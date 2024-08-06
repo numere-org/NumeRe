@@ -36,13 +36,13 @@ bool isNotEmptyExpression(StringView sExpr);
 ///
 /// \param nResults int&
 /// \param sExpression std::string
-/// \return mu::value_type*
+/// \return mu::Array*
 ///
 /////////////////////////////////////////////////
-static mu::value_type* evaluateNumerical(int& nResults, std::string sExpression)
+static mu::Array* evaluateNumerical(int& nResults, std::string sExpression)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     if (_data.containsTablesOrClusters(sExpression))
         getDataElements(sExpression, _parser, _data);
@@ -280,7 +280,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "alpha", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=')+5));
-            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().real();
+            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().front().getNum().val.real();
 
             if (floatSettings[FLOAT_ALPHAVAL] < 0 || floatSettings[FLOAT_ALPHAVAL] > 1)
                 floatSettings[FLOAT_ALPHAVAL] = 0.5;
@@ -289,7 +289,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "transparency", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "transparency", '=')+12));
-            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().real();
+            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().front().getNum().val.real();
 
             if (floatSettings[FLOAT_ALPHAVAL] < 0 || floatSettings[FLOAT_ALPHAVAL] > 1)
                 floatSettings[FLOAT_ALPHAVAL] = 0.5;
@@ -431,7 +431,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         intSettings[INT_SAMPLES] = intCast(_parser.Eval());
 
-        if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
+        if (isnan(_parser.Eval().front().getNum().val.real()) || isinf(_parser.Eval().front().getNum().val.real()))
             intSettings[INT_SAMPLES] = 100;
     }
 
@@ -464,19 +464,19 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp.find(',') && sTemp.find(',') != sTemp.length()-1)
             {
                 int nResults;
-                mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
-                dRotateAngles[0] = dTemp[0].real();
-                dRotateAngles[1] = dTemp[1].real();
+                mu::Array* dTemp = evaluateNumerical(nResults, sTemp);
+                dRotateAngles[0] = dTemp[0].front().getNum().val.real();
+                dRotateAngles[1] = dTemp[1].front().getNum().val.real();
             }
             else if (!sTemp.find(','))
             {
                 _parser.SetExpr(sTemp.substr(1));
-                dRotateAngles[1] = _parser.Eval().real();
+                dRotateAngles[1] = _parser.Eval().front().getNum().val.real();
             }
             else if (sTemp.find(',') == sTemp.length()-1)
             {
                 _parser.SetExpr(sTemp.substr(0,sTemp.length()-1));
-                dRotateAngles[0] = _parser.Eval().real();
+                dRotateAngles[0] = _parser.Eval().front().getNum().val.real();
             }
 
             for (size_t i = 0; i < 2; i++)
@@ -512,13 +512,13 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults = 0;
-            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
+            mu::Array* dTemp = evaluateNumerical(nResults, sTemp);
             if (nResults)
             {
-                for (int i = 0; i < 3; i++)
+                for (size_t i = 0; i < 3; i++)
                 {
-                    if (i < nResults && !isnan(dTemp[i].real()) && !isinf(dTemp[i].real()))
-                        dOrigin[i] = dTemp[i].real();
+                    if (i < dTemp[0].size() && !isnan(dTemp[0][i].getNum().val.real()) && !isinf(dTemp[0][i].getNum().val.real()))
+                        dOrigin[i] = dTemp[0][i].getNum().val.real();
                     else
                         dOrigin[i] = 0.0;
                 }
@@ -543,14 +543,18 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults;
-            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
+            mu::Array* dTemp = evaluateNumerical(nResults, sTemp);
 
             if (nResults)
             {
-                for (int i = 0; i < 3; i++)
+                for (size_t i = 0; i < 3; i++)
                 {
-                    if (i < nResults && !isnan(dTemp[i].real()) && !isinf(dTemp[i].real()) && dTemp[i].real() <= 5 && dTemp[i].real() >= 0)
-                        nSlices[i] = (unsigned short)dTemp[i].real();
+                    if (i < dTemp[0].size()
+                        && !isnan(dTemp[0][i].getNum().val.real())
+                        && !isinf(dTemp[0][i].getNum().val.real())
+                        && dTemp[0][i].getNum().val.real() <= 5
+                        && dTemp[0][i].getNum().val.real() >= 0)
+                        nSlices[i] = dTemp[0][i].getNum().asInt();
                     else
                         nSlices[i] = 1;
                 }
@@ -570,12 +574,12 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults = 0;
-            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
+            mu::Array* dTemp = evaluateNumerical(nResults, sTemp);
 
-            if (nResults >= 2)
+            if (dTemp[0].size() >= 2)
             {
-                nTargetGUI[0] = intCast(dTemp[0]);
-                nTargetGUI[1] = intCast(dTemp[1]);
+                nTargetGUI[0] = dTemp[0][0].getNum().asInt();
+                nTargetGUI[1] = dTemp[0][1].getNum().asInt();
             }
         }
     }
@@ -587,12 +591,12 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults = 0;
-            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
+            mu::Array* dTemp = evaluateNumerical(nResults, sTemp);
 
-            if (nResults >= 2)
+            if (dTemp[0].size() >= 2)
             {
-                intSettings[INT_SIZE_X] = intCast(dTemp[0]);
-                intSettings[INT_SIZE_Y] = intCast(dTemp[1]);
+                intSettings[INT_SIZE_X] = dTemp[0][0].getNum().asInt();
+                intSettings[INT_SIZE_Y] = dTemp[0][1].getNum().asInt();
 
                 if (intSettings[INT_SIZE_X] > 0 && intSettings[INT_SIZE_Y] > 0)
                     floatSettings[FLOAT_ASPECT] = intSettings[INT_SIZE_X] / (double)intSettings[INT_SIZE_Y];
@@ -666,8 +670,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         size_t nPos = findParameter(sCmd, "animate", '=')+7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        intSettings[INT_ANIMATESAMPLES] = intCast(_parser.Eval());
-        if (intSettings[INT_ANIMATESAMPLES] && !isinf(_parser.Eval()) && !isnan(_parser.Eval()))
+        intSettings[INT_ANIMATESAMPLES] = _parser.Eval().getAsScalarInt();
+        if (intSettings[INT_ANIMATESAMPLES] && !mu::isinf(_parser.Eval().front().getNum().val) && !mu::isnan(_parser.Eval().front().getNum()))
             logicalSettings[LOG_ANIMATE] = true;
         else
         {
@@ -684,8 +688,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         size_t nPos = findParameter(sCmd, "marks", '=')+5;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        intSettings[INT_MARKS] = intCast(_parser.Eval());
-        if (!intSettings[INT_MARKS] || isinf(_parser.Eval().real()) || isnan(_parser.Eval().real()))
+        intSettings[INT_MARKS] = _parser.Eval().getAsScalarInt();
+        if (!intSettings[INT_MARKS] || isinf(_parser.Eval().front().getNum().val.real()) || isnan(_parser.Eval().front().getNum().val.real()))
             intSettings[INT_MARKS] = 0;
         if (intSettings[INT_MARKS] > 9)
             intSettings[INT_MARKS] = 9;
@@ -700,7 +704,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         size_t nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        floatSettings[FLOAT_TEXTSIZE] = _parser.Eval().real();
+        floatSettings[FLOAT_TEXTSIZE] = _parser.Eval().front().getNum().val.real();
 
         if (isinf(floatSettings[FLOAT_TEXTSIZE]) || isnan(floatSettings[FLOAT_TEXTSIZE]))
             floatSettings[FLOAT_TEXTSIZE] = 5;
@@ -713,7 +717,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         size_t nPos = findParameter(sCmd, "aspect", '=') + 6;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        floatSettings[FLOAT_ASPECT] = _parser.Eval().real();
+        floatSettings[FLOAT_ASPECT] = _parser.Eval().front().getNum().val.real();
         if (floatSettings[FLOAT_ASPECT] <= 0 || isnan(floatSettings[FLOAT_ASPECT]) || isinf(floatSettings[FLOAT_ASPECT]))
             floatSettings[FLOAT_ASPECT] = 4/3;
     }
@@ -748,10 +752,10 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "bars", '=')+4));
-        floatSettings[FLOAT_BARS] = _parser.Eval().real();
+        floatSettings[FLOAT_BARS] = _parser.Eval().front().getNum().val.real();
         if (floatSettings[FLOAT_BARS]
-            && !isinf(_parser.Eval().real())
-            && !isnan(_parser.Eval().real())
+            && !isinf(_parser.Eval().front().getNum().val.real())
+            && !isnan(_parser.Eval().front().getNum().val.real())
             && (floatSettings[FLOAT_BARS] < 0.0 || floatSettings[FLOAT_BARS] > 1.0))
             floatSettings[FLOAT_BARS] = 0.9;
         floatSettings[FLOAT_HBARS] = 0.0;
@@ -766,10 +770,10 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "hbars", '=')+5));
-        floatSettings[FLOAT_HBARS] = _parser.Eval().real();
+        floatSettings[FLOAT_HBARS] = _parser.Eval().front().getNum().val.real();
         if (floatSettings[FLOAT_HBARS]
-            && !isinf(_parser.Eval().real())
-            && !isnan(_parser.Eval().real())
+            && !isinf(_parser.Eval().front().getNum().val.real())
+            && !isnan(_parser.Eval().front().getNum().val.real())
             && (floatSettings[FLOAT_HBARS] < 0.0 || floatSettings[FLOAT_HBARS] > 1.0))
             floatSettings[FLOAT_HBARS] = 0.9;
         floatSettings[FLOAT_BARS] = 0.0;
@@ -784,7 +788,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "perspective", '=') && (nType == ALL || nType & GLOBAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "perspective", '=')+11));
-        floatSettings[FLOAT_PERSPECTIVE] = fabs(_parser.Eval());
+        floatSettings[FLOAT_PERSPECTIVE] = fabs(_parser.Eval().front().getNum().val);
         if (floatSettings[FLOAT_PERSPECTIVE] >= 1.0)
             floatSettings[FLOAT_PERSPECTIVE] = 0.0;
     }
@@ -826,16 +830,16 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            value_type* v = nullptr;
+            mu::Array* v = nullptr;
             int nResults = 0;
             v = evaluateNumerical(nResults, getNextArgument(sTemp, true));
 
-            for (int i = 0; i < nResults; i++)
+            for (size_t i = 0; i < v[0].size(); i++)
             {
                 if (i)
                     _lHlines.push_back(Line());
 
-                _lHlines[i+2].dPos = v[i].real();
+                _lHlines[i+2].dPos = v[0][i].getNum().val.real();
             }
 
             std::string sDescList = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
@@ -881,16 +885,16 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            value_type* v = nullptr;
+            mu::Array* v = nullptr;
             int nResults = 0;
             v = evaluateNumerical(nResults, getNextArgument(sTemp, true));
 
-            for (int i = 0; i < nResults; i++)
+            for (size_t i = 0; i < v[0].size(); i++)
             {
                 if (i)
                     _lVLines.push_back(Line());
 
-                _lVLines[i+2].dPos = v[i].real();
+                _lVLines[i+2].dPos = v[0][i].getNum().val.real();
             }
 
             std::string sDescList = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
@@ -972,7 +976,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[0].dPos = _parser.Eval().real();
+            _lVLines[0].dPos = _parser.Eval().front().getNum().val.real();
             _lVLines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
             if (sTemp.length())
                 _lVLines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0, STRINGEXTRACT);
@@ -988,7 +992,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[1].dPos = _parser.Eval().real();
+            _lVLines[1].dPos = _parser.Eval().front().getNum().val.real();
             _lVLines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0, STRINGEXTRACT);
             if (sTemp.length())
                 _lVLines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
@@ -1008,8 +1012,9 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (getNextArgument(sTemp, false).front() != '"')
             {
                 int nRes;
-                mu::value_type minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
-                _AddAxes[0].ivl.reset(minval, evaluateNumerical(nRes, getNextArgument(sTemp, true))[0]);
+                mu::Array minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
+                _AddAxes[0].ivl.reset(minval.front().getNum().val,
+                                      evaluateNumerical(nRes, getNextArgument(sTemp, true))[0].front().getNum().val);
 
                 if (getNextArgument(sTemp, false).length())
                 {
@@ -1053,8 +1058,9 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (getNextArgument(sTemp, false).front() != '"')
             {
                 int nRes;
-                mu::value_type minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
-                _AddAxes[1].ivl.reset(minval, evaluateNumerical(nRes, getNextArgument(sTemp, true))[0]);
+                mu::Array minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
+                _AddAxes[1].ivl.reset(minval.front().getNum().val,
+                                      evaluateNumerical(nRes, getNextArgument(sTemp, true))[0].front().getNum().val);
 
                 if (getNextArgument(sTemp, false).length())
                 {
@@ -1781,25 +1787,25 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if ((nPos = findParameter(sCmd, "xscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[0] = _parser.Eval().real();
+            dAxisScale[0] = _parser.Eval().front().getNum().val.real();
         }
 
         if ((nPos = findParameter(sCmd, "yscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[1] = _parser.Eval().real();
+            dAxisScale[1] = _parser.Eval().front().getNum().val.real();
         }
 
         if ((nPos = findParameter(sCmd, "zscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[2] = _parser.Eval().real();
+            dAxisScale[2] = _parser.Eval().front().getNum().val.real();
         }
 
         if ((nPos = findParameter(sCmd, "cscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[3] = _parser.Eval().real();
+            dAxisScale[3] = _parser.Eval().front().getNum().val.real();
         }
 
         for (int i = 0; i < 4; i++)

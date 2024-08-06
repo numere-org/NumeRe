@@ -72,7 +72,7 @@ std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowD
 double Linearize(double x_0, double y_0, double x_1, double y_1);
 void make_hline(int nLength = -1);
 void make_progressBar(int nStep, int nFirstStep = 1, int nFinalStep = 100, const std::string& sType = "std");
-bool containsStrings(const std::string& sLine);
+bool containsStrings(StringView sLine);
 void reduceLogFilesize(const std::string& sFileName);
 std::string replaceToVectorname(const std::string& sExpression);
 void eraseToken(std::string& sExpr, const std::string& sToken, bool bTokenHasValue = false);

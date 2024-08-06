@@ -129,7 +129,7 @@ static Matrix identityMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
     if (!funcData.nVal)
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mIdentity(funcData.nVal, funcData.nVal, 0.0);
+    Matrix _mIdentity(funcData.nVal, funcData.nVal, mu::Value(0.0));
 
     for (int i = 0; i < funcData.nVal; i++)
     {
@@ -158,7 +158,7 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
 
-    Matrix _mReturn(1, 1, 0.0);
+    Matrix _mReturn(1, 1, mu::Value(0.0));
 
     for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
@@ -1415,7 +1415,7 @@ static Matrix matrixCutoff(const MatFuncData& funcData, const MatFuncErrorInfo& 
     double thresLow(NAN);
 
     // Get the input values
-    double thresInput = funcData.fVal.real();
+    double thresInput = funcData.fVal.getNum().val.real();
     int mode = funcData.nVal;
 
     // Check if the mode is within the acceptable range
@@ -1624,7 +1624,7 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mCoords = createFilledMatrix(2, 1, 0.0);
     _mCoords(0) = -1;
 
-    std::complex<double> dValue = funcData.fVal;
+    std::complex<double> dValue = funcData.fVal.getNum().val;
     int nType = funcData.nVal;
     std::complex<double> dKeep = dValue;
 
@@ -1745,7 +1745,7 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].getNum().val);
     }
 
     return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1), VectorIndex(0)));
@@ -1827,10 +1827,10 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].getNum().val);
     }
 
-    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal));
+    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal.getNum().val));
 }
 
 
@@ -1846,7 +1846,7 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t nLines = funcData.fVal.real();
+    size_t nLines = funcData.fVal.getNum().val.real();
     size_t nCols = funcData.nVal;
 
     if (funcData.mat1.isEmpty() || !nLines || !nCols)
@@ -2017,7 +2017,7 @@ static Matrix normalize(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t nLines = funcData.fVal.real();
+    size_t nLines = funcData.fVal.getNum().val.real();
     size_t nCols = funcData.nVal;
 
     if (funcData.mat1.isEmpty() || !nLines || !nCols)
@@ -2050,7 +2050,7 @@ static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo&
 /////////////////////////////////////////////////
 static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t n = funcData.fVal.real();
+    size_t n = funcData.fVal.getNum().val.real();
     size_t m = funcData.nVal;
 
     if (n == 0)
@@ -2255,7 +2255,7 @@ static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mReturn = funcData.mat1;
 
         // (Any) vector
-        std::vector<std::complex<double>>& dat = _mReturn.data();
+        mu::Array& dat = _mReturn.data();
 
         for (size_t i = 1; i < dat.size(); i++)
         {
@@ -2271,7 +2271,7 @@ static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
             _mReturn = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                      errorInfo);
             // (Any) vector
-            std::vector<std::complex<double>>& dat = _mReturn.data();
+            mu::Array& dat = _mReturn.data();
 
             for (size_t i = 1; i < dat.size(); i++)
             {
@@ -2330,7 +2330,7 @@ static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mReturn = funcData.mat1;
 
         // (Any) vector
-        std::vector<std::complex<double>>& dat = _mReturn.data();
+        mu::Array& dat = _mReturn.data();
 
         for (size_t i = 1; i < dat.size(); i++)
         {
@@ -2346,7 +2346,7 @@ static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
             _mReturn = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                      errorInfo);
             // (Any) vector
-            std::vector<std::complex<double>>& dat = _mReturn.data();
+            mu::Array& dat = _mReturn.data();
 
             for (size_t i = 1; i < dat.size(); i++)
             {
@@ -2733,7 +2733,7 @@ static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& err
     for (size_t i = 0; i < _mReturn.rows(); i++)
     {
         _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2) + intPower(funcData.mat1(i, 1), 2));
-        _mReturn(i, 1) = parser_phi(funcData.mat1(i, 0), funcData.mat1(i, 1));
+        _mReturn(i, 1) = parser_phi(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1))).front().getNum().val;
     }
 
     return _mReturn;
@@ -2769,8 +2769,8 @@ static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& e
         _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2)
                                    + intPower(funcData.mat1(i, 1), 2)
                                    + intPower(funcData.mat1(i, 2), 2));
-        _mReturn(i, 1) = parser_phi(funcData.mat1(i, 0), funcData.mat1(i, 1));
-        _mReturn(i, 2) = parser_theta(funcData.mat1(i, 0), funcData.mat1(i, 1), funcData.mat1(i, 2));
+        _mReturn(i, 1) = parser_phi(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1))).front().getNum().val;
+        _mReturn(i, 2) = parser_theta(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1)), mu::Value(funcData.mat1(i, 2))).front().getNum().val;
     }
 
     return _mReturn;
@@ -2835,9 +2835,9 @@ static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& er
     for (size_t i = 0; i < _mReturn.rows(); i++)
     {
         _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2) + intPower(funcData.mat1(i, 2), 2));
-        _mReturn(i, 2) = parser_theta(funcData.mat1(i, 0) * cos(funcData.mat1(i, 1)),
-                                      funcData.mat1(i, 0) * sin(funcData.mat1(i, 1)),
-                                      funcData.mat1(i, 2));
+        _mReturn(i, 2) = parser_theta(mu::Value(funcData.mat1(i, 0) * cos(funcData.mat1(i, 1))),
+                                      mu::Value(funcData.mat1(i, 0) * sin(funcData.mat1(i, 1))),
+                                      mu::Value(funcData.mat1(i, 2))).front().getNum().val;
     }
 
     return _mReturn;
@@ -3419,7 +3419,8 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     mglDataC _fftData1;
 
     // Link the existing matrix to the fft object. Avoids copying the data
-    _fftData1.Link(&mat1.data()[0], mat1.rows(), mat1.cols());
+    std::vector<std::complex<double>> m1 = mat1.data().as_cmplx_vector();
+    _fftData1.Link(&m1[0], mat1.rows(), mat1.cols());
 
     // Replace all nans with zeros
     for (size_t i = 0; i < mat1.rows(); i++)
@@ -3432,8 +3433,10 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     //Transform matrix 2
     mglDataC _fftData2;
 
+    std::vector<std::complex<double>> m2 = mat2.data().as_cmplx_vector();
+
     // Link the existing matrix to the fft object. Avoids copying the data
-    _fftData2.Link(&mat2.data()[0], mat2.rows(), mat2.cols());
+    _fftData2.Link(&m2[0], mat2.rows(), mat2.cols());
 
     // Replace all nans with zeros
     for (size_t i = 0; i < mat2.rows(); i++)
@@ -3450,6 +3453,8 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
 
     // Take the inverse of the convolution result
     _fftData1.FFT("ixy");
+
+    mat1.data() = m1;
 
     // Write results to matrix
     return mat1;
@@ -3511,7 +3516,7 @@ static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorI
             mat(i, j) = funcData.mat1(rows[i], cols[j]);
 
     // Extend the kernel with zeros to the same size as the extended matrix
-    Matrix kernel(rows.size(), cols.size(), 0.0);
+    Matrix kernel(rows.size(), cols.size(), mu::Value(0.0));
     for (size_t i = 0; i < funcData.mat2.rows(); i++)
         for (size_t j = 0; j < funcData.mat2.cols(); j++)
             kernel(i + offsetRows + inputRows / 2 - funcData.mat2.rows() / 2,

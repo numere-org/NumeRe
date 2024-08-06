@@ -1150,7 +1150,7 @@ namespace mu
 
 		CheckName(a_sName, ValidNameChars());
 
-		bool needsReInit = bool needsReInit = m_factory->m_VarDef.find(a_sName) != m_factory->m_VarDef.end();
+		bool needsReInit = m_factory->m_VarDef.find(a_sName) != m_factory->m_VarDef.end();
 
 	    Variable* var = m_factory->Create(a_sName);
 
@@ -1453,7 +1453,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push( (vExpr.GetVal() != 0.0) ? vVal1 : vVal2);
+			a_stVal.push( (vExpr.GetVal() != mu::Value(0.0)) ? vVal1 : vVal2);
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1674,7 +1674,7 @@ namespace mu
                     continue;
 
                 case  cmIF:
-                    if (Stack[sidx--] == 0.0)
+                    if (!Stack[sidx--])
                         pTok += pTok->Oprt().offset;
                     continue;
 
@@ -1931,7 +1931,7 @@ namespace mu
                         continue;
 
                     case  cmIF:
-                        if (Stack[sidx--] == 0.0)
+                        if (!Stack[sidx--])
                             pTok += pTok->Oprt().offset;
                         continue;
 
@@ -2337,6 +2337,7 @@ namespace mu
 					// A binary operator (user defined or built in) has been found.
 					while ( stOpt.size() &&
 							stOpt.top().GetCode() != cmBO &&
+							stOpt.top().GetCode() != cmVO &&
 							stOpt.top().GetCode() != cmELSE &&
 							stOpt.top().GetCode() != cmIF)
 					{
@@ -2422,12 +2423,12 @@ namespace mu
 			// Commented out - might be necessary for deep debugging stuff
 			//if (ParserBase::g_DbgDumpStack)
 			//{
-				StackDump(stVal, stOpt);
+			//	StackDump(stVal, stOpt);
 			//	m_compilingState.m_byteCode.AsciiDump();
 			//}
 		} // while (true)
 
-		if (ParserBase::g_DbgDumpCmdCode)
+		//if (ParserBase::g_DbgDumpCmdCode)
 			m_compilingState.m_byteCode.AsciiDump();
 
 		if (m_nIfElseCounter > 0)

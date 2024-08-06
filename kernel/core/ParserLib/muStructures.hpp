@@ -94,6 +94,8 @@ namespace mu
             Numerical& getNum();
             const Numerical& getNum() const;
 
+            std::complex<double> as_cmplx() const;
+
             Value operator+(const Value& other) const;
             Value operator-() const;
             Value operator-(const Value& other) const;
@@ -119,8 +121,8 @@ namespace mu
             Value operator&&(const Value& other) const;
             Value operator||(const Value& other) const;
 
-            std::string print(size_t chrs = 0) const;
-            std::string printVal(size_t chrs = 0) const;
+            std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
+            std::string printVal(size_t digits = 0, size_t chrs = 0) const;
             void clear();
             size_t getBytes() const;
 
@@ -144,6 +146,7 @@ namespace mu
             Array(const Array& other);
             Array(Array&& other) = default;
 
+            Array(size_t n, const Value& fillVal = Value());
             Array(const Value& singleton);
             Array(const Variable& var);
             Array(const std::vector<std::complex<double>>& other);
@@ -189,8 +192,8 @@ namespace mu
             std::vector<std::string> as_str_vector() const;
             std::vector<std::complex<double>> as_cmplx_vector() const;
             std::vector<std::string> to_string() const;
-            std::string print(size_t chrs = 0) const;
-            std::string printVals(size_t chrs = 0) const;
+            std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
+            std::string printVals(size_t digits = 0, size_t chrs = 0) const;
             size_t getBytes() const;
 
             Value& get(size_t i);

@@ -321,7 +321,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         // Replace the value with its actual value and mark the
         // argument type as reference
         mu::Variable* address = _parser.GetVar().find(sArgumentValue)->second;
-        sArgumentValue = address->print(DEFAULT_NUM_PRECISION);
+        sArgumentValue = address->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
         //sArgumentValue = toString(*address, (address->imag() ? 2*DEFAULT_NUM_PRECISION : DEFAULT_NUM_PRECISION));
 
         //if (address->imag())
@@ -990,7 +990,7 @@ vector<string> NumeReDebugger::getGlobals()
             && !isDimensionVar(iter->first))
         {
             mGlobals[iter->first] = "1 x 1\t" + iter->second->getCommonTypeAsString() + "\t"
-                + iter->second->print(iter->second->getCommonType() == mu::TYPE_STRING ? MAXSTRINGLENGTH : DEFAULT_NUM_PRECISION);
+                + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
         }
     }
 

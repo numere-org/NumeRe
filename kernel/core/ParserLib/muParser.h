@@ -59,10 +59,10 @@ namespace mu
             virtual void InitOprt() override;
             virtual void OnDetectVar(string_type* pExpr, int& nStart, int& nEnd) override;
 
-            std::vector<Array> Diff(Value* a_Var,
-                                    const Array& a_fPos,
-                                    Value a_fEpsilon = 0.0,
-                                    size_t order = 1);
+            Array Diff(Variable* a_Var,
+                       const Array& a_fPos,
+                       Value a_fEpsilon = 0.0,
+                       size_t order = 1);
 
         protected:
 

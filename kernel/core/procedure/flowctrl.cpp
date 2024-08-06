@@ -1149,7 +1149,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     // Search for the correct first(!) case
     for (int i = 0; i < nNum; i++)
     {
-        if (v[i] == 0.0)
+        if (!v[i])
             nNextCase = nJumpTable[nNextCase][BLOCK_MIDDLE];
         else
             break;

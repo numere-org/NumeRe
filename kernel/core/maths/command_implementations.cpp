@@ -37,10 +37,6 @@
 using namespace std;
 
 DefaultVariables _defVars;
-static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps = 1e-10, int nRecursion = 0);
-static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps = 1e-10, int nRecursion = 0);
-static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, const std::vector<size_t>& nSamples);
-static void expandVectorToDatagrid(IntervalSet& ivl, std::vector<std::vector<mu::value_type>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
 /////////////////////////////////////////////////
@@ -48,46 +44,42 @@ static void expandVectorToDatagrid(IntervalSet& ivl, std::vector<std::vector<mu:
 /// integration step using a trapezoidal
 /// approximation algorithm.
 ///
-/// \param x mu::value_type&
-/// \param x0 mu::value_type
-/// \param dx mu::value_type
-/// \param vResult vector<mu::value_type>&
-/// \param vFunctionValues vector<mu::value_type>&
+/// \param x mu::Variable&
+/// \param x0 const mu::Value&
+/// \param dx const mu::Value&
+/// \param vResult mu::Array&
+/// \param vFunctionValues mu::Array&
 /// \param bReturnFunctionPoints bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void integrationstep_trapezoidal(mu::value_type& x, mu::value_type x0, mu::value_type dx, vector<mu::value_type>& vResult, vector<mu::value_type>& vFunctionValues, bool bReturnFunctionPoints)
+static void integrationstep_trapezoidal(mu::Variable& x, const mu::Value& x0, const mu::Value& dx, mu::Array& vResult, mu::Array& vFunctionValues, bool bReturnFunctionPoints)
 {
     x = x0;
-    int nResults;
-    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+    mu::Array v = NumeReKernel::getInstance()->getParser().Eval();
 
     // Evaluate the current integration step for each of the
     // defined functions
-    for (int i = 0; i < nResults; i++)
+    for (size_t i = 0; i < v.size(); i++)
     {
-        if (isnan(v[i].real()) || isnan(v[i].imag()))
-            v[i] = 0.0;
+        if (mu::isnan(v[i]))
+            v[i] = mu::Value(0.0);
     }
 
     // Now calculate the area below the curve
     if (!bReturnFunctionPoints)
-    {
-        for (int i = 0; i < nResults; i++)
-            vResult[i] += dx * (vFunctionValues[i] + v[i]) * 0.5;
-    }
+        vResult += dx * (vFunctionValues + v) * 0.5;
     else
     {
         // Calculate the integral
         if (vResult.size())
-            vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5 + vResult.back());
+            vResult.push_back(dx * (vFunctionValues[0] + v[0]) * mu::Value(0.5) + vResult.back());
         else
-            vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5);
+            vResult.push_back(dx * (vFunctionValues[0] + v[0]) * mu::Value(0.5));
     }
 
     // Set the last sample as the first one
-    vFunctionValues.assign(v, v+nResults);
+    vFunctionValues = v;
 }
 
 
@@ -96,58 +88,55 @@ static void integrationstep_trapezoidal(mu::value_type& x, mu::value_type x0, mu
 /// integration step using the Simpson
 /// approximation algorithm.
 ///
-/// \param x mu::value_type&
-/// \param x0 mu::value_type
-/// \param x1 mu::value_type
-/// \param dx double
-/// \param vResult vector<mu::value_type>&
-/// \param vFunctionValues vector<mu::value_type>&
+/// \param x mu::Variable&
+/// \param x0 const mu::Value&
+/// \param x1 const mu::Value&
+/// \param dx const mu::Value&
+/// \param vResult mu::Array&
+/// \param vFunctionValues mu::Array&
 /// \param bReturnFunctionPoints bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void integrationstep_simpson(mu::value_type& x, mu::value_type x0, mu::value_type x1, double dx, vector<mu::value_type>& vResult, vector<mu::value_type>& vFunctionValues, bool bReturnFunctionPoints)
+static void integrationstep_simpson(mu::Variable& x, const mu::Value& x0, const mu::Value& x1, const mu::Value& dx, mu::Array& vResult, mu::Array& vFunctionValues, bool bReturnFunctionPoints)
 {
     // Evaluate the intermediate function value
     x = x0;
-    int nResults;
-    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
-    for (int i = 0; i < nResults; i++)
+    mu::Array v = NumeReKernel::getInstance()->getParser().Eval();
+
+    for (size_t i = 0; i < v.size(); i++)
     {
-        if (isnan(std::abs(v[i])))
-            v[i] = 0.0;
+        if (mu::isnan(v[i]))
+            v[i] = mu::Value(0.0);
     }
 
-    vector<mu::value_type> vInter(v, v+nResults);
+    mu::Array vInter = v;
 
     // Evaluate the end function value
     x = x1;
-    v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+    v = NumeReKernel::getInstance()->getParser().Eval();
 
-    for (int i = 0; i < nResults; i++)
+    for (size_t i = 0; i < v.size(); i++)
     {
-        if (isnan(std::abs(v[i])))
-            v[i] = 0.0;
+        if (mu::isnan(v[i]))
+            v[i] = mu::Value(0.0);
     }
 
     // Now calculate the area below the curve
     if (!bReturnFunctionPoints)
-    {
-        for (int i = 0; i < nResults; i++)
-            vResult[i] += dx / 6.0 * (vFunctionValues[i] + 4.0 * vInter[i] + v[i]); // b-a/6*(f(a)+4f(a+b/2)+f(b))
-    }
+        vResult += dx / mu::Value(6.0) * (vFunctionValues + mu::Value(4.0) * vInter + v); // b-a/6*(f(a)+4f(a+b/2)+f(b))
     else
     {
         // Calculate the integral at the current x position
         if (vResult.size())
-            vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]) + vResult.back());
+            vResult.push_back(dx / mu::Value(6.0) * (vFunctionValues[0] + mu::Value(4.0) * vInter[0] + v[0]) + vResult.back());
         else
-            vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]));
+            vResult.push_back(dx / mu::Value(6.0) * (vFunctionValues[0] + mu::Value(4.0) * vInter[0] + v[0]));
     }
 
     // Set the last sample as the first one
-    vFunctionValues.assign(v, v+nResults);
+    vFunctionValues = v;
 }
 
 
@@ -156,15 +145,15 @@ static void integrationstep_simpson(mu::value_type& x, mu::value_type x0, mu::va
 /// dimension data.
 ///
 /// \param cmdParser& ComandLineParser
-/// \return vector<double>
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cmdParser)
+static mu::Array integrateSingleDimensionData(CommandLineParser& cmdParser)
 {
     bool bReturnFunctionPoints = cmdParser.hasParam("points");
     bool bCalcXvals = cmdParser.hasParam("xvals");
 
-    vector<mu::value_type> vResult;
+    mu::Array vResult;
 
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
@@ -186,7 +175,7 @@ static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cm
     // summarize its contents, otherwise we calculate the
     // integral with the trapezoidal method
     if ((_idx.row.size() == 1 || _idx.col.size() == 1) && !bReturnFunctionPoints)
-        vResult.push_back(_data.sum(sDatatable, _idx.row, _idx.col));
+        vResult.push_back(mu::Value(_data.sum(sDatatable, _idx.row, _idx.col)));
     else if (_idx.row.size() == 1 || _idx.col.size() == 1)
     {
         // cumulative sum
@@ -216,7 +205,7 @@ static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cm
 
         // Sort the data
         _cache.sortElements("sort -table c=1[2]");
-        mu::value_type dResult = 0.0;
+        mu::Value dResult;
         long long int j = 1;
 
         // Calculate the integral by jumping over NaNs
@@ -233,21 +222,21 @@ static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cm
             if (!_cache.isValidElement(i + j, 0, "table") || !_cache.isValidElement(i + j, 1, "table"))
                 break;
 
-            if (ivl.intervals.size() >= 1 && ivl.intervals[0].front().real() > _cache.getElement(i, 0, "table").real())
+            if (ivl.intervals.size() >= 1 && ivl.intervals[0].front().real() > _cache.getElement(i, 0, "table").getNum().val.real())
                 continue;
 
-            if (ivl.intervals.size() >= 1 && ivl.intervals[0].back().real() < _cache.getElement(i + j, 0, "table").real())
+            if (ivl.intervals.size() >= 1 && ivl.intervals[0].back().real() < _cache.getElement(i + j, 0, "table").getNum().val.real())
                 break;
 
             // Calculate either the integral, its samples or the corresponding x values
             if (!bReturnFunctionPoints && !bCalcXvals)
-                dResult += (_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table"));
+                dResult += (_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / mu::Value(2.0) * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table"));
             else if (bReturnFunctionPoints && !bCalcXvals)
             {
                 if (vResult.size())
-                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")) + vResult.back());
+                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / mu::Value(2.0) * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")) + vResult.back());
                 else
-                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")));
+                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / mu::Value(2.0) * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")));
             }
             else
                 vResult.push_back(_cache.getElement(i + j, 0, "table"));
@@ -274,26 +263,21 @@ static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cm
 /////////////////////////////////////////////////
 bool integrate(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
     string sIntegrationExpression = cmdParser.getExprAsMathExpression();
-    mu::value_type* v = 0;
     int nResults = 0;
-    vector<mu::value_type> vResult;   // Ausgabe-Wert
-    vector<mu::value_type> vFunctionValues; // Werte an der Stelle n und n+1
+    mu::Array vResult(mu::Value(0.0));   // Ausgabe-Wert
+    mu::Array vFunctionValues(mu::Value(0.0)); // Werte an der Stelle n und n+1
     bool bLargeInterval = false;    // Boolean: TRUE, wenn ueber ein grosses Intervall integriert werden soll
     bool bReturnFunctionPoints = cmdParser.hasParam("points");
     bool bCalcXvals = cmdParser.hasParam("xvals");
     unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
     size_t nSamples = 1e3;
 
-    mu::value_type& x = _defVars.vValue[0][0];
+    mu::Variable& x = _defVars.vValue[0][0];
     double range;
-
-    // It's not possible to calculate the integral of a string expression
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sIntegrationExpression))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "integrate");
 
     // Ensure that the function is available
     if (!sIntegrationExpression.length())
@@ -330,35 +314,35 @@ bool integrate(CommandLineParser& cmdParser)
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    std::vector<mu::value_type> vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
 
     if (vParVal.size())
-        nSamples = std::rint(range / vParVal.front().real());
+        nSamples = std::rint(range / vParVal.front().getNum().val.real());
     else
     {
         vParVal = cmdParser.getParameterValueAsNumericalValue("p");
 
         if (vParVal.size())
-            nSamples = std::rint(range / vParVal.front().real());
+            nSamples = std::rint(range / vParVal.front().getNum().val.real());
         else
         {
             vParVal = cmdParser.getParameterValueAsNumericalValue("eps");
 
             if (vParVal.size())
-                nSamples = std::rint(range / vParVal.front().real());
+                nSamples = std::rint(range / vParVal.front().getNum().val.real());
         }
     }
 
     vParVal = cmdParser.getParameterValueAsNumericalValue("steps");
 
     if (vParVal.size())
-        nSamples = std::abs(intCast(vParVal.front()));
+        nSamples = std::abs(vParVal.getAsScalarInt());
     else
     {
         vParVal = cmdParser.getParameterValueAsNumericalValue("s");
 
         if (vParVal.size())
-            nSamples = std::abs(intCast(vParVal.front()));
+            nSamples = std::abs(vParVal.getAsScalarInt());
     }
 
     std::string sParVal = cmdParser.getParameterValue("method");
@@ -374,12 +358,11 @@ bool integrate(CommandLineParser& cmdParser)
     // Check, whether the expression actual depends
     // upon the integration variable
     _parser.SetExpr(sIntegrationExpression);
-
     _parser.Eval(nResults);
-    vResult.resize(nResults, 0.0);
 
-    // Set the calculation variables to their starting values
-    vFunctionValues.resize(nResults, 0.0);
+    // Ensure that we have only a single expression
+    if (nResults > 1)
+        _parser.SetExpr("{" + sIntegrationExpression + "}");
 
     // Calculate the numerical integration
     // If the precision is invalid (e.g. due to a very
@@ -393,7 +376,7 @@ bool integrate(CommandLineParser& cmdParser)
     {
         for (size_t i = 0; i < nSamples; i++)
         {
-            vResult.push_back(ivl[0](i, nSamples));
+            vResult.push_back(mu::Value(ivl[0](i, nSamples)));
         }
 
         cmdParser.setReturnValue(vResult);
@@ -412,13 +395,12 @@ bool integrate(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Set the integration variable to the lower border
-    x = ivl[0](0);
+    x.overwrite(mu::Value(ivl[0](0)));
 
     // Calculate the first sample(s)
-    v = _parser.Eval(nResults);
-    vFunctionValues.assign(v, v+nResults);
+    vFunctionValues = _parser.Eval();
 
-    double dx = range / (nSamples-1);
+    mu::Value dx(range / (nSamples-1));
 
     // Perform the actual numerical integration
     for (size_t i = 1; i < nSamples; i++)
@@ -483,27 +465,22 @@ static void refreshBoundaries(IntervalSet& ivl, const string& sIntegrationExpres
 /////////////////////////////////////////////////
 bool integrate2d(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
     string sIntegrationExpression = cmdParser.getExprAsMathExpression();                // string fuer die zu integrierende Funktion
-    mu::value_type* v = 0;
     int nResults = 0;
-    vector<mu::value_type> vResult[3];      // value_type-Array, wobei vResult[0] das eigentliche Ergebnis speichert
+    mu::Array vResult[3];      // value_type-Array, wobei vResult[0] das eigentliche Ergebnis speichert
     // und vResult[1] fuer die Zwischenergebnisse des inneren Integrals ist
-    vector<mu::value_type> fx_n[2][3];          // value_type-Array fuer die jeweiligen Stuetzstellen im inneren und aeusseren Integral
+    mu::Array fx_n[2][3];          // value_type-Array fuer die jeweiligen Stuetzstellen im inneren und aeusseren Integral
     bool bRenewBoundaries = false;      // bool, der speichert, ob die Integralgrenzen von x oder y abhaengen
     bool bLargeArray = false;       // bool, der TRUE fuer viele Datenpunkte ist;
     unsigned int nMethod = TRAPEZOIDAL;       // trapezoidal = 1, simpson = 2
     size_t nSamples = 1e3;
 
-    mu::value_type& x = _defVars.vValue[0][0];
-    mu::value_type& y = _defVars.vValue[1][0];
+    mu::Variable& x = _defVars.vValue[0][0];
+    mu::Variable& y = _defVars.vValue[1][0];
 
     double range;
-
-    // Strings may not be integrated
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sIntegrationExpression))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "integrate");
 
     // Ensure that the integration function is available
     if (!sIntegrationExpression.length())
@@ -531,35 +508,35 @@ bool integrate2d(CommandLineParser& cmdParser)
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    std::vector<mu::value_type> vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
 
     if (vParVal.size())
-        nSamples = std::rint(range / vParVal.front().real());
+        nSamples = std::rint(range / vParVal.front().getNum().val.real());
     else
     {
         vParVal = cmdParser.getParameterValueAsNumericalValue("p");
 
         if (vParVal.size())
-            nSamples = std::rint(range / vParVal.front().real());
+            nSamples = std::rint(range / vParVal.front().getNum().val.real());
         else
         {
             vParVal = cmdParser.getParameterValueAsNumericalValue("eps");
 
             if (vParVal.size())
-                nSamples = std::rint(range / vParVal.front().real());
+                nSamples = std::rint(range / vParVal.front().getNum().val.real());
         }
     }
 
     vParVal = cmdParser.getParameterValueAsNumericalValue("steps");
 
     if (vParVal.size())
-        nSamples = std::abs(intCast(vParVal.front()));
+        nSamples = std::abs(vParVal.getAsScalarInt());
     else
     {
         vParVal = cmdParser.getParameterValueAsNumericalValue("s");
 
         if (vParVal.size())
-            nSamples = std::abs(intCast(vParVal.front()));
+            nSamples = std::abs(vParVal.getAsScalarInt());
     }
 
     std::string sParVal = cmdParser.getParameterValue("method");
@@ -579,11 +556,15 @@ bool integrate2d(CommandLineParser& cmdParser)
     // Prepare the memory for integration
     _parser.Eval(nResults);
 
+    // Ensure that we have only a single expression
+    if (nResults > 1)
+        _parser.SetExpr("{" + sIntegrationExpression + "}");
+
     for (int i = 0; i < 3; i++)
     {
-        vResult[i].resize(nResults, 0.0);
-        fx_n[0][i].resize(nResults, 0.0);
-        fx_n[1][i].resize(nResults, 0.0);
+        vResult[i] = mu::Value(0.0);
+        fx_n[0][i] = mu::Value(0.0);
+        fx_n[1][i] = mu::Value(0.0);
     }
 
     if (ivl[1].contains(_defVars.sName[0]))
@@ -611,20 +592,19 @@ bool integrate2d(CommandLineParser& cmdParser)
         NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
 
     // --> Setzen wir "x" und "y" auf ihre Startwerte <--
-    x = ivl[0](0); // x = x_0
+    x.overwrite(mu::Value(ivl[0](0))); // x = x_0
 
     // y might depend on the starting value
     if (bRenewBoundaries)
         refreshBoundaries(ivl, sIntegrationExpression);
 
-    y = ivl[1](0); // y = y_0
+    y.overwrite(mu::Value(ivl[1](0))); // y = y_0
 
-    double dx = ivl[0].range() / (nSamples-1);
-    double dy = ivl[1].range() / (nSamples-1);
+    mu::Value dx(ivl[0].range() / (nSamples-1));
+    mu::Value dy(ivl[1].range() / (nSamples-1));
 
     // --> Werte mit den Startwerten die erste Stuetzstelle fuer die y-Integration aus <--
-    v = _parser.Eval(nResults);
-    fx_n[1][0].assign(v, v+nResults);
+    fx_n[1][0] = _parser.Eval();
 
     /* --> Berechne das erste y-Integral fuer die erste Stuetzstelle fuer x
      *     Die Schleife laeuft so lange wie y < y_1 <--
@@ -659,22 +639,21 @@ bool integrate2d(CommandLineParser& cmdParser)
             // --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
             y = ivl[1](0);
             // --> Werten wir sofort die erste y-Stuetzstelle aus <--
-            v = _parser.Eval(nResults);
-            fx_n[1][0].assign(v, v+nResults);
-            vResult[1].assign(nResults, 0.0);
+            fx_n[1][0] = _parser.Eval();
+            vResult[1] = mu::Value(0.0);
 
             for (size_t j = 1; j < nSamples; j++)
                 integrationstep_trapezoidal(y, ivl[1](j, nSamples), dy, vResult[1], fx_n[1][0], false);
 
             // --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
-            for (int i = 0; i < nResults; i++)
+            for (size_t i = 0; i < vResult[1].size(); i++)
             {
-                if (isnan(std::abs(vResult[1][i])))
-                    vResult[1][i] = 0.0;
-
-                vResult[0][i] += dx * (fx_n[0][0][i] + vResult[1][i]) * 0.5; // Berechne das Trapez zu x
-                fx_n[0][0][i] = vResult[1][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
+                if (mu::isnan(vResult[1][i]))
+                    vResult[1][i] = mu::Value(0.0);
             }
+
+            vResult[0] += dx * (fx_n[0][0] + vResult[1]) * mu::Value(0.5); // Berechne das Trapez zu x
+            fx_n[0][0] = vResult[1]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
         }
         else if (nMethod == SIMPSON)
         {
@@ -694,29 +673,23 @@ bool integrate2d(CommandLineParser& cmdParser)
 
                 // Calculate the first position
                 if (n == 1)
-                {
-                    v = _parser.Eval(nResults);
-                    fx_n[1][0].assign(v, v+nResults);
-                }
+                    fx_n[1][0] = _parser.Eval();
 
-                vResult[n].assign(nResults, 0.0);
+                vResult[n] = mu::Value(0.0);
 
                 for (size_t j = 1; j < nSamples; j++)
                     integrationstep_simpson(y, ivl[1](2*j-1, 2*nSamples-1), ivl[1](2*j, 2*nSamples-1), dy, vResult[n], fx_n[1][0], false);
 
                 // --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
-                for (int i = 0; i < nResults; i++)
+                for (size_t i = 0; i < vResult[n].size(); i++)
                 {
-                    if (isnan(std::abs(vResult[n][i])))
-                        vResult[n][i] = 0.0;
+                    if (mu::isnan(vResult[n][i]))
+                        vResult[n][i] = mu::Value(0.0);
                 }
             }
 
-            for (int i = 0; i < nResults; i++)
-            {
-                vResult[0][i] += dx / 6.0 * (fx_n[0][0][i] + 4.0 * vResult[1][i] + vResult[2][i]); // Berechne das Trapez zu x
-                fx_n[0][0][i] = vResult[2][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
-            }
+            vResult[0] += dx / mu::Value(6.0) * (fx_n[0][0] + mu::Value(4.0) * vResult[1] + vResult[2]); // Berechne das Trapez zu x
+            fx_n[0][0] = vResult[2]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
         }
 
         // Show some progress
@@ -756,33 +729,27 @@ bool integrate2d(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool differentiate(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-    string sExpr = cmdParser.getExprAsMathExpression();
-    string sVar = "";
-    string sPos = "";
+    std::string sExpr = cmdParser.getExprAsMathExpression();
+    std::string sVar = "";
+    std::string sPos = "";
     double dEps = 0.0;
-    mu::value_type dPos = 0.0;
-    mu::value_type* dVar = 0;
-    mu::value_type* v = 0;
+    mu::Variable* dVar = nullptr;
     int nResults = 0;
     int nSamples = 100;
     size_t order = 1;
-    std::vector<mu::value_type> vInterval;
-    std::vector<mu::value_type> vResult;
-    std::vector<mu::value_type> paramVal;
-
-    // Strings cannot be differentiated
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "diff");
+    mu::Array vInterval;
+    mu::Array vResult;
+    mu::Array paramVal;
 
     // Get the order of the differntiation
     paramVal = cmdParser.getParameterValueAsNumericalValue("order");
 
     if (paramVal.size())
     {
-        order = intCast(paramVal.front());
+        order = paramVal.getAsScalarInt();
         order = std::min(order, (size_t)3u);
     }
 
@@ -793,12 +760,12 @@ bool differentiate(CommandLineParser& cmdParser)
         paramVal = cmdParser.getParameterValueAsNumericalValue("eps");
 
         if (paramVal.size())
-            dEps = fabs(paramVal.front());
+            dEps = fabs(paramVal.front().getNum().val);
 
         paramVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
         if (paramVal.size())
-            nSamples = intCast(fabs(paramVal.front()));
+            nSamples = std::abs(paramVal.getAsScalarInt());
 
         sVar = cmdParser.getParameterList();
 
@@ -806,10 +773,10 @@ bool differentiate(CommandLineParser& cmdParser)
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, cmdParser.getCommandLine(), sVar, sVar);
 
         // Is a variable interval defined?
-        if (sVar.find('=') != string::npos ||
-                (sVar.find('[') != string::npos
-                 && sVar.find(']', sVar.find('[')) != string::npos
-                 && sVar.find(':', sVar.find('[')) != string::npos))
+        if (sVar.find('=') != string::npos
+            || (sVar.find('[') != string::npos
+                && sVar.find(']', sVar.find('[')) != string::npos
+                && sVar.find(':', sVar.find('[')) != string::npos))
         {
             // Remove possible parameter list initializers
             if (sVar.substr(0, 2) == "--")
@@ -846,23 +813,24 @@ bool differentiate(CommandLineParser& cmdParser)
 
                 if (sPos.find(':') != string::npos)
                     sPos.replace(sPos.find(':'), 1, ",");
-                _parser.SetExpr(sPos);
-                v = _parser.Eval(nResults);
 
-                if (isinf(std::abs(v[0])) || isnan(std::abs(v[0])))
+                _parser.SetExpr("{" + sPos + "}");
+                vInterval = _parser.Eval();
+
+                if (mu::isinf(vInterval.front().getNum().val) || mu::isnan(vInterval.front()))
                 {
                     cmdParser.setReturnValue("nan");
                     return true;
                 }
-
-                for (int i = 0; i < nResults; i++)
-                    vInterval.push_back(v[i]);
             }
 
             // Set the expression for differentiation
             // and evaluate it
             _parser.SetExpr(sExpr);
             _parser.Eval(nResults);
+
+            if (nResults > 1)
+                _parser.SetExpr("{" + sExpr + "}");
 
             // Get the address of the variable
             dVar = getPointerToVariable(sVar, _parser);
@@ -872,36 +840,20 @@ bool differentiate(CommandLineParser& cmdParser)
         if (!dVar)
             throw SyntaxError(SyntaxError::NO_DIFF_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        // Store the expression
-        string sCompl_Expr = sExpr;
-
-        // As long as the expression has a length
-        while (sCompl_Expr.length())
+        // Evaluate the differential at the desired
+        // locations
+        if (vInterval.size() == 1 || vInterval.size() > 2)
         {
-            // Get the next subexpression and
-            // set it in the parser
-            sExpr = getNextArgument(sCompl_Expr, true);
-            _parser.SetExpr(sExpr);
-
-            // Evaluate the differential at the desired
-            // locations
-            if (vInterval.size() == 1 || vInterval.size() > 2)
+            // single point or a vector
+            vResult = _parser.Diff(dVar, vInterval, dEps, order);
+        }
+        else
+        {
+            // a range -> use the samples
+            for (int i = 0; i < nSamples; i++)
             {
-                // single point or a vector
-                for (size_t i = 0; i < vInterval.size(); i++)
-                {
-                    dPos = vInterval[i];
-                    vResult.push_back(_parser.Diff(dVar, dPos, dEps, order));
-                }
-            }
-            else
-            {
-                // a range -> use the samples
-                for (int i = 0; i < nSamples; i++)
-                {
-                    dPos = vInterval[0] + (vInterval[1] - vInterval[0]) / (double)(nSamples - 1) * (double)i;
-                    vResult.push_back(_parser.Diff(dVar, dPos, dEps, order));
-                }
+                mu::Value dPos = vInterval[0] + (vInterval[1] - vInterval[0]) / mu::Value(nSamples - 1) * mu::Value(i);
+                vResult.push_back(_parser.Diff(dVar, dPos, dEps, order).front());
             }
         }
     }
@@ -943,7 +895,7 @@ bool differentiate(CommandLineParser& cmdParser)
         // value
         if (_idx.row.size() < nFilterSize)
         {
-            vResult.push_back(NAN);
+            vResult.push_back(mu::Value(NAN));
             cmdParser.setReturnValue(vResult);
             return true;
         }
@@ -969,7 +921,7 @@ bool differentiate(CommandLineParser& cmdParser)
                 for (int j = 0; j < (int)nFilterSize; j++)
                 {
                     if (_data.isValidElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName))
-                        vResult[i] += diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName));
+                        vResult[i] += mu::Value(diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName).getNum().val));
                 }
             }
 
@@ -1009,9 +961,9 @@ bool differentiate(CommandLineParser& cmdParser)
                             && _cache.isValidElement(i + 1, 0, "table")
                             && _cache.isValidElement(i, 1, "table")
                             && _cache.isValidElement(i + 1, 1, "table"))
-                        vResult.push_back((_cache.getElement(i + 1, 0, "table") + _cache.getElement(i, 0, "table")) / 2.0);
+                        vResult.push_back((_cache.getElement(i + 1, 0, "table") + _cache.getElement(i, 0, "table")) / mu::Value(2.0));
                     else
-                        vResult.push_back(NAN);
+                        vResult.push_back(mu::Value(NAN));
                 }
             }
             else
@@ -1022,14 +974,14 @@ bool differentiate(CommandLineParser& cmdParser)
                 // by approximating it linearily
                 for (int i = nFilterSize/2; i < _cache.getLines("table", false) - (int)nFilterSize/2; i++)
                 {
-                    std::pair<mu::value_type, size_t> avgDiff(0.0, 0);
+                    std::pair<mu::Value, size_t> avgDiff(0.0, 0);
 
                     for (int j = 0; j < (int)nFilterSize; j++)
                     {
                         if (_cache.isValidElement(i + j - nFilterSize/2, 0, "table")
                             && _cache.isValidElement(i + j - nFilterSize/2, 1, "table"))
                         {
-                            vResult[i] += diff.apply(j, 0, _cache.getElement(i + j - nFilterSize/2, 1, "table"));
+                            vResult[i] += mu::Value(diff.apply(j, 0, _cache.getElement(i + j - nFilterSize/2, 1, "table").getNum().val));
 
                             // Calculate the average difference
                             if (_cache.isValidElement(i + j - nFilterSize/2 - 1, 0, "table"))
@@ -1042,9 +994,9 @@ bool differentiate(CommandLineParser& cmdParser)
                     }
 
                     if (!avgDiff.second)
-                        vResult[i] = NAN;
+                        vResult[i] = mu::Value(NAN);
                     else
-                        vResult[i] /= intPower(avgDiff.first/(double)avgDiff.second, order);
+                        vResult[i] /= (avgDiff.first/mu::Value(avgDiff.second)).pow(order);
                 }
 
                 // Repeat the first and last values
@@ -1120,34 +1072,33 @@ static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
 /// \param cmdParser CommandLineParser&
 /// \param sExpr string&
 /// \param sInterval string&
-/// \param nOrder int
+/// \param nOrder size_t
 /// \param nMode int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr, string& sInterval, int nOrder, int nMode)
+static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr, string& sInterval, size_t nOrder, int nMode)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    int nResults;
-    mu::value_type* v = _parser.Eval(nResults);
-    vector<mu::value_type> vResults;
-    int nResults_x = 0;
+    mu::Array v = _parser.Eval();
+    mu::Array vResults;
     MemoryManager _cache;
+    size_t res = v.size();
 
     // Store the results in the second column of a table
-    for (int i = 0; i < nResults; i++)
+    for (size_t i = 0; i < v.size(); i++)
         _cache.writeToTable(i, 1, "table", v[i]);
 
     _parser.SetExpr(sInterval);
-    v = _parser.Eval(nResults_x);
+    v = _parser.Eval();
 
     // Write the results for the x interval in the first column
-    if (nResults_x > 1)
+    if (v.size() > 1)
     {
-        for (int i = 0; i < nResults; i++)
+        for (size_t i = 0; i < res; i++)
         {
-            if (i >= nResults_x)
+            if (i >= v.size())
                 _cache.writeToTable(i, 0, "table", 0.0);
             else
                 _cache.writeToTable(i, 0, "table", v[i]);
@@ -1160,54 +1111,56 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
     _cache.sortElements(sSortingExpr);
 
     double dMedian = 0.0, dExtremum = 0.0;
-    double* data = new double[nOrder];
+    std::vector<double> data(nOrder);
     double nDir = 0;
-    int nanShift = 0;
+    size_t nanShift = 0;
 
-    if (nOrder >= nResults / 3)
-        nOrder = nResults / 3;
+    if (nOrder >= res / 3)
+        nOrder = res / 3;
 
     // Ensure that the number of used points is reasonable
     if (nOrder < 3)
     {
-        vResults.push_back(NAN);
+        vResults = mu::Value(NAN);
         return false;
     }
 
     // Find the first median and use it as starting point
     // for identifying the next extremum
-    for (int i = 0; i + nanShift < _cache.getLines("table", true); i++)
+    for (size_t i = 0; i + nanShift < (size_t)_cache.getLines("table", true); i++)
     {
         if (i == nOrder)
             break;
 
-        while (isnan(std::abs(_cache.getElement(i + nanShift, 1, "table"))) && i + nanShift < _cache.getLines("table", true) - 1)
+        while (mu::isnan(_cache.getElement(i + nanShift, 1, "table"))
+               && i + nanShift < (size_t)_cache.getLines("table", true) - 1)
             nanShift++;
 
-        data[i] = _cache.getElement(i + nanShift, 1, "table").real();
+        data[i] = _cache.getElement(i + nanShift, 1, "table").getNum().val.real();
     }
 
     // Sort the data and find the median
-    gsl_sort(data, 1, nOrder);
-    dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+    gsl_sort(&data[0], 1, nOrder);
+    dExtremum = gsl_stats_median_from_sorted_data(&data[0], 1, nOrder);
 
     // Go through the data points using sliding median to find the local
     // extrema in the data set
-    for (int i = nOrder; i + nanShift < _cache.getLines("table", false) - nOrder; i++)
+    for (size_t i = nOrder; i + nanShift < _cache.getLines("table", false) - nOrder; i++)
     {
-        int currNanShift = 0;
+        size_t currNanShift = 0;
         dMedian = 0.0;
 
-        for (int j = i; j < i + nOrder; j++)
+        for (size_t j = i; j < i + nOrder; j++)
         {
-            while (isnan(std::abs(_cache.getElement(j + nanShift + currNanShift, 1, "table"))) && j + nanShift + currNanShift < _cache.getLines("table", true) - 1)
+            while (mu::isnan(_cache.getElement(j + nanShift + currNanShift, 1, "table"))
+                   && j + nanShift + currNanShift < (size_t)_cache.getLines("table", true) - 1)
                 currNanShift++;
 
-            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "table").real();
+            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "table").getNum().val.real();
         }
 
-        gsl_sort(data, 1, nOrder);
-        dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+        gsl_sort(&data[0], 1, nOrder);
+        dMedian = gsl_stats_median_from_sorted_data(&data[0], 1, nOrder);
 
         if (!nDir)
         {
@@ -1224,18 +1177,18 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
             {
                 if (!nMode || nMode == nDir)
                 {
-                    int nExtremum = i + nanShift;
-                    double dExtremum = _cache.getElement(i + nanShift, 1, "table").real();
+                    size_t nExtremum = i + nanShift;
+                    double dExtremum = _cache.getElement(i + nanShift, 1, "table").getNum().val.real();
 
-                    for (long long int k = i + nanShift; k >= 0; k--)
+                    for (size_t k = i + nanShift; k >= 0; k--)
                     {
                         if (k == i - nOrder)
                             break;
 
-                        if (nDir*_cache.getElement(k, 1, "table").real() > nDir*dExtremum)
+                        if (nDir*_cache.getElement(k, 1, "table").getNum().val.real() > nDir*dExtremum)
                         {
                             nExtremum = k;
-                            dExtremum = _cache.getElement(k, 1, "table").real();
+                            dExtremum = _cache.getElement(k, 1, "table").getNum().val.real();
                         }
                     }
 
@@ -1253,9 +1206,8 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
     }
 
     if (!vResults.size())
-        vResults.push_back(NAN);
+        vResults = mu::Value(NAN);
 
-    delete[] data;
     cmdParser.setReturnValue(vResults);
     return true;
 }
@@ -1265,28 +1217,28 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
 /// \brief Static helper function for
 /// findExtremaInData
 ///
-/// \param v value_type*
-/// \param nResults int
-/// \param start int
-/// \param nOrder int
-/// \param nanShiftStart int
-/// \param nNewNanShift int&
+/// \param v const mu::Array&
+/// \param start size_t
+/// \param nOrder size_t
+/// \param nanShiftStart size_t
+/// \param nNewNanShift size_t&
 /// \return double
 ///
 /////////////////////////////////////////////////
-static double calculateMedian(value_type* v, int nResults, int start, int nOrder, int nanShiftStart, int& nNewNanShift)
+static double calculateMedian(const mu::Array& v, size_t start, size_t nOrder, size_t nanShiftStart, size_t& nNewNanShift)
 {
-    vector<double> data;
+    std::vector<double> data;
 
-    for (int i = start; i < start + nOrder; i++)
+    for (size_t i = start; i < start + nOrder; i++)
     {
-        while (isnan(v[i + nanShiftStart + nNewNanShift].real()) && i + nanShiftStart + nNewNanShift < nResults - 1)
+        while (mu::isnan(v[i + nanShiftStart + nNewNanShift])
+               && i + nanShiftStart + nNewNanShift < v.size() - 1)
             nNewNanShift++;
 
-        if (i + nanShiftStart + nNewNanShift >= nResults)
+        if (i + nanShiftStart + nNewNanShift >= v.size())
             break;
 
-        data.push_back(v[i + nanShiftStart + nNewNanShift].real());
+        data.push_back(v[i + nanShiftStart + nNewNanShift].getNum().val.real());
     }
 
     gsl_sort(&data[0], 1, data.size());
@@ -1300,41 +1252,40 @@ static double calculateMedian(value_type* v, int nResults, int start, int nOrder
 ///
 /// \param cmdParser CommandLineParser&
 /// \param sExpr string&
-/// \param nOrder int
+/// \param nOrder size_t
 /// \param nMode int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, int nOrder, int nMode)
+static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, size_t nOrder, int nMode)
 {
-    mu::value_type* v;
-    int nResults = 0;
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Array v;
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    v = _parser.Eval(nResults);
+    v = _parser.Eval();
 
-    if (nResults > 1)
+    if (v.size() > 1)
     {
-        if (nOrder >= nResults / 3)
-            nOrder = nResults / 3;
+        if (nOrder >= v.size() / 3)
+            nOrder = v.size() / 3;
 
         double dMedian = 0.0, dExtremum = 0.0;
         double nDir = 0;
-        int nanShift = 0;
-        vector<mu::value_type> vResults;
+        size_t nanShift = 0;
+        mu::Array vResults;
 
         if (nOrder < 3)
         {
-            vResults.push_back(NAN);
+            vResults = mu::Value(NAN);
             return false;
         }
 
-        dExtremum = calculateMedian(v, nResults, 0, nOrder, 0, nanShift);
+        dExtremum = calculateMedian(v, 0, nOrder, 0, nanShift);
 
-        for (int i = nOrder; i + nanShift < nResults - nOrder; i++)
+        for (size_t i = nOrder; i + nanShift < v.size() - nOrder; i++)
         {
-            int currNanShift = 0;
-            dMedian = calculateMedian(v, nResults, i, nOrder, nanShift, currNanShift);
+            size_t currNanShift = 0;
+            dMedian = calculateMedian(v, i, nOrder, nanShift, currNanShift);
 
             if (!nDir)
             {
@@ -1351,22 +1302,22 @@ static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, int n
                 {
                     if (!nMode || nMode == nDir)
                     {
-                        int nExtremum = i + nanShift;
-                        double dLocalExtremum = v[i + nanShift].real();
+                        size_t nExtremum = i + nanShift;
+                        double dLocalExtremum = v[i + nanShift].getNum().val.real();
 
-                        for (long long int k = i + nanShift; k >= 0; k--)
+                        for (size_t k = i + nanShift; k >= 0; k--)
                         {
                             if (k == i + nanShift - nOrder)
                                 break;
 
-                            if (nDir*v[k].real() > nDir*dLocalExtremum)
+                            if (nDir*v[k].getNum().val.real() > nDir*dLocalExtremum)
                             {
                                 nExtremum = k;
-                                dLocalExtremum = v[k].real();
+                                dLocalExtremum = v[k].getNum().val.real();
                             }
                         }
 
-                        vResults.push_back(nExtremum + 1);
+                        vResults.push_back(mu::Value(nExtremum + 1));
                         i = nExtremum + nOrder;
                         nanShift = 0;
                     }
@@ -1381,13 +1332,120 @@ static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, int n
         }
 
         if (!vResults.size())
-            vResults.push_back(NAN);
+            vResults = mu::Value(NAN);
 
         cmdParser.setReturnValue(vResults);
         return true;
     }
     else
         throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+}
+
+/////////////////////////////////////////////////
+/// \brief This function searches for the
+/// positions of all extrema, which are located
+/// in the selected interval.
+///
+/// \param sCmd string&
+/// \param dVarAdress mu::Variable*
+/// \param _parser mu::Parser&
+/// \param _option const Settings&
+/// \param dLeft mu::Value
+/// \param dRight mu::Value
+/// \param dEps double
+/// \param nRecursion int
+/// \return mu::value_type
+///
+/// The expression has to be setted in advance.
+/// The function performs recursions until the
+/// defined precision is reached.
+/////////////////////////////////////////////////
+static mu::Value localizeExtremum(string& sCmd, mu::Variable* dVarAdress, mu::Parser& _parser, const Settings& _option, mu::Value dLeft, mu::Value dRight, double dEps = 1e-10, int nRecursion = 0)
+{
+    const size_t nSamples = 101;
+    mu::Array dVal(2);
+
+    if (_parser.GetExpr() != sCmd)
+    {
+        _parser.SetExpr(sCmd);
+        _parser.Eval();
+    }
+
+    // Calculate the leftmost value
+    dVal[0] = _parser.Diff(dVarAdress, dLeft, 1e-7).front();
+
+    // Separate the current interval in
+    // nSamples steps and examine each step
+    for (size_t i = 1; i < nSamples; i++)
+    {
+        // Calculate the next value
+        dVal[1] = _parser.Diff(dVarAdress, dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), 1e-7).front();
+
+        // Multiply the values to find a sign change
+        if (dVal[0]*dVal[1] < mu::Value(0))
+        {
+            // Sign change
+            // return, if precision is reached. Otherwise perform
+            // a new recursion between the two values
+            if (std::abs(dRight.getNum().val - dLeft.getNum().val) / (double)(nSamples - 1) <= dEps || fabs(log(dEps)) + 1 < nRecursion * 2)
+                return dLeft + mu::Value(i - 1) * (dRight - dLeft) / mu::Value(nSamples - 1)
+                    + mu::Value(Linearize(0.0, dVal[0].getNum().val.real(),
+                                ((dRight - dLeft) / mu::Value(nSamples - 1)).getNum().val.real(),
+                                dVal[1].getNum().val.real()));
+            else
+                return localizeExtremum(sCmd, dVarAdress, _parser, _option,
+                                        dLeft + mu::Value(i - 1) * (dRight - dLeft) / mu::Value(nSamples - 1),
+                                        dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), dEps, nRecursion + 1);
+        }
+        else if (dVal[0]*dVal[1] == mu::Value(0.0))
+        {
+            // One of the two vwlues is zero.
+            // Jump over all following zeros due
+            // to constness
+            int nTemp = i - 1;
+
+            if (dVal[0] != mu::Value(0.0))
+            {
+                while (dVal[0]*dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
+                {
+                    i++;
+                    dVal[1] = _parser.Diff(dVarAdress, dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), 1e-7).front();
+                }
+            }
+            else
+            {
+                while (dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
+                {
+                    i++;
+                    dVal[1] = _parser.Diff(dVarAdress, dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), 1e-7).front();
+                }
+            }
+
+            // return, if precision is reached. Otherwise perform
+            // a new recursion between the two values
+            if ((i - nTemp) * std::abs(dRight.getNum().val - dLeft.getNum().val) / (double)(nSamples - 1) <= dEps
+                || (!nTemp && i + 1 == nSamples) || fabs(log(dEps)) + 1 < nRecursion * 2)
+                return dLeft + mu::Value(nTemp) * (dRight - dLeft) / mu::Value(nSamples - 1)
+                    + mu::Value(Linearize(0.0, dVal[0].getNum().val.real(),
+                                (i - nTemp) * (dRight - dLeft).getNum().val.real() / (double)(nSamples - 1),
+                                dVal[1].getNum().val.real()));
+            else
+                return localizeExtremum(sCmd, dVarAdress, _parser, _option,
+                                        dLeft + mu::Value(nTemp) * (dRight - dLeft) / mu::Value(nSamples - 1),
+                                        dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), dEps, nRecursion + 1);
+        }
+
+        dVal[0] = dVal[1];
+    }
+
+    // If no explict sign change was found,
+    // interpolate the position by linearisation
+    *dVarAdress = dLeft;
+    dVal[0] = _parser.Eval().front();
+    *dVarAdress = dRight;
+    dVal[1] = _parser.Eval().front();
+    return Linearize(dLeft.getNum().val.real(), dVal[0].getNum().val.real(),
+                     dRight.getNum().val.real(), dVal[1].getNum().val.real());
 }
 
 
@@ -1404,22 +1462,18 @@ bool findExtrema(CommandLineParser& cmdParser)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
     MemoryManager& _data = instance->getMemoryManager();
-    Parser& _parser = instance->getParser();
+    mu::Parser& _parser = instance->getParser();
 
     size_t nSamples = 21;
-    int nOrder = 5;
-    mu::value_type dVal[2];
-    mu::value_type dBoundaries[2] = {0.0, 0.0};
+    size_t nOrder = 5;
+    mu::Array dVal(2, mu::Value(0.0));
+    mu::Array dBoundaries(2, mu::Value(0.0));
     int nMode = 0;
-    mu::value_type* dVar = 0;
-    string sExpr = "";
-    string sParams = "";
-    string sInterval = "";
-    string sVar = "";
-
-    // We cannot search extrema in strings
-    if (instance->getStringParser().isStringExpression(cmdParser.getExpr()))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "extrema");
+    mu::Variable* dVar = nullptr;
+    std::string sExpr = "";
+    std::string sParams = "";
+    std::string sInterval = "";
+    std::string sVar = "";
 
     if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -1446,9 +1500,6 @@ bool findExtrema(CommandLineParser& cmdParser)
     // data elements, get their values here
     if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, false);
-
-    if (instance->getStringParser().isStringExpression(sExpr))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "extrema");
 
     if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, false);
@@ -1501,6 +1552,11 @@ bool findExtrema(CommandLineParser& cmdParser)
         _parser.Eval(nResults);
 
         if (nResults > 1)
+            _parser.SetExpr("{" + sExpr + "}");
+
+        mu::Array res = _parser.Eval();
+
+        if (res.size() > 1)
             return findExtremaInMultiResult(cmdParser, sExpr, sInterval, nOrder, nMode);
         else
         {
@@ -1525,9 +1581,9 @@ bool findExtrema(CommandLineParser& cmdParser)
                 if (isNotEmptyExpression(indices[i]))
                 {
                     _parser.SetExpr(indices[i]);
-                    dBoundaries[i] = _parser.Eval();
+                    dBoundaries[i] = _parser.Eval().front();
 
-                    if (isinf(std::abs(dBoundaries[i])) || isnan(std::abs(dBoundaries[i])))
+                    if (mu::isinf(dBoundaries[i].getNum().val) || mu::isnan(dBoundaries[i]))
                     {
                         cmdParser.setReturnValue("nan");
                         return false;
@@ -1537,9 +1593,9 @@ bool findExtrema(CommandLineParser& cmdParser)
                     return false;
             }
 
-            if (std::abs(dBoundaries[1]) < std::abs(dBoundaries[0]))
+            if (dBoundaries[1] < dBoundaries[0])
             {
-                mu::value_type Temp = dBoundaries[1];
+                mu::Value Temp = dBoundaries[1];
                 dBoundaries[1] = dBoundaries[0];
                 dBoundaries[0] = Temp;
             }
@@ -1552,8 +1608,8 @@ bool findExtrema(CommandLineParser& cmdParser)
 
     // Calculate the number of samples depending on
     // the interval width
-    if (intCast(std::abs(dBoundaries[1] - dBoundaries[0])))
-        nSamples = (nSamples - 1) * intCast(std::abs(dBoundaries[1] - dBoundaries[0])) + 1;
+    if (intCast(std::abs(dBoundaries[1].getNum().val - dBoundaries[0].getNum().val)))
+        nSamples = (nSamples - 1) * intCast(std::abs(dBoundaries[1].getNum().val - dBoundaries[0].getNum().val)) + 1;
 
     // Ensure that we calculate a reasonable number of samples
     if (nSamples > 10001)
@@ -1562,8 +1618,8 @@ bool findExtrema(CommandLineParser& cmdParser)
     // Set the expression and evaluate it once
     _parser.SetExpr(sExpr);
     _parser.Eval();
-    vector<mu::value_type> vResults;
-    dVal[0] = _parser.Diff(dVar, dBoundaries[0], 1e-7);
+    mu::Array vResults;
+    dVal[0] = _parser.Diff(dVar, dBoundaries[0], 1e-7).front();
 
     // Evaluate the extrema for all samples. We search for
     // a sign change in the derivative and examine these intervals
@@ -1571,49 +1627,60 @@ bool findExtrema(CommandLineParser& cmdParser)
     for (size_t i = 1; i < nSamples; i++)
     {
         // Evaluate the derivative at the current sample position
-        dVal[1] = _parser.Diff(dVar, dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
+        dVal[1] = _parser.Diff(dVar,
+                               dBoundaries[0] + mu::Value(i) * (dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1),
+                               1e-7).front();
 
         // Is it a sign change or a actual zero?
-        if (dVal[0].real()*dVal[1].real() < 0)
+        if (dVal[0]*dVal[1] < mu::Value(0))
         {
             if (!nMode
-                    || (nMode == 1 && (dVal[0].real() > 0 && dVal[1].real() < 0))
-                    || (nMode == -1 && (dVal[0].real() < 0 && dVal[1].real() > 0)))
+                || (nMode == 1 && (dVal[0] > mu::Value(0) && dVal[1] < mu::Value(0)))
+                || (nMode == -1 && (dVal[0] < mu::Value(0) && dVal[1] > mu::Value(0))))
             {
                 // Examine the current interval in more detail
-                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + (double)(i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
+                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(),
+                                                    dBoundaries[0] + mu::Value(i-1)*(dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1),
+                                                    dBoundaries[0] + mu::Value(i)*(dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1)));
             }
         }
-        else if (dVal[0].real()*dVal[1].real() == 0.0)
+        else if (dVal[0]*dVal[1] == mu::Value(0.0))
         {
             if (!nMode
-                    || (nMode == 1 && (dVal[0].real() > 0 || dVal[1].real() < 0))
-                    || (nMode == -1 && (dVal[0].real() < 0 || dVal[1].real() > 0)))
+                || (nMode == 1 && (dVal[0] > mu::Value(0.0) || dVal[1] < mu::Value(0.0)))
+                || (nMode == -1 && (dVal[0] < mu::Value(0.0) || dVal[1] > mu::Value(0.0))))
             {
                 int nTemp = i - 1;
 
                 // Jump over multiple zeros due to constness
-                if (dVal[0] != 0.0)
+                if (dVal[0] != mu::Value(0.0))
                 {
-                    while (dVal[0].real()*dVal[1].real() == 0.0 && i + 1 < nSamples)
+                    while (dVal[0]*dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
                     {
                         i++;
-                        dVal[1] = _parser.Diff(dVar, dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
+                        dVal[1] = _parser.Diff(dVar,
+                                               dBoundaries[0] + mu::Value(i)*(dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1),
+                                               1e-7).front();
                     }
                 }
                 else
                 {
-                    while (dVal[1] == 0.0 && i + 1 < nSamples)
+                    while (dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
                     {
                         i++;
-                        dVal[1] = _parser.Diff(dVar, dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
+                        dVal[1] = _parser.Diff(dVar,
+                                               dBoundaries[0] + mu::Value(i)*(dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1),
+                                               1e-7).front();
                     }
                 }
 
                 // Store the current location
-                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + (double)nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
+                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(),
+                                                    dBoundaries[0] + mu::Value(nTemp)*(dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1),
+                                                    dBoundaries[0] + mu::Value(i)*(dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1)));
             }
         }
+
         dVal[0] = dVal[1];
     }
 
@@ -1621,39 +1688,37 @@ bool findExtrema(CommandLineParser& cmdParser)
     // examine the boundaries for possible extremas
     if (!vResults.size())
     {
-        dVal[0] = _parser.Diff(dVar, dBoundaries[0]);
-        dVal[1] = _parser.Diff(dVar, dBoundaries[1]);
+        dVal[0] = _parser.Diff(dVar, dBoundaries[0]).front();
+        dVal[1] = _parser.Diff(dVar, dBoundaries[1]).front();
         std::string sRetVal;
 
         // Examine the left boundary
-        if (std::abs(dVal[0])
-                && (!nMode
-                    || (dVal[0].real() < 0 && nMode == 1)
-                    || (dVal[0].real() > 0 && nMode == -1)))
-            sRetVal = toString(dBoundaries[0], instance->getSettings().getPrecision());
+        if (std::abs(dVal[0].getNum().val)
+            && (!nMode
+                || (bool(dVal[0] < mu::Value(0.0)) && nMode == 1)
+                || (bool(dVal[0] > mu::Value(0.0)) && nMode == -1)))
+            sRetVal = dBoundaries[0].print(instance->getSettings().getPrecision());
 
         // Examine the right boundary
-        if (std::abs(dVal[1])
-                && (!nMode
-                    || (dVal[1].real() < 0 && nMode == -1)
-                    || (dVal[1].real() > 0 && nMode == 1)))
+        if (std::abs(dVal[1].getNum().val)
+            && (!nMode
+                || (bool(dVal[1] < mu::Value(0.0)) && nMode == -1)
+                || (bool(dVal[1] > mu::Value(0.0)) && nMode == 1)))
         {
             if (sRetVal.length())
                 sRetVal += ", ";
 
-            sRetVal += toString(dBoundaries[1], instance->getSettings().getPrecision());
+            sRetVal += dBoundaries[1].print(instance->getSettings().getPrecision());
         }
 
         // Still nothing found?
-        if (!std::abs(dVal[0]) && ! std::abs(dVal[1]))
+        if (!std::abs(dVal[0].getNum().val) && !std::abs(dVal[1].getNum().val))
             sRetVal = "nan";
 
         cmdParser.setReturnValue(sRetVal);
     }
     else
-    {
         cmdParser.setReturnValue(vResults);
-    }
 
     return true;
 }
@@ -1673,26 +1738,25 @@ bool findExtrema(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr, string& sInterval, int nMode)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    int nResults;
-    mu::value_type* v = _parser.Eval(nResults);
+    mu::Array v = _parser.Eval();
     MemoryManager _cache;
+    size_t res = v.size();
 
-    vector<mu::value_type> vResults;
-    int nResults_x = 0;
+    mu::Array vResults;
 
-    for (int i = 0; i < nResults; i++)
+    for (size_t i = 0; i < res; i++)
         _cache.writeToTable(i, 1, "table", v[i]);
 
     _parser.SetExpr(sInterval);
-    v = _parser.Eval(nResults_x);
+    v = _parser.Eval();
 
-    if (nResults_x > 1)
+    if (v.size() > 1)
     {
-        for (int i = 0; i < nResults; i++)
+        for (size_t i = 0; i < res; i++)
         {
-            if (i >= nResults_x)
+            if (i >= v.size())
                 _cache.writeToTable(i, 0, "table", 0.0);
             else
                 _cache.writeToTable(i, 0, "table", v[i]);
@@ -1704,42 +1768,47 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
     std::string sSortingExpr = "sort -table cols=1[2]";
     _cache.sortElements(sSortingExpr);
 
-    for (long long int i = 1; i < _cache.getLines("table", false); i++)
+    for (size_t i = 1; i < (size_t)_cache.getLines("table", false); i++)
     {
-        if (isnan(_cache.getElement(i - 1, 1, "table").real()))
+        if (mu::isnan(_cache.getElement(i - 1, 1, "table")))
             continue;
 
-        if (!nMode && _cache.getElement(i, 1, "table").real()*_cache.getElement(i - 1, 1, "table").real() <= 0.0)
+        if (!nMode && bool(_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= mu::Value(0.0)))
         {
-            if (_cache.getElement(i, 1, "table") == 0.0)
+            if (_cache.getElement(i, 1, "table") == mu::Value(0.0))
             {
                 vResults.push_back(_cache.getElement(i, 0, "table"));
                 i++;
             }
-            else if (_cache.getElement(i - 1, 1, "table") == 0.0)
+            else if (_cache.getElement(i - 1, 1, "table") == mu::Value(0.0))
                 vResults.push_back(_cache.getElement(i - 1, 0, "table"));
-            else if (_cache.getElement(i, 1, "table").real()*_cache.getElement(i - 1, 1, "table").real() < 0.0)
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table").real(), _cache.getElement(i - 1, 1, "table").real(), _cache.getElement(i, 0, "table").real(), _cache.getElement(i, 1, "table").real()));
+            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < mu::Value(0.0))
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table").getNum().val.real(),
+                                             _cache.getElement(i - 1, 1, "table").getNum().val.real(),
+                                             _cache.getElement(i, 0, "table").getNum().val.real(),
+                                             _cache.getElement(i, 1, "table").getNum().val.real()));
         }
-        else if (nMode && _cache.getElement(i, 1, "table").real()*_cache.getElement(i - 1, 1, "table").real() <= 0.0)
+        else if (nMode && bool(_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= mu::Value(0.0)))
         {
-            if (_cache.getElement(i, 1, "table") == 0.0 && _cache.getElement(i - 1, 1, "table") == 0.0)
+            if (_cache.getElement(i, 1, "table") == mu::Value(0.0) && _cache.getElement(i - 1, 1, "table") == mu::Value(0.0))
             {
-                for (long long int j = i + 1; j < _cache.getLines("table", false); j++)
+                for (size_t j = i + 1; j < (size_t)_cache.getLines("table", false); j++)
                 {
-                    if (nMode * _cache.getElement(j, 1, "table").real() > 0.0)
+                    if (mu::Value(nMode) * _cache.getElement(j, 1, "table") > mu::Value(0.0))
                     {
-                        for (long long int k = i - 1; k <= j; k++)
+                        for (size_t k = i - 1; k <= j; k++)
                             vResults.push_back(_cache.getElement(k, 0, "table"));
 
                         break;
                     }
-                    else if (nMode * _cache.getElement(j, 1, "table").real() < 0.0)
+                    else if (mu::Value(nMode) * _cache.getElement(j, 1, "table") < mu::Value(0.0))
                         break;
 
-                    if (j + 1 == _cache.getLines("table", false) && i > 1 && nMode * _cache.getElement(i - 2, 1, "table").real() < 0.0)
+                    if (j + 1 == (size_t)_cache.getLines("table", false)
+                        && i > 1
+                        && bool(mu::Value(nMode) * _cache.getElement(i - 2, 1, "table") < mu::Value(0.0)))
                     {
-                        for (long long int k = i - 1; k <= j; k++)
+                        for (size_t k = i - 1; k <= j; k++)
                             vResults.push_back(_cache.getElement(k, 0, "table"));
 
                         break;
@@ -1748,17 +1817,23 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 
                 continue;
             }
-            else if (_cache.getElement(i, 1, "table") == 0.0 && nMode * _cache.getElement(i - 1, 1, "table").real() < 0.0)
+            else if (_cache.getElement(i, 1, "table") == mu::Value(0.0)
+                     && mu::Value(nMode) * _cache.getElement(i - 1, 1, "table") < mu::Value(0.0))
                 vResults.push_back(_cache.getElement(i, 0, "table"));
-            else if (_cache.getElement(i - 1, 1, "table") == 0.0 && nMode * _cache.getElement(i, 1, "table").real() > 0.0)
+            else if (_cache.getElement(i - 1, 1, "table") == mu::Value(0.0)
+                     && mu::Value(nMode) * _cache.getElement(i, 1, "table") > mu::Value(0.0))
                 vResults.push_back(_cache.getElement(i - 1, 0, "table"));
-            else if (_cache.getElement(i, 1, "table").real()*_cache.getElement(i - 1, 1, "table").real() < 0.0 && nMode * _cache.getElement(i - 1, 1, "table").real() < 0.0)
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table").real(), _cache.getElement(i - 1, 1, "table").real(), _cache.getElement(i, 0, "table").real(), _cache.getElement(i, 1, "table").real()));
+            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < mu::Value(0.0)
+                     && mu::Value(nMode) * _cache.getElement(i - 1, 1, "table") < mu::Value(0.0))
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table").getNum().val.real(),
+                                             _cache.getElement(i - 1, 1, "table").getNum().val.real(),
+                                             _cache.getElement(i, 0, "table").getNum().val.real(),
+                                             _cache.getElement(i, 1, "table").getNum().val.real()));
         }
     }
 
     if (!vResults.size())
-        vResults.push_back(NAN);
+        vResults = mu::Value(NAN);
 
     cmdParser.setReturnValue(vResults);
     return true;
@@ -1777,55 +1852,55 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 /////////////////////////////////////////////////
 static bool findZeroesInData(CommandLineParser& cmdParser, string& sExpr, int nMode)
 {
-    mu::value_type* v;
-    int nResults = 0;
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    v = _parser.Eval(nResults);
+    mu::Array v = _parser.Eval();
 
-    if (nResults > 1)
+    if (v.size() > 1)
     {
-        vector<mu::value_type> vResults;
+        mu::Array vResults;
 
-        for (int i = 1; i < nResults; i++)
+        for (size_t i = 1; i < v.size(); i++)
         {
-            if (isnan(std::abs(v[i - 1])))
+            if (mu::isnan(v[i - 1]))
                 continue;
 
-            if (!nMode && v[i].real()*v[i - 1].real() <= 0.0)
+            if (!nMode && bool(v[i]*v[i - 1] <= mu::Value(0.0)))
             {
-                if (v[i] == 0.0)
+                if (v[i] == mu::Value(0.0))
                 {
-                    vResults.push_back((double)i + 1);
+                    vResults.push_back(mu::Value(i + 1));
                     i++;
                 }
-                else if (v[i - 1] == 0.0)
-                    vResults.push_back((double)i);
-                else if (fabs(v[i]) <= fabs(v[i - 1]))
-                    vResults.push_back((double)i + 1);
+                else if (v[i - 1] == mu::Value(0.0))
+                    vResults.push_back(mu::Value(i));
+                else if (fabs(v[i].getNum().val) <= fabs(v[i - 1].getNum().val))
+                    vResults.push_back(mu::Value(i + 1));
                 else
-                    vResults.push_back((double)i);
+                    vResults.push_back(mu::Value(i));
             }
-            else if (nMode && v[i].real()*v[i - 1].real() <= 0.0)
+            else if (nMode && bool(v[i]*v[i - 1] <= mu::Value(0.0)))
             {
-                if (v[i] == 0.0 && v[i - 1] == 0.0)
+                if (v[i] == mu::Value(0.0) && v[i - 1] == mu::Value(0.0))
                 {
-                    for (int j = i + 1; j < nResults; j++)
+                    for (size_t j = i + 1; j < v.size(); j++)
                     {
-                        if (nMode * v[j].real() > 0.0)
+                        if (mu::Value(nMode) * v[j] > mu::Value(0.0))
                         {
-                            for (int k = i - 1; k <= j; k++)
-                                vResults.push_back((double)k);
+                            for (size_t k = i - 1; k <= j; k++)
+                                vResults.push_back(mu::Value(k));
 
                             break;
                         }
-                        else if (nMode * v[j].real() < 0.0)
+                        else if (mu::Value(nMode) * v[j] < mu::Value(0.0))
                             break;
 
-                        if (j + 1 == nResults && i > 2 && nMode * v[i - 2].real() < 0.0)
+                        if (j + 1 == v.size()
+                            && i > 2
+                            && bool(mu::Value(nMode) * v[i - 2] < mu::Value(0.0)))
                         {
-                            for (int k = i - 1; k <= j; k++)
-                                vResults.push_back((double)k);
+                            for (size_t k = i - 1; k <= j; k++)
+                                vResults.push_back(mu::Value(k));
 
                             break;
                         }
@@ -1833,25 +1908,139 @@ static bool findZeroesInData(CommandLineParser& cmdParser, string& sExpr, int nM
 
                     continue;
                 }
-                else if (v[i] == 0.0 && nMode * v[i - 1].real() < 0.0)
-                    vResults.push_back((double)i + 1);
-                else if (v[i - 1] == 0.0 && nMode * v[i].real() > 0.0)
+                else if (v[i] == mu::Value(0.0) && mu::Value(nMode) * v[i - 1] < mu::Value(0.0))
+                    vResults.push_back(mu::Value(i + 1));
+                else if (v[i - 1] == mu::Value(0.0) && mu::Value(nMode) * v[i] > mu::Value(0.0))
                     vResults.push_back((double)i);
-                else if (fabs(v[i]) <= fabs(v[i - 1]) && nMode * v[i - 1].real() < 0.0)
-                    vResults.push_back((double)i + 1);
-                else if (nMode * v[i - 1].real() < 0.0)
-                    vResults.push_back((double)i);
+                else if (fabs(v[i].getNum().val) <= fabs(v[i - 1].getNum().val)
+                         && bool(mu::Value(nMode) * v[i - 1] < mu::Value(0.0)))
+                    vResults.push_back(mu::Value(i + 1));
+                else if (mu::Value(nMode) * v[i - 1] < mu::Value(0.0))
+                    vResults.push_back(mu::Value(i));
             }
         }
 
         if (!vResults.size())
-            vResults.push_back(NAN);
+            vResults = mu::Value(NAN);
 
         cmdParser.setReturnValue(vResults);
         return true;
     }
     else
         throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function searches for the
+/// positions of all zeroes (roots), which are
+/// located in the selected interval.
+///
+/// \param sCmd string&
+/// \param dVarAdress mu::Variable*
+/// \param _parser mu::Parser&
+/// \param _option const Settings&
+/// \param dLeft mu::Value
+/// \param dRight mu::Value
+/// \param dEps double
+/// \param nRecursion int
+/// \return mu::Value
+///
+/// The expression has to be setted in advance.
+/// The function performs recursions until the
+/// defined precision is reached.
+/////////////////////////////////////////////////
+static mu::Value localizeZero(string& sCmd, mu::Variable* dVarAdress, mu::Parser& _parser, const Settings& _option, mu::Value dLeft, mu::Value dRight, double dEps = 1e-10, int nRecursion = 0)
+{
+    const size_t nSamples = 101;
+    mu::Array dVal(2);
+
+    if (_parser.GetExpr() != sCmd)
+    {
+        _parser.SetExpr(sCmd);
+        _parser.Eval();
+    }
+
+    // Calculate the leftmost value
+    *dVarAdress = dLeft;
+    dVal[0] = _parser.Eval().front();
+
+    // Separate the current interval in
+    // nSamples steps and examine each step
+    for (size_t i = 1; i < nSamples; i++)
+    {
+        // Calculate the next value
+        *dVarAdress = dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1);
+        dVal[1] = _parser.Eval().front();
+
+        // Multiply the values to find a sign change
+        if (dVal[0]*dVal[1] < mu::Value(0))
+        {
+            // Sign change
+            // return, if precision is reached. Otherwise perform
+            // a new recursion between the two values
+            if (std::abs(dRight.getNum().val - dLeft.getNum().val) / (double)(nSamples - 1) <= dEps
+                || fabs(log(dEps)) + 1 < nRecursion * 2)
+                return dLeft + mu::Value(i - 1) * (dRight - dLeft) / mu::Value(nSamples - 1)
+                    + mu::Value(Linearize(0.0, dVal[0].getNum().val.real(),
+                                          (dRight - dLeft).getNum().val.real() / (double)(nSamples - 1),
+                                          dVal[1].getNum().val.real()));
+            else
+                return localizeZero(sCmd, dVarAdress, _parser, _option,
+                                    dLeft + mu::Value(i - 1) * (dRight - dLeft) / mu::Value(nSamples - 1),
+                                    dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), dEps, nRecursion + 1);
+        }
+        else if (dVal[0]*dVal[1] == mu::Value(0.0))
+        {
+            // One of the two vwlues is zero.
+            // Jump over all following zeros due
+            // to constness
+            int nTemp = i - 1;
+
+            if (dVal[0] != mu::Value(0.0))
+            {
+                while (dVal[0]*dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
+                {
+                    i++;
+                    *dVarAdress = dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1);
+                    dVal[1] = _parser.Eval().front();
+                }
+            }
+            else
+            {
+                while (dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
+                {
+                    i++;
+                    *dVarAdress = dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1);
+                    dVal[1] = _parser.Eval().front();
+                }
+            }
+
+            // return, if precision is reached. Otherwise perform
+            // a new recursion between the two values
+            if ((i - nTemp) * std::abs(dRight.getNum().val - dLeft.getNum().val) / (double)(nSamples - 1) <= dEps
+                || (!nTemp && i + 1 == nSamples) || fabs(log(dEps)) + 1 < nRecursion * 2)
+                return dLeft + mu::Value(nTemp) * (dRight - dLeft) / mu::Value(nSamples - 1)
+                    + mu::Value(Linearize(0.0, dVal[0].getNum().val.real(),
+                                          (i - nTemp) * (dRight - dLeft).getNum().val.real() / (double)(nSamples - 1),
+                                          dVal[1].getNum().val.real()));
+            else
+                return localizeZero(sCmd, dVarAdress, _parser, _option,
+                                    dLeft + mu::Value(nTemp) * (dRight - dLeft) / mu::Value(nSamples - 1),
+                                    dLeft + mu::Value(i) * (dRight - dLeft) / mu::Value(nSamples - 1), dEps, nRecursion + 1);
+        }
+
+        dVal[0] = dVal[1];
+    }
+
+    // If no explict sign change was found,
+    // interpolate the position by linearisation
+    *dVarAdress = dLeft;
+    dVal[0] = _parser.Eval().front();
+    *dVarAdress = dRight;
+    dVal[1] = _parser.Eval().front();
+    return Linearize(dLeft.getNum().val.real(), dVal[0].getNum().val.real(),
+                     dRight.getNum().val.real(), dVal[1].getNum().val.real());
 }
 
 
@@ -1871,19 +2060,15 @@ bool findZeroes(CommandLineParser& cmdParser)
     Parser& _parser = instance->getParser();
 
     size_t nSamples = 21;
-    mu::value_type dVal[2];
-    mu::value_type dBoundaries[2] = {0.0, 0.0};
+    mu::Array dVal(2, mu::Value(0.0));
+    mu::Array dBoundaries(2, mu::Value(0.0));
     int nMode = 0;
-    mu::value_type* dVar = 0;
-    mu::value_type dTemp = 0.0;
-    string sExpr = "";
-    string sParams = "";
-    string sInterval = "";
-    string sVar = "";
-
-    // We cannot search zeroes in strings
-    if (instance->getStringParser().isStringExpression(cmdParser.getExpr()))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "zeroes");
+    mu::Variable* dVar = nullptr;
+    mu::Array dTemp;
+    std::string sExpr = "";
+    std::string sParams = "";
+    std::string sInterval = "";
+    std::string sVar = "";
 
     if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -1907,9 +2092,6 @@ bool findZeroes(CommandLineParser& cmdParser)
     if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, false);
 
-    if (instance->getStringParser().isStringExpression(sExpr))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "zeroes");
-
     if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, false);
 
@@ -1932,9 +2114,9 @@ bool findZeroes(CommandLineParser& cmdParser)
 
     // Evaluate the interval
     if (sParams.find('=') != string::npos
-            || (sParams.find('[') != string::npos
-                && sParams.find(']', sParams.find('['))
-                && sParams.find(':', sParams.find('['))))
+        || (sParams.find('[') != string::npos
+            && sParams.find(']', sParams.find('['))
+            && sParams.find(':', sParams.find('['))))
     {
         if (sParams.substr(0, 2) == "--")
             sParams = sParams.substr(2);
@@ -1973,9 +2155,9 @@ bool findZeroes(CommandLineParser& cmdParser)
                 if (isNotEmptyExpression(indices[i]))
                 {
                     _parser.SetExpr(indices[i]);
-                    dBoundaries[i] = _parser.Eval();
+                    dBoundaries[i] = _parser.Eval().front();
 
-                    if (isinf(std::abs(dBoundaries[i])) || isnan(std::abs(dBoundaries[i])))
+                    if (mu::isinf(dBoundaries[i].getNum().val) || mu::isnan(dBoundaries[i]))
                     {
                         cmdParser.setReturnValue("nan");
                         return false;
@@ -1985,9 +2167,9 @@ bool findZeroes(CommandLineParser& cmdParser)
                     return false;
             }
 
-            if (std::abs(dBoundaries[1]) < std::abs(dBoundaries[0]))
+            if (dBoundaries[1] < dBoundaries[0])
             {
-                mu::value_type Temp = dBoundaries[1];
+                mu::Value Temp = dBoundaries[1];
                 dBoundaries[1] = dBoundaries[0];
                 dBoundaries[0] = Temp;
             }
@@ -1999,8 +2181,8 @@ bool findZeroes(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Calculate the interval
-    if (intCast(std::abs(dBoundaries[1] - dBoundaries[0])))
-        nSamples = (nSamples - 1) * intCast(std::abs(dBoundaries[1] - dBoundaries[0])) + 1;
+    if (intCast(std::abs(dBoundaries[1].getNum().val - dBoundaries[0].getNum().val)))
+        nSamples = (nSamples - 1) * intCast(std::abs(dBoundaries[1].getNum().val - dBoundaries[0].getNum().val)) + 1;
 
     // Ensure that we calculate a reasonable
     // amount of samples
@@ -2014,19 +2196,21 @@ bool findZeroes(CommandLineParser& cmdParser)
     dTemp = *dVar;
 
     *dVar = dBoundaries[0];
-    vector<mu::value_type> vResults;
-    dVal[0] = _parser.Eval();
+    mu::Array vResults;
+    dVal[0] = _parser.Eval().front();
 
     // Find near zeros to the left of the boundary
     // which are probably not located due toe rounding
     // errors
-    if (dVal[0] != 0.0 && fabs(dVal[0]) < 1e-10)
+    if (bool(dVal[0] != mu::Value(0.0)) && fabs(dVal[0].getNum().val) < 1e-10)
     {
-        *dVar = dBoundaries[0] - 1e-10;
-        dVal[1] = _parser.Eval();
+        *dVar = dBoundaries[0] - mu::Value(1e-10);
+        dVal[1] = _parser.Eval().front();
 
-        if (dVal[0].real()*dVal[1].real() < 0 && (nMode * dVal[0].real() <= 0.0))
-            vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] - 1e-10, dBoundaries[0]));
+        if (dVal[0]*dVal[1] < mu::Value(0) && mu::Value(nMode) * dVal[0] <= mu::Value(0.0))
+            vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(),
+                                                dBoundaries[0] - mu::Value(1e-10),
+                                                dBoundaries[0]));
     }
 
     // Evaluate all samples. We try to find
@@ -2035,50 +2219,54 @@ bool findZeroes(CommandLineParser& cmdParser)
     for (size_t i = 1; i < nSamples; i++)
     {
         // Evalute the current sample
-        *dVar = dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
-        dVal[1] = _parser.Eval();
+        *dVar = dBoundaries[0] + mu::Value(i) * (dBoundaries[1] - dBoundaries[0]) / mu::Value(nSamples - 1);
+        dVal[1] = _parser.Eval().front();
 
-        if (dVal[0].real()*dVal[1].real() < 0)
+        if (dVal[0]*dVal[1] < mu::Value(0))
         {
             if (!nMode
-                    || (nMode == -1 && (dVal[0].real() > 0 && dVal[1].real() < 0))
-                    || (nMode == 1 && (dVal[0].real() < 0 && dVal[1].real() > 0)))
+                || (nMode == -1 && bool(dVal[0] > mu::Value(0.0) && dVal[1] < mu::Value(0.0)))
+                || (nMode == 1 && bool(dVal[0] < mu::Value(0.0) && dVal[1] > mu::Value(0.0))))
             {
                 // Examine the current interval
-                vResults.push_back((localizeZero(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + (double)(i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1))));
+                vResults.push_back((localizeZero(sExpr, dVar, _parser, instance->getSettings(),
+                                                 dBoundaries[0] + mu::Value(i-1) * (dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1),
+                                                 dBoundaries[0] + mu::Value(i) * (dBoundaries[1]-dBoundaries[0]) / mu::Value(nSamples-1))));
             }
         }
-        else if (dVal[0].real()*dVal[1].real() == 0.0)
+        else if (dVal[0]*dVal[1] == mu::Value(0.0))
         {
             if (!nMode
-                    || (nMode == -1 && (dVal[0].real() > 0 || dVal[1].real() < 0))
-                    || (nMode == 1 && (dVal[0].real() < 0 || dVal[1].real() > 0)))
+                || (nMode == -1 && bool(dVal[0] > mu::Value(0.0) || dVal[1] < mu::Value(0.0)))
+                || (nMode == 1 && bool(dVal[0] < mu::Value(0.0) || dVal[1] > mu::Value(0.0))))
             {
                 int nTemp = i - 1;
 
                 // Ignore consecutive zeros due to
                 // constness
-                if (dVal[0] != 0.0)
+                if (dVal[0] != mu::Value(0.0))
                 {
-                    while (dVal[0]*dVal[1] == 0.0 && i + 1 < nSamples)
+                    while (dVal[0]*dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
                     {
                         i++;
-                        *dVar = dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
-                        dVal[1] = _parser.Eval();
+                        *dVar = dBoundaries[0] + mu::Value(i) * (dBoundaries[1] - dBoundaries[0]) / mu::Value(nSamples - 1);
+                        dVal[1] = _parser.Eval().front();
                     }
                 }
                 else
                 {
-                    while (dVal[1] == 0.0 && i + 1 < nSamples)
+                    while (dVal[1] == mu::Value(0.0) && mu::Value(i + 1 < nSamples))
                     {
                         i++;
-                        *dVar = dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
-                        dVal[1] = _parser.Eval();
+                        *dVar = dBoundaries[0] + mu::Value(i) * (dBoundaries[1] - dBoundaries[0]) / mu::Value(nSamples - 1);
+                        dVal[1] = _parser.Eval().front();
                     }
                 }
 
                 // Store the result
-                vResults.push_back(localizeZero(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + (double)nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
+                vResults.push_back(localizeZero(sExpr, dVar, _parser, instance->getSettings(),
+                                                dBoundaries[0] + mu::Value(nTemp) * (dBoundaries[1] - dBoundaries[0])/mu::Value(nSamples-1),
+                                                dBoundaries[0] + mu::Value(i) * (dBoundaries[1] - dBoundaries[0])/mu::Value(nSamples-1)));
             }
         }
 
@@ -2087,13 +2275,15 @@ bool findZeroes(CommandLineParser& cmdParser)
 
     // Examine the right boundary, because there might be
     // a zero slightly right from the interval
-    if (dVal[0] != 0.0 && fabs(dVal[0]) < 1e-10)
+    if (bool(dVal[0] != mu::Value(0.0)) && fabs(dVal[0].getNum().val) < 1e-10)
     {
-        *dVar = dBoundaries[1] + 1e-10;
-        dVal[1] = _parser.Eval();
+        *dVar = dBoundaries[1] + mu::Value(1e-10);
+        dVal[1] = _parser.Eval().front();
 
-        if (dVal[0].real()*dVal[1].real() < 0 && nMode * dVal[0].real() <= 0.0)
-            vResults.push_back(localizeZero(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[1], dBoundaries[1] + 1e-10));
+        if (dVal[0]*dVal[1] < mu::Value(0) && mu::Value(nMode) * dVal[0] <= mu::Value(0.0))
+            vResults.push_back(localizeZero(sExpr, dVar, _parser, instance->getSettings(),
+                                            dBoundaries[1],
+                                            dBoundaries[1] + mu::Value(1e-10)));
     }
 
     *dVar = dTemp;
@@ -2104,202 +2294,6 @@ bool findZeroes(CommandLineParser& cmdParser)
         cmdParser.setReturnValue(vResults);
 
     return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function searches for the
-/// positions of all extrema, which are located
-/// in the selected interval.
-///
-/// \param sCmd string&
-/// \param dVarAdress mu::value_type*
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param dLeft mu::value_type
-/// \param dRight mu::value_type
-/// \param dEps double
-/// \param nRecursion int
-/// \return mu::value_type
-///
-/// The expression has to be setted in advance.
-/// The function performs recursions until the
-/// defined precision is reached.
-/////////////////////////////////////////////////
-static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps, int nRecursion)
-{
-    const size_t nSamples = 101;
-    mu::value_type dVal[2];
-
-    if (_parser.GetExpr() != sCmd)
-    {
-        _parser.SetExpr(sCmd);
-        _parser.Eval();
-    }
-
-    // Calculate the leftmost value
-    dVal[0] = _parser.Diff(dVarAdress, dLeft, 1e-7);
-
-    // Separate the current interval in
-    // nSamples steps and examine each step
-    for (size_t i = 1; i < nSamples; i++)
-    {
-        // Calculate the next value
-        dVal[1] = _parser.Diff(dVarAdress, dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
-
-        // Multiply the values to find a sign change
-        if (dVal[0].real()*dVal[1].real() < 0)
-        {
-            // Sign change
-            // return, if precision is reached. Otherwise perform
-            // a new recursion between the two values
-            if (std::abs(dRight - dLeft) / (double)(nSamples - 1) <= dEps || fabs(log(dEps)) + 1 < nRecursion * 2)
-                return dLeft + (double)(i - 1) * (dRight - dLeft) / (double)(nSamples - 1) + Linearize(0.0, dVal[0].real(), (dRight - dLeft).real() / (double)(nSamples - 1), dVal[1].real());
-            else
-                return localizeExtremum(sCmd, dVarAdress, _parser, _option, dLeft + (double)(i - 1) * (dRight - dLeft) / (double)(nSamples - 1), dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), dEps, nRecursion + 1);
-        }
-        else if (dVal[0]*dVal[1] == 0.0)
-        {
-            // One of the two vwlues is zero.
-            // Jump over all following zeros due
-            // to constness
-            int nTemp = i - 1;
-
-            if (dVal[0] != 0.0)
-            {
-                while (dVal[0]*dVal[1] == 0.0 && i + 1 < nSamples)
-                {
-                    i++;
-                    dVal[1] = _parser.Diff(dVarAdress, dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
-                }
-            }
-            else
-            {
-                while (dVal[1] == 0.0 && i + 1 < nSamples)
-                {
-                    i++;
-                    dVal[1] = _parser.Diff(dVarAdress, dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
-                }
-            }
-
-            // return, if precision is reached. Otherwise perform
-            // a new recursion between the two values
-            if ((i - nTemp) * std::abs(dRight - dLeft) / (double)(nSamples - 1) <= dEps || (!nTemp && i + 1 == nSamples) || fabs(log(dEps)) + 1 < nRecursion * 2)
-                return dLeft + (double)nTemp * (dRight - dLeft) / (double)(nSamples - 1) + Linearize(0.0, dVal[0].real(), (i - nTemp) * (dRight - dLeft).real() / (double)(nSamples - 1), dVal[1].real());
-            else
-                return localizeExtremum(sCmd, dVarAdress, _parser, _option, dLeft + (double)nTemp * (dRight - dLeft) / (double)(nSamples - 1), dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), dEps, nRecursion + 1);
-        }
-
-        dVal[0] = dVal[1];
-    }
-
-    // If no explict sign change was found,
-    // interpolate the position by linearisation
-    *dVarAdress = dLeft;
-    dVal[0] = _parser.Eval();
-    *dVarAdress = dRight;
-    dVal[1] = _parser.Eval();
-    return Linearize(dLeft.real(), dVal[0].real(), dRight.real(), dVal[1].real());
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function searches for the
-/// positions of all zeroes (roots), which are
-/// located in the selected interval.
-///
-/// \param sCmd string&
-/// \param dVarAdress mu::value_type*
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param dLeft mu::value_type
-/// \param dRight mu::value_type
-/// \param dEps double
-/// \param nRecursion int
-/// \return mu::value_type
-///
-/// The expression has to be setted in advance.
-/// The function performs recursions until the
-/// defined precision is reached.
-/////////////////////////////////////////////////
-static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps, int nRecursion)
-{
-    const size_t nSamples = 101;
-    mu::value_type dVal[2];
-
-    if (_parser.GetExpr() != sCmd)
-    {
-        _parser.SetExpr(sCmd);
-        _parser.Eval();
-    }
-
-    // Calculate the leftmost value
-    *dVarAdress = dLeft;
-    dVal[0] = _parser.Eval();
-
-    // Separate the current interval in
-    // nSamples steps and examine each step
-    for (size_t i = 1; i < nSamples; i++)
-    {
-        // Calculate the next value
-        *dVarAdress = dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1);
-        dVal[1] = _parser.Eval();
-
-        // Multiply the values to find a sign change
-        if (dVal[0].real()*dVal[1].real() < 0)
-        {
-            // Sign change
-            // return, if precision is reached. Otherwise perform
-            // a new recursion between the two values
-            if (std::abs(dRight - dLeft) / (double)(nSamples - 1) <= dEps || fabs(log(dEps)) + 1 < nRecursion * 2)
-                return dLeft + (double)(i - 1) * (dRight - dLeft) / (double)(nSamples - 1) + Linearize(0.0, dVal[0].real(), (dRight - dLeft).real() / (double)(nSamples - 1), dVal[1].real());
-            else
-                return localizeZero(sCmd, dVarAdress, _parser, _option, dLeft + (double)(i - 1) * (dRight - dLeft) / (double)(nSamples - 1), dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), dEps, nRecursion + 1);
-        }
-        else if (dVal[0]*dVal[1] == 0.0)
-        {
-            // One of the two vwlues is zero.
-            // Jump over all following zeros due
-            // to constness
-            int nTemp = i - 1;
-
-            if (dVal[0] != 0.0)
-            {
-                while (dVal[0]*dVal[1] == 0.0 && i + 1 < nSamples)
-                {
-                    i++;
-                    *dVarAdress = dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1);
-                    dVal[1] = _parser.Eval();
-                }
-            }
-            else
-            {
-                while (dVal[1] == 0.0 && i + 1 < nSamples)
-                {
-                    i++;
-                    *dVarAdress = dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1);
-                    dVal[1] = _parser.Eval();
-                }
-            }
-
-            // return, if precision is reached. Otherwise perform
-            // a new recursion between the two values
-            if ((i - nTemp) * std::abs(dRight - dLeft) / (double)(nSamples - 1) <= dEps || (!nTemp && i + 1 == nSamples) || fabs(log(dEps)) + 1 < nRecursion * 2)
-                return dLeft + (double)nTemp * (dRight - dLeft) / (double)(nSamples - 1) + Linearize(0.0, dVal[0].real(), (i - nTemp) * (dRight - dLeft).real() / (double)(nSamples - 1), dVal[1].real());
-            else
-                return localizeZero(sCmd, dVarAdress, _parser, _option, dLeft + (double)nTemp * (dRight - dLeft) / (double)(nSamples - 1), dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), dEps, nRecursion + 1);
-        }
-
-        dVal[0] = dVal[1];
-    }
-
-    // If no explict sign change was found,
-    // interpolate the position by linearisation
-    *dVarAdress = dLeft;
-    dVal[0] = _parser.Eval();
-    *dVarAdress = dRight;
-    dVal[1] = _parser.Eval();
-    return Linearize(dLeft.real(), dVal[0].real(), dRight.real(), dVal[1].real());
 }
 
 
@@ -2315,22 +2309,22 @@ static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Par
 /////////////////////////////////////////////////
 void taylor(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     const double dPRECISION = 1e-1;
-    string sVarName = "";
-    string sExpr = cmdParser.getExprAsMathExpression();
-    string sExpr_cpy = "";
-    string sArg = "";
-    string sTaylor = "Taylor";
-    string sPolynom = "";
+    std::string sVarName = "";
+    std::string sExpr = cmdParser.getExprAsMathExpression();
+    std::string sExpr_cpy = "";
+    std::string sArg = "";
+    std::string sTaylor = "Taylor";
+    std::string sPolynom = "";
     bool bUseUniqueName = cmdParser.hasParam("unique") || cmdParser.hasParam("u");
     size_t nth_taylor = 6;
     size_t nSamples = 0;
-    mu::value_type* dVar = 0;
-    mu::value_type dVarValue = 0.0;
-    std::vector<mu::value_type> vCoeffs;
+    mu::Variable* dVar = nullptr;
+    mu::Array dVarValue;
+    mu::Array vCoeffs;
 
     // We cannot approximate string expressions
     if (containsStrings(sExpr))
@@ -2359,18 +2353,18 @@ void taylor(CommandLineParser& cmdParser)
             dVarValue = cmdParser.getParameterValueAsNumericalValue(sVarName).front();
 
             // Ensure that the location was chosen reasonable
-            if (isinf(std::abs(dVarValue)) || isnan(std::abs(dVarValue)))
+            if (mu::isinf(dVarValue.front().getNum().val) || mu::isnan(dVarValue.front()))
                 return;
 
             // Create the string element, which is used
             // for the variable in the created funcction
             // string
-            if (dVarValue == 0.0)
+            if (dVarValue == mu::Value(0.0))
                 sArg = "x";
-            else if (dVarValue.real() < 0)
-                sArg = "x+" + toString(-dVarValue, _option.getPrecision());
+            else if (dVarValue < mu::Value(0))
+                sArg = "x+" + (-dVarValue).print(_option.getPrecision());
             else
-                sArg = "x-" + toString(dVarValue, _option.getPrecision());
+                sArg = "x-" + dVarValue.print(_option.getPrecision());
 
             break;
         }
@@ -2424,8 +2418,8 @@ void taylor(CommandLineParser& cmdParser)
     {
         // zero order polynomial
         *dVar = dVarValue;
-        vCoeffs.push_back(_parser.Eval());
-        sTaylor += toString(vCoeffs.back(), _option.getPrecision());
+        vCoeffs = _parser.Eval();
+        sTaylor += vCoeffs.back().print(_option.getPrecision());
     }
     else
     {
@@ -2433,41 +2427,38 @@ void taylor(CommandLineParser& cmdParser)
         *dVar = dVarValue;
 
         // the constant term
-        vCoeffs.push_back(_parser.Eval());
-        sPolynom = toString(vCoeffs.back(), _option.getPrecision()) + ",";
+        vCoeffs.push_back(_parser.Eval().front());
+        sPolynom = vCoeffs.back().print(_option.getPrecision()) + ",";
 
         nSamples = 6*nth_taylor + 1;
         const size_t nFILTERSIZE = 7;
         NumeRe::SavitzkyGolayDiffFilter filter(nFILTERSIZE, 1);
-        std::vector<mu::value_type> vValues(nSamples, 0.0);
-        std::vector<mu::value_type> vDiffValues;
+        mu::Array vValues(nSamples, mu::Value(0.0));
+        mu::Array vDiffValues(nSamples, mu::Value(0.0));;
         double dPrec = dPRECISION / nth_taylor;
 
         // Prepare smoothing array
         for (size_t i = 0; i < vValues.size(); i++)
         {
-            *dVar = dVarValue + ((int)i - (int)nSamples/2)*dPrec;
-            vValues[i] = _parser.Eval();
+            *dVar = dVarValue + mu::Value(((int)i - (int)nSamples/2)*dPrec);
+            vValues[i] = _parser.Eval().front();
         }
-
-        // Copy values for easier initialisation
-        vDiffValues = vValues;
 
         // Perform the derivation
         for (size_t n = 0; n < nth_taylor; n++)
         {
             for (size_t i = nFILTERSIZE/2; i < vValues.size()-nFILTERSIZE/2; i++)
             {
-                vDiffValues[i] = 0.0;
+                vDiffValues[i] = mu::Value(0.0);
 
                 for (size_t j = 0; j < nFILTERSIZE; j++)
-                    vDiffValues[i] += filter.apply(j, 0, vValues[i + j - nFILTERSIZE/2]);
+                    vDiffValues[i] += mu::Value(filter.apply(j, 0, vValues[i + j - nFILTERSIZE/2].getNum().val));
 
-                vDiffValues[i] /= dPrec;
+                vDiffValues[i] /= mu::Value(dPrec);
             }
 
-            vCoeffs.push_back(vDiffValues[vDiffValues.size()/2] / (double)integralFactorial(n+1));
-            sPolynom += toString(vCoeffs.back(), _option.getPrecision()) + ",";
+            vCoeffs.push_back(vDiffValues[vDiffValues.size()/2] / mu::Value(integralFactorial(n+1)));
+            sPolynom += vCoeffs.back().print(_option.getPrecision()) + ",";
             vValues = vDiffValues;
         }
 
@@ -2477,7 +2468,7 @@ void taylor(CommandLineParser& cmdParser)
     //if (_option.systemPrints())
     //    NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 
-    sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString(nth_taylor));
+    sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, dVarValue.print(4), toString(nth_taylor));
 
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
@@ -2905,7 +2896,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (_fft.lines % 2 && _fft.lines > 1e3)
         _fft.lines--;
 
-    _fft.dNyquistFrequency[0] = _fft.lines / (_mem->readMem(_fft.lines - 1, 0).real() - _mem->readMem(0, 0).real()) / 2.0;
+    _fft.dNyquistFrequency[0] = _fft.lines/(_mem->readMem(_fft.lines - 1, 0).getNum().val.real()-_mem->readMem(0, 0).getNum().val.real())/2.0;
     _fft.dTimeInterval[0] = (_fft.lines - 1) / (_mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real() - _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real());
 
     if (bIs2DFFT)
@@ -2915,8 +2906,8 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
 
         int collines = _mem->getElemsInColumn(1);
 
-        _fft.dNyquistFrequency[1] = collines / (_mem->readMem(collines - 1, 1).real() - _mem->readMem(0, 1).real()) / 2.0;
-        _fft.dTimeInterval[1] = (collines - 1) / (_mem->readMem(collines - 1, 1).real());
+        _fft.dNyquistFrequency[1] = collines/(_mem->readMem(collines-1, 1).getNum().val.real()-_mem->readMem(0, 1).getNum().val.real())/2.0;
+        _fft.dTimeInterval[1] = (collines - 1) / (_mem->readMem(collines - 1, 1).getNum().val.real());
     }
 
     // Check the dimensions of the input data
@@ -2927,10 +2918,10 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (_fft.bShiftAxis)
     {
         _fft.dFrequencyOffset = -_fft.dNyquistFrequency[0] * (1 + (_fft.lines % 2) * 1.0 / _fft.lines);
-        _fft.dTimeInterval[0] = fabs((_fft.lines + (_fft.lines % 2)) / (_mem->readMem(0, 0).real())) * 0.5;
+        _fft.dTimeInterval[0] = fabs((_fft.lines + (_fft.lines % 2)) / (_mem->readMem(0, 0).getNum().val.real())) * 0.5;
 
         if (bIs2DFFT)
-            _fft.dTimeInterval[1] = fabs((_fft.cols-2 + (_fft.cols % 2)) / (_mem->readMem(0, 1).real())) * 0.5;
+            _fft.dTimeInterval[1] = fabs((_fft.cols-2 + (_fft.cols % 2)) / (_mem->readMem(0, 1).getNum().val.real())) * 0.5;
     }
 
     if (_option.systemPrints())
@@ -2958,7 +2949,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     }
 
     // Lambda expression for catching and converting NaNs into zeros
-    auto nanguard = [](const mu::value_type& val) {return mu::isnan(val) ? mu::value_type(0.0) : val;};
+    auto nanguard = [](const mu::Value& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val.getNum().val;};
 
     // Copy the data
     for (int i = 0; i < _fft.lines; i++)
@@ -2966,10 +2957,10 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         if (_fft.cols == 2)
             _fftData.a[i] = nanguard(_mem->readMem(vAxis[i], 1)); // Can be complex or not: does not matter
         else if (_fft.cols == 3 && _fft.bComplex)
-            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real()));
+            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i], 1).getNum().val.real(), _mem->readMem(vAxis[i], 2).getNum().val.real()));
         else if (_fft.cols == 3 && !_fft.bComplex)
-            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i], 1).real() * cos(_mem->readMem(vAxis[i], 2).real()),
-                                          _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real())));
+            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i],1).getNum().val.real()*cos(_mem->readMem(vAxis[i], 2).getNum().val.real()),
+                                          _mem->readMem(vAxis[i],1).getNum().val.real()*sin(_mem->readMem(vAxis[i], 2).getNum().val.real())));
         else if (bIs2DFFT)
         {
             int nLines = _fft.lines;
@@ -3019,14 +3010,14 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    vector<double> vWaveletData;
-    vector<double> vAxisData;
+    std::vector<double> vWaveletData;
+    std::vector<double> vAxisData;
     Indices _idx;
 
     bool bInverseTrafo = cmdParser.hasParam("inverse");
     bool bTargetGrid = cmdParser.hasParam("grid");
-    string sTargetTable = "fwtdata";
-    string sType = "d"; // d = daubechies, cd = centered daubechies, h = haar, ch = centered haar, b = bspline, cb = centered bspline
+    std::string sTargetTable = "fwtdata";
+    std::string sType = "d"; // d = daubechies, cd = centered daubechies, h = haar, ch = centered haar, b = bspline, cb = centered bspline
     int k = 4;
 
     std::string sParVal = cmdParser.getParameterValue("type");
@@ -3039,11 +3030,10 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     if (!sType.length() && sParVal.length())
         sType = sParVal;
 
-    std::vector<mu::value_type> vParVal = cmdParser.getParameterValueAsNumericalValue("k");
+    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("k");
 
     if (vParVal.size())
-        k = intCast(vParVal.front());
-
+        k = vParVal.getAsScalarInt();
 
     // search for explicit "target" options and select the target cache
     sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
@@ -3081,10 +3071,10 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
 
     for (size_t i = 0; i < (size_t)_mem->getLines(); i++)
     {
-        vWaveletData.push_back(_mem->readMem(i, 1).real());
+        vWaveletData.push_back(_mem->readMem(i, 1).getNum().val.real());
 
         if (bTargetGrid)
-            vAxisData.push_back(_mem->readMem(i, 0).real());
+            vAxisData.push_back(_mem->readMem(i, 0).getNum().val.real());
     }
 
     // calculate the wavelet:
@@ -3191,13 +3181,13 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool evalPoints(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu:: Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     size_t nSamples = 100;
-    mu::value_type* dVar = 0;
-    mu::value_type dTemp = 0.0;
-    string sExpr = cmdParser.getExprAsMathExpression();
-    string sVar = "x";
+    mu::Variable* dVar = 0;
+    mu::Array dTemp = 0.0;
+    std::string sExpr = cmdParser.getExprAsMathExpression();
+    std::string sVar = "x";
     static string zero = "0.0";
     bool bLogarithmic = cmdParser.hasParam("logscale");
 
@@ -3235,8 +3225,8 @@ bool evalPoints(CommandLineParser& cmdParser)
 
                 _parser.SetExpr(indices[0] + "," + indices[1]);
                 int nIndices;
-                mu::value_type* res = _parser.Eval(nIndices);
-                ivl.intervals.push_back(Interval(res[0], res[1]));
+                mu::Array* res = _parser.Eval(nIndices);
+                ivl.intervals.push_back(Interval(res[0].front().getNum().val, res[1].front().getNum().val));
 
                 break;
             }
@@ -3246,10 +3236,10 @@ bool evalPoints(CommandLineParser& cmdParser)
     if (!ivl.size())
         ivl.intervals.push_back(Interval(-10.0, 10.0));
 
-    std::vector<mu::value_type> vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
+    mu::Array vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
 
     if (vSamples.size())
-        nSamples = intCast(vSamples.front());
+        nSamples = vSamples.getAsScalarInt();
     else if (ivl[0].getSamples())
         nSamples = ivl[0].getSamples();
 
@@ -3264,9 +3254,9 @@ bool evalPoints(CommandLineParser& cmdParser)
     if (!dVar)
         throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
 
-    if (isnan(ivl[0].front().real()) && isnan(ivl[0].back().real()))
+    if (mu::isnan(ivl[0].front()) && mu::isnan(ivl[0].back()))
         ivl[0] = Interval(-10.0, 10.0);
-    else if (isnan(ivl[0].front().real()) || isnan(ivl[0].back().real()) || isinf(ivl[0].front().real()) || isinf(ivl[0].back().real()))
+    else if (mu::isnan(ivl[0].front()) || mu::isnan(ivl[0].back()) || mu::isinf(ivl[0].front()) || mu::isinf(ivl[0].back()))
     {
         cmdParser.setReturnValue("nan");
         return false;
@@ -3284,7 +3274,7 @@ bool evalPoints(CommandLineParser& cmdParser)
         _parser.SetExpr(zero);
 
     _parser.Eval();
-    vector<mu::value_type> vResults;
+    mu::Array vResults;
 
     // Evaluate the selected expression at
     // the selected samples
@@ -3292,7 +3282,7 @@ bool evalPoints(CommandLineParser& cmdParser)
     {
         dTemp = *dVar;
         *dVar = ivl[0](0);
-        vResults.push_back(_parser.Eval());
+        vResults.push_back(_parser.Eval().front());
 
         for (size_t i = 1; i < nSamples; i++)
         {
@@ -3302,7 +3292,7 @@ bool evalPoints(CommandLineParser& cmdParser)
             else
                 *dVar = ivl[0](i, nSamples);
 
-            vResults.push_back(_parser.Eval());
+            vResults.push_back(_parser.Eval().front());
         }
 
         *dVar = dTemp;
@@ -3310,11 +3300,142 @@ bool evalPoints(CommandLineParser& cmdParser)
     else
     {
         for (size_t i = 0; i < nSamples; i++)
-            vResults.push_back(_parser.Eval());
+            vResults.push_back(_parser.Eval().front());
     }
 
     cmdParser.setReturnValue(vResults);
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function will obtain the samples
+/// of the datagrid for each spatial direction.
+///
+/// \param cmdParser CommandLineParser&
+/// \param nSamples const std::vector<size_t>&
+/// \return std::vector<size_t>
+///
+/////////////////////////////////////////////////
+static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, const std::vector<size_t>& nSamples)
+{
+    vector<size_t> vSamples = nSamples;
+
+    // If the z vals are inside of a table then obtain the correct number of samples here
+    if (cmdParser.exprContainsDataObjects())
+    {
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+        // Get the indices and identify the table name
+        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+
+        if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+
+        Indices& _idx = _accessParser.getIndices();
+        std::string& sZDatatable = _accessParser.getDataObject();
+
+        // Check the indices
+        if (!isValidIndexSet(_idx))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+
+        // The indices are vectors
+        if (_idx.col.isOpenEnd())
+            _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
+
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);
+
+        vSamples.front() = _idx.row.size();
+        vSamples.back() = _idx.col.size();
+
+        // Check for singletons
+        if (vSamples[0] < 2 && vSamples[1] >= 2)
+            vSamples[0] = vSamples[1];
+        else if (vSamples[1] < 2 && vSamples[0] >= 2)
+            vSamples[1] = vSamples[0];
+    }
+
+    if (vSamples.size() < 2 || vSamples[0] < 2 || vSamples[1] < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+
+    return vSamples;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function will expand the z vector
+/// into a z matrix using triangulation.
+///
+/// \param ivl IntervalSet&
+/// \param vZVals std::vector<mu::Array>&
+/// \param nSamples_x size_t
+/// \param nSamples_y size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+static void expandVectorToDatagrid(IntervalSet& ivl, std::vector<mu::Array>& vZVals, size_t nSamples_x, size_t nSamples_y)
+{
+    // Only if a dimension is a singleton
+    if (vZVals.size() == 1 || vZVals[0].size() == 1)
+    {
+        mu::Array vVector;
+
+        // construct the needed MGL objects
+        mglData _mData[4];
+        mglGraph _graph;
+
+        // Prepare the memory
+        _mData[0].Create(nSamples_x, nSamples_y);
+        _mData[1].Create(nSamples_x);
+        _mData[2].Create(nSamples_y);
+
+        if (vZVals.size() != 1)
+            _mData[3].Create(vZVals.size());
+        else
+            _mData[3].Create(vZVals[0].size());
+
+        // copy the x and y vectors
+        for (size_t i = 0; i < nSamples_x; i++)
+            _mData[1].a[i] = ivl[0](i, nSamples_x).real();
+
+        for (size_t i = 0; i < nSamples_y; i++)
+            _mData[2].a[i] = ivl[1](i, nSamples_y).real();
+
+        // copy the z vector
+        if (vZVals.size() != 1)
+        {
+            for (size_t i = 0; i < vZVals.size(); i++)
+                _mData[3].a[i] = vZVals[i][0].getNum().val.real();
+        }
+        else
+        {
+            for (size_t i = 0; i < vZVals[0].size(); i++)
+                _mData[3].a[i] = vZVals[0][i].getNum().val.real();
+        }
+
+        // Set the ranges needed for the DataGrid function
+        _graph.SetRanges(_mData[1], _mData[2], _mData[3]);
+
+        // Calculate the data grid using a triangulation
+        _graph.DataGrid(_mData[0], _mData[1], _mData[2], _mData[3]);
+
+        vZVals.clear();
+
+        // Refill the x and y vectors
+        ivl[0] = Interval(_mData[1].Minimal(), _mData[1].Maximal());
+        ivl[1] = Interval(_mData[2].Minimal(), _mData[2].Maximal());
+
+        // Copy the z matrix
+        for (size_t i = 0; i < nSamples_x; i++)
+        {
+            for (size_t j = 0; j < nSamples_y; j++)
+                vVector.push_back(_mData[0].a[i + nSamples_x * j]);
+
+            vZVals.push_back(vVector);
+            vVector.clear();
+        }
+    }
 }
 
 
@@ -3332,7 +3453,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
     bool bTranspose = cmdParser.hasParam("transpose");
 
     Indices _iTargetIndex;
-    vector<vector<mu::value_type> > vZVals;
+    std::vector<mu::Array> vZVals;
 
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
@@ -3400,7 +3521,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
             throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // the indices are vectors
-        vector<mu::value_type> vVector;
+        mu::Array vVector;
 
         if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _data.getCols(szDatatable)-1);
@@ -3442,7 +3563,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
         // Calculate the grid from formula
         _parser.SetExpr(cmdParser.getExprAsMathExpression());
 
-        vector<mu::value_type> vVector;
+        mu::Array vVector;
 
         for (size_t x = 0; x < vSamples[bTranspose]; x++)
         {
@@ -3451,7 +3572,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
             for (size_t y = 0; y < vSamples[1-bTranspose]; y++)
             {
                 _defVars.vValue[1][0] = ivl[1](y, vSamples[1-bTranspose]);
-                vVector.push_back(_parser.Eval());
+                vVector.push_back(_parser.Eval().front());
             }
 
             vZVals.push_back(vVector);
@@ -3501,137 +3622,6 @@ bool createDatagrid(CommandLineParser& cmdParser)
 
 
 /////////////////////////////////////////////////
-/// \brief This function will obtain the samples
-/// of the datagrid for each spatial direction.
-///
-/// \param cmdParser CommandLineParser&
-/// \param nSamples const std::vector<size_t>&
-/// \return std::vector<size_t>
-///
-/////////////////////////////////////////////////
-static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, const std::vector<size_t>& nSamples)
-{
-    vector<size_t> vSamples = nSamples;
-
-    // If the z vals are inside of a table then obtain the correct number of samples here
-    if (cmdParser.exprContainsDataObjects())
-    {
-        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
-        // Get the indices and identify the table name
-        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-
-        if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
-
-        Indices& _idx = _accessParser.getIndices();
-        std::string& sZDatatable = _accessParser.getDataObject();
-
-        // Check the indices
-        if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
-
-        // The indices are vectors
-        if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
-
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);
-
-        vSamples.front() = _idx.row.size();
-        vSamples.back() = _idx.col.size();
-
-        // Check for singletons
-        if (vSamples[0] < 2 && vSamples[1] >= 2)
-            vSamples[0] = vSamples[1];
-        else if (vSamples[1] < 2 && vSamples[0] >= 2)
-            vSamples[1] = vSamples[0];
-    }
-
-    if (vSamples.size() < 2 || vSamples[0] < 2 || vSamples[1] < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
-
-    return vSamples;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function will expand the z vector
-/// into a z matrix using triangulation.
-///
-/// \param ivl IntervalSet&
-/// \param vZVals vector<vector<mu::value_type>>&
-/// \param nSamples_x size_t
-/// \param nSamples_y size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-static void expandVectorToDatagrid(IntervalSet& ivl, vector<vector<mu::value_type>>& vZVals, size_t nSamples_x, size_t nSamples_y)
-{
-    // Only if a dimension is a singleton
-    if (vZVals.size() == 1 || vZVals[0].size() == 1)
-    {
-        vector<mu::value_type> vVector;
-
-        // construct the needed MGL objects
-        mglData _mData[4];
-        mglGraph _graph;
-
-        // Prepare the memory
-        _mData[0].Create(nSamples_x, nSamples_y);
-        _mData[1].Create(nSamples_x);
-        _mData[2].Create(nSamples_y);
-
-        if (vZVals.size() != 1)
-            _mData[3].Create(vZVals.size());
-        else
-            _mData[3].Create(vZVals[0].size());
-
-        // copy the x and y vectors
-        for (size_t i = 0; i < nSamples_x; i++)
-            _mData[1].a[i] = ivl[0](i, nSamples_x).real();
-
-        for (size_t i = 0; i < nSamples_y; i++)
-            _mData[2].a[i] = ivl[1](i, nSamples_y).real();
-
-        // copy the z vector
-        if (vZVals.size() != 1)
-        {
-            for (size_t i = 0; i < vZVals.size(); i++)
-                _mData[3].a[i] = vZVals[i][0].real();
-        }
-        else
-        {
-            for (size_t i = 0; i < vZVals[0].size(); i++)
-                _mData[3].a[i] = vZVals[0][i].real();
-        }
-
-        // Set the ranges needed for the DataGrid function
-        _graph.SetRanges(_mData[1], _mData[2], _mData[3]);
-
-        // Calculate the data grid using a triangulation
-        _graph.DataGrid(_mData[0], _mData[1], _mData[2], _mData[3]);
-
-        vZVals.clear();
-
-        // Refill the x and y vectors
-        ivl[0] = Interval(_mData[1].Minimal(), _mData[1].Maximal());
-        ivl[1] = Interval(_mData[2].Minimal(), _mData[2].Maximal());
-
-        // Copy the z matrix
-        for (size_t i = 0; i < nSamples_x; i++)
-        {
-            for (size_t j = 0; j < nSamples_y; j++)
-                vVector.push_back(_mData[0].a[i + nSamples_x * j]);
-
-            vZVals.push_back(vVector);
-            vVector.clear();
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function creates a WAVE file from
 /// the selected data set.
 ///
@@ -3650,10 +3640,10 @@ bool writeAudioFile(CommandLineParser& cmdParser)
     double dMin = 0.0;
 
     // Samples lesen
-    std::vector<mu::value_type> vVals = cmdParser.getParameterValueAsNumericalValue("samples");
+    mu::Array vVals = cmdParser.getParameterValueAsNumericalValue("samples");
 
     if (vVals.size())
-        nSamples = intCast(vVals.front());
+        nSamples = vVals.getAsScalarInt();
 
     // Dateiname lesen
     sAudioFileName = cmdParser.getFileParameterValueForSaving(".wav", "<savepath>", sAudioFileName);
@@ -3693,9 +3683,12 @@ bool writeAudioFile(CommandLineParser& cmdParser)
     if (!audiofile.get()->isValid())
         return false;
 
+    const std::string& sTab = _accessParser.getDataObject();
+
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
-        audiofile.get()->write(Audio::Sample(_data.getElement(_idx.row[i], _idx.col[0], _accessParser.getDataObject()).real() / dMax, nChannels > 1 ? _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject()).real() / dMax : NAN));
+        audiofile.get()->write(Audio::Sample(_data.getElement(_idx.row[i],_idx.col[0],sTab).getNum().val.real()/dMax,
+                                             nChannels > 1 ? _data.getElement(_idx.row[i],_idx.col[1],sTab).getNum().val.real()/dMax : NAN));
     }
 
     return true;
@@ -3779,7 +3772,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
         _table->markModified();
 
         // Create the storage indices
-        std::vector<mu::value_type> vIndices = {_targetIdx.row.min()+1,
+        std::vector<std::complex<double>> vIndices = {_targetIdx.row.min()+1,
             _targetIdx.row.size() < nLen ? _targetIdx.row.max()+1 : _targetIdx.row.min()+nLen,
             (nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).min()+1 : _targetIdx.col.front()+1),
             (nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1)};
@@ -3800,7 +3793,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
         size_t nSampleRate = audiofile->getSampleRate();
 
         // Create the metadata
-        std::vector<mu::value_type> vMetaData = {nLen, nChannels, nSampleRate, nLen / (double)nSampleRate};
+        std::vector<std::complex<double>> vMetaData = {nLen, nChannels, nSampleRate, nLen / (double)nSampleRate};
 
         cmdParser.setReturnValue(vMetaData);
         g_logger.info("Audiofile metadata read.");
@@ -3823,7 +3816,7 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Indices _targetIdx;
     std::string sTarget = cmdParser.getTargetTable(_targetIdx, "audiodata");
-    std::vector<mu::value_type> vSeekIndices = cmdParser.parseExprAsNumericalValues();
+    std::vector<mu::Array> vSeekIndices = cmdParser.parseExprAsNumericalValues();
 
     if (vSeekIndices.size() < 2)
         return false;
@@ -3839,13 +3832,13 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     size_t nLen = audiofile->getLength();
     size_t nChannels = audiofile->getChannels();
 
-    if (!audiofile->isSeekable() || std::max(vSeekIndices[0].real()-1, 0.0) >= nLen)
+    if (!audiofile->isSeekable() || std::max(vSeekIndices[0].front().getNum().val.real()-1, 0.0) >= nLen)
         return false;
 
     std::unique_ptr<Audio::SeekableFile> seekable(static_cast<Audio::SeekableFile*>(audiofile.release()));
 
-    seekable->setPosition(std::max(vSeekIndices[0].real()-1, 0.0));
-    nLen = std::min(nLen - seekable->getPosition(), (size_t)(std::max(vSeekIndices[1].real(), 0.0)));
+    seekable->setPosition(std::max(vSeekIndices[0].front().getNum().val.real()-1, 0.0));
+    nLen = std::min(nLen - seekable->getPosition(), (size_t)(std::max(vSeekIndices[1].front().getNum().val.real(), 0.0)));
 
     // Try to read the desired length from the file
     _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
@@ -3942,8 +3935,8 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
 
     // Create splines
     tk::spline _spline;
-    _spline.set_points(mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(0))),
-                       mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(1))), false);
+    _spline.set_points(mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(0)).as_cmplx_vector()),
+                       mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(1)).as_cmplx_vector()), false);
 
     if (!nSamples)
         nSamples = nLines;
@@ -3978,7 +3971,7 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
 bool analyzePulse(CommandLineParser& cmdParser)
 {
     mglData _v;
-    vector<mu::value_type> vPulseProperties;
+    mu::Array vPulseProperties;
     double dXmin = NAN, dXmax = NAN;
     double dSampleSize = NAN;
 
@@ -4001,7 +3994,7 @@ bool analyzePulse(CommandLineParser& cmdParser)
     _v.Create(nLines);
 
     for (long long int i = 0; i < nLines; i++)
-        _v.a[i] = _mem->readMem(i, 1).real();
+        _v.a[i] = _mem->readMem(i, 1).getNum().val.real();
 
     dSampleSize = (dXmax - dXmin) / ((double)_v.GetNx() - 1.0);
     mglData _pulse(_v.Pulse('x'));
@@ -4029,7 +4022,8 @@ bool analyzePulse(CommandLineParser& cmdParser)
         make_hline();
 
         for (size_t i = 0; i < vPulseProperties.size(); i++)
-            NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString(i + 1) + "_*", toString(vPulseProperties[i], NumeReKernel::getInstance()->getSettings().getPrecision())) + "\n");
+            NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString(i + 1) + "_*",
+                                                         vPulseProperties[i].print(NumeReKernel::getInstance()->getSettings().getPrecision())) + "\n");
 
         NumeReKernel::toggleTableStatus();
         make_hline();
@@ -4081,12 +4075,23 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     _real.Create(_idx.row.size());
     _imag.Create(_idx.row.size());
 
+#warning FIXME (numere#9#08/05/24): Check all openmp constructs for necessary try-catch constructs
+
     #pragma omp parallel for
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
-        mu::value_type val = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject());
-        _real.a[i] = val.real();
-        _imag.a[i] = val.imag();
+        mu::Value val = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject());
+
+        if (val.isNumerical())
+        {
+            _real.a[i] = val.getNum().val.real();
+            _imag.a[i] = val.getNum().val.imag();
+        }
+        else
+        {
+            _real.a[i] = NAN;
+            _imag.a[i] = NAN;
+        }
     }
 
     if (!nSamples || nSamples > _real.GetNx())
@@ -4223,25 +4228,25 @@ void boneDetection(CommandLineParser& cmdParser)
     double dLevel = NAN, dAttrX = 0.0, dAttrY = 1.0, dMinLen = 0.0;
 
     // detect TABLE() -set minval=LVL attract={x,y} minlen=MIN target=TARGET()
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("minval");
+    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("minval");
 
     if (vParVal.size())
-        dLevel = vParVal.front().real();
+        dLevel = vParVal.front().getNum().val.real();
 
     vParVal = cmdParser.getParameterValueAsNumericalValue("attract");
 
     if (vParVal.size() > 1)
     {
-        dAttrX = fabs(vParVal[0]);
-        dAttrY = fabs(vParVal[1]);
+        dAttrX = fabs(vParVal[0].getNum().val);
+        dAttrY = fabs(vParVal[1].getNum().val);
     }
     else if (vParVal.size())
-        dAttrY = fabs(vParVal[0]);
+        dAttrY = fabs(vParVal[0].getNum().val);
 
     vParVal = cmdParser.getParameterValueAsNumericalValue("minlen");
 
     if (vParVal.size())
-        dMinLen = fabs(vParVal.front());
+        dMinLen = fabs(vParVal.front().getNum().val);
 
     Indices _target;
     std::string sTargetCache = cmdParser.getTargetTable(_target, "detectdat");
@@ -4254,14 +4259,16 @@ void boneDetection(CommandLineParser& cmdParser)
         _idx.row.setRange(0, _data.getLines(accessParser.getDataObject())-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + _data.getLines(accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[1], accessParser.getDataObject()) + 1);
+        _idx.col.setRange(0, _idx.col.front() + _data.getLines(accessParser.getDataObject(), true)
+                                              - _data.getAppendedZeroes(_idx.col[1], accessParser.getDataObject()) + 1);
 
     if (!_data.isValueLike(_idx.col, accessParser.getDataObject()))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
+                          accessParser.getDataObject()+"(", accessParser.getDataObject());
 
     // Get x and y axis for the final scaling
-    std::vector<mu::value_type> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), accessParser.getDataObject());
-    std::vector<mu::value_type> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), accessParser.getDataObject());
+    mu::Array vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), accessParser.getDataObject());
+    mu::Array vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), accessParser.getDataObject());
 
     _idx.col = _idx.col.subidx(2);
 
@@ -4289,7 +4296,7 @@ void boneDetection(CommandLineParser& cmdParser)
     {
         for (long long int j = 0; j < nCols; j++)
         {
-            _mData.a[i+j*nLines] = _mem->readMem(i, j).real();
+            _mData.a[i+j*nLines] = _mem->readMem(i, j).getNum().val.real();
         }
     }
 
@@ -4314,9 +4321,11 @@ void boneDetection(CommandLineParser& cmdParser)
                 break;
 
             if (!j)
-                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache, interpolateToGrid(mu::real(vX), _res.a[j+i*_res.GetNx()]));
+                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache,
+                                   interpolateToGrid(mu::real(vX.as_cmplx_vector()), _res.a[j+i*_res.GetNx()]));
             else
-                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache, interpolateToGrid(mu::real(vY), _res.a[j+i*_res.GetNx()]));
+                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache,
+                                   interpolateToGrid(mu::real(vY.as_cmplx_vector()), _res.a[j+i*_res.GetNx()]));
         }
     }
 
@@ -4366,8 +4375,8 @@ bool calculateSplines(CommandLineParser& cmdParser)
 
     for (int i = 0; i < nLines; i++)
     {
-        xVect.push_back(_mem->readMem(i, 0).real());
-        yVect.push_back(_mem->readMem(i, 1).real());
+        xVect.push_back(_mem->readMem(i, 0).getNum().val.real());
+        yVect.push_back(_mem->readMem(i, 1).getNum().val.real());
     }
 
     // Set the points for the spline to calculate
@@ -4443,24 +4452,27 @@ void rotateTable(CommandLineParser& cmdParser)
     // Find the target of this operation
     std::string sTargetTable = cmdParser.getTargetTable(_idx, "rotdata");
 
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
+    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
 
     if (vParVal.size())
-        dAlpha = -vParVal.front().real() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
+        dAlpha = -vParVal.front().getNum().val.real() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
 
     _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
     _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
 
     if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
+                          _accessParser.getDataObject()+"(", _accessParser.getDataObject());
 
     // Handle the image and datagrid cases
     if (cmdParser.getCommand() == "imrot" || cmdParser.getCommand() == "gridrot")
     {
         if (cmdParser.getCommand() == "gridrot")
         {
-            source_x = mu::real(_data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(0, 1), _accessParser.getDataObject()));
-            source_y = mu::real(_data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(1, 1), _accessParser.getDataObject()));
+            source_x = mu::real(_data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(0, 1),
+                                                 _accessParser.getDataObject()).as_cmplx_vector());
+            source_y = mu::real(_data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(1, 1),
+                                                 _accessParser.getDataObject()).as_cmplx_vector());
 
             // Remove trailing NANs
             while (isnan(source_x.back()))
@@ -4628,7 +4640,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
 // Forward declaration to make this function usable by the
 // particle swarm optimizer (needs randomness)
-value_type parser_Random(const value_type& vRandMin, const value_type& vRandMax);
+mu::Array parser_Random(const mu::Array& vRandMin, const mu::Array& vRandMax);
 
 
 /////////////////////////////////////////////////
@@ -4656,15 +4668,15 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     IntervalSet ivl = cmdParser.parseIntervals();
 
     // Handle parameters
-    std::vector<mu::value_type> vParVal = cmdParser.getParameterValueAsNumericalValue("particles");
+    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("particles");
 
     if (vParVal.size())
-        nNumParticles = intCast(vParVal.front());
+        nNumParticles = vParVal.getAsScalarInt();
 
     vParVal = cmdParser.getParameterValueAsNumericalValue("iter");
 
     if (vParVal.size())
-        nMaxIterations = intCast(vParVal.front());
+        nMaxIterations = vParVal.getAsScalarInt();
 
     // Set the expression
     _parser.SetExpr(cmdParser.getExprAsMathExpression(true));
@@ -4708,13 +4720,13 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     {
         for (size_t j = 0; j < nDims; j++)
         {
-            vPos[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()).real());
-            vVel[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()).real()/5.0);
+            vPos[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()).front().getNum().val.real());
+            vVel[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()).front().getNum().val.real()/5.0);
 
-            _defVars.vValue[j][0] = vPos[j].back();
+            _defVars.vValue[j][0] = mu::Value(vPos[j].back());
         }
 
-        vFunctionValues.push_back(_parser.Eval().real());
+        vFunctionValues.push_back(_parser.Eval().front().getNum().val.real());
     }
 
     for (size_t j = 0; j < nDims; j++)
@@ -4739,7 +4751,8 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
             for (size_t n = 0; n < nDims; n++)
             {
                 // Update velocities
-                vVel[n][j] += parser_Random(0, fRandRange).real() * (vBest[n][j] - vPos[n][j]) + parser_Random(0, fRandRange).real() * (vBest[n][nGlobalBest] - vPos[n][j]);
+                vVel[n][j] += parser_Random(0, fRandRange).front().getNum().val.real() * (vBest[n][j] - vPos[n][j])
+                    + parser_Random(0, fRandRange).front().getNum().val.real() * (vBest[n][nGlobalBest] - vPos[n][j]);
 
                 // Update positions
                 vPos[n][j] += fAdaptiveVelFactor * vVel[n][j];
@@ -4748,11 +4761,11 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
                 vPos[n][j] = std::max(ivl[n].min(), std::min(vPos[n][j], ivl[n].max()));
 
                 // Update the corresponding default variable
-                _defVars.vValue[n][0] = vPos[n][j];
+                _defVars.vValue[n][0] = mu::Value(vPos[n][j]);
             }
 
             // Recalculate the function value
-            vFunctionValues[j] = _parser.Eval().real();
+            vFunctionValues[j] = _parser.Eval().front().getNum().val.real();
 
             // Update the best positions
             if (vFunctionValues[j] < vBestValues[j])
@@ -4771,7 +4784,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     }
 
     // Create return value
-    std::vector<mu::value_type> vRes;
+    mu::Array vRes;
 
     for (size_t j = 0; j < nDims; j++)
     {

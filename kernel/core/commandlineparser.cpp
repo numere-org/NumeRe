@@ -378,6 +378,10 @@ std::string CommandLineParser::parseExprAsString() const
     if (!instance->getDefinitions().call(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
 
+    // Resolve table accesses
+    if (instance->getMemoryManager().containsTablesOrClusters(sExpr))
+        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
+
     StripSpaces(sExpr);
 
     if (sExpr.find("??") != std::string::npos)
@@ -385,9 +389,8 @@ std::string CommandLineParser::parseExprAsString() const
 
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    int ret;
-    mu::Array* v = _parser.Eval(ret);
-    sExpr = v[0].front().getStr();
+    mu::Array v = _parser.Eval();
+    sExpr = v.printVals();
 
     return sExpr;
 }

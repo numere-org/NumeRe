@@ -1573,25 +1573,8 @@ static void parseArg(std::string& sArg, int flags)
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
 
     // Read data
-    if (instance->getMemoryManager().containsTablesOrClusters(sArg)
-        && !instance->getStringParser().isStringExpression(sArg))
+    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
-
-    // String evaluation
-    if (instance->getStringParser().isStringExpression(sArg))
-    {
-        std::string dummy;
-        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sArg, dummy, true);
-
-        if (_ret == NumeRe::StringParser::STRING_SUCCESS)
-        {
-            sArg = NumeReKernel::getInstance()->getAns().serialize();
-            return;
-        }
-    }
-
-    if (flags & ARGEXTRACT_ASSTRING)
-        return;
 
     // Numerical evaluation
     instance->getParser().SetExpr(sArg);
@@ -1608,9 +1591,11 @@ static void parseArg(std::string& sArg, int flags)
             sArg += ",";
 
         if (flags & ARGEXTRACT_ASINT)
-            sArg += toString(intCast(v[i]));
+            sArg += toString(v[i].getAsScalarInt());
+        else if (flags & ARGEXTRACT_ASSTRING)
+            sArg += v[i].print(nPrec);
         else
-            sArg += v[i].print();
+            sArg += v[i].printVals(nPrec);
     }
 }
 
@@ -1660,7 +1645,7 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
         {
             size_t cont = isStringContinuation(sCmd, i);
 
-            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sCmd, nPos, i-nPos)))
+            if (cont < sCmd.length() && containsStrings(StringView(sCmd, nPos, i-nPos)))
                 i = cont-1;
             else
             {
@@ -2192,11 +2177,11 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 /// through the list of known clusters for
 /// string-containing clusters.
 ///
-/// \param sLine const string&
+/// \param sLine StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool containsStringClusters(const string& sLine)
+static bool containsStringClusters(StringView sLine)
 {
     const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
 
@@ -2206,7 +2191,7 @@ static bool containsStringClusters(const string& sLine)
         {
             size_t pos = sLine.find(iter->first + "{");
 
-            if (pos != string::npos && (!pos || isDelimiter(sLine[pos-1])))
+            if (pos != std::string::npos && (!pos || isDelimiter(sLine[pos-1])))
                 return true;
         }
     }
@@ -2220,27 +2205,27 @@ static bool containsStringClusters(const string& sLine)
 /// passed expression contains strings or
 /// valtostring parser.
 ///
-/// \param sLine const string&
+/// \param sLine StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool containsStrings(const string& sLine)
+bool containsStrings(StringView sLine)
 {
     if (!sLine.length())
         return false;
 
     // It's only necessary to check the following functions.
     // All other string functions need strings as input
-    if (sLine.find_first_of("\"#") != string::npos
-            || sLine.find("string(") != string::npos
-            || sLine.find("string_cast(") != string::npos
-            || sLine.find("char(") != string::npos
-            || sLine.find("getlasterror(") != string::npos
-            || sLine.find("getuilang(") != string::npos
-            || sLine.find("getversioninfo(") != string::npos
-            || sLine.find("valtostr(") != string::npos
-            || sLine.find("weekday(") != string::npos
-            || sLine.find("to_tex(") != std::string::npos)
+    if (sLine.find_first_of("\"#") != std::string::npos
+        || sLine.find("string(") != std::string::npos
+        || sLine.find("string_cast(") != std::string::npos
+        || sLine.find("char(") != std::string::npos
+        || sLine.find("getlasterror(") != std::string::npos
+        || sLine.find("getuilang(") != std::string::npos
+        || sLine.find("getversioninfo(") != std::string::npos
+        || sLine.find("valtostr(") != std::string::npos
+        || sLine.find("weekday(") != std::string::npos
+        || sLine.find("to_tex(") != std::string::npos)
         return true;
 
     return containsStringClusters(sLine);

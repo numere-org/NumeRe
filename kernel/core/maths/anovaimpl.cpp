@@ -34,14 +34,14 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
     for (size_t i = 0; i < factors[facIdx].size(); i++)
     {
         //positions of all elements, which correspond to the passed values
-        std::vector<std::complex<double>> catIndex1 = mem->getIndex(facIdx+1, std::vector<std::complex<double>>(), std::vector<std::string>(1, factors[facIdx][i]));
+        std::vector<std::complex<double>> catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factors[facIdx][i]));
 
         if (mu::isnan(catIndex1.front()))
             continue;
 
         if (parent == nullptr)
         {
-            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
+            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(catIndex1))));
             catIndex.push_back(catIndex1);
         } else
         {
@@ -58,7 +58,7 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
                 if (intersection.size() == 0)
                     continue;
 
-                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
+                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(intersection))));
                 catIndex.push_back(intersection);
             }
         }

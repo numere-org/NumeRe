@@ -18,7 +18,6 @@
 
 #include "error.hpp"
 #include "../utils/tools.hpp"
-#include "../strings/stringdatastructures.hpp"
 #include "../../kernel.hpp"
 #include "../maths/matdatastructures.hpp"
 
@@ -236,12 +235,12 @@ void Assertion::enable(const std::string& sExpr)
 /// \brief Checks the return value of a muParser
 /// evaluated result.
 ///
-/// \param v mu::value_type*
+/// \param v mu::Array*
 /// \param nNum int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Assertion::checkAssertion(mu::value_type* v, int nNum)
+void Assertion::checkAssertion(mu::Array* v, int nNum)
 {
     // Only do something, if the assertion mode is
     // active
@@ -251,7 +250,7 @@ void Assertion::checkAssertion(mu::value_type* v, int nNum)
         {
             // If a single value is zero,
             // throw the assertion error
-            if (v[i] == 0.0)
+            if (!v[i])
                 assertionFail();
         }
 
@@ -274,44 +273,12 @@ void Assertion::checkAssertion(const Matrix& _mMatrix)
     // active
     if (assertionMode)
     {
-        for (const mu::value_type& val : _mMatrix.data())
+        for (const mu::Value& val : _mMatrix.data())
         {
             // If a single value is zero,
             // throw the assertion error
-            if (val == 0.0)
+            if (!val)
                 assertionFail();
-        }
-
-        stats.succeeded();
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Checks the return vale of the string
-/// parser in the not-numerical-only case.
-///
-/// \param strRes const StringResult&
-/// \return void
-///
-/////////////////////////////////////////////////
-void Assertion::checkAssertion(const StringResult& strRes)
-{
-    // Only do something, if the assertion mode is
-    // active and the strings are not only logicals
-    if (assertionMode && !strRes.bOnlyLogicals)
-    {
-        for (size_t i = 0; i < strRes.vResult.size(); i++)
-        {
-            if (strRes.vResult[i] == "\"\"")
-                assertionFail();
-            else if (strRes.vNoStringVal[i])
-            {
-                NumeReKernel::getInstance()->getParser().SetExpr(strRes.vResult[i]);
-
-                if (NumeReKernel::getInstance()->getParser().Eval() == 0.0)
-                    assertionFail();
-            }
         }
 
         stats.succeeded();

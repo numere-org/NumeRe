@@ -402,10 +402,10 @@ static std::complex<double> nanAvg(const std::vector<std::complex<double>>& valu
 ///
 /// \param _dLine double
 /// \param _dCol double
-/// \return mu::Value
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::Value Memory::readMemInterpolated(double _dLine, double _dCol) const
+std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) const
 {
     if (isnan(_dLine) || isnan(_dCol))
         return NAN;
@@ -419,31 +419,31 @@ mu::Value Memory::readMemInterpolated(double _dLine, double _dCol) const
     double y = _dCol - nBaseCol;
 
     // Find the surrounding four entries
-    mu::Value f00 = readMem(nBaseLine, nBaseCol);
-    mu::Value f10 = readMem(nBaseLine+1, nBaseCol);
-    mu::Value f01 = readMem(nBaseLine, nBaseCol+1);
-    mu::Value f11 = readMem(nBaseLine+1, nBaseCol+1);
+    mu::Value vf00 = readMem(nBaseLine, nBaseCol);
+    mu::Value vf10 = readMem(nBaseLine+1, nBaseCol);
+    mu::Value vf01 = readMem(nBaseLine, nBaseCol+1);
+    mu::Value vf11 = readMem(nBaseLine+1, nBaseCol+1);
 
-    f00 = f00.isNumerical() ? f00 : mu::Value(NAN);
-    f10 = f10.isNumerical() ? f10 : mu::Value(NAN);
-    f01 = f01.isNumerical() ? f01 : mu::Value(NAN);
-    f11 = f11.isNumerical() ? f11 : mu::Value(NAN);
+    std::complex<double> f00 = vf00.isNumerical() ? vf00.getNum().val : NAN;
+    std::complex<double> f10 = vf10.isNumerical() ? vf10.getNum().val : NAN;
+    std::complex<double> f01 = vf01.isNumerical() ? vf01.getNum().val : NAN;
+    std::complex<double> f11 = vf11.isNumerical() ? vf11.getNum().val : NAN;
 
     // If all are NAN, return NAN
-    if (!f00.isValid() && !f01.isValid() && !f10.isValid() && !f11.isValid())
+    if (mu::isnan(f00) && mu::isnan(f01) && mu::isnan(f10) && mu::isnan(f11))
         return NAN;
 
     // Get the average respecting NaNs
-    std::complex<double> dNanAvg = nanAvg({f00.getNum().val, f01.getNum().val, f10.getNum().val, f11.getNum().val});
+    std::complex<double> dNanAvg = nanAvg({f00, f01, f10, f11});
 
     // Otherwise set NAN to zero
-    f00 = mu::isnan(f00.getNum().val) ? dNanAvg : f00;
-    f10 = mu::isnan(f10.getNum().val) ? dNanAvg : f10;
-    f01 = mu::isnan(f01.getNum().val) ? dNanAvg : f01;
-    f11 = mu::isnan(f11.getNum().val) ? dNanAvg : f11;
+    f00 = mu::isnan(f00) ? dNanAvg : f00;
+    f10 = mu::isnan(f10) ? dNanAvg : f10;
+    f01 = mu::isnan(f01) ? dNanAvg : f01;
+    f11 = mu::isnan(f11) ? dNanAvg : f11;
 
     //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
-    return f00*mu::Value((1.0-x)*(1.0-y)) + f10*mu::Value(x*(1.0-y)) + f01*mu::Value((1.0-x)*y) + f11*mu::Value(x*y);
+    return f00*(1.0-x)*(1.0-y) + f10*x*(1.0-y) + f01*(1.0-x)*y + f11*x*y;
 }
 
 
@@ -2483,7 +2483,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]).getNum().val);
+                operation[j](readMem(_vLine[i], _vCol[j]).as_cmplx());
             }
         }
     }

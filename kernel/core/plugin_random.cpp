@@ -54,7 +54,7 @@ static double getParameterValue(const std::string& sCmd, const std::string& sLon
             nPos = findParameter(sCmd, sShortVersion, '=')+sShortVersion.length();
 
         _parser.SetExpr(getArgAtPos(sCmd, nPos));
-        return _parser.Eval().real();
+        return _parser.Eval().front().getNum().val.real();
     }
 
     return defaultVal;

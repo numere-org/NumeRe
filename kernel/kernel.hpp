@@ -170,7 +170,6 @@ class NumeReKernel
         bool evaluateProcedureCalls(std::string& sLine);
         bool executePlugins(std::string& sLine);
         bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal);
         void createCalculationAnswer(int nNum, mu::Array* v);
         void printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos);
         void resetAfterError();

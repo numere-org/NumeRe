@@ -257,13 +257,13 @@ namespace mu
 
       http://sourceforge.net/forum/forum.php?thread_id=1994611&forum_id=462843
     */
-    std::vector<Array> Parser::Diff(Value* a_Var,
+    Array Parser::Diff(Variable* a_Var,
                        const Array& a_fPos,
                        Value fEpsilon,
                        size_t order)
     {
-        Value fBuf(*a_Var);
-        std::vector<Array> fRes;
+        Variable fBuf(*a_Var);
+        Array fRes;
         std::array<Array, 5> f;
         std::array<double, 5> factors = {-2, -1, 0, 1, 2};
 
@@ -275,24 +275,21 @@ namespace mu
             fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 
-        for (size_t n = 0; n < a_fPos.size(); n++)
+        for (size_t i = 0; i < f.size(); i++)
         {
-            for (size_t i = 0; i < f.size(); i++)
-            {
-                *a_Var = a_fPos[n] + Value(factors[i]) * fEpsilon;
-                f[i] = Eval().front();
-            }
-
-            // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
-            if (order == 1)
-                fRes.push_back(( f[0]  - Value(8.0) * f[1]              + Value(8.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon));
-            else if (order == 2)
-                fRes.push_back((-f[0] + Value(16.0) * f[1] - Value(30.0)*f[2] + Value(16.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon * fEpsilon));
-            else if (order == 3)
-                fRes.push_back((-f[0]  + Value(2.0) * f[1]              - Value(2.0) * f[3] + f[4]) / (Value(2.0) * fEpsilon * fEpsilon * fEpsilon));
-            else
-                fRes.push_back(Value(NAN));
+            *a_Var = a_fPos + Value(factors[i]) * fEpsilon;
+            f[i] = Eval().front();
         }
+
+        // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
+        if (order == 1)
+            fRes = (f[0] - Value(8.0) * f[1] + Value(8.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon);
+        else if (order == 2)
+            fRes = (-f[0] + Value(16.0) * f[1] - Value(30.0)*f[2] + Value(16.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon * fEpsilon);
+        else if (order == 3)
+            fRes = (-f[0] + Value(2.0) * f[1] - Value(2.0) * f[3] + f[4]) / (Value(2.0) * fEpsilon * fEpsilon * fEpsilon);
+        else
+            fRes = Value(NAN);
 
         *a_Var = fBuf; // restore variable
         return fRes;

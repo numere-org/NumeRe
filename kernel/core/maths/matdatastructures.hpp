@@ -161,13 +161,12 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals mu::Value*
-        /// \param nVals int
+        /// \param vVals const mu::Array&
         ///
         /////////////////////////////////////////////////
-        Matrix(size_t r, size_t c, mu::Value* vVals, int nVals)
+        Matrix(size_t r, size_t c, const mu::Array& vVals)
         {
-            assign(r, c, vVals, nVals);
+            assign(r, c, vVals);
         }
 
         /////////////////////////////////////////////////
@@ -203,14 +202,13 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals mu::Value*
-        /// \param nVals int
+        /// \param vVals const mu::Array&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void assign(size_t r, size_t c, mu::Value* vVals, int nVals)
+        void assign(size_t r, size_t c, const mu::Array& vVals)
         {
-            m_storage.assign(vVals, vVals+std::min(r*c, (size_t)nVals));
+            m_storage.assign(vVals.begin(), vVals.begin()+std::min(r*c, vVals.size()));
             m_rows = r;
             m_cols = c;
             m_storage.resize(m_rows*m_cols);
@@ -376,17 +374,17 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return mu::Value&
+        /// \return std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        mu::Value& operator()(size_t i, size_t j = 0u)
+        std::complex<double>& operator()(size_t i, size_t j = 0u)
         {
             if (i >= m_rows || j >= m_cols)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
                                   SyntaxError::invalid_position,
                                   "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
 
-            return get(i, j);
+            return get(i, j).getNum().val;
         }
 
         /////////////////////////////////////////////////
@@ -395,17 +393,17 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return const mu::Value&
+        /// \return const std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        const mu::Value& operator()(size_t i, size_t j = 0u) const
+        const std::complex<double>& operator()(size_t i, size_t j = 0u) const
         {
             if (i >= m_rows || j >= m_cols)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
                                   SyntaxError::invalid_position,
                                   "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
 
-            return get(i, j);
+            return get(i, j).getNum().val;
         }
 
         /////////////////////////////////////////////////
@@ -524,7 +522,7 @@ class Matrix
                                   SyntaxError::invalid_position,
                                   printDims() + " vs. " + mat.printDims());
 
-            Matrix ret(m_rows, mat.m_cols, 0.0);
+            Matrix ret(m_rows, mat.m_cols, mu::Value(0.0));
 
             #pragma omp parallel for
             for (size_t i = 0; i < ret.m_rows; i++)

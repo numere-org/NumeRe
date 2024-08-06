@@ -561,7 +561,6 @@ class Assertion
         void enable(const std::string& sExpr);
         void checkAssertion(mu::Array* v, int nNum);
         void checkAssertion(const Matrix& _mMatrix);
-        void checkAssertion(const StringResult& strRes);
         AssertionStats getStats() const;
 };
 

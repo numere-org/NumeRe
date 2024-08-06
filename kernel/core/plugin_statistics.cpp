@@ -111,7 +111,7 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
             if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
                 continue;
 
-            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).real();
+            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).getNum().val.real();
 
             if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_STD].back())
                 vStats[STATS_CONFINT].back()++;
@@ -264,7 +264,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
                 continue;
             }
 
-            sOut[i + nHeadlines][j] = toString(_data.getElement(_idx.row[i], _idx.col[j], sTable), _option.getPrecision()); // Kopieren der Matrix in die Ausgabe
+            sOut[i + nHeadlines][j] = _data.getElement(_idx.row[i], _idx.col[j], sTable).print(_option.getPrecision()); // Kopieren der Matrix in die Ausgabe
         }
 
         // Write the calculated stats to the columns

@@ -136,7 +136,7 @@ class Memory : public Sorter
 
         // READ ACCESS METHODS
 		mu::Value readMem(size_t _nLine, size_t _nCol) const;
-		mu::Value readMemInterpolated(double _dLine, double _dCol) const;
+		std::complex<double> readMemInterpolated(double _dLine, double _dCol) const;
 		mu::Array readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		mu::Array readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		Matrix readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vCol) const;

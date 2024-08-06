@@ -147,7 +147,7 @@ mu::Array parser_acsch(const mu::Array&);
 mu::Array parser_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
 mu::Array parser_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4
 
-mu::Array parser_perlin(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array, const mu::Array&); // OPT=6
+mu::Array parser_perlin(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=6
 
 // Distribution functions
 mu::Array parser_rd_laplace_rd(const mu::Array& a);

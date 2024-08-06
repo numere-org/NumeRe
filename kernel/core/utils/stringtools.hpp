@@ -513,6 +513,8 @@ std::vector<std::string> split(const std::string& sStr, char cSplit);
 std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 1024);
 
 bool isEqualStripped(StringView str1, StringView str2);
+std::string removeMaskedStrings(const std::string& sString);
+std::string removeQuotationMarks(const std::string& sString);
 
 void strChangeNumberFormat(std::string &sNum, int numFormat);
 

@@ -174,12 +174,12 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             {
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    if (!_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable))
-                        || !_histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable))
-                        || !_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable)))
+                    if (!_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable).getNum().val)
+                        || !_histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable).getNum().val)
+                        || !_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().val))
                         continue;
 
-                    if (ivl.isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable), Interval::INCLUDE_LOWER))
+                    if (ivl.isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER))
                         nCount++;
                 }
 
@@ -210,7 +210,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 // are part of the current bin interval
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    std::complex<double> val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable);
+                    std::complex<double> val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().val;
 
                     if (isXLog)
                     {
@@ -802,19 +802,19 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 /// (if one is a subset of the other) or an empty
 /// vector.
 ///
-/// \param lhs const ValueVector&
-/// \param rhs const ValueVector&
-/// \return ValueVector
+/// \param lhs const mu::Array&
+/// \param rhs const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-static ValueVector isSubSet(const ValueVector& lhs, const ValueVector& rhs)
+static mu::Array isSubSet(const mu::Array& lhs, const mu::Array& rhs)
 {
     // Are they equal?
     if (lhs == rhs)
         return lhs;
 
-    const ValueVector& longer = lhs.size() > rhs.size() ? lhs : rhs;
-    const ValueVector& shorter = lhs.size() > rhs.size() ? rhs : lhs;
+    const mu::Array& longer = lhs.size() > rhs.size() ? lhs : rhs;
+    const mu::Array& shorter = lhs.size() > rhs.size() ? rhs : lhs;
 
     // Ensure that one of the category definitions is a subset of the other one
     for (size_t i = 0; i < shorter.size(); i += 2)
@@ -822,7 +822,7 @@ static ValueVector isSubSet(const ValueVector& lhs, const ValueVector& rhs)
         auto pos = std::find(longer.begin(), longer.end(), shorter[i]);
 
         if (pos == longer.end() || *(pos+1) != shorter[i+1])
-            return ValueVector();
+            return mu::Array();
     }
 
     // return the superset
@@ -838,11 +838,11 @@ static ValueVector isSubSet(const ValueVector& lhs, const ValueVector& rhs)
 /// \param _data MemoryManager&
 /// \param _histParams HistogramParameters&
 /// \param _idx Indices&
-/// \param vCategories ValueVector&
+/// \param vCategories mu::Array&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _histParams, Indices& _idx, ValueVector& vCategories)
+static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _histParams, Indices& _idx, mu::Array& vCategories)
 {
     // For special column types, we use predefined bins instead of the calculated ones
     if (_data.getType(_idx.col, _histParams.sTable) == TableColumn::TYPE_CATEGORICAL)
@@ -865,7 +865,7 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
                 for (int i = 0; i < _histParams.nBin[XCOORD]; i++)
                 {
                     vCategories.push_back("Cat:" + toString(i+nCategoryMin));
-                    vCategories.push_back(toString(i+nCategoryMin));
+                    vCategories.push_back(mu::Value(i+nCategoryMin));
                 }
 
                 return true;
@@ -877,7 +877,10 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
         // Use logical values as bins and labels
         _histParams.binWidth[XCOORD] = 1.0;
         _histParams.nBin[XCOORD] = 2;
-        vCategories = std::vector<std::string>({"false", "0", "true", "1"});
+        vCategories = mu::Value("false");
+        vCategories.push_back(mu::Value(0));
+        vCategories.push_back(mu::Value("true"));
+        vCategories.push_back(mu::Value(1));
     }
 
     // If we found a set of categories, ensure that their IDs are part of the
@@ -888,7 +891,7 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
 
         while (i < vCategories.size())
         {
-            if (!_histParams.ranges[XCOORD].isInside(StrToInt(vCategories[i])))
+            if (!_histParams.ranges[XCOORD].isInside(vCategories[i].getNum().asInt()))
                 vCategories.erase(vCategories.begin() + i - 1, vCategories.begin() + i + 1);
             else
                 i += 2;
@@ -956,17 +959,17 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
         for (size_t j = 2 * _histParams.bGrid; j < _idx.col.size(); j++)
         {
             if (_histParams.bGrid
-                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable))
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable))
-                && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable)))
+                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
+                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val)
+                && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().val))
                 nMax++;
             else if (!_histParams.bGrid
-                     && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable)))
+                     && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().val))
                 nMax++;
         }
     }
 
-    ValueVector vCategories;
+    mu::Array vCategories;
 
     if (!_histParams.nBin[XCOORD] && _histParams.binWidth[XCOORD] == 0.0)
     {
@@ -1137,13 +1140,13 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable))
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable))
+            if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
+                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val)
                 && _data.isValidElement(_idx.row[i], _idx.col[2], _histParams.sTable))
             {
-                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real();
-                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real();
-                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).real();
+                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val.real();
+                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val.real();
+                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).getNum().val.real();
             }
             else
             {
@@ -1160,15 +1163,15 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real();
-            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real();
+            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val.real();
+            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val.real();
 
             for (size_t j = 0; j < _idx.col.size() - 2; j++)
             {
-                if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable))
-                    && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable))
+                if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
+                    && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val)
                     && _data.isValidElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable))
-                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable).real();
+                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable).getNum().val.real();
                 else
                     _hist2DData[2].a[i + j * _idx.row.size()] = NAN;
             }
@@ -1211,16 +1214,16 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (ivl.isInside(_data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable), Interval::INCLUDE_LOWER))
+            if (ivl.isInside(_data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER))
             {
                 if (_idx.col.size() == 3)
                 {
                     if (_data.isValidElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)
-                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable))
-                        && range.isInside(_data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)))
+                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val)
+                        && range.isInside(_data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).getNum().val))
                     {
                         if (_histParams.bSum || _histParams.bAvg)
-                            dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).real();
+                            dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val.real();
                         else
                             dSum++;
 
@@ -1234,10 +1237,10 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
                         if (_data.isValidElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)
                             && _data.isValidElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable)
                             && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[(!isHbar*i+isHbar*l)],
-                                                                                    _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable))
-                            && range.isInside(_data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)))
+                                                                                    _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().val)
+                            && range.isInside(_data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).getNum().val))
                         {
-                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).real();
+                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().val.real();
                             nCount++;
                         }
                     }
@@ -1290,15 +1293,15 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
 
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                if (xInterval.isInside(_data.getElement(_idx.row[i], _idx.col[XCOORD], _histParams.sTable), Interval::INCLUDE_LOWER)
-                    && yInterval.isInside(_data.getElement(_idx.row[i], _idx.col[YCOORD], _histParams.sTable), Interval::INCLUDE_LOWER))
+                if (xInterval.isInside(_data.getElement(_idx.row[i], _idx.col[XCOORD], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER)
+                    && yInterval.isInside(_data.getElement(_idx.row[i], _idx.col[YCOORD], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER))
                 {
                     if (_idx.col.size() == 3)
                     {
-                        if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable)))
+                        if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val))
                         {
                             if (_histParams.bSum || _histParams.bAvg)
-                                dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).real();
+                                dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val.real();
                             else
                                 dSum++;
 
@@ -1309,9 +1312,9 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
                     {
                         for (size_t l = 0; l < _idx.row.size(); l++)
                         {
-                            if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable)))
+                            if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().val))
                             {
-                                dSum += _data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).real();
+                                dSum += _data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().val.real();
                                 nCount++;
                             }
                         }
@@ -1789,8 +1792,8 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         for (size_t j = 2; j < _idx.col.size(); j++)
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable)
-                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable))
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable)))
+                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
+                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val))
                 nMax++;
         }
     }
@@ -2019,7 +2022,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
     if (!_data.isValueLike(_idx.col, _histParams.sTable))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _histParams.sTable+"(", _histParams.sTable);
 
-    std::vector<std::complex<double>> vResults;
+    mu::Array vResults;
 
     // Get the number of selected bins
     if (cmdParser.hasParam("bins"))
@@ -2029,10 +2032,10 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     if (vResults.size())
     {
-        _histParams.nBin[XCOORD] = intCast(vResults.front());
+        _histParams.nBin[XCOORD] = vResults.getAsScalarInt();
 
         if (vResults.size() > 1)
-            _histParams.nBin[YCOORD] = intCast(vResults[1]);
+            _histParams.nBin[YCOORD] = vResults[1].getNum().asInt();
         else
             _histParams.nBin[YCOORD] = _histParams.nBin[XCOORD];
 
@@ -2047,10 +2050,10 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     if (vResults.size())
     {
-        _histParams.binWidth[XCOORD] = vResults.front().real();
+        _histParams.binWidth[XCOORD] = vResults.front().getNum().val.real();
 
         if (vResults.size() > 1)
-            _histParams.binWidth[YCOORD] = vResults[1].real();
+            _histParams.binWidth[YCOORD] = vResults[1].getNum().val.real();
         else
             _histParams.binWidth[YCOORD] = _histParams.binWidth[XCOORD];
 

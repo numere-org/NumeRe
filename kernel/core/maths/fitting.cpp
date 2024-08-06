@@ -75,21 +75,21 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // Declare the FittingData object first
     FittingData fitData;
 
-    vector<double> vInitialVals;
-    vector<double> vInterVal;
+    std::vector<double> vInitialVals;
+    std::vector<double> vInterVal;
     double dChisq = 0.0;
     Indices _idx;
 
-    ofstream oFitLog;
-    string sFitLog = "<savepath>/numerefit.log";
+    std::ofstream oFitLog;
+    std::string sFitLog = "<savepath>/numerefit.log";
     sFitLog = _data.ValidFileName(sFitLog, ".log");
 
     bool bMaskDialog = false;
     bool bTeXExport = false;
-    string sTeXExportFile = "<savepath>/fit.tex";
-    string sDimsForFitLog;
-    string sFunctionDefString = "";
-    string sFuncDisplay = "";
+    std::string sTeXExportFile = "<savepath>/fit.tex";
+    std::string sDimsForFitLog;
+    std::string sFunctionDefString = "";
+    std::string sFuncDisplay = "";
 
     // Prepare the default values in the FittingData
     // object for the further calculation
@@ -225,7 +225,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
-        vInitialVals.push_back((*(iter->second)).real());
+        vInitialVals.push_back(iter->second->front().getNum().val.real());
     }
 
     // If the user desires a chi^2 map, then it is calculated in the
@@ -405,7 +405,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 // parameters of the fitting routine
 static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, Indices& _idx, string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
@@ -531,7 +531,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "tol", '=') + 3));
         eraseToken(sCmd, "tol", true);
         eraseToken(fitData.sFitFunction, "tol", true);
-        fitData.dPrecision = fabs(_parser.Eval());
+        fitData.dPrecision = fabs(_parser.Eval().front().getNum().val);
 
         if (isnan(fitData.dPrecision) || isinf(fitData.dPrecision) || fitData.dPrecision == 0)
             fitData.dPrecision = 1e-4;
@@ -543,7 +543,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "iter", '=') + 4));
         eraseToken(sCmd, "iter", true);
         eraseToken(fitData.sFitFunction, "iter", true);
-        fitData.nMaxIterations = abs(rint(_parser.Eval()).real());
+        fitData.nMaxIterations = std::abs(_parser.Eval().getAsScalarInt());
 
         if (!fitData.nMaxIterations)
             fitData.nMaxIterations = 500;
@@ -633,8 +633,8 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
             getDataElements(fitData.sParams, _parser, _data);
         }
 
-        if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
-            convertVectorToExpression(fitData.sParams);
+        //if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
+        //    convertVectorToExpression(fitData.sParams);
     }
 
     StripSpaces(sCmd);
@@ -870,11 +870,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (nColumns == 1)
             {
-                mu::value_type val = getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster);
-                if (isValidValue(val.real()) && fitData.ivl[0].isInside(val))
+                mu::Value val = getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster);
+
+                if (isValidValue(val.getNum().val.real()) && fitData.ivl[0].isInside(val.getNum().val))
                 {
                     fitData.vx.push_back(_idx.row[i] + 1);
-                    fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster).real());
+                    fitData.vy.push_back(val.getNum().val.real());
                 }
             }
             else
@@ -882,12 +883,15 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 if (_data.isValidElement(_idx.row[i], _idx.col.front(), sDataTable)
                     && _data.isValidElement(_idx.row[i], _idx.col.last(), sDataTable))
                 {
-                    if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable))
-                        || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col.last(), sDataTable)))
+                    mu::Value valx = _data.getElement(_idx.row[i], _idx.col.front(), sDataTable);
+                    mu::Value valy = _data.getElement(_idx.row[i], _idx.col.last(), sDataTable);
+
+                    if (!fitData.ivl[0].isInside(valx.getNum().val)
+                        || !fitData.ivl[1].isInside(valy.getNum().val))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real());
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col.last(), sDataTable).real());
+                    fitData.vx.push_back(valx.getNum().val.real());
+                    fitData.vy.push_back(valy.getNum().val.real());
                 }
             }
         }
@@ -911,31 +915,39 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
                     && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
-                    if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
-                        || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
+                    mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
+                    mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
+
+                    if (!fitData.ivl[0].isInside(valx.getNum().val)
+                        || !fitData.ivl[1].isInside(valy.getNum().val))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
+                    fitData.vx.push_back(valx.getNum().val.real());
+                    fitData.vy.push_back(valy.getNum().val.real());
 
                     if (nErrorCols == 1)
                     {
                         if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().val.real()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
                     else
                     {
+                        mu::Value valx_w = _data.getElement(_idx.row[i], _idx.col[2], sDataTable);
+                        mu::Value valy_w = _data.getElement(_idx.row[i], _idx.col[3], sDataTable);
+
                         if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
                             && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                            && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()
-                                && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
-                            fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()) * fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())));
-                        else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable).real())
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
-                        else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()));
+                            && valx_w.getNum().val.real()
+                            && valy_w.getNum().val.real())
+                            fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().val.real()) * fabs(valy_w.getNum().val.real())));
+                        else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
+                                 && valx_w.getNum().val.real())
+                            fitData.vy_w.push_back(fabs(valx_w.getNum().val.real()));
+                        else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
+                                 && valy_w.getNum().val.real())
+                            fitData.vy_w.push_back(fabs(valy_w.getNum().val.real()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -943,24 +955,33 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             }
             else
             {
-                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
+                    && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
-                    if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
-                        || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
+                    mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
+                    mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
+
+                    if (!fitData.ivl[0].isInside(valx.getNum().val)
+                        || !fitData.ivl[1].isInside(valy.getNum().val))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
+                    fitData.vx.push_back(valx.getNum().val.real());
+                    fitData.vy.push_back(valy.getNum().val.real());
+
+                    mu::Value valx_w = _data.getElement(_idx.row[i], _idx.col[2], sDataTable);
+                    mu::Value valy_w = _data.getElement(_idx.row[i], _idx.col[3], sDataTable);
 
                     if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
                         && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                        && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()
-                            && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
-                        fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()) * fabs(_data.getElement(i, _idx.col[3], sDataTable).real())));
-                    else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable).real())
-                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
-                    else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())
-                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()));
+                        && valx_w.getNum().val.real()
+                        && valy_w.getNum().val.real())
+                        fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().val.real()) * fabs(valy_w.getNum().val.real())));
+                    else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
+                             && valx_w.getNum().val.real())
+                        fitData.vy_w.push_back(fabs(valx_w.getNum().val.real()));
+                    else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
+                             && valy_w.getNum().val.real())
+                        fitData.vy_w.push_back(fabs(valy_w.getNum().val.real()));
                     else
                         fitData.vy_w.push_back(0.0);
                 }
@@ -971,17 +992,20 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
+            mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
+            mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
+
             if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable)
-                || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
+                || !fitData.ivl[1].isInside(valy.getNum().val))
                 continue;
             else
-                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
+                fitData.vy.push_back(valy.getNum().val.real());
 
             if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
-                || !fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable)))
+                || !fitData.ivl[0].isInside(valx.getNum().val))
                 continue;
             else
-                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
+                fitData.vx.push_back(valx.getNum().val.real());
 
             for (size_t k = 2; k < _idx.col.size(); k++)
             {
@@ -989,9 +1013,9 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     break;
 
                 if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
-                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable)))
+                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).getNum().val))
                     continue;
-                else if (!fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable)))
+                else if (!fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().val))
                 {
                     vTempZ.push_back(NAN);
 
@@ -1000,12 +1024,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 }
                 else
                 {
-                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).real());
+                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().val.real());
 
                     if (fitData.bUseErrors)
                     {
                         if (_data.isValidElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable).real()));
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k+_idx.row.size()], sDataTable).getNum().val.real()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -1029,15 +1053,18 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
                 && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
             {
-                if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
-                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
+                mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
+                mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
+
+                if (!fitData.ivl[0].isInside(valx.getNum().val)
+                    || !fitData.ivl[1].isInside(valy.getNum().val))
                     continue;
 
-                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
-                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
+                fitData.vx.push_back(valx.getNum().val.real());
+                fitData.vy.push_back(valy.getNum().val.real());
 
                 if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
+                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().val.real()));
                 else
                     fitData.vy_w.push_back(0.0);
             }
@@ -1160,7 +1187,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 
             for (size_t n = 0; n < vInitialVals.size(); n++)
             {
-                *(iter->second) = vInitialVals[n];
+                *(iter->second) = mu::Value(vInitialVals[n]);
                 ++iter;
             }
 
@@ -1243,7 +1270,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 
     for (size_t n = 0; n < vInitialVals.size(); n++)
     {
-        *(iter->second) = vInitialVals[n];
+        *(iter->second) = mu::Value(vInitialVals[n]);
         ++iter;
     }
 
@@ -1488,14 +1515,16 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
         // parameter name, initial and final value and errors
         sParameterTable += pItem->first + "    "
             + strfill(toString(vInitialVals[n], _option), (pItem->first.length() > (windowSize - 32) / 2 + windowSize % 2 ? 0u : (windowSize - 32) / 2 + windowSize % 2 - pItem->first.length()))
-            + strfill(toString(*(pItem->second), _option.getPrecision()), (windowSize - 50) / 2)
+            + strfill(pItem->second->print(_option.getPrecision()), (windowSize - 50) / 2)
             + strfill(sPMSign + " " + toString(sqrt(abs(fitData.vz_w[n][n])), 5), 16);
 
         // Append the percentage of error compared to the final
         // value if the final value does exist
         if (fitData.vz_w[n][n])
             // Changed the position of the sqrt as it contained the parameter itself
-            sParameterTable += " " + strfill("(" + toString(abs(sqrt(abs(fitData.vz_w[n][n])) / (*(pItem->second)) * 100.0), 4) + "%)", 16) + "\n";
+            sParameterTable += " "
+                + strfill("(" + toString(std::abs(std::sqrt(std::abs(fitData.vz_w[n][n]))
+                                                  / pItem->second->front().getNum().val * 100.0), 4) + "%)", 16) + "\n";
         else
             sParameterTable += "\n";
 

@@ -53,7 +53,7 @@ extern const std::string sVersion;
 
 Language _lang;
 mglGraph _fontData;
-extern value_type vAns;
+extern mu::Variable vAns;
 extern DefaultVariables _defVars;
 __time64_t tTimeZero = _time64(0);
 
@@ -79,7 +79,7 @@ ProcedureLibrary NumeReKernel::ProcLibrary;
 /////////////////////////////////////////////////
 /// \brief Constructor of the kernel.
 /////////////////////////////////////////////////
-NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _stringParser(_parser, _memoryManager, _option), _functions(false)
+NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _functions(false)
 {
     sCommandLine.clear();
     sAnswer.clear();
@@ -310,11 +310,18 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     }
 
     // Declare the default variables
-    _parser.DefineVar("ans", &vAns);        // Deklariere die spezielle Variable "ans", die stets, das letzte Ergebnis speichert und die vier Standardvariablen
+    _parser.DefineVar("ans", &vAns);
     _parser.DefineVar(_defVars.sName[0], &_defVars.vValue[0][0]);
     _parser.DefineVar(_defVars.sName[1], &_defVars.vValue[1][0]);
     _parser.DefineVar(_defVars.sName[2], &_defVars.vValue[2][0]);
     _parser.DefineVar(_defVars.sName[3], &_defVars.vValue[3][0]);
+
+    // Initialize the default variables to a reasonable
+    // default value
+    _defVars.vValue[0][0] = mu::Value(0.0);
+    _defVars.vValue[1][0] = mu::Value(0.0);
+    _defVars.vValue[2][0] = mu::Value(0.0);
+    _defVars.vValue[3][0] = mu::Value(0.0);
 
     // Declare the table dimension variables
     _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
@@ -389,10 +396,6 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("!!", parser_doubleFaculty);
     _parser.DefinePostfixOprt("i", parser_imaginaryUnit);
 
-    // --> Logisches NICHT <--
-    _parser.DefineInfixOprt("!", parser_Not);
-    _parser.DefineInfixOprt("+", parser_Identity);
-
     // --> Operatoren <--
     _parser.DefineOprt("%", parser_Mod, prMUL_DIV, oaLEFT);
     _parser.DefineOprt("|||", parser_XOR, prLOGIC, oaLEFT);
@@ -466,11 +469,11 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", NAN);
-    _parser.DefineConst("I", mu::value_type(0.0, 1.0));
-    _parser.DefineConst(errorTypeToString(TYPE_CUSTOMERROR), mu::value_type(TYPE_CUSTOMERROR, 0));
-    _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::value_type(TYPE_SYNTAXERROR, 0));
-    _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::value_type(TYPE_ASSERTIONERROR, 0));
-    _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::value_type(TYPE_MATHERROR, 0));
+    _parser.DefineConst("I", std::complex<double>(0.0, 1.0));
+    _parser.DefineConst(errorTypeToString(TYPE_CUSTOMERROR), mu::Value(TYPE_CUSTOMERROR));
+    _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::Value(TYPE_SYNTAXERROR));
+    _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::Value(TYPE_ASSERTIONERROR));
+    _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::Value(TYPE_MATHERROR));
     _parser.DefineConst("ui8_max", UINT8_MAX);
     _parser.DefineConst("i8_max", INT8_MAX);
     _parser.DefineConst("i8_min", INT8_MIN);
@@ -489,12 +492,12 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("f32_max", __FLT_MAX__);
     _parser.DefineConst("f32_min", __FLT_MIN__);
     _parser.DefineConst("f32_eps", __FLT_EPSILON__);
-    _parser.DefineConst("cf64_max", mu::value_type(__DBL_MAX__, __DBL_MAX__));
-    _parser.DefineConst("cf64_min", mu::value_type(__DBL_MIN__, __DBL_MIN__));
-    _parser.DefineConst("cf64_eps", mu::value_type(__DBL_EPSILON__, __DBL_EPSILON__));
-    _parser.DefineConst("cf32_max", mu::value_type(__FLT_MAX__, __FLT_MAX__));
-    _parser.DefineConst("cf32_min", mu::value_type(__FLT_MIN__, __FLT_MIN__));
-    _parser.DefineConst("cf32_eps", mu::value_type(__FLT_EPSILON__, __FLT_EPSILON__));
+    _parser.DefineConst("cf64_max", std::complex<double>(__DBL_MAX__, __DBL_MAX__));
+    _parser.DefineConst("cf64_min", std::complex<double>(__DBL_MIN__, __DBL_MIN__));
+    _parser.DefineConst("cf64_eps", std::complex<double>(__DBL_EPSILON__, __DBL_EPSILON__));
+    _parser.DefineConst("cf32_max", std::complex<double>(__FLT_MAX__, __FLT_MAX__));
+    _parser.DefineConst("cf32_min", std::complex<double>(__FLT_MIN__, __FLT_MIN__));
+    _parser.DefineConst("cf32_eps", std::complex<double>(__FLT_EPSILON__, __FLT_EPSILON__));
 }
 
 
@@ -742,9 +745,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
     std::string sCurrentCommand = "";// The current command
     std::queue<std::string> emptyQueue;
     commandQueue.swap(emptyQueue);
-    mu::value_type* v = 0;          // Ergebnisarray
     int& nDebuggerCode = _procedure.getDebuggerCode();
-    int nNum = 0;               // Zahl der Ergebnisse in value_type* v
     nLastStatusVal = -1;
     nLastLineLength = 0;
     refreshTree = false;
@@ -754,12 +755,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
     // add the passed command to the internal command line (append it, if it's non-empty)
     sCommandLine += sCommand;
+
     if (!sCommandLine.length())
         return NUMERE_PENDING;
 
     // clear whitespaces
     while (sCommandLine.front() == ' ')
         sCommandLine.erase(0, 1);
+
     if (!sCommandLine.length())
         return NUMERE_PENDING;
 
@@ -811,7 +814,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
     // member variable (we don't want to repeat the tasks entered last time)
     sLine = sCommandLine;
     sCommandLine.clear();
-    _parser.ClearVectorVars();
+    _parser.ClearInternalVars();
     // Remove all temporary clusters defined for
     // inlined procedures
     _memoryManager.removeTemporaryClusters();
@@ -1047,7 +1050,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
             // for a cluster
-            if (!_stringParser.isStringExpression(sLine) && _memoryManager.containsTablesOrClusters(sLine))
+            if (_memoryManager.containsTablesOrClusters(sLine))
             {
                 sCache = getDataElements(sLine, _parser, _memoryManager);
 
@@ -1061,19 +1064,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             while (sLine.find(":=") != std::string::npos)
             {
                 sLine.erase(sLine.find(":="), 1);
-            }
-
-            // evaluate strings
-            nReturnVal = NUMERE_ERROR;
-
-            if (!evaluateStrings(sLine, sCache, bWriteToCache, nReturnVal))
-            {
-                // returns false either when the loop shall return
-                // or it shall continue
-                if (nReturnVal)
-                    return nReturnVal;
-
-                continue;
             }
 
             // --> Wenn die Ergebnisse in den Cache geschrieben werden sollen, bestimme hier die entsprechenden Koordinaten <--
@@ -1103,8 +1093,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             if (!_parser.IsAlreadyParsed(sLine))
                 _parser.SetExpr(sLine);
 
-            // --> Jetzt weiss der Parser, wie viele Ergebnisse er berechnen muss <--
-            v = _parser.Eval(nNum);
+            int nNum;
+            mu::Array* v = _parser.Eval(nNum);
             _assertionHandler.checkAssertion(v, nNum);
 
             // Create the answer of the calculation and print it
@@ -1117,10 +1107,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 if (bWriteToCluster)
                 {
                     NumeRe::Cluster& cluster = _memoryManager.getCluster(sCache);
-                    cluster.assignResults(_idx, nNum, v);
+                    cluster.assignResults(_idx, v[0]);
                 }
                 else
-                    _memoryManager.writeToTable(_idx, sCache, v, nNum);
+                    _memoryManager.writeToTable(_idx, sCache, v[0]);
             }
         }
         // This section starts the error handling
@@ -1260,8 +1250,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             resetAfterError();
             return NUMERE_ERROR;
         }
-
-        _stringParser.removeTempStringVectorVars();
 
         if (_script.wasLastCommand())
         {
@@ -1805,21 +1793,21 @@ void NumeReKernel::handleToCmd(std::string& sLine, std::string& sCache, std::str
         while (sLine.find("to_cmd(", nPos) != std::string::npos)
         {
             nPos = sLine.find("to_cmd(", nPos) + 6;
+
             if (isInQuotes(sLine, nPos))
                 continue;
+
             size_t nParPos = getMatchingParenthesis(StringView(sLine, nPos));
+
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
             std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
 
             // Evaluate the string part
-            if (_stringParser.isStringExpression(sCmdString))
-            {
-                sCmdString += " -nq";
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
-                sCache = "";
-            }
+            _parser.SetExpr(sCmdString);
+            sCmdString = _parser.Eval().printVals();
             sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
             nPos -= 5;
         }
@@ -1951,15 +1939,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _out, _pData, _script);
 
             // Handle the return values
-            if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != std::string::npos)
-            {
-                std::string sReturn = "{";
-                for (size_t v = 0; v < _rTemp.vStringVal.size(); v++)
-                    sReturn += _rTemp.vStringVal[v] + ",";
-                sReturn.back() = '}';
-                sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
-            }
-            else if (_rTemp.sReturnedTable.length())
+            if (_rTemp.sReturnedTable.length())
             {
                 std::string sTargetTable = sLine.substr(0, sLine.find("<<RETURNVAL>>"));
 
@@ -1988,7 +1968,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
                     else
                         _memoryManager.copyTable(_rTemp.sReturnedTable, sTargetTable);
 
-                    sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_memoryManager.getLines(sTargetTable),
+                    sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_memoryManager.getLines(sTargetTable),
                                                                                      _memoryManager.getCols(sTargetTable)}))
                             + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                 }
@@ -2000,20 +1980,23 @@ bool NumeReKernel::executePlugins(std::string& sLine)
                         _memoryManager.deleteTable(_rTemp.sReturnedTable);
                 }
             }
-            else if (_rTemp.isNumeric() && sLine.find("<<RETURNVAL>>") != std::string::npos)
+            else if (sLine.find("<<RETURNVAL>>") != std::string::npos)
             {
-                sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
-                _parser.SetVectorVar("_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]", _rTemp.vNumVal);
+                std::string sVarName = "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]";
+                sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
+#warning FIXME (numere#1#08/05/24): Figure out, how to correctly handle multiple return values (instead of using .front())
+                _parser.SetInternalVar(sVarName, _rTemp.valArray.front());
             }
+
             _option.enableSystemPrints(true);
+
             if (!sLine.length())
                 return false;
         }
         else
-        {
             return false;
-        }
     }
+
     return true;
 }
 
@@ -2134,72 +2117,19 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 
 
 /////////////////////////////////////////////////
-/// \brief This private member function redirects
-/// the processing of strings to the string parser.
-///
-/// \param sLine std::string&
-/// \param sCache std::string&
-/// \param bWriteToCache bool&
-/// \param nReturnVal KernelStatus&
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal)
-{
-    if (_stringParser.isStringExpression(sLine)
-        || (_stringParser.isStringExpression(sCache) && !_memoryManager.isTable(sCache))) // hack for performance Re:#178
-    {
-        auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true, true);
-
-        if (retVal == NumeRe::StringParser::STRING_SUCCESS)
-        {
-            if (!commandQueue.size() && !(_script.isValid() && _script.isOpen()))
-            {
-                if (_script.wasLastCommand())
-                {
-                    print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                    _memoryManager.setPluginCommands(_procedure.getPluginNames());
-                    checkInternalStates();
-                }
-
-                sCommandLine.clear();
-                bCancelSignal = false;
-                nReturnVal = NUMERE_DONE_KEYWORD;
-                return false;
-            }
-            else
-                return false;
-        }
-
-#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
-        //if (sCache.length() && _memoryManager.containsTablesOrClusters(sCache) && !bWriteToCache)
-        //    bWriteToCache = true;
-
-        if (sCache.length())
-        {
-            bWriteToCache = false;
-            sCache.clear();
-        }
-    }
-
-    return true;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This private member function will
 /// create the answer line for the parser which is
 /// then passed to NumeReKernel::printResult().
 ///
 /// \param nNum int
-/// \param v value_type*
+/// \param v mu::Array*
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::createCalculationAnswer(int nNum, value_type* v)
+void NumeReKernel::createCalculationAnswer(int nNum, mu::Array* v)
 {
-    vAns = v[0];
-    getAns().setDoubleArray(nNum, v);
+    vAns.overwrite(v[0]);
+    getAns().setValueArray(v[0]);
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
@@ -2234,7 +2164,6 @@ void NumeReKernel::resetAfterError()
     // Reset the debugger, if not already done
     _debugger.finalize();
     _procedure.reset();
-    _stringParser.removeTempStringVectorVars();
 }
 
 
@@ -2586,7 +2515,6 @@ NumeReVariables NumeReKernel::getVariableList()
     constexpr size_t MAXSTRINGLENGTH = 1024;
 
     mu::varmap_type varmap = _parser.GetVar();
-    const std::map<std::string, std::string>& stringmap = _stringParser.getStringVars();
     std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
     const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
@@ -2599,13 +2527,13 @@ NumeReVariables NumeReKernel::getVariableList()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
+            || iter->second->getCommonType() == mu::TYPE_STRING
             || isDimensionVar(iter->first))
             continue;
 
-        if ((*iter->second).imag() && !(isnan((*iter->second).real()) && isnan((*iter->second).imag())))
-            sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, DEFAULT_NUM_PRECISION*2) + "\t" + iter->first + "\t" + formatByteSize(16);
-        else
-            sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION) + "\t" + iter->first + "\t" + formatByteSize(8);
+        sCurrentLine = iter->first + "\t1 x 1\t" + iter->second->getCommonTypeAsString() + "\t"
+            + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
         vars.vVariables.push_back(sCurrentLine);
     }
@@ -2613,15 +2541,19 @@ NumeReVariables NumeReKernel::getVariableList()
     vars.nNumerics = vars.vVariables.size();
 
     // Gather all (global) string variables
-    for (auto iter = stringmap.begin(); iter != stringmap.end(); ++iter)
+    // Gather all (global) numerical variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).starts_with("_~"))
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() != mu::TYPE_STRING
+            || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first
-            + "\t1 x 1\tstring\t"
-            + replaceControlCharacters(ellipsize(toExternalString(iter->second), MAXSTRINGLENGTH)) + "\t"
-            + iter->first + "\t" + formatByteSize(iter->second.length());
+        sCurrentLine = iter->first + "\t1 x 1\t" + iter->second->getCommonTypeAsString() + "\t"
+            + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->first + "\t" + formatByteSize(iter->second->getBytes());
+
         vars.vVariables.push_back(sCurrentLine);
     }
 
@@ -2887,48 +2819,56 @@ void NumeReKernel::printPreFmt(const std::string& __sLine, bool printingEnabled)
 /// numerical-only results.
 ///
 /// \param nNum int
-/// \param v value_type*
+/// \param v mu::Array*
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReKernel::formatResultOutput(int nNum, value_type* v)
+std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
 {
     Settings& _option = getInstance()->getSettings();
+    std::string sAns;
 
-    if (nNum > 1)
+    for (int n = 0; n < nNum; n++)
     {
-        // More than one result
-        //
-        // How many fit into one line?
-        int nLineBreak = numberOfNumbersPerLine();
-        std::string sAns = "ans = {";
-
-        // compose the result
-        for (int i = 0; i < nNum; ++i)
+        if (v[n].size() > 1)
         {
-            sAns += strfill(toString(v[i], _option.getPrecision()), _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
+            // More than one result
+            //
+            // How many fit into one line?
+            size_t nLineBreak = numberOfNumbersPerLine();
 
-            if (i < nNum - 1)
-                sAns += ", ";
+            if (n)
+                sAns += "\n|-> ans = {";
+            else
+                sAns = "ans = {";
 
-            if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
-                sAns += "...\n|          ";
+            // compose the result
+            for (size_t i = 0; i < v[n].size(); ++i)
+            {
+                sAns += strfill(v[n][i].print(_option.getPrecision(), _option.getPrecision()+TERMINAL_FORMAT_FIELD_LENOFFSET-1, true),
+                                _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
+
+                if (i < v[n].size() - 1)
+                    sAns += ", ";
+
+                if (v[n].size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < v[n].size() - 1)
+                    sAns += "...\n|          ";
+            }
+
+            sAns += "}";
         }
-
-        sAns += "}";
-
-        // return the composed result
-        return sAns;
-    }
-    else
-    {
-        // Only one result
-        // return the answer
-        return "ans = " + toString(v[0], _option.getPrecision());
+        else
+        {
+            // Only one result
+            if (n)
+                sAns += "\n|-> ans = " + v[n].print(_option.getPrecision(), 0);
+            else
+                sAns = "ans = " + v[n].print(_option.getPrecision(), 0);
+        }
     }
 
     // fallback
-    return "";
+    return sAns;
 }
 
 
@@ -3641,8 +3581,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     if (!getInstance())
         return DEBUGGER_CONTINUE;
 
-    std::map<std::string, std::pair<std::string, mu::value_type*>> mLocalVars;
-    std::map<std::string, std::pair<std::string, std::string>> mLocalStrings;
+    std::map<std::string, std::pair<std::string, mu::Variable*>> mLocalVars;
     std::map<std::string, std::string> mLocalTables;
     std::map<std::string, std::string> mLocalClusters;
     std::map<std::string, std::string> mArguments;
@@ -3660,15 +3599,6 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
             && iter.first != "ans"
             && !isDimensionVar(iter.first))
             mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
-    }
-
-    // Get the string variable map
-    const std::map<std::string, std::string>& sStringMap = getInstance()->getStringParser().getStringVars();
-
-    for (const auto& iter : sStringMap)
-    {
-        if (!iter.first.starts_with("_~"))
-            mLocalStrings[iter.first] = std::make_pair(iter.first, iter.second);
     }
 
     // Get the table variable map
@@ -3691,8 +3621,9 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
 
     // Pass the created information to the debugger
-    _debugger.gatherInformations(mLocalVars, mLocalStrings, mLocalTables, mLocalClusters, mArguments,
-                                 sCurrentCommand, getInstance()->getScript().getScriptFileName(), getInstance()->getScript().getCurrentLine()-1);
+    _debugger.gatherInformations(mLocalVars, mLocalTables, mLocalClusters, mArguments,
+                                 sCurrentCommand, getInstance()->getScript().getScriptFileName(),
+                                 getInstance()->getScript().getCurrentLine()-1);
 
     // Show the breakpoint and wait for the
     // user interaction

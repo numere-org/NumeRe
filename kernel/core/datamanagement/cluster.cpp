@@ -550,7 +550,7 @@ namespace NumeRe
             return vClusterArray[i]->getDouble();
 
         if (getType(i) == ClusterItem::ITEMTYPE_STRING)
-            return vClusterArray[i]->getString();
+            return vClusterArray[i]->getInternalString();
 
         return mu::Value();
     }
@@ -737,6 +737,8 @@ namespace NumeRe
                     vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().val);
                 else if (a[i].isString())
                     vClusterArray[i] = new ClusterStringItem(a[i].getStr());
+                else
+                    vClusterArray[i] = new ClusterDoubleItem(NAN);
             }
         }
         else
@@ -747,6 +749,8 @@ namespace NumeRe
                     vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().val);
                 else if (a[i].isString())
                     vClusterArray[i] = new ClusterStringItem(a[i].getStr());
+                else
+                    vClusterArray[i] = new ClusterDoubleItem(NAN);
             }
         }
     }
@@ -2423,9 +2427,9 @@ namespace NumeRe
     bool ClusterManager::updateClusterSizeVariables(StringView sCluster)
     {
         if (isCluster(sCluster))
-            dClusterElementsCount = getCluster(sCluster.subview(0, sCluster.find('{'))).size();
+            dClusterElementsCount = mu::Value(getCluster(sCluster.subview(0, sCluster.find('{'))).size());
         else
-            dClusterElementsCount = 0.0;
+            dClusterElementsCount = mu::Value(0.0);
 
         return true;
     }

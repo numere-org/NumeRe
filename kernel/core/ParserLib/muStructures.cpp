@@ -238,7 +238,7 @@ namespace mu
 
     Value& Value::operator=(const Value& other)
     {
-        if (isValid() && m_type != other.m_type)
+        if (m_data && m_type != other.m_type)
             clear();
 
         m_type = other.m_type;
@@ -295,7 +295,7 @@ namespace mu
     {
         return m_type != TYPE_VOID
             && m_data
-            && ((isString() && getStr().length()) || (isNumerical() && !isnan(getNum().val)));
+            && ((isString() && getStr().length()) || (isNumerical() && getNum().val == getNum().val));
     }
 
     bool Value::isNumerical() const
@@ -344,6 +344,14 @@ namespace mu
             throw std::runtime_error("Value does not contain a numerical type.");
 
         return *(Numerical*)m_data;
+    }
+
+    std::complex<double> Value::as_cmplx() const
+    {
+        if (!isNumerical())
+            return NAN;
+
+        return static_cast<Numerical*>(m_data)->val;
     }
 
     Value Value::operator+(const Value& other) const
@@ -525,7 +533,8 @@ namespace mu
 
     Value Value::operator!=(const Value& other) const
     {
-        return !operator==(other);
+        return m_type != other.m_type
+            || ((isString() && getStr() != other.getStr()) || (isNumerical() && getNum().val != other.getNum().val));
     }
 
     Value Value::operator<(const Value& other) const
@@ -541,12 +550,13 @@ namespace mu
 
     Value Value::operator>(const Value& other) const
     {
-        return !operator<=(other);
+       return m_type == other.m_type
+            && ((isString() && getStr() > other.getStr()) || (isNumerical() && getNum().val.real() > other.getNum().val.real()));
     }
 
     Value Value::operator>=(const Value& other) const
     {
-        return !operator<(other);
+        return operator>(other) || operator==(other);
     }
 
     Value Value::operator&&(const Value& other) const
@@ -559,15 +569,20 @@ namespace mu
         return bool(*this) || bool(other);
     }
 
-    std::string Value::print(size_t chrs) const
+    std::string Value::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isNumerical())
-            return ::toString(getNum().val, chrs > 0 ? chrs : 7);
+            return ::toString(getNum().val, digits > 0 ? digits : 7);
 
         if (isString())
         {
             if (chrs > 0)
+            {
+                if (trunc)
+                    return truncString(toExternalString(getStr()), chrs);
+
                 return ellipsize(toExternalString(getStr()), chrs);
+            }
 
             return toExternalString(getStr());
         }
@@ -575,10 +590,10 @@ namespace mu
         return "void";
     }
 
-    std::string Value::printVal(size_t chrs) const
+    std::string Value::printVal(size_t digits, size_t chrs) const
     {
         if (isNumerical())
-            return ::toString(getNum().val, chrs > 0 ? chrs : 7);
+            return ::toString(getNum().val, digits > 0 ? digits : 7);
 
         if (isString())
         {
@@ -638,6 +653,9 @@ namespace mu
     { }
 
     Array::Array(const Array& other) : std::vector<Value>(other), m_commonType(other.m_commonType)
+    { }
+
+    Array::Array(size_t n, const Value& fillVal) : std::vector<Value>(n, fillVal), m_commonType(fillVal.getType())
     { }
 
     Array::Array(const Value& singleton) : std::vector<Value>({singleton}), m_commonType(singleton.getType())
@@ -1020,7 +1038,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            ret.push_back(operator[](i).getNum().val);
+            ret.push_back(operator[](i).as_cmplx());
         }
 
         return ret;
@@ -1038,7 +1056,7 @@ namespace mu
         return ret;
     }
 
-    std::string Array::print(size_t chrs) const
+    std::string Array::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isDefault())
             return "DEFVAL";
@@ -1050,7 +1068,7 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).print(chrs);
+            ret += operator[](i).print(digits, chrs, trunc);
         }
 
         if (size() > 1)
@@ -1059,7 +1077,7 @@ namespace mu
         return ret;
     }
 
-    std::string Array::printVals(size_t chrs) const
+    std::string Array::printVals(size_t digits, size_t chrs) const
     {
         if (isDefault())
             return "void";
@@ -1071,7 +1089,7 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).printVal(chrs);
+            ret += operator[](i).printVal(digits, chrs);
         }
 
         return ret;

@@ -21,7 +21,7 @@
 #include "../../kernel.hpp"
 
 
-mu::value_type vAns;
+mu::Variable vAns;
 extern mglGraph _fontData;
 
 using namespace std;
@@ -507,18 +507,19 @@ string promptForUserInput(const string& __sCommand)
 /// \brief This function returns the pointer to
 /// the passed variable.
 ///
-/// \param sVarName const string&
-/// \param _parser Parser&
-/// \return double*
+/// \param sVarName const std::string&
+/// \param _parser mu::Parser&
+/// \return mu::Variable*
 ///
 /////////////////////////////////////////////////
-mu::value_type* getPointerToVariable(const string& sVarName, Parser& _parser)
+mu::Variable* getPointerToVariable(const std::string& sVarName, mu::Parser& _parser)
 {
     // Get the map of declared variables
 	mu::varmap_type Vars = _parser.GetVar();
 
 	// Try to find the selected variable in the map
 	auto iter = Vars.find(sVarName);
+
 	if (iter != Vars.end())
         return iter->second;
 
@@ -649,19 +650,19 @@ bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 /// legacy interval. It's a helper for
 /// readAndParseIntervals().
 ///
-/// \param sExpr string&
-/// \param sLegacyIntervalIdentifier const string&
-/// \param _parser Parser&6
-/// \param vInterval vector<double>&
+/// \param sExpr std::string&
+/// \param sLegacyIntervalIdentifier const std::string&
+/// \param _parser mu::Parser&
+/// \param vInterval std::vector<double>&
 /// \param nMinSize size_t
 /// \param bEraseInterval bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyIntervalIdentifier, Parser& _parser, vector<double>& vInterval, size_t nMinSize, bool bEraseInterval)
+static void readAndParseLegacyIntervals(std::string& sExpr, const std::string& sLegacyIntervalIdentifier, mu::Parser& _parser, std::vector<double>& vInterval, size_t nMinSize, bool bEraseInterval)
 {
-    string sInterval = getArgAtPos(sExpr, findParameter(sExpr, sLegacyIntervalIdentifier, '=') + 1);
-    EndlessVector<string> indices;
+    std::string sInterval = getArgAtPos(sExpr, findParameter(sExpr, sLegacyIntervalIdentifier, '=') + 1);
+    EndlessVector<std::string> indices;
 
     // Erase the interval definition, if needed
     if (bEraseInterval)
@@ -672,7 +673,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
     }
 
     // If the intervall contains a colon, split it there
-    if (sInterval.find(':') != string::npos)
+    if (sInterval.find(':') != std::string::npos)
         indices = getAllIndices(sInterval);
     else
         indices.push_back(sInterval);
@@ -685,7 +686,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
         if (isNotEmptyExpression(indices[i]))
         {
             _parser.SetExpr(indices[i]);
-            vInterval.push_back(_parser.Eval().real());
+            vInterval.push_back(_parser.Eval().front().getNum().val.real());
         }
         else
             vInterval.push_back(NAN);
@@ -698,17 +699,17 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
 /// syntax in commands and return their values in
 /// a single vector.
 ///
-/// \param sExpr string&
-/// \param _parser Parser&
+/// \param sExpr std::string&
+/// \param _parser mu::Parser&
 /// \param _data Datafile&
 /// \param _functions Define&
 /// \param bEraseInterval bool
-/// \return vector<double>
+/// \return std::vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, bool bEraseInterval)
+std::vector<double> readAndParseIntervals(std::string& sExpr, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, bool bEraseInterval)
 {
-	vector<double> vInterval;
+	std::vector<double> vInterval;
 
 	// Get user defined functions
 	if (!_functions.call(sExpr))
@@ -731,9 +732,9 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
         readAndParseLegacyIntervals(sExpr, "z", _parser, vInterval, 4, bEraseInterval);
 
 	// Read the interval syntax
-	if (sExpr.find('[') != string::npos
-			&& sExpr.find(']', sExpr.find('[')) != string::npos
-			&& sExpr.find(':', sExpr.find('[')) != string::npos)
+	if (sExpr.find('[') != std::string::npos
+			&& sExpr.find(']', sExpr.find('[')) != std::string::npos
+			&& sExpr.find(':', sExpr.find('[')) != std::string::npos)
 	{
 		size_t nPos = 0;
 		size_t nMatchingParens = 0;
@@ -743,18 +744,18 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
 		{
 			nPos = sExpr.find('[', nPos);
 
-			if (nPos == string::npos || (nMatchingParens = getMatchingParenthesis(StringView(sExpr, nPos))) == string::npos)
+			if (nPos == std::string::npos || (nMatchingParens = getMatchingParenthesis(StringView(sExpr, nPos))) == std::string::npos)
 				break;
 
             nMatchingParens += nPos;
 			nPos++;
 		}
-		while (isInQuotes(sExpr, nPos) || sExpr.substr(nPos, nMatchingParens - nPos).find(':') == string::npos);
+		while (isInQuotes(sExpr, nPos) || sExpr.substr(nPos, nMatchingParens - nPos).find(':') == std::string::npos);
 
 		// If an interval bracket was found
-		if (nPos != string::npos && nMatchingParens != string::npos)
+		if (nPos != std::string::npos && nMatchingParens != std::string::npos)
 		{
-			string sRanges = sExpr.substr(nPos, nMatchingParens - nPos);
+			std::string sRanges = sExpr.substr(nPos, nMatchingParens - nPos);
 
 			// Erase the interval part from the expression, if needed
 			if (bEraseInterval)
@@ -766,7 +767,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
 			// Try to split the indices in every argument
 			for (size_t i = 0; i < args.size(); i++)
 			{
-				if (args[i].find(':') == string::npos)
+				if (args[i].find(':') == std::string::npos)
 					continue;
 
 				auto indices = getAllIndices(args[i]);
@@ -777,7 +778,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
                     if (isNotEmptyExpression(indices[j]))
                     {
                         _parser.SetExpr(indices[j]);
-                        vInterval.push_back(_parser.Eval().real());
+                        vInterval.push_back(_parser.Eval().front().getNum().val.real());
                     }
                     else
                         vInterval.push_back(NAN);

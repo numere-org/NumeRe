@@ -142,6 +142,22 @@
 					<Add option="-DPARSERSTANDALONE" />
 				</Compiler>
 			</Target>
+			<Target title="Debug_x64">
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Og" />
+					<Add option="-g" />
+					<Add option="-ggdb3" />
+					<Add option="-fno-omit-frame-pointer" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+					<Add option="-DWXDEBUG" />
+					<Add option="-DDO_LOG" />
+				</Compiler>
+			</Target>
 			<Environment>
 				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />
 			</Environment>
@@ -214,6 +230,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/CommonHeaders.h">
 			<Option target="Debug" />
@@ -224,6 +241,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/Options.h">
 			<Option target="Debug" />
@@ -234,6 +252,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/compareFiles.cpp">
 			<Option target="Debug" />
@@ -244,6 +263,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/compareFiles.hpp">
 			<Option target="Debug" />
@@ -254,6 +274,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/datastructures.h">
 			<Option target="Debug" />
@@ -264,6 +285,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/filerevisions.cpp">
 			<Option target="Debug" />
@@ -274,6 +296,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/filerevisions.hpp">
 			<Option target="Debug" />
@@ -284,6 +307,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/filewatcher.cpp">
 			<Option target="Debug" />
@@ -294,6 +318,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/filewatcher.hpp">
 			<Option target="Debug" />
@@ -304,6 +329,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/ipc.cpp">
 			<Option target="Debug" />
@@ -314,6 +340,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/ipc.hpp">
 			<Option target="Debug" />
@@ -324,6 +351,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/options.cpp">
 			<Option target="Debug" />
@@ -334,6 +362,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/recycler.cpp">
 			<Option target="Debug" />
@@ -344,6 +373,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/recycler.hpp">
 			<Option target="Debug" />
@@ -354,6 +384,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/vcsmanager.cpp">
 			<Option target="Debug" />
@@ -364,6 +395,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/vcsmanager.hpp">
 			<Option target="Debug" />
@@ -374,6 +406,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/QR-Code-generator/cpp/qrcodegen.cpp">
 			<Option target="Debug" />
@@ -384,6 +417,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/QR-Code-generator/cpp/qrcodegen.hpp">
 			<Option target="Debug" />
@@ -394,6 +428,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/chrono_io.h">
 			<Option target="Debug" />
@@ -404,6 +439,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/date.h">
 			<Option target="Debug" />
@@ -414,6 +450,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/ios.h">
 			<Option target="Debug" />
@@ -424,6 +461,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/islamic.h">
 			<Option target="Debug" />
@@ -434,6 +472,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/iso_week.h">
 			<Option target="Debug" />
@@ -444,6 +483,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/julian.h">
 			<Option target="Debug" />
@@ -454,6 +494,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/ptz.h">
 			<Option target="Debug" />
@@ -464,6 +505,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/solar_hijri.h">
 			<Option target="Debug" />
@@ -474,6 +516,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/tz.h">
 			<Option target="Debug" />
@@ -484,6 +527,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/date/include/date/tz_private.h">
 			<Option target="Debug" />
@@ -494,6 +538,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/Diff.hpp">
 			<Option target="Debug" />
@@ -504,6 +549,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/Diff3.hpp">
 			<Option target="Debug" />
@@ -514,6 +560,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/Lcs.hpp">
 			<Option target="Debug" />
@@ -524,6 +571,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/Sequence.hpp">
 			<Option target="Debug" />
@@ -534,6 +582,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/Ses.hpp">
 			<Option target="Debug" />
@@ -544,6 +593,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/dtl.hpp">
 			<Option target="Debug" />
@@ -554,6 +604,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/functors.hpp">
 			<Option target="Debug" />
@@ -564,6 +615,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/variables.hpp">
 			<Option target="Debug" />
@@ -574,6 +626,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/tinyxml2/tinyxml2.cpp">
 			<Option target="Debug" />
@@ -584,6 +637,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/tinyxml2/tinyxml2.h">
 			<Option target="Debug" />
@@ -594,6 +648,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/DirTraverser.cpp">
 			<Option target="Debug" />
@@ -604,6 +659,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/DirTraverser.hpp">
 			<Option target="Debug" />
@@ -614,6 +670,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/IconManager.cpp">
 			<Option target="Debug" />
@@ -624,6 +681,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/IconManager.h">
 			<Option target="Debug" />
@@ -634,6 +692,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/NumeReNotebook.cpp">
 			<Option target="Debug" />
@@ -644,6 +703,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/NumeReNotebook.h">
 			<Option target="Debug" />
@@ -654,6 +714,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/NumeReStatusbar.cpp">
 			<Option target="Debug" />
@@ -664,6 +725,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/NumeReStatusbar.hpp">
 			<Option target="Debug" />
@@ -674,6 +736,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/NumeReWindow.cpp">
 			<Option target="Debug" />
@@ -684,6 +747,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/NumeReWindow.h">
 			<Option target="Debug" />
@@ -694,6 +758,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/cellattributes.hpp">
 			<Option target="Debug" />
@@ -704,6 +769,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/cellvalueshader.hpp">
 			<Option target="Debug" />
@@ -714,6 +780,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/customwindow.cpp">
 			<Option target="Debug" />
@@ -724,6 +791,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/customwindow.hpp">
 			<Option target="Debug" />
@@ -734,6 +802,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/debugviewer.cpp">
 			<Option target="Debug" />
@@ -744,6 +813,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/debugviewer.hpp">
 			<Option target="Debug" />
@@ -754,6 +824,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/filetree.cpp">
 			<Option target="Debug" />
@@ -764,6 +835,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/filetree.hpp">
 			<Option target="Debug" />
@@ -774,6 +846,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/gridcellcoordscontainer.hpp">
 			<Option target="Debug" />
@@ -784,6 +857,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/gridtable.cpp">
 			<Option target="Debug" />
@@ -794,6 +868,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/gridtable.hpp">
 			<Option target="Debug" />
@@ -804,6 +879,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/grouppanel.cpp">
 			<Option target="Debug" />
@@ -814,6 +890,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/grouppanel.hpp">
 			<Option target="Debug" />
@@ -824,6 +901,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/helpviewer.cpp">
 			<Option target="Debug" />
@@ -834,6 +912,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/helpviewer.hpp">
 			<Option target="Debug" />
@@ -844,6 +923,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/imagepanel.cpp">
 			<Option target="Debug" />
@@ -854,6 +934,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/imagepanel.hpp">
 			<Option target="Debug" />
@@ -864,6 +945,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/procedureviewer.cpp">
 			<Option target="Debug" />
@@ -874,6 +956,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/procedureviewer.hpp">
 			<Option target="Debug" />
@@ -884,6 +967,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/tabartprovider.hpp">
 			<Option target="Debug" />
@@ -894,6 +978,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/tableeditpanel.cpp">
 			<Option target="Debug" />
@@ -904,6 +989,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/tableeditpanel.hpp">
 			<Option target="Debug" />
@@ -914,6 +1000,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/tableviewer.cpp">
 			<Option target="Debug" />
@@ -924,6 +1011,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/tableviewer.hpp">
 			<Option target="Debug" />
@@ -934,6 +1022,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/treepanel.hpp">
 			<Option target="Debug" />
@@ -944,6 +1033,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/variableviewer.cpp">
 			<Option target="Debug" />
@@ -954,6 +1044,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/variableviewer.hpp">
 			<Option target="Debug" />
@@ -964,6 +1055,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/viewerbook.cpp">
 			<Option target="Debug" />
@@ -974,6 +1066,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/viewerbook.hpp">
 			<Option target="Debug" />
@@ -984,6 +1077,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/viewerframe.cpp">
 			<Option target="Debug" />
@@ -994,6 +1088,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/viewerframe.hpp">
 			<Option target="Debug" />
@@ -1004,6 +1099,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/viewerpanel.cpp">
 			<Option target="Debug" />
@@ -1014,6 +1110,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/viewerpanel.hpp">
 			<Option target="Debug" />
@@ -1024,6 +1121,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/wxTermContainer.cpp">
 			<Option target="Debug" />
@@ -1034,6 +1132,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/wxTermContainer.h">
 			<Option target="Debug" />
@@ -1044,6 +1143,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/datetimepicker.cpp">
 			<Option target="Debug" />
@@ -1054,6 +1154,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/datetimepicker.hpp">
 			<Option target="Debug" />
@@ -1064,6 +1165,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/searchctrl.cpp">
 			<Option target="Debug" />
@@ -1074,6 +1176,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/searchctrl.hpp">
 			<Option target="Debug" />
@@ -1084,6 +1187,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/toolbarsearchctrl.cpp">
 			<Option target="Debug" />
@@ -1094,6 +1198,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/toolbarsearchctrl.hpp">
 			<Option target="Debug" />
@@ -1104,6 +1209,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/treedata.hpp">
 			<Option target="Debug" />
@@ -1114,6 +1220,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/treelistctrl.cpp">
 			<Option target="Debug" />
@@ -1124,6 +1231,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/treelistctrl.h">
 			<Option target="Debug" />
@@ -1134,6 +1242,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/treesearchctrl.cpp">
 			<Option target="Debug" />
@@ -1144,6 +1253,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/controls/treesearchctrl.hpp">
 			<Option target="Debug" />
@@ -1154,6 +1264,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/AboutChameleonDialog.cpp">
 			<Option target="Debug" />
@@ -1164,6 +1275,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/AboutChameleonDialog.h">
 			<Option target="Debug" />
@@ -1174,6 +1286,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/OptionsDialog.cpp">
 			<Option target="Debug" />
@@ -1184,6 +1297,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/OptionsDialog.h">
 			<Option target="Debug" />
@@ -1194,6 +1308,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/dependencydialog.cpp">
 			<Option target="Debug" />
@@ -1204,6 +1319,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/dependencydialog.hpp">
 			<Option target="Debug" />
@@ -1214,6 +1330,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/duplicatecodedialog.cpp">
 			<Option target="Debug" />
@@ -1224,6 +1341,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/duplicatecodedialog.hpp">
 			<Option target="Debug" />
@@ -1234,6 +1352,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/fndrpldialog.cpp">
 			<Option target="Debug" />
@@ -1244,6 +1363,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/fndrpldialog.hpp">
 			<Option target="Debug" />
@@ -1254,6 +1374,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/listeditdialog.cpp">
 			<Option target="Debug" />
@@ -1264,6 +1385,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/listeditdialog.hpp">
 			<Option target="Debug" />
@@ -1274,6 +1396,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/newfiledialog.cpp">
 			<Option target="Debug" />
@@ -1284,6 +1407,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/newfiledialog.hpp">
 			<Option target="Debug" />
@@ -1294,6 +1418,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/packagedialog.cpp">
 			<Option target="Debug" />
@@ -1304,6 +1429,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/packagedialog.hpp">
 			<Option target="Debug" />
@@ -1314,6 +1440,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/pluginrepodialog.cpp">
 			<Option target="Debug" />
@@ -1324,6 +1451,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/pluginrepodialog.hpp">
 			<Option target="Debug" />
@@ -1334,6 +1462,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/renamesymbolsdialog.cpp">
 			<Option target="Debug" />
@@ -1344,6 +1473,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/renamesymbolsdialog.hpp">
 			<Option target="Debug" />
@@ -1354,6 +1484,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/revisiondialog.cpp">
 			<Option target="Debug" />
@@ -1364,6 +1495,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/revisiondialog.hpp">
 			<Option target="Debug" />
@@ -1374,6 +1506,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/textoutputdialog.cpp">
 			<Option target="Debug" />
@@ -1384,6 +1517,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/textoutputdialog.hpp">
 			<Option target="Debug" />
@@ -1394,6 +1528,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/tipdialog.cpp">
 			<Option target="Debug" />
@@ -1404,6 +1539,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/dialogs/tipdialog.hpp">
 			<Option target="Debug" />
@@ -1414,6 +1550,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/documentationbrowser.cpp">
 			<Option target="Debug" />
@@ -1424,6 +1561,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/documentationbrowser.hpp">
 			<Option target="Debug" />
@@ -1434,6 +1572,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/NumeRePrintout.cpp">
 			<Option target="Debug" />
@@ -1444,6 +1583,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/NumeRePrintout.h">
 			<Option target="Debug" />
@@ -1454,6 +1594,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/codeanalyzer.cpp">
 			<Option target="Debug" />
@@ -1464,6 +1605,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/codeanalyzer.hpp">
 			<Option target="Debug" />
@@ -1474,6 +1616,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/codeformatter.cpp">
 			<Option target="Debug" />
@@ -1484,6 +1627,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/codeformatter.hpp">
 			<Option target="Debug" />
@@ -1494,6 +1638,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/editor.cpp">
 			<Option target="Debug" />
@@ -1504,6 +1649,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/editor.h">
 			<Option target="Debug" />
@@ -1514,6 +1660,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/history.cpp">
 			<Option target="Debug" />
@@ -1524,6 +1671,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/history.hpp">
 			<Option target="Debug" />
@@ -1534,6 +1682,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/searchcontroller.cpp">
 			<Option target="Debug" />
@@ -1544,6 +1693,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/editor/searchcontroller.hpp">
 			<Option target="Debug" />
@@ -1554,6 +1704,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/globals.hpp">
 			<Option target="Debug" />
@@ -1564,6 +1715,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/graphviewer.cpp">
 			<Option target="Debug" />
@@ -1574,6 +1726,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/graphviewer.hpp">
 			<Option target="Debug" />
@@ -1584,6 +1737,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/numeredroptarget.cpp">
 			<Option target="Debug" />
@@ -1594,6 +1748,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/numeredroptarget.hpp">
 			<Option target="Debug" />
@@ -1604,6 +1759,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/TextManager.cpp">
 			<Option target="Debug" />
@@ -1614,6 +1770,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/TextManager.h">
 			<Option target="Debug" />
@@ -1624,6 +1781,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/actions.cpp">
 			<Option target="Debug" />
@@ -1634,6 +1792,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/gterm.cpp">
 			<Option target="Debug" />
@@ -1644,6 +1803,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/gterm.hpp">
 			<Option target="Debug" />
@@ -1654,6 +1814,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/terminal.cpp">
 			<Option target="Debug" />
@@ -1664,6 +1825,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/terminal.hpp">
 			<Option target="Debug" />
@@ -1674,6 +1836,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/terminalcalltip.cpp">
 			<Option target="Debug" />
@@ -1684,6 +1847,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/terminalcalltip.hpp">
 			<Option target="Debug" />
@@ -1694,6 +1858,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/utils.cpp">
 			<Option target="Debug" />
@@ -1704,6 +1869,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/terminal/winmesgbeep.cpp">
 			<Option target="Debug" />
@@ -1714,6 +1880,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/textsplashscreen.hpp">
 			<Option target="Debug" />
@@ -1724,6 +1891,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/wx.cpp">
 			<Option target="Debug" />
@@ -1734,6 +1902,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/wx.h">
 			<Option target="Debug" />
@@ -1744,6 +1913,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/wxProportionalSplitterWindow.h">
 			<Option target="Debug" />
@@ -1754,6 +1924,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/AudioLib/audiofile.cpp">
 			<Option target="Debug" />
@@ -1764,6 +1935,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/AudioLib/audiofile.hpp">
 			<Option target="Debug" />
@@ -1774,6 +1946,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/AudioLib/wavfile.cpp">
 			<Option target="Debug" />
@@ -1784,6 +1957,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/AudioLib/wavfile.hpp">
 			<Option target="Debug" />
@@ -1794,6 +1968,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ParserLib/muHelpers.cpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.hpp" />
@@ -1832,6 +2007,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/built-in.hpp">
 			<Option target="Debug" />
@@ -1842,6 +2018,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/commandfunctions.hpp">
 			<Option target="Debug" />
@@ -1852,6 +2029,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/commandlineparser.cpp">
 			<Option target="Debug" />
@@ -1862,6 +2040,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/commandlineparser.hpp">
 			<Option target="Debug" />
@@ -1872,6 +2051,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/cluster.cpp">
 			<Option target="Debug" />
@@ -1882,6 +2062,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/cluster.hpp">
 			<Option target="Debug" />
@@ -1892,6 +2073,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/container.hpp">
 			<Option target="Debug" />
@@ -1902,6 +2084,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/dataaccess.cpp">
 			<Option target="Debug" />
@@ -1912,6 +2095,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/dataaccess.hpp">
 			<Option target="Debug" />
@@ -1922,6 +2106,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/database.cpp">
 			<Option target="Debug" />
@@ -1932,6 +2117,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/database.hpp">
 			<Option target="Debug" />
@@ -1942,6 +2128,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/dataops.cpp">
 			<Option target="Debug" />
@@ -1952,6 +2139,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/dataops.hpp">
 			<Option target="Debug" />
@@ -1962,6 +2150,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/fileadapter.cpp">
 			<Option target="Debug" />
@@ -1972,6 +2161,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/fileadapter.hpp">
 			<Option target="Debug" />
@@ -1982,6 +2172,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/indices.cpp">
 			<Option target="Debug" />
@@ -1992,6 +2183,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/memory.cpp">
 			<Option target="Debug" />
@@ -2002,6 +2194,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/memory.hpp">
 			<Option target="Debug" />
@@ -2012,6 +2205,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/memorymanager.cpp">
 			<Option target="Debug" />
@@ -2022,6 +2216,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/memorymanager.hpp">
 			<Option target="Debug" />
@@ -2032,6 +2227,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/sorter.cpp">
 			<Option target="Debug" />
@@ -2042,6 +2238,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/sorter.hpp">
 			<Option target="Debug" />
@@ -2052,6 +2249,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/stringmemory.cpp">
 			<Option target="Debug" />
@@ -2062,6 +2260,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/stringmemory.hpp">
 			<Option target="Debug" />
@@ -2072,6 +2271,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/table.cpp">
 			<Option target="Debug" />
@@ -2082,6 +2282,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/table.hpp">
 			<Option target="Debug" />
@@ -2092,6 +2293,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/tablecolumn.cpp">
 			<Option target="Debug" />
@@ -2102,6 +2304,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/tablecolumn.hpp">
 			<Option target="Debug" />
@@ -2112,6 +2315,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/tablecolumnimpl.cpp">
 			<Option target="Debug" />
@@ -2122,6 +2326,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/tablecolumnimpl.hpp">
 			<Option target="Debug" />
@@ -2132,6 +2337,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/debugger/breakpointmanager.cpp">
 			<Option target="Debug" />
@@ -2142,6 +2348,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/debugger/breakpointmanager.hpp">
 			<Option target="Debug" />
@@ -2152,6 +2359,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/debugger/debugger.cpp">
 			<Option target="Debug" />
@@ -2162,6 +2370,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/debugger/debugger.hpp">
 			<Option target="Debug" />
@@ -2172,6 +2381,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/doc_helper.cpp">
 			<Option target="Debug" />
@@ -2182,6 +2392,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/doc_helper.hpp">
 			<Option target="Debug" />
@@ -2192,6 +2403,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/docfile.cpp">
 			<Option target="Debug" />
@@ -2202,6 +2414,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/docfile.hpp">
 			<Option target="Debug" />
@@ -2212,6 +2425,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/docgen.cpp">
 			<Option target="Debug" />
@@ -2222,6 +2436,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/docgen.hpp">
 			<Option target="Debug" />
@@ -2232,6 +2447,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/documentation.cpp">
 			<Option target="Debug" />
@@ -2242,6 +2458,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/documentation.hpp">
 			<Option target="Debug" />
@@ -2252,6 +2469,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/htmlrendering.cpp">
 			<Option target="Debug" />
@@ -2262,6 +2480,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/htmlrendering.hpp">
 			<Option target="Debug" />
@@ -2272,6 +2491,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/texrendering.cpp">
 			<Option target="Debug" />
@@ -2282,6 +2502,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/documentation/texrendering.hpp">
 			<Option target="Debug" />
@@ -2292,6 +2513,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/interval.cpp">
 			<Option target="Debug" />
@@ -2302,6 +2524,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/interval.hpp">
 			<Option target="Debug" />
@@ -2312,6 +2535,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/BasicExcel.cpp">
 			<Option target="Debug" />
@@ -2322,6 +2546,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/BasicExcel.hpp">
 			<Option target="Debug" />
@@ -2332,6 +2557,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/IgorLib/CrossPlatformFileIO.cpp">
 			<Option target="Debug" />
@@ -2342,6 +2568,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/IgorLib/CrossPlatformFileIO.h">
 			<Option target="Debug" />
@@ -2352,6 +2579,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/IgorLib/IgorBin.h">
 			<Option target="Debug" />
@@ -2362,6 +2590,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/IgorLib/ReadWave.cpp">
 			<Option target="Debug" />
@@ -2372,6 +2601,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/IgorLib/ReadWave.h">
 			<Option target="Debug" />
@@ -2382,6 +2612,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/archive.cpp">
 			<Option target="Debug" />
@@ -2392,6 +2623,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/archive.hpp">
 			<Option target="Debug" />
@@ -2402,6 +2634,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/file.cpp">
 			<Option target="Debug" />
@@ -2412,6 +2645,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/file.hpp">
 			<Option target="Debug" />
@@ -2422,6 +2656,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/fileops.cpp">
 			<Option target="Debug" />
@@ -2432,6 +2667,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/fileops.hpp">
 			<Option target="Debug" />
@@ -2442,6 +2678,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/filesystem.cpp" />
 		<Unit filename="kernel/core/io/filesystem.hpp" />
@@ -2454,6 +2691,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/logger.hpp">
 			<Option target="Debug" />
@@ -2464,6 +2702,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/output.cpp">
 			<Option target="Debug" />
@@ -2474,6 +2713,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/output.hpp">
 			<Option target="Debug" />
@@ -2484,6 +2724,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/qrcode.cpp">
 			<Option target="Debug" />
@@ -2494,6 +2735,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/qrcode.hpp">
 			<Option target="Debug" />
@@ -2504,6 +2746,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/styledtextfile.cpp">
 			<Option target="Debug" />
@@ -2514,6 +2757,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/styledtextfile.hpp">
 			<Option target="Debug" />
@@ -2524,6 +2768,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/unzip.cpp">
 			<Option target="Debug" />
@@ -2534,6 +2779,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/unzip.h">
 			<Option target="Debug" />
@@ -2544,6 +2790,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/zip++.cpp">
 			<Option target="Debug" />
@@ -2554,6 +2801,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/zip++.hpp">
 			<Option target="Debug" />
@@ -2564,6 +2812,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/zip.cpp">
 			<Option target="Debug" />
@@ -2574,6 +2823,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/io/zip.h">
 			<Option target="Debug" />
@@ -2584,6 +2834,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/anova.hpp">
 			<Option target="Debug" />
@@ -2594,6 +2845,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/anovaimpl.cpp">
 			<Option target="Debug" />
@@ -2604,6 +2856,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/anovaimpl.hpp">
 			<Option target="Debug" />
@@ -2614,6 +2867,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/command_implementations.cpp">
 			<Option target="Debug" />
@@ -2624,6 +2878,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/command_implementations.hpp">
 			<Option target="Debug" />
@@ -2634,6 +2889,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/define.cpp">
 			<Option target="Debug" />
@@ -2644,6 +2900,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/define.hpp">
 			<Option target="Debug" />
@@ -2654,6 +2911,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/filtering.hpp">
 			<Option target="Debug" />
@@ -2664,6 +2922,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/fitcontroller.cpp">
 			<Option target="Debug" />
@@ -2674,6 +2933,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/fitcontroller.hpp">
 			<Option target="Debug" />
@@ -2684,6 +2944,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/fitting.cpp">
 			<Option target="Debug" />
@@ -2694,6 +2955,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/functionimplementation.cpp" />
 		<Unit filename="kernel/core/maths/functionimplementation.hpp" />
@@ -2706,6 +2968,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/matfuncs.hpp">
 			<Option target="Debug" />
@@ -2716,6 +2979,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/matrixoperations.cpp">
 			<Option target="Debug" />
@@ -2726,6 +2990,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/matrixoperations.hpp">
 			<Option target="Debug" />
@@ -2736,6 +3001,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/odesolver.cpp">
 			<Option target="Debug" />
@@ -2746,6 +3012,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/odesolver.hpp">
 			<Option target="Debug" />
@@ -2756,6 +3023,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/parser_functions.cpp">
 			<Option target="Debug" />
@@ -2766,6 +3034,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/parser_functions.hpp">
 			<Option target="Debug" />
@@ -2776,6 +3045,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/resampler.cpp">
 			<Option target="Debug" />
@@ -2786,6 +3056,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/resampler.h">
 			<Option target="Debug" />
@@ -2796,6 +3067,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/spline.h">
 			<Option target="Debug" />
@@ -2806,6 +3078,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/statslogic.hpp">
 			<Option target="Debug" />
@@ -2816,6 +3089,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/student_t.cpp" />
 		<Unit filename="kernel/core/maths/student_t.hpp" />
@@ -2828,6 +3102,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/units.hpp">
 			<Option target="Debug" />
@@ -2838,6 +3113,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/wavelet.cpp">
 			<Option target="Debug" />
@@ -2848,6 +3124,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/maths/wavelet.hpp">
 			<Option target="Debug" />
@@ -2858,6 +3135,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/graph_helper.cpp">
 			<Option target="Debug" />
@@ -2868,6 +3146,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/graph_helper.hpp">
 			<Option target="Debug" />
@@ -2878,6 +3157,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotasset.cpp">
 			<Option target="Debug" />
@@ -2888,6 +3168,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotasset.hpp">
 			<Option target="Debug" />
@@ -2898,6 +3179,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotdata.cpp">
 			<Option target="Debug" />
@@ -2908,6 +3190,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotdata.hpp">
 			<Option target="Debug" />
@@ -2918,6 +3201,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotdef.hpp">
 			<Option target="Debug" />
@@ -2928,6 +3212,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotinfo.hpp">
 			<Option target="Debug" />
@@ -2938,6 +3223,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotting.cpp">
 			<Option target="Debug" />
@@ -2948,6 +3234,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plotting/plotting.hpp">
 			<Option target="Debug" />
@@ -2958,6 +3245,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plugin_histogram.cpp">
 			<Option target="Debug" />
@@ -2968,6 +3256,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plugin_random.cpp">
 			<Option target="Debug" />
@@ -2978,6 +3267,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plugin_statistics.cpp">
 			<Option target="Debug" />
@@ -2988,6 +3278,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/plugins.hpp">
 			<Option target="Debug" />
@@ -2998,6 +3289,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/dependency.cpp">
 			<Option target="Debug" />
@@ -3008,6 +3300,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/dependency.hpp">
 			<Option target="Debug" />
@@ -3018,6 +3311,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/flowctrl.cpp">
 			<Option target="Debug" />
@@ -3028,6 +3322,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/flowctrl.hpp">
 			<Option target="Debug" />
@@ -3038,6 +3333,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/includer.cpp">
 			<Option target="Debug" />
@@ -3048,6 +3344,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/includer.hpp">
 			<Option target="Debug" />
@@ -3058,6 +3355,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/plugin.cpp">
 			<Option target="Debug" />
@@ -3068,6 +3366,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/plugin.hpp">
 			<Option target="Debug" />
@@ -3078,6 +3377,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedure.cpp">
 			<Option target="Debug" />
@@ -3088,6 +3388,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedure.hpp">
 			<Option target="Debug" />
@@ -3098,6 +3399,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedurecommandline.hpp">
 			<Option target="Debug" />
@@ -3108,6 +3410,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedureelement.cpp">
 			<Option target="Debug" />
@@ -3118,6 +3421,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedureelement.hpp">
 			<Option target="Debug" />
@@ -3128,6 +3432,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedurelibrary.cpp">
 			<Option target="Debug" />
@@ -3138,6 +3443,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedurelibrary.hpp">
 			<Option target="Debug" />
@@ -3148,6 +3454,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedurevarfactory.cpp">
 			<Option target="Debug" />
@@ -3158,6 +3465,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/procedure/procedurevarfactory.hpp">
 			<Option target="Debug" />
@@ -3168,6 +3476,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/script.cpp">
 			<Option target="Debug" />
@@ -3178,6 +3487,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/script.hpp">
 			<Option target="Debug" />
@@ -3188,6 +3498,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/settings.cpp">
 			<Option target="Debug" />
@@ -3198,6 +3509,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/settings.hpp">
 			<Option target="Debug" />
@@ -3208,6 +3520,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/functionimplementation.cpp" />
 		<Unit filename="kernel/core/strings/functionimplementation.hpp" />
@@ -3215,108 +3528,84 @@
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringdatastructures.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringexpression.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringfunchandler.cpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringfunchandler.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringfunctions.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringlogicparser.cpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringlogicparser.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringparser.cpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringparser.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringvarfactory.cpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringvarfactory.hpp">
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
 			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/structures.hpp">
@@ -3328,6 +3617,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/symdef.cpp">
 			<Option target="Debug" />
@@ -3338,6 +3628,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/symdef.hpp">
 			<Option target="Debug" />
@@ -3348,6 +3639,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ui/calltipprovider.cpp">
 			<Option target="Debug" />
@@ -3358,6 +3650,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ui/calltipprovider.hpp">
 			<Option target="Debug" />
@@ -3368,6 +3661,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ui/error.cpp">
 			<Option target="Debug" />
@@ -3378,6 +3672,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ui/error.hpp">
 			<Option target="Debug" />
@@ -3388,6 +3683,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ui/language.cpp" />
 		<Unit filename="kernel/core/ui/language.hpp" />
@@ -3400,6 +3696,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/ui/winlayout.hpp">
 			<Option target="Debug" />
@@ -3410,6 +3707,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/datetimetools.cpp" />
 		<Unit filename="kernel/core/utils/datetimetools.hpp" />
@@ -3422,6 +3720,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/filecheck.hpp">
 			<Option target="Debug" />
@@ -3432,6 +3731,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/http.cpp">
 			<Option target="Debug" />
@@ -3442,6 +3742,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/http.h">
 			<Option target="Debug" />
@@ -3452,6 +3753,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
@@ -3462,6 +3764,7 @@
 			<Option target="Profiling_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />
@@ -3474,6 +3777,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/kernel.cpp">
 			<Option target="Debug" />
@@ -3484,6 +3788,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/kernel.hpp">
 			<Option target="Debug" />
@@ -3494,6 +3799,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/syntax.cpp">
 			<Option target="Debug" />
@@ -3504,6 +3810,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/syntax.hpp">
 			<Option target="Debug" />
@@ -3514,6 +3821,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/windowmanager.cpp">
 			<Option target="Debug" />
@@ -3524,6 +3832,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/windowmanager.hpp">
 			<Option target="Debug" />
@@ -3534,6 +3843,7 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
 		</Unit>
 		<Extensions>
 			<AutoVersioning>

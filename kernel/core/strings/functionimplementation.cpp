@@ -2552,12 +2552,7 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
 
     for (size_t i = 0; i < std::max({vals.size(), cfill.size(), len.size()}); i++)
     {
-        std::string v;
-
-        if (vals.get(i).isString())
-            v = vals.get(i).getStr();
-        else
-            v = vals.get(i).print();
+        std::string v = vals.get(i).printVal();
 
         if (!len.isDefault()
             && !cfill.isDefault()

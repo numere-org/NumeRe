@@ -263,13 +263,13 @@ namespace mu
 						// Optimization for ploynomials of low order
 						if (m_vRPN[sz - 2].Cmd == cmVAR && m_vRPN[sz - 1].Cmd == cmVAL)
 						{
-							if (m_vRPN[sz - 1].Val().data2 == 2.0)
+							if (m_vRPN[sz - 1].Val().data2 == mu::Value(2.0))
 								m_vRPN[sz - 2].Cmd = cmVARPOW2;
-							else if (m_vRPN[sz - 1].Val().data2 == 3.0)
+							else if (m_vRPN[sz - 1].Val().data2 == mu::Value(3.0))
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
-							else if (m_vRPN[sz - 1].Val().data2 == 4.0)
+							else if (m_vRPN[sz - 1].Val().data2 == mu::Value(4.0))
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (m_vRPN[sz - 1].Val().data2 == (double)m_vRPN[sz - 1].Val().data2.front().getNum().asInt())
+							else if (m_vRPN[sz - 1].Val().data2 == mu::Value(m_vRPN[sz - 1].Val().data2.front().getNum().asInt()))
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
 							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;

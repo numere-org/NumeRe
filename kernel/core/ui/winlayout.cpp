@@ -125,16 +125,6 @@ static void evaluateExpression(std::string& sExpr)
     if (!instance->getDefinitions().call(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, "");
 
-    // Evaluate strings
-    if (instance->getStringParser().isStringExpression(sExpr))
-    {
-        std::string dummy;
-        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sExpr, dummy, true, false, true);
-
-        if (_ret == NumeRe::StringParser::STRING_SUCCESS)
-            return;
-    }
-
     if (instance->getMemoryManager().containsTablesOrClusters(sExpr))
         getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
 
@@ -142,7 +132,7 @@ static void evaluateExpression(std::string& sExpr)
     instance->getParser().SetExpr(sExpr);
 
     int results;
-    mu::value_type* v = instance->getParser().Eval(results);
+    mu::Array* v = instance->getParser().Eval(results);
 
     sExpr.clear();
 
@@ -151,7 +141,7 @@ static void evaluateExpression(std::string& sExpr)
         if (sExpr.length())
             sExpr += ",";
 
-        sExpr += toString(v[i], 7);
+        sExpr += v[i].print(7);
     }
 }
 
@@ -601,14 +591,14 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
     }
     else if (findParameter(sParList, "selection", '='))
     {
-        std::vector<mu::value_type> sel = cmdParser.getParameterValueAsNumericalValue("selection");
+        mu::Array sel = cmdParser.getParameterValueAsNumericalValue("selection");
         int sel1 = 1, sel2 = 0;
 
         if (sel.size() > 0)
-            sel1 = intCast(sel[0]);
+            sel1 = sel[0].getNum().asInt();
 
         if (sel.size() > 1)
-            sel2 = intCast(sel[1]);
+            sel2 = sel[1].getNum().asInt();
 
         cmdParser.setReturnValue(toString(winInfo.window->setItemSelection(sel1, sel2, itemID)));
     }
@@ -641,14 +631,8 @@ void windowCommand(CommandLineParser& cmdParser)
     std::string sExpr = cmdParser.getExpr();
     std::string sParList = cmdParser.getParameterList();
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
-    {
-        std::string dummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, dummy, true, false, true);
-    }
-
-    StripSpaces(sExpr);
-    sExpr = removeQuotationMarks(sExpr);
+    NumeReKernel::getInstance()->getParser().SetExpr(sExpr);
+    sExpr = NumeReKernel::getInstance()->getParser().Eval().printVals();
 
     // Determine, what the user wants to do
     if (findParameter(sParList, "getitems", '='))
@@ -656,7 +640,7 @@ void windowCommand(CommandLineParser& cmdParser)
         // get IDs of all selected items
         std::string sItemType = getArgAtPos(sParList, findParameter(sParList, "getitems", '=')+8);
         NumeRe::WindowInformation winInfo = getWindow(sExpr);
-        Parser& _parser = NumeReKernel::getInstance()->getParser();
+        mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
         // If the window does not exist, the pointer
         // is a nullptr type
@@ -674,13 +658,13 @@ void windowCommand(CommandLineParser& cmdParser)
                     cmdParser.setReturnValue("nan");
                 else
                 {
-                    std::vector<mu::value_type> vRes;
+                    mu::Array vRes;
 
                     // Convert the ints to doubles
                     for (auto items : vItems)
-                        vRes.push_back(items);
+                        vRes.push_back(mu::Value(items));
 
-                    cmdParser.setReturnValue(_parser.CreateTempVectorVar(vRes));
+                    cmdParser.setReturnValue(_parser.CreateTempVar(vRes));
                 }
             }
         }
@@ -912,12 +896,8 @@ void dialogCommand(CommandLineParser& cmdParser)
     // Handle strings in the default value
     // expression. This will include also possible path
     // tokens
-    if (kernel->getStringParser().isStringExpression(sExpression))
-    {
-        std::string sDummy;
-        kernel->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
-        sExpression = kernel->getAns().serialize();
-    }
+    kernel->getParser().SetExpr(sExpression);
+    sExpression = kernel->getParser().Eval().print();
 
     // Ensure that default values are available, if the user
     // selected either a list or a selection dialog

@@ -19,12 +19,12 @@
 #include "fitcontroller.hpp"
 #include "../../kernel.hpp"
 
-Parser* Fitcontroller::_fitParser = 0;
+mu::Parser* Fitcontroller::_fitParser = nullptr;
 int Fitcontroller::nDimensions = 0;
 mu::varmap_type Fitcontroller::mParams;
-mu::value_type* Fitcontroller::xvar = 0;
-mu::value_type* Fitcontroller::yvar = 0;
-mu::value_type* Fitcontroller::zvar = 0;
+mu::Variable* Fitcontroller::xvar = nullptr;
+mu::Variable* Fitcontroller::yvar = nullptr;
+mu::Variable* Fitcontroller::zvar = nullptr;
 
 using namespace std;
 
@@ -38,9 +38,9 @@ Fitcontroller::Fitcontroller()
     dChiSqr = 0.0;
     sExpr = "";
 
-    xvar = 0;
-    yvar = 0;
-    zvar = 0;
+    xvar = nullptr;
+    yvar = nullptr;
+    zvar = nullptr;
 }
 
 
@@ -48,10 +48,10 @@ Fitcontroller::Fitcontroller()
 /// \brief Constructor taking a pointer to the
 /// current parser.
 ///
-/// \param _parser Parser*
+/// \param _parser mu::Parser*
 ///
 /////////////////////////////////////////////////
-Fitcontroller::Fitcontroller(Parser* _parser) : Fitcontroller()
+Fitcontroller::Fitcontroller(mu::Parser* _parser) : Fitcontroller()
 {
     _fitParser = _parser;
     mu::varmap_type mVars = _parser->GetVar();
@@ -66,10 +66,10 @@ Fitcontroller::Fitcontroller(Parser* _parser) : Fitcontroller()
 /////////////////////////////////////////////////
 Fitcontroller::~Fitcontroller()
 {
-    _fitParser = 0;
-    xvar = 0;
-    yvar = 0;
-    zvar = 0;
+    _fitParser = nullptr;
+    xvar = nullptr;
+    yvar = nullptr;
+    zvar = nullptr;
 }
 
 
@@ -91,7 +91,7 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(params, i);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i));
         i++;
     }
 
@@ -105,8 +105,8 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
                 continue;
             }
 
-            *xvar = _fData->vx[n];
-            gsl_vector_set(fvals, n, (_fitParser->Eval().real() - _fData->vy[n])/_fData->vy_w[n]); // Residuen (y-y0)/sigma
+            *xvar = mu::Value(_fData->vx[n]);
+            gsl_vector_set(fvals, n, (_fitParser->Eval().front().getNum().val.real() - _fData->vy[n])/_fData->vy_w[n]); // Residuen (y-y0)/sigma
 
         }
 
@@ -116,7 +116,7 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
     {
         for (size_t n = 0; n < _fData->vx.size(); n++)
         {
-            *xvar = _fData->vx[n];
+            *xvar = mu::Value(_fData->vx[n]);
 
             for (size_t m = 0; m < _fData->vy.size(); m++)
             {
@@ -126,8 +126,8 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
                     continue;
                 }
 
-                *yvar = _fData->vy[m];
-                gsl_vector_set(fvals, m+n*(_fData->vy.size()), (_fitParser->Eval().real() - _fData->vz[n][m])/_fData->vz_w[n][m]);
+                *yvar = mu::Value(_fData->vy[m]);
+                gsl_vector_set(fvals, m+n*(_fData->vy.size()), (_fitParser->Eval().front().getNum().val.real() - _fData->vz[n][m])/_fData->vz_w[n][m]);
 
             }
         }
@@ -159,7 +159,7 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(params, i);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i));
         i++;
     }
 
@@ -170,8 +170,8 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 
         for (size_t n = 0; n < _fData->vx.size(); n++)
         {
-            *xvar = _fData->vx[n];
-            vFuncRes[n][0] = _fitParser->Eval().real();
+            *xvar = mu::Value(_fData->vx[n]);
+            vFuncRes[n][0] = _fitParser->Eval().front().getNum().val.real();
         }
     }
     else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
@@ -181,12 +181,12 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 
         for (size_t n = 0; n < _fData->vx.size(); n++)
         {
-            *xvar = _fData->vx[n];
+            *xvar = mu::Value(_fData->vx[n]);
 
             for (size_t m = 0; m < _fData->vy.size(); m++)
             {
-                *yvar = _fData->vy[m];
-                vFuncRes[n][m] = _fitParser->Eval().real();
+                *yvar = mu::Value(_fData->vy[m]);
+                vFuncRes[n][m] = _fitParser->Eval().front().getNum().val.real();
 
             }
         }
@@ -196,14 +196,14 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(params, i) + dEps;
+        *(iter->second) = mu::Value(gsl_vector_get(params, i) + dEps);
 
         if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
         {
             for (size_t n = 0; n < _fData->vx.size(); n++)
             {
-                *xvar = _fData->vx[n];
-                vDiffRes[n][0] = _fitParser->Eval().real();
+                *xvar = mu::Value(_fData->vx[n]);
+                vDiffRes[n][0] = _fitParser->Eval().front().getNum().val.real();
             }
 
             for (size_t n = 0; n < _fData->vx.size(); n++)
@@ -221,12 +221,12 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
         {
             for (size_t n = 0; n < _fData->vx.size(); n++)
             {
-                *xvar = _fData->vx[n];
+                *xvar = mu::Value(_fData->vx[n]);
 
                 for (size_t m = 0; m < _fData->vy.size(); m++)
                 {
-                    *yvar = _fData->vy[m];
-                    vDiffRes[n][m] = _fitParser->Eval().real();
+                    *yvar = mu::Value(_fData->vy[m]);
+                    vDiffRes[n][m] = _fitParser->Eval().front().getNum().val.real();
                 }
             }
 
@@ -245,7 +245,7 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
             }
         }
 
-        *(iter->second) = gsl_vector_get(params, i);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i));
         i++;
     }
 
@@ -292,11 +292,11 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
     FitData* _fData = static_cast<FitData*>(data);
     size_t i = 0;
     int nVals = 0;
-    value_type* v = 0;
+    mu::Array* v = nullptr;
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(params, i);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i));
         i++;
     }
 
@@ -310,7 +310,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
                 continue;
             }
 
-            *xvar = _fData->vx[n];
+            *xvar = mu::Value(_fData->vx[n]);
             v = _fitParser->Eval(nVals);
             gsl_vector_set(fvals, n, (evalRestrictions(v, nVals) - _fData->vy[n])/_fData->vy_w[n]); // Residuen (y-y0)/sigma
 
@@ -322,7 +322,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
     {
         for (size_t n = 0; n < _fData->vx.size(); n++)
         {
-            *xvar = _fData->vx[n];
+            *xvar = mu::Value(_fData->vx[n]);
 
             for (size_t m = 0; m < _fData->vy.size(); m++)
             {
@@ -332,7 +332,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
                     continue;
                 }
 
-                *yvar = _fData->vy[m];
+                *yvar = mu::Value(_fData->vy[m]);
                 v = _fitParser->Eval(nVals);
                 gsl_vector_set(fvals, m+n*(_fData->vy.size()), (evalRestrictions(v, nVals) - _fData->vz[n][m])/_fData->vz_w[n][m]);
 
@@ -363,12 +363,12 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
     const double dEps = _fData->dPrecision*1.0e-1;
     FitMatrix vFuncRes;
     FitMatrix vDiffRes;
-    value_type* v = 0;
+    mu::Array* v = nullptr;
     int nVals = 0;
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(params, i);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i));
         i++;
     }
 
@@ -379,7 +379,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
 
         for (size_t n = 0; n < _fData->vx.size(); n++)
         {
-            *xvar = _fData->vx[n];
+            *xvar = mu::Value(_fData->vx[n]);
             v = _fitParser->Eval(nVals);
             vFuncRes[n][0] = evalRestrictions(v, nVals);
         }
@@ -391,11 +391,11 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
 
         for (size_t n = 0; n < _fData->vx.size(); n++)
         {
-            *xvar = _fData->vx[n];
+            *xvar = mu::Value(_fData->vx[n]);
 
             for (size_t m = 0; m < _fData->vy.size(); m++)
             {
-                *yvar = _fData->vy[m];
+                *yvar = mu::Value(_fData->vy[m]);
                 v = _fitParser->Eval(nVals);
                 vFuncRes[n][m] = evalRestrictions(v, nVals);
 
@@ -407,13 +407,13 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(params, i) + dEps;
+        *(iter->second) = mu::Value(gsl_vector_get(params, i) + dEps);
 
         if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
         {
             for (size_t n = 0; n < _fData->vx.size(); n++)
             {
-                *xvar = _fData->vx[n];
+                *xvar = mu::Value(_fData->vx[n]);
                 v = _fitParser->Eval(nVals);
                 vDiffRes[n][0] = evalRestrictions(v, nVals);
             }
@@ -433,11 +433,11 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
         {
             for (size_t n = 0; n < _fData->vx.size(); n++)
             {
-                *xvar = _fData->vx[n];
+                *xvar = mu::Value(_fData->vx[n]);
 
                 for (size_t m = 0; m < _fData->vy.size(); m++)
                 {
-                    *yvar = _fData->vy[m];
+                    *yvar = mu::Value(_fData->vy[m]);
                     v = _fitParser->Eval(nVals);
                     vDiffRes[n][m] = evalRestrictions(v, nVals);
                 }
@@ -458,7 +458,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
             }
         }
 
-        *(iter->second) = gsl_vector_get(params, i);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i));
         i++;
     }
 
@@ -494,24 +494,24 @@ int Fitcontroller::fitfuncjacrestricted(const gsl_vector* params, void* data, gs
 /////////////////////////////////////////////////
 /// \brief Evaluate additional restrictions.
 ///
-/// \param v const value_type*
+/// \param v const mu::Array*
 /// \param nVals int
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Fitcontroller::evalRestrictions(const value_type* v, int nVals)
+double Fitcontroller::evalRestrictions(const mu::Array* v, int nVals)
 {
     if (nVals == 1)
-        return v[0].real();
+        return v[0].front().getNum().val.real();
     else
     {
         for (int i = 1; i < nVals; i++)
         {
-            if (!v[i].real())
+            if ((bool)!v[i])
                 return NAN;
         }
 
-        return v[0].real();
+        return v[0].front().getNum().val.real();
     }
 
     return NAN;
@@ -680,7 +680,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     // Copy the parameter values
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        gsl_vector_set(params, n, (*iter->second).real());
+        gsl_vector_set(params, n, iter->second->front().getNum().val.real());
         n++;
     }
 
@@ -783,7 +783,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     // Get the parameter from the solver
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(solver->x, n);
+        *(iter->second) = mu::Value(gsl_vector_get(solver->x, n));
         n++;
     }
 
@@ -799,7 +799,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     if (__sRestrictions.length())
     {
         int nVals = 0;
-        value_type* v = _fitParser->Eval(nVals);
+        mu::Array* v = _fitParser->Eval(nVals);
 
         if (isnan(evalRestrictions(v, nVals)))
             return false;
@@ -887,8 +887,8 @@ string Fitcontroller::getFitFunction()
             {
                 if (expr.is_delimited_sequence(i, iter->first.length()))
                 {
-                    expr.replace(i, (iter->first).length(), toString(*(iter->second), 5));
-                    i += toString(*(iter->second), 5).length();
+                    expr.replace(i, (iter->first).length(), iter->second->print(5));
+                    i += iter->second->print(5).length();
                 }
             }
         }

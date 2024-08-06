@@ -527,14 +527,25 @@ mu::Array parser_Norm(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array parser_Med(const mu::Array* vElements, int nElements)
 {
-#warning FIXME (numere#1#06/29/24): This does only work with the Memory manager compiled in.
 #ifndef PARSERSTANDALONE
     Memory _mem;
 
-    for (int i = 0; i < nElements; i++)
-        _mem.writeData(i, 0, vElements[i]);
+    if (nElements == 1)
+    {
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            _mem.writeData(i, 0, vElements[0][i]);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            _mem.writeData(i, 0, vElements[i].front());
+        }
+    }
 
-    return _mem.med(VectorIndex(0, nElements-1), VectorIndex(0));
+    return mu::Value(_mem.med(VectorIndex(0, nElements-1), VectorIndex(0)));
 #endif // PARSERSTANDALONE
 }
 
@@ -550,14 +561,26 @@ mu::Array parser_Med(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array parser_Pct(const mu::Array* vElements, int nElements)
 {
-#warning FIXME (numere#1#06/29/24): This does only work with the Memory manager compiled in.
 #ifndef PARSERSTANDALONE
     Memory _mem;
 
-    for (int i = 0; i < nElements-1; i++)
-        _mem.writeData(i, 0, vElements[i]);
+    if (nElements == 1)
+    {
+        for (size_t i = 0; i < vElements[0].size()-1; i++)
+        {
+            _mem.writeData(i, 0, vElements[0][i]);
+        }
 
-    return _mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1]);
+        return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[0].back().getNum().val));
+    }
+
+    for (int i = 0; i < nElements-1; i++)
+    {
+        _mem.writeData(i, 0, vElements[i].front());
+    }
+
+    return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1].front().getNum().val));
+
 #endif // PARSERSTANDALONE
 }
 

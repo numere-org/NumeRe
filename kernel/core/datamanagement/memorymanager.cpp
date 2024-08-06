@@ -51,8 +51,8 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::
 	mCachesMap["table"] = std::make_pair(0u, 0u);
 	vMemory.push_back(new Memory());
 
-	tableColumnsCount = 0.0;
-	tableLinesCount = 0.0;
+	tableColumnsCount = mu::Value(0.0);
+	tableLinesCount = mu::Value(0.0);
 }
 
 
@@ -981,15 +981,15 @@ bool MemoryManager::updateDimensionVariables(StringView sTableName) const
     {
         // Update the dimensions for the selected
         // numerical table
-        tableLinesCount = getLines(sTableName, false);
-        tableColumnsCount = getCols(sTableName, false);
+        tableLinesCount = mu::Value(getLines(sTableName, false));
+        tableColumnsCount = mu::Value(getCols(sTableName, false));
     }
     else
     {
         // Update the dimensions for the selected
         // string table
-        tableLinesCount = getStringElements();
-        tableColumnsCount = getStringCols();
+        tableLinesCount = mu::Value(getStringElements());
+        tableColumnsCount = mu::Value(getStringCols());
     }
 
     return true;

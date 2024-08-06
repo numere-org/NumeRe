@@ -457,10 +457,10 @@ namespace NumeRe
             std::map<std::string, Cluster>::const_iterator mapStringViewFind(StringView view) const;
 
         public:
-            ClusterManager() {dClusterElementsCount = 0.0;}
+            ClusterManager() {dClusterElementsCount = mu::Value(0.0);}
             ~ClusterManager() {}
 
-            std::complex<double> dClusterElementsCount;
+            mu::Variable dClusterElementsCount;
 
             bool containsClusters(const std::string& sCmdLine) const;
             bool isCluster(StringView sCluster) const;
