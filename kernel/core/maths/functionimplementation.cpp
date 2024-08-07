@@ -68,7 +68,7 @@ extern time_t tTimeZero;
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_imaginaryUnit(const mu::Array& v)
+mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 {
     mu::Array res;
 
@@ -90,7 +90,7 @@ mu::Array parser_imaginaryUnit(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_real(const mu::Array& v)
+mu::Array numfnc_real(const mu::Array& v)
 {
     mu::Array res;
 
@@ -111,7 +111,7 @@ mu::Array parser_real(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_imag(const mu::Array& v)
+mu::Array numfnc_imag(const mu::Array& v)
 {
     mu::Array res;
 
@@ -133,7 +133,7 @@ mu::Array parser_imag(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rect2polar(const mu::Array& v)
+mu::Array numfnc_rect2polar(const mu::Array& v)
 {
     mu::Array res;
 
@@ -156,7 +156,7 @@ mu::Array parser_rect2polar(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_polar2rect(const mu::Array& v)
+mu::Array numfnc_polar2rect(const mu::Array& v)
 {
     mu::Array res;
 
@@ -178,7 +178,7 @@ mu::Array parser_polar2rect(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_conj(const mu::Array& v)
+mu::Array numfnc_conj(const mu::Array& v)
 {
     return mu::apply(std::conj, v);
 }
@@ -193,7 +193,7 @@ mu::Array parser_conj(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_complex(const mu::Array& re, const mu::Array& im)
+mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 {
     mu::Array res;
 
@@ -241,7 +241,7 @@ static std::complex<double> factorial_impl(const std::complex<double>& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Faculty(const mu::Array& v)
+mu::Array numfnc_Faculty(const mu::Array& v)
 {
     return mu::apply(factorial_impl, v);
 }
@@ -274,7 +274,7 @@ static std::complex<double> double_factorial_impl(const std::complex<double>& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_doubleFaculty(const mu::Array& v)
+mu::Array numfnc_doubleFaculty(const mu::Array& v)
 {
     return mu::apply(double_factorial_impl, v);
 }
@@ -302,7 +302,7 @@ static std::complex<double> binom_impl(const std::complex<double>& v1, const std
     {
         /* --> In allen anderen Faellen muessen wir den Binomialkoeffzienten muehsam mithilfe der Formel
          *     binom(v1,v2) = v1!/(v2!*(v1-v2)!) ausrechnen. Das machen wir, indem wir die Funktion
-         *     parser_Faculty(mu::Array) aufrufen <--
+         *     numfnc_Faculty(mu::Array) aufrufen <--
          */
         return factorial_impl(v1) / (factorial_impl(v2)*factorial_impl(intCast(v1) - intCast(v2)));
     }
@@ -318,7 +318,7 @@ static std::complex<double> binom_impl(const std::complex<double>& v1, const std
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Binom(const mu::Array& v1, const mu::Array& v2)
+mu::Array numfnc_Binom(const mu::Array& v1, const mu::Array& v2)
 {
     return mu::apply(binom_impl, v1, v2);
 }
@@ -333,7 +333,7 @@ mu::Array parser_Binom(const mu::Array& v1, const mu::Array& v2)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Num(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
 {
     size_t elems;
 
@@ -388,7 +388,7 @@ mu::Array parser_Num(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Cnt(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
         return mu::Array(mu::Numerical(vElements[0].size()));
@@ -421,11 +421,11 @@ static mu::Value conj(const mu::Value& val)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Std(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
 {
     mu::Value vStd = 0.0;
-    mu::Value vMean = parser_Avg(vElements, nElements).front();
-    mu::Value vNum = parser_Num(vElements, nElements).front();
+    mu::Value vMean = numfnc_Avg(vElements, nElements).front();
+    mu::Value vNum = numfnc_Num(vElements, nElements).front();
 
     if (nElements == 1)
     {
@@ -457,7 +457,7 @@ mu::Array parser_Std(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_product(const mu::Array* vElements, int nElements)
+mu::Array numfnc_product(const mu::Array* vElements, int nElements)
 {
     mu::Value vProd = 1.0;
 
@@ -491,7 +491,7 @@ mu::Array parser_product(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Norm(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
 {
     mu::Value vProd = 0.0;
 
@@ -525,7 +525,7 @@ mu::Array parser_Norm(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Med(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
 {
 #ifndef PARSERSTANDALONE
     Memory _mem;
@@ -559,7 +559,7 @@ mu::Array parser_Med(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Pct(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
 {
 #ifndef PARSERSTANDALONE
     Memory _mem;
@@ -689,7 +689,7 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_compare(const mu::Array& vElements, const mu::Array& value, const mu::Array& mode)
+mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, const mu::Array& mode)
 {
     mu::Array res;
 
@@ -712,7 +712,7 @@ mu::Array parser_compare(const mu::Array& vElements, const mu::Array& value, con
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_and(const mu::Array* vElements, int nElements)
+mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
     {
@@ -745,7 +745,7 @@ mu::Array parser_and(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_or(const mu::Array* vElements, int nElements)
+mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
     {
@@ -778,7 +778,7 @@ mu::Array parser_or(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_xor(const mu::Array* vElements, int nElements)
+mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
 {
     bool isTrue = false;
 
@@ -822,7 +822,7 @@ mu::Array parser_xor(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_polynomial(const mu::Array* vElements, int nElements)
+mu::Array numfnc_polynomial(const mu::Array* vElements, int nElements)
 {
     if (!nElements)
         return mu::Value(NAN);
@@ -852,7 +852,7 @@ mu::Array parser_polynomial(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_perlin(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence)
+mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence)
 {
     noise::module::Perlin perlinNoise;
 
@@ -899,7 +899,7 @@ mu::Array parser_perlin(const mu::Array& x, const mu::Array& y, const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_logtoidx(const mu::Array* v, int n)
+mu::Array numfnc_logtoidx(const mu::Array* v, int n)
 {
     mu::Array vIdx;
 
@@ -936,12 +936,12 @@ mu::Array parser_logtoidx(const mu::Array* v, int n)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_idxtolog(const mu::Array* v, int n)
+mu::Array numfnc_idxtolog(const mu::Array* v, int n)
 {
     if (!n)
         return mu::Value(false);
 
-    mu::Array maxIdx = parser_Max(v, n);
+    mu::Array maxIdx = numfnc_Max(v, n);
 
     if (mu::isnan(maxIdx.front().getNum().val.real()))
         return mu::Value(false);
@@ -979,7 +979,7 @@ mu::Array parser_idxtolog(const mu::Array* v, int n)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Sum(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
 {
     mu::Value fRes;
 
@@ -1013,9 +1013,9 @@ mu::Array parser_Sum(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Avg(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
 {
-    return parser_Sum(vElements, nElements) / parser_Num(vElements, nElements);
+    return numfnc_Sum(vElements, nElements) / numfnc_Num(vElements, nElements);
 }
 
 
@@ -1028,7 +1028,7 @@ mu::Array parser_Avg(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Min(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
 {
     if (!nElements)
         return mu::Value(NAN);
@@ -1065,7 +1065,7 @@ mu::Array parser_Min(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Max(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
 {
     if (!nElements)
         return mu::Value(NAN);
@@ -1101,9 +1101,9 @@ mu::Array parser_Max(const mu::Array* vElements, int nElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_MinPos(const mu::Array& vElements)
+mu::Array numfnc_MinPos(const mu::Array& vElements)
 {
-    return parser_compare(vElements, parser_Min(&vElements, 1), mu::Value(0.0));
+    return numfnc_compare(vElements, numfnc_Min(&vElements, 1), mu::Value(0.0));
 }
 
 
@@ -1115,9 +1115,9 @@ mu::Array parser_MinPos(const mu::Array& vElements)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_MaxPos(const mu::Array& vElements)
+mu::Array numfnc_MaxPos(const mu::Array& vElements)
 {
-    return parser_compare(vElements, parser_Max(&vElements, 1), mu::Value(0.0));
+    return numfnc_compare(vElements, numfnc_Max(&vElements, 1), mu::Value(0.0));
 }
 
 
@@ -1133,7 +1133,7 @@ static std::complex<double> round_impl(const std::complex<double>& vToRound, con
 }
 
 
-static std::complex<double> parser_rint(const std::complex<double>& val)
+static std::complex<double> numfnc_rint(const std::complex<double>& val)
 {
     return std::complex<double>(std::rint(val.real()), std::rint(val.imag()));
 }
@@ -1145,9 +1145,9 @@ static std::complex<double> parser_rint(const std::complex<double>& val)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rint(const mu::Array& a)
+mu::Array numfnc_rint(const mu::Array& a)
 {
-    return mu::apply(parser_rint, a);
+    return mu::apply(numfnc_rint, a);
 }
 
 
@@ -1160,7 +1160,7 @@ mu::Array parser_rint(const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_round(const mu::Array& vToRound, const mu::Array& vDecimals)
+mu::Array numfnc_round(const mu::Array& vToRound, const mu::Array& vDecimals)
 {
     return mu::apply(round_impl, vToRound, vDecimals);
 }
@@ -1174,7 +1174,7 @@ mu::Array parser_round(const mu::Array& vToRound, const mu::Array& vDecimals)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_toRadian(const mu::Array& v)
+mu::Array numfnc_toRadian(const mu::Array& v)
 {
     return v * mu::Value(M_PI/180.0);
 }
@@ -1188,7 +1188,7 @@ mu::Array parser_toRadian(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_toDegree(const mu::Array& v)
+mu::Array numfnc_toDegree(const mu::Array& v)
 {
     return v * mu::Value(180.0 / M_PI);
 }
@@ -1265,7 +1265,7 @@ static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_SphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
+mu::Array numfnc_SphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
 {
     return mu::apply(SphericalHarmonics_impl, vl, vm, theta, phi);
 }
@@ -1303,7 +1303,7 @@ static std::complex<double> imSphericalHarmonics_impl(const std::complex<double>
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_imSphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
+mu::Array numfnc_imSphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
 {
     return mu::apply(imSphericalHarmonics_impl, vl, vm, theta, phi);
 }
@@ -1380,7 +1380,7 @@ static std::complex<double> Zernike_impl(const std::complex<double>& vn, const s
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Zernike(const mu::Array& vn, const mu::Array& vm, const mu::Array& rho, const mu::Array& phi)
+mu::Array numfnc_Zernike(const mu::Array& vn, const mu::Array& vm, const mu::Array& rho, const mu::Array& phi)
 {
     return mu::apply(Zernike_impl, vn, vm, rho, phi);
 }
@@ -1405,7 +1405,7 @@ static std::complex<double> SinusCardinalis_impl(const std::complex<double>& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_SinusCardinalis(const mu::Array& v)
+mu::Array numfnc_SinusCardinalis(const mu::Array& v)
 {
     return mu::apply(SinusCardinalis_impl, v);
 }
@@ -1461,7 +1461,7 @@ static std::complex<double> SphericalBessel_impl(const std::complex<double>& vn,
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_SphericalBessel(const mu::Array& vn, const mu::Array& vc)
+mu::Array numfnc_SphericalBessel(const mu::Array& vn, const mu::Array& vc)
 {
     return mu::apply(SphericalBessel_impl, vn, vc);
 }
@@ -1514,7 +1514,7 @@ static std::complex<double> SphericalNeumann_impl(const std::complex<double>& vn
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_SphericalNeumann(const mu::Array& vn, const mu::Array& vc)
+mu::Array numfnc_SphericalNeumann(const mu::Array& vn, const mu::Array& vc)
 {
     return mu::apply(SphericalNeumann_impl, vn, vc);
 }
@@ -1529,7 +1529,7 @@ mu::Array parser_SphericalNeumann(const mu::Array& vn, const mu::Array& vc)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_LegendrePolynomial(const mu::Array& vn, const mu::Array& v)
+mu::Array numfnc_LegendrePolynomial(const mu::Array& vn, const mu::Array& v)
 {
     return mu::apply(LegendrePolynomial_impl, vn, v);
 }
@@ -1546,7 +1546,7 @@ mu::Array parser_LegendrePolynomial(const mu::Array& vn, const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_AssociatedLegendrePolynomial(const mu::Array& vl, const mu::Array& vm, const mu::Array& v)
+mu::Array numfnc_AssociatedLegendrePolynomial(const mu::Array& vl, const mu::Array& vm, const mu::Array& v)
 {
     return mu::apply(AssociatedLegendrePolynomial_impl, vl, vm, v);
 }
@@ -1576,7 +1576,7 @@ static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_LaguerrePolynomial(const mu::Array& vn, const mu::Array& v)
+mu::Array numfnc_LaguerrePolynomial(const mu::Array& vn, const mu::Array& v)
 {
     return mu::apply(LaguerrePolynomial_impl, vn, v);
 }
@@ -1615,7 +1615,7 @@ static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_AssociatedLaguerrePolynomial(const mu::Array& vn, const mu::Array& vk, const mu::Array& v)
+mu::Array numfnc_AssociatedLaguerrePolynomial(const mu::Array& vn, const mu::Array& vk, const mu::Array& v)
 {
     return mu::apply(AssociatedLaguerrePolynomial_impl, vn, vk, v);
 }
@@ -1649,7 +1649,7 @@ static std::complex<double> HermitePolynomial_impl(const std::complex<double>& v
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_HermitePolynomial(const mu::Array& vn, const mu::Array& v)
+mu::Array numfnc_HermitePolynomial(const mu::Array& vn, const mu::Array& v)
 {
     return mu::apply(HermitePolynomial_impl, vn, v);
 }
@@ -1698,7 +1698,7 @@ static std::complex<double> BetheWeizsaecker_impl(const std::complex<double>& vN
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_BetheWeizsaecker(const mu::Array& vN, const mu::Array& vZ)
+mu::Array numfnc_BetheWeizsaecker(const mu::Array& vN, const mu::Array& vZ)
 {
     return mu::apply(BetheWeizsaecker_impl, vN, vZ);
 }
@@ -1712,7 +1712,7 @@ mu::Array parser_BetheWeizsaecker(const mu::Array& vN, const mu::Array& vZ)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Heaviside(const mu::Array& v)
+mu::Array numfnc_Heaviside(const mu::Array& v)
 {
     return v >= mu::Value(0.0);
 }
@@ -1738,7 +1738,7 @@ static std::complex<double> phi_impl(const std::complex<double>& x, const std::c
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_phi(const mu::Array& x, const mu::Array& y)
+mu::Array numfnc_phi(const mu::Array& x, const mu::Array& y)
 {
     return mu::apply(phi_impl, x, y);
 }
@@ -1765,7 +1765,7 @@ std::complex<double> theta_impl(const std::complex<double>& x, const std::comple
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_theta(const mu::Array& x, const mu::Array& y, const mu::Array& z)
+mu::Array numfnc_theta(const mu::Array& x, const mu::Array& y, const mu::Array& z)
 {
     return mu::apply(theta_impl, x, y, z);
 }
@@ -1798,12 +1798,25 @@ static std::complex<double> gauss_rand_impl(const std::complex<double>& vRandAvg
 ///
 /// \param vRandMin const mu::Array&
 /// \param vRandMax const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Random(const mu::Array& vRandMin, const mu::Array& vRandMax)
+mu::Array rndfnc_Random(const mu::Array& vRandMin, const mu::Array& vRandMax, const mu::Array& n)
 {
-    return mu::apply(rand_impl, vRandMin, vRandMax);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max({vRandMax.size(), vRandMin.size(), nRandCount}); i++)
+    {
+        ret.push_back(mu::Value(rand_impl(vRandMin.get(i).getNum().val, vRandMax.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -1814,12 +1827,25 @@ mu::Array parser_Random(const mu::Array& vRandMin, const mu::Array& vRandMax)
 ///
 /// \param vRandAvg const mu::Array&
 /// \param vRandStd const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd)
+mu::Array rndfnc_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd, const mu::Array& n)
 {
-    return mu::apply(gauss_rand_impl, vRandAvg, vRandStd);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max({vRandAvg.size(), vRandStd.size(), nRandCount}); i++)
+    {
+        ret.push_back(mu::Value(gauss_rand_impl(vRandAvg.get(i).getNum().val, vRandStd.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 static std::complex<double> erf_impl(const std::complex<double>& x)
@@ -1845,7 +1871,7 @@ static std::complex<double> erfc_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_erf(const mu::Array& x)
+mu::Array numfnc_erf(const mu::Array& x)
 {
     return mu::apply(erf_impl, x);
 }
@@ -1859,7 +1885,7 @@ mu::Array parser_erf(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_erfc(const mu::Array& x)
+mu::Array numfnc_erfc(const mu::Array& x)
 {
     return mu::apply(erfc_impl, x);
 }
@@ -1888,19 +1914,19 @@ static std::complex<double> gamma_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_gamma(const mu::Array& x)
+mu::Array numfnc_gamma(const mu::Array& x)
 {
     return mu::apply(gamma_impl, x);
 }
 
 
-static std::complex<double>AiryA_impl(const std::complex<double>& x)
+static std::complex<double> AiryA_impl(const std::complex<double>& x)
 {
     return gsl_sf_airy_Ai(x.real(), GSL_PREC_DOUBLE);
 }
 
 
-static std::complex<double>AiryB_impl(const std::complex<double>& x)
+static std::complex<double> AiryB_impl(const std::complex<double>& x)
 {
     return gsl_sf_airy_Bi(x.real(), GSL_PREC_DOUBLE);
 }
@@ -1914,7 +1940,7 @@ static std::complex<double>AiryB_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_AiryA(const mu::Array& x)
+mu::Array numfnc_AiryA(const mu::Array& x)
 {
     return mu::apply(AiryA_impl, x);
 }
@@ -1928,7 +1954,7 @@ mu::Array parser_AiryA(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_AiryB(const mu::Array& x)
+mu::Array numfnc_AiryB(const mu::Array& x)
 {
     return mu::apply(AiryB_impl, x);
 }
@@ -1961,7 +1987,7 @@ static std::complex<double> IrregularCylBessel_impl(const std::complex<double>& 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_RegularCylBessel(const mu::Array& n, const mu::Array& x)
+mu::Array numfnc_RegularCylBessel(const mu::Array& n, const mu::Array& x)
 {
     return mu::apply(RegularCylBessel_impl, n, x);
 }
@@ -1976,7 +2002,7 @@ mu::Array parser_RegularCylBessel(const mu::Array& n, const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_IrregularCylBessel(const mu::Array& n, const mu::Array& x)
+mu::Array numfnc_IrregularCylBessel(const mu::Array& n, const mu::Array& x)
 {
     return mu::apply(IrregularCylBessel_impl, n, x);
 }
@@ -2120,7 +2146,7 @@ static std::complex<double> EllipticD_impl(const std::complex<double>& phi, cons
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_EllipticF(const mu::Array& phic, const mu::Array& kc)
+mu::Array numfnc_EllipticF(const mu::Array& phic, const mu::Array& kc)
 {
     return mu::apply(EllipticF_impl, phic, kc);
 }
@@ -2135,7 +2161,7 @@ mu::Array parser_EllipticF(const mu::Array& phic, const mu::Array& kc)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_EllipticE(const mu::Array& phic, const mu::Array& kc)
+mu::Array numfnc_EllipticE(const mu::Array& phic, const mu::Array& kc)
 {
     return mu::apply(EllipticE_impl, phic, kc);
 }
@@ -2151,7 +2177,7 @@ mu::Array parser_EllipticE(const mu::Array& phic, const mu::Array& kc)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_EllipticP(const mu::Array& phi, const mu::Array& n, const mu::Array& k)
+mu::Array numfnc_EllipticP(const mu::Array& phi, const mu::Array& n, const mu::Array& k)
 {
     return mu::apply(EllipticP_impl, phi, n, k);
 }
@@ -2166,7 +2192,7 @@ mu::Array parser_EllipticP(const mu::Array& phi, const mu::Array& n, const mu::A
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_EllipticD(const mu::Array& phi, const mu::Array& k)
+mu::Array numfnc_EllipticD(const mu::Array& phi, const mu::Array& k)
 {
     return mu::apply(EllipticD_impl, phi, k);
 }
@@ -2192,7 +2218,7 @@ static std::complex<double> beta_impl(const std::complex<double>& a, const std::
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_beta(const mu::Array& a, const mu::Array& b)
+mu::Array numfnc_beta(const mu::Array& a, const mu::Array& b)
 {
     return mu::apply(beta_impl, a, b);
 }
@@ -2278,7 +2304,7 @@ static std::complex<double> zeta_impl(const std::complex<double>& s)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_zeta(const mu::Array& s)
+mu::Array numfnc_zeta(const mu::Array& s)
 {
     return mu::apply(zeta_impl, s);
 }
@@ -2302,7 +2328,7 @@ static std::complex<double> clausen_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_clausen(const mu::Array& x)
+mu::Array numfnc_clausen(const mu::Array& x)
 {
     return mu::apply(clausen_impl, x);
 }
@@ -2331,7 +2357,7 @@ static std::complex<double> digamma_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_digamma(const mu::Array& x)
+mu::Array numfnc_digamma(const mu::Array& x)
 {
     return mu::apply(digamma_impl, x);
 }
@@ -2355,7 +2381,7 @@ static std::complex<double> polygamma_impl(const std::complex<double>& n, const 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_polygamma(const mu::Array& n, const mu::Array& x)
+mu::Array numfnc_polygamma(const mu::Array& n, const mu::Array& x)
 {
     return mu::apply(polygamma_impl, n, x);
 }
@@ -2385,7 +2411,7 @@ static std::complex<double> dilogarithm_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_dilogarithm(const mu::Array& x)
+mu::Array numfnc_dilogarithm(const mu::Array& x)
 {
     return mu::apply(dilogarithm_impl, x);
 }
@@ -2409,7 +2435,7 @@ static std::complex<double> roof_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_floor(const mu::Array& x)
+mu::Array numfnc_floor(const mu::Array& x)
 {
     return mu::apply(floor_impl, x);
 }
@@ -2422,7 +2448,7 @@ mu::Array parser_floor(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_roof(const mu::Array& x)
+mu::Array numfnc_roof(const mu::Array& x)
 {
     return mu::apply(roof_impl, x);
 }
@@ -2437,7 +2463,7 @@ mu::Array parser_roof(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rect(const mu::Array& x, const mu::Array& x0, const mu::Array& x1)
+mu::Array numfnc_rect(const mu::Array& x, const mu::Array& x0, const mu::Array& x1)
 {
     return x > x1 || x < x0;
 }
@@ -2497,7 +2523,7 @@ static std::complex<double> ivl_impl(const std::complex<double>& x, const std::c
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_ivl(const mu::Array& x, const mu::Array& x0, const mu::Array& x1, const mu::Array& lborder, const mu::Array& rborder)
+mu::Array numfnc_ivl(const mu::Array& x, const mu::Array& x0, const mu::Array& x1, const mu::Array& lborder, const mu::Array& rborder)
 {
     return mu::apply(ivl_impl, x, x0, x1, lborder, rborder);
 }
@@ -2522,7 +2548,7 @@ static std::complex<double> studentFactor_impl(const std::complex<double>& vFree
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlpha)
+mu::Array numfnc_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlpha)
 {
     return mu::apply(studentFactor_impl, vFreedoms, vAlpha);
 }
@@ -2546,7 +2572,7 @@ static std::complex<double> lcm_impl(const std::complex<double>& n, const std::c
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_gcd(const mu::Array& n, const mu::Array& k)
+mu::Array numfnc_gcd(const mu::Array& n, const mu::Array& k)
 {
     return mu::apply(gcd_impl, n, k);
 }
@@ -2561,7 +2587,7 @@ mu::Array parser_gcd(const mu::Array& n, const mu::Array& k)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_lcm(const mu::Array& n, const mu::Array& k)
+mu::Array numfnc_lcm(const mu::Array& n, const mu::Array& k)
 {
     return mu::apply(lcm_impl, n, k);
 }
@@ -2589,7 +2615,7 @@ static std::complex<double> mod_impl(const std::complex<double>& v1, const std::
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Mod(const mu::Array& v1, const mu::Array& v2)
+mu::Array oprt_Mod(const mu::Array& v1, const mu::Array& v2)
 {
     return mu::apply(mod_impl, v1, v2);
 }
@@ -2631,7 +2657,7 @@ static std::complex<double> binAnd_impl(const std::complex<double>& v1, const st
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_XOR(const mu::Array& v1, const mu::Array& v2)
+mu::Array oprt_XOR(const mu::Array& v1, const mu::Array& v2)
 {
     return mu::apply(xor_impl, v1, v2);
 }
@@ -2646,7 +2672,7 @@ mu::Array parser_XOR(const mu::Array& v1, const mu::Array& v2)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_BinOR(const mu::Array& v1, const mu::Array& v2)
+mu::Array oprt_BinOR(const mu::Array& v1, const mu::Array& v2)
 {
     return mu::apply(binOr_impl, v1, v2);
 }
@@ -2661,7 +2687,7 @@ mu::Array parser_BinOR(const mu::Array& v1, const mu::Array& v2)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_BinAND(const mu::Array& v1, const mu::Array& v2)
+mu::Array oprt_BinAND(const mu::Array& v1, const mu::Array& v2)
 {
     return mu::apply(binAnd_impl, v1, v2);
 }
@@ -2676,7 +2702,7 @@ mu::Array parser_BinAND(const mu::Array& v1, const mu::Array& v2)
 /// \return const mu::Array&
 ///
 /////////////////////////////////////////////////
-mu::Array parser_is_string(const mu::Array& v)
+mu::Array numfnc_is_string(const mu::Array& v)
 {
     mu::Array res;
 
@@ -2706,7 +2732,7 @@ mu::Array parser_is_string(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_time()
+mu::Array timfnc_time()
 {
     return mu::Value(to_double(sys_time_now()));
 }
@@ -2719,7 +2745,7 @@ mu::Array parser_time()
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_clock()
+mu::Array timfnc_clock()
 {
     return mu::Value((int64_t)clock());
 }
@@ -2733,7 +2759,7 @@ mu::Array parser_clock()
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_sleep(const mu::Array& ms)
+mu::Array numfnc_sleep(const mu::Array& ms)
 {
     int64_t msec = ms.front().getNum().asInt();
     Sleep(msec);
@@ -2741,13 +2767,13 @@ mu::Array parser_sleep(const mu::Array& ms)
 }
 
 
-mu::Array parser_exp(const mu::Array& a)
+mu::Array numfnc_exp(const mu::Array& a)
 {
     return mu::apply(std::exp, a);
 }
 
 
-static std::complex<double> parser_abs(const std::complex<double>& val)
+static std::complex<double> numfnc_abs(const std::complex<double>& val)
 {
     if (val.imag() == 0.0)
         return std::abs(val.real());
@@ -2755,49 +2781,49 @@ static std::complex<double> parser_abs(const std::complex<double>& val)
     return std::abs(val);
 }
 
-mu::Array parser_abs(const mu::Array& a)
+mu::Array numfnc_abs(const mu::Array& a)
 {
-    return mu::apply(parser_abs, a);
+    return mu::apply(numfnc_abs, a);
 }
 
 
-mu::Array parser_sqrt(const mu::Array& a)
+mu::Array numfnc_sqrt(const mu::Array& a)
 {
     return mu::apply(std::sqrt, a);
 }
 
 
-static std::complex<double> parser_sign(const std::complex<double>& val)
+static std::complex<double> numfnc_sign(const std::complex<double>& val)
 {
     return std::complex<double>(val.real() == 0.0 ? 0 : (val.real() > 0.0 ? 1.0 : -1.0),
                                 val.imag() == 0.0 ? 0 : (val.imag() > 0.0 ? 1.0 : -1.0));
 }
 
-mu::Array parser_sign(const mu::Array& a)
+mu::Array numfnc_sign(const mu::Array& a)
 {
-    return mu::apply(parser_sign, a);
+    return mu::apply(numfnc_sign, a);
 }
 
 
-static std::complex<double> parser_log2(const std::complex<double>& val)
+static std::complex<double> numfnc_log2(const std::complex<double>& val)
 {
     return val.imag() == 0.0 ? std::log2(val.real()) : std::log(val) / std::log(2.0);
 }
 
 
-mu::Array parser_log2(const mu::Array& a)
+mu::Array numfnc_log2(const mu::Array& a)
 {
-    return mu::apply(parser_log2, a);
+    return mu::apply(numfnc_log2, a);
 }
 
 
-mu::Array parser_log10(const mu::Array& a)
+mu::Array numfnc_log10(const mu::Array& a)
 {
     return mu::apply(std::log10, a);
 }
 
 
-mu::Array parser_ln(const mu::Array& a)
+mu::Array numfnc_ln(const mu::Array& a)
 {
     return mu::apply(std::log, a);
 }
@@ -2824,7 +2850,7 @@ static std::complex<double> log_b_impl(const std::complex<double>& b, const std:
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_log_b(const mu::Array& b, const mu::Array& x)
+mu::Array numfnc_log_b(const mu::Array& b, const mu::Array& x)
 {
     return mu::apply(log_b_impl, b, x);
 }
@@ -2837,7 +2863,7 @@ mu::Array parser_log_b(const mu::Array& b, const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_numereversion()
+mu::Array numfnc_numereversion()
 {
     return mu::Value(100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0);
 }
@@ -2850,7 +2876,7 @@ mu::Array parser_numereversion()
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_omp_threads()
+mu::Array numfnc_omp_threads()
 {
     return mu::Value(omp_get_max_threads());
 }
@@ -2933,7 +2959,7 @@ static std::complex<double> weeknum_impl(const std::complex<double>& vTime)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_date(const mu::Array& vTime, const mu::Array& vType)
+mu::Array timfnc_date(const mu::Array& vTime, const mu::Array& vType)
 {
     return mu::apply(date_impl, vTime, vType);
 }
@@ -2947,7 +2973,7 @@ mu::Array parser_date(const mu::Array& vTime, const mu::Array& vType)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_weeknum(const mu::Array& vTime)
+mu::Array timfnc_weeknum(const mu::Array& vTime)
 {
     return mu::apply(weeknum_impl, vTime);
 }
@@ -2961,7 +2987,7 @@ mu::Array parser_weeknum(const mu::Array& vTime)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_isnan(const mu::Array& v)
+mu::Array numfnc_isnan(const mu::Array& v)
 {
     return v != v;
 }
@@ -3002,7 +3028,7 @@ static std::complex<double> cot_impl(const std::complex<double>& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_interval(const mu::Array& v, const mu::Array& vLeft, const mu::Array& vRight)
+mu::Array numfnc_interval(const mu::Array& v, const mu::Array& vLeft, const mu::Array& vRight)
 {
     return mu::apply(interval_impl, v, vLeft, vRight);
 }
@@ -3016,79 +3042,79 @@ mu::Array parser_interval(const mu::Array& v, const mu::Array& vLeft, const mu::
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_cot(const mu::Array& x)
+mu::Array numfnc_cot(const mu::Array& x)
 {
     return mu::apply(cot_impl, x);
 }
 
 
-mu::Array parser_sin(const mu::Array& a)
+mu::Array numfnc_sin(const mu::Array& a)
 {
     return mu::apply(std::sin, a);
 }
 
 
-mu::Array parser_cos(const mu::Array& a)
+mu::Array numfnc_cos(const mu::Array& a)
 {
     return mu::apply(std::cos, a);
 }
 
 
-mu::Array parser_tan(const mu::Array& a)
+mu::Array numfnc_tan(const mu::Array& a)
 {
     return mu::apply(std::tan, a);
 }
 
 
-mu::Array parser_asin(const mu::Array& a)
+mu::Array numfnc_asin(const mu::Array& a)
 {
     return mu::apply(std::asin, a);
 }
 
 
-mu::Array parser_acos(const mu::Array& a)
+mu::Array numfnc_acos(const mu::Array& a)
 {
     return mu::apply(std::acos, a);
 }
 
 
-mu::Array parser_atan(const mu::Array& a)
+mu::Array numfnc_atan(const mu::Array& a)
 {
     return mu::apply(std::atan, a);
 }
 
 
-mu::Array parser_sinh(const mu::Array& a)
+mu::Array numfnc_sinh(const mu::Array& a)
 {
     return mu::apply(std::sinh, a);
 }
 
 
-mu::Array parser_cosh(const mu::Array& a)
+mu::Array numfnc_cosh(const mu::Array& a)
 {
     return mu::apply(std::cosh, a);
 }
 
 
-mu::Array parser_tanh(const mu::Array& a)
+mu::Array numfnc_tanh(const mu::Array& a)
 {
     return mu::apply(std::tanh, a);
 }
 
 
-mu::Array parser_asinh(const mu::Array& a)
+mu::Array numfnc_asinh(const mu::Array& a)
 {
     return mu::apply(std::asinh, a);
 }
 
 
-mu::Array parser_acosh(const mu::Array& a)
+mu::Array numfnc_acosh(const mu::Array& a)
 {
     return mu::apply(std::acosh, a);
 }
 
 
-mu::Array parser_atanh(const mu::Array& a)
+mu::Array numfnc_atanh(const mu::Array& a)
 {
     return mu::apply(std::atanh, a);
 }
@@ -3102,7 +3128,7 @@ mu::Array parser_atanh(const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_sec(const mu::Array& x)
+mu::Array numfnc_sec(const mu::Array& x)
 {
     return mu::Value(1.0) / mu::apply(std::cos, x);
 }
@@ -3116,7 +3142,7 @@ mu::Array parser_sec(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_csc(const mu::Array& x)
+mu::Array numfnc_csc(const mu::Array& x)
 {
     return mu::Value(1.0) / mu::apply(std::sin, x);
 }
@@ -3130,7 +3156,7 @@ mu::Array parser_csc(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_asec(const mu::Array& x)
+mu::Array numfnc_asec(const mu::Array& x)
 {
     return mu::apply(std::acos, mu::Value(1.0) / x);
 }
@@ -3144,7 +3170,7 @@ mu::Array parser_asec(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_acsc(const mu::Array& x)
+mu::Array numfnc_acsc(const mu::Array& x)
 {
     return mu::apply(std::asin, mu::Value(1.0) / x);
 }
@@ -3158,7 +3184,7 @@ mu::Array parser_acsc(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_sech(const mu::Array& x)
+mu::Array numfnc_sech(const mu::Array& x)
 {
     return mu::Value(1.0) / mu::apply(std::cosh, x);
 }
@@ -3172,7 +3198,7 @@ mu::Array parser_sech(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_csch(const mu::Array& x)
+mu::Array numfnc_csch(const mu::Array& x)
 {
     return mu::Value(1.0) / mu::apply(std::sinh, x);
 }
@@ -3186,7 +3212,7 @@ mu::Array parser_csch(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_asech(const mu::Array& x)
+mu::Array numfnc_asech(const mu::Array& x)
 {
     return mu::apply(std::acosh, mu::Value(1.0) / x);
 }
@@ -3200,7 +3226,7 @@ mu::Array parser_asech(const mu::Array& x)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_acsch(const mu::Array& x)
+mu::Array numfnc_acsch(const mu::Array& x)
 {
     return mu::apply(std::asinh, mu::Value(1.0) / x);
 }
@@ -3242,7 +3268,7 @@ static mu::Value as_time_impl(const mu::Value& hours, const mu::Value& minutes, 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_as_date(const mu::Array& year, const mu::Array& month, const mu::Array& day)
+mu::Array timfnc_as_date(const mu::Array& year, const mu::Array& month, const mu::Array& day)
 {
     return mu::apply(as_date_impl, year,
                      month.isDefault() ? mu::Value(1.0) : month,
@@ -3262,7 +3288,7 @@ mu::Array parser_as_date(const mu::Array& year, const mu::Array& month, const mu
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_as_time(const mu::Array& h, const mu::Array& m, const mu::Array& s, const mu::Array& ms, const mu::Array& mus)
+mu::Array timfnc_as_time(const mu::Array& h, const mu::Array& m, const mu::Array& s, const mu::Array& ms, const mu::Array& mus)
 {
     return mu::apply(as_time_impl, h,
                      m.isDefault() ? mu::Value(0.0) : m,
@@ -3279,7 +3305,7 @@ mu::Array parser_as_time(const mu::Array& h, const mu::Array& m, const mu::Array
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_laplace_rd(const std::complex<double>& a)
+static std::complex<double> rndfnc_laplace_rd(const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(a) || a.imag() != 0 || a.real() <= 0)
@@ -3300,7 +3326,7 @@ static std::complex<double> parser_rd_laplace_rd(const std::complex<double>& a)
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_laplace_pdf(const std::complex<double>& x, const std::complex<double>& a)
+static std::complex<double> rndfnc_laplace_pdf(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() == 0.0)
@@ -3321,7 +3347,7 @@ static std::complex<double> parser_rd_laplace_pdf(const std::complex<double>& x,
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_laplace_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
+static std::complex<double> rndfnc_laplace_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() <= 0)
@@ -3342,10 +3368,10 @@ static std::complex<double> parser_rd_laplace_cdf_p(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_laplace_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
+static std::complex<double> rndfnc_laplace_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Get the result from the existing p variant
-    return std::complex<double>(1) - parser_rd_laplace_cdf_p(x, a);
+    return std::complex<double>(1) - rndfnc_laplace_cdf_p(x, a);
 }
 
 
@@ -3359,7 +3385,7 @@ static std::complex<double> parser_rd_laplace_cdf_q(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_laplace_inv_p(const std::complex<double>& p, const std::complex<double>& a)
+static std::complex<double> rndfnc_laplace_inv_p(const std::complex<double>& p, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0 || p.real() > 1)
@@ -3380,7 +3406,7 @@ static std::complex<double> parser_rd_laplace_inv_p(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_laplace_inv_q(const std::complex<double>& q, const std::complex<double>& a)
+static std::complex<double> rndfnc_laplace_inv_q(const std::complex<double>& q, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(a) || q.imag() != 0 || a.imag() != 0 || a.real() <= 0 || q.real() < 0 || q.real() > 1)
@@ -3399,7 +3425,7 @@ static std::complex<double> parser_rd_laplace_inv_q(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_cauchy_rd(const std::complex<double>& a)
+static std::complex<double> rndfnc_cauchy_rd(const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(a) || a.imag() != 0 || a.real() <= 0)
@@ -3420,7 +3446,7 @@ static std::complex<double> parser_rd_cauchy_rd(const std::complex<double>& a)
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_cauchy_pdf(const std::complex<double>& x, const std::complex<double>& a)
+static std::complex<double> rndfnc_cauchy_pdf(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() == 0)
@@ -3441,7 +3467,7 @@ static std::complex<double> parser_rd_cauchy_pdf(const std::complex<double>& x, 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_cauchy_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
+static std::complex<double> rndfnc_cauchy_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() <= 0)
@@ -3462,10 +3488,10 @@ static std::complex<double> parser_rd_cauchy_cdf_p(const std::complex<double>& x
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_cauchy_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
+static std::complex<double> rndfnc_cauchy_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Get the result from the existing p variant
-    return std::complex<double>(1) - parser_rd_cauchy_cdf_p(x, a);
+    return std::complex<double>(1) - rndfnc_cauchy_cdf_p(x, a);
 }
 
 
@@ -3479,7 +3505,7 @@ static std::complex<double> parser_rd_cauchy_cdf_q(const std::complex<double>& x
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_cauchy_inv_p(const std::complex<double>& p, const std::complex<double>& a)
+static std::complex<double> rndfnc_cauchy_inv_p(const std::complex<double>& p, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0 || p.real() > 1)
@@ -3500,7 +3526,7 @@ static std::complex<double> parser_rd_cauchy_inv_p(const std::complex<double>& p
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_cauchy_inv_q(const std::complex<double>& q, const std::complex<double>& a)
+static std::complex<double> rndfnc_cauchy_inv_q(const std::complex<double>& q, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(a) || q.imag() != 0 || a.imag() != 0 || a.real() <= 0 || q.real() < 0 || q.real() > 1)
@@ -3519,7 +3545,7 @@ static std::complex<double> parser_rd_cauchy_inv_q(const std::complex<double>& q
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_rayleigh_rd(const std::complex<double>& sigma)
+static std::complex<double> rndfnc_rayleigh_rd(const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(sigma) || sigma.imag() != 0 || sigma.real() <= 0)
@@ -3540,7 +3566,7 @@ static std::complex<double> parser_rd_rayleigh_rd(const std::complex<double>& si
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_rayleigh_pdf(const std::complex<double>& x, const std::complex<double>& sigma)
+static std::complex<double> rndfnc_rayleigh_pdf(const std::complex<double>& x, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() == 0 || x.real() < 0)
@@ -3561,7 +3587,7 @@ static std::complex<double> parser_rd_rayleigh_pdf(const std::complex<double>& x
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_rayleigh_cdf_p(const std::complex<double>& x, const std::complex<double>& sigma)
+static std::complex<double> rndfnc_rayleigh_cdf_p(const std::complex<double>& x, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || x.real() < 0)
@@ -3582,10 +3608,10 @@ static std::complex<double> parser_rd_rayleigh_cdf_p(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_rayleigh_cdf_q(const std::complex<double>& x, const std::complex<double>& sigma)
+static std::complex<double> rndfnc_rayleigh_cdf_q(const std::complex<double>& x, const std::complex<double>& sigma)
 {
     // Get the result from the existing p variant
-    return std::complex<double>(1) - parser_rd_rayleigh_cdf_p(x, sigma);
+    return std::complex<double>(1) - rndfnc_rayleigh_cdf_p(x, sigma);
 }
 
 
@@ -3599,7 +3625,7 @@ static std::complex<double> parser_rd_rayleigh_cdf_q(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_rayleigh_inv_p(const std::complex<double>& p, const std::complex<double>& sigma)
+static std::complex<double> rndfnc_rayleigh_inv_p(const std::complex<double>& p, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(sigma) || p.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || p.real() < 0 || p.real() > 1)
@@ -3620,7 +3646,7 @@ static std::complex<double> parser_rd_rayleigh_inv_p(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_rayleigh_inv_q(const std::complex<double>& q, const std::complex<double>& sigma)
+static std::complex<double> rndfnc_rayleigh_inv_q(const std::complex<double>& q, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(sigma) || q.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || q.real() < 0 || q.real() > 1)
@@ -3639,7 +3665,7 @@ static std::complex<double> parser_rd_rayleigh_inv_q(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_landau_pdf(const std::complex<double>& x)
+static std::complex<double> rndfnc_landau_pdf(const std::complex<double>& x)
 {
     // Check the input values
     if (mu::isnan(x) || x.imag() != 0)
@@ -3659,7 +3685,7 @@ static std::complex<double> parser_rd_landau_pdf(const std::complex<double>& x)
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_levyAlphaStable_rd(const std::complex<double>& c, const std::complex<double>& alpha)
+static std::complex<double> rndfnc_levyAlphaStable_rd(const std::complex<double>& c, const std::complex<double>& alpha)
 {
     // Check the input values
     if (mu::isnan(c) || c.imag() != 0 || c.real() < 0 || mu::isnan(alpha) || alpha.imag() != 0 || alpha.real() <= 0 || alpha.real() > 2)
@@ -3679,7 +3705,7 @@ static std::complex<double> parser_rd_levyAlphaStable_rd(const std::complex<doub
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_fisher_f_rd(const std::complex<double>& nu1, const std::complex<double>& nu2)
+static std::complex<double> rndfnc_fisher_f_rd(const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(nu1) || nu1.imag() != 0 || nu1.real() <= 0 || mu::isnan(nu2) || nu2.imag() != 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3701,7 +3727,7 @@ static std::complex<double> parser_rd_fisher_f_rd(const std::complex<double>& nu
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_fisher_f_pdf(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
+static std::complex<double> rndfnc_fisher_f_pdf(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() < 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3723,7 +3749,7 @@ static std::complex<double> parser_rd_fisher_f_pdf(const std::complex<double>& x
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_fisher_f_cdf_p(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
+static std::complex<double> rndfnc_fisher_f_cdf_p(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() < 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3745,10 +3771,10 @@ static std::complex<double> parser_rd_fisher_f_cdf_p(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_fisher_f_cdf_q(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
+static std::complex<double> rndfnc_fisher_f_cdf_q(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Get the result from the existing p variant
-    return std::complex<double>(1) - parser_rd_fisher_f_cdf_p(x, nu1, nu2);
+    return std::complex<double>(1) - rndfnc_fisher_f_cdf_p(x, nu1, nu2);
 }
 
 
@@ -3763,7 +3789,7 @@ static std::complex<double> parser_rd_fisher_f_cdf_q(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_fisher_f_inv_p(const std::complex<double>& p, const std::complex<double>& nu1, const std::complex<double>& nu2)
+static std::complex<double> rndfnc_fisher_f_inv_p(const std::complex<double>& p, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(nu1) || mu::isnan(nu2) || p.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || p.real() < 0 || p.real() > 1 || nu1.real() <= 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3785,7 +3811,7 @@ static std::complex<double> parser_rd_fisher_f_inv_p(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_fisher_f_inv_q(const std::complex<double>& q, const std::complex<double>& nu1, const std::complex<double>& nu2)
+static std::complex<double> rndfnc_fisher_f_inv_q(const std::complex<double>& q, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(nu1) || mu::isnan(nu2) || q.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || q.real() < 0 || q.real() > 1 || nu1.real() <= 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3805,7 +3831,7 @@ static std::complex<double> parser_rd_fisher_f_inv_q(const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_weibull_rd(const std::complex<double>& a, const std::complex<double>& b)
+static std::complex<double> rndfnc_weibull_rd(const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b))
@@ -3827,7 +3853,7 @@ static std::complex<double> parser_rd_weibull_rd(const std::complex<double>& a, 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_weibull_pdf(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
+static std::complex<double> rndfnc_weibull_pdf(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
@@ -3849,7 +3875,7 @@ static std::complex<double> parser_rd_weibull_pdf(const std::complex<double>& x,
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_weibull_cdf_p(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
+static std::complex<double> rndfnc_weibull_cdf_p(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
@@ -3871,7 +3897,7 @@ static std::complex<double> parser_rd_weibull_cdf_p(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_weibull_cdf_q(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
+static std::complex<double> rndfnc_weibull_cdf_q(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
 {
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
         return NAN;
@@ -3892,7 +3918,7 @@ static std::complex<double> parser_rd_weibull_cdf_q(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_weibull_inv_p(const std::complex<double>& p, const std::complex<double>& a, const std::complex<double>& b)
+static std::complex<double> rndfnc_weibull_inv_p(const std::complex<double>& p, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(p) || p.real() < 0 || p.real() > 1)
@@ -3914,7 +3940,7 @@ static std::complex<double> parser_rd_weibull_inv_p(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_weibull_inv_q(const std::complex<double>& q, const std::complex<double>& a, const std::complex<double>& b)
+static std::complex<double> rndfnc_weibull_inv_q(const std::complex<double>& q, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(q) || q.real() < 0 || q.real() > 1)
@@ -3933,7 +3959,7 @@ static std::complex<double> parser_rd_weibull_inv_q(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_student_t_rd(const std::complex<double>& nu)
+static std::complex<double> rndfnc_student_t_rd(const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(nu) || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3954,7 +3980,7 @@ static std::complex<double> parser_rd_student_t_rd(const std::complex<double>& n
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_student_t_pdf(const std::complex<double>& x, const std::complex<double>& nu)
+static std::complex<double> rndfnc_student_t_pdf(const std::complex<double>& x, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3975,7 +4001,7 @@ static std::complex<double> parser_rd_student_t_pdf(const std::complex<double>& 
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_student_t_cdf_p(const std::complex<double>& x, const std::complex<double>& nu)
+static std::complex<double> rndfnc_student_t_cdf_p(const std::complex<double>& x, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3996,10 +4022,10 @@ static std::complex<double> parser_rd_student_t_cdf_p(const std::complex<double>
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_student_t_cdf_q(const std::complex<double>& x, const std::complex<double>& nu)
+static std::complex<double> rndfnc_student_t_cdf_q(const std::complex<double>& x, const std::complex<double>& nu)
 {
     // Get the result from the existing p variant
-    return std::complex<double>(1) - parser_rd_student_t_cdf_p(x, nu);
+    return std::complex<double>(1) - rndfnc_student_t_cdf_p(x, nu);
 }
 
 
@@ -4013,7 +4039,7 @@ static std::complex<double> parser_rd_student_t_cdf_q(const std::complex<double>
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_student_t_inv_p(const std::complex<double>& p, const std::complex<double>& nu)
+static std::complex<double> rndfnc_student_t_inv_p(const std::complex<double>& p, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(nu) || p.imag() != 0 || nu.imag() != 0 || p.real() < 0 || p.real() > 1 || nu.real() <= 0 || !isInt(nu.real()))
@@ -4034,7 +4060,7 @@ static std::complex<double> parser_rd_student_t_inv_p(const std::complex<double>
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> parser_rd_student_t_inv_q(const std::complex<double>& q, const std::complex<double>& nu)
+static std::complex<double> rndfnc_student_t_inv_q(const std::complex<double>& q, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(nu) || q.imag() != 0 || nu.imag() != 0 || q.real() < 0 || q.real() > 1 || nu.real() <= 0 || !isInt(nu.real()))
@@ -4051,12 +4077,25 @@ static std::complex<double> parser_rd_student_t_inv_q(const std::complex<double>
 /// from the Laplace distribution function.
 ///
 /// \param a const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_laplace_rd(const mu::Array& a)
+mu::Array rndfnc_laplace_rd(const mu::Array& a, const mu::Array& n)
 {
-    return mu::apply(parser_rd_laplace_rd, a);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max(a.size(), nRandCount); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_laplace_rd(a.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4070,9 +4109,9 @@ mu::Array parser_rd_laplace_rd(const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_laplace_pdf(const mu::Array& x, const mu::Array& a)
+mu::Array rndfnc_laplace_pdf(const mu::Array& x, const mu::Array& a)
 {
-    return mu::apply(parser_rd_laplace_pdf, x, a);
+    return mu::apply(rndfnc_laplace_pdf, x, a);
 }
 
 
@@ -4086,9 +4125,9 @@ mu::Array parser_rd_laplace_pdf(const mu::Array& x, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_laplace_cdf_p(const mu::Array& x, const mu::Array& a)
+mu::Array rndfnc_laplace_cdf_p(const mu::Array& x, const mu::Array& a)
 {
-    return mu::apply(parser_rd_laplace_cdf_p, x, a);
+    return mu::apply(rndfnc_laplace_cdf_p, x, a);
 }
 
 
@@ -4102,10 +4141,10 @@ mu::Array parser_rd_laplace_cdf_p(const mu::Array& x, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_laplace_cdf_q(const mu::Array& x, const mu::Array& a)
+mu::Array rndfnc_laplace_cdf_q(const mu::Array& x, const mu::Array& a)
 {
     // Get the result from the existing p variant
-    return mu::apply(parser_rd_laplace_cdf_q, x, a);
+    return mu::apply(rndfnc_laplace_cdf_q, x, a);
 }
 
 
@@ -4119,9 +4158,9 @@ mu::Array parser_rd_laplace_cdf_q(const mu::Array& x, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_laplace_inv_p(const mu::Array& p, const mu::Array& a)
+mu::Array rndfnc_laplace_inv_p(const mu::Array& p, const mu::Array& a)
 {
-    return mu::apply(parser_rd_laplace_inv_p, p, a);
+    return mu::apply(rndfnc_laplace_inv_p, p, a);
 }
 
 
@@ -4135,9 +4174,9 @@ mu::Array parser_rd_laplace_inv_p(const mu::Array& p, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_laplace_inv_q(const mu::Array& q, const mu::Array& a)
+mu::Array rndfnc_laplace_inv_q(const mu::Array& q, const mu::Array& a)
 {
-    return mu::apply(parser_rd_laplace_inv_q, q, a);
+    return mu::apply(rndfnc_laplace_inv_q, q, a);
 }
 
 
@@ -4146,12 +4185,25 @@ mu::Array parser_rd_laplace_inv_q(const mu::Array& q, const mu::Array& a)
 /// from the Cauchy distribution function.
 ///
 /// \param a const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_cauchy_rd(const mu::Array& a)
+mu::Array rndfnc_cauchy_rd(const mu::Array& a, const mu::Array& n)
 {
-    return mu::apply(parser_rd_cauchy_rd, a);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max(a.size(), nRandCount); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_cauchy_rd(a.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4165,9 +4217,9 @@ mu::Array parser_rd_cauchy_rd(const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_cauchy_pdf(const mu::Array& x, const mu::Array& a)
+mu::Array rndfnc_cauchy_pdf(const mu::Array& x, const mu::Array& a)
 {
-    return mu::apply(parser_rd_cauchy_pdf, x, a);
+    return mu::apply(rndfnc_cauchy_pdf, x, a);
 }
 
 
@@ -4181,9 +4233,9 @@ mu::Array parser_rd_cauchy_pdf(const mu::Array& x, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_cauchy_cdf_p(const mu::Array& x, const mu::Array& a)
+mu::Array rndfnc_cauchy_cdf_p(const mu::Array& x, const mu::Array& a)
 {
-    return mu::apply(parser_rd_cauchy_cdf_p, x, a);
+    return mu::apply(rndfnc_cauchy_cdf_p, x, a);
 }
 
 
@@ -4197,9 +4249,9 @@ mu::Array parser_rd_cauchy_cdf_p(const mu::Array& x, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_cauchy_cdf_q(const mu::Array& x, const mu::Array& a)
+mu::Array rndfnc_cauchy_cdf_q(const mu::Array& x, const mu::Array& a)
 {
-    return mu::apply(parser_rd_cauchy_cdf_q, x, a);
+    return mu::apply(rndfnc_cauchy_cdf_q, x, a);
 }
 
 
@@ -4213,9 +4265,9 @@ mu::Array parser_rd_cauchy_cdf_q(const mu::Array& x, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_cauchy_inv_p(const mu::Array& p, const mu::Array& a)
+mu::Array rndfnc_cauchy_inv_p(const mu::Array& p, const mu::Array& a)
 {
-    return mu::apply(parser_rd_cauchy_inv_p, p, a);
+    return mu::apply(rndfnc_cauchy_inv_p, p, a);
 }
 
 
@@ -4229,9 +4281,9 @@ mu::Array parser_rd_cauchy_inv_p(const mu::Array& p, const mu::Array& a)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_cauchy_inv_q(const mu::Array& q, const mu::Array& a)
+mu::Array rndfnc_cauchy_inv_q(const mu::Array& q, const mu::Array& a)
 {
-    return mu::apply(parser_rd_cauchy_inv_q, q, a);
+    return mu::apply(rndfnc_cauchy_inv_q, q, a);
 }
 
 
@@ -4240,12 +4292,25 @@ mu::Array parser_rd_cauchy_inv_q(const mu::Array& q, const mu::Array& a)
 /// from the Rayleigh distribution function.
 ///
 /// \param sigma const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_rayleigh_rd(const mu::Array& sigma)
+mu::Array rndfnc_rayleigh_rd(const mu::Array& sigma, const mu::Array& n)
 {
-    return mu::apply(parser_rd_rayleigh_rd, sigma);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max(sigma.size(), nRandCount); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_rayleigh_rd(sigma.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4259,9 +4324,9 @@ mu::Array parser_rd_rayleigh_rd(const mu::Array& sigma)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_rayleigh_pdf(const mu::Array& x, const mu::Array& sigma)
+mu::Array rndfnc_rayleigh_pdf(const mu::Array& x, const mu::Array& sigma)
 {
-    return mu::apply(parser_rd_rayleigh_pdf, x, sigma);
+    return mu::apply(rndfnc_rayleigh_pdf, x, sigma);
 }
 
 
@@ -4275,9 +4340,9 @@ mu::Array parser_rd_rayleigh_pdf(const mu::Array& x, const mu::Array& sigma)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_rayleigh_cdf_p(const mu::Array& x, const mu::Array& sigma)
+mu::Array rndfnc_rayleigh_cdf_p(const mu::Array& x, const mu::Array& sigma)
 {
-    return mu::apply(parser_rd_rayleigh_cdf_p, x, sigma);
+    return mu::apply(rndfnc_rayleigh_cdf_p, x, sigma);
 }
 
 
@@ -4291,9 +4356,9 @@ mu::Array parser_rd_rayleigh_cdf_p(const mu::Array& x, const mu::Array& sigma)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_rayleigh_cdf_q(const mu::Array& x, const mu::Array& sigma)
+mu::Array rndfnc_rayleigh_cdf_q(const mu::Array& x, const mu::Array& sigma)
 {
-    return mu::apply(parser_rd_rayleigh_cdf_q, x, sigma);
+    return mu::apply(rndfnc_rayleigh_cdf_q, x, sigma);
 }
 
 
@@ -4307,9 +4372,9 @@ mu::Array parser_rd_rayleigh_cdf_q(const mu::Array& x, const mu::Array& sigma)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_rayleigh_inv_p(const mu::Array& p, const mu::Array& sigma)
+mu::Array rndfnc_rayleigh_inv_p(const mu::Array& p, const mu::Array& sigma)
 {
-    return mu::apply(parser_rd_rayleigh_inv_p, p, sigma);
+    return mu::apply(rndfnc_rayleigh_inv_p, p, sigma);
 }
 
 
@@ -4323,9 +4388,9 @@ mu::Array parser_rd_rayleigh_inv_p(const mu::Array& p, const mu::Array& sigma)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma)
+mu::Array rndfnc_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma)
 {
-    return mu::apply(parser_rd_rayleigh_inv_q, q, sigma);
+    return mu::apply(rndfnc_rayleigh_inv_q, q, sigma);
 }
 
 
@@ -4337,18 +4402,17 @@ mu::Array parser_rd_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_landau_rd(const mu::Array& n)
+mu::Array rndfnc_landau_rd(const mu::Array& n)
 {
     if (n.isDefault())
     {
-    #warning FIXME (numere#1#07/02/24): Solve the problem with random number generators
         // Get the value from the probability density function
         return mu::Value(gsl_ran_landau(getGslRandGenInstance()));
     }
 
     mu::Array ret;
 
-    for (size_t i = 0; i < n.front().getNum().asInt(); i++)
+    for (size_t i = 0; (int64_t)i < n.getAsScalarInt(); i++)
     {
         ret.push_back(mu::Value(gsl_ran_landau(getGslRandGenInstance())));
     }
@@ -4365,9 +4429,9 @@ mu::Array parser_rd_landau_rd(const mu::Array& n)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_landau_pdf(const mu::Array& x)
+mu::Array rndfnc_landau_pdf(const mu::Array& x)
 {
-    return mu::apply(parser_rd_landau_pdf, x);
+    return mu::apply(rndfnc_landau_pdf, x);
 }
 
 
@@ -4377,12 +4441,25 @@ mu::Array parser_rd_landau_pdf(const mu::Array& x)
 ///
 /// \param c const mu::Array&
 /// \param alpha const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha)
+mu::Array rndfnc_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha, const mu::Array& n)
 {
-    return mu::apply(parser_rd_levyAlphaStable_rd, c, alpha);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max({c.size(), alpha.size(), nRandCount}); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_levyAlphaStable_rd(c.get(i).getNum().val, alpha.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4392,12 +4469,25 @@ mu::Array parser_rd_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alph
 ///
 /// \param nu1 const mu::Array&
 /// \param nu2 const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2)
+mu::Array rndfnc_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2, const mu::Array& n)
 {
-    return mu::apply(parser_rd_fisher_f_rd, nu1, nu2);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max({nu1.size(), nu2.size(), nRandCount}); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_fisher_f_rd(nu1.get(i).getNum().val, nu2.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4412,9 +4502,9 @@ mu::Array parser_rd_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_fisher_f_pdf(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
+mu::Array rndfnc_fisher_f_pdf(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
 {
-    return mu::apply(parser_rd_fisher_f_pdf, x, nu1, nu2);
+    return mu::apply(rndfnc_fisher_f_pdf, x, nu1, nu2);
 }
 
 
@@ -4429,9 +4519,9 @@ mu::Array parser_rd_fisher_f_pdf(const mu::Array& x, const mu::Array& nu1, const
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_fisher_f_cdf_p(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
+mu::Array rndfnc_fisher_f_cdf_p(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
 {
-    return mu::apply(parser_rd_fisher_f_cdf_p, x, nu1, nu2);
+    return mu::apply(rndfnc_fisher_f_cdf_p, x, nu1, nu2);
 }
 
 
@@ -4446,9 +4536,9 @@ mu::Array parser_rd_fisher_f_cdf_p(const mu::Array& x, const mu::Array& nu1, con
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_fisher_f_cdf_q(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
+mu::Array rndfnc_fisher_f_cdf_q(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
 {
-    return mu::apply(parser_rd_fisher_f_cdf_q, x, nu1, nu2);
+    return mu::apply(rndfnc_fisher_f_cdf_q, x, nu1, nu2);
 }
 
 
@@ -4463,9 +4553,9 @@ mu::Array parser_rd_fisher_f_cdf_q(const mu::Array& x, const mu::Array& nu1, con
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_fisher_f_inv_p(const mu::Array& p, const mu::Array& nu1, const mu::Array& nu2)
+mu::Array rndfnc_fisher_f_inv_p(const mu::Array& p, const mu::Array& nu1, const mu::Array& nu2)
 {
-    return mu::apply(parser_rd_fisher_f_inv_p, p, nu1, nu2);
+    return mu::apply(rndfnc_fisher_f_inv_p, p, nu1, nu2);
 }
 
 
@@ -4480,9 +4570,9 @@ mu::Array parser_rd_fisher_f_inv_p(const mu::Array& p, const mu::Array& nu1, con
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_fisher_f_inv_q(const mu::Array& q, const mu::Array& nu1, const mu::Array& nu2)
+mu::Array rndfnc_fisher_f_inv_q(const mu::Array& q, const mu::Array& nu1, const mu::Array& nu2)
 {
-    return mu::apply(parser_rd_fisher_f_inv_q, q, nu1, nu2);
+    return mu::apply(rndfnc_fisher_f_inv_q, q, nu1, nu2);
 }
 
 
@@ -4492,12 +4582,25 @@ mu::Array parser_rd_fisher_f_inv_q(const mu::Array& q, const mu::Array& nu1, con
 ///
 /// \param a const mu::Array&
 /// \param b const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_weibull_rd(const mu::Array& a, const mu::Array& b)
+mu::Array rndfnc_weibull_rd(const mu::Array& a, const mu::Array& b, const mu::Array& n)
 {
-    return mu::apply(parser_rd_weibull_rd, a, b);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max({a.size(), b.size(), nRandCount}); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_weibull_rd(a.get(i).getNum().val, b.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4512,9 +4615,9 @@ mu::Array parser_rd_weibull_rd(const mu::Array& a, const mu::Array& b)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_weibull_pdf(const mu::Array& x, const mu::Array& a, const mu::Array& b)
+mu::Array rndfnc_weibull_pdf(const mu::Array& x, const mu::Array& a, const mu::Array& b)
 {
-    return mu::apply(parser_rd_weibull_pdf, x, a, b);
+    return mu::apply(rndfnc_weibull_pdf, x, a, b);
 }
 
 
@@ -4529,9 +4632,9 @@ mu::Array parser_rd_weibull_pdf(const mu::Array& x, const mu::Array& a, const mu
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_weibull_cdf_p(const mu::Array& x, const mu::Array& a, const mu::Array& b)
+mu::Array rndfnc_weibull_cdf_p(const mu::Array& x, const mu::Array& a, const mu::Array& b)
 {
-    return mu::apply(parser_rd_weibull_cdf_p, x, a, b);
+    return mu::apply(rndfnc_weibull_cdf_p, x, a, b);
 }
 
 
@@ -4546,9 +4649,9 @@ mu::Array parser_rd_weibull_cdf_p(const mu::Array& x, const mu::Array& a, const 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_weibull_cdf_q(const mu::Array& x, const mu::Array& a, const mu::Array& b)
+mu::Array rndfnc_weibull_cdf_q(const mu::Array& x, const mu::Array& a, const mu::Array& b)
 {
-    return mu::apply(parser_rd_weibull_cdf_q, x, a, b);
+    return mu::apply(rndfnc_weibull_cdf_q, x, a, b);
 }
 
 
@@ -4563,9 +4666,9 @@ mu::Array parser_rd_weibull_cdf_q(const mu::Array& x, const mu::Array& a, const 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_weibull_inv_p(const mu::Array& p, const mu::Array& a, const mu::Array& b)
+mu::Array rndfnc_weibull_inv_p(const mu::Array& p, const mu::Array& a, const mu::Array& b)
 {
-    return mu::apply(parser_rd_weibull_inv_p, p, a, b);
+    return mu::apply(rndfnc_weibull_inv_p, p, a, b);
 }
 
 
@@ -4580,9 +4683,9 @@ mu::Array parser_rd_weibull_inv_p(const mu::Array& p, const mu::Array& a, const 
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_weibull_inv_q(const mu::Array& q, const mu::Array& a, const mu::Array& b)
+mu::Array rndfnc_weibull_inv_q(const mu::Array& q, const mu::Array& a, const mu::Array& b)
 {
-    return mu::apply(parser_rd_weibull_inv_q, q, a, b);
+    return mu::apply(rndfnc_weibull_inv_q, q, a, b);
 }
 
 
@@ -4591,12 +4694,25 @@ mu::Array parser_rd_weibull_inv_q(const mu::Array& q, const mu::Array& a, const 
 /// from the Student t-distribution function.
 ///
 /// \param nu const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_student_t_rd(const mu::Array& nu)
+mu::Array rndfnc_student_t_rd(const mu::Array& nu, const mu::Array& n)
 {
-    return mu::apply(parser_rd_student_t_rd, nu);
+    size_t nRandCount = 1;
+
+    if (!n.isDefault())
+        nRandCount = n.getAsScalarInt();
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < std::max(nu.size(), nRandCount); i++)
+    {
+        ret.push_back(mu::Value(rndfnc_student_t_rd(nu.get(i).getNum().val)));
+    }
+
+    return ret;
 }
 
 
@@ -4610,9 +4726,9 @@ mu::Array parser_rd_student_t_rd(const mu::Array& nu)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_student_t_pdf(const mu::Array& x, const mu::Array& nu)
+mu::Array rndfnc_student_t_pdf(const mu::Array& x, const mu::Array& nu)
 {
-    return mu::apply(parser_rd_student_t_pdf, x, nu);
+    return mu::apply(rndfnc_student_t_pdf, x, nu);
 }
 
 
@@ -4626,9 +4742,9 @@ mu::Array parser_rd_student_t_pdf(const mu::Array& x, const mu::Array& nu)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_student_t_cdf_p(const mu::Array& x, const mu::Array& nu)
+mu::Array rndfnc_student_t_cdf_p(const mu::Array& x, const mu::Array& nu)
 {
-    return mu::apply(parser_rd_student_t_cdf_p, x, nu);
+    return mu::apply(rndfnc_student_t_cdf_p, x, nu);
 }
 
 
@@ -4642,9 +4758,9 @@ mu::Array parser_rd_student_t_cdf_p(const mu::Array& x, const mu::Array& nu)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_student_t_cdf_q(const mu::Array& x, const mu::Array& nu)
+mu::Array rndfnc_student_t_cdf_q(const mu::Array& x, const mu::Array& nu)
 {
-    return mu::apply(parser_rd_student_t_cdf_q, x, nu);
+    return mu::apply(rndfnc_student_t_cdf_q, x, nu);
 }
 
 
@@ -4658,9 +4774,9 @@ mu::Array parser_rd_student_t_cdf_q(const mu::Array& x, const mu::Array& nu)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_student_t_inv_p(const mu::Array& p, const mu::Array& nu)
+mu::Array rndfnc_student_t_inv_p(const mu::Array& p, const mu::Array& nu)
 {
-    return mu::apply(parser_rd_student_t_inv_p, p, nu);
+    return mu::apply(rndfnc_student_t_inv_p, p, nu);
 }
 
 
@@ -4674,8 +4790,8 @@ mu::Array parser_rd_student_t_inv_p(const mu::Array& p, const mu::Array& nu)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
+mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
 {
-    return mu::apply(parser_rd_student_t_inv_q, q, nu);
+    return mu::apply(rndfnc_student_t_inv_q, q, nu);
 }
 

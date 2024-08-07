@@ -1745,7 +1745,7 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].getNum().val);
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].as_cmplx());
     }
 
     return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1), VectorIndex(0)));
@@ -1827,7 +1827,7 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].getNum().val);
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].as_cmplx());
     }
 
     return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal.getNum().val));
@@ -2733,7 +2733,7 @@ static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& err
     for (size_t i = 0; i < _mReturn.rows(); i++)
     {
         _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2) + intPower(funcData.mat1(i, 1), 2));
-        _mReturn(i, 1) = parser_phi(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1))).front().getNum().val;
+        _mReturn(i, 1) = numfnc_phi(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1))).front().as_cmplx();
     }
 
     return _mReturn;
@@ -2769,8 +2769,8 @@ static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& e
         _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2)
                                    + intPower(funcData.mat1(i, 1), 2)
                                    + intPower(funcData.mat1(i, 2), 2));
-        _mReturn(i, 1) = parser_phi(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1))).front().getNum().val;
-        _mReturn(i, 2) = parser_theta(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1)), mu::Value(funcData.mat1(i, 2))).front().getNum().val;
+        _mReturn(i, 1) = numfnc_phi(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1))).front().as_cmplx();
+        _mReturn(i, 2) = numfnc_theta(mu::Value(funcData.mat1(i, 0)), mu::Value(funcData.mat1(i, 1)), mu::Value(funcData.mat1(i, 2))).front().as_cmplx();
     }
 
     return _mReturn;
@@ -2835,9 +2835,9 @@ static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& er
     for (size_t i = 0; i < _mReturn.rows(); i++)
     {
         _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2) + intPower(funcData.mat1(i, 2), 2));
-        _mReturn(i, 2) = parser_theta(mu::Value(funcData.mat1(i, 0) * cos(funcData.mat1(i, 1))),
+        _mReturn(i, 2) = numfnc_theta(mu::Value(funcData.mat1(i, 0) * cos(funcData.mat1(i, 1))),
                                       mu::Value(funcData.mat1(i, 0) * sin(funcData.mat1(i, 1))),
-                                      mu::Value(funcData.mat1(i, 2))).front().getNum().val;
+                                      mu::Value(funcData.mat1(i, 2))).front().as_cmplx();
     }
 
     return _mReturn;

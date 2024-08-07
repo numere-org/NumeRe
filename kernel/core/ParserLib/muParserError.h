@@ -48,6 +48,7 @@ namespace mu
     /** \brief Error codes. */
     enum EErrorCodes
     {
+#warning TODO (numere#1#08/07/24): Sync this with the error messages
         // Formula syntax errors
         ecUNEXPECTED_OPERATOR    = 0,  ///< Unexpected binary operator found
         ecUNASSIGNABLE_TOKEN     = 1,  ///< Token cant be identified.
@@ -63,35 +64,43 @@ namespace mu
         ecVAL_EXPECTED           = 11, ///< A numerical function has been called with a non value type of argument
         ecMISSING_PARENS         = 12, ///< Missing parens. (Example: "3*sin(3")
         ecUNEXPECTED_FUN         = 13, ///< Unexpected function found. (Example: "sin(8)cos(9)")
-        ecUNTERMINATED_STRING    = 14, ///< unterminated string constant. (Example: "3*valueof("hello)")
-        ecTOO_MANY_PARAMS        = 15, ///< Too many function parameters
-        ecTOO_FEW_PARAMS         = 16, ///< Too few function parameters. (Example: "ite(1<2,2)")
-        ecOPRT_TYPE_CONFLICT     = 17, ///< binary operators may only be applied to value items of the same type
-        ecSTR_RESULT             = 18, ///< result is a string
+        ecUNEXPECTED_METHOD      = 14, ///< Unexpected method found. (Example: "+.len")
+        ecUNTERMINATED_STRING    = 15, ///< unterminated string constant. (Example: "3*valueof("hello)")
+        ecTOO_MANY_PARAMS        = 16, ///< Too many function parameters
+        ecTOO_FEW_PARAMS         = 17, ///< Too few function parameters. (Example: "ite(1<2,2)")
+        ecOPRT_TYPE_CONFLICT     = 18, ///< binary operators may only be applied to value items of the same type
+        ecSTR_RESULT             = 19, ///< result is a string
 
         // Invalid Parser input Parameters
-        ecINVALID_NAME           = 19, ///< Invalid function, variable or constant name.
-        ecINVALID_BINOP_IDENT    = 20, ///< Invalid binary operator identifier
-        ecINVALID_INFIX_IDENT    = 21, ///< Invalid function, variable or constant name.
-        ecINVALID_POSTFIX_IDENT  = 22, ///< Invalid function, variable or constant name.
+        ecINVALID_NAME           = 20, ///< Invalid function, variable or constant name.
+        ecINVALID_BINOP_IDENT    = 21, ///< Invalid binary operator identifier
+        ecINVALID_INFIX_IDENT    = 22, ///< Invalid function, variable or constant name.
+        ecINVALID_POSTFIX_IDENT  = 23, ///< Invalid function, variable or constant name.
 
-        ecBUILTIN_OVERLOAD       = 23, ///< Trying to overload builtin operator
-        ecINVALID_FUN_PTR        = 24, ///< Invalid callback function pointer
-        ecINVALID_VAR_PTR        = 25, ///< Invalid variable pointer
-        ecEMPTY_EXPRESSION       = 26, ///< The Expression is empty
-        ecNAME_CONFLICT          = 27, ///< Name conflict
-        ecOPT_PRI                = 28, ///< Invalid operator priority
+        ecBUILTIN_OVERLOAD       = 24, ///< Trying to overload builtin operator
+        ecINVALID_FUN_PTR        = 25, ///< Invalid callback function pointer
+        ecINVALID_VAR_PTR        = 26, ///< Invalid variable pointer
+        ecEMPTY_EXPRESSION       = 27, ///< The Expression is empty
+        ecNAME_CONFLICT          = 28, ///< Name conflict
+        ecOPT_PRI                = 29, ///< Invalid operator priority
         //
-        ecDOMAIN_ERROR           = 29, ///< catch division by zero, sqrt(-1), log(0) (currently unused)
-        ecGENERIC                = 30, ///< Generic error
-        ecLOCALE                 = 31, ///< Conflict with current locale
+        ecDOMAIN_ERROR           = 30, ///< catch division by zero, sqrt(-1), log(0) (currently unused)
+        ecGENERIC                = 31, ///< Generic error
+        ecLOCALE                 = 32, ///< Conflict with current locale
 
-        ecUNEXPECTED_CONDITIONAL = 32,
-        ecMISSING_ELSE_CLAUSE    = 33,
-        ecMISPLACED_COLON        = 34,
+        ecUNEXPECTED_CONDITIONAL = 33,
+        ecMISSING_ELSE_CLAUSE    = 34,
+        ecMISPLACED_COLON        = 35,
+
+        ecTYPE_NO_STR            = 36, ///< Type is not a string (Value does not contain a string type)
+        ecTYPE_NO_VAL            = 37, ///< Type is not a value (Value does not contain a numerical type)
+        ecTYPE_MISMATCH          = 38, ///< Something's wrong with the types (Value types do not match or operation not supported)
+        ecTYPE_MISMATCH_OOB      = 39, ///< Something's wrong with the types (Value types do not match or index out of bounds)
+        ecASSIGNED_TYPE_MISMATCH = 40, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
+        ecMETHOD_ERROR           = 41, ///< Such a method does not exist (No such method or too few arguments)
 
         // internal errors
-        ecINTERNAL_ERROR         = 35, ///< Internal error of any kind.
+        ecINTERNAL_ERROR         = 42, ///< Internal error of any kind.
 
         // The last two are special entries
         ecCOUNT,                      ///< This is no error code, It just stores just the total number of error codes

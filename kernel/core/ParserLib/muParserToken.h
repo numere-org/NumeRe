@@ -153,6 +153,7 @@ namespace mu
                 assert(a_iType != cmVAR);
                 assert(a_iType != cmVAL);
                 assert(a_iType != cmFUNC);
+                assert(a_iType != cmMETHOD);
 
                 m_iCode = a_iType;
                 m_iType = tpVOID;
@@ -186,6 +187,19 @@ namespace mu
                 m_iType = tpVOID;
                 m_strTok = a_sTok;
                 m_pCallback.reset(new ParserCallback(a_pCallback));
+
+                m_var = nullptr;
+                m_iIdx = -1;
+                m_val2StrLen = 0;
+
+                return *this;
+            }
+
+            ParserToken& SetMethod(const std::string& a_sTok, bool noargs)
+            {
+                m_iCode = cmMETHOD;
+                m_iType = noargs ? tpNOARGS : tpVOID;
+                m_strTok = a_sTok;
 
                 m_var = nullptr;
                 m_iIdx = -1;

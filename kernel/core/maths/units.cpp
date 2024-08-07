@@ -29,7 +29,7 @@
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Identity(const mu::Array& v)
+mu::Array numfnc_Identity(const mu::Array& v)
 {
     return v;
 }
@@ -42,7 +42,7 @@ mu::Array parser_Identity(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Mega(const mu::Array& a_fVal)
+mu::Array unit_Mega(const mu::Array& a_fVal)
 {
     return a_fVal * 1e6;
 }
@@ -55,7 +55,7 @@ mu::Array parser_Mega(const mu::Array& a_fVal)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Milli(const mu::Array& a_fVal)
+mu::Array unit_Milli(const mu::Array& a_fVal)
 {
     return a_fVal * 1e-3;
 }
@@ -68,7 +68,7 @@ mu::Array parser_Milli(const mu::Array& a_fVal)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Giga(const mu::Array& a_fVal)
+mu::Array unit_Giga(const mu::Array& a_fVal)
 {
     return a_fVal * 1e9;
 }
@@ -81,7 +81,7 @@ mu::Array parser_Giga(const mu::Array& a_fVal)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Kilo(const mu::Array& a_fVal)
+mu::Array unit_Kilo(const mu::Array& a_fVal)
 {
     return a_fVal * 1e3;
 }
@@ -94,7 +94,7 @@ mu::Array parser_Kilo(const mu::Array& a_fVal)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Micro(const mu::Array& a_fVal)
+mu::Array unit_Micro(const mu::Array& a_fVal)
 {
     return a_fVal * 1e-6;
 }
@@ -107,7 +107,7 @@ mu::Array parser_Micro(const mu::Array& a_fVal)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Nano(const mu::Array& a_fVal)
+mu::Array unit_Nano(const mu::Array& a_fVal)
 {
     return a_fVal * 1e-9;
 }
@@ -120,7 +120,7 @@ mu::Array parser_Nano(const mu::Array& a_fVal)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_ElectronVolt(const mu::Array& v)
+mu::Array unit_ElectronVolt(const mu::Array& v)
 {
     return v * 1.60217657e-19;
 }
@@ -133,7 +133,7 @@ mu::Array parser_ElectronVolt(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Fermi(const mu::Array& v)
+mu::Array unit_Fermi(const mu::Array& v)
 {
     return v * 1e-15;
 }
@@ -146,7 +146,7 @@ mu::Array parser_Fermi(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Angstroem(const mu::Array& v)
+mu::Array unit_Angstroem(const mu::Array& v)
 {
     return v * 1e-10;
 }
@@ -159,7 +159,7 @@ mu::Array parser_Angstroem(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Barn(const mu::Array& v)
+mu::Array unit_Barn(const mu::Array& v)
 {
     return v * 1e-28;
 }
@@ -172,7 +172,7 @@ mu::Array parser_Barn(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Torr(const mu::Array& v)
+mu::Array unit_Torr(const mu::Array& v)
 {
     return v * 101325.0/760.0;
 }
@@ -185,7 +185,7 @@ mu::Array parser_Torr(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_AstroUnit(const mu::Array& v)
+mu::Array unit_AstroUnit(const mu::Array& v)
 {
     return v * 149597870700.0;
 }
@@ -198,7 +198,7 @@ mu::Array parser_AstroUnit(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Lightyear(const mu::Array& v)
+mu::Array unit_Lightyear(const mu::Array& v)
 {
     return v * 9460730472580800.0;
 }
@@ -211,7 +211,7 @@ mu::Array parser_Lightyear(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Parsec(const mu::Array& v)
+mu::Array unit_Parsec(const mu::Array& v)
 {
     return v * 30856775777948584.2;
 }
@@ -224,7 +224,7 @@ mu::Array parser_Parsec(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Mile(const mu::Array& v)
+mu::Array unit_Mile(const mu::Array& v)
 {
     return v * 1609.344;
 }
@@ -237,7 +237,7 @@ mu::Array parser_Mile(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_NauticalMile(const mu::Array& v)
+mu::Array unit_NauticalMile(const mu::Array& v)
 {
     return v * 1852.0;
 }
@@ -250,7 +250,7 @@ mu::Array parser_NauticalMile(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Yard(const mu::Array& v)
+mu::Array unit_Yard(const mu::Array& v)
 {
     return v * 0.9144;
 }
@@ -263,7 +263,7 @@ mu::Array parser_Yard(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Foot(const mu::Array& v)
+mu::Array unit_Foot(const mu::Array& v)
 {
     return v * 0.3048;
 }
@@ -276,7 +276,7 @@ mu::Array parser_Foot(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Inch(const mu::Array& v)
+mu::Array unit_Inch(const mu::Array& v)
 {
     return v * 0.0254;
 }
@@ -289,7 +289,7 @@ mu::Array parser_Inch(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Calorie(const mu::Array& v)
+mu::Array unit_Calorie(const mu::Array& v)
 {
     return v * 4.1868;
 }
@@ -302,7 +302,7 @@ mu::Array parser_Calorie(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_PSI(const mu::Array& v)
+mu::Array unit_PSI(const mu::Array& v)
 {
     return v * 6894.75729;
 }
@@ -315,7 +315,7 @@ mu::Array parser_PSI(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Knoten(const mu::Array& v)
+mu::Array unit_Knoten(const mu::Array& v)
 {
     return v * 463.0 / 900.0;
 }
@@ -328,7 +328,7 @@ mu::Array parser_Knoten(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_liter(const mu::Array& v)
+mu::Array unit_liter(const mu::Array& v)
 {
     return v * 1e-3;
 }
@@ -341,7 +341,7 @@ mu::Array parser_liter(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_kmh(const mu::Array& v)
+mu::Array unit_kmh(const mu::Array& v)
 {
     return v / 3.6;
 }
@@ -354,7 +354,7 @@ mu::Array parser_kmh(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_mph(const mu::Array& v)
+mu::Array unit_mph(const mu::Array& v)
 {
     return v * 1.609334 / 3.6;
 }
@@ -367,7 +367,7 @@ mu::Array parser_mph(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Celsius(const mu::Array& v)
+mu::Array unit_Celsius(const mu::Array& v)
 {
     return v + 273.15;
 }
@@ -380,7 +380,7 @@ mu::Array parser_Celsius(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Fahrenheit(const mu::Array& v)
+mu::Array unit_Fahrenheit(const mu::Array& v)
 {
     return (v + 459.67) * 5.0 / 9.0;
 }
@@ -393,7 +393,7 @@ mu::Array parser_Fahrenheit(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Curie(const mu::Array& v)
+mu::Array unit_Curie(const mu::Array& v)
 {
     return v * 3.7e10;
 }
@@ -406,7 +406,7 @@ mu::Array parser_Curie(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Gauss(const mu::Array& v)
+mu::Array unit_Gauss(const mu::Array& v)
 {
     return v * 1e-4;
 }
@@ -419,7 +419,7 @@ mu::Array parser_Gauss(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Poise(const mu::Array& v)
+mu::Array unit_Poise(const mu::Array& v)
 {
     return v * 1e-1;
 }
@@ -432,7 +432,7 @@ mu::Array parser_Poise(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Bar(const mu::Array& v)
+mu::Array unit_Bar(const mu::Array& v)
 {
     return v * 1e5;
 }
@@ -445,7 +445,7 @@ mu::Array parser_Bar(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Dyn(const mu::Array& v)
+mu::Array unit_Dyn(const mu::Array& v)
 {
     return v * 1e-5;
 }
@@ -458,7 +458,7 @@ mu::Array parser_Dyn(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_Erg(const mu::Array& v)
+mu::Array unit_Erg(const mu::Array& v)
 {
     return v * 1e-7;
 }
@@ -471,7 +471,7 @@ mu::Array parser_Erg(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_mol(const mu::Array& v)
+mu::Array unit_mol(const mu::Array& v)
 {
     return v * 6.022140857E23;
 }
@@ -484,7 +484,7 @@ mu::Array parser_mol(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_gon(const mu::Array& v)
+mu::Array unit_gon(const mu::Array& v)
 {
     return v * M_PI / 200.0;
 }
@@ -497,7 +497,7 @@ mu::Array parser_gon(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_deg(const mu::Array& v)
+mu::Array unit_deg(const mu::Array& v)
 {
     return v * M_PI / 180.0;
 }
@@ -510,7 +510,7 @@ mu::Array parser_deg(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_lb(const mu::Array& v)
+mu::Array unit_lb(const mu::Array& v)
 {
     return v * 0.45359237;
 }
@@ -523,9 +523,9 @@ mu::Array parser_lb(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_oz(const mu::Array& v)
+mu::Array unit_oz(const mu::Array& v)
 {
-    return parser_lb(v/16.0);
+    return unit_lb(v/16.0);
 }
 
 
@@ -536,7 +536,7 @@ mu::Array parser_oz(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_bbarrel(const mu::Array& v)
+mu::Array unit_bbarrel(const mu::Array& v)
 {
     return v * 0.158987294928;
 }
@@ -549,7 +549,7 @@ mu::Array parser_bbarrel(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_barrel(const mu::Array& v)
+mu::Array unit_barrel(const mu::Array& v)
 {
     return v * 0.1192405;
 }
@@ -562,9 +562,9 @@ mu::Array parser_barrel(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_gallon(const mu::Array& v)
+mu::Array unit_gallon(const mu::Array& v)
 {
-    return parser_barrel(v/31.5);
+    return unit_barrel(v/31.5);
 }
 
 
@@ -575,7 +575,7 @@ mu::Array parser_gallon(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_pH(const mu::Array& v)
+mu::Array unit_pH(const mu::Array& v)
 {
     return mu::Array(mu::Value(10.0)).pow(-v);
 }
@@ -588,7 +588,7 @@ mu::Array parser_pH(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_beaufort(const mu::Array& v)
+mu::Array unit_beaufort(const mu::Array& v)
 {
     return 0.836 * v.pow(mu::Value(1.5));
 }
@@ -601,9 +601,9 @@ mu::Array parser_beaufort(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_BRT(const mu::Array& v)
+mu::Array unit_BRT(const mu::Array& v)
 {
-    return v * 100.0 * intPower(parser_Foot(mu::Value(1.0)), 3);
+    return v * 100.0 * unit_Foot(mu::Value(1.0)).pow(mu::Numerical(3));
 }
 
 
@@ -614,7 +614,7 @@ mu::Array parser_BRT(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_PS(const mu::Array& v)
+mu::Array unit_PS(const mu::Array& v)
 {
     return v * 735.49875;
 }
@@ -627,7 +627,7 @@ mu::Array parser_PS(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_hp(const mu::Array& v)
+mu::Array unit_hp(const mu::Array& v)
 {
     return v * 76.0402249 * 9.80665;
 }
@@ -640,9 +640,9 @@ mu::Array parser_hp(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_year(const mu::Array& v)
+mu::Array unit_year(const mu::Array& v)
 {
-    return v * 365.25*parser_day(mu::Value(1.0));
+    return v * 365.25*unit_day(mu::Value(1.0));
 }
 
 
@@ -653,9 +653,9 @@ mu::Array parser_year(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_week(const mu::Array& v)
+mu::Array unit_week(const mu::Array& v)
 {
-    return v * 7.0*parser_day(mu::Value(1.0));
+    return v * 7.0*unit_day(mu::Value(1.0));
 }
 
 
@@ -666,7 +666,7 @@ mu::Array parser_week(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_day(const mu::Array& v)
+mu::Array unit_day(const mu::Array& v)
 {
     return v * 24.0*3600.0;
 }
@@ -679,7 +679,7 @@ mu::Array parser_day(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_hour(const mu::Array& v)
+mu::Array unit_hour(const mu::Array& v)
 {
     return v * 3600.0;
 }
@@ -692,7 +692,7 @@ mu::Array parser_hour(const mu::Array& v)
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_minute(const mu::Array& v)
+mu::Array unit_minute(const mu::Array& v)
 {
     return v * 60.0;
 }
@@ -1159,7 +1159,7 @@ struct Unit
 /////////////////////////////////////////////////
 mu::Array UnitFunction::operator()(const mu::Array& val)
 {
-    // TODO °C and °F are affine transforms and do not follow the
+    // °C and °F are affine transforms and do not follow the
     // generic convention
     if (m_nonlinear)
     {
@@ -1485,96 +1485,96 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
 
     if (sUnit == "kmh" || sUnit == "kph")
         return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{1e3}},
-                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{parser_hour}}};
+                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "gph")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_gallon}},
-                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{parser_hour}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_gallon}},
+                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "mpg")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Mile}},
-                UnitFunction{.m_unit{"m"}, .m_exp{-3*unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{parser_gallon}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Mile}},
+                UnitFunction{.m_unit{"m"}, .m_exp{-3*unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{unit_gallon}}};
 
     if (sUnit == "Gs")
-        return {UnitFunction{.m_unit{"T"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Gauss}}};
+        return {UnitFunction{.m_unit{"T"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Gauss}}};
 
     if (sUnit == "kn")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_NauticalMile}},
-                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{parser_hour}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_NauticalMile}},
+                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "mile" || sUnit == "mi")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Mile}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Mile}}};
 
     if (sUnit == "NM")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_NauticalMile}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_NauticalMile}}};
 
     if (sUnit == "mph")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Mile}},
-                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{parser_hour}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Mile}},
+                UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "Torr" || sUnit == "mmHg")
-        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Torr}}};
+        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Torr}}};
 
     if (sUnit == "ft")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Foot}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Foot}}};
 
     if (sUnit == "in" || sUnit == "\"")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Inch}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Inch}}};
 
     if (sUnit == "mil" || sUnit == "thou")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{1e-3}, .m_conv{parser_Inch}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{1e-3}, .m_conv{unit_Inch}}};
 
     if (sUnit == "yd")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Yard}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Yard}}};
 
     if (sUnit == "psi")
-        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_PSI}}};
+        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_PSI}}};
 
     if (sUnit == "lb")
-        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_lb}}};
+        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_lb}}};
 
     if (sUnit == "oz")
-        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_oz}}};
+        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_oz}}};
 
     if (sUnit == "bbl")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_bbarrel}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_bbarrel}}};
 
     if (sUnit == "bl")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_barrel}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_barrel}}};
 
     if (sUnit == "gal")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_gallon}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_gallon}}};
 
     if (sUnit == "hp")
-        return {UnitFunction{.m_unit{"W"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_hp}}};
+        return {UnitFunction{.m_unit{"W"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_hp}}};
 
     if (sUnit == "PS")
-        return {UnitFunction{.m_unit{"W"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_PS}}};
+        return {UnitFunction{.m_unit{"W"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_PS}}};
 
     if (sUnit == "BRT" || sUnit == "RT")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_BRT}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_BRT}}};
 
     // Time specifics
     if (sUnit == "y")
-        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_year}}};
+        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_year}}};
 
     if (sUnit == "wk")
-        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_week}}};
+        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_week}}};
 
     if (sUnit == "d")
-        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_day}}};
+        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_day}}};
 
     if (sUnit == "h")
-        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_hour}}};
+        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "min")
-        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_minute}}};
+        return {UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_minute}}};
 
 
     // Duplicated code intended to avoid those units to be mixed
     // up with the SI scaling factors
     if (sUnit == "pc")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_Parsec}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_Parsec}}};
 
     if (sUnit == "Pa")
         return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}}};
@@ -1587,20 +1587,20 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
                 UnitFunction{.m_unit{"s"}, .m_exp{-2*unit.m_exp}, .m_sourceExp{-unit.m_exp}}};
 
     if (sUnit == "°C" || sUnit == "degC")
-        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{parser_Celsius}}};
+        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{unit_Celsius}}};
 
     if (sUnit == "°F" || sUnit == "degF")
-        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{parser_Fahrenheit}}};
+        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{unit_Fahrenheit}}};
 
     if (sUnit == "°" || sUnit == "deg")
-        return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_deg}}};
+        return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_deg}}};
 
     if (sUnit == "pH")
-        return {UnitFunction{.m_unit{"mol"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{parser_pH}},
-                UnitFunction{.m_unit{"m"}, .m_exp{-3*unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{parser_liter}}};
+        return {UnitFunction{.m_unit{"mol"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{unit_pH}},
+                UnitFunction{.m_unit{"m"}, .m_exp{-3*unit.m_exp}, .m_sourceExp{-unit.m_exp}, .m_conv{unit_liter}}};
 
     if (sUnit == "bft")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{parser_beaufort}},
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{unit_beaufort}},
                 UnitFunction{.m_unit{"s"}, .m_exp{-unit.m_exp}, .m_sourceExp{-unit.m_exp}}};
 
 
@@ -1609,43 +1609,43 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
     double scale = detectSiScaling(sUnit);
 
     if (sUnit == "°C" || sUnit == "degC")
-        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_nonlinear{true}, .m_conv{parser_Celsius}}};
+        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_nonlinear{true}, .m_conv{unit_Celsius}}};
 
     if (sUnit == "°F" || sUnit == "degF")
-        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_nonlinear{true}, .m_conv{parser_Fahrenheit}}};
+        return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_nonlinear{true}, .m_conv{unit_Fahrenheit}}};
 
     if (sUnit == "°" || sUnit == "deg")
-        return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_deg}}};
+        return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_deg}}};
 
     if (sUnit == "eV")
-        return {UnitFunction{.m_unit{"J"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_ElectronVolt}}};
+        return {UnitFunction{.m_unit{"J"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_ElectronVolt}}};
 
     if (sUnit == "dyn")
-        return {UnitFunction{.m_unit{"N"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Dyn}}};
+        return {UnitFunction{.m_unit{"N"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Dyn}}};
 
     if (sUnit == "erg")
-        return {UnitFunction{.m_unit{"J"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Erg}}};
+        return {UnitFunction{.m_unit{"J"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Erg}}};
 
     if (sUnit == "b")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{2*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Barn}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{2*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Barn}}};
 
     if (sUnit == "cal")
-        return {UnitFunction{.m_unit{"J"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Calorie}}};
+        return {UnitFunction{.m_unit{"J"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Calorie}}};
 
     if (sUnit == "AU")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_AstroUnit}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_AstroUnit}}};
 
     if (sUnit == "Ci")
-        return {UnitFunction{.m_unit{"Bq"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Curie}}};
+        return {UnitFunction{.m_unit{"Bq"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Curie}}};
 
     if (sUnit == "l" || sUnit == "L" || sUnit == "ltr")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_liter}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{3*unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_liter}}};
 
     if (sUnit == "ly")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Lightyear}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Lightyear}}};
 
     if (sUnit == "P")
-        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Poise}},
+        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Poise}},
                 UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}}};
 
     if (sUnit == "St")
@@ -1666,26 +1666,26 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
 
     if (sUnit == "Wh")
         return {UnitFunction{.m_unit{"W"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}},
-                UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_hour}}};
+                UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "Ah")
         return {UnitFunction{.m_unit{"A"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}},
-                UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{parser_hour}}};
+                UnitFunction{.m_unit{"s"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_hour}}};
 
     if (sUnit == "bar")
-        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Bar}}};
+        return {UnitFunction{.m_unit{"Pa"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Bar}}};
 
     if (sUnit == "pc")
-        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Parsec}}};
+        return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Parsec}}};
 
     if (sUnit == "t")
-        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Kilo}}};
+        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Kilo}}};
 
     if (sUnit == "g")
-        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_Milli}}};
+        return {UnitFunction{.m_unit{"kg"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_Milli}}};
 
     if (sUnit == "gon")
-        return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{parser_gon}}};
+        return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_gon}}};
 
     return {UnitFunction{.m_unit{sUnit.to_string()}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}}};
 }
@@ -1737,7 +1737,7 @@ bool canConvert(StringView sUnit)
 {
     UnitConversion converter = getUnitConversion(sUnit);
 
-    return converter.m_convs.size() > 1 || converter.m_convs.front().m_conv != parser_Identity;
+    return converter.m_convs.size() > 1 || converter.m_convs.front().m_conv != numfnc_Identity;
 }
 
 
@@ -1757,6 +1757,6 @@ std::string printUnitConversion(StringView sUnit, UnitConversionMode mode)
 
     UnitConversion convert = getUnitConversion(sUnit);
 
-    return "1 " + sUnit + " = " + toString(convert(mu::Value(1.0)).front().getNum().val, 7) + " " + convert.formatUnit(mode);
+    return "1 " + sUnit + " = " + convert(mu::Value(1.0)).front().print(7) + " " + convert.formatUnit(mode);
 }
 

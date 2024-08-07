@@ -310,7 +310,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     // part will be appended to the evaluated equation.
     for (size_t i = iter_start; i < sCmd.length(); i++)
     {
-        size_t nMatchingParens;
+        size_t nMatchingParens = 0;
         // Is the current character alphabetical and
         // either the first or prefixed with a delimiter?
         // Then this is a possible start for a function

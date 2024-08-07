@@ -39,7 +39,6 @@
 #include "core/io/output.hpp"
 
 #include "core/maths/define.hpp"
-#include "core/maths/functionimplementation.hpp"
 #include "core/maths/parser_functions.hpp"
 
 #include "core/ParserLib/muParser.h"
@@ -179,7 +178,8 @@ class NumeReKernel
         // Functions for initializing the numerical parser
         void defineOperators();
         void defineConst();
-        void defineFunctions();
+        void defineNumFunctions();
+        void defineStrFunctions();
 
     public:
         // Static public class members
@@ -228,7 +228,6 @@ class NumeReKernel
         static void print(const std::string& __sLine, bool printingEnabled = true);
         static void printPreFmt(const std::string& __sLine, bool printingEnabled = true);
         static std::string formatResultOutput(int nNum, mu::Array* v);
-        static std::string formatResultOutput(const std::vector<std::string>& vStringResults);
         static void issueWarning(std::string sWarningMessage);
         static void failMessage(std::string sFailMessage);
         static int numberOfNumbersPerLine();

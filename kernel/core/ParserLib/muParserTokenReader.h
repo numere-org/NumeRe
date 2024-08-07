@@ -104,7 +104,8 @@ namespace mu
                 noELSE    = 1 << 13,
                 noVO      = 1 << 14,
                 noVC      = 1 << 15,
-                sfSTART_OF_LINE = noOPT | noBC | noVC | noPOSTOP | noASSIGN | noIF | noELSE | noARG_SEP,
+                noMETHOD  = 1 << 16,
+                sfSTART_OF_LINE = noOPT | noBC | noVC | noPOSTOP | noASSIGN | noIF | noELSE | noARG_SEP | noMETHOD,
                 noANY     = ~0       ///< All of he above flags set
             };
 
@@ -123,6 +124,7 @@ namespace mu
             bool IsEOF(token_type& a_Tok);
             bool IsInfixOpTok(token_type& a_Tok);
             bool IsFunTok(token_type& a_Tok);
+            bool IsMethod(token_type& a_Tok);
             bool IsPostOpTok(token_type& a_Tok);
             bool IsOprt(token_type& a_Tok);
             bool IsValTok(token_type& a_Tok);

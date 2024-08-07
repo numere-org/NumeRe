@@ -33,50 +33,50 @@ int main()
     _parser.EnableDebugDump(true, false);
 
     // trigonometric functions
-    _parser.DefineFun("sin", parser_sin);
-    _parser.DefineFun("cos", parser_cos);
-    _parser.DefineFun("tan", parser_tan);
+    _parser.DefineFun("sin", numfnc_sin);
+    _parser.DefineFun("cos", numfnc_cos);
+    _parser.DefineFun("tan", numfnc_tan);
     // arcus functions
-    _parser.DefineFun("asin", parser_asin);
-    _parser.DefineFun("arcsin", parser_asin);
-    _parser.DefineFun("acos", parser_acos);
-    _parser.DefineFun("arccos", parser_acos);
-    _parser.DefineFun("atan", parser_atan);
-    _parser.DefineFun("arctan", parser_atan);
+    _parser.DefineFun("asin", numfnc_asin);
+    _parser.DefineFun("arcsin", numfnc_asin);
+    _parser.DefineFun("acos", numfnc_acos);
+    _parser.DefineFun("arccos", numfnc_acos);
+    _parser.DefineFun("atan", numfnc_atan);
+    _parser.DefineFun("arctan", numfnc_atan);
     //DefineFun("atan2", ATan2);
     // hyperbolic functions
-    _parser.DefineFun("sinh", parser_sinh);
-    _parser.DefineFun("cosh", parser_cosh);
-    _parser.DefineFun("tanh", parser_tanh);
+    _parser.DefineFun("sinh", numfnc_sinh);
+    _parser.DefineFun("cosh", numfnc_cosh);
+    _parser.DefineFun("tanh", numfnc_tanh);
     // arcus hyperbolic functions
-    _parser.DefineFun("asinh", parser_asinh);
-    _parser.DefineFun("arsinh", parser_asinh);
-    _parser.DefineFun("acosh", parser_acosh);
-    _parser.DefineFun("arcosh", parser_acosh);
-    _parser.DefineFun("atanh", parser_atanh);
-    _parser.DefineFun("artanh", parser_atanh);
+    _parser.DefineFun("asinh", numfnc_asinh);
+    _parser.DefineFun("arsinh", numfnc_asinh);
+    _parser.DefineFun("acosh", numfnc_acosh);
+    _parser.DefineFun("arcosh", numfnc_acosh);
+    _parser.DefineFun("atanh", numfnc_atanh);
+    _parser.DefineFun("artanh", numfnc_atanh);
     // Logarithm functions
-    _parser.DefineFun("log2", parser_log2);
-    _parser.DefineFun("log10", parser_log10);
-    _parser.DefineFun("log", parser_log10);
-    _parser.DefineFun("ln", parser_ln);
+    _parser.DefineFun("log2", numfnc_log2);
+    _parser.DefineFun("log10", numfnc_log10);
+    _parser.DefineFun("log", numfnc_log10);
+    _parser.DefineFun("ln", numfnc_ln);
     // misc
-    _parser.DefineFun("exp", parser_exp);
-    _parser.DefineFun("sqrt", parser_sqrt);
-    _parser.DefineFun("sign", parser_sign);
-    _parser.DefineFun("rint", parser_rint);
-    _parser.DefineFun("abs", parser_abs);
-    _parser.DefineFun("time", parser_time);
-    _parser.DefineFun("date", parser_date);
+    _parser.DefineFun("exp", numfnc_exp);
+    _parser.DefineFun("sqrt", numfnc_sqrt);
+    _parser.DefineFun("sign", numfnc_sign);
+    _parser.DefineFun("rint", numfnc_rint);
+    _parser.DefineFun("abs", numfnc_abs);
+    _parser.DefineFun("time", timfnc_time);
+    _parser.DefineFun("date", timfnc_date, true, 2);
 
-    _parser.DefineFun("logtoidx", parser_logtoidx);
-    _parser.DefineFun("idxtolog", parser_idxtolog);
+    _parser.DefineFun("logtoidx", numfnc_logtoidx);
+    _parser.DefineFun("idxtolog", numfnc_idxtolog);
     _parser.DefineFun("strlen", strfnc_strlen);
     _parser.DefineFun("substr", strfnc_substr, true, 1);
     _parser.DefineFun("firstch", strfnc_firstch);
     _parser.DefineFun("lastch", strfnc_lastch);
     _parser.DefineFun("strjoin", strfnc_strjoin, true, 2);
-    _parser.DefineFun("landau_rd", parser_rd_landau_rd, false, 1);
+    _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);
 
     std::string sInput;
     int nResults;

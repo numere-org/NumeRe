@@ -82,8 +82,9 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                         continue;
                     }
 
-                    // Calculate the indices
-                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
+                    // Calculate the indices. Has to use a copy of the parser
+                    mu::Parser p = instance->getParser();
+                    ::getIndices(sCommand.subview(pos), idx, p, instance->getMemoryManager(),
                                  isAssignment);
                     break;
                 }
@@ -101,9 +102,10 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                     }
 
                     // Calculate the indices and switch the access
-                    // to a cluster access
+                    // to a cluster access. Has to use a copy of the parser
                     bIsCluster = true;
-                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
+                    mu::Parser p = instance->getParser();
+                    ::getIndices(sCommand.subview(pos), idx, p, instance->getMemoryManager(),
                                  isAssignment);
                     break;
                 }
@@ -492,7 +494,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
     // handle MAF methods. sEntity already has "(" at its back
     while (!isCluster && (nPos = sLine.find(sEntity + ").", nPos)) != std::string::npos)
     {
-        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1])))
+        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~'))
         {
             nPos++;
             continue;
@@ -506,7 +508,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
     // handle logical table accesses
     while (!isCluster && (nPos = sLine.find(sEntity + ")", nPos)) != std::string::npos)
     {
-        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1])))
+        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~'))
         {
             nPos++;
             continue;
@@ -527,7 +529,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
         nPos = sLine.find(sEntity, nPos);
 
         // Ensure that this is delimited occurence
-        if (nPos && (!isDelimiter(sLine[nPos - 1]) || isInQuotes(sLine, nPos)))
+        if (nPos && ((!isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~') || isInQuotes(sLine, nPos, true)))
         {
             nPos++;
             continue;
@@ -582,6 +584,7 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
 
     if (_idx.col.isString())
         bWriteFileName = true;
+#warning TODO (numere#1#08/06/24): Handle here the var2str parser conversion for tables
 
     // Handle the filename and headline access different from the usual data access
     if (!isCluster && bWriteFileName)
@@ -1281,7 +1284,7 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
 
     for (size_t i = 0; i < v[0].size(); i++)
     {
-        TableColumn::ColumnType type = _kernel->getMemoryManager().getType(VectorIndex(intCast(v[0][i].getNum().val) - 1), sTableName);
+        TableColumn::ColumnType type = _kernel->getMemoryManager().getType(VectorIndex(v[0][i].getNum().asInt() - 1), sTableName);
         vRet.push_back(TableColumn::typeToString(type));
     }
 
@@ -1370,7 +1373,7 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
 
     for (size_t i = 0; i < std::min(v[0].size(), v[1].size()); i++)
     {
-        _kernel->getMemoryManager().setUnit(intCast(v[0].get(i).getNum().val) - 1, sTableName, v[1].get(i).getStr());
+        _kernel->getMemoryManager().setUnit(v[0].get(i).getNum().asInt() - 1, sTableName, v[1].get(i).getStr());
     }
 
     return _kernel->getParser().CreateTempVar(v[1]);

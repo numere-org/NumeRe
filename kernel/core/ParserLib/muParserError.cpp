@@ -77,7 +77,6 @@ namespace mu
         m_vErrMsg[ecUNEXPECTED_EOF]         = 	"ERR_MUP_UNEXPECTED_EOF";
         m_vErrMsg[ecUNEXPECTED_ARG_SEP]     = 	"ERR_MUP_UNEXPECTED_ARG_SEP";
         m_vErrMsg[ecUNEXPECTED_PARENS]      = 	"ERR_MUP_UNEXPECTED_PARENS";
-        m_vErrMsg[ecUNEXPECTED_VPARENS]     = 	"ERR_MUP_UNEXPECTED_VPARENS";
         m_vErrMsg[ecUNEXPECTED_FUN]         = 	"ERR_MUP_UNEXPECTED_FUN";
         m_vErrMsg[ecUNEXPECTED_VAL]         = 	"ERR_MUP_UNEXPECTED_VAL";
         m_vErrMsg[ecUNEXPECTED_VAR]         = 	"ERR_MUP_UNEXPECTED_VAR";
@@ -100,6 +99,16 @@ namespace mu
         m_vErrMsg[ecUNEXPECTED_CONDITIONAL] = 	"ERR_MUP_UNEXPECTED_CONDITIONAL";
         m_vErrMsg[ecMISSING_ELSE_CLAUSE]    = 	"ERR_MUP_MISSING_ELSE_CLAUSE";
         m_vErrMsg[ecMISPLACED_COLON]        = 	"ERR_MUP_MISPLACED_COLON";
+
+        m_vErrMsg[ecUNEXPECTED_METHOD]      = 	"ERR_MUP_UNEXPECTED_METHOD"; //
+        m_vErrMsg[ecUNEXPECTED_VPARENS]     = 	"ERR_MUP_UNEXPECTED_VPARENS"; //
+        m_vErrMsg[ecTYPE_NO_STR]            =   "ERR_MUP_TYPE_NO_STR"; //
+        m_vErrMsg[ecTYPE_NO_VAL]            =   "ERR_MUP_TYPE_NO_VAL"; //
+        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_TYPE_MISMATCH"; //
+        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_TYPE_MISMATCH_OOB"; //
+        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_ASSIGNED_TYPE_MISMATCH"; //
+        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_METHOD_ERROR"; //
+
 
 #if defined(_DEBUG)
         for (int i = 0; i < ecCOUNT; ++i)

@@ -424,10 +424,10 @@ std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) co
     mu::Value vf01 = readMem(nBaseLine, nBaseCol+1);
     mu::Value vf11 = readMem(nBaseLine+1, nBaseCol+1);
 
-    std::complex<double> f00 = vf00.isNumerical() ? vf00.getNum().val : NAN;
-    std::complex<double> f10 = vf10.isNumerical() ? vf10.getNum().val : NAN;
-    std::complex<double> f01 = vf01.isNumerical() ? vf01.getNum().val : NAN;
-    std::complex<double> f11 = vf11.isNumerical() ? vf11.getNum().val : NAN;
+    std::complex<double> f00 = vf00.as_cmplx();
+    std::complex<double> f10 = vf10.as_cmplx();
+    std::complex<double> f01 = vf01.as_cmplx();
+    std::complex<double> f11 = vf11.as_cmplx();
 
     // If all are NAN, return NAN
     if (mu::isnan(f00) && mu::isnan(f01) && mu::isnan(f10) && mu::isnan(f11))
@@ -1450,6 +1450,18 @@ void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<dou
 /////////////////////////////////////////////////
 void Memory::writeData(Indices& _idx, const mu::Array& _values)
 {
+    if (_idx.row.isString())
+    {
+        _idx.col.setOpenEndIndex(_idx.col.front()+_values.size()-1);
+
+        for (size_t i = 0; i < _idx.col.size(); i++)
+        {
+            setHeadLineElement(_idx.col[i], _values.get(i).getStr());
+        }
+
+        return;
+    }
+
     int nDirection = LINES;
 
     if (_values.size() == 1)
@@ -1480,7 +1492,7 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
                 if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                 {
                     if (_values[i].isNumerical()
-                        && (_values[i].getNum().val.imag()
+                        && (_values[i].as_cmplx().imag()
                             || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
                                 && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
                         convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
@@ -1529,7 +1541,7 @@ void Memory::writeSingletonData(Indices& _idx, const mu::Value& _value)
             if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
             {
                 if (_value.isNumerical()
-                    && (_value.getNum().val.imag()
+                    && (_value.as_cmplx().imag()
                         || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
                             && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
@@ -2454,7 +2466,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]).getNum().val);
+                operation[j](readMem(_vLine[i], _vCol[j]).as_cmplx());
             }
         }
     }
@@ -3516,7 +3528,7 @@ std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, c
 
     std::vector<std::complex<double>> vPos;
     double dMax = NAN;
-    size_t pos;
+    size_t pos = 0;
     VectorIndex _cellsTemp = _cellsIdx;
     _cellsTemp.apply_offset(nGridOffset);
 

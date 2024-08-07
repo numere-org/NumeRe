@@ -539,6 +539,9 @@ namespace mu
 
 		// Re-initialize the parser
 		ReInit();
+
+		// Convert the string directly to bytecode
+		ParseString();
 	}
 
 
@@ -1357,43 +1360,51 @@ namespace mu
 	    \post The function token is removed from the stack
 	    \throw exception_type if Argument count does not mach function requirements.
 	*/
-	void ParserBase::ApplyFunc( ParserStack<token_type>& a_stOpt,
-								ParserStack<token_type>& a_stVal,
-								int a_iArgCount) const
+	void ParserBase::ApplyFunc(ParserStack<token_type>& a_stOpt,
+                               ParserStack<token_type>& a_stVal,
+                               int a_iArgCount) const
 	{
 		assert(m_pTokenReader.get());
 		static ParserCallback ValidZeroArgument = m_FunDef.at(MU_VECTOR_CREATE);
 
 		// Operator stack empty or does not contain tokens with callback functions
-		if (a_stOpt.empty() || a_stOpt.top().GetFuncAddr() == 0 )
+		if (a_stOpt.empty() || (a_stOpt.top().GetFuncAddr() == 0 && a_stOpt.top().GetCode() != cmMETHOD))
 			return;
 
 		token_type funTok = a_stOpt.pop();
-		assert(funTok.GetFuncAddr());
+		assert(funTok.GetFuncAddr() || funTok.GetCode() == cmMETHOD);
 
 		// Binary operators must rely on their internal operator number
 		// since counting of operators relies on commas for function arguments
 		// binary operators do not have commas in their expression
 		int iArgCount = (funTok.GetCode() == cmOPRT_BIN) ? funTok.GetArgCount() : a_iArgCount;
 
-		// determine how many parameters the function needs. To remember iArgCount includes the
-		// string parameter whilst GetArgCount() counts only numeric parameters.
-		int iArgRequired = funTok.GetArgCount();
-		int iArgOptional = funTok.GetOptArgCount();
+		int iArgRequired = iArgCount;
+        int iArgOptional = 0;
 
-		if (funTok.GetArgCount() >= 0 && iArgCount > iArgRequired)
-			Error(ecTOO_MANY_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
+        // In case of a function (not a method) evaluate the actual necessary arguments
+		if (funTok.GetCode() != cmMETHOD)
+        {
+            // determine how many parameters the function needs. To remember iArgCount includes the
+            // string parameter whilst GetArgCount() counts only numeric parameters.
+            iArgRequired = funTok.GetArgCount();
+            iArgOptional = funTok.GetOptArgCount();
 
-		if (funTok.GetCode() != cmOPRT_BIN && iArgCount < iArgRequired - iArgOptional)
-			Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
+            if (funTok.GetArgCount() >= 0 && iArgCount > iArgRequired)
+                Error(ecTOO_MANY_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
+
+            if (funTok.GetCode() != cmOPRT_BIN && iArgCount < iArgRequired - iArgOptional)
+                Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
+        }
 
 		// Collect the numeric function arguments from the value stack and store them
 		// in a vector
 		std::vector<token_type> stArg;
+
 		for (int i = 0; i < iArgCount; ++i)
 		{
-			stArg.push_back( a_stVal.pop() );
-			if ( stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR )
+			stArg.push_back(a_stVal.pop());
+			if (stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR)
 				Error(ecVAL_EXPECTED, m_pTokenReader->GetPos(), funTok.GetAsString());
 		}
 
@@ -1421,6 +1432,8 @@ namespace mu
                                                    (funTok.GetArgCount() == -1) ? -iArgCount : iArgRequired,
                                                    funTok.IsOptimizable());
 				break;
+            case  cmMETHOD:
+                m_compilingState.m_byteCode.AddMethod(funTok.GetAsString(), iArgCount+1);
             default:
                 break;
                 // nothing, just avoiding warnings
@@ -1453,7 +1466,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push( (vExpr.GetVal() != mu::Value(0.0)) ? vVal1 : vVal2);
+			a_stVal.push((vExpr.GetVal() != mu::Value(0.0)) ? vVal1 : vVal2);
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1831,6 +1844,32 @@ namespace mu
                         }
                     }
 
+                case  cmMETHOD:
+                    {
+                        int iArgCount = pTok->Fun().argc;
+
+                        // switch according to argument count
+                        switch (iArgCount)
+                        {
+                            case 1:
+                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name);
+                                continue;
+                            case 2:
+                                sidx -= 1;
+                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
+                                                               Stack[sidx + 1]);
+                                continue;
+                            case 3:
+                                sidx -= 2;
+                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
+                                                               Stack[sidx + 1],
+                                                               Stack[sidx + 2]);
+                                continue;
+                            default:
+                                Error(ecINTERNAL_ERROR, 1);
+                        }
+                    }
+
                 default:
                     Error(ecINTERNAL_ERROR, 3);
             } // switch CmdCode
@@ -2089,6 +2128,32 @@ namespace mu
                             }
                         }
 
+                    case  cmMETHOD:
+                        {
+                            int iArgCount = pTok->Fun().argc;
+
+                            // switch according to argument count
+                            switch (iArgCount)
+                            {
+                                case 1:
+                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name);
+                                    continue;
+                                case 2:
+                                    sidx -= 1;
+                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
+                                                                   Stack[sidx + 1]);
+                                    continue;
+                                case 3:
+                                    sidx -= 2;
+                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
+                                                                   Stack[sidx + 1],
+                                                                   Stack[sidx + 2]);
+                                    continue;
+                                default:
+                                    Error(ecINTERNAL_ERROR, 1);
+                            }
+                        }
+
                     default:
                         Error(ecINTERNAL_ERROR, 3);
                 } // switch CmdCode
@@ -2143,7 +2208,7 @@ namespace mu
 				case cmVAL:
 				    varArrayCandidate = false;
 					stVal.push(opt);
-					m_compilingState.m_byteCode.AddVal( opt.GetVal() );
+					m_compilingState.m_byteCode.AddVal(opt.GetVal());
 					break;
 
 				case cmELSE:
@@ -2292,15 +2357,15 @@ namespace mu
                             }
 
 							if (iArgCount > 1
-                                && (stOpt.size() == 0 || stOpt.top().GetCode() != cmFUNC))
+                                && (stOpt.size() == 0 || (stOpt.top().GetCode() != cmFUNC && stOpt.top().GetCode() != cmMETHOD)))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
 							// The opening bracket was popped from the stack now check if there
 							// was a function before this bracket
-							if (stOpt.size() &&
-									stOpt.top().GetCode() != cmOPRT_INFIX &&
-									stOpt.top().GetCode() != cmOPRT_BIN &&
-									stOpt.top().GetFuncAddr() != 0)
+							if (stOpt.size()
+								&& stOpt.top().GetCode() != cmOPRT_INFIX
+								&& stOpt.top().GetCode() != cmOPRT_BIN
+								&& (stOpt.top().GetFuncAddr() != nullptr || stOpt.top().GetCode() == cmMETHOD))
 							{
 								ApplyFunc(stOpt, stVal, iArgCount);
 							}
@@ -2398,7 +2463,12 @@ namespace mu
 				case cmOPRT_INFIX:
 				case cmVAL2STR:
 				case cmFUNC:
+                case cmMETHOD:
 					stOpt.push(opt);
+
+					if (opt.GetType() == tpNOARGS)
+                        ApplyFunc(stOpt, stVal, 0);
+
 					varArrayCandidate = false;
 					break;
 
@@ -2479,7 +2549,7 @@ namespace mu
             m_state = &m_compilingState;
 
 		m_pParseFormula = &ParserBase::ParseCmdCode;
-		(this->*m_pParseFormula)();
+		//(this->*m_pParseFormula)();
 	}
 
 	//---------------------------------------------------------------------------
@@ -2711,6 +2781,9 @@ namespace mu
 						break;
 					case cmFUNC:
 					    printFormatted("|   FUNC \"" + stOprt.top().GetAsString() + "\"\n");
+						break;
+					case cmMETHOD:
+					    printFormatted("|   METHOD \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
 					case cmOPRT_INFIX:
 						printFormatted("|   OPRT_INF \"" + stOprt.top().GetAsString() + "\"\n");

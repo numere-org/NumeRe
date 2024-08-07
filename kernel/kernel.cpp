@@ -22,6 +22,9 @@
 #include "core/io/logger.hpp"
 #include "core/plotting/plotting.hpp"
 
+#include "core/maths/functionimplementation.hpp"
+#include "core/strings/functionimplementation.hpp"
+
 #define KERNEL_PRINT_SLEEP 2
 #define TERMINAL_FORMAT_FIELD_LENOFFSET 16
 #define DEFAULT_NUM_PRECISION 7
@@ -339,7 +342,8 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 
     // Define the functions
     g_logger.debug("Defining functions.");
-    defineFunctions();
+    defineNumFunctions();
+    defineStrFunctions();
 
     g_logger.info("Kernel ready.");
 }
@@ -355,52 +359,52 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 void NumeReKernel::defineOperators()
 {
     // --> Syntax fuer die Umrechnungsfunktionen definieren und die zugehoerigen Funktionen deklarieren <--
-    _parser.DefinePostfixOprt("'G", parser_Giga);
-    _parser.DefinePostfixOprt("'M", parser_Mega);
-    _parser.DefinePostfixOprt("'k", parser_Kilo);
-    _parser.DefinePostfixOprt("'m", parser_Milli);
-    _parser.DefinePostfixOprt("'mu", parser_Micro);
-    _parser.DefinePostfixOprt("'n", parser_Nano);
+    _parser.DefinePostfixOprt("'G", unit_Giga);
+    _parser.DefinePostfixOprt("'M", unit_Mega);
+    _parser.DefinePostfixOprt("'k", unit_Kilo);
+    _parser.DefinePostfixOprt("'m", unit_Milli);
+    _parser.DefinePostfixOprt("'mu", unit_Micro);
+    _parser.DefinePostfixOprt("'n", unit_Nano);
 
     // --> Einheitenumrechnungen: Werden aufgerufen durch WERT'EINHEIT <--
-    _parser.DefinePostfixOprt("'eV", parser_ElectronVolt);
-    _parser.DefinePostfixOprt("'fm", parser_Fermi);
-    _parser.DefinePostfixOprt("'A", parser_Angstroem);
-    _parser.DefinePostfixOprt("'b", parser_Barn);
-    _parser.DefinePostfixOprt("'Torr", parser_Torr);
-    _parser.DefinePostfixOprt("'AU", parser_AstroUnit);
-    _parser.DefinePostfixOprt("'ly", parser_Lightyear);
-    _parser.DefinePostfixOprt("'pc", parser_Parsec);
-    _parser.DefinePostfixOprt("'mile", parser_Mile);
-    _parser.DefinePostfixOprt("'yd", parser_Yard);
-    _parser.DefinePostfixOprt("'ft", parser_Foot);
-    _parser.DefinePostfixOprt("'in", parser_Inch);
-    _parser.DefinePostfixOprt("'cal", parser_Calorie);
-    _parser.DefinePostfixOprt("'psi", parser_PSI);
-    _parser.DefinePostfixOprt("'kn", parser_Knoten);
-    _parser.DefinePostfixOprt("'l", parser_liter);
-    _parser.DefinePostfixOprt("'kmh", parser_kmh);
-    _parser.DefinePostfixOprt("'mph", parser_mph);
-    _parser.DefinePostfixOprt("'TC", parser_Celsius);
-    _parser.DefinePostfixOprt("'TF", parser_Fahrenheit);
-    _parser.DefinePostfixOprt("'Ci", parser_Curie);
-    _parser.DefinePostfixOprt("'Gs", parser_Gauss);
-    _parser.DefinePostfixOprt("'Ps", parser_Poise);
-    _parser.DefinePostfixOprt("'mol", parser_mol);
-    _parser.DefinePostfixOprt("'y", parser_year);
-    _parser.DefinePostfixOprt("'wk", parser_week);
-    _parser.DefinePostfixOprt("'d", parser_day);
-    _parser.DefinePostfixOprt("'h", parser_hour);
-    _parser.DefinePostfixOprt("'min", parser_minute);
-    _parser.DefinePostfixOprt("!", parser_Faculty);
-    _parser.DefinePostfixOprt("!!", parser_doubleFaculty);
-    _parser.DefinePostfixOprt("i", parser_imaginaryUnit);
+    _parser.DefinePostfixOprt("'eV", unit_ElectronVolt);
+    _parser.DefinePostfixOprt("'fm", unit_Fermi);
+    _parser.DefinePostfixOprt("'A", unit_Angstroem);
+    _parser.DefinePostfixOprt("'b", unit_Barn);
+    _parser.DefinePostfixOprt("'Torr", unit_Torr);
+    _parser.DefinePostfixOprt("'AU", unit_AstroUnit);
+    _parser.DefinePostfixOprt("'ly", unit_Lightyear);
+    _parser.DefinePostfixOprt("'pc", unit_Parsec);
+    _parser.DefinePostfixOprt("'mile", unit_Mile);
+    _parser.DefinePostfixOprt("'yd", unit_Yard);
+    _parser.DefinePostfixOprt("'ft", unit_Foot);
+    _parser.DefinePostfixOprt("'in", unit_Inch);
+    _parser.DefinePostfixOprt("'cal", unit_Calorie);
+    _parser.DefinePostfixOprt("'psi", unit_PSI);
+    _parser.DefinePostfixOprt("'kn", unit_Knoten);
+    _parser.DefinePostfixOprt("'l", unit_liter);
+    _parser.DefinePostfixOprt("'kmh", unit_kmh);
+    _parser.DefinePostfixOprt("'mph", unit_mph);
+    _parser.DefinePostfixOprt("'TC", unit_Celsius);
+    _parser.DefinePostfixOprt("'TF", unit_Fahrenheit);
+    _parser.DefinePostfixOprt("'Ci", unit_Curie);
+    _parser.DefinePostfixOprt("'Gs", unit_Gauss);
+    _parser.DefinePostfixOprt("'Ps", unit_Poise);
+    _parser.DefinePostfixOprt("'mol", unit_mol);
+    _parser.DefinePostfixOprt("'y", unit_year);
+    _parser.DefinePostfixOprt("'wk", unit_week);
+    _parser.DefinePostfixOprt("'d", unit_day);
+    _parser.DefinePostfixOprt("'h", unit_hour);
+    _parser.DefinePostfixOprt("'min", unit_minute);
+    _parser.DefinePostfixOprt("!", numfnc_Faculty);
+    _parser.DefinePostfixOprt("!!", numfnc_doubleFaculty);
+    _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
 
     // --> Operatoren <--
-    _parser.DefineOprt("%", parser_Mod, prMUL_DIV, oaLEFT);
-    _parser.DefineOprt("|||", parser_XOR, prLOGIC, oaLEFT);
-    _parser.DefineOprt("|", parser_BinOR, prLOGIC, oaLEFT);
-    _parser.DefineOprt("&", parser_BinAND, prLOGIC, oaLEFT);
+    _parser.DefineOprt("%", oprt_Mod, prMUL_DIV, oaLEFT);
+    _parser.DefineOprt("|||", oprt_XOR, prLOGIC, oaLEFT);
+    _parser.DefineOprt("|", oprt_BinOR, prLOGIC, oaLEFT);
+    _parser.DefineOprt("&", oprt_BinAND, prLOGIC, oaLEFT);
 }
 
 
@@ -508,7 +512,7 @@ void NumeReKernel::defineConst()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::defineFunctions()
+void NumeReKernel::defineNumFunctions()
 {
 
     /////////////////////////////////////////////////////////////////////
@@ -519,138 +523,156 @@ void NumeReKernel::defineFunctions()
     // function search in the parser.
     /////////////////////////////////////////////////////////////////////
 
-    _parser.DefineFun("faculty", parser_Faculty);                             // faculty(n)
-    _parser.DefineFun("factorial", parser_Faculty);                           // factorial(n)
-    _parser.DefineFun("dblfacul", parser_doubleFaculty);                      // dblfacul(n)
-    _parser.DefineFun("dblfact", parser_doubleFaculty);                       // dblfact(n)
-    _parser.DefineFun("binom", parser_Binom);                                 // binom(Wert1,Wert2)
-    _parser.DefineFun("num", parser_Num);                                     // num(a,b,c,...)
-    _parser.DefineFun("cnt", parser_Cnt);                                     // num(a,b,c,...)
-    _parser.DefineFun("std", parser_Std);                                     // std(a,b,c,...)
-    _parser.DefineFun("prd", parser_product);                                 // prd(a,b,c,...)
-    _parser.DefineFun("round", parser_round);                                 // round(x,n)
-    _parser.DefineFun("radian", parser_toRadian);                             // radian(alpha)
-    _parser.DefineFun("degree", parser_toDegree);                             // degree(x)
-    _parser.DefineFun("Y", parser_SphericalHarmonics);                        // Y(l,m,theta,phi)
-    _parser.DefineFun("imY", parser_imSphericalHarmonics);                    // imY(l,m,theta,phi)
-    _parser.DefineFun("Z", parser_Zernike);                                   // Z(n,m,rho,phi)
-    _parser.DefineFun("sinc", parser_SinusCardinalis);                        // sinc(x)
-    _parser.DefineFun("sbessel", parser_SphericalBessel);                     // sbessel(n,x)
-    _parser.DefineFun("sneumann", parser_SphericalNeumann);                   // sneumann(n,x)
-    _parser.DefineFun("bessel", parser_RegularCylBessel);                     // bessel(n,x)
-    _parser.DefineFun("neumann", parser_IrregularCylBessel);                  // neumann(n,x)
-    _parser.DefineFun("legendre", parser_LegendrePolynomial);                 // legendre(n,x)
-    _parser.DefineFun("legendre_a", parser_AssociatedLegendrePolynomial);     // legendre_a(l,m,x)
-    _parser.DefineFun("laguerre", parser_LaguerrePolynomial);                 // laguerre(n,x)
-    _parser.DefineFun("laguerre_a", parser_AssociatedLaguerrePolynomial);     // laguerre_a(n,k,x)
-    _parser.DefineFun("hermite", parser_HermitePolynomial);                   // hermite(n,x)
-    _parser.DefineFun("betheweizsaecker", parser_BetheWeizsaecker);           // betheweizsaecker(N,Z)
-    _parser.DefineFun("heaviside", parser_Heaviside);                         // heaviside(x)
-    _parser.DefineFun("phi", parser_phi);                                     // phi(x,y)
-    _parser.DefineFun("theta", parser_theta);                                 // theta(x,y,z)
-    _parser.DefineFun("norm", parser_Norm);                                   // norm(x,y,z,...)
-    _parser.DefineFun("med", parser_Med);                                     // med(x,y,z,...)
-    _parser.DefineFun("pct", parser_Pct);                                     // pct(x,y,z,...)
-    _parser.DefineFun("and", parser_and);                                     // and(x,y,z,...)
-    _parser.DefineFun("or", parser_or);                                       // or(x,y,z,...)
-    _parser.DefineFun("xor", parser_xor);                                     // xor(x,y,z,...)
-    _parser.DefineFun("minpos", parser_MinPos);                               // minpos(x,y,z,...)
-    _parser.DefineFun("maxpos", parser_MaxPos);                               // maxpos(x,y,z,...)
-    _parser.DefineFun("polynomial", parser_polynomial);                       // polynomial(x,a0,a1,a2,a3,...)
-    _parser.DefineFun("perlin", parser_perlin);                               // perlin(x,y,z,seed,freq,oct,pers)
-    _parser.DefineFun("rand", parser_Random, false);                          // rand(left,right)
-    _parser.DefineFun("gauss", parser_gRandom, false);                        // gauss(mean,std)
-    _parser.DefineFun("erf", parser_erf);                                     // erf(x)
-    _parser.DefineFun("erfc", parser_erfc);                                   // erfc(x)
-    _parser.DefineFun("gamma", parser_gamma);                                 // gamma(x)
-    _parser.DefineFun("cmp", parser_compare);                                 // cmp(crit,a,b,c,...,type)
-    _parser.DefineFun("is_string", parser_is_string);                         // is_string(EXPR)
-    _parser.DefineFun("to_value", parser_Identity);                             // to_value(STRING)
-    _parser.DefineFun("time", parser_time, false);                            // time()
-    _parser.DefineFun("clock", parser_clock, false);                          // clock()
-    _parser.DefineFun("sleep", parser_sleep, false);                          // sleep(millisecnds)
-    _parser.DefineFun("version", parser_numereversion);                       // version()
-    _parser.DefineFun("getompthreads", parser_omp_threads);                   // getompthreads()
-    _parser.DefineFun("date", parser_date);                                   // date(TIME,TYPE)
-    _parser.DefineFun("weeknum", parser_weeknum);                             // date(TIME,TYPE)
-    _parser.DefineFun("is_nan", parser_isnan);                                // is_nan(x)
-    _parser.DefineFun("range", parser_interval);                              // range(x,left,right)
-    _parser.DefineFun("Ai", parser_AiryA);                                    // Ai(x)
-    _parser.DefineFun("Bi", parser_AiryB);                                    // Bi(x)
-    _parser.DefineFun("ellipticF", parser_EllipticF);                         // ellipticF(x,k)
-    _parser.DefineFun("ellipticE", parser_EllipticE);                         // ellipticE(x,k)
-    _parser.DefineFun("ellipticPi", parser_EllipticP);                        // ellipticPi(x,n,k)
-    _parser.DefineFun("ellipticD", parser_EllipticD);                         // ellipticD(x,k)
-    _parser.DefineFun("cot", parser_cot);                                     // cot(x)
-    _parser.DefineFun("floor", parser_floor);                                 // floor(x)
-    _parser.DefineFun("roof", parser_roof);                                   // roof(x)
-    _parser.DefineFun("rect", parser_rect);                                   // rect(x,x0,x1)
-    _parser.DefineFun("ivl", parser_ivl);                                     // ivl(x,x0,x1,lb,rb)
-    _parser.DefineFun("student_t", parser_studentFactor);                     // student_t(number,confidence)
-    _parser.DefineFun("gcd", parser_gcd);                                     // gcd(x,y)
-    _parser.DefineFun("lcm", parser_lcm);                                     // lcm(x,y)
-    _parser.DefineFun("beta", parser_beta);                                   // beta(x,y)
-    _parser.DefineFun("zeta", parser_zeta);                                   // zeta(n)
-    _parser.DefineFun("Cl2", parser_clausen);                                 // Cl2(x)
-    _parser.DefineFun("psi", parser_digamma);                                 // psi(x)
-    _parser.DefineFun("psi_n", parser_polygamma);                             // psi_n(n,x)
-    _parser.DefineFun("Li2", parser_dilogarithm);                             // Li2(x)
-    _parser.DefineFun("log_b", parser_log_b);                                 // log_b(b,x)
-    _parser.DefineFun("real", parser_real);                                   // real(x)
-    _parser.DefineFun("imag", parser_imag);                                   // imag(x)
-    _parser.DefineFun("to_rect", parser_polar2rect);                          // to_rect(x)
-    _parser.DefineFun("to_polar", parser_rect2polar);                         // to_polar(x)
-    _parser.DefineFun("conj", parser_conj);                                   // conj(x)
-    _parser.DefineFun("complex", parser_complex);                             // complex(re,im)
-    _parser.DefineFun("sec", parser_sec);                                     // sec(x)
-    _parser.DefineFun("csc", parser_csc);                                     // csc(x)
-    _parser.DefineFun("asec", parser_asec);                                   // asec(x)
-    _parser.DefineFun("acsc", parser_acsc);                                   // acsc(x)
-    _parser.DefineFun("sech", parser_sech);                                   // sech(x)
-    _parser.DefineFun("csch", parser_csch);                                   // csch(x)
-    _parser.DefineFun("asech", parser_asech);                                 // asech(x)
-    _parser.DefineFun("acsch", parser_acsch);                                 // acsch(x)
-    _parser.DefineFun("laplace_rd", parser_rd_laplace_rd, false);             // laplace_rd(sigma)
-    _parser.DefineFun("laplace_pdf", parser_rd_laplace_pdf);                  // laplace_pdf(x, sigma)
-    _parser.DefineFun("laplace_cdf_p", parser_rd_laplace_cdf_p);              // laplace_cdf_p(x, sigma)
-    _parser.DefineFun("laplace_cdf_q", parser_rd_laplace_cdf_q);              // laplace_cdf_q(x, sigma)
-    _parser.DefineFun("laplace_inv_p", parser_rd_laplace_inv_p);              // laplace_inv_p(p, sigma)
-    _parser.DefineFun("laplace_inv_q", parser_rd_laplace_inv_q);              // laplace_inv_q(q, sigma)
-    _parser.DefineFun("cauchy_rd", parser_rd_cauchy_rd, false);               // cauchy_rd(a)
-    _parser.DefineFun("cauchy_pdf", parser_rd_cauchy_pdf);                    // cauchy_pdf(x, a)
-    _parser.DefineFun("cauchy_cdf_p", parser_rd_cauchy_cdf_p);                // cauchy_cdf_p(x, a)
-    _parser.DefineFun("cauchy_cdf_q", parser_rd_cauchy_cdf_q);                // cauchy_cdf_q(x, a)
-    _parser.DefineFun("cauchy_inv_p", parser_rd_cauchy_inv_p);                // cauchy_inv_p(p, a)
-    _parser.DefineFun("cauchy_inv_q", parser_rd_cauchy_inv_q);                // cauchy_inv_q(q, a)
-    _parser.DefineFun("rayleigh_rd", parser_rd_rayleigh_rd, false);           // rayleigh_rd(sigma)
-    _parser.DefineFun("rayleigh_pdf", parser_rd_rayleigh_pdf);                // rayleigh_pdf(x, sigma)
-    _parser.DefineFun("rayleigh_cdf_p", parser_rd_rayleigh_cdf_p);            // rayleigh_cdf_p(x, sigma)
-    _parser.DefineFun("rayleigh_cdf_q", parser_rd_rayleigh_cdf_q);            // rayleigh_cdf_q(x, sigma)
-    _parser.DefineFun("rayleigh_inv_p", parser_rd_rayleigh_inv_p);            // rayleigh_inv_p(p, sigma)
-    _parser.DefineFun("rayleigh_inv_q", parser_rd_rayleigh_inv_q);            // rayleigh_inv_q(q, sigma)
-    _parser.DefineFun("landau_rd", parser_rd_landau_rd, false);               // landau_rd()
-    _parser.DefineFun("landau_pdf", parser_rd_landau_pdf, false);             // landau_pdf(x)
-    _parser.DefineFun("alpha_stable_rd", parser_rd_levyAlphaStable_rd, false);   // levyAlphaStable_rd(c, alpha)
-    _parser.DefineFun("fisher_f_rd", parser_rd_fisher_f_rd, false);           // fisher_f_rd(nu1, nu2)
-    _parser.DefineFun("fisher_f_pdf", parser_rd_fisher_f_pdf);                // fisher_f_pdf(x, nu1, nu2)
-    _parser.DefineFun("fisher_f_cdf_p", parser_rd_fisher_f_cdf_p);            // fisher_f_cdf_p(x, nu1, nu2)
-    _parser.DefineFun("fisher_f_cdf_q", parser_rd_fisher_f_cdf_q);            // fisher_f_cdf_q(x, nu1, nu2)
-    _parser.DefineFun("fisher_f_inv_p", parser_rd_fisher_f_inv_p);            // fisher_f_inv_p(p, nu1, nu2)
-    _parser.DefineFun("fisher_f_inv_q", parser_rd_fisher_f_inv_q);            // fisher_f_inv_q(q, nu1, nu2)
-    _parser.DefineFun("weibull_rd", parser_rd_weibull_rd, false);             // weibull_rd(a, b)
-    _parser.DefineFun("weibull_pdf", parser_rd_weibull_pdf);                  // weibull_pdf(x, a, b)
-    _parser.DefineFun("weibull_cdf_p", parser_rd_weibull_cdf_p);              // weibull_cdf_p(x, a, b)
-    _parser.DefineFun("weibull_cdf_q", parser_rd_weibull_cdf_q);              // weibull_cdf_q(x, a, b)
-    _parser.DefineFun("weibull_inv_p", parser_rd_weibull_inv_p);              // weibull_inv_p(p, a, b)
-    _parser.DefineFun("weibull_inv_q", parser_rd_weibull_inv_q);              // weibull_inv_q(q, a, b)
-    _parser.DefineFun("student_t_rd", parser_rd_student_t_rd, false);         // student_t_rd(nu)
-    _parser.DefineFun("student_t_pdf", parser_rd_student_t_pdf);              // student_t_pdf(x, nu)
-    _parser.DefineFun("student_t_cdf_p", parser_rd_student_t_cdf_p);          // student_t_cdf_p(x, nu)
-    _parser.DefineFun("student_t_cdf_q", parser_rd_student_t_cdf_q);          // student_t_cdf_q(x, nu)
-    _parser.DefineFun("student_t_inv_p", parser_rd_student_t_inv_p);          // student_t_inv_p(p, nu)
-    _parser.DefineFun("student_t_inv_q", parser_rd_student_t_inv_q);          // student_t_inv_q(q, nu)
-    _parser.DefineFun("as_date", parser_as_date, true);                         // as_date(nYear, nMounth, nDay)
-    _parser.DefineFun("as_time", parser_as_time, true);                         // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
+    _parser.DefineFun("faculty", numfnc_Faculty);                                // faculty(n)
+    _parser.DefineFun("factorial", numfnc_Faculty);                              // factorial(n)
+    _parser.DefineFun("dblfacul", numfnc_doubleFaculty);                         // dblfacul(n)
+    _parser.DefineFun("dblfact", numfnc_doubleFaculty);                          // dblfact(n)
+    _parser.DefineFun("binom", numfnc_Binom);                                    // binom(Wert1,Wert2)
+    _parser.DefineFun("num", numfnc_Num);                                        // num(a,b,c,...)
+    _parser.DefineFun("cnt", numfnc_Cnt);                                        // num(a,b,c,...)
+    _parser.DefineFun("std", numfnc_Std);                                        // std(a,b,c,...)
+    _parser.DefineFun("prd", numfnc_product);                                    // prd(a,b,c,...)
+    _parser.DefineFun("round", numfnc_round);                                    // round(x,n)
+    _parser.DefineFun("radian", numfnc_toRadian);                                // radian(alpha)
+    _parser.DefineFun("degree", numfnc_toDegree);                                // degree(x)
+    _parser.DefineFun("Y", numfnc_SphericalHarmonics);                           // Y(l,m,theta,phi)
+    _parser.DefineFun("imY", numfnc_imSphericalHarmonics);                       // imY(l,m,theta,phi)
+    _parser.DefineFun("Z", numfnc_Zernike);                                      // Z(n,m,rho,phi)
+    _parser.DefineFun("sinc", numfnc_SinusCardinalis);                           // sinc(x)
+    _parser.DefineFun("sbessel", numfnc_SphericalBessel);                        // sbessel(n,x)
+    _parser.DefineFun("sneumann", numfnc_SphericalNeumann);                      // sneumann(n,x)
+    _parser.DefineFun("bessel", numfnc_RegularCylBessel);                        // bessel(n,x)
+    _parser.DefineFun("neumann", numfnc_IrregularCylBessel);                     // neumann(n,x)
+    _parser.DefineFun("legendre", numfnc_LegendrePolynomial);                    // legendre(n,x)
+    _parser.DefineFun("legendre_a", numfnc_AssociatedLegendrePolynomial);        // legendre_a(l,m,x)
+    _parser.DefineFun("laguerre", numfnc_LaguerrePolynomial);                    // laguerre(n,x)
+    _parser.DefineFun("laguerre_a", numfnc_AssociatedLaguerrePolynomial);        // laguerre_a(n,k,x)
+    _parser.DefineFun("hermite", numfnc_HermitePolynomial);                      // hermite(n,x)
+    _parser.DefineFun("betheweizsaecker", numfnc_BetheWeizsaecker);              // betheweizsaecker(N,Z)
+    _parser.DefineFun("heaviside", numfnc_Heaviside);                            // heaviside(x)
+    _parser.DefineFun("phi", numfnc_phi);                                        // phi(x,y)
+    _parser.DefineFun("theta", numfnc_theta);                                    // theta(x,y,z)
+    _parser.DefineFun("norm", numfnc_Norm);                                      // norm(x,y,z,...)
+    _parser.DefineFun("med", numfnc_Med);                                        // med(x,y,z,...)
+    _parser.DefineFun("pct", numfnc_Pct);                                        // pct(x,y,z,...)
+    _parser.DefineFun("and", numfnc_and);                                        // and(x,y,z,...)
+    _parser.DefineFun("or", numfnc_or);                                          // or(x,y,z,...)
+    _parser.DefineFun("xor", numfnc_xor);                                        // xor(x,y,z,...)
+    _parser.DefineFun("minpos", numfnc_MinPos);                                  // minpos(x,y,z,...)
+    _parser.DefineFun("maxpos", numfnc_MaxPos);                                  // maxpos(x,y,z,...)
+    _parser.DefineFun("polynomial", numfnc_polynomial);                          // polynomial(x,a0,a1,a2,a3,...)
+    _parser.DefineFun("perlin", rndfnc_perlin, true, 6);                         // perlin(x,y,z,seed,freq,oct,pers)
+    _parser.DefineFun("rand", rndfnc_Random, false, 1);                          // rand(left,right,n)
+    _parser.DefineFun("gauss", rndfnc_gRandom, false, 1);                        // gauss(mean,std,n)
+    _parser.DefineFun("erf", numfnc_erf);                                        // erf(x)
+    _parser.DefineFun("erfc", numfnc_erfc);                                      // erfc(x)
+    _parser.DefineFun("gamma", numfnc_gamma);                                    // gamma(x)
+    _parser.DefineFun("cmp", numfnc_compare);                                    // cmp(crit,a,b,c,...,type)
+    _parser.DefineFun("is_string", numfnc_is_string);                            // is_string(EXPR)
+    _parser.DefineFun("to_value", numfnc_Identity);                              // to_value(STRING)
+    _parser.DefineFun("time", timfnc_time, false);                               // time()
+    _parser.DefineFun("clock", timfnc_clock, false);                             // clock()
+    _parser.DefineFun("sleep", numfnc_sleep, false);                             // sleep(millisecnds)
+    _parser.DefineFun("version", numfnc_numereversion);                          // version()
+    _parser.DefineFun("getompthreads", numfnc_omp_threads);                      // getompthreads()
+    _parser.DefineFun("date", timfnc_date);                                      // date(TIME,TYPE)
+    _parser.DefineFun("weeknum", timfnc_weeknum);                                // date(TIME,TYPE)
+    _parser.DefineFun("is_nan", numfnc_isnan);                                   // is_nan(x)
+    _parser.DefineFun("range", numfnc_interval);                                 // range(x,left,right)
+    _parser.DefineFun("Ai", numfnc_AiryA);                                       // Ai(x)
+    _parser.DefineFun("Bi", numfnc_AiryB);                                       // Bi(x)
+    _parser.DefineFun("ellipticF", numfnc_EllipticF);                            // ellipticF(x,k)
+    _parser.DefineFun("ellipticE", numfnc_EllipticE);                            // ellipticE(x,k)
+    _parser.DefineFun("ellipticPi", numfnc_EllipticP);                           // ellipticPi(x,n,k)
+    _parser.DefineFun("ellipticD", numfnc_EllipticD);                            // ellipticD(x,k)
+    _parser.DefineFun("cot", numfnc_cot);                                        // cot(x)
+    _parser.DefineFun("floor", numfnc_floor);                                    // floor(x)
+    _parser.DefineFun("roof", numfnc_roof);                                      // roof(x)
+    _parser.DefineFun("rect", numfnc_rect);                                      // rect(x,x0,x1)
+    _parser.DefineFun("ivl", numfnc_ivl);                                        // ivl(x,x0,x1,lb,rb)
+    _parser.DefineFun("student_t", numfnc_studentFactor);                        // student_t(number,confidence)
+    _parser.DefineFun("gcd", numfnc_gcd);                                        // gcd(x,y)
+    _parser.DefineFun("lcm", numfnc_lcm);                                        // lcm(x,y)
+    _parser.DefineFun("beta", numfnc_beta);                                      // beta(x,y)
+    _parser.DefineFun("zeta", numfnc_zeta);                                      // zeta(n)
+    _parser.DefineFun("Cl2", numfnc_clausen);                                    // Cl2(x)
+    _parser.DefineFun("psi", numfnc_digamma);                                    // psi(x)
+    _parser.DefineFun("psi_n", numfnc_polygamma);                                // psi_n(n,x)
+    _parser.DefineFun("Li2", numfnc_dilogarithm);                                // Li2(x)
+    _parser.DefineFun("log_b", numfnc_log_b);                                    // log_b(b,x)
+    _parser.DefineFun("real", numfnc_real);                                      // real(x)
+    _parser.DefineFun("imag", numfnc_imag);                                      // imag(x)
+    _parser.DefineFun("to_rect", numfnc_polar2rect);                             // to_rect(x)
+    _parser.DefineFun("to_polar", numfnc_rect2polar);                            // to_polar(x)
+    _parser.DefineFun("conj", numfnc_conj);                                      // conj(x)
+    _parser.DefineFun("complex", numfnc_complex);                                // complex(re,im)
+    _parser.DefineFun("sin", numfnc_sin);                                        // sin(x)
+    _parser.DefineFun("cos", numfnc_cos);                                        // cos(x)
+    _parser.DefineFun("tan", numfnc_tan);                                        // tan(x)
+    _parser.DefineFun("asin", numfnc_asin);                                      // asin(x)
+    _parser.DefineFun("acos", numfnc_acos);                                      // acos(x)
+    _parser.DefineFun("atan", numfnc_atan);                                      // atan(x)
+    _parser.DefineFun("arcsin", numfnc_asin);                                    // arcsin(x)
+    _parser.DefineFun("arccos", numfnc_acos);                                    // arccos(x)
+    _parser.DefineFun("arctan", numfnc_atan);                                    // arctan(x)
+    _parser.DefineFun("sinh", numfnc_sinh);                                      // sinh(x)
+    _parser.DefineFun("cosh", numfnc_cosh);                                      // cosh(x)
+    _parser.DefineFun("tanh", numfnc_tanh);                                      // tanh(x)
+    _parser.DefineFun("asinh", numfnc_asinh);                                    // asinh(x)
+    _parser.DefineFun("acosh", numfnc_acosh);                                    // acosh(x)
+    _parser.DefineFun("atanh", numfnc_atanh);                                    // atanh(x)
+    _parser.DefineFun("arsinh", numfnc_asinh);                                   // arsinh(x)
+    _parser.DefineFun("arcosh", numfnc_acosh);                                   // arcosh(x)
+    _parser.DefineFun("artanh", numfnc_atanh);                                   // artanh(x)
+    _parser.DefineFun("sec", numfnc_sec);                                        // sec(x)
+    _parser.DefineFun("csc", numfnc_csc);                                        // csc(x)
+    _parser.DefineFun("asec", numfnc_asec);                                      // asec(x)
+    _parser.DefineFun("acsc", numfnc_acsc);                                      // acsc(x)
+    _parser.DefineFun("sech", numfnc_sech);                                      // sech(x)
+    _parser.DefineFun("csch", numfnc_csch);                                      // csch(x)
+    _parser.DefineFun("asech", numfnc_asech);                                    // asech(x)
+    _parser.DefineFun("acsch", numfnc_acsch);                                    // acsch(x)
+    _parser.DefineFun("laplace_rd", rndfnc_laplace_rd, false, 1);                // laplace_rd(sigma,n)
+    _parser.DefineFun("laplace_pdf", rndfnc_laplace_pdf);                        // laplace_pdf(x, sigma)
+    _parser.DefineFun("laplace_cdf_p", rndfnc_laplace_cdf_p);                    // laplace_cdf_p(x, sigma)
+    _parser.DefineFun("laplace_cdf_q", rndfnc_laplace_cdf_q);                    // laplace_cdf_q(x, sigma)
+    _parser.DefineFun("laplace_inv_p", rndfnc_laplace_inv_p);                    // laplace_inv_p(p, sigma)
+    _parser.DefineFun("laplace_inv_q", rndfnc_laplace_inv_q);                    // laplace_inv_q(q, sigma)
+    _parser.DefineFun("cauchy_rd", rndfnc_cauchy_rd, false, 1);                  // cauchy_rd(a,n)
+    _parser.DefineFun("cauchy_pdf", rndfnc_cauchy_pdf);                          // cauchy_pdf(x, a)
+    _parser.DefineFun("cauchy_cdf_p", rndfnc_cauchy_cdf_p);                      // cauchy_cdf_p(x, a)
+    _parser.DefineFun("cauchy_cdf_q", rndfnc_cauchy_cdf_q);                      // cauchy_cdf_q(x, a)
+    _parser.DefineFun("cauchy_inv_p", rndfnc_cauchy_inv_p);                      // cauchy_inv_p(p, a)
+    _parser.DefineFun("cauchy_inv_q", rndfnc_cauchy_inv_q);                      // cauchy_inv_q(q, a)
+    _parser.DefineFun("rayleigh_rd", rndfnc_rayleigh_rd, false, 1);              // rayleigh_rd(sigma,n)
+    _parser.DefineFun("rayleigh_pdf", rndfnc_rayleigh_pdf);                      // rayleigh_pdf(x, sigma)
+    _parser.DefineFun("rayleigh_cdf_p", rndfnc_rayleigh_cdf_p);                  // rayleigh_cdf_p(x, sigma)
+    _parser.DefineFun("rayleigh_cdf_q", rndfnc_rayleigh_cdf_q);                  // rayleigh_cdf_q(x, sigma)
+    _parser.DefineFun("rayleigh_inv_p", rndfnc_rayleigh_inv_p);                  // rayleigh_inv_p(p, sigma)
+    _parser.DefineFun("rayleigh_inv_q", rndfnc_rayleigh_inv_q);                  // rayleigh_inv_q(q, sigma)
+    _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);                  // landau_rd(n)
+    _parser.DefineFun("landau_pdf", rndfnc_landau_pdf);                          // landau_pdf(x)
+    _parser.DefineFun("alpha_stable_rd", rndfnc_levyAlphaStable_rd, false, 1);   // levyAlphaStable_rd(c, alpha,n)
+    _parser.DefineFun("fisher_f_rd", rndfnc_fisher_f_rd, false, 1);              // fisher_f_rd(nu1, nu2,n)
+    _parser.DefineFun("fisher_f_pdf", rndfnc_fisher_f_pdf);                      // fisher_f_pdf(x, nu1, nu2)
+    _parser.DefineFun("fisher_f_cdf_p", rndfnc_fisher_f_cdf_p);                  // fisher_f_cdf_p(x, nu1, nu2)
+    _parser.DefineFun("fisher_f_cdf_q", rndfnc_fisher_f_cdf_q);                  // fisher_f_cdf_q(x, nu1, nu2)
+    _parser.DefineFun("fisher_f_inv_p", rndfnc_fisher_f_inv_p);                  // fisher_f_inv_p(p, nu1, nu2)
+    _parser.DefineFun("fisher_f_inv_q", rndfnc_fisher_f_inv_q);                  // fisher_f_inv_q(q, nu1, nu2)
+    _parser.DefineFun("weibull_rd", rndfnc_weibull_rd, false, 1);                // weibull_rd(a, b,n)
+    _parser.DefineFun("weibull_pdf", rndfnc_weibull_pdf);                        // weibull_pdf(x, a, b)
+    _parser.DefineFun("weibull_cdf_p", rndfnc_weibull_cdf_p);                    // weibull_cdf_p(x, a, b)
+    _parser.DefineFun("weibull_cdf_q", rndfnc_weibull_cdf_q);                    // weibull_cdf_q(x, a, b)
+    _parser.DefineFun("weibull_inv_p", rndfnc_weibull_inv_p);                    // weibull_inv_p(p, a, b)
+    _parser.DefineFun("weibull_inv_q", rndfnc_weibull_inv_q);                    // weibull_inv_q(q, a, b)
+    _parser.DefineFun("student_t_rd", rndfnc_student_t_rd, false, 1);            // student_t_rd(nu,n)
+    _parser.DefineFun("student_t_pdf", rndfnc_student_t_pdf);                    // student_t_pdf(x, nu)
+    _parser.DefineFun("student_t_cdf_p", rndfnc_student_t_cdf_p);                // student_t_cdf_p(x, nu)
+    _parser.DefineFun("student_t_cdf_q", rndfnc_student_t_cdf_q);                // student_t_cdf_q(x, nu)
+    _parser.DefineFun("student_t_inv_p", rndfnc_student_t_inv_p);                // student_t_inv_p(p, nu)
+    _parser.DefineFun("student_t_inv_q", rndfnc_student_t_inv_q);                // student_t_inv_q(q, nu)
+    _parser.DefineFun("as_date", timfnc_as_date, true, 2);                       // as_date(nYear, nMounth, nDay)
+    _parser.DefineFun("as_time", timfnc_as_time, true, 4);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
 
 
     /////////////////////////////////////////////////////////////////////
@@ -662,6 +684,94 @@ void NumeReKernel::defineFunctions()
     // Multi-args with a limited number of args (like perlin) have to be
     // excluded always.
     /////////////////////////////////////////////////////////////////////
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function declares all
+/// string functions.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::defineStrFunctions()
+{
+    _parser.DefineFun("to_tex", strfnc_to_tex, true, 1);                             // to_tex(str,n)
+    _parser.DefineFun("to_uppercase", strfnc_to_uppercase);                          // to_uppercase(str)
+    _parser.DefineFun("to_lowercase", strfnc_to_lowercase);                          // to_lowercase(str)
+    _parser.DefineFun("to_ansi", strfnc_utf8ToAnsi);                                 // to_ansi(str)
+    _parser.DefineFun("to_utf8", strfnc_ansiToUtf8);                                 // to_utf8(str)
+    _parser.DefineFun("getenvvar", strfnc_getenvvar);                                // getenvvar(str)
+    _parser.DefineFun("getfileparts", strfnc_getFileParts);                          // getfileparts(str)
+    _parser.DefineFun("getfilediff", strfnc_getFileDiffs, false);                    // getfilediff(str1,str2) <- file accesses cannot be optimized away
+    _parser.DefineFun("getfilelist", strfnc_getfilelist, false, 1);                  // getfilelist(str,n)
+    _parser.DefineFun("getfolderlist", strfnc_getfolderlist, false, 1);              // getfolderlist(str,n)
+    _parser.DefineFun("strlen", strfnc_strlen);                                      // strlen(str)
+    _parser.DefineFun("firstch", strfnc_firstch);                                    // firstch(str)
+    _parser.DefineFun("lastch", strfnc_lastch);                                      // lastch(str)
+    _parser.DefineFun("getmatchingparens", strfnc_getmatchingparens);                // getmatchingparens(str)
+    _parser.DefineFun("ascii", strfnc_ascii);                                        // ascii(str)
+    _parser.DefineFun("is_blank", strfnc_isblank);                                   // is_blank(str)
+    _parser.DefineFun("is_alnum", strfnc_isalnum);                                   // is_alnum(str)
+    _parser.DefineFun("is_alpha", strfnc_isalpha);                                   // is_alpha(str)
+    _parser.DefineFun("is_cntrl", strfnc_iscntrl);                                   // is_cntrl(str)
+    _parser.DefineFun("is_digit", strfnc_isdigit);                                   // is_digit(str)
+    _parser.DefineFun("is_graph", strfnc_isgraph);                                   // is_graph(str)
+    _parser.DefineFun("is_lower", strfnc_islower);                                   // is_lower(str)
+    _parser.DefineFun("is_print", strfnc_isprint);                                   // is_print(str)
+    _parser.DefineFun("is_punct", strfnc_ispunct);                                   // is_punct(str)
+    _parser.DefineFun("is_space", strfnc_isspace);                                   // is_space(str)
+    _parser.DefineFun("is_upper", strfnc_isupper);                                   // is_upper(str)
+    _parser.DefineFun("is_xdigit", strfnc_isxdigit);                                 // is_xdigit(str)
+    _parser.DefineFun("is_dirpath", strfnc_isdir);                                   // is_dirpath(str)
+    _parser.DefineFun("is_filepath", strfnc_isfile);                                 // is_filepath(str)
+    _parser.DefineFun("to_char", strfnc_to_char);                                    // to_char({x,y,z...})
+    _parser.DefineFun("findfile", strfnc_findfile, false, 1);                        // findfile(str1,str2)
+    _parser.DefineFun("split", strfnc_split, true, 1);                               // split(str1,str2,n)
+    _parser.DefineFun("to_time", strfnc_to_time);                                    // to_time(str1,str2)
+    _parser.DefineFun("strfnd", strfnc_strfnd, true, 1);                             // strfnd(str1,str2,n)
+    _parser.DefineFun("strmatch", strfnc_strmatch, true, 1);                         // strmatch(str1,str2,n)
+    _parser.DefineFun("strrfnd", strfnc_strrfnd, true, 1);                           // strrfnd(str1,str2,n)
+    _parser.DefineFun("strrmatch", strfnc_strrmatch, true, 1);                       // strrmatch(str1,str2,n)
+    _parser.DefineFun("str_non_match", strfnc_str_not_match, true, 1);               // str_not_match(str1,str2,n)
+    _parser.DefineFun("str_non_rmatch", strfnc_str_not_rmatch, true, 1);             // str_not_rmatch(str1,str2,n)
+    _parser.DefineFun("strfndall", strfnc_strfndall, true, 2);                       // strfndall(str1,str2,n,n)
+    _parser.DefineFun("strmatchall", strfnc_strmatchall, true, 2);                   // strmatchall(str1,str2,n,n)
+    _parser.DefineFun("findparam", strfnc_findparam, true, 1);                       // findparam(str1,str2,str3)
+    _parser.DefineFun("substr", strfnc_substr, true, 1);                             // substr(str,p,l)
+    _parser.DefineFun("repeat", strfnc_repeat);                                      // repeat(str,n)
+    _parser.DefineFun("timeformat", strfnc_timeformat);                              // timeformat(str,time)
+    _parser.DefineFun("weekday", strfnc_weekday, true, 1);                           // weekday(d,opts)
+    _parser.DefineFun("char", strfnc_char);                                          // char(str,n)
+    _parser.DefineFun("getopt", strfnc_getopt);                                      // getopt(str,n)
+    _parser.DefineFun("replace", strfnc_replace);                                    // replace(str,n,m,str)
+    _parser.DefineFun("textparse", strfnc_textparse, true, 2);                       // textparse(str,str,p1,p2)
+    _parser.DefineFun("locate", strfnc_locate, true, 1);                             // locate({str},str,n)
+    _parser.DefineFun("strunique", strfnc_strunique, true, 1);                       // strunique({str},n)
+    _parser.DefineFun("strjoin", strfnc_strjoin, true, 2);                           // strjoin({str},str,n)
+    _parser.DefineFun("getkeyval", strfnc_getkeyval, true, 2);                       // getkeyval({str},str,arg,n)
+    _parser.DefineFun("findtoken", strfnc_findtoken, true, 1);                       // findtoken(str,str,str)
+    _parser.DefineFun("replaceall", strfnc_replaceall, true, 2);                     // replaceall(str,str,str,n,m)
+    _parser.DefineFun("strip", strfnc_strip, true, 1);                               // strip(str,str,str,n)
+    _parser.DefineFun("regex", strfnc_regex, true, 2);                               // regex(str,str,p,l)
+    _parser.DefineFun("basetodec", strfnc_basetodec);                                // basetodec(str,str)
+    _parser.DefineFun("dectobase", strfnc_dectobase);                                // dectobase(str,val)
+    _parser.DefineFun("justify", strfnc_justify, true, 1);                           // justify({str},n)
+    _parser.DefineFun("getlasterror", strfnc_getlasterror, false);                   // getlasterror()
+    _parser.DefineFun("getversioninfo", strfnc_getversioninfo);                      // getversioninfo()
+    _parser.DefineFun("getuilang", strfnc_getuilang);                                // getuilang()
+    _parser.DefineFun("getfileinfo", strfnc_getfileinfo, false);                     // getfileinfo(str)
+    _parser.DefineFun("sha256", strfnc_sha256, false, 1);                            // sha256(str,n) <- can access a file
+    _parser.DefineFun("startswith", strfnc_startswith);                              // startswith(str,str)
+    _parser.DefineFun("endswith", strfnc_endswith);                                  // endswith(str,str)
+    _parser.DefineFun("to_value", strfnc_to_value);                                  // to_value(str)
+    _parser.DefineFun("to_string", strfnc_to_string);                                // to_string(val)
+    _parser.DefineFun("getindices", strfnc_getindices, false, 1);                    // getindices(str,n) <- tables/clusters may change
+    _parser.DefineFun("is_data", strfnc_is_data, false);                             // is_data(str) <- tables/clusters may change
+    _parser.DefineFun("is_table", strfnc_is_table, false);                           // is_table(str) <- tables/clusters may change
+    _parser.DefineFun("is_cluster", strfnc_is_cluster, false);                       // is_cluster(str) <- tables/clusters may change
+    _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
+    _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
 }
 
 
@@ -1054,7 +1164,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             {
                 sCache = getDataElements(sLine, _parser, _memoryManager);
 
-                if (sCache.length() && sCache.find('#') == std::string::npos)
+                if (sCache.length())
                     bWriteToCache = true;
             }
             else if (isClusterCandidate(sLine, sCache))
@@ -2845,6 +2955,7 @@ std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
             // compose the result
             for (size_t i = 0; i < v[n].size(); ++i)
             {
+#warning TODO (numere#1#08/06/24): Possible improvement: use strrfill for strings
                 sAns += strfill(v[n][i].print(_option.getPrecision(), _option.getPrecision()+TERMINAL_FORMAT_FIELD_LENOFFSET-1, true),
                                 _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
@@ -2869,58 +2980,6 @@ std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
 
     // fallback
     return sAns;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function is used to format
-/// the result output in the terminal for string
-/// and numerical results converted to a string
-/// vector.
-///
-/// \param vStringResults const std::vector<std::string>&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string NumeReKernel::formatResultOutput(const std::vector<std::string>& vStringResults)
-{
-    const Settings& _option = getInstance()->getSettings();
-
-    if (vStringResults.size() > 1)
-    {
-        // More than one result
-        //
-        // How many fit into one line?
-        size_t nLineBreak = numberOfNumbersPerLine();
-        std::string sAns = "ans = {";
-        size_t nNum = vStringResults.size();
-
-        // compose the result
-        for (size_t i = 0; i < nNum; ++i)
-        {
-            sAns += strfill(truncString(vStringResults[i], _option.getPrecision()+TERMINAL_FORMAT_FIELD_LENOFFSET-1), _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
-
-            if (i < nNum - 1)
-                sAns += ", ";
-
-            if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
-                sAns += "...\n|          ";
-        }
-
-        sAns += "}";
-
-        // return the composed result
-        return sAns;
-    }
-    else if (vStringResults.size())
-    {
-        // Only one result
-        // return the answer
-        return "ans = " + vStringResults.front();
-    }
-
-    // fallback
-    return "";
 }
 
 

@@ -187,6 +187,10 @@ namespace mu
             Array operator&&(const Array& other) const;
             Array operator||(const Array& other) const;
 
+            Array call(const std::string& sMethod) const;
+            Array call(const std::string& sMethod, const Array& arg1) const;
+            Array call(const std::string& sMethod, const Array& arg1, const Array& arg2) const;
+
             int64_t getAsScalarInt() const;
 
             std::vector<std::string> as_str_vector() const;

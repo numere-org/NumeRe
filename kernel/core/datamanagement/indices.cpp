@@ -282,12 +282,6 @@ static void stringToNumIndex(mu::Array& a, StringView sTableName, bool isAssignm
             // Find the columns if any
             std::vector<std::complex<double>> cols = _data.findCols(sTableName.to_string(), {a[i].getStr()}, false, isAssignment);
 
-            // Add the index offset
-            for (size_t j = 0; j < cols.size(); j++)
-            {
-                cols[j] += 1;
-            }
-
             // Remove the string and insert the found columns
             a.erase(a.begin()+i);
             a.insert(a.begin()+i, cols.begin(), cols.end());

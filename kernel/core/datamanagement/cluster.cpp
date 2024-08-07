@@ -2151,6 +2151,7 @@ namespace NumeRe
             return false;
 
         size_t nQuotes = sCmdLine.front() == '"';
+        size_t nVar2StrParserEnd = 0;
 
         // Search through the expression -> We do not need to examine the first character
         for (size_t i = 1; i < sCmdLine.length(); i++)
@@ -2159,15 +2160,31 @@ namespace NumeRe
             if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
                 nQuotes++;
 
+            if (nQuotes % 2)
+                continue;
+
+            // Jump over the var2str parser operator
+            if (sCmdLine[i-1] == '#')
+            {
+                while (sCmdLine[i] == '~')
+                {
+                    i++;
+                    nVar2StrParserEnd = i;
+                }
+            }
+
             // Is this a candidate for a cluster
-            if (!(nQuotes % 2)
-                && sCmdLine[i] == '{'
-                && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~' || sCmdLine[i] == '[' || sCmdLine[i] == ']'))
+            if (sCmdLine[i] == '{'
+                && (isalnum(sCmdLine[i-1])
+                    || sCmdLine[i-1] == '_'
+                    || sCmdLine[i-1] == '~'
+                    || sCmdLine[i] == '['
+                    || sCmdLine[i] == ']'))
             {
                 size_t nStartPos = i-1;
 
                 // Try to find the starting position
-                while (nStartPos > 0
+                while (nStartPos > nVar2StrParserEnd
                        && (isalnum(sCmdLine[nStartPos-1])
                            || sCmdLine[nStartPos-1] == '_'
                            || sCmdLine[nStartPos-1] == '~'
@@ -2181,30 +2198,6 @@ namespace NumeRe
                 if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
                     return true;
             }
-
-            /*if (!(nQuotes % 2))
-            {
-                // If the current character might probably be an
-                // identifier for a table, search for the next
-                // nonmatching character and try to find the obtained
-                // string in the internal map
-                if (isalpha(sCmdLine[i]) || sCmdLine[i] == '_' || sCmdLine[i] == '~')
-                {
-                    size_t nStartPos = i;
-
-                    do
-                    {
-                        i++;
-                    }
-                    while (isalnum(sCmdLine[i]) || sCmdLine[i] == '_' || sCmdLine[i] == '~' || sCmdLine[i] == '[' || sCmdLine[i] == ']');
-
-                    if (sCmdLine[i] == '{')
-                    {
-                        if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
-                            return true;
-                    }
-                }
-            }*/
         }
 
         return false;

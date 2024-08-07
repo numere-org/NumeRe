@@ -257,6 +257,8 @@ namespace mu
 			return SaveBeforeReturn(tok); // Check for user defined binary operator
 		if ( IsFunTok(tok) )
 			return SaveBeforeReturn(tok); // Check for function token
+		if ( IsMethod(tok) )
+			return SaveBeforeReturn(tok); // Check for method token
 		if ( IsBuiltIn(tok) )
 			return SaveBeforeReturn(tok); // Check built in operators / tokens
 		if ( IsArgSep(tok) )
@@ -413,7 +415,7 @@ namespace mu
 							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
 						}
 
-						m_iSynFlags  = noBC | noVC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+						m_iSynFlags  = noBC | noVC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
 						m_iSynFlags |= ( (i != cmEND) && ( i != cmBC) ) ? noEND : 0;
 						break;
 
@@ -421,10 +423,10 @@ namespace mu
 						if (m_iSynFlags & noBO)
 							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 
-						if (m_lastTok.GetCode() == cmFUNC)
-							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC;
+						if (m_lastTok.GetCode() == cmFUNC || m_lastTok.GetCode() == cmMETHOD)
+							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD;
 						else
-							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC;
+							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD;
 
 						++m_iBrackets;
 						break;
@@ -446,7 +448,7 @@ namespace mu
 						/*if (m_lastTok.GetCode() == cmFUNC)
 							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
 						else*/
-							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
 
 						++m_iVBrackets;
 						break;
@@ -465,14 +467,14 @@ namespace mu
 						if (m_iSynFlags & noELSE)
 							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE;
+						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD;
 						break;
 
 					case cmIF:
 						if (m_iSynFlags & noIF)
 							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE;
+						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD;
 						break;
 
 					default:      // The operator is listed in c_DefaultOprt, but not here. This is a bad thing...
@@ -501,7 +503,7 @@ namespace mu
 			if (m_iSynFlags & noARG_SEP)
 				Error(ecUNEXPECTED_ARG_SEP, m_iPos, szSep);
 
-			m_iSynFlags  = noBC | noVC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN;
+			m_iSynFlags  = noBC | noVC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noMETHOD;
 			m_iPos++;
 			a_Tok.Set(cmARG_SEP, szSep);
 			return true;
@@ -551,15 +553,17 @@ namespace mu
 		if (iEnd == m_iPos)
 			return false;
 
-        if (sTok.front() == '#' && sTok.find_first_not_of('~', 1) == std::string::npos)
+        if (sTok.front() == '#')
         {
-            m_iPos += sTok.length();
-            a_Tok.SetVal2Str(sTok.length());
+            size_t nEnd = std::min(sTok.length(), sTok.find_first_not_of("#~"));
+
+            m_iPos += nEnd;
+            a_Tok.SetVal2Str(nEnd);
 
             if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN | noMETHOD;
 			return true;
         }
 
@@ -576,7 +580,7 @@ namespace mu
 			if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN | noMETHOD;
 			return true;
 		}
 
@@ -623,6 +627,30 @@ namespace mu
 			Error(ecUNEXPECTED_FUN, m_iPos - (int)a_Tok.GetAsString().length(), a_Tok.GetAsString());
 
 		m_iSynFlags = noANY ^ noBO;
+		return true;
+	}
+
+	bool ParserTokenReader::IsMethod(token_type& a_Tok)
+	{
+		string_type strTok;
+
+		if (m_strFormula[m_iPos] != '.')
+            return false;
+
+		int iEnd = ExtractToken(m_pParser->ValidNameChars(), strTok, m_iPos+1);
+		if (iEnd == m_iPos)
+			return false;
+
+		// Check if the next sign is an opening bracket
+		bool noargs = m_strFormula[iEnd] != '(';
+
+		a_Tok.SetMethod(strTok, noargs);
+
+		m_iPos = (int)iEnd;
+		if (m_iSynFlags & noMETHOD)
+			Error(ecUNEXPECTED_METHOD, m_iPos - (int)a_Tok.GetAsString().length(), a_Tok.GetAsString());
+
+		m_iSynFlags = noargs ? (noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN) : noANY ^ noBO;
 		return true;
 	}
 
@@ -679,7 +707,7 @@ namespace mu
 				}
 
 				m_iPos += (int)(it->first.length());
-				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noVC | noASSIGN;
+				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noVC | noASSIGN | noMETHOD;
 				return true;
 			}
 		}
@@ -726,7 +754,7 @@ namespace mu
 			a_Tok.Set(it->second, sTok);
 			m_iPos += (int)it->first.length();
 
-			m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noPOSTOP | noSTR | noASSIGN;
+			m_iSynFlags = noVAL | noVAR | noFUN | noMETHOD | noBO | noVO | noPOSTOP | noSTR | noASSIGN;
 			return true;
 		}
 

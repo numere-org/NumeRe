@@ -43,8 +43,6 @@ bool Breakpoint::isActive(bool needsLocks)
 
     NumeReKernel* instance = NumeReKernel::getInstance();
     mu::Parser& _parser = instance->getParser();
-    std::string sCache;
-    int nNum;
 
     // Replace the function definitions, if not already done
     if (!instance->getDefinitions().call(m_condition))
@@ -52,12 +50,13 @@ bool Breakpoint::isActive(bool needsLocks)
 
     // Catch and evaluate all data and cache calls
     if (instance->getMemoryManager().containsTablesOrClusters(m_condition))
-        sCache = getDataElements(m_condition, _parser, instance->getMemoryManager());
+        getDataElements(m_condition, _parser, instance->getMemoryManager());
 
     // Evalute the already prepared equation
     if (!_parser.IsAlreadyParsed(m_condition))
         _parser.SetExpr(m_condition);
 
+    int nNum;
     mu::Array* v = _parser.Eval(nNum);
 
     for (int i = 0; i < nNum; i++)

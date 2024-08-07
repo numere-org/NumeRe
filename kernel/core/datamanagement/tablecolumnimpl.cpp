@@ -1346,7 +1346,6 @@ TableColumn* StringColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
-            // TODO Marco 1
             std::string strval = m_data[i];
             strChangeNumberFormat(strval, numFormat);
             col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
@@ -1846,10 +1845,8 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
-            // TODO Marco 2
             std::string strval = m_categories[m_data[i]];
             strChangeNumberFormat(strval, NumFormat);
-            //replaceAll(strval, ",", ".");
             col->setValue(i, StrToCmplx(strval));
         }
         else if (convType == CONVTYPE_LOGICAL)

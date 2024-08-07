@@ -1012,6 +1012,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 
     // Check the first character directly
     size_t nQuotes = sCmdLine.front() == '"';
+    size_t nVar2StrParserEnd = 0;
 
     // Search through the expression -> We do not need to examine the first character
     for (size_t i = 1; i < sCmdLine.length(); i++)
@@ -1023,14 +1024,28 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
         if (nQuotes % 2)
             continue;
 
+        // Jump over the var2str parser operator
+        if (sCmdLine[i-1] == '#')
+        {
+            while (sCmdLine[i] == '~')
+            {
+                i++;
+                nVar2StrParserEnd = i;
+            }
+        }
+
         // Is this a candidate for a table
         if (sCmdLine[i] == '('
-            && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~'))
+            && (isalnum(sCmdLine[i-1])
+                || sCmdLine[i-1] == '_'
+                || sCmdLine[i-1] == '~'))
         {
             size_t nStartPos = i-1;
 
             // Try to find the starting position
-            while (nStartPos > 0 && (isalnum(sCmdLine[nStartPos-1]) || sCmdLine[nStartPos-1] == '_' || sCmdLine[nStartPos-1] == '~'))
+            while (nStartPos > nVar2StrParserEnd && (isalnum(sCmdLine[nStartPos-1])
+                                                     || sCmdLine[nStartPos-1] == '_'
+                                                     || sCmdLine[nStartPos-1] == '~'))
             {
                 nStartPos--;
             }
@@ -1042,16 +1057,20 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 
         // Is this a candidate for a table
         if (sCmdLine[i] == '{'
-            && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~' || sCmdLine[i-1] == '[' || sCmdLine[i-1] == ']'))
+            && (isalnum(sCmdLine[i-1])
+                || sCmdLine[i-1] == '_'
+                || sCmdLine[i-1] == '~'
+                || sCmdLine[i-1] == '['
+                || sCmdLine[i-1] == ']'))
         {
             size_t nStartPos = i-1;
 
             // Try to find the starting position
-            while (nStartPos > 0 && (isalnum(sCmdLine[nStartPos-1])
-                                     || sCmdLine[nStartPos-1] == '_'
-                                     || sCmdLine[nStartPos-1] == '~'
-                                     || sCmdLine[nStartPos-1] == '['
-                                     || sCmdLine[nStartPos-1] == ']'))
+            while (nStartPos > nVar2StrParserEnd && (isalnum(sCmdLine[nStartPos-1])
+                                                     || sCmdLine[nStartPos-1] == '_'
+                                                     || sCmdLine[nStartPos-1] == '~'
+                                                     || sCmdLine[nStartPos-1] == '['
+                                                     || sCmdLine[nStartPos-1] == ']'))
             {
                 nStartPos--;
             }
@@ -1126,6 +1145,7 @@ bool MemoryManager::containsTables(const std::string& sExpression)
 
     // Check the first character directly
     size_t nQuotes = sExpression.front() == '"';
+    size_t nVar2StrParserEnd = 0;
 
     // Search through the expression -> We do not need to examine the first character
     for (size_t i = 1; i < sExpression.length(); i++)
@@ -1134,15 +1154,32 @@ bool MemoryManager::containsTables(const std::string& sExpression)
         if (sExpression[i] == '"' && sExpression[i-1] != '\\')
             nQuotes++;
 
+        if (nQuotes % 2)
+            continue;
+
+        // Jump over the var2str parser operator
+        if (sExpression[i-1] == '#')
+        {
+            while (sExpression[i] == '~')
+            {
+                i++;
+                nVar2StrParserEnd = i;
+            }
+        }
+
         // Is this a candidate for a table
-        if (!(nQuotes % 2)
-            && sExpression[i] == '('
-            && (isalnum(sExpression[i-1]) || sExpression[i-1] == '_' || sExpression[i-1] == '~'))
+        if (sExpression[i] == '('
+            && (isalnum(sExpression[i-1])
+                || sExpression[i-1] == '_'
+                || sExpression[i-1] == '~'))
         {
             size_t nStartPos = i-1;
 
             // Try to find the starting position
-            while (nStartPos > 0 && (isalnum(sExpression[nStartPos-1]) || sExpression[nStartPos-1] == '_' || sExpression[nStartPos-1] == '~'))
+            while (nStartPos > nVar2StrParserEnd
+                   && (isalnum(sExpression[nStartPos-1])
+                       || sExpression[nStartPos-1] == '_'
+                       || sExpression[nStartPos-1] == '~'))
             {
                 nStartPos--;
             }
@@ -1151,30 +1188,6 @@ bool MemoryManager::containsTables(const std::string& sExpression)
             if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
                 return true;
         }
-
-        /*if (!(nQuotes % 2))
-        {
-            // If the current character might probably be an
-            // identifier for a table, search for the next
-            // nonmatching character and try to find the obtained
-            // string in the internal map
-            if (isalpha(sExpression[i]) || sExpression[i] == '_' || sExpression[i] == '~')
-            {
-                size_t nStartPos = i;
-
-                do
-                {
-                    i++;
-                }
-                while (isalnum(sExpression[i]) || sExpression[i] == '_' || sExpression[i] == '~');
-
-                if (sExpression[i] == '(')
-                {
-                    if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
-                        return true;
-                }
-            }
-        }*/
     }
 
     return false;

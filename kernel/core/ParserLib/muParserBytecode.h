@@ -57,6 +57,7 @@ namespace mu
         //       pointer due to constraints in the ANSI standard which allows
         //       data pointers and function pointers to differ in size.
         generic_fun_type ptr;
+        std::string name;
         int   argc;
         int   idx;
     };
@@ -156,6 +157,7 @@ namespace mu
 			void AddAssignOp(Variable* a_pVar);
 			void AddAssignOp(const VarArray& a_varArray);
 			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway);
+			void AddMethod(const std::string& a_method, int a_iArgc);
 
 			void pop();
 

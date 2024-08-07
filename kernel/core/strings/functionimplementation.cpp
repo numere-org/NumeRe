@@ -20,6 +20,9 @@
 #include "../utils/tools.hpp"
 #include "../utils/filecheck.hpp"
 #include "../../../common/compareFiles.hpp"
+#ifndef PARSERSTANDALONE
+#include "../../kernel.hpp"
+#endif
 #include <boost/tokenizer.hpp>
 #include <regex>
 #include <sstream>
@@ -51,10 +54,11 @@ static std::string createLaTeXExponent(const std::string& sExp, bool negative)
 /////////////////////////////////////////////////
 static std::string formatNumberToTex(const mu::Value& number, size_t precision = 0)
 {
+#ifndef PARSERSTANDALONE
     // Use the default precision if precision is default value
-    //if (precision == 0)
-    //    precision = NumeReKernel::getInstance()->getSettings().getPrecision();
-
+    if (precision == 0)
+        precision = NumeReKernel::getInstance()->getSettings().getPrecision();
+#endif
     std::string sNumber = toString(number.getNum().val, precision);
 
     // Handle floating point numbers with
@@ -171,22 +175,23 @@ mu::Array strfnc_getFileParts(const mu::Array& a)
 mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
-//    FileSystem _fSys;
-//    _fSys.initializeFromKernel();
-//
-//    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
-//    {
-//        if (!a1.get(i).getStr().length() || !a2.get(i).getStr().length())
-//            ret.push_back(mu::Value(""));
-//
-//        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getStr(), "", false, false),
-//                                          _fSys.ValidFileName(a2.get(i).getStr(), "", false, false));
-//        replaceAll(sDiffs, "\r\n", "\n");
-//        std::vector<std::string> vSplitted = split(sDiffs, '\n');
-//
-//        ret.insert(ret.end(), vSplitted.begin(), vSplitted.end());
-//    }
+#ifndef PARSERSTANDALONE
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
 
+    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    {
+        if (!a1.get(i).getStr().length() || !a2.get(i).getStr().length())
+            ret.push_back(mu::Value(""));
+
+        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getStr(), "", false, false),
+                                          _fSys.ValidFileName(a2.get(i).getStr(), "", false, false));
+        replaceAll(sDiffs, "\r\n", "\n");
+        std::vector<std::string> vSplitted = split(sDiffs, '\n');
+
+        ret.insert(ret.end(), vSplitted.begin(), vSplitted.end());
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -195,20 +200,20 @@ mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    {
+        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asInt());
 
-//    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
-//    {
-//        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asInt());
-//
-//        if (!vFileList.size())
-//            ret.push_back("");
-//        else
-//            ret.insert(ret.end(), vFileList.begin(), vFileList.end());
-//    }
-//
-//    if (!ret.size())
-//        ret.push_back("");
+        if (!vFileList.size())
+            ret.push_back("");
+        else
+            ret.insert(ret.end(), vFileList.begin(), vFileList.end());
+    }
 
+    if (!ret.size())
+        ret.push_back("");
+#endif
     return ret;
 }
 
@@ -216,20 +221,20 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    {
+        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asInt());
 
-//    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
-//    {
-//        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asInt());
-//
-//        if (!vFolderList.size())
-//            ret.push_back("");
-//        else
-//            ret.insert(ret.end(), vFolderList.begin(), vFolderList.end());
-//    }
-//
-//    if (!ret.size())
-//        ret.push_back("");
+        if (!vFolderList.size())
+            ret.push_back("");
+        else
+            ret.insert(ret.end(), vFolderList.begin(), vFolderList.end());
+    }
 
+    if (!ret.size())
+        ret.push_back("");
+#endif
     return ret;
 }
 
@@ -282,12 +287,12 @@ mu::Array strfnc_lastch(const mu::Array& a)
 mu::Array strfnc_getmatchingparens(const mu::Array& a)
 {
     mu::Array ret;
-
-//    for (size_t i = 0; i < a.size(); i++)
-//    {
-//        ret.push_back(getMatchingParenthesis(a[i].getStr())+1)
-//    }
-
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        ret.push_back(getMatchingParenthesis(a[i].getStr())+1);
+    }
+#endif
     return ret;
 }
 
@@ -639,12 +644,12 @@ mu::Array strfnc_isxdigit(const mu::Array& a)
 mu::Array strfnc_isdir(const mu::Array& a)
 {
     mu::Array ret;
-
-//    for (size_t i = 0; i < a.size(); i++)
-//    {
-//        ret.push_back(is_dir(a[i].getStr()));
-//    }
-
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        ret.push_back(is_dir(a[i].getStr()));
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -652,12 +657,12 @@ mu::Array strfnc_isdir(const mu::Array& a)
 mu::Array strfnc_isfile(const mu::Array& a)
 {
     mu::Array ret;
-
-//    for (size_t i = 0; i < a.size(); i++)
-//    {
-//        ret.push_back(is_file(a[i].getStr()));
-//    }
-
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        ret.push_back(is_file(a[i].getStr()));
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -690,34 +695,35 @@ mu::Array strfnc_to_char(const mu::Array* arrs, int n)
 mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
-//    FileSystem _fSys;
-//    _fSys.initializeFromKernel();
-//    static std::string sExePath = NumeReKernel::getInstance()->getSettings().getExePath();
-//
-//    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
-//    {
-//        if (!a2.isDefault())
-//            _fSys.setPath(a2.get(i).getStr(), false, sExePath);
-//        else
-//            _fSys.setPath(sExePath, false, sExePath);
-//
-//        std::string sExtension = ".dat";
-//
-//        if (a1.get(i).getStr().rfind('.') != std::string::npos)
-//        {
-//            sExtension = a1.get(i).getStr().substr(a1.get(i).getStr().rfind('.'));
-//
-//            if (sExtension.find('*') != std::string::npos || sExtension.find('?') != std::string::npos)
-//                sExtension = ".dat";
-//            else
-//                _fSys.declareFileType(sExtension);
-//        }
-//
-//        std::string sFile = _fSys.ValidFileName(a1.get(i).getStr(), sExtension);
-//
-//        ret.push_back(fileExists(sFile));
-//    }
+#ifndef PARSERSTANDALONE
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
+    static std::string sExePath = NumeReKernel::getInstance()->getSettings().getExePath();
 
+    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    {
+        if (!a2.isDefault())
+            _fSys.setPath(a2.get(i).getStr(), false, sExePath);
+        else
+            _fSys.setPath(sExePath, false, sExePath);
+
+        std::string sExtension = ".dat";
+
+        if (a1.get(i).getStr().rfind('.') != std::string::npos)
+        {
+            sExtension = a1.get(i).getStr().substr(a1.get(i).getStr().rfind('.'));
+
+            if (sExtension.find('*') != std::string::npos || sExtension.find('?') != std::string::npos)
+                sExtension = ".dat";
+            else
+                _fSys.declareFileType(sExtension);
+        }
+
+        std::string sFile = _fSys.ValidFileName(a1.get(i).getStr(), sExtension);
+
+        ret.push_back(fileExists(sFile));
+    }
+#endif
     return ret;
 }
 
@@ -1098,27 +1104,28 @@ mu::Array strfnc_findparam(const mu::Array& par, const mu::Array& line, const mu
 {
     mu::Array ret;
 
-//    for (size_t i = 0; i < std::max({par.size(), line.size(), following.size()}); i++)
-//    {
-//        if (!line.get(i).getStr().length())
-//        {
-//            ret.push_back(0);
-//            continue;
-//        }
-//
-//        size_t nMatch;
-//
-//        if (!following.isDefault())
-//            nMatch = findParameter(line.get(i).getStr(), par.get(i).getStr(), following.get(i).getStr().front());
-//        else
-//            nMatch = findParameter(line.get(i).getStr(), par.get(i).getStr());
-//
-//        if (nMatch)
-//            ret.push_back(nMatch); // findParameter returns already pos+1
-//        else
-//            ret.push_back(0);
-//    }
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < std::max({par.size(), line.size(), following.size()}); i++)
+    {
+        if (!line.get(i).getStr().length())
+        {
+            ret.push_back(0);
+            continue;
+        }
 
+        size_t nMatch;
+
+        if (!following.isDefault())
+            nMatch = findParameter(line.get(i).getStr(), par.get(i).getStr(), following.get(i).getStr().front());
+        else
+            nMatch = findParameter(line.get(i).getStr(), par.get(i).getStr());
+
+        if (nMatch)
+            ret.push_back(nMatch); // findParameter returns already pos+1
+        else
+            ret.push_back(0);
+    }
+#endif
     return ret;
 }
 
@@ -1269,7 +1276,7 @@ mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
             continue;
         }
 
-        std::vector<std::string> weekdays = _lang.getList("COMMON_WEEKDAY_*");
+        static std::vector<std::string> weekdays = _lang.getList("COMMON_WEEKDAY_*");
 
         if (weekdays.size() >= 7)
             ret.push_back(weekdays[day-1]);
@@ -1295,7 +1302,7 @@ mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
         else if (p >= (int64_t)s.length())
             ret.push_back(s.substr(s.length()-1, 1));
         else
-            ret.push_back(s.substr(p, 1));
+            ret.push_back(s.substr(p-1, 1));
     }
 
     return ret;
@@ -1305,21 +1312,21 @@ mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
 mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
 {
     mu::Array ret;
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
+    {
+        const std::string& s = sStr.get(i).getStr();
+        int64_t p = pos.get(i).getNum().asInt();
 
-//    for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
-//    {
-//        const std::string& s = sStr.get(i).getStr();
-//        int64_t p = pos.get(i).getNum().asInt();
-//
-//        if (p < 1)
-//            p = 1;
-//
-//        if (p > s.length())
-//            ret.push_back("");
-//        else
-//            ret.push_back(getArgAtPos(s, p-1));
-//    }
+        if (p < 1)
+            p = 1;
 
+        if (p > s.length())
+            ret.push_back("");
+        else
+            ret.push_back(getArgAtPos(s, p-1));
+    }
+#endif
     return ret;
 }
 
@@ -1813,44 +1820,45 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
 {
     mu::Array ret;
 
-//    for (size_t j = 0; j < std::max({key.size(), defs.size(), opts.size()}); j++)
-//    {
-//        StringView sKey = key.get(j).getStr();
-//        int64_t o = 0;
-//        bool found = false;
-//
-//        if (!opts.isDefault())
-//            o = opts.get(j).getNum().asInt();
-//
-//        // Examine the whole string array
-//        for (size_t i = 0; i < kvlist.size(); i+=2)
-//        {
-//            // Remove the masked strings
-//            StringView arg = kvlist[i].getStr();
-//
-//            // Remove surrounding whitespaces and compare
-//            arg.strip();
-//
-//            if (arg == sKey)
-//            {
-//                ret.push_back(kvlist[i+1]);
-//                found = true;
-//            }
-//        }
-//
-//        // set values to the default values and probably
-//        // issue a warning, if no values were found
-//        if (!found)
-//        {
-//            if (o)
-//                NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + sKey.to_string() + "\""));
-//
-//            if (!defs.isDefault())
-//                ret.push_back(defs.get(j));
-//            else
-//                ret.push_back(mu::Value());
-//        }
-//    }
+    for (size_t j = 0; j < std::max({key.size(), defs.size(), opts.size()}); j++)
+    {
+        StringView sKey = key.get(j).getStr();
+        int64_t o = 0;
+        bool found = false;
+
+        if (!opts.isDefault())
+            o = opts.get(j).getNum().asInt();
+
+        // Examine the whole string array
+        for (size_t i = 0; i < kvlist.size(); i+=2)
+        {
+            // Remove the masked strings
+            StringView arg = kvlist[i].getStr();
+
+            // Remove surrounding whitespaces and compare
+            arg.strip();
+
+            if (arg == sKey)
+            {
+                ret.push_back(kvlist[i+1]);
+                found = true;
+            }
+        }
+
+        // set values to the default values and probably
+        // issue a warning, if no values were found
+        if (!found)
+        {
+#ifndef PARSERSTANDALONE
+            if (o)
+                NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + sKey.to_string() + "\""));
+#endif
+            if (!defs.isDefault())
+                ret.push_back(defs.get(j));
+            else
+                ret.push_back(mu::Value());
+        }
+    }
 
     return ret;
 }
@@ -1977,96 +1985,96 @@ mu::Array strfnc_strip(const mu::Array& sStr, const mu::Array& frnt, const mu::A
 mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Array& pos, const mu::Array& len)
 {
     mu::Array ret;
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < std::max({rgx.size(), sStr.size(), pos.size(), len.size()}); i++)
+    {
+        StringView r = rgx.get(i).getStr();
+        StringView s = sStr.get(i).getStr();
 
-//    for (size_t i = 0; i < std::max({rgx.size(), sStr.size(), pos.size(), len.size()}); i++)
-//    {
-//        StringView r = rgx.get(i).getStr();
-//        StringView s = sStr.get(i).getStr();
-//
-//        int64_t p = 1;
-//        int64_t l = s.length();
-//
-//        if (!r.length())
-//        {
-//            ret.push_back(0);
-//            ret.push_back(0);
-//            continue;
-//        }
-//
-//        if (!pos.isDefault())
-//            p = std::max(p, std::min(l, pos.get(i).getNum().asInt()));
-//
-//        if (!len.isDefault())
-//            p = std::min(l, pos.get(i).getNum().asInt());
-//
-//        try
-//        {
-//            std::smatch match;
-//            std::regex expr(r.to_string());
-//            std::string sStr = s.subview(p-1, l).to_string();
-//
-//            if (std::regex_search(sStr, match, expr))
-//            {
-//                ret.push_back(match.position(0) + (size_t)p);
-//                ret.push_back(match.length(0));
-//            }
-//            else
-//            {
-//                ret.push_back(0);
-//                ret.push_back(0);
-//            }
-//        }
-//        catch (std::regex_error& e)
-//        {
-//            std::string message;
-//
-//            switch (e.code())
-//            {
-//                case std::regex_constants::error_collate:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COLLATE");
-//                    break;
-//                case std::regex_constants::error_ctype:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_CTYPE");
-//                    break;
-//                case std::regex_constants::error_escape:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_ESCAPE");
-//                    break;
-//                case std::regex_constants::error_backref:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BACKREF");
-//                    break;
-//                case std::regex_constants::error_brack:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACK");
-//                    break;
-//                case std::regex_constants::error_paren:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_PAREN");
-//                    break;
-//                case std::regex_constants::error_brace:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACE");
-//                    break;
-//                case std::regex_constants::error_badbrace:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADBRACE");
-//                    break;
-//                case std::regex_constants::error_range:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_RANGE");
-//                    break;
-//                case std::regex_constants::error_space:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_SPACE");
-//                    break;
-//                case std::regex_constants::error_badrepeat:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
-//                    break;
-//                case std::regex_constants::error_complexity:
-//                    message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
-//                    break;
-//                case std::regex_constants::error_stack:
-//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
-//                    break;
-//            }
-//
-//            throw SyntaxError(SyntaxError::INVALID_REGEX, r.to_string(), SyntaxError::invalid_position, message);
-//        }
-//    }
+        int64_t p = 1;
+        int64_t l = s.length();
 
+        if (!r.length())
+        {
+            ret.push_back(0);
+            ret.push_back(0);
+            continue;
+        }
+
+        if (!pos.isDefault())
+            p = std::max(p, std::min(l, pos.get(i).getNum().asInt()));
+
+        if (!len.isDefault())
+            p = std::min(l, pos.get(i).getNum().asInt());
+
+        try
+        {
+            std::smatch match;
+            std::regex expr(r.to_string());
+            std::string sStr = s.subview(p-1, l).to_string();
+
+            if (std::regex_search(sStr, match, expr))
+            {
+                ret.push_back(match.position(0) + (size_t)p);
+                ret.push_back(match.length(0));
+            }
+            else
+            {
+                ret.push_back(0);
+                ret.push_back(0);
+            }
+        }
+        catch (std::regex_error& e)
+        {
+            std::string message;
+
+            switch (e.code())
+            {
+                case std::regex_constants::error_collate:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COLLATE");
+                    break;
+                case std::regex_constants::error_ctype:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_CTYPE");
+                    break;
+                case std::regex_constants::error_escape:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_ESCAPE");
+                    break;
+                case std::regex_constants::error_backref:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BACKREF");
+                    break;
+                case std::regex_constants::error_brack:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACK");
+                    break;
+                case std::regex_constants::error_paren:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_PAREN");
+                    break;
+                case std::regex_constants::error_brace:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACE");
+                    break;
+                case std::regex_constants::error_badbrace:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADBRACE");
+                    break;
+                case std::regex_constants::error_range:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_RANGE");
+                    break;
+                case std::regex_constants::error_space:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_SPACE");
+                    break;
+                case std::regex_constants::error_badrepeat:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
+                    break;
+                case std::regex_constants::error_complexity:
+                    message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
+                    break;
+                case std::regex_constants::error_stack:
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
+                    break;
+            }
+
+            throw SyntaxError(SyntaxError::INVALID_REGEX, r.to_string(), SyntaxError::invalid_position, message);
+        }
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -2201,45 +2209,51 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
 mu::Array strfnc_getlasterror()
 {
     mu::Array ret;
-//    ret.push_back(errorTypeToString(getLastErrorType()));
-//    ret.push_back(getLastErrorMessage());
+#ifndef PARSERSTANDALONE
+    ret.push_back(errorTypeToString(getLastErrorType()));
+    ret.push_back(getLastErrorMessage());
+#endif // PARSERSTANDALONE
     return ret;
 }
 
 
 mu::Array strfnc_getversioninfo()
 {
-//    static std::string sBUILDDATE = std::string(AutoVersion::YEAR) + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE;
-//    static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
-//        + toString((int)AutoVersion::MINOR) + "."
-//        + toString((int)AutoVersion::BUILD) + "."
-//        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100))
-//#ifdef __GNUWIN64__
-//        + "-x64"
-//#endif
-//        ;
-//    static std::string sINSTNAME = toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
-//        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "")
-//#ifdef __GNUWIN64__
-//        + "_x64"
-//#endif
-//        ;
-    mu::Array sVersionInfo;
-//    sVersionInfo.push_back("Version");
-//    sVersionInfo.push_back(sVersion);
-//    sVersionInfo.push_back("BuildDate");
-//    sVersionInfo.push_back(sBUILDDATE);
-//    sVersionInfo.push_back("FullVersion");
-//    sVersionInfo.push_back(sINTVERSION);
-//    sVersionInfo.push_back("FileVersion");
-//    sVersionInfo.push_back(sINSTNAME);
-//    sVersionInfo.push_back("Architecture");
-//#ifdef __GNUWIN64__
-//    sVersionInfo.push_back("64 bit");
-//#else
-//    sVersionInfo.push_back("32 bit");
-//#endif
+#ifndef PARSERSTANDALONE
+    static std::string sBUILDDATE = std::string(AutoVersion::YEAR) + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE;
+    static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
+        + toString((int)AutoVersion::MINOR) + "."
+        + toString((int)AutoVersion::BUILD) + "."
+        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100))
+#ifdef __GNUWIN64__
+        + "-x64"
+#endif
+        ;
+    static std::string sINSTNAME = toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
+        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "")
+#ifdef __GNUWIN64__
+        + "_x64"
+#endif
+        ;
+#endif // PARSERSTANDALONE
 
+    mu::Array sVersionInfo;
+#ifndef PARSERSTANDALONE
+    sVersionInfo.push_back("Version");
+    sVersionInfo.push_back(sVersion);
+    sVersionInfo.push_back("BuildDate");
+    sVersionInfo.push_back(sBUILDDATE);
+    sVersionInfo.push_back("FullVersion");
+    sVersionInfo.push_back(sINTVERSION);
+    sVersionInfo.push_back("FileVersion");
+    sVersionInfo.push_back(sINSTNAME);
+    sVersionInfo.push_back("Architecture");
+#ifdef __GNUWIN64__
+    sVersionInfo.push_back("64 bit");
+#else
+    sVersionInfo.push_back("32 bit");
+#endif
+#endif // PARSERSTANDALONE
     return sVersionInfo;
 }
 
@@ -2253,46 +2267,46 @@ mu::Array strfnc_getuilang()
 mu::Array strfnc_getfileinfo(const mu::Array& file)
 {
     mu::Array sFileInfo;
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < file.size(); i++)
+    {
+        FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(file[i].getStr());
 
-//    for (size_t i = 0; i < file.size(); i++)
-//    {
-//        FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(file[i].getStr());
-//
-//        sFileInfo.push_back("Drive");
-//        sFileInfo.push_back(fInfo.drive);
-//        sFileInfo.push_back("Path");
-//        sFileInfo.push_back(fInfo.path);
-//        sFileInfo.push_back("Name");
-//        sFileInfo.push_back(fInfo.name);
-//        sFileInfo.push_back("FileExt");
-//        sFileInfo.push_back(fInfo.ext);
-//        sFileInfo.push_back("Size");
-//        sFileInfo.push_back(fInfo.filesize);
-//
-//        std::string sAttr = fInfo.fileAttributes & FileInfo::ATTR_READONLY ? "readonly," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_HIDDEN ? "hidden," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_SYSTEM ? "systemfile," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_DIRECTORY ? "directory," : "";
-//        //sAttr += fInfo.fileAttributes & FileInfo::ATTR_ARCHIVE ? "archive," : "";
-//        //sAttr += fInfo.fileAttributes & FileInfo::ATTR_DEVICE ? "device," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_TEMPORARY ? "temp," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_COMPRESSED ? "compressed," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_OFFLINE ? "offline," : "";
-//        sAttr += fInfo.fileAttributes & FileInfo::ATTR_ENCRYPTED ? "encrypted," : "";
-//
-//        if (sAttr.length())
-//            sAttr.pop_back();
-//        else
-//            sAttr = "none";
-//
-//        sFileInfo.push_back("Attributes");
-//        sFileInfo.push_back(sAttr);
-//        sFileInfo.push_back("CreationTime");
-//        sFileInfo.push_back(fInfo.creationTime);
-//        sFileInfo.push_back("ModificationTime");
-//        sFileInfo.push_back(fInfo.modificationTime);
-//    }
+        sFileInfo.push_back("Drive");
+        sFileInfo.push_back(fInfo.drive);
+        sFileInfo.push_back("Path");
+        sFileInfo.push_back(fInfo.path);
+        sFileInfo.push_back("Name");
+        sFileInfo.push_back(fInfo.name);
+        sFileInfo.push_back("FileExt");
+        sFileInfo.push_back(fInfo.ext);
+        sFileInfo.push_back("Size");
+        sFileInfo.push_back(fInfo.filesize);
 
+        std::string sAttr = fInfo.fileAttributes & FileInfo::ATTR_READONLY ? "readonly," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_HIDDEN ? "hidden," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_SYSTEM ? "systemfile," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_DIRECTORY ? "directory," : "";
+        //sAttr += fInfo.fileAttributes & FileInfo::ATTR_ARCHIVE ? "archive," : "";
+        //sAttr += fInfo.fileAttributes & FileInfo::ATTR_DEVICE ? "device," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_TEMPORARY ? "temp," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_COMPRESSED ? "compressed," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_OFFLINE ? "offline," : "";
+        sAttr += fInfo.fileAttributes & FileInfo::ATTR_ENCRYPTED ? "encrypted," : "";
+
+        if (sAttr.length())
+            sAttr.pop_back();
+        else
+            sAttr = "none";
+
+        sFileInfo.push_back("Attributes");
+        sFileInfo.push_back(sAttr);
+        sFileInfo.push_back("CreationTime");
+        sFileInfo.push_back(fInfo.creationTime);
+        sFileInfo.push_back("ModificationTime");
+        sFileInfo.push_back(fInfo.modificationTime);
+    }
+#endif // PARSERSTANDALONE
     return sFileInfo;
 }
 
@@ -2305,18 +2319,20 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
     {
         if (opts.isDefault() || opts.get(i).getNum().asInt() == 0)
             ret.push_back(sha256(sStr.get(i).getStr()));
-//        else
-//        {
-//            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
-//                                                                                               ".dat", false, true);
-//
-//            // Ensure that the file actually exist
-//            if (fileExists(sFileName))
-//            {
-//                std::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
-//                ret.push_back(sha256(file));
-//            }
-//        }
+        else
+        {
+#ifndef PARSERSTANDALONE
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
+                                                                                               ".dat", false, true);
+
+            // Ensure that the file actually exist
+            if (fileExists(sFileName))
+            {
+                std::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
+                ret.push_back(sha256(file));
+            }
+#endif // PARSERSTANDALONE
+        }
     }
 
     return ret;
@@ -2352,25 +2368,26 @@ mu::Array strfnc_endswith(const mu::Array& sStr, const mu::Array& with)
 mu::Array strfnc_to_value(const mu::Array& sStr)
 {
     mu::Array ret;
-//    mu::Parser p = NumeReKernel::getInstance()->getParser(); // Get a copy
-//
-//    for (size_t i = 0; i < sStr.size(); i++)
-//    {
-//        if (sStr[i].isString())
-//        {
-//            p.SetExpr(sStr[i].getStr());
-//            int res;
-//            mu::Array* vals = p.Eval(res);
-//
-//            for (int n = 0; n < res; n++)
-//            {
-//                ret.insert(ret.end(), vals[n].begin(), vals[n].end());
-//            }
-//        }
-//        else
-//            ret.push_back(sStr[i]);
-//    }
+#ifndef PARSERSTANDALONE
+    mu::Parser p = NumeReKernel::getInstance()->getParser(); // Get a copy
 
+    for (size_t i = 0; i < sStr.size(); i++)
+    {
+        if (sStr[i].isString())
+        {
+            p.SetExpr(sStr[i].getStr());
+            int res;
+            mu::Array* vals = p.Eval(res);
+
+            for (int n = 0; n < res; n++)
+            {
+                ret.insert(ret.end(), vals[n].begin(), vals[n].end());
+            }
+        }
+        else
+            ret.push_back(sStr[i]);
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -2394,86 +2411,84 @@ mu::Array strfnc_to_string(const mu::Array& vals)
 mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
 {
     mu::Array ret;
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < std::max(tab.size(), opts.size()); i++)
+    {
+        int64_t nType = 0;
 
-//    for (size_t i = 0; i < std::max(tab.size(), opts.size()); i++)
-//    {
-//        int64_t nType = 0;
-//
-//        if (!opts.isDefault())
-//            nType = opts.get(i).getNum().asInt();
-//
-//        // Because the object might be a constructed table, we
-//        // disable the access caching for this expression
-//        _parser.DisableAccessCaching();
-//
-//#warning FIXME (numere#1#07/23/24): This now needs to use a copy instead of a reference
-//        DataAccessParser _accessParser(tab.get(i).getStr(), false);
-//
-//        if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
-//        {
-//            ret.push_back(NAN);
-//            continue;
-//        }
-//
-//        if (nType > -1)
-//        {
-//            if (nType == 2 && _accessParser.getIndices().row.isOpenEnd())
-//                _accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(),
-//                                                        _accessParser.getIndices().row.front() + 1);
-//            else if (nType == 1 && _accessParser.getIndices().col.isOpenEnd())
-//                _accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(),
-//                                                        _accessParser.getIndices().col.front() + 1);
-//
-//            if (_accessParser.isCluster())
-//            {
-//                if (_accessParser.getIndices().row.isOpenEnd())
-//                    _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
-//
-//                if (_accessParser.getIndices().col.isOpenEnd())
-//                    _accessParser.getIndices().col.back() = VectorIndex::INVALID;
-//            }
-//            else if (_accessParser.getDataObject() == "string")
-//            {
-//                if (_accessParser.getIndices().row.isOpenEnd())
-//                {
-//                    if (_accessParser.getIndices().col.size() == 1)
-//                    {
-//                        if (_data.getStringElements(_accessParser.getIndices().col.front()))
-//                            _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
-//                        else
-//                            _accessParser.getIndices().row.setRange(0, 0);
-//                    }
-//                    else
-//                    {
-//                        if (_data.getStringElements())
-//                            _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
-//                        else
-//                            _accessParser.getIndices().row.setRange(0, 0);
-//                    }
-//                }
-//
-//                if (_accessParser.getIndices().col.isOpenEnd())
-//                    _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
-//            }
-//            else
-//            {
-//                if (_accessParser.getIndices().row.isOpenEnd())
-//                    _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
-//
-//                if (_accessParser.getIndices().col.isOpenEnd())
-//                    _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
-//            }
-//        }
-//
-//        _accessParser.getIndices().row.linearize();
-//        _accessParser.getIndices().col.linearize();
-//
-//        ret.push_back(_accessParser.getIndices().row.front() + 1);
-//        ret.push_back(_accessParser.getIndices().row.last() + 1);
-//        ret.push_back(_accessParser.getIndices().col.front() + 1);
-//        ret.push_back(_accessParser.getIndices().col.last() + 1);
-//    }
+        if (!opts.isDefault())
+            nType = opts.get(i).getNum().asInt();
 
+        // Because the object might be a constructed table, we
+        // disable the access caching for this expression
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+        DataAccessParser _accessParser(tab.get(i).getStr(), false);
+
+        if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
+        {
+            ret.push_back(NAN);
+            continue;
+        }
+
+        if (nType > -1)
+        {
+            if (nType == 2 && _accessParser.getIndices().row.isOpenEnd())
+                _accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(),
+                                                        _accessParser.getIndices().row.front() + 1);
+            else if (nType == 1 && _accessParser.getIndices().col.isOpenEnd())
+                _accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(),
+                                                        _accessParser.getIndices().col.front() + 1);
+
+            if (_accessParser.isCluster())
+            {
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
+
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.back() = VectorIndex::INVALID;
+            }
+            else if (_accessParser.getDataObject() == "string")
+            {
+                if (_accessParser.getIndices().row.isOpenEnd())
+                {
+                    if (_accessParser.getIndices().col.size() == 1)
+                    {
+                        if (_data.getStringElements(_accessParser.getIndices().col.front()))
+                            _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
+                        else
+                            _accessParser.getIndices().row.setRange(0, 0);
+                    }
+                    else
+                    {
+                        if (_data.getStringElements())
+                            _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
+                        else
+                            _accessParser.getIndices().row.setRange(0, 0);
+                    }
+                }
+
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
+            }
+            else
+            {
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
+
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+            }
+        }
+
+        _accessParser.getIndices().row.linearize();
+        _accessParser.getIndices().col.linearize();
+
+        ret.push_back(_accessParser.getIndices().row.front() + 1);
+        ret.push_back(_accessParser.getIndices().row.last() + 1);
+        ret.push_back(_accessParser.getIndices().col.front() + 1);
+        ret.push_back(_accessParser.getIndices().col.last() + 1);
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -2481,13 +2496,14 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
 mu::Array strfnc_is_data(const mu::Array& sStr)
 {
     mu::Array ret;
-//    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-//
-//    for (size_t i = 0; i < sStr.size(); i++)
-//    {
-//        ret.push_back(_data.isTable(sStr[i].getStr()) || _data.isCluster(sStr[i].getStr()));
-//    }
+#ifndef PARSERSTANDALONE
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
+    for (size_t i = 0; i < sStr.size(); i++)
+    {
+        ret.push_back(_data.isTable(sStr[i].getStr()) || _data.isCluster(sStr[i].getStr()));
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -2495,13 +2511,14 @@ mu::Array strfnc_is_data(const mu::Array& sStr)
 mu::Array strfnc_is_table(const mu::Array& sStr)
 {
     mu::Array ret;
-//    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-//
-//    for (size_t i = 0; i < sStr.size(); i++)
-//    {
-//        ret.push_back(_data.isTable(sStr[i].getStr()));
-//    }
+#ifndef PARSERSTANDALONE
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
+    for (size_t i = 0; i < sStr.size(); i++)
+    {
+        ret.push_back(_data.isTable(sStr[i].getStr()));
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -2509,13 +2526,14 @@ mu::Array strfnc_is_table(const mu::Array& sStr)
 mu::Array strfnc_is_cluster(const mu::Array& sStr)
 {
     mu::Array ret;
-//    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-//
-//    for (size_t i = 0; i < sStr.size(); i++)
-//    {
-//        ret.push_back(_data.isCluster(sStr[i].getStr()));
-//    }
+#ifndef PARSERSTANDALONE
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
+    for (size_t i = 0; i < sStr.size(); i++)
+    {
+        ret.push_back(_data.isCluster(sStr[i].getStr()));
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 
@@ -2523,25 +2541,26 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr)
 mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
 {
     mu::Array ret;
-//    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-//
-//    for (size_t i = 0; i < std::max(tab.size(), col.size()); i++)
-//    {
-//        if (!_data.isTable(tab.get(i).getStr()))
-//        {
-//            ret.push_back(NAN);
-//            continue;
-//        }
-//
-//        std::vector<std::complex<double>> cols = _data.findCols(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('(')),
-//                                                                {col.get(i).getStr()}, false, false);
-//
-//        if (cols.size())
-//            ret.insert(ret.end(), cols.begin(), cols.end());
-//        else
-//            ret.push_back(NAN);
-//    }
+#ifndef PARSERSTANDALONE
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
+    for (size_t i = 0; i < std::max(tab.size(), col.size()); i++)
+    {
+        if (!_data.isTable(tab.get(i).getStr()))
+        {
+            ret.push_back(NAN);
+            continue;
+        }
+
+        std::vector<std::complex<double>> cols = _data.findCols(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('(')),
+                                                                {col.get(i).getStr()}, false, false);
+
+        if (cols.size())
+            ret.insert(ret.end(), cols.begin(), cols.end());
+        else
+            ret.push_back(NAN);
+    }
+#endif // PARSERSTANDALONE
     return ret;
 }
 

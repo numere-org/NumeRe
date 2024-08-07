@@ -393,7 +393,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             sCache = getDataElements(sLine, _parser, _data);
 
-            if (sCache.length() && sCache.find('#') == string::npos)
+            if (sCache.length())
                 bWriteToCache = true;
         }
         else if (isClusterCandidate(sLine, sCache))

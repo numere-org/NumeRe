@@ -4075,23 +4075,12 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     _real.Create(_idx.row.size());
     _imag.Create(_idx.row.size());
 
-#warning FIXME (numere#9#08/05/24): Check all openmp constructs for necessary try-catch constructs
-
     #pragma omp parallel for
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
         mu::Value val = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject());
-
-        if (val.isNumerical())
-        {
-            _real.a[i] = val.getNum().val.real();
-            _imag.a[i] = val.getNum().val.imag();
-        }
-        else
-        {
-            _real.a[i] = NAN;
-            _imag.a[i] = NAN;
-        }
+        _real.a[i] = val.as_cmplx().real();
+        _imag.a[i] = val.as_cmplx().imag();
     }
 
     if (!nSamples || nSamples > _real.GetNx())
@@ -4640,7 +4629,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
 // Forward declaration to make this function usable by the
 // particle swarm optimizer (needs randomness)
-mu::Array parser_Random(const mu::Array& vRandMin, const mu::Array& vRandMax);
+mu::Array rndfnc_Random(const mu::Array& vRandMin, const mu::Array& vRandMax, const mu::Array& n);
 
 
 /////////////////////////////////////////////////
@@ -4720,8 +4709,8 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     {
         for (size_t j = 0; j < nDims; j++)
         {
-            vPos[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()).front().getNum().val.real());
-            vVel[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()).front().getNum().val.real()/5.0);
+            vPos[j].push_back(rndfnc_Random(ivl[j].min(), ivl[j].max(), mu::Array()).front().getNum().val.real());
+            vVel[j].push_back(rndfnc_Random(ivl[j].min(), ivl[j].max(), mu::Array()).front().getNum().val.real()/5.0);
 
             _defVars.vValue[j][0] = mu::Value(vPos[j].back());
         }
@@ -4751,8 +4740,8 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
             for (size_t n = 0; n < nDims; n++)
             {
                 // Update velocities
-                vVel[n][j] += parser_Random(0, fRandRange).front().getNum().val.real() * (vBest[n][j] - vPos[n][j])
-                    + parser_Random(0, fRandRange).front().getNum().val.real() * (vBest[n][nGlobalBest] - vPos[n][j]);
+                vVel[n][j] += rndfnc_Random(0, fRandRange, mu::Array()).front().getNum().val.real() * (vBest[n][j] - vPos[n][j])
+                    + rndfnc_Random(0, fRandRange, mu::Array()).front().getNum().val.real() * (vBest[n][nGlobalBest] - vPos[n][j]);
 
                 // Update positions
                 vPos[n][j] += fAdaptiveVelFactor * vVel[n][j];

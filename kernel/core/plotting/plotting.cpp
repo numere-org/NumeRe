@@ -4353,10 +4353,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                 for (size_t x = 0; x < std::min(samples[0]-isBars, vVals.size()); x++)
                 {
-                    if (vVals[x].isNumerical())
-                        m_manager.assets[typeCounter].writeData(vVals[x].getNum().val, 0, x, y);
-                    else
-                        m_manager.assets[typeCounter].writeData(NAN, 0, x, y);
+                    m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);;
                 }
             }
 
@@ -4408,10 +4405,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                 for (size_t x = 0; x < std::min(samples[0], vVals.size()); x++)
                 {
-                    if (vVals[x].isNumerical())
-                        m_manager.assets[typeCounter].writeData(vVals[x].getNum().val, 0, x, y);
-                    else
-                        m_manager.assets[typeCounter].writeData(NAN, 0, x, y);
+                    m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);
                 }
             }
 

@@ -17,7 +17,9 @@
 ******************************************************************************/
 
 #include "muStructures.hpp"
+#include "muParserError.h"
 #include "../utils/tools.hpp"
+#include "../strings/functionimplementation.hpp" // for string method callees
 
 namespace mu
 {
@@ -311,7 +313,7 @@ namespace mu
     std::string& Value::getStr()
     {
         if (!isString())
-            throw std::runtime_error("Value does not contain a string type.");
+            throw ParserError(ecTYPE_NO_STR);
 
         return *(std::string*)m_data;
     }
@@ -322,7 +324,7 @@ namespace mu
             return m_defString;
 
         if (!isString())
-            throw std::runtime_error("Value does not contain a string type.");
+            throw ParserError(ecTYPE_NO_STR);
 
         return *(std::string*)m_data;
     }
@@ -330,7 +332,7 @@ namespace mu
     Numerical& Value::getNum()
     {
         if (!isNumerical())
-            throw std::runtime_error("Value does not contain a numerical type.");
+            throw ParserError(ecTYPE_NO_VAL);
 
         return *(Numerical*)m_data;
     }
@@ -341,7 +343,7 @@ namespace mu
             return m_defVal;
 
         if (!isNumerical())
-            throw std::runtime_error("Value does not contain a numerical type.");
+            throw ParserError(ecTYPE_NO_STR);
 
         return *(Numerical*)m_data;
     }
@@ -359,14 +361,14 @@ namespace mu
         DataType common = detectCommonType(other);
 
         if (common == TYPE_MIXED)
-            throw std::runtime_error("Value types do not match.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         if (common == TYPE_NUMERICAL)
             return getNum() + other.getNum();
         else if (common == TYPE_STRING)
             return getStr() + other.getStr();
 
-        throw std::runtime_error("Value type invalid or operation not supported.");
+        throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value Value::operator-() const
@@ -374,7 +376,7 @@ namespace mu
         if (m_type == TYPE_NUMERICAL)
             return -getNum();
 
-        throw std::runtime_error("Value type invalid or operation not supported.");
+        throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value Value::operator-(const Value& other) const
@@ -382,12 +384,12 @@ namespace mu
         DataType common = detectCommonType(other);
 
         if (common == TYPE_MIXED)
-            throw std::runtime_error("Value types do not match.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         if (common == TYPE_NUMERICAL)
             return getNum() - other.getNum();
 
-        throw std::runtime_error("Value type invalid or operation not supported.");
+        throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value Value::operator/(const Value& other) const
@@ -395,14 +397,14 @@ namespace mu
         DataType common = detectCommonType(other);
 
         if (common == TYPE_MIXED)
-            throw std::runtime_error("Value types do not match.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         if (common == TYPE_NUMERICAL && other.m_type == TYPE_NUMERICAL)
             return getNum() / other.getNum();
         else if (common == TYPE_NUMERICAL)
             return getNum(); // Do not divide by zero
 
-        throw std::runtime_error("Value type invalid or operation not supported.");
+        throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value Value::operator*(const Value& other) const
@@ -417,13 +419,13 @@ namespace mu
             else if (other.m_type == TYPE_NUMERICAL && isInt(other.getNum().val))
                 return mu::Value(strRepeat(getStr(), other.getNum().asInt()));
 
-            throw std::runtime_error("Value types do not match.");
+            throw ParserError(ecTYPE_MISMATCH);
         }
 
         if (common == TYPE_NUMERICAL)
             return getNum() * other.getNum();
 
-        throw std::runtime_error("Value type invalid or operation not supported.");
+        throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value& Value::operator+=(const Value& other)
@@ -432,14 +434,14 @@ namespace mu
             return operator=(other);
 
         if (m_type != other.m_type)
-            throw std::runtime_error("Value types do not match or index out of bounds.");
+            throw ParserError(ecTYPE_MISMATCH_OOB);
 
         if (isNumerical())
             getNum() += other.getNum();
         else if (isString())
             getStr() += other.getStr();
         else
-            throw std::runtime_error("Value type invalid or operation not supported.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         return *this;
     }
@@ -450,12 +452,12 @@ namespace mu
             return operator=(-other);
 
         if (m_type != other.m_type)
-            throw std::runtime_error("Value types do not match or index out of bounds.");
+            throw ParserError(ecTYPE_MISMATCH_OOB);
 
         if (isNumerical())
             getNum() -= other.getNum();
         else
-            throw std::runtime_error("Value type invalid or operation not supported.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         return *this;
     }
@@ -463,12 +465,12 @@ namespace mu
     Value& Value::operator/=(const Value& other)
     {
         if (m_type != other.m_type)
-            throw std::runtime_error("Value types do not match or index out of bounds.");
+            throw ParserError(ecTYPE_MISMATCH_OOB);
 
         if (isNumerical())
             getNum() /= other.getNum();
         else
-            throw std::runtime_error("Value type invalid or operation not supported.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         return *this;
     }
@@ -486,13 +488,13 @@ namespace mu
             else if (other.m_type == TYPE_NUMERICAL && isInt(other.getNum().val))
                 return operator=(mu::Value(strRepeat(getStr(), other.getNum().asInt())));
 
-            throw std::runtime_error("Value types do not match or index out of bounds.");
+            throw ParserError(ecTYPE_MISMATCH_OOB);
         }
 
         if (isNumerical())
             getNum() *= other.getNum();
         else
-            throw std::runtime_error("Value type invalid or operation not supported.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         return *this;
     }
@@ -502,7 +504,7 @@ namespace mu
         DataType common = detectCommonType(exponent);
 
         if (common == TYPE_MIXED)
-            throw std::runtime_error("Value types do not match.");
+            throw ParserError(ecTYPE_MISMATCH);
 
         if (common == TYPE_NUMERICAL)
         {
@@ -512,7 +514,7 @@ namespace mu
             return Numerical(std::pow(getNum().val, exponent.getNum().val));
         }
 
-        throw std::runtime_error("Value type invalid or operation not supported.");
+        throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value::operator bool() const
@@ -1015,6 +1017,69 @@ namespace mu
         return ret;
     }
 
+    Array Array::call(const std::string& sMethod) const
+    {
+        if (sMethod == "len")
+            return strfnc_strlen(*this);
+        else if (sMethod == "first")
+            return strfnc_firstch(*this);
+        else if (sMethod == "last")
+            return strfnc_lastch(*this);
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    Array Array::call(const std::string& sMethod, const Array& arg1) const
+    {
+        if (sMethod == "at")
+            return strfnc_char(*this, arg1);
+        else if (sMethod == "startsw")
+            return strfnc_startswith(*this, arg1);
+        else if (sMethod == "endsw")
+            return strfnc_endswith(*this, arg1);
+        else if (sMethod == "sub")
+            return strfnc_substr(*this, arg1, mu::Array());
+        else if (sMethod == "splt")
+            return strfnc_split(*this, arg1, mu::Array());
+        else if (sMethod == "fnd")
+            return strfnc_strfnd(arg1, *this, mu::Array());
+        else if (sMethod == "rfnd")
+            return strfnc_strrfnd(arg1, *this, mu::Array());
+        else if (sMethod == "mtch")
+            return strfnc_strmatch(arg1, *this, mu::Array());
+        else if (sMethod == "rmtch")
+            return strfnc_strrmatch(arg1, *this, mu::Array());
+        else if (sMethod == "nmtch")
+            return strfnc_str_not_match(arg1, *this, mu::Array());
+        else if (sMethod == "nrmtch")
+            return strfnc_str_not_rmatch(arg1, *this, mu::Array());
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
+    {
+        if (sMethod == "sub")
+            return strfnc_substr(*this, arg1, arg2);
+        else if (sMethod == "splt")
+            return strfnc_split(*this, arg1, arg2);
+        else if (sMethod == "fnd")
+            return strfnc_strfnd(arg1, *this, arg2);
+        else if (sMethod == "rfnd")
+            return strfnc_strrfnd(arg1, *this, arg2);
+        else if (sMethod == "mtch")
+            return strfnc_strmatch(arg1, *this, arg2);
+        else if (sMethod == "rmtch")
+            return strfnc_strrmatch(arg1, *this, arg2);
+        else if (sMethod == "nmtch")
+            return strfnc_str_not_match(arg1, *this, arg2);
+        else if (sMethod == "nrmtch")
+            return strfnc_str_not_rmatch(arg1, *this, arg2);
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
     int64_t Array::getAsScalarInt() const
     {
         return intCast(front().getNum().asInt());
@@ -1172,7 +1237,7 @@ namespace mu
             return *this;
         }
 
-        throw std::runtime_error("Cannot assign a different type to an already initialized variable.");
+        throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
     Variable& Variable::operator=(const Array& other)
@@ -1183,7 +1248,7 @@ namespace mu
             return *this;
         }
 
-        throw std::runtime_error("Cannot assign a different type to an already initialized variable.");
+        throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
     Variable& Variable::operator=(const Variable& other)
@@ -1194,7 +1259,7 @@ namespace mu
             return *this;
         }
 
-        throw std::runtime_error("Cannot assign a different type to an already initialized variable.");
+        throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
     void Variable::overwrite(const Array& other)
@@ -1437,10 +1502,7 @@ namespace mu
 
         for (const auto& val : a)
         {
-            if (val.isNumerical())
-                ret.push_back(Numerical(func(val.getNum().val)));
-            else
-                ret.push_back(Numerical(NAN));
+            ret.push_back(Numerical(func(val.getNum().val)));
         }
 
         return ret;
@@ -1490,12 +1552,8 @@ namespace mu
 
         for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
         {
-            if (a1.get(i).isNumerical()
-                && a2.get(i).isNumerical())
-                ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                             a2.get(i).getNum().val)));
-            else
-                ret.push_back(Numerical(NAN));
+            ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                         a2.get(i).getNum().val)));
         }
 
         return ret;
@@ -1521,14 +1579,9 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
         {
-            if (a1.get(i).isNumerical()
-                && a2.get(i).isNumerical()
-                && a3.get(i).isNumerical())
-                ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                             a2.get(i).getNum().val,
-                                             a3.get(i).getNum().val)));
-            else
-                ret.push_back(Numerical(NAN));
+            ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                         a2.get(i).getNum().val,
+                                         a3.get(i).getNum().val)));
         }
 
         return ret;
@@ -1542,16 +1595,10 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
         {
-            if (a1.get(i).isNumerical()
-                && a2.get(i).isNumerical()
-                && a3.get(i).isNumerical()
-                && a4.get(i).isNumerical())
-                ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                             a2.get(i).getNum().val,
-                                             a3.get(i).getNum().val,
-                                             a4.get(i).getNum().val)));
-            else
-                ret.push_back(Numerical(NAN));
+            ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                         a2.get(i).getNum().val,
+                                         a3.get(i).getNum().val,
+                                         a4.get(i).getNum().val)));
         }
 
         return ret;
@@ -1563,7 +1610,7 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i))));
+            ret.push_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i)));
         }
 
         return ret;
@@ -1577,18 +1624,11 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
         {
-            if (a1.get(i).isNumerical()
-                && a2.get(i).isNumerical()
-                && a3.get(i).isNumerical()
-                && a4.get(i).isNumerical()
-                && a5.get(i).isNumerical())
-                ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                             a2.get(i).getNum().val,
-                                             a3.get(i).getNum().val,
-                                             a4.get(i).getNum().val,
-                                             a5.get(i).getNum().val)));
-            else
-                ret.push_back(Numerical(NAN));
+            ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                         a2.get(i).getNum().val,
+                                         a3.get(i).getNum().val,
+                                         a4.get(i).getNum().val,
+                                         a5.get(i).getNum().val)));
         }
 
         return ret;
@@ -1600,7 +1640,7 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i))));
+            ret.push_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i)));
         }
 
         return ret;

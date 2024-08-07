@@ -679,7 +679,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
     {
         currentArg.pop_back();
 
-#warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
         if (_optionRef->getSetting(SETTING_B_TABLEREFS).active() && !isRef)
         {
             isRef = true;
@@ -700,7 +699,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         }
         else if (!isRef && !isMacroOrInlining) // Macros do the old copy-paste logic
         {
-#warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
             if (!_optionRef->getSetting(SETTING_B_TABLEREFS).active()
                 && _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
@@ -800,7 +798,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         }
         else if (inliningMode) // Only for checking, whether the table is a reference
         {
-            #warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
             if (!_optionRef->getSetting(SETTING_B_TABLEREFS).active())
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
         }

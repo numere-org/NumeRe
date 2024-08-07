@@ -195,6 +195,7 @@ namespace mu
 
         // operators and functions
         cmFUNC,                ///< Code for a generic function item
+        cmMETHOD,              ///< Code for a generic method item
         cmSTRING,              ///< Code for a string token
         cmOPRT_BIN,            ///< user defined binary operator
         cmOPRT_POSTFIX,        ///< code for postfix operators
@@ -209,9 +210,10 @@ namespace mu
     */
     enum ETypeCode
     {
-        tpSTR  = 0,     ///< String type (Function arguments and constants only, no string variables)
-        tpDBL  = 1,     ///< Floating point variables
-        tpVOID = 2      ///< Undefined type.
+        tpSTR    = 0,     ///< String type (Function arguments and constants only, no string variables)
+        tpDBL    = 1,     ///< Floating point variables
+        tpNOARGS = 2,     ///< Method with no args (no braces to be expected)
+        tpVOID   = -1     ///< Undefined type.
     };
 
     //------------------------------------------------------------------------------

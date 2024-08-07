@@ -32,15 +32,6 @@
 
 std::string removeQuotationMarks(const std::string& sString);
 
-#ifdef PARSERSTANDALONE
-std::string removeQuotationMarks(const std::string& sString)
-{
-    if (sString.find('"') == std::string::npos || sString.front() != '"' || sString.back() != '"')
-        return sString;
-
-    return sString.substr(1, sString.length() - 2);
-}
-#endif
 
 
 /////////////////////////////////////////////////

@@ -384,6 +384,9 @@ class Matrix
                                   SyntaxError::invalid_position,
                                   "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
 
+            if (!get(i, j).isNumerical())
+                get(i, j) = mu::Value(NAN);
+
             return get(i, j).getNum().val;
         }
 
@@ -403,7 +406,7 @@ class Matrix
                                   SyntaxError::invalid_position,
                                   "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
 
-            return get(i, j).getNum().val;
+            return get(i, j).as_cmplx();
         }
 
         /////////////////////////////////////////////////

@@ -43,11 +43,11 @@ using namespace std;
     \brief Implementation of the standard floating point parser.
 */
 
-mu::Array parser_Sum(const mu::Array*, int);
-mu::Array parser_Avg(const mu::Array*, int);
-mu::Array parser_Min(const mu::Array*, int);
-mu::Array parser_Max(const mu::Array*, int);
-mu::Array parser_abs(const mu::Array& a);
+mu::Array numfnc_Sum(const mu::Array*, int);
+mu::Array numfnc_Avg(const mu::Array*, int);
+mu::Array numfnc_Min(const mu::Array*, int);
+mu::Array numfnc_Max(const mu::Array*, int);
+mu::Array numfnc_abs(const mu::Array& a);
 
 /** \brief Namespace for mathematical applications. */
 namespace mu
@@ -81,7 +81,7 @@ namespace mu
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function sum."));
-        return parser_Sum(a_afArg, a_iArgc);
+        return numfnc_Sum(a_afArg, a_iArgc);
     }
 
     //---------------------------------------------------------------------------
@@ -93,7 +93,7 @@ namespace mu
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function avg."));
-        return parser_Avg(a_afArg, a_iArgc);
+        return numfnc_Avg(a_afArg, a_iArgc);
     }
 
 
@@ -106,7 +106,7 @@ namespace mu
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function min."));
-        return parser_Min(a_afArg, a_iArgc);
+        return numfnc_Min(a_afArg, a_iArgc);
     }
 
 
@@ -119,7 +119,7 @@ namespace mu
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function max."));
-        return parser_Max(a_afArg, a_iArgc);
+        return numfnc_Max(a_afArg, a_iArgc);
     }
 
 
@@ -271,7 +271,7 @@ namespace mu
         // his own epsilon
         if (fEpsilon == Value(0.0))
         {
-            Array absVal = parser_abs(a_fPos);
+            Array absVal = numfnc_abs(a_fPos);
             fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 

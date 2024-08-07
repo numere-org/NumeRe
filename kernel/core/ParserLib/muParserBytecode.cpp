@@ -610,8 +610,19 @@ namespace mu
             tok.m_data = SFunData{.ptr{a_pFun}, .argc{a_iArgc}, .idx{0}};
             m_vRPN.push_back(tok);
 		}
+	}
 
+	void ParserByteCode::AddMethod(const std::string& a_method, int a_iArgc)
+	{
+	    if (a_iArgc >= 0)
+            m_iStackPos = m_iStackPos - a_iArgc + 1;
 
+        m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+        SToken tok;
+        tok.Cmd = cmMETHOD;
+        tok.m_data = SFunData{.name{a_method}, .argc{a_iArgc}, .idx{0}};
+        m_vRPN.push_back(tok);
 	}
 
 	void ParserByteCode::pop()
@@ -782,6 +793,10 @@ namespace mu
 
 				case cmFUNC:
 				    printFormatted("CALL \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
+					break;
+
+				case cmMETHOD:
+				    printFormatted("CALL \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [METHOD: " + m_vRPN[i].Fun().name + "]\n");
 					break;
 
 				case cmLT:

@@ -376,7 +376,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
         {
             // Create new tables
             std::string sReturnVal = "";
-            std::string sObject = cmdParser.parseExprAsString();
+            std::string sObject = cmdParser.getExpr();
 
             if (!sObject.length())
                 return false;
@@ -5063,7 +5063,7 @@ static CommandReturnValues cmd_print(string& sCmd)
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sArgument);
     mu::Array res = _parser.Eval();
-    NumeReKernel::print(res.printVals());
+    NumeReKernel::printPreFmt("\r|-> " + res.printVals() + "\n");
 
     return COMMAND_PROCESSED;
 }

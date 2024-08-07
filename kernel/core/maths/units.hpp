@@ -22,64 +22,64 @@
 #include "../ParserLib/muParser.h"
 #include "../structures.hpp"
 
-mu::Array parser_Identity(const mu::Array&);
+mu::Array numfnc_Identity(const mu::Array&);
 
 // Scaling operator callback functions
-mu::Array parser_Mega(const mu::Array&);
-mu::Array parser_Giga(const mu::Array&);
-mu::Array parser_Kilo(const mu::Array&);
-mu::Array parser_Milli(const mu::Array&);
-mu::Array parser_Micro(const mu::Array&);
-mu::Array parser_Nano(const mu::Array&);
+mu::Array unit_Mega(const mu::Array&);
+mu::Array unit_Giga(const mu::Array&);
+mu::Array unit_Kilo(const mu::Array&);
+mu::Array unit_Milli(const mu::Array&);
+mu::Array unit_Micro(const mu::Array&);
+mu::Array unit_Nano(const mu::Array&);
 
 // Unit conversion callback functions
-mu::Array parser_ElectronVolt(const mu::Array&);
-mu::Array parser_Fermi(const mu::Array&);
-mu::Array parser_Angstroem(const mu::Array&);
-mu::Array parser_Barn(const mu::Array&);
-mu::Array parser_Torr(const mu::Array&);
-mu::Array parser_AstroUnit(const mu::Array&);
-mu::Array parser_Lightyear(const mu::Array&);
-mu::Array parser_Parsec(const mu::Array&);
-mu::Array parser_Mile(const mu::Array&);
-mu::Array parser_NauticalMile(const mu::Array&);
-mu::Array parser_Yard(const mu::Array&);
-mu::Array parser_Foot(const mu::Array&);
-mu::Array parser_Inch(const mu::Array&);
-mu::Array parser_Calorie(const mu::Array&);
-mu::Array parser_PSI(const mu::Array&);
-mu::Array parser_Knoten(const mu::Array&);
-mu::Array parser_liter(const mu::Array&);
-mu::Array parser_kmh(const mu::Array&);
-mu::Array parser_mph(const mu::Array&);
-mu::Array parser_Celsius(const mu::Array&);
-mu::Array parser_Fahrenheit(const mu::Array&);
-mu::Array parser_Curie(const mu::Array&);
-mu::Array parser_Gauss(const mu::Array&);
-mu::Array parser_Poise(const mu::Array&);
-mu::Array parser_Bar(const mu::Array&);
-mu::Array parser_Dyn(const mu::Array&);
-mu::Array parser_Erg(const mu::Array&);
-mu::Array parser_mol(const mu::Array&);
-mu::Array parser_gon(const mu::Array&);
-mu::Array parser_deg(const mu::Array&);
-mu::Array parser_lb(const mu::Array&);
-mu::Array parser_oz(const mu::Array&);
-mu::Array parser_bbarrel(const mu::Array&);
-mu::Array parser_barrel(const mu::Array&);
-mu::Array parser_gallon(const mu::Array&);
-mu::Array parser_pH(const mu::Array&);
-mu::Array parser_beaufort(const mu::Array&);
-mu::Array parser_BRT(const mu::Array&);
-mu::Array parser_PS(const mu::Array&);
-mu::Array parser_hp(const mu::Array&);
+mu::Array unit_ElectronVolt(const mu::Array&);
+mu::Array unit_Fermi(const mu::Array&);
+mu::Array unit_Angstroem(const mu::Array&);
+mu::Array unit_Barn(const mu::Array&);
+mu::Array unit_Torr(const mu::Array&);
+mu::Array unit_AstroUnit(const mu::Array&);
+mu::Array unit_Lightyear(const mu::Array&);
+mu::Array unit_Parsec(const mu::Array&);
+mu::Array unit_Mile(const mu::Array&);
+mu::Array unit_NauticalMile(const mu::Array&);
+mu::Array unit_Yard(const mu::Array&);
+mu::Array unit_Foot(const mu::Array&);
+mu::Array unit_Inch(const mu::Array&);
+mu::Array unit_Calorie(const mu::Array&);
+mu::Array unit_PSI(const mu::Array&);
+mu::Array unit_Knoten(const mu::Array&);
+mu::Array unit_liter(const mu::Array&);
+mu::Array unit_kmh(const mu::Array&);
+mu::Array unit_mph(const mu::Array&);
+mu::Array unit_Celsius(const mu::Array&);
+mu::Array unit_Fahrenheit(const mu::Array&);
+mu::Array unit_Curie(const mu::Array&);
+mu::Array unit_Gauss(const mu::Array&);
+mu::Array unit_Poise(const mu::Array&);
+mu::Array unit_Bar(const mu::Array&);
+mu::Array unit_Dyn(const mu::Array&);
+mu::Array unit_Erg(const mu::Array&);
+mu::Array unit_mol(const mu::Array&);
+mu::Array unit_gon(const mu::Array&);
+mu::Array unit_deg(const mu::Array&);
+mu::Array unit_lb(const mu::Array&);
+mu::Array unit_oz(const mu::Array&);
+mu::Array unit_bbarrel(const mu::Array&);
+mu::Array unit_barrel(const mu::Array&);
+mu::Array unit_gallon(const mu::Array&);
+mu::Array unit_pH(const mu::Array&);
+mu::Array unit_beaufort(const mu::Array&);
+mu::Array unit_BRT(const mu::Array&);
+mu::Array unit_PS(const mu::Array&);
+mu::Array unit_hp(const mu::Array&);
 
 // Time specific conversions
-mu::Array parser_year(const mu::Array&);
-mu::Array parser_week(const mu::Array&);
-mu::Array parser_day(const mu::Array&);
-mu::Array parser_hour(const mu::Array&);
-mu::Array parser_minute(const mu::Array&);
+mu::Array unit_year(const mu::Array&);
+mu::Array unit_week(const mu::Array&);
+mu::Array unit_day(const mu::Array&);
+mu::Array unit_hour(const mu::Array&);
+mu::Array unit_minute(const mu::Array&);
 
 // Conversion structure and helper
 enum UnitConversionMode
@@ -101,7 +101,7 @@ struct UnitFunction
     double m_sourceExp = 1.0; // Part inherited from original unit
     double m_scale = 1.0; // Scalefactor
     bool m_nonlinear = false;
-    mu::Array (*m_conv)(const mu::Array&) = parser_Identity;
+    mu::Array (*m_conv)(const mu::Array&) = numfnc_Identity;
 
     // Conversion function
     mu::Array operator()(const mu::Array& val);
