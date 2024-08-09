@@ -143,7 +143,11 @@ namespace mu
         if (!stream.eof() && iEnd == (stringstream_type::pos_type)-1)
             return 0;
 
-        *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
+        if (stream.eof())
+            *a_iPos = a_szExpr.get_viewed_string().length();
+        else
+            *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
+
         *a_fVal = Numerical(fVal);
         return 1;
     }

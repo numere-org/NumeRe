@@ -20,6 +20,7 @@
 #include "muParserError.h"
 #include "../utils/tools.hpp"
 #include "../strings/functionimplementation.hpp" // for string method callees
+#include "../maths/functionimplementation.hpp" // for numerical method callees
 
 namespace mu
 {
@@ -227,6 +228,13 @@ namespace mu
     }
 
     Value::Value(const std::string& sData)
+    {
+        m_type = TYPE_STRING;
+        m_data = new std::string;
+        *static_cast<std::string*>(m_data) = sData;
+    }
+
+    Value::Value(const char* sData)
     {
         m_type = TYPE_STRING;
         m_data = new std::string;
@@ -1025,6 +1033,40 @@ namespace mu
             return strfnc_firstch(*this);
         else if (sMethod == "last")
             return strfnc_lastch(*this);
+        else if (sMethod == "std")
+            return numfnc_Std(this, 1); // Pointer as single-element array
+        else if (sMethod == "avg")
+            return numfnc_Avg(this, 1);
+        else if (sMethod == "prd")
+            return numfnc_product(this, 1);
+        else if (sMethod == "sum")
+            return numfnc_Sum(this, 1);
+        else if (sMethod == "min")
+            return numfnc_Min(this, 1);
+        else if (sMethod == "max")
+            return numfnc_Max(this, 1);
+        else if (sMethod == "norm")
+            return numfnc_Norm(this, 1);
+        else if (sMethod == "num")
+            return numfnc_Num(this, 1);
+        else if (sMethod == "cnt")
+            return numfnc_Cnt(this, 1);
+        else if (sMethod == "med")
+            return numfnc_Med(this, 1);
+        else if (sMethod == "and")
+            return numfnc_and(this, 1);
+        else if (sMethod == "or")
+            return numfnc_or(this, 1);
+        else if (sMethod == "xor")
+            return numfnc_xor(this, 1);
+        else if (sMethod == "size")
+            return numfnc_Cnt(this, 1);
+        else if (sMethod == "maxpos")
+            return numfnc_MaxPos(*this);
+        else if (sMethod == "minpos")
+            return numfnc_MinPos(*this);
+        else if (sMethod == "order")
+            return numfnc_order(this, 1);
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1037,6 +1079,8 @@ namespace mu
             return strfnc_startswith(*this, arg1);
         else if (sMethod == "endsw")
             return strfnc_endswith(*this, arg1);
+        else if (sMethod == "sel")
+            return numfnc_getElements(*this, arg1);
         else if (sMethod == "sub")
             return strfnc_substr(*this, arg1, mu::Array());
         else if (sMethod == "splt")

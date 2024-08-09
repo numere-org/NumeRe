@@ -118,6 +118,22 @@ namespace mu
     /////////////////////////////////////////////////
     Variable* VarFactory::Get(const std::string& sVarSymbol)
     {
+        if (m_VarAliases)
+        {
+            // Find the symbol in the aliases map
+            auto alias = m_VarAliases->find(sVarSymbol);
+
+            // If something has been found, try to find the
+            // aliased variable in the var map
+            if (alias != m_VarAliases->end())
+            {
+                auto iter = m_VarDef.find(alias->second);
+
+                if (iter != m_VarDef.end())
+                    return iter->second;
+            }
+        }
+
         auto iter = m_VarDef.find(sVarSymbol);
 
         if (iter != m_VarDef.end())
@@ -142,6 +158,7 @@ namespace mu
             delete *iter;
 
         m_varStorage.clear();
+        m_VarAliases = nullptr;
     }
 
 

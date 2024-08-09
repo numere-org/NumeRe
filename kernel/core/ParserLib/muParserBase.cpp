@@ -178,8 +178,6 @@ namespace mu
 		bPauseLock = false;
 		m_state = &m_compilingState;
 		nMaxThreads = omp_get_max_threads();// std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
-
-		mVarMapPntr = nullptr;
 	}
 
 	//---------------------------------------------------------------------------
@@ -501,19 +499,6 @@ namespace mu
     /////////////////////////////////////////////////
 	void ParserBase::SetExpr(StringView a_sExpr)
 	{
-		//string_type st;
-
-#warning FIXME (numere#1#06/29/24): Evaluate which of those segments is still necessary
-		// Perform the pre-evaluation of the vectors first
-		/*if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
-        {
-            st = a_sExpr.to_string();
-            a_sExpr = compileVectors(st);
-
-            if (a_sExpr.find_first_of("{}") != string::npos)
-                Error(ecMISSING_PARENS, a_sExpr.to_string(), a_sExpr.find_first_of("{}"), "{}");
-        }*/
-
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
@@ -524,15 +509,6 @@ namespace mu
                  && this->GetExpr().length()
                  && m_state->m_valid)
 			m_state->m_valid = 0;
-
-		if (mVarMapPntr)
-        {
-            MutableStringView mut = a_sExpr.make_mutable();
-			replaceLocalVars(mut);
-			a_sExpr = mut;
-        }
-
-		//string_type sBuf(a_sExpr.to_string() + " ");
 
         // Pass the formula to the token reader
 		m_pTokenReader->SetFormula(a_sExpr);
@@ -1401,7 +1377,7 @@ namespace mu
 		// in a vector
 		std::vector<token_type> stArg;
 
-		for (int i = 0; i < iArgCount; ++i)
+		for (int i = 0; i < iArgCount+(funTok.GetCode() == cmMETHOD); ++i) // Methods have to remove their root element as well
 		{
 			stArg.push_back(a_stVal.pop());
 			if (stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR)
@@ -2479,12 +2455,12 @@ namespace mu
 					break;
 
 				default:
-					Error(ecINTERNAL_ERROR, 3);
+					Error(ecINTERNAL_ERROR, m_pTokenReader->GetPos());
 			} // end of switch operator-token
 
 			opta = opt;
 
-			if ( opt.GetCode() == cmEND )
+			if (opt.GetCode() == cmEND)
 			{
 				m_compilingState.m_byteCode.Finalize();
 				break;
@@ -2498,7 +2474,9 @@ namespace mu
 			//}
 		} // while (true)
 
-		//if (ParserBase::g_DbgDumpCmdCode)
+#ifndef PARSERSTANDALONE
+		if (ParserBase::g_DbgDumpCmdCode)
+#endif // PARSERSTANDALONE
 			m_compilingState.m_byteCode.AsciiDump();
 
 		if (m_nIfElseCounter > 0)
@@ -2864,90 +2842,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function evaluates the
-    /// temporary vector expressions and assigns
-    /// their results to their corresponding target
-    /// vector.
-    ///
-    /// \param vectEval const VectorEvaluation&
-    /// \param nStackSize int
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-    void ParserBase::evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize)
-	{
-	    //g_logger.debug("Accessing " + vectEval.m_targetVect);
-        Array* vTgt = GetInternalVar(vectEval.m_targetVect);
-
-        switch (vectEval.m_type)
-        {
-            case VectorEvaluation::EVALTYPE_VECTOR_EXPANSION:
-            {
-                vTgt->clear();
-
-                for (size_t i = 0, n = 0; i < m_state->m_vectEval.m_componentDefs.size(); i++, n++)
-                {
-                    if (m_state->m_vectEval.m_componentDefs[i] == 1)
-                        vTgt->insert(vTgt->end(), m_buffer[n].begin(), m_buffer[n].end());
-                    else
-                    {
-                        int nComps = m_state->m_vectEval.m_componentDefs[i];
-
-                        // This is an expansion. There are two possible cases
-                        if (nComps == 2)
-                        {
-                            Array diff = m_buffer[n+1] - m_buffer[n];
-
-                            for (size_t v = 0; v < diff.size(); v++)
-                            {
-                                Numerical d = diff[v].getNum();
-                                d.val.real(d.val.real() > 0.0 ? 1.0 : (d.val.real() < 0.0 ? -1.0 : 0.0));
-                                d.val.imag(d.val.imag() > 0.0 ? 1.0 : (d.val.imag() < 0.0 ? -1.0 : 0.0));
-                                expandVector(m_buffer[n][v].getNum().val, m_buffer[n+1][v].getNum().val, d.val, *vTgt);
-                            }
-
-                        }
-                        else if (nComps == 3)
-                        {
-                            for (size_t v = 0; v < std::max({m_buffer[n].size(), m_buffer[n+1].size(), m_buffer[n+2].size()}); v++)
-                            {
-                                expandVector(m_buffer[n][v].getNum().val, m_buffer[n+2][v].getNum().val, m_buffer[n+1][v].getNum().val, *vTgt);
-                            }
-                        }
-
-                        n += nComps-1;
-                    }
-                }
-
-                break;
-            }
-
-#warning FIXME (numere#1#06/29/24): Those segments have to be checked
-            /*case VectorEvaluation::EVALTYPE_VECTOR:
-                vTgt->assign(m_buffer.begin(), m_buffer.begin() + nStackSize);
-                break;*/
-
-            /*case VectorEvaluation::EVALTYPE_MULTIARGFUNC:
-            {
-                // Apply the needed multi-argument function
-                if (m_FunDef.find(m_state->m_vectEval.m_mafunc) != m_FunDef.end())
-                {
-                    ParserCallback pCallback = m_FunDef[m_state->m_vectEval.m_mafunc];
-                    vTgt->assign(1, multfun_type(pCallback.GetAddr())(&m_buffer[0], nStackSize));
-                }
-                else if (m_state->m_vectEval.m_mafunc == "logtoidx")
-                    *vTgt = parser_logtoidx(&m_buffer[0], nStackSize);
-                else if (m_state->m_vectEval.m_mafunc == "idxtolog")
-                    *vTgt = parser_idxtolog(&m_buffer[0], nStackSize);
-
-                break;
-            }*/
-
-        }
-	}
-
-
-    /////////////////////////////////////////////////
     /// \brief Simple helper function to print the
     /// buffer's contents.
     ///
@@ -2993,102 +2887,12 @@ namespace mu
         m_buffer.assign(m_state->m_stackBuffer.begin()+1,
                         m_state->m_stackBuffer.begin()+nStackSize+1);
 
-#warning FIXME (numere#1#06/29/24): This segment has to be checked
-        /*if (mVectorVars.size())
-        {
-            std::vector<std::vector<value_type>*> vUsedVectorVars;
-            VarArray vUsedVectorVarAddresses;
-            varmap_type& vars = m_state->m_usedVar;
-            size_t nVectorLength = 0;
-
-            // Get the maximal size of the used vectors
-            auto iterVector = mVectorVars.begin();
-            auto iterVar = vars.begin();
-
-            for ( ; iterVector != mVectorVars.end() && iterVar != vars.end(); )
-            {
-                if (iterVector->first == iterVar->first)
-                {
-                    if (iterVector->second.size() > 1 && iterVector->first != "_~TRGTVCT[~]")
-                    {
-                        vUsedVectorVarAddresses.push_back(iterVar->second);
-                        vUsedVectorVars.push_back(&(iterVector->second));
-                        nVectorLength = std::max(nVectorLength, iterVector->second.size());
-                    }
-
-                    ++iterVector;
-                    ++iterVar;
-                }
-                else
-                {
-                    if (iterVector->first < iterVar->first)
-                        ++iterVector;
-                    else
-                        ++iterVar;
-                }
-            }
-
-            // Any vectors larger than 1 element in this equation?
-            if (vUsedVectorVarAddresses.size())
-            {
-                // Replace all addresses and resize all vectors to fit
-                for (size_t i = 0; i < vUsedVectorVarAddresses.size(); i++)
-                {
-                    vUsedVectorVars[i]->resize(nVectorLength);
-                    m_state->m_byteCode.ChangeVar(vUsedVectorVarAddresses[i], vUsedVectorVars[i]->data(), true);
-                }
-
-                // Resize the target buffer correspondingly
-                m_buffer.resize(nStackSize * nVectorLength);
-
-                if (nVectorLength < 500)
-                {
-                    // Too few components -> run sequentially
-                    for (size_t i = 1; i < nVectorLength; ++i)
-                    {
-                        ParseCmdCodeBulk(i, 0);
-
-                        for (int j = 0; j < nStackSize; j++)
-                        {
-                            m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[j + 1];
-                        }
-                    }
-                }
-                else
-                {
-                    //g_logger.info("Start parallel run");
-                    // Run parallel
-
-                    ParseCmdCodeBulkParallel(nVectorLength);
-
-                    //g_logger.info("Ran parallel");
-                }
-
-
-                // Update the external variable
-                nStackSize *= nVectorLength;
-
-                // Replace all addresses (they are temporary!)
-                for (size_t i = 0; i < vUsedVectorVarAddresses.size(); i++)
-                {
-                    m_state->m_byteCode.ChangeVar(vUsedVectorVars[i]->data(), vUsedVectorVarAddresses[i], false);
-                }
-
-                // Repeat the first component to resolve possible overwrites (needs additional time)
-                (this->*m_pParseFormula)();
-            }
-        }*/
-
         // assign the results of the calculation to a possible
         // temporary vector
         ExpressionTarget& target = getTarget();
 
         if (target.isValid() && m_state->m_usedVar.find("_~TRGTVCT[~]") != m_state->m_usedVar.end())
             target.assign(m_buffer, nStackSize);
-
-        // Temporary target vector
-        if (m_state->m_vectEval.m_type != VectorEvaluation::EVALTYPE_NONE)
-            evaluateTemporaryVectors(m_state->m_vectEval, nStackSize);
 
         if (g_DbgDumpStack)
             print("ParserBase::Eval() @ ["
@@ -3125,6 +2929,21 @@ namespace mu
 	    v = Eval(nResults);
 
 	    return v[0];
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief Change or remove the internal variable
+    /// aliasing map.
+    ///
+    /// \param std::map<std::string
+    /// \param aliases std::string>*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::SetVarAliases(std::map<std::string, std::string>* aliases)
+	{
+	    m_factory->m_VarAliases = aliases;
 	}
 
 
@@ -3644,33 +3463,5 @@ namespace mu
 
         return false;
 	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This member function replaces var
-    /// occurences with the names of local variables.
-    ///
-    /// \param sLine MutableStringView
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-	void ParserBase::replaceLocalVars(MutableStringView sLine)
-	{
-		if (!mVarMapPntr || !mVarMapPntr->size())
-			return;
-
-		for (auto iter = mVarMapPntr->begin(); iter != mVarMapPntr->end(); ++iter)
-		{
-			for (size_t i = 0; i < sLine.length(); i++)
-			{
-				if (sLine.match(iter->first, i))
-				{
-					if (sLine.is_delimited_sequence(i, (iter->first).length(), StringViewBase::PARSER_DELIMITER))
-						sLine.replace(i, (iter->first).length(), iter->second);
-				}
-			}
-		}
-	}
-
 } // namespace mu
 

@@ -207,6 +207,22 @@ mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 }
 
 
+mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
+{
+    mu::Array res;
+
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        int64_t n = idx.get(i).getNum().asInt();
+
+        if (n > 0 && (size_t)n <= a.size())
+            res.push_back(a.get(n-1));
+    }
+
+    return res;
+}
+
+
 static std::complex<double> factorial_impl(const std::complex<double>& v)
 {
     if (mu::isnan(v) || mu::isinf(v))
@@ -967,6 +983,49 @@ mu::Array numfnc_idxtolog(const mu::Array* v, int n)
     }
 
     return vLogical;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function for getting the order of an
+/// array.
+///
+/// \param v const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_order(const mu::Array* v, int n)
+{
+    if (!n)
+        return mu::Value(false);
+
+    mu::Array index;
+
+    if (n == 1)
+    {
+        for (size_t i = 1; i <= v[0].size(); i++)
+        {
+            index.push_back(i);
+        }
+
+        auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
+            {return v[0][v1.getNum().asInt()-1] < v[0][v2.getNum().asInt()-1];};
+        std::sort(index.begin(), index.end(), sorter);
+    }
+    else
+    {
+        for (int i = 1; i <= n; i++)
+        {
+            index.push_back(i);
+        }
+
+        auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
+            {return v[v1.getNum().asInt()-1].front() < v[v2.getNum().asInt()-1].front();};
+        std::sort(index.begin(), index.end(), sorter);
+    }
+
+    return index;
 }
 
 

@@ -97,7 +97,7 @@ namespace mu
 			*/
 			typedef ParserError exception_type;
 
-			mutable std::map<std::string, std::string>* mVarMapPntr;
+			void SetVarAliases(std::map<std::string, std::string>* aliases);
 
 			// Bytecode caching and loop caching interface section
 			void ActivateLoopMode(size_t _nLoopLength);
@@ -276,12 +276,10 @@ namespace mu
                                      Array& vResults);
 
 		private:
-			void replaceLocalVars(MutableStringView sLine);
 			MutableStringView compileVectors(MutableStringView sExpr);
 			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
-			void evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize);
 			string_type getNextTempVarIndex();
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();

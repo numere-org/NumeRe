@@ -48,6 +48,7 @@ namespace mu
             size_t ManagedSize() const;
 
             varmap_type m_VarDef;
+            std::map<std::string,std::string>* m_VarAliases = nullptr;
 
         private:
             std::list<Variable*> m_varStorage;

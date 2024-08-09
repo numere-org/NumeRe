@@ -26,16 +26,20 @@
 #include "../ParserLib/muParser.h"
 #include "units.hpp"
 
+
+// Index selectors
+mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx);
+
 // Imaginary unit
 mu::Array numfnc_imaginaryUnit(const mu::Array&);
+
+// Actual math functions
 mu::Array numfnc_real(const mu::Array&);
 mu::Array numfnc_imag(const mu::Array&);
 mu::Array numfnc_rect2polar(const mu::Array&);
 mu::Array numfnc_polar2rect(const mu::Array&);
 mu::Array numfnc_conj(const mu::Array&);
 mu::Array numfnc_complex(const mu::Array&, const mu::Array&);
-
-// Actual math functions
 mu::Array numfnc_Faculty(const mu::Array&);
 mu::Array numfnc_doubleFaculty(const mu::Array&);
 mu::Array numfnc_Binom(const mu::Array&, const mu::Array&);
@@ -61,12 +65,12 @@ mu::Array numfnc_xor(const mu::Array*, int);
 mu::Array numfnc_polynomial(const mu::Array*, int);
 mu::Array numfnc_logtoidx(const mu::Array*, int);
 mu::Array numfnc_idxtolog(const mu::Array*, int);
+mu::Array numfnc_order(const mu::Array*, int);
 mu::Array numfnc_toRadian(const mu::Array&);
 mu::Array numfnc_toDegree(const mu::Array&);
 mu::Array numfnc_SphericalHarmonics(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array numfnc_imSphericalHarmonics(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array numfnc_Zernike(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
-mu::Array numfnc_SinusCardinalis(const mu::Array&);
 mu::Array numfnc_SphericalBessel(const mu::Array&, const mu::Array&);
 mu::Array numfnc_SphericalNeumann(const mu::Array&, const mu::Array&);
 mu::Array numfnc_LegendrePolynomial(const mu::Array&, const mu::Array&);
@@ -107,7 +111,6 @@ mu::Array numfnc_isnan(const mu::Array&);
 mu::Array numfnc_interval(const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array numfnc_numereversion();
 mu::Array numfnc_omp_threads();
-mu::Array numfnc_cot(const mu::Array&);
 mu::Array numfnc_sleep(const mu::Array&);
 mu::Array numfnc_exp(const mu::Array&);
 mu::Array numfnc_abs(const mu::Array&);
@@ -117,9 +120,12 @@ mu::Array numfnc_log2(const mu::Array&);
 mu::Array numfnc_log10(const mu::Array&);
 mu::Array numfnc_ln(const mu::Array&);
 mu::Array numfnc_log_b(const mu::Array&, const mu::Array&);
+
+mu::Array numfnc_SinusCardinalis(const mu::Array&);
 mu::Array numfnc_sin(const mu::Array&);
 mu::Array numfnc_cos(const mu::Array&);
 mu::Array numfnc_tan(const mu::Array&);
+mu::Array numfnc_cot(const mu::Array&);
 mu::Array numfnc_asin(const mu::Array&);
 mu::Array numfnc_acos(const mu::Array&);
 mu::Array numfnc_atan(const mu::Array&);

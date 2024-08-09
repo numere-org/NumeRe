@@ -522,7 +522,7 @@ bool Procedure::setProcName(StringView sProc, bool bInstallFileName)
 ///
 /// \param sProc StringView
 /// \param sVarList string
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param _functions Define&
 /// \param _data Datafile&
 /// \param _option Settings&
@@ -533,7 +533,7 @@ bool Procedure::setProcName(StringView sProc, bool bInstallFileName)
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
+Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
 {
     // Measure the current stack size and ensure
     // that the current call won't exceed the
@@ -703,7 +703,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
         throw;
     }
 
-    _parser.mVarMapPntr = &mVarMap;
+    _parser.SetVarAliases(&mVarMap);
 
     if (nFlags & ProcedureCommandLine::FLAG_TEST)
     {
@@ -1294,7 +1294,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
         nReturn = FlowCtrl::INTERFACE_VALUE;
         updateTestStats();
         StripSpaces(sLine);
-        _parser.mVarMapPntr = &mVarMap;
+        _parser.SetVarAliases(&mVarMap);
 
         if (nFlags & ProcedureCommandLine::FLAG_MASK)
             _option.enableSystemPrints(false);
@@ -1344,7 +1344,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 _option.enableSystemPrints(true);
             }
 
-            _parser.mVarMapPntr = &mVarMap;
+            _parser.SetVarAliases(&mVarMap);
             updateTestStats();
 
             // Handle the plugin return values
@@ -2710,12 +2710,12 @@ std::string Procedure::resolveVariables(const std::string& sCommandLine) const
 /// will be called at the end of the executed
 /// procedure.
 ///
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param bSupressAnswer bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
+void Procedure::resetProcedure(mu::Parser& _parser, bool bSupressAnswer)
 {
     // Remove the current procedure from the call stack
     NumeReKernel::getInstance()->getDebugger().popStackItem();
@@ -2725,7 +2725,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
     sThisNameSpace.clear();
     mVarMap.clear();
     NumeReKernel::bSupressAnswer = bSupressAnswer;
-    _parser.mVarMapPntr = 0;
+    _parser.SetVarAliases(nullptr);
     _localDef.reset();
     nDebuggerCode = 0;
     nFlags = 0;

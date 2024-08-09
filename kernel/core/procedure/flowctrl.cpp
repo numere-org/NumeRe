@@ -2544,7 +2544,7 @@ void FlowCtrl::reset()
         }
 
         if (!mVarMap.size())
-            _parserRef->mVarMapPntr = nullptr;
+            _parserRef->SetVarAliases(nullptr);
     }
 
     if (!vVars.empty())
@@ -4357,7 +4357,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
             _parserRef->DefineVar(sVarArray[i], &vVarArray[i]);
     }
 
-    _parserRef->mVarMapPntr = &mVarMap;
+    _parserRef->SetVarAliases(&mVarMap);
 
     // Replace the local index variables in the
     // whole command set for this flow control

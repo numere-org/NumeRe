@@ -75,6 +75,7 @@ namespace mu
             Value(const std::complex<float>& value);
             Value(const std::complex<double>& value);
             Value(const std::string& sData);
+            Value(const char* sData);
 
             virtual ~Value();
 
