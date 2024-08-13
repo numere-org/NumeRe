@@ -269,7 +269,7 @@ bool Odesolver::solve(const string& sCmd)
     if (findParameter(sParams, "samples", '='))
     {
         _odeParser->SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=')+7));
-        nSamples = intCast(_odeParser->Eval());
+        nSamples = _odeParser->Eval().getAsScalarInt();
         if (nSamples <= 0)
             nSamples = 100;
     }

@@ -1232,6 +1232,26 @@ void FileSystem::setTokens(std::string _sTokens)
 
 
 /////////////////////////////////////////////////
+/// \brief Return the value of a selected path
+/// token.
+///
+/// \param _sToken const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string FileSystem::getTokenValue(const std::string& _sToken) const
+{
+    for (int i = 0; i < 7; i++)
+    {
+        if (sTokens[i][0] == '<' + _sToken + '>')
+            return sTokens[i][1];
+    }
+
+    return _sToken;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function determines, whether a
 /// path name indicates a file or a folder.
 ///

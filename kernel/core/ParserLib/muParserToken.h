@@ -177,6 +177,18 @@ namespace mu
                 return *this;
             }
 
+            ParserToken& SetPathPlaceholder(const std::string& sPlaceholder)
+            {
+                m_iCode = cmPATHPLACEHOLDER;
+                m_iType = tpVOID;
+                m_var = nullptr;
+                m_strTok = sPlaceholder;
+                m_iIdx = -1;
+                m_val2StrLen = 0;
+
+                return *this;
+            }
+
             //------------------------------------------------------------------------------
             /** \brief Set Callback type. */
             ParserToken& Set(const ParserCallback& a_pCallback, const std::string& a_sTok)

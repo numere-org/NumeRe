@@ -1556,7 +1556,7 @@ static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitDat
         // Add the percentage value
         if (fitData.vz_w[n][n])
         {
-            dAverageErrorPercentage += abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0);
+            dAverageErrorPercentage += abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)).front().as_cmplx())) * 100.0);
         }
 
         // Add a constructed variable containing the error value
@@ -1729,14 +1729,14 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
 
         oTeXExport << "\t\t$" <<  replaceToTeX(pItem->first, true) << "$ & $"
                    << vInitialVals[n] << "$ & $"
-                   << *(pItem->second) << "$ & $\\pm"
+                   << pItem->second->front().as_cmplx() << "$ & $\\pm"
                    << sqrt(abs(fitData.vz_w[n][n]));
 
         // Append the percentual error value, if the current parameter
         // is non-zero.
         if (fitData.vz_w[n][n])
         {
-            oTeXExport << " \\quad (" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "\\%)$\\\\" << endl;
+            oTeXExport << " \\quad (" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (pItem->second->front().as_cmplx()))) * 100.0), 4) + "\\%)$\\\\" << endl;
         }
         else
             oTeXExport << "$\\\\" << endl;

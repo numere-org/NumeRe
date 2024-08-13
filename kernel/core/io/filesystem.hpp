@@ -128,6 +128,7 @@ class FileSystem
 		std::vector<std::string> getFileParts(const std::string& sFilePath) const;
 		FileInfo getFileInfo(const std::string& sFilePath) const;
         void setTokens(std::string _sTokens);
+        std::string getTokenValue(const std::string& _sToken) const;
         bool isFile(const std::string& _sPath) const;
         void initializeFromKernel();
 

@@ -454,7 +454,7 @@ static NumeRe::WindowInformation getWindow(const std::string& sExpr)
         getDataElements(sCurExpr, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
 
     NumeReKernel::getInstance()->getParser().SetExpr(sCurExpr);
-    int windowID = intCast(NumeReKernel::getInstance()->getParser().Eval());
+    int windowID = NumeReKernel::getInstance()->getParser().Eval().getAsScalarInt();
 
     return NumeReKernel::getInstance()->getWindowManager().getWindowInformation(windowID);
 }

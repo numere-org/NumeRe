@@ -26,7 +26,6 @@
 #include "../structures.hpp"
 #include "table.hpp"
 #include "memory.hpp"
-#include "stringmemory.hpp"
 #include "cluster.hpp"
 #include "fileadapter.hpp"
 
@@ -41,7 +40,7 @@
 /// tables and clusters, which have been created
 /// during the runtime.
 /////////////////////////////////////////////////
-class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public NumeRe::ClusterManager
+class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 {
 	private:
 		std::vector<Memory*> vMemory;
@@ -292,8 +291,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			if (!isTable(sCache))
 				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache);
 
-			if (sCache == "table" && !bForceRenaming)
-				throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, "table");
+			if ((sCache == "table" || sCache == "string") && !bForceRenaming)
+				throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, sCache);
 
 			mCachesMap[sNewName] = mCachesMap[sCache];
 			mCachesMap.erase(sCache);

@@ -21,6 +21,7 @@
  * Implementierung der Parser-Funktionen
  */
 #include "functionimplementation.hpp"
+#include "../ParserLib/muParserTemplateMagic.h"
 #define _USE_MATH_DEFINES
 
 #include <cstdlib>
@@ -162,8 +163,8 @@ mu::Array numfnc_polar2rect(const mu::Array& v)
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res.push_back(mu::Numerical(std::complex<double>(v[i].getNum().val.real(),
-                                                         v[i].getNum().val.imag())));
+        res.push_back(mu::Numerical(std::polar(v[i].getNum().val.real(),
+                                               v[i].getNum().val.imag())));
     }
 
     return res;
@@ -731,18 +732,12 @@ mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, con
 mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
-    {
-        for (size_t i = 0; i < vElements[0].size(); i++)
-        {
-            if (!vElements[0][i].isValid() || !vElements[0][i])
-                return mu::Value(false);
-        }
-    }
+        return mu::Value(mu::all(vElements[0]));
     else
     {
         for (int i = 0; i < nElements; i++)
         {
-            if (!vElements[i].front().isValid() || !vElements[i].front())
+            if (!vElements[i].front())
                 return mu::Value(false);
         }
     }
@@ -764,18 +759,12 @@ mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
-    {
-        for (size_t i = 0; i < vElements[0].size(); i++)
-        {
-            if (vElements[0][i].isValid() || vElements[0][i])
-                return mu::Value(true);
-        }
-    }
+        return mu::Value(mu::any(vElements[0]));
     else
     {
         for (int i = 0; i < nElements; i++)
         {
-            if (vElements[i].front().isValid() || vElements[i].front())
+            if (vElements[i].front())
                 return mu::Value(true);
         }
     }
@@ -802,7 +791,7 @@ mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid() || vElements[0][i])
+            if (vElements[0][i])
             {
                 if (!isTrue)
                     isTrue = true;
@@ -815,7 +804,7 @@ mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
     {
         for (int i = 0; i < nElements; i++)
         {
-            if (vElements[i].front().isValid() || vElements[i].front())
+            if (vElements[i].front())
             {
                 if (!isTrue)
                     isTrue = true;
@@ -2828,7 +2817,7 @@ mu::Array numfnc_sleep(const mu::Array& ms)
 
 mu::Array numfnc_exp(const mu::Array& a)
 {
-    return mu::apply(std::exp, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Exp, a);
 }
 
 
@@ -2848,7 +2837,7 @@ mu::Array numfnc_abs(const mu::Array& a)
 
 mu::Array numfnc_sqrt(const mu::Array& a)
 {
-    return mu::apply(std::sqrt, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Sqrt, a);
 }
 
 
@@ -2863,28 +2852,21 @@ mu::Array numfnc_sign(const mu::Array& a)
     return mu::apply(numfnc_sign, a);
 }
 
-
-static std::complex<double> numfnc_log2(const std::complex<double>& val)
-{
-    return val.imag() == 0.0 ? std::log2(val.real()) : std::log(val) / std::log(2.0);
-}
-
-
 mu::Array numfnc_log2(const mu::Array& a)
 {
-    return mu::apply(numfnc_log2, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Log2, a);
 }
 
 
 mu::Array numfnc_log10(const mu::Array& a)
 {
-    return mu::apply(std::log10, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Log10, a);
 }
 
 
 mu::Array numfnc_ln(const mu::Array& a)
 {
-    return mu::apply(std::log, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Log, a);
 }
 
 
@@ -3109,73 +3091,73 @@ mu::Array numfnc_cot(const mu::Array& x)
 
 mu::Array numfnc_sin(const mu::Array& a)
 {
-    return mu::apply(std::sin, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Sin, a);
 }
 
 
 mu::Array numfnc_cos(const mu::Array& a)
 {
-    return mu::apply(std::cos, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Cos, a);
 }
 
 
 mu::Array numfnc_tan(const mu::Array& a)
 {
-    return mu::apply(std::tan, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Tan, a);
 }
 
 
 mu::Array numfnc_asin(const mu::Array& a)
 {
-    return mu::apply(std::asin, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::ASin, a);
 }
 
 
 mu::Array numfnc_acos(const mu::Array& a)
 {
-    return mu::apply(std::acos, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::ACos, a);
 }
 
 
 mu::Array numfnc_atan(const mu::Array& a)
 {
-    return mu::apply(std::atan, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::ATan, a);
 }
 
 
 mu::Array numfnc_sinh(const mu::Array& a)
 {
-    return mu::apply(std::sinh, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Sinh, a);
 }
 
 
 mu::Array numfnc_cosh(const mu::Array& a)
 {
-    return mu::apply(std::cosh, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Cosh, a);
 }
 
 
 mu::Array numfnc_tanh(const mu::Array& a)
 {
-    return mu::apply(std::tanh, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::Tanh, a);
 }
 
 
 mu::Array numfnc_asinh(const mu::Array& a)
 {
-    return mu::apply(std::asinh, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::ASinh, a);
 }
 
 
 mu::Array numfnc_acosh(const mu::Array& a)
 {
-    return mu::apply(std::acosh, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::ACosh, a);
 }
 
 
 mu::Array numfnc_atanh(const mu::Array& a)
 {
-    return mu::apply(std::atanh, a);
+    return mu::apply(mu::MathImpl<std::complex<double>>::ATanh, a);
 }
 
 

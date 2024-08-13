@@ -31,7 +31,6 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
 static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd, StringView sTableName, bool isAssignment);
 static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign);
 static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView sCmd);
-static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data);
 
 
 /////////////////////////////////////////////////
@@ -507,39 +506,9 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView s
     if (!_idx.row.isValid() || !_idx.col.isValid())
         throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
-    // Is it the "string" object?
-    if (sCache == "string")
-    {
-        expandStringIndexVectors(_idx, _data);
-        return;
-    }
-
     // If the cache is not really a cache
     if (!isCluster && !_data.isTable(sCache.to_string()))
         throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd.to_string(), SyntaxError::invalid_position);
 }
 
-
-/////////////////////////////////////////////////
-/// \brief This static function expands the
-/// indices into vectors, if the current object
-/// is the string object.
-///
-/// \param _idx Indices&
-/// \param _data MemoryManager&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data)
-{
-    if (_idx.row.isOpenEnd())
-    {
-        _idx.row.setRange(0, _data.getStringElements()-1);
-    }
-
-    if (_idx.col.isOpenEnd())
-    {
-        _idx.col.setRange(0, _data.getStringCols()-1);
-    }
-}
 

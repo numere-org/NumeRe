@@ -1442,7 +1442,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push((vExpr.GetVal() != mu::Value(0.0)) ? vVal1 : vVal2);
+			a_stVal.push(all(vExpr.GetVal() != Value(0.0)) ? vVal1 : vVal2);
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1663,7 +1663,8 @@ namespace mu
                     continue;
 
                 case  cmIF:
-                    if (!Stack[sidx--])
+#warning TODO (numere#1#08/11/24): Solve this for vectorisation
+                    if (!all(Stack[sidx--]))
                         pTok += pTok->Oprt().offset;
                     continue;
 
@@ -1946,7 +1947,8 @@ namespace mu
                         continue;
 
                     case  cmIF:
-                        if (!Stack[sidx--])
+#warning TODO (numere#1#08/11/24): Solve this for vectorisation
+                        if (!all(Stack[sidx--]))
                             pTok += pTok->Oprt().offset;
                         continue;
 
@@ -2435,6 +2437,12 @@ namespace mu
 					if (opt.GetCode() == cmBO)
                         varArrayCandidate = false;
 					break;
+
+                case cmPATHPLACEHOLDER:
+                    m_compilingState.m_byteCode.AddVal(Value(opt.GetAsString()));
+                    m_compilingState.m_byteCode.AddFun((generic_fun_type)getPathToken, 1, false);
+                    stVal.push(ParserToken().SetVal(Value(opt.GetAsString()), opt.GetAsString()));
+                    break;
 
 				case cmOPRT_INFIX:
 				case cmVAL2STR:

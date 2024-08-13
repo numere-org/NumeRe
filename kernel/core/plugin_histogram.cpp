@@ -810,7 +810,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 static mu::Array isSubSet(const mu::Array& lhs, const mu::Array& rhs)
 {
     // Are they equal?
-    if (lhs == rhs)
+    if (mu::all(lhs == rhs))
         return lhs;
 
     const mu::Array& longer = lhs.size() > rhs.size() ? lhs : rhs;

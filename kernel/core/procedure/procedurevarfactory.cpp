@@ -869,7 +869,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             // Reference
             if (varMap.find(currentValue) == varMap.end()
                 && !(isTemplate && _dataRef->isCluster(currentValue))
-                && !(isTemplate && currentValue.starts_with("string("))
                 && !(isTemplate && _dataRef->isTable(currentValue)))
             {
                 _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());

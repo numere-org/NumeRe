@@ -23,6 +23,8 @@
 #include "../../kernel.hpp"
 #endif
 
+#warning TODO (numere#1#08/13/24): Update function language strings
+#warning TODO (numere#1#08/09/24): Check functionalities of CommandLineParser
 
 namespace mu
 {
@@ -59,12 +61,11 @@ namespace mu
 
         for (const auto& val : arr)
         {
-            std::string sStr;
-
-            if (val.isString())
-                sStr = val.getStr();
-            else
-                sStr = val.print();
+#ifndef PARSERSTANDALONE
+            std::string sStr = val.printVal(NumeReKernel::getInstance()->getSettings().getPrecision());
+#else
+            std::string sStr = val.printVal();
+#endif // PARSERSTANDALONE
 
             if (sStr.length() < nLen)
                 sStr.insert(0, std::string(nLen-sStr.length(), '0'));
@@ -73,6 +74,15 @@ namespace mu
         }
 
         return res;
+    }
+
+    Array getPathToken(const Array& arr)
+    {
+        #ifndef PARSERSTANDALONE
+        return mu::Value(NumeReKernel::getInstance()->getFileSystem().getTokenValue(arr.front().getStr()));
+        #else
+        return arr;
+        #endif // PARSERSTANDALONE
     }
 }
 

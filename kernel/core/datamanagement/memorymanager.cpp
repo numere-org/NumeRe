@@ -40,7 +40,7 @@ using namespace std;
 /// Creates the default table and initializes the
 /// list of predefined commands.
 /////////////////////////////////////////////////
-MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::ClusterManager()
+MemoryManager::MemoryManager() : NumeRe::FileAdapter(), NumeRe::ClusterManager()
 {
 	bSaveMutex = false;
 	sCache_file = "<>/numere.cache";
@@ -49,6 +49,8 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;imread;implot;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
 	mCachesMap["table"] = std::make_pair(0u, 0u);
+	mCachesMap["string"] = std::make_pair(1u, 1u);
+	vMemory.push_back(new Memory());
 	vMemory.push_back(new Memory());
 
 	tableColumnsCount = mu::Value(0.0);
@@ -95,6 +97,8 @@ void MemoryManager::removeTablesFromMemory()
 		bSaveMutex = false;
 		mCachesMap.clear();
 		mCachesMap["table"] = std::make_pair(0u, 0u);
+		mCachesMap["string"] = std::make_pair(1u, 1u);
+		vMemory.push_back(new Memory());
 		vMemory.push_back(new Memory());
 		sDataFile.clear();
 	}
@@ -398,6 +402,17 @@ bool MemoryManager::loadFromNewCacheFile()
 
             if (cacheFile.getComment() != "NO COMMENT")
                 vMemory.back()->m_meta.comment = cacheFile.getComment();
+        }
+
+        if (mCachesMap.find("table") == mCachesMap.end())
+        {
+            mCachesMap["table"] = std::make_pair(vMemory.size(), vMemory.size());
+            vMemory.push_back(new Memory());
+        }
+        if (mCachesMap.find("string") == mCachesMap.end())
+        {
+            mCachesMap["string"] = std::make_pair(vMemory.size(), vMemory.size());
+            vMemory.push_back(new Memory());
         }
 
         bSaveMutex = false;
@@ -976,21 +991,10 @@ void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget
 /////////////////////////////////////////////////
 bool MemoryManager::updateDimensionVariables(StringView sTableName) const
 {
-    // Determine the type of table
-    if (sTableName != "string")
-    {
-        // Update the dimensions for the selected
-        // numerical table
-        tableLinesCount = mu::Value(getLines(sTableName, false));
-        tableColumnsCount = mu::Value(getCols(sTableName, false));
-    }
-    else
-    {
-        // Update the dimensions for the selected
-        // string table
-        tableLinesCount = mu::Value(getStringElements());
-        tableColumnsCount = mu::Value(getStringCols());
-    }
+    // Update the dimensions for the selected
+    // table
+    tableLinesCount = mu::Value(getLines(sTableName, false));
+    tableColumnsCount = mu::Value(getCols(sTableName, false));
 
     return true;
 }
@@ -1252,18 +1256,18 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
 /// \brief This member function removes the
 /// selected table.
 ///
-/// \param sCache const string&
+/// \param sTable const string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::deleteTable(const string& sCache)
+bool MemoryManager::deleteTable(const string& sTable)
 {
-    if (sCache == "table")
+    if (sTable == "table" || sTable == "string")
         return false;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
-        if (iter->first == sCache)
+        if (iter->first == sTable)
         {
             if (vMemory.size() > iter->second.first)
             {

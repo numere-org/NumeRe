@@ -338,7 +338,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "lcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lcont", '=')));
-            intSettings[INT_CONTLINES] = intCast(_parser.Eval());
+            intSettings[INT_CONTLINES] = _parser.Eval().getAsScalarInt();
         }
     }
 
@@ -352,7 +352,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "pcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "pcont", '=')));
-            intSettings[INT_CONTLINES] = intCast(_parser.Eval());
+            intSettings[INT_CONTLINES] = _parser.Eval().getAsScalarInt();
         }
     }
 
@@ -366,7 +366,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "fcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "fcont", '=')));
-            intSettings[INT_CONTLINES] = intCast(_parser.Eval());
+            intSettings[INT_CONTLINES] = _parser.Eval().getAsScalarInt();
         }
     }
 
@@ -429,7 +429,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         int nPos = findParameter(sCmd, "samples", '=') + 7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        intSettings[INT_SAMPLES] = intCast(_parser.Eval());
+        intSettings[INT_SAMPLES] = _parser.Eval().getAsScalarInt();
 
         if (isnan(_parser.Eval().front().getNum().val.real()) || isinf(_parser.Eval().front().getNum().val.real()))
             intSettings[INT_SAMPLES] = 100;

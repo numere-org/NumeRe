@@ -263,13 +263,13 @@ namespace mu
 						// Optimization for ploynomials of low order
 						if (m_vRPN[sz - 2].Cmd == cmVAR && m_vRPN[sz - 1].Cmd == cmVAL)
 						{
-							if (m_vRPN[sz - 1].Val().data2 == mu::Value(2.0))
+							if (all(m_vRPN[sz - 1].Val().data2 == Value(2.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW2;
-							else if (m_vRPN[sz - 1].Val().data2 == mu::Value(3.0))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(3.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
-							else if (m_vRPN[sz - 1].Val().data2 == mu::Value(4.0))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(4.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (m_vRPN[sz - 1].Val().data2 == mu::Value(m_vRPN[sz - 1].Val().data2.front().getNum().asInt()))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.front().getNum().asInt())))
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
 							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;
@@ -375,7 +375,7 @@ namespace mu
 					case cmDIV:
                         if (m_vRPN[sz-1].Cmd == cmVAL
                             && m_vRPN[sz-2].Cmd == cmVARMUL
-                            && m_vRPN[sz-1].Val().data2 != Array(Numerical(0.0)))
+                            && all(m_vRPN[sz-1].Val().data2 != Array(Numerical(0.0))))
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[sz - 2].Val().data  /= m_vRPN[sz - 1].Val().data2;

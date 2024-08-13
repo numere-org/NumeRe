@@ -748,8 +748,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("strmatch", strfnc_strmatch, true, 1);                         // strmatch(str1,str2,n)
     _parser.DefineFun("strrfnd", strfnc_strrfnd, true, 1);                           // strrfnd(str1,str2,n)
     _parser.DefineFun("strrmatch", strfnc_strrmatch, true, 1);                       // strrmatch(str1,str2,n)
-    _parser.DefineFun("str_non_match", strfnc_str_not_match, true, 1);               // str_not_match(str1,str2,n)
-    _parser.DefineFun("str_non_rmatch", strfnc_str_not_rmatch, true, 1);             // str_not_rmatch(str1,str2,n)
+    _parser.DefineFun("str_not_match", strfnc_str_not_match, true, 1);               // str_not_match(str1,str2,n)
+    _parser.DefineFun("str_not_rmatch", strfnc_str_not_rmatch, true, 1);             // str_not_rmatch(str1,str2,n)
     _parser.DefineFun("strfndall", strfnc_strfndall, true, 2);                       // strfndall(str1,str2,n,n)
     _parser.DefineFun("strmatchall", strfnc_strmatchall, true, 2);                   // strmatchall(str1,str2,n,n)
     _parser.DefineFun("findparam", strfnc_findparam, true, 1);                       // findparam(str1,str2,str3)
@@ -2643,9 +2643,6 @@ NumeReVariables NumeReKernel::getVariableList()
     const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
 
-    if (_memoryManager.getStringElements())
-        tablemap["string"] = std::pair<size_t,size_t>(-1, -1);
-
     // Gather all (global) numerical variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
@@ -2689,16 +2686,11 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).starts_with("_~"))
             continue;
 
-        if (iter->first == "string")
-        {
-            sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getStringElements()) + " x " + toString(_memoryManager.getStringCols());
-            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_memoryManager.minString()) + "\", ..., \"" + replaceControlCharacters(_memoryManager.maxString()) + "\"}\tstring()\t" + formatByteSize(_memoryManager.getStringSize());
-        }
-        else
-        {
-            sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x " + toString(_memoryManager.getCols(iter->first, false));
-            sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t" + formatByteSize(_memoryManager.getBytes(iter->first));
-        }
+        sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
+            + toString(_memoryManager.getCols(iter->first, false));
+        sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
+            + toString(_memoryManager.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
+            + formatByteSize(_memoryManager.getBytes(iter->first));
 
         vars.vVariables.push_back(sCurrentLine);
     }
@@ -3533,22 +3525,7 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 /////////////////////////////////////////////////
 NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& sStringTableName)
 {
-    if (sStringTableName == "string()")
-    {
-        // Create the container for the string table
-        NumeRe::Container<std::string> stringTable(_memoryManager.getStringElements(), _memoryManager.getStringCols());
-
-        for (size_t j = 0; j < _memoryManager.getStringCols(); j++)
-        {
-            for (size_t i = 0; i < _memoryManager.getStringElements(j); i++)
-            {
-                stringTable.set(i, j, "\"" + _memoryManager.readString(i, j) + "\"");
-            }
-        }
-
-        return stringTable;
-    }
-    else if (_memoryManager.isCluster(sStringTableName))
+    if (_memoryManager.isCluster(sStringTableName))
     {
         // Create the container for the selected cluster
         NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
@@ -3676,9 +3653,6 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     // Get the table variable map
     std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
-
-    if (getInstance()->getMemoryManager().getStringElements())
-        tableMap["string"] = std::pair<size_t, size_t>(-1, -1);
 
     for (const auto& iter : tableMap)
         mLocalTables[iter.first] = iter.first;

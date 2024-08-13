@@ -361,9 +361,6 @@ bool getStringArgument(const string& sCmd, string& sArgument)
         if (sCmd.find("to_string(") != string::npos && (sCmd.find("to_string(") < nPos || nPos == string::npos))
             nPos = sCmd.find("to_string(");
 
-        if (sCmd.find("string(") != string::npos && (sCmd.find("string(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("string(");
-
         if (sCmd.find("substr(") != string::npos && (sCmd.find("substr(") < nPos || nPos == string::npos))
             nPos = sCmd.find("substr(");
 
@@ -2217,7 +2214,6 @@ bool containsStrings(StringView sLine)
     // It's only necessary to check the following functions.
     // All other string functions need strings as input
     if (sLine.find_first_of("\"#") != std::string::npos
-        || sLine.find("string(") != std::string::npos
         || sLine.find("string_cast(") != std::string::npos
         || sLine.find("char(") != std::string::npos
         || sLine.find("getlasterror(") != std::string::npos

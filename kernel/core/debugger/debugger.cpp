@@ -302,7 +302,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     }
 
     // Equals the current argument the string table?
-    if (sArgumentValue.starts_with("string("))
+    /*if (sArgumentValue.starts_with("string("))
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
@@ -313,7 +313,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
             return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&@) string\t";
 
         return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&) string\t";
-    }
+    }*/
 
     // Is the current argument a numerical variable?
     if (_parser.GetVar().find(sArgumentValue) != _parser.GetVar().end())
@@ -557,8 +557,6 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
                                          const std::map<std::string, std::string>& _mArguments,
                                          const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
 {
-
-
     if (bAlreadyThrown)
         return;
 
@@ -621,17 +619,10 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
 
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel
-        if (iter.second == "string")
-        {
-            sTableData = toString(instance->getMemoryManager().getStringElements()) + " x " + toString(instance->getMemoryManager().getStringCols());
-            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getMemoryManager().minString()) + "\", ..., \""
-                + replaceControlCharacters(instance->getMemoryManager().maxString()) + "\"}\tstring()";
-        }
-        else
-        {
-            sTableData = toString(instance->getMemoryManager().getLines(iter.second, false)) + " x " + toString(instance->getMemoryManager().getCols(iter.second, false));
-            sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
-        }
+        sTableData = toString(instance->getMemoryManager().getLines(iter.second, false)) + " x "
+            + toString(instance->getMemoryManager().getCols(iter.second, false));
+        sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
+            + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
 
         mLocalTables[iter.first + "()"] = sTableData;
     }
@@ -947,12 +938,12 @@ vector<string> NumeReDebugger::getGlobals()
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     // Is there anything in the string object?
-    if (_data.getStringElements())
+    /*if (_data.getStringElements())
     {
         mGlobals["string()"] = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols())
                                + "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ...,\""
                                + replaceControlCharacters(_data.maxString()) + "\"}";
-    }
+    }*/
 
     // List all relevant caches
     for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)

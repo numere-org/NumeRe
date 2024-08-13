@@ -670,7 +670,7 @@ namespace NumeRe
                         if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                             (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
                         else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING)
-                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getString();
+                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getInternalString();
                         else
                             (*vTarget)[i] = mu::Value(NAN);
                     }
@@ -685,7 +685,7 @@ namespace NumeRe
                         if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                             (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
                         else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING)
-                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getString();
+                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getInternalString();
                         else
                             (*vTarget)[i] = mu::Value(NAN);
                     }

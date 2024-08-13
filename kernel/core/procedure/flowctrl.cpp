@@ -545,10 +545,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 
                 for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
                 {
-                    if (range.getType(i+n) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                        iterCluster.setDouble(n, range.getDouble(i+n));
-                    else
-                        iterCluster.setString(n, range.getInternalString(i+n));
+                    iterCluster.setValue(n, range.getValue(i+n));
                 }
 
                 i += vCmdArray[nth_Cmd].nRFStepping;
@@ -701,7 +698,7 @@ static bool isTrue(mu::Array* v, int nNum)
 {
     for (int i = 0; i < nNum; i++)
     {
-        if (!(bool)v[i])
+        if (!mu::all(v[i]))
             return false;
     }
 
@@ -1149,7 +1146,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     // Search for the correct first(!) case
     for (int i = 0; i < nNum; i++)
     {
-        if (!v[i])
+        if (!mu::all(v[i]))
             nNextCase = nJumpTable[nNextCase][BLOCK_MIDDLE];
         else
             break;
@@ -3877,7 +3874,7 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         if (vCmdArray[i].sCommand.find("end") != std::string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl", '='))
         {
             _parserRef->SetExpr(getArgAtPos(vCmdArray[i].sCommand, findParameter(vCmdArray[i].sCommand, "lnumctrl", '=') + 8));
-            nLoopSafety = intCast(_parserRef->Eval());
+            nLoopSafety = _parserRef->Eval().getAsScalarInt();
 
             if (nLoopSafety <= 0)
                 nLoopSafety = 1000;

@@ -671,12 +671,12 @@ bool Memory::isValueLike(const VectorIndex& _vCol) const
 /// the categories and their respective index.
 ///
 /// \param _vCol const VectorIndex&
-/// \return ValueVector
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-ValueVector Memory::getCategoryList(const VectorIndex& _vCol) const
+mu::Array Memory::getCategoryList(const VectorIndex& _vCol) const
 {
-    ValueVector vRet;
+    mu::Array vRet;
 
     for (size_t i = 0; i < _vCol.size(); i++)
     {
@@ -689,7 +689,7 @@ ValueVector Memory::getCategoryList(const VectorIndex& _vCol) const
                 for (size_t c = 0; c < vCategories.size(); c++)
                 {
                     vRet.push_back(vCategories[c]);
-                    vRet.push_back(toString(c+1));
+                    vRet.push_back(mu::Numerical(c+1));
                 }
             }
         }
@@ -789,7 +789,10 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
                     continue;
                 }
 
-                (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
+                if (memArray[_vCol[j]]->m_type == TableColumn::TYPE_STRING)
+                    (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsInternalString(_vLine[i]);
+                else
+                    (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
             }
         }
     }
@@ -3407,7 +3410,7 @@ std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, c
 
     int nGridOffset = 2*((dir & GRID) != 0);
     _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
-    _cellsIdx.setOpenEndIndex(dir & LINES ? cols-1-nGridOffset : lines-1);
+    _cellsIdx.setOpenEndIndex(dir & COLS ? lines-1 : cols-1-nGridOffset);
 
     // If a grid is required, get the grid dimensions
     // of this table
@@ -3494,7 +3497,7 @@ std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, c
 
     int nGridOffset = 2*((dir & GRID) != 0);
     _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
-    _cellsIdx.setOpenEndIndex(dir & LINES ? cols-1-nGridOffset : lines-1);
+    _cellsIdx.setOpenEndIndex(dir & COLS ? lines-1 : cols-1-nGridOffset);
 
     // If a grid is required, get the grid dimensions
     // of this table
@@ -4038,7 +4041,7 @@ std::complex<double> Memory::getCovariance(size_t col1, const VectorIndex& _vInd
 
     for (size_t i = 0; i < minSize; i++)
     {
-        vCov += (readMem(_vIndex1[i], col1) - vAvg1) * (readMem(_vIndex2[i], col2) - vAvg2);
+        vCov += (readMem(_vIndex1[i], col1).getNum().val - vAvg1) * (readMem(_vIndex2[i], col2).getNum().val - vAvg2);
     }
 
     return vCov / (minSize-1.0);

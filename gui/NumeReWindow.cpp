@@ -2207,7 +2207,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 
 /////////////////////////////////////////////////
 /// \brief This member function displays the
-/// contents of the "string()" table or a cluster.
+/// contents of a cluster.
 ///
 /// \param _stringTable NumeRe::Container<std::string>
 /// \param tableDisplayName const std::string&
@@ -2258,8 +2258,8 @@ void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDispl
 
 /////////////////////////////////////////////////
 /// \brief This member function displays the
-/// contents of the "string()" table or a cluster
-/// and enables editing its contents.
+/// contents of a cluster and enables editing its
+/// contents.
 ///
 /// \param _stringTable NumeRe::Container<std::string>
 /// \param tableDisplayName const std::string&
@@ -2316,7 +2316,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDispl
 /////////////////////////////////////////////////
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
-    if (tableDisplayName == "string()" || tableDisplayName.find("{}") != std::string::npos)
+    if (tableDisplayName.find("{}") != std::string::npos)
         openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
     else
         openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());

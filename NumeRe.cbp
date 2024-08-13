@@ -2260,7 +2260,6 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/stringmemory.hpp">
 			<Option target="Debug" />
@@ -2271,7 +2270,6 @@
 			<Option target="Release_x64" />
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/table.cpp">
 			<Option target="Debug" />

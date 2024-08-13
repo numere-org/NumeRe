@@ -71,11 +71,11 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                 // character
                 if (sCommand[i] == '(')
                 {
-                    // This is a usual table or a reference to "string()"
+                    // This is a usual table
                     sDataObject = sCommand.subview(pos, i - pos).to_string();
 
                     // Ensure that the table exists
-                    if (!instance->getMemoryManager().isTable(sDataObject) && sDataObject != "string")
+                    if (!instance->getMemoryManager().isTable(sDataObject))
                     {
                         sDataObject.clear();
                         pos = std::string::npos;
@@ -911,7 +911,7 @@ static void replaceEntityOccurence(std::string& sLine, const std::string& sEntit
                     getDataElements(sArg, _parser, _data);
 
                 _parser.SetExpr(sArg);
-                nType = intCast(_parser.Eval());
+                nType = _parser.Eval().getAsScalarInt();
                 sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
                                       getMatchingParenthesis(StringView(sLine, sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
                                       createTempVar(sEntityReplacement + "~cmp", isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef.front().getNum().val, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef.front().getNum().val, nType), _parser));
@@ -1229,7 +1229,7 @@ static std::string tableMethod_aliasof(const std::string& sTableName, std::strin
 
     _kernel->getMemoryManager().addReference(sTableName, a.front().getStr());
 
-    return sMethodArguments;
+    return _kernel->getParser().CreateTempVar(a);
 }
 
 
@@ -1257,9 +1257,9 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
         sMethodArguments = v[1].front().getStr();
 
     if (_kernel->getMemoryManager().convertColumns(sTableName, VectorIndex(v[0]), sMethodArguments))
-        return "\"" + sMethodArguments + "\"";
+        return _kernel->getParser().CreateTempVar(mu::Value(sMethodArguments));
 
-    return "\"\"";
+    return _kernel->getParser().CreateTempVar(mu::Value(""));
 }
 
 
@@ -1291,7 +1291,7 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
     if (vRet.size())
         return _kernel->getParser().CreateTempVar(vRet);
 
-    return "\"\"";
+    return _kernel->getParser().CreateTempVar(mu::Value(""));
 }
 
 
@@ -1316,7 +1316,7 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
     mu::Array vCategories = _kernel->getMemoryManager().getCategoryList(VectorIndex(v[0]), sTableName);
 
     if (!vCategories.size())
-        return "\"\"";
+        return _kernel->getParser().CreateTempVar(mu::Value(""));
 
     return _kernel->getParser().CreateTempVar(vCategories);
 }
@@ -1369,7 +1369,7 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        return "\"\"";
+        return _kernel->getParser().CreateTempVar(mu::Value(""));
 
     for (size_t i = 0; i < std::min(v[0].size(), v[1].size()); i++)
     {
@@ -1412,7 +1412,7 @@ static std::string tableMethod_toSiUnits(const std::string& sTableName, std::str
 
         if (nResults > 3)
         {
-            if (v[2])
+            if (mu::all(v[2]))
             {
                 mu::Array vUnits;
 
@@ -1477,7 +1477,7 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        return "\"\"";
+        return _kernel->getParser().CreateTempVar(mu::Value(""));
 
     vCategories = v[1].as_str_vector();
 
@@ -1486,12 +1486,12 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
         mu::Array cats = _kernel->getMemoryManager().getCategoryList(VectorIndex(v[0]), sTableName);
 
         if (!cats.size())
-            return "\"\"";
+            return _kernel->getParser().CreateTempVar(mu::Value(""));
 
         return _kernel->getParser().CreateTempVar(cats);
     }
 
-    return "\"\"";
+    return _kernel->getParser().CreateTempVar(mu::Value(""));
 }
 
 
@@ -1507,7 +1507,6 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
 static std::string tableMethod_findCols(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-    std::string sColumns = getNextArgument(sMethodArguments, true);
     bool enableRegEx = false;
 
     int nResults = 0;
@@ -1516,7 +1515,7 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     if (nResults > 1)
-        enableRegEx = (bool)v[1];
+        enableRegEx = mu::all(v[1]);
 
     std::vector<std::complex<double>> vCols = _kernel->getMemoryManager().findCols(sTableName, v[0].as_str_vector(), enableRegEx);
 
@@ -1943,7 +1942,7 @@ static std::string tableMethod_annotate(const std::string& sTableName, std::stri
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     _kernel->getMemoryManager().writeComment(sTableName, v[0].front().getStr());
-    return "\"" + v[0].front().getStr() + "\"";
+    return _kernel->getParser().CreateTempVar(mu::Value(v[0].front().getStr()));
 }
 
 
@@ -2170,7 +2169,7 @@ static std::string tableMethod_reorderRows(const std::string& sTableName, std::s
     int nResults = 0;
 
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
-    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    _kernel->getParser().SetExpr(sMethodArguments);
     mu::Array* v = _kernel->getParser().Eval(nResults);
     vIndex = VectorIndex(v[0]);
 
@@ -2271,10 +2270,10 @@ static std::string createMafVectorName(std::string sAccessString)
     }
 
     if (sAccessString.find(".name") != std::string::npos)
-        return "\"" + sAccessString.substr(0, sAccessString.find("().") + 2) + "\"";
+        return NumeReKernel::getInstance()->getParser().CreateTempVar(mu::Value(sAccessString.substr(0, sAccessString.find("().") + 2)));
 
     if (sAccessString.find(".description") != std::string::npos)
-        return "\"" + NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("()."))) + "\"";
+        return NumeReKernel::getInstance()->getParser().CreateTempVar(mu::Value(NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("().")))));
 
     if (sAccessString.find(".shrink") != std::string::npos)
     {

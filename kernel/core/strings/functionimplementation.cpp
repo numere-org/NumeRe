@@ -357,8 +357,8 @@ mu::Array strfnc_isalnum(const mu::Array& a)
         for (size_t j = 0; j < a[i].getStr().length(); j++)
         {
             if (isalnum(a[i].getStr()[j])
-                && _umlauts.lower.find(a[i].getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a[i].getStr()[j]) == std::string::npos)
+                || _umlauts.lower.find(a[i].getStr()[j]) != std::string::npos
+                || _umlauts.upper.find(a[i].getStr()[j]) != std::string::npos)
                 ret.push_back(true);
             else
                 ret.push_back(false);
@@ -675,16 +675,16 @@ mu::Array strfnc_to_char(const mu::Array* arrs, int n)
     {
         for (size_t i = 0; i < arrs[0].size(); i++)
         {
-            if (!arrs[0][i].isValid())
-                sToChar += (char)arrs[0][i].getNum().asInt();
+            if (arrs[0][i].isValid())
+                sToChar += char(arrs[0][i].getNum().asInt());
         }
     }
     else
     {
         for (int i = 0; i < n; i++)
         {
-            if (!arrs[i].front().isValid())
-                sToChar += (char)arrs[i].front().getNum().asInt();
+            if (arrs[i].front().isValid())
+                sToChar += char(arrs[i].front().getNum().asInt());
         }
     }
 
@@ -1087,7 +1087,7 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
 
         for (size_t j = 0; j < chars.get(i).getStr().length(); j++)
         {
-            size_t match = where.get(i).getStr().find(chars.get(i).getStr()[i], pos_start);
+            size_t match = where.get(i).getStr().find(chars.get(i).getStr()[j], pos_start);
 
             if (match <= pos_last)
                 ret.push_back(match+1);
@@ -1538,8 +1538,8 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
         {
             size_t pos = sSearchString.length() + lastPosition;
 
-            if ((int64_t)pos >= pos2)
-                break;
+            //if ((int64_t)pos >= pos2)
+            //    break;
 
             StringView nextPattern;
 
@@ -1856,7 +1856,7 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
             if (!defs.isDefault())
                 ret.push_back(defs.get(j));
             else
-                ret.push_back(mu::Value());
+                ret.push_back(mu::Value(""));
         }
     }
 
@@ -1893,8 +1893,10 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
 
             nMatch++;
         }
-
     }
+
+    if (!ret.size())
+        return mu::Value(false);
 
     return ret;
 }
@@ -1927,6 +1929,8 @@ mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const m
 
         // Using the slower version to enable replacement of null characters
         replaceAll(s, f, r, p1-1, p2-1);
+
+        ret.push_back(s);
     }
 
     return ret;
@@ -2086,7 +2090,7 @@ mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val)
     for (size_t i = 0; i < std::max(base.size(), val.size()); i++)
     {
         StringView b = base.get(i).getStr();
-        StringView v = base.get(i).getStr();
+        StringView v = val.get(i).getStr();
 
         if (b == "hex")
             ret.push_back(convertBaseToDecimal(v, HEX));
@@ -2094,8 +2098,8 @@ mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val)
             ret.push_back(convertBaseToDecimal(v, OCT));
         else if (b == "bin")
             ret.push_back(convertBaseToDecimal(v, BIN));
-
-        ret.push_back(v.to_string());
+        else
+            ret.push_back(v.to_string());
     }
 
     return ret;
@@ -2447,29 +2451,6 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
                 if (_accessParser.getIndices().col.isOpenEnd())
                     _accessParser.getIndices().col.back() = VectorIndex::INVALID;
             }
-            else if (_accessParser.getDataObject() == "string")
-            {
-                if (_accessParser.getIndices().row.isOpenEnd())
-                {
-                    if (_accessParser.getIndices().col.size() == 1)
-                    {
-                        if (_data.getStringElements(_accessParser.getIndices().col.front()))
-                            _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
-                        else
-                            _accessParser.getIndices().row.setRange(0, 0);
-                    }
-                    else
-                    {
-                        if (_data.getStringElements())
-                            _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
-                        else
-                            _accessParser.getIndices().row.setRange(0, 0);
-                    }
-                }
-
-                if (_accessParser.getIndices().col.isOpenEnd())
-                    _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
-            }
             else
             {
                 if (_accessParser.getIndices().row.isOpenEnd())
@@ -2571,7 +2552,11 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
 
     for (size_t i = 0; i < std::max({vals.size(), cfill.size(), len.size()}); i++)
     {
+#ifndef PARSERSTANDALONE
+        std::string v = vals.get(i).printVal(NumeReKernel::getInstance()->getSettings().getPrecision());
+#else
         std::string v = vals.get(i).printVal();
+#endif // PARSERSTANDALONE
 
         if (!len.isDefault()
             && !cfill.isDefault()

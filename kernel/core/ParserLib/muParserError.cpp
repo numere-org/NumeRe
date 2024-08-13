@@ -139,19 +139,23 @@ namespace mu
 
       It does not contain any information but the error code.
     */
-    ParserError::ParserError(EErrorCodes /*a_iErrc*/)
-        : m_ErrMsg(ParserErrorMsg::Instance())
+    ParserError::ParserError(EErrorCodes a_iErrc)
+        : ParserError()
     {
-        Reset();
-        m_strMsg = _nrT("parser error");
+        m_iErrc = a_iErrc;
+        m_strMsg = m_ErrMsg[m_iErrc];
+
+        if (!m_strMsg.length())
+            m_strMsg = _nrT("Generic parser error");
+        else
+            m_strMsg = ::_lang.get(m_strMsg);
     }
 
     //------------------------------------------------------------------------------
     /** \brief Construct an error from a message text. */
     ParserError::ParserError(const string_type& sMsg)
-        : m_ErrMsg(ParserErrorMsg::Instance())
+        : ParserError()
     {
-        Reset();
         m_strMsg = sMsg;
     }
 

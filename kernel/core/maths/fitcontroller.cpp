@@ -507,7 +507,7 @@ double Fitcontroller::evalRestrictions(const mu::Array* v, int nVals)
     {
         for (int i = 1; i < nVals; i++)
         {
-            if ((bool)!v[i])
+            if (!mu::all(v[i]))
                 return NAN;
         }
 

@@ -568,13 +568,9 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
         popUpmenu.Append(ID_VARVIEWER_RENAME, _guilang.get("GUI_VARVIEWER_MENU_RENAME"));
         popUpmenu.Append(ID_VARVIEWER_REMOVE, _guilang.get("GUI_VARVIEWER_MENU_REMOVE"));
 
-        // Add stuff, for non-string tables
-        if (itemLabel != "string()")
-        {
-            popUpmenu.AppendSeparator();
-            popUpmenu.Append(ID_VARVIEWER_SAVE, _guilang.get("GUI_VARVIEWER_MENU_SAVE"));
-            popUpmenu.Append(ID_VARVIEWER_SAVEAS, _guilang.get("GUI_VARVIEWER_MENU_SAVEAS"));
-        }
+        popUpmenu.AppendSeparator();
+        popUpmenu.Append(ID_VARVIEWER_SAVE, _guilang.get("GUI_VARVIEWER_MENU_SAVE"));
+        popUpmenu.Append(ID_VARVIEWER_SAVEAS, _guilang.get("GUI_VARVIEWER_MENU_SAVEAS"));
 
         // Disable menu items for tables, which
         // cannot be modified

@@ -175,8 +175,6 @@ namespace mu
             Array pow(const Array& exponent) const;
             Array pow(const Numerical& exponent) const;
 
-            operator bool() const;
-
             Array operator!() const;
             Array operator==(const Array& other) const;
             Array operator!=(const Array& other) const;
@@ -249,6 +247,10 @@ namespace mu
             std::string print() const;
             Array asArray() const;
     };
+
+
+    bool all(const Array& arr);
+    bool any(const Array& arr);
 
     Array operator+(const Array& arr, const Value& v);
     Array operator-(const Array& arr, const Value& v);

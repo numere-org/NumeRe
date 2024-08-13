@@ -1745,7 +1745,7 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].as_cmplx());
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
     }
 
     return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1), VectorIndex(0)));
@@ -1827,7 +1827,7 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i].as_cmplx());
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
     }
 
     return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal.getNum().val));
@@ -2255,7 +2255,7 @@ static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mReturn = funcData.mat1;
 
         // (Any) vector
-        mu::Array& dat = _mReturn.data();
+        std::vector<std::complex<double>>& dat = _mReturn.data();
 
         for (size_t i = 1; i < dat.size(); i++)
         {
@@ -2271,7 +2271,7 @@ static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
             _mReturn = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                      errorInfo);
             // (Any) vector
-            mu::Array& dat = _mReturn.data();
+            std::vector<std::complex<double>>& dat = _mReturn.data();
 
             for (size_t i = 1; i < dat.size(); i++)
             {
@@ -2330,7 +2330,7 @@ static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mReturn = funcData.mat1;
 
         // (Any) vector
-        mu::Array& dat = _mReturn.data();
+        std::vector<std::complex<double>>& dat = _mReturn.data();
 
         for (size_t i = 1; i < dat.size(); i++)
         {
@@ -2346,7 +2346,7 @@ static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
             _mReturn = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                      errorInfo);
             // (Any) vector
-            mu::Array& dat = _mReturn.data();
+            std::vector<std::complex<double>>& dat = _mReturn.data();
 
             for (size_t i = 1; i < dat.size(); i++)
             {
@@ -3419,7 +3419,7 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     mglDataC _fftData1;
 
     // Link the existing matrix to the fft object. Avoids copying the data
-    std::vector<std::complex<double>> m1 = mat1.data().as_cmplx_vector();
+    std::vector<std::complex<double>>& m1 = mat1.data();
     _fftData1.Link(&m1[0], mat1.rows(), mat1.cols());
 
     // Replace all nans with zeros
@@ -3433,7 +3433,7 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     //Transform matrix 2
     mglDataC _fftData2;
 
-    std::vector<std::complex<double>> m2 = mat2.data().as_cmplx_vector();
+    std::vector<std::complex<double>>& m2 = mat2.data();
 
     // Link the existing matrix to the fft object. Avoids copying the data
     _fftData2.Link(&m2[0], mat2.rows(), mat2.cols());
@@ -3454,7 +3454,7 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     // Take the inverse of the convolution result
     _fftData1.FFT("ixy");
 
-    mat1.data() = m1;
+    //mat1.data() = m1;
 
     // Write results to matrix
     return mat1;

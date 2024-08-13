@@ -1247,11 +1247,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 
     // Get the current defined data tables
     const map<string, std::pair<size_t, size_t>>& CacheMap = _data.getTableMap();
-
     const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
-
-    // Get data table and string table sizes
-    string sStringSize = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
 
     NumeReKernel::toggleTableStatus();
     make_hline();
@@ -1295,22 +1291,6 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     if (mClusterMap.size())
         NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
 
-
-    // Print now the dimension of the string table
-    if (_data.getStringElements())
-    {
-        NumeReKernel::printPreFmt("|   string()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 6 + _option.getWindow(0) % 2) + strfill(sStringSize, (_option.getWindow(0) - 50) / 2) + strfill("[string x string]", 19));
-        if (_data.getStringSize() >= 1024 * 1024)
-            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-        else if (_data.getStringSize() >= 1024)
-            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0), 4), 9) + " KBytes\n");
-        else
-            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize()), 9) + "  Bytes\n");
-        nBytesSum += _data.getStringSize();
-
-        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
-    }
-
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
     {
@@ -1333,23 +1313,14 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     // Combine the number of variables and data
     // tables first
     NumeReKernel::printPreFmt("|   -- " + toString(variables.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
-    if (_data.isValid() || _data.getStringElements())
+    if (_data.isValid())
     {
-        if (_data.isValid() && _data.getStringElements())
-        {
-            NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
-            nDataSetNum = CacheMap.size() + 1;
-        }
-        else if (_data.isValid())
-        {
-            NumeReKernel::printPreFmt(toString(CacheMap.size()));
-            nDataSetNum = CacheMap.size();
-        }
-        else
-            NumeReKernel::printPreFmt("1");
+        NumeReKernel::printPreFmt(toString(CacheMap.size()));
+        nDataSetNum = CacheMap.size();
     }
     else
         NumeReKernel::printPreFmt("0");
+
     NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_DATATABLES")) + " --");
 
     // Calculate now the needed memory for the stored values and print it at the
@@ -2770,7 +2741,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
             sArgument = sDefault;
     }
 
-    if (cmdParser.hasParam("asstr") && sArgument[0] != '"' && sArgument[sArgument.length() - 1] != '"')
+    if (cmdParser.hasParam("asstr") && sArgument.front() != '"' && sArgument.back() != '"')
         cmdParser.setReturnValue("\"" + sArgument + "\"");
     else
         cmdParser.setReturnValue(sArgument);
@@ -3001,18 +2972,6 @@ static CommandReturnValues cmd_delete(string& sCmd)
         else
             throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
     }
-    else if (accessParser.getDataObject() == "string")
-    {
-        nArgument = accessParser.getIndices().row.front();
-
-        if (_data.removeStringElements(nArgument))
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
-        }
-
-        return COMMAND_PROCESSED;
-    }
 
     return COMMAND_PROCESSED;
 }
@@ -3082,9 +3041,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
         else
             clear_cache(_data, _option);
 
-        // Clear also the string table
-        _data.clearStringElements();
-
         // Clear also user-defined variables if called from terminal
         clear_variables();
 
@@ -3093,16 +3049,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
         NumeRe::Cluster& ans = _data.newCluster("ans");
         ans.setDouble(0, NAN);
         NumeReKernel::getInstance()->setAns(&ans);
-    }
-    else if (cmdParser.getExpr() == "string()")
-    {
-        if (_data.clearStringElements())
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
-        }
-
-        return COMMAND_PROCESSED;
     }
 
     return COMMAND_PROCESSED;
@@ -3482,7 +3428,7 @@ static CommandReturnValues cmd_warn(string& sCmd)
             if (sMessage.length())
                 sMessage += ", ";
 
-            sMessage += vVals[i].print();
+            sMessage += vVals[i].printVals(_option.getPrecision(), 0);
         }
 
         NumeReKernel::issueWarning(sMessage);
@@ -3852,27 +3798,6 @@ static CommandReturnValues cmd_show(string& sCmd)
             NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
 
             return COMMAND_PROCESSED;
-        }
-        else if (_accessParser.getDataObject() == "string")
-        {
-            // Create the target container
-            NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size());
-
-            // Copy the data to the new container and add surrounding
-            // quotation marks
-            for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
-            {
-                for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
-                {
-                    if ((int)_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
-                        break;
-
-                    _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
-                }
-            }
-
-            // Redirect control
-            NumeReKernel::showStringTable(_stringTable, "string()");
         }
         else
         {
@@ -4383,7 +4308,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
             {
                 size_t nPos = sTable.find(iter->first + "()");
 
-                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos - 1])) && iter->first != "table")
+                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos - 1])) && iter->first != "table" && iter->first != "string")
                 {
                     sTable = iter->first;
 
@@ -5062,8 +4987,9 @@ static CommandReturnValues cmd_print(string& sCmd)
 
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sArgument);
-    mu::Array res = _parser.Eval();
-    NumeReKernel::printPreFmt("\r|-> " + res.printVals() + "\n");
+    sArgument = _parser.Eval().printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
+    replaceAll(sArgument, "\n", "\n|   ");
+    NumeReKernel::printPreFmt("\r|-> " + sArgument + "\n");
 
     return COMMAND_PROCESSED;
 }

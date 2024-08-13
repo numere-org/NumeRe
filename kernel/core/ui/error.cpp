@@ -250,7 +250,7 @@ void Assertion::checkAssertion(mu::Array* v, int nNum)
         {
             // If a single value is zero,
             // throw the assertion error
-            if (!v[i])
+            if (!mu::all(v[i]))
                 assertionFail();
         }
 

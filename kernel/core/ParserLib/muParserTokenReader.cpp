@@ -545,7 +545,7 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsInfixOpTok(token_type& a_Tok)
 	{
-	    if (m_lastTok.GetCode() == cmVAR || m_lastTok.GetCode() == cmVAL || m_lastTok.GetCode() == cmBC)
+	    if (m_lastTok.GetCode() == cmVAR || m_lastTok.GetCode() == cmVAL || m_lastTok.GetCode() == cmBC || m_lastTok.GetCode() == cmVC)
             return false;
 
 		string_type sTok;
@@ -555,6 +555,18 @@ namespace mu
 
         if (sTok.front() == '#')
         {
+            if (m_strFormula.match("#<", m_iPos) && m_strFormula.find('>', m_iPos+1) != std::string::npos)
+            {
+                a_Tok.SetPathPlaceholder(m_strFormula.subview(m_iPos+2, m_strFormula.find('>', m_iPos+1) - m_iPos-2).to_string());
+
+                if (m_iSynFlags & noINFIXOP)
+                    Error(ecUNEXPECTED_OPERATOR, m_iPos, "#<" + a_Tok.GetAsString() + ">");
+
+                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+                m_iPos = m_strFormula.find('>', m_iPos+1)+1;
+                return true;
+            }
+
             size_t nEnd = std::min(sTok.length(), sTok.find_first_not_of("#~"));
 
             m_iPos += nEnd;

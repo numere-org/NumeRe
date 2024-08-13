@@ -1514,7 +1514,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     if (findParameter(sParams, "samples", '='))
     {
         _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-        nSamples = intCast(_parser.Eval());
+        nSamples = _parser.Eval().getAsScalarInt();
 
         if (nSamples < 21)
             nSamples = 21;
@@ -1525,7 +1525,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     if (findParameter(sParams, "points", '='))
     {
         _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "points", '=') + 6));
-        nOrder = intCast(_parser.Eval());
+        nOrder = _parser.Eval().getAsScalarInt();
 
         if (nOrder <= 3)
             nOrder = 3;
@@ -2104,7 +2104,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     if (findParameter(sParams, "samples", '='))
     {
         _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-        nSamples = intCast(_parser.Eval());
+        nSamples = _parser.Eval().getAsScalarInt();
 
         if (nSamples < 21)
             nSamples = 21;
@@ -2359,9 +2359,9 @@ void taylor(CommandLineParser& cmdParser)
             // Create the string element, which is used
             // for the variable in the created funcction
             // string
-            if (dVarValue == mu::Value(0.0))
+            if (mu::all(dVarValue == mu::Value(0.0)))
                 sArg = "x";
-            else if (dVarValue < mu::Value(0))
+            else if (mu::all(dVarValue < mu::Value(0)))
                 sArg = "x+" + (-dVarValue).print(_option.getPrecision());
             else
                 sArg = "x-" + dVarValue.print(_option.getPrecision());

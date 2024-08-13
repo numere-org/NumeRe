@@ -28,6 +28,7 @@ namespace mu
     void printFormatted(const std::string& msg);
     void toggleTableMode();
     Array val2Str(const Array& arr, size_t nLen);
+    Array getPathToken(const Array& arr);
 }
 
 #endif // MUHELPERS_HPP

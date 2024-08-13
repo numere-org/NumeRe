@@ -532,7 +532,7 @@ namespace mu
 
     Value Value::operator!() const
     {
-        return !bool(*this);
+        return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && getNum().val == 0.0));
     }
 
     Value Value::operator==(const Value& other) const
@@ -582,7 +582,7 @@ namespace mu
     std::string Value::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isNumerical())
-            return ::toString(getNum().val, digits > 0 ? digits : 7);
+            return toString(getNum().val, digits > 0 ? digits : 7);
 
         if (isString())
         {
@@ -603,7 +603,25 @@ namespace mu
     std::string Value::printVal(size_t digits, size_t chrs) const
     {
         if (isNumerical())
-            return ::toString(getNum().val, digits > 0 ? digits : 7);
+        {
+            std::complex<double> val = getNum().val;
+            // Is one of the components zero, then try to find an
+            // integer optimisation
+            if (val.imag() == 0.0)
+            {
+                if (fabs(rint(val.real()) - val.real()) < 1e-14 && fabs(val.real()) >= 1.0)
+                    return toString(intCast(val.real()));
+            }
+            else if (val.real() == 0.0)
+            {
+                if (fabs(rint(val.imag()) - val.imag()) < 1e-14 && fabs(val.imag()) >= 1.0)
+                    return toString(intCast(val.imag())) + "i";
+            }
+
+            // Otherwise do not optimize due to the fact that the
+            // precision will get halved in this case
+            return toString(val, digits > 0 ? digits : 7);
+        }
 
         if (isString())
         {
@@ -905,25 +923,13 @@ namespace mu
         return ret;
     }
 
-    Array::operator bool() const
-    {
-        bool ret = true;
-
-        for (size_t i = 0; i < size(); i++)
-        {
-            ret = ret && bool(operator[](i));
-        }
-
-        return ret;
-    }
-
     Array Array::operator!() const
     {
         Array ret;
 
         for (size_t i = 0; i < size(); i++)
         {
-            ret.push_back(!operator[](i));
+            ret.push_back(operator[](i).operator!());
         }
 
         return ret;
@@ -1413,6 +1419,30 @@ namespace mu
     const std::string Value::m_defString;
     const Numerical Value::m_defVal;
     const Value Array::m_default;
+
+
+    bool all(const Array& arr)
+    {
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            if (!arr[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    bool any(const Array& arr)
+    {
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            if (arr[i])
+                return true;
+        }
+
+        return false;
+    }
+
 
 
     Array operator+(const Array& arr, const Value& v)

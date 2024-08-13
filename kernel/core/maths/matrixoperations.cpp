@@ -350,7 +350,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                             if (sSubExpr.length())
                             {
                                 Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
-                                n = mres.data().getAsScalarInt();
+                                n = intCast(mres.data().front());
                             }
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), n),
@@ -380,7 +380,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                             std::string sMatrix1 = getNextArgument(sSubExpr, true);
                             std::string sMatrix2 = getNextArgument(sSubExpr, true);
                             Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
-                            int n = mres.data().getAsScalarInt();
+                            int n = intCast(mres.data().front());
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache),
                                                                                               evalMatOp(sMatrix2, _parser, _data, _cache), n),
@@ -391,7 +391,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
                             Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
-                            std::complex<double> fVal = mres.data().front().getNum().val;
+                            std::complex<double> fVal = mres.data().front();
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
                                                                                               fVal), errorInfo));
@@ -401,7 +401,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
                             Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
-                            std::complex<double> fVal = mres.data().front().getNum().val;
+                            std::complex<double> fVal = mres.data().front();
                             int n = 0;
 
                             if (mres.data().size() > 1)
@@ -415,11 +415,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
                             Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
-                            int n = mres.data().getAsScalarInt();
-                            int m = mres.data().getAsScalarInt();
+                            int n = intCast(mres.data().front());
+                            int m = intCast(mres.data().front());
 
                             if (mres.data().size() > 1)
-                                m = mres.data()[1].getNum().asInt();
+                                m = intCast(mres.data()[1]);
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
                                                                                               n, m), errorInfo));
@@ -429,11 +429,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
                             Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
-                            int n = mres.data().getAsScalarInt();
+                            int n = intCast(mres.data().front());
                             int m = 0;
 
                             if (mres.data().size() > 1)
-                                m = mres.data()[1].getNum().asInt();
+                                m = intCast(mres.data()[1]);
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
                                                                                               n, m), errorInfo));
@@ -885,7 +885,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     }
 
     // Set the expression in the parser
-    _parser.SetExpr(sCmd);
+    _parser.SetExpr("{" + sCmd + "}");
 
     g_logger.debug("Matrix calculation");
 

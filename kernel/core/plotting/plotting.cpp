@@ -3664,13 +3664,13 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
         if (findParameter(sCmd, "cols", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
-            nMultiCols = (size_t)intCast(_parser.Eval());
+            nMultiCols = (size_t)_parser.Eval().getAsScalarInt();
         }
 
         if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
-            nMultiLines = (size_t)intCast(_parser.Eval());
+            nMultiLines = (size_t)_parser.Eval().getAsScalarInt();
         }
 
         if (sSubPlotIDX.length())

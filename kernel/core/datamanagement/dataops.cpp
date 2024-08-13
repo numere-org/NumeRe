@@ -582,52 +582,6 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
 
 /////////////////////////////////////////////////
-/// \brief This static function sorts strings and
-/// is called by sortData, if the selected data
-/// object equals "string".
-///
-/// \param cmdParser CommandLineParser&
-/// \param _idx Indices&
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool sortStrings(CommandLineParser& cmdParser, Indices& _idx)
-{
-    vector<int> vSortIndex;
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
-    // Evalulate special index values
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getStringElements(_idx.col.front()) - 1);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _data.getStringCols() - 1);
-
-    // Perform the actual sorting operation
-    // The member function will be able to handle the remaining command line parameters by itself
-    vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), cmdParser.getParameterList());
-
-    // If the sorting index contains elements, the user had requested them
-    if (vSortIndex.size())
-    {
-        // Transform the integer indices into doubles
-        mu::Array vDoubleSortIndex;
-
-        for (size_t i = 0; i < vSortIndex.size(); i++)
-            vDoubleSortIndex.push_back(vSortIndex[i]);
-
-        // Set the vector name and set the vector for the parser
-        cmdParser.setReturnValue(vDoubleSortIndex);
-    }
-    else
-        cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
-
-    // Return true
-    return true;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function sorts clusters
 /// and is called by sortData, if the selected
 /// data object equals a cluster identifier.
@@ -694,12 +648,6 @@ bool sortData(CommandLineParser& cmdParser)
     // Ensure that the indices are reasonable
     if (!isValidIndexSet(_idx))
         throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "", _idx.row.to_string() + ", " + _idx.col.to_string());
-
-    // If the current cache equals to "string", leave the function at
-    // this point and redirect the control to the string sorting
-    // function
-    if (_accessParser.getDataObject() == "string")
-        return sortStrings(cmdParser, _idx);
 
     // If the current cache equals a cluster, leave the function at
     // this point and redirect the control to the cluster sorting
@@ -870,7 +818,11 @@ bool readFromFile(CommandLineParser& cmdParser)
     std::string sInput = "";
     std::string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
     // Kind of a hack
-    NumeRe::Cluster comments = NumeReKernel::getInstance()->getAns();
+    mu::Array comments;
+
+    if (sCommentEscapeSequence.length())
+        comments = NumeReKernel::getInstance()->getParser().Eval();
+
     std::string sStringSequence = cmdParser.getParameterValueAsString("qmarks", "");
 
     bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
@@ -900,7 +852,7 @@ bool readFromFile(CommandLineParser& cmdParser)
 
         //EndlessVector<std::string> args = getAllArguments(sCommentEscapeSequence);
         EndlessVector<std::string> args;
-        std::vector<std::string> strArr = comments.getInternalStringArray();
+        std::vector<std::string> strArr = comments.as_str_vector();
         args.assign(strArr.begin(), strArr.end());
         fFile.reStyle(args[0],
                       args[0],
@@ -912,7 +864,7 @@ bool readFromFile(CommandLineParser& cmdParser)
     }
 
     // create a new vector for the file's contents
-    vector<string> vFileContents;
+    std::vector<std::string> vFileContents;
 
     // Read the complete file, where each line is a separate string expression
     for (int i = 0; i < fFile.getLinesCount(); i++)
@@ -923,7 +875,7 @@ bool readFromFile(CommandLineParser& cmdParser)
         if (!sLine.length() || sLine == "\"\"" || sLine == "\"")
         {
             if (bKeepEmptyLines && i + 1 < fFile.getLinesCount())
-                vFileContents.push_back("\"\"");
+                vFileContents.push_back("");
 
             continue;
         }
@@ -936,7 +888,7 @@ bool readFromFile(CommandLineParser& cmdParser)
         //	sLine += '"';
 
         // Append the parsed string to the vector
-        vFileContents.push_back("\"" + sLine + "\"");
+        vFileContents.push_back(sLine);
     }
 
     // Create a new temporary variable, if we actually

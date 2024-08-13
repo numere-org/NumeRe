@@ -276,7 +276,7 @@ namespace mu
         if (fEpsilon == Value(0.0))
         {
             Array absVal = numfnc_abs(a_fPos);
-            fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
+            fEpsilon = all(a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 
         for (size_t i = 0; i < f.size(); i++)
