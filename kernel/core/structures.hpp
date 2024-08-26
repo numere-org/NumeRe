@@ -258,8 +258,8 @@ class VectorIndex
             // using the intCast() function
             for (size_t i = 0; i < indices.size(); i++)
             {
-                if (!std::isnan(indices[i].getNum().val.real()) && !std::isinf(indices[i].getNum().val.real()))
-                    vStorage.push_back(intCast(indices[i].getNum().val) - 1);
+                if (!std::isnan(indices[i].getNum().asF64()) && !std::isinf(indices[i].getNum().asF64()))
+                    vStorage.push_back(indices[i].getNum().asI64() - 1);
                 else
                     vStorage.push_back(INVALID);
             }

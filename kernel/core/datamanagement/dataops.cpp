@@ -166,7 +166,7 @@ void append_data(CommandLineParser& cmdParser)
     std::string sFileFormat;
 
     if (cmdParser.hasParam("fileformat"))
-        sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+        sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
     // If the command expression contains the parameter "all" and the
     // argument (i.e. the filename) contains wildcards
@@ -207,14 +207,14 @@ void append_data(CommandLineParser& cmdParser)
     {
         if (cmdParser.hasParam("head"))
         {
-            auto vPar = cmdParser.getParameterValueAsNumericalValue("head");
+            auto vPar = cmdParser.getParsedParameterValue("head");
 
             if (vPar.size())
                 nArgument = intCast(vPar.front());
         }
         else
         {
-            auto vPar = cmdParser.getParameterValueAsNumericalValue("h");
+            auto vPar = cmdParser.getParsedParameterValue("h");
 
             if (vPar.size())
                 nArgument = intCast(vPar.front());
@@ -757,7 +757,7 @@ bool writeToFile(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Parse the expression
-    std::vector<mu::Array> contents = cmdParser.parseExprAsNumericalValues();
+    std::vector<mu::Array> contents = cmdParser.parseExpr();
 
     if (!contents.size() || !contents.front().size())
         throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -816,14 +816,14 @@ bool writeToFile(CommandLineParser& cmdParser)
 bool readFromFile(CommandLineParser& cmdParser)
 {
     std::string sInput = "";
-    std::string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
+    std::string sCommentEscapeSequence = cmdParser.getParsedParameterValueAsString("comments", "");
     // Kind of a hack
     mu::Array comments;
 
     if (sCommentEscapeSequence.length())
         comments = NumeReKernel::getInstance()->getParser().Eval();
 
-    std::string sStringSequence = cmdParser.getParameterValueAsString("qmarks", "");
+    std::string sStringSequence = cmdParser.getParsedParameterValueAsString("qmarks", "");
 
     bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 
@@ -926,7 +926,7 @@ bool readImage(CommandLineParser& cmdParser)
     std::string sFileName = cmdParser.getExprAsFileName(".bmp");
 
     if (cmdParser.hasParam("channels"))
-        sChannels = cmdParser.getParameterValueAsString("channels", "grey");
+        sChannels = cmdParser.getParsedParameterValueAsString("channels", "grey");
 
     // Ensure that a filename is present
     if (!sFileName.length())

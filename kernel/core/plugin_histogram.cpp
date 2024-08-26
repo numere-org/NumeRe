@@ -2026,9 +2026,9 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     // Get the number of selected bins
     if (cmdParser.hasParam("bins"))
-        vResults = cmdParser.getParameterValueAsNumericalValue("bins");
+        vResults = cmdParser.getParsedParameterValue("bins");
     else if (cmdParser.hasParam("b"))
-        vResults = cmdParser.getParameterValueAsNumericalValue("b");
+        vResults = cmdParser.getParsedParameterValue("b");
 
     if (vResults.size())
     {
@@ -2044,9 +2044,9 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     // Get the selected bin widths
     if (cmdParser.hasParam("width"))
-        vResults = cmdParser.getParameterValueAsNumericalValue("width");
+        vResults = cmdParser.getParsedParameterValue("width");
     else if (cmdParser.hasParam("w"))
-        vResults = cmdParser.getParameterValueAsNumericalValue("w");
+        vResults = cmdParser.getParsedParameterValue("w");
 
     if (vResults.size())
     {
@@ -2107,12 +2107,12 @@ void plugin_histogram(CommandLineParser& cmdParser)
     else if (cmdParser.hasParam("save"))
     {
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
-        _histParams.sSavePath = cmdParser.getParameterValueAsString("save", "", true, true);
+        _histParams.sSavePath = cmdParser.getParsedParameterValueAsString("save", "", true, true);
     }
     else if (cmdParser.hasParam("export"))
     {
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
-        _histParams.sSavePath = cmdParser.getParameterValueAsString("export", "", true, true);
+        _histParams.sSavePath = cmdParser.getParsedParameterValueAsString("export", "", true, true);
     }
 
     _out.setStatus(_histParams.sSavePath.length() != 0);
@@ -2121,25 +2121,25 @@ void plugin_histogram(CommandLineParser& cmdParser)
     if (!bMake2DHist)
     {
         if (cmdParser.hasParam("xlabel"))
-            _histParams.sBinLabel = cmdParser.getParameterValueAsString("xlabel", "Bins", true, true);
+            _histParams.sBinLabel = cmdParser.getParsedParameterValueAsString("xlabel", "Bins", true, true);
         else
-            _histParams.sBinLabel = cmdParser.getParameterValueAsString("binlabel", "Bins", true, true);
+            _histParams.sBinLabel = cmdParser.getParsedParameterValueAsString("binlabel", "Bins", true, true);
 
         if (cmdParser.hasParam("ylabel"))
-            _histParams.sCountLabel = cmdParser.getParameterValueAsString("ylabel", "Counts", true, true);
+            _histParams.sCountLabel = cmdParser.getParsedParameterValueAsString("ylabel", "Counts", true, true);
         else
-            _histParams.sCountLabel = cmdParser.getParameterValueAsString("countlabel", "Counts", true, true);
+            _histParams.sCountLabel = cmdParser.getParsedParameterValueAsString("countlabel", "Counts", true, true);
 
         if (_histParams.bRelative)
             _histParams.sCountLabel += " (rel.)";
     }
     else
     {
-        _histParams.sBinLabel = cmdParser.getParameterValueAsString("binlabel", "Bins", true, true);
-        _histParams.sCountLabel = cmdParser.getParameterValueAsString("countlabel", "Counts", true, true);
-        _histParams.sAxisLabels[XCOORD] = cmdParser.getParameterValueAsString("xlabel", "\\i x", true, true);
-        _histParams.sAxisLabels[YCOORD] = cmdParser.getParameterValueAsString("ylabel", "\\i y", true, true);
-        _histParams.sAxisLabels[ZCOORD] = cmdParser.getParameterValueAsString("zlabel", "\\i z", true, true);
+        _histParams.sBinLabel = cmdParser.getParsedParameterValueAsString("binlabel", "Bins", true, true);
+        _histParams.sCountLabel = cmdParser.getParsedParameterValueAsString("countlabel", "Counts", true, true);
+        _histParams.sAxisLabels[XCOORD] = cmdParser.getParsedParameterValueAsString("xlabel", "\\i x", true, true);
+        _histParams.sAxisLabels[YCOORD] = cmdParser.getParsedParameterValueAsString("ylabel", "\\i y", true, true);
+        _histParams.sAxisLabels[ZCOORD] = cmdParser.getParsedParameterValueAsString("zlabel", "\\i z", true, true);
     }
 
     // Get the bin estimation method

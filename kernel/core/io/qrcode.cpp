@@ -89,7 +89,7 @@ void createQrCode(CommandLineParser& cmdParser)
 
     if (cmdParser.hasParam("level"))
     {
-        mu::Array res = cmdParser.getParameterValueAsNumericalValue("level");
+        mu::Array res = cmdParser.getParsedParameterValue("level");
 
         if (res.size() && res.front().getNum().val.real() >= 0 && res.front().getNum().val.real() <= 3)
             level = (QrCode::Ecc)res.getAsScalarInt();
@@ -102,7 +102,7 @@ void createQrCode(CommandLineParser& cmdParser)
 
     if (cmdParser.hasParam("color"))
     {
-        mu::Array res = cmdParser.getParameterValueAsNumericalValue("color");
+        mu::Array res = cmdParser.getParsedParameterValue("color");
 
         if (res.size() >= 3)
         {

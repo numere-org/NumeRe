@@ -66,8 +66,9 @@ int main()
     _parser.DefineFun("sign", numfnc_sign);
     _parser.DefineFun("rint", numfnc_rint);
     _parser.DefineFun("abs", numfnc_abs);
-    _parser.DefineFun("time", timfnc_time);
+    _parser.DefineFun("time", timfnc_time, false);
     _parser.DefineFun("date", timfnc_date, true, 2);
+    _parser.DefineFun("as_date", timfnc_as_date, true, 2);
 
     _parser.DefineFun("logtoidx", numfnc_logtoidx);
     _parser.DefineFun("idxtolog", numfnc_idxtolog);
@@ -92,12 +93,17 @@ int main()
     mixed.push_back(mu::Value(std::string("1")));
     mixed.push_back(mu::Value(2.0));
     mixed.push_back(mu::Value(std::string("3")));
+    mu::Variable categories;
+    categories.push_back(mu::Value(mu::Category(1, "Hello")));
+    categories.push_back(mu::Value(mu::Category(2, "World")));
+    categories.push_back(mu::Value(mu::Category(1, "Hello")));
     _parser.DefineVar("vect", &vectorVar);
     _parser.DefineVar("logicals", &logicalVar);
     _parser.DefineVar("var", &var);
     _parser.DefineVar("str", &strvar);
     _parser.DefineVar("strvect", &stringVect);
     _parser.DefineVar("mixed", &mixed);
+    _parser.DefineVar("categories", &categories);
 
     while (true)
     {
@@ -116,7 +122,7 @@ int main()
 
             for (int i = 0; i < nResults; i++)
             {
-                std::cout << i+1 << ">> " << res[i].print() << std::endl;
+                std::cout << i+1 << ">> " << res[i].print() << " [" << res[i].printDims() << " " << res[i].getCommonTypeAsString() << "]" << std::endl;
             }
         }
         catch (...)

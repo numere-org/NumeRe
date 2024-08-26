@@ -59,7 +59,7 @@ static std::string formatNumberToTex(const mu::Value& number, size_t precision =
     if (precision == 0)
         precision = NumeReKernel::getInstance()->getSettings().getPrecision();
 #endif
-    std::string sNumber = toString(number.getNum().val, precision);
+    std::string sNumber = toString(number.getNum().asCF64(), precision);
 
     // Handle floating point numbers with
     // exponents correctly
@@ -93,7 +93,7 @@ mu::Array strfnc_to_tex(const mu::Array& a1, const mu::Array& a2)
     {
         for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
         {
-            ret.push_back(formatNumberToTex(a1.get(i), a2.get(i).getNum().asInt()));
+            ret.push_back(formatNumberToTex(a1.get(i), a2.get(i).getNum().asI64()));
         }
     }
     else
@@ -203,7 +203,7 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 #ifndef PARSERSTANDALONE
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asInt());
+        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
 
         if (!vFileList.size())
             ret.push_back("");
@@ -224,7 +224,7 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 #ifndef PARSERSTANDALONE
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asInt());
+        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
 
         if (!vFolderList.size())
             ret.push_back("");
@@ -676,7 +676,7 @@ mu::Array strfnc_to_char(const mu::Array* arrs, int n)
         for (size_t i = 0; i < arrs[0].size(); i++)
         {
             if (arrs[0][i].isValid())
-                sToChar += char(arrs[0][i].getNum().asInt());
+                sToChar += char(arrs[0][i].getNum().asI64());
         }
     }
     else
@@ -684,7 +684,7 @@ mu::Array strfnc_to_char(const mu::Array* arrs, int n)
         for (int i = 0; i < n; i++)
         {
             if (arrs[i].front().isValid())
-                sToChar += char(arrs[i].front().getNum().asInt());
+                sToChar += char(arrs[i].front().getNum().asI64());
         }
     }
 
@@ -869,9 +869,9 @@ mu::Array strfnc_strfnd(const mu::Array& what, const mu::Array& where, const mu:
         size_t pos = 1;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asInt();
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos = from.get(i).getNum().asI64();
 
         ret.push_back(where.get(i).getStr().find(what.get(i).getStr(), pos-1)+1);
     }
@@ -895,9 +895,9 @@ mu::Array strfnc_strrfnd(const mu::Array& what, const mu::Array& where, const mu
         size_t pos = where.get(i).getStr().length()+1;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asInt();
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos = from.get(i).getNum().asI64();
 
         ret.push_back(where.get(i).getStr().rfind(what.get(i).getStr(), pos-1)+1);
     }
@@ -921,9 +921,9 @@ mu::Array strfnc_strmatch(const mu::Array& chars, const mu::Array& where, const 
         size_t pos = 1;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asInt();
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos = from.get(i).getNum().asI64();
 
         ret.push_back(where.get(i).getStr().find_first_of(chars.get(i).getStr(), pos-1)+1);
     }
@@ -947,9 +947,9 @@ mu::Array strfnc_strrmatch(const mu::Array& chars, const mu::Array& where, const
         size_t pos = where.get(i).getStr().length()+1;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asInt();
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos = from.get(i).getNum().asI64();
 
         ret.push_back(where.get(i).getStr().find_last_of(chars.get(i).getStr(), pos-1)+1);
     }
@@ -973,9 +973,9 @@ mu::Array strfnc_str_not_match(const mu::Array& chars, const mu::Array& where, c
         size_t pos = 1;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asInt();
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos = from.get(i).getNum().asI64();
 
         ret.push_back(where.get(i).getStr().find_first_not_of(chars.get(i).getStr(), pos-1)+1);
     }
@@ -999,9 +999,9 @@ mu::Array strfnc_str_not_rmatch(const mu::Array& chars, const mu::Array& where, 
         size_t pos = where.get(i).getStr().length()+1;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asInt();
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos = from.get(i).getNum().asI64();
 
         ret.push_back(where.get(i).getStr().find_last_not_of(chars.get(i).getStr(), pos-1)+1);
     }
@@ -1027,14 +1027,14 @@ mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const 
         bool found = false;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos_start = from.get(i).getNum().asInt()-1;
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos_start = from.get(i).getNum().asI64()-1;
 
         if (!to.isDefault()
-            && to.get(i).getNum().asInt() > 0
-            && to.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos_last = to.get(i).getNum().asInt() - what.get(i).getStr().length();
+            && to.get(i).getNum().asI64() > 0
+            && to.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos_last = to.get(i).getNum().asI64() - what.get(i).getStr().length();
         else
             pos_last = where.get(i).getStr().length() - what.get(i).getStr().length();
 
@@ -1074,14 +1074,14 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
         size_t pos_last;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asInt() > 0
-            && from.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos_start = from.get(i).getNum().asInt()-1;
+            && from.get(i).getNum().asI64() > 0
+            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos_start = from.get(i).getNum().asI64()-1;
 
         if (!to.isDefault()
-            && to.get(i).getNum().asInt() > 0
-            && to.get(i).getNum().asInt() <= (int64_t)where.get(i).getStr().length())
-            pos_last = to.get(i).getNum().asInt()-1;
+            && to.get(i).getNum().asI64() > 0
+            && to.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
+            pos_last = to.get(i).getNum().asI64()-1;
         else
             pos_last = where.get(i).getStr().length()-1;
 
@@ -1136,16 +1136,16 @@ mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::A
 
     for (size_t i = 0; i < std::max({sStr.size(), pos.size(), len.size()}); i++)
     {
-        if (!sStr.get(i).getStr().length() || (size_t)pos.get(i).getNum().asInt() > sStr.get(i).getStr().length())
+        if (!sStr.get(i).getStr().length() || (size_t)pos.get(i).getNum().asI64() > sStr.get(i).getStr().length())
         {
             ret.push_back("");
             continue;
         }
 
         if (!len.isDefault())
-            ret.push_back(sStr.get(i).getStr().substr(std::max(0LL, pos.get(i).getNum().asInt()-1), len.get(i).getNum().asInt()));
+            ret.push_back(sStr.get(i).getStr().substr(std::max(0LL, pos.get(i).getNum().asI64()-1), len.get(i).getNum().asI64()));
         else
-            ret.push_back(sStr.get(i).getStr().substr(std::max(0LL, pos.get(i).getNum().asInt()-1)));
+            ret.push_back(sStr.get(i).getStr().substr(std::max(0LL, pos.get(i).getNum().asI64()-1)));
     }
 
     return ret;
@@ -1158,7 +1158,7 @@ mu::Array strfnc_repeat(const mu::Array& sStr, const mu::Array& rep)
 
     for (size_t i = 0; i < std::max(sStr.size(), rep.size()); i++)
     {
-        ret.push_back(strRepeat(sStr.get(i).getStr(), rep.get(i).getNum().asInt()));
+        ret.push_back(strRepeat(sStr.get(i).getStr(), rep.get(i).getNum().asI64()));
     }
 
     return ret;
@@ -1189,12 +1189,12 @@ mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
     {
         if (!fmt.get(i).getStr().length())
         {
-            ret.push_back(toString(to_timePoint(time.get(i).getNum().val.real()), 0));
+            ret.push_back(toString(to_timePoint(time.get(i).getNum().asF64()), 0));
             continue;
         }
 
         std::string sFormattedTime = fmt.get(i).getStr() + " "; // contains pattern
-        sys_time_point nTime = to_timePoint(time.get(i).getNum().val.real());
+        sys_time_point nTime = to_timePoint(time.get(i).getNum().asF64());
         time_stamp timeStruct = getTimeStampFromTimePoint(nTime);
         time_zone tz = getCurrentTimeZone();
 
@@ -1266,7 +1266,7 @@ mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
 
     for (size_t i = 0; i < std::max(daynum.size(), opts.size()); i++)
     {
-        sys_time_point nTime = to_timePoint(daynum.get(i).getNum().val.real());
+        sys_time_point nTime = to_timePoint(daynum.get(i).getNum().asF64());
 
         size_t day = getWeekDay(nTime);
 
@@ -1295,7 +1295,7 @@ mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
     for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
     {
         const std::string& s = sStr.get(i).getStr();
-        int64_t p = pos.get(i).getNum().asInt();
+        int64_t p = pos.get(i).getNum().asI64();
 
         if (p <= 1)
             ret.push_back(s.substr(0, 1));
@@ -1316,7 +1316,7 @@ mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
     for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
     {
         const std::string& s = sStr.get(i).getStr();
-        int64_t p = pos.get(i).getNum().asInt();
+        int64_t p = pos.get(i).getNum().asI64();
 
         if (p < 1)
             p = 1;
@@ -1340,8 +1340,8 @@ mu::Array strfnc_replace(const mu::Array& where, const mu::Array& from, const mu
         std::string s = where.get(i).getStr();
         const std::string& r = rep.get(i).getStr();
 
-        int64_t p = std::min((int64_t)s.length(), std::max(1LL, from.get(i).getNum().asInt()));
-        int64_t l = len.get(i).getNum().asInt();
+        int64_t p = std::min((int64_t)s.length(), std::max(1LL, from.get(i).getNum().asI64()));
+        int64_t l = len.get(i).getNum().asI64();
 
         if (!s.length())
             ret.push_back("");
@@ -1447,10 +1447,10 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
         int64_t pos2 = sSearchString.length();
 
         if (!p1.isDefault())
-            pos1 = std::max(pos1, p1.get(i).getNum().asInt());
+            pos1 = std::max(pos1, p1.get(i).getNum().asI64());
 
         if (!p2.isDefault())
-            pos2 = std::min(pos2, std::max(1LL, p2.get(i).getNum().asInt()));
+            pos2 = std::min(pos2, std::max(1LL, p2.get(i).getNum().asI64()));
 
         // Exclude border cases
         if (!sSearchString.length() || pos1 > (int64_t)sSearchString.length())
@@ -1668,7 +1668,7 @@ mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu:
         StringView sView = tofind.get(j).getStr();
 
         if (!tol.isDefault())
-            t = tol.get(j).getNum().asInt();
+            t = tol.get(j).getNum().asI64();
 
         // Examine the whole string array
         for (size_t i = 0; i < arr.size(); i++)
@@ -1736,7 +1736,7 @@ mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
         int64_t o = arr.size() > 1 ? 0 : 1;
 
         if (!opts.isDefault())
-            o = opts.get(j).getNum().asInt();
+            o = opts.get(j).getNum().asI64();
 
         // Separate unique strings from unique chars
         if (o == 0)
@@ -1795,7 +1795,7 @@ mu::Array strfnc_strjoin(const mu::Array& arr, const mu::Array& sep, const mu::A
             sSeparator = sep.get(j).getStr();
 
         if (!opts.isDefault())
-            keepEmpty = opts.get(j).getNum().asInt();
+            keepEmpty = opts.get(j).getNum().asI64();
 
         for (size_t i = 0; i < arr.size(); i++)
         {
@@ -1827,7 +1827,7 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
         bool found = false;
 
         if (!opts.isDefault())
-            o = opts.get(j).getNum().asInt();
+            o = opts.get(j).getNum().asI64();
 
         // Examine the whole string array
         for (size_t i = 0; i < kvlist.size(); i+=2)
@@ -1922,10 +1922,10 @@ mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const m
         int64_t p2 = s.length()+1;
 
         if (!pos1.isDefault())
-            p1 = std::max(p1, std::min((int64_t)s.length(), pos1.get(i).getNum().asInt()));
+            p1 = std::max(p1, std::min((int64_t)s.length(), pos1.get(i).getNum().asI64()));
 
         if (!pos2.isDefault())
-            p2 = std::max(p1, std::min((int64_t)s.length(), pos2.get(i).getNum().asInt()));
+            p2 = std::max(p1, std::min((int64_t)s.length(), pos2.get(i).getNum().asI64()));
 
         // Using the slower version to enable replacement of null characters
         replaceAll(s, f, r, p1-1, p2-1);
@@ -1950,7 +1950,7 @@ mu::Array strfnc_strip(const mu::Array& sStr, const mu::Array& frnt, const mu::A
         int64_t stripAll = 0;
 
         if (!opts.isDefault())
-            stripAll = opts.get(i).getNum().asInt();
+            stripAll = opts.get(i).getNum().asI64();
 
         if (!s.length())
         {
@@ -2006,10 +2006,10 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
         }
 
         if (!pos.isDefault())
-            p = std::max(p, std::min(l, pos.get(i).getNum().asInt()));
+            p = std::max(p, std::min(l, pos.get(i).getNum().asI64()));
 
         if (!len.isDefault())
-            p = std::min(l, pos.get(i).getNum().asInt());
+            p = std::min(l, pos.get(i).getNum().asI64());
 
         try
         {
@@ -2113,7 +2113,7 @@ mu::Array strfnc_dectobase(const mu::Array& base, const mu::Array& val)
     for (size_t i = 0; i < std::max(base.size(), val.size()); i++)
     {
         StringView b = base.get(i).getStr();
-        int64_t v = val.get(i).getNum().asInt();
+        int64_t v = val.get(i).getNum().asI64();
         std::stringstream stream;
 
         if (b == "hex")
@@ -2163,7 +2163,7 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
         int64_t a = -1;
 
         if (!align.isDefault())
-            a = align.get(j).getNum().asInt();
+            a = align.get(j).getNum().asI64();
 
         // Find the string of max length
         size_t maxLength = 0;
@@ -2321,7 +2321,7 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
 
     for (size_t i = 0; i < std::max(sStr.size(), opts.size()); i++)
     {
-        if (opts.isDefault() || opts.get(i).getNum().asInt() == 0)
+        if (opts.isDefault() || opts.get(i).getNum().asI64() == 0)
             ret.push_back(sha256(sStr.get(i).getStr()));
         else
         {
@@ -2421,7 +2421,7 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
         int64_t nType = 0;
 
         if (!opts.isDefault())
-            nType = opts.get(i).getNum().asInt();
+            nType = opts.get(i).getNum().asI64();
 
         // Because the object might be a constructed table, we
         // disable the access caching for this expression
@@ -2561,9 +2561,9 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
         if (!len.isDefault()
             && !cfill.isDefault()
             && cfill.get(i).getStr().length()
-            && (int64_t)v.length() < len.get(i).getNum().asInt())
+            && (int64_t)v.length() < len.get(i).getNum().asI64())
         {
-            int64_t l = len.get(i).getNum().asInt();
+            int64_t l = len.get(i).getNum().asI64();
             const std::string& sChar = cfill.get(i).getStr();
 
             while ((int64_t)v.length() < l)

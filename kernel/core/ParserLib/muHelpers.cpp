@@ -23,8 +23,8 @@
 #include "../../kernel.hpp"
 #endif
 
+#warning TODO (numere#1#08/14/24): Handle new method types within autocompletion
 #warning TODO (numere#1#08/13/24): Update function language strings
-#warning TODO (numere#1#08/09/24): Check functionalities of CommandLineParser
 
 namespace mu
 {

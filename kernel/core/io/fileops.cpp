@@ -121,9 +121,9 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     if (cmdParser.hasParam("target") || cmdParser.hasParam("t"))
     {
         if (cmdParser.hasParam("target"))
-            sTarget = cmdParser.getParameterValueAsString("target", "");
+            sTarget = cmdParser.getParsedParameterValueAsString("target", "");
         else
-            sTarget = cmdParser.getParameterValueAsString("t", "");
+            sTarget = cmdParser.getParsedParameterValueAsString("t", "");
 
         StripSpaces(sTarget);
     }

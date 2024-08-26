@@ -564,14 +564,14 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
                 value.stringValue = _access.getDataObject() + "()";
             }
             else
-                value.stringValue = cmdParser.getParameterValueAsString("value", "");
+                value.stringValue = cmdParser.getParsedParameterValueAsString("value", "");
 
             cmdParser.setReturnValue(toString(winInfo.window->setItemValue(value, itemID)));
         }
     }
     else if (findParameter(sParList, "label", '='))
     {
-        std::string sLabel = cmdParser.getParameterValueAsString("label", "");
+        std::string sLabel = cmdParser.getParsedParameterValueAsString("label", "");
         cmdParser.setReturnValue(toString(winInfo.window->setItemLabel(sLabel, itemID)));
     }
     else if (findParameter(sParList, "state", '='))
@@ -591,7 +591,7 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
     }
     else if (findParameter(sParList, "selection", '='))
     {
-        mu::Array sel = cmdParser.getParameterValueAsNumericalValue("selection");
+        mu::Array sel = cmdParser.getParsedParameterValue("selection");
         int sel1 = 1, sel2 = 0;
 
         if (sel.size() > 0)
@@ -608,7 +608,7 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
     }
     else if (findParameter(sParList, "statustext", '='))
     {
-        std::string sStatusText = cmdParser.getParameterValueAsString("statustext", "");
+        std::string sStatusText = cmdParser.getParsedParameterValueAsString("statustext", "");
         cmdParser.setReturnValue(toString(winInfo.window->setStatusText(sStatusText)));
     }
 }
@@ -826,11 +826,11 @@ void dialogCommand(CommandLineParser& cmdParser)
 
     // Extract the message for the user
     if (findParameter(sParList, "msg", '='))
-        sMessage = cmdParser.getParameterValueAsString("msg", "");
+        sMessage = cmdParser.getParsedParameterValueAsString("msg", "");
 
     // Extract the window title
     if (findParameter(sParList, "title", '='))
-        sTitle = cmdParser.getParameterValueAsString("title", sTitle);
+        sTitle = cmdParser.getParsedParameterValueAsString("title", sTitle);
 
     // Extract the selected dialog type if available, otherwise
     // use the message box as default value

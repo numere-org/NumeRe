@@ -453,12 +453,12 @@ void plugin_statistics(CommandLineParser& cmdParser)
     else if (cmdParser.hasParam("save"))
     {
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
-        sSavePath = cmdParser.getParameterValueAsString("save", "", true, true);
+        sSavePath = cmdParser.getParsedParameterValueAsString("save", "", true, true);
     }
     else if (cmdParser.hasParam("export"))
     {
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
-        sSavePath = cmdParser.getParameterValueAsString("export", "", true, true);
+        sSavePath = cmdParser.getParsedParameterValueAsString("export", "", true, true);
     }
 
     _out.setStatus(sSavePath.length() != 0);

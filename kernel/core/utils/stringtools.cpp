@@ -134,7 +134,9 @@ std::string toString(int nNumber)
 /////////////////////////////////////////////////
 std::string toString(size_t nNumber)
 {
-    return toString((long long int)nNumber);
+    std::ostringstream Temp;
+    Temp << nNumber;
+    return Temp.str();
 }
 
 

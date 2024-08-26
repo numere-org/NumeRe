@@ -69,65 +69,553 @@ namespace mu
 
 
 
-    Numerical::Numerical(double data) : val(data)
-    { }
+    Numerical::Numerical(int8_t data) : m_type(Numerical::I8)
+    {
+        i64 = data;
+        getTypeInfo();
+    }
 
-    Numerical::Numerical(const std::complex<double>& data) : val(data)
-    { }
+    Numerical::Numerical(uint8_t data) : m_type(Numerical::UI8)
+    {
+        ui64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(int16_t data) : m_type(Numerical::I16)
+    {
+        i64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(uint16_t data) : m_type(Numerical::UI16)
+    {
+        ui64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(int32_t data) : m_type(Numerical::I32)
+    {
+        i64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(uint32_t data) : m_type(Numerical::UI32)
+    {
+        ui64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(int64_t data, Numerical::NumericalType type) : m_type(type)
+    {
+        i64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(uint64_t data, Numerical::NumericalType type) : m_type(type)
+    {
+        ui64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(float data) : m_type(Numerical::F32)
+    {
+        cf64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(double data) : m_type(Numerical::F64)
+    {
+        cf64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(bool data) : m_type(Numerical::LOGICAL)
+    {
+        i64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(const std::complex<float>& data) : m_type(Numerical::CF32)
+    {
+        cf64 = data;
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(const std::complex<double>& data, Numerical::NumericalType type) : m_type(type)
+    {
+        cf64 = data;
+
+        if (type == Numerical::CF64 && data.imag() == 0.0)
+            m_type = Numerical::F64;
+
+        getTypeInfo();
+    }
+
+    Numerical::Numerical(const sys_time_point& time) : m_type(Numerical::DATETIME)
+    {
+        cf64 = to_double(time);
+        getTypeInfo();
+    }
+
+    Numerical Numerical::autoType(const std::complex<double>& data)
+    {
+        if (::isInt(data))
+        {
+            /*if (data.real() >= 0)
+            {
+                if (data.real() <= UINT8_MAX)
+                    return Numerical((uint8_t)data.real());
+
+                if (data.real() <= UINT16_MAX)
+                    return Numerical((uint16_t)data.real());
+
+                if (data.real() <= UINT32_MAX)
+                    return Numerical((uint32_t)data.real());
+
+                return Numerical((uint64_t)data.real());
+            }*/
+
+            if (data.real() >= INT8_MIN && data.real() <= INT8_MAX)
+                return Numerical((int8_t)data.real());
+
+            if (data.real() >= INT16_MIN && data.real() <= INT16_MAX)
+                return Numerical((int16_t)data.real());
+
+            if (data.real() >= INT32_MIN && data.real() <= INT32_MAX)
+                return Numerical((int32_t)data.real());
+
+            return Numerical((int64_t)data.real());
+        }
+
+        if (data.imag() == 0.0)
+            return Numerical(data.real());
+
+        return Numerical(data);
+    }
+
+    void Numerical::getTypeInfo()
+    {
+        if (m_type == Numerical::LOGICAL)
+        {
+            m_bits = 8;
+            m_flags = Numerical::TYPE_LOGICAL;
+        }
+        else if (m_type == Numerical::DATETIME)
+        {
+            m_bits = 64;
+            m_flags = Numerical::TYPE_FLOAT | Numerical::TYPE_DATETIME;
+        }
+        else if (m_type <= Numerical::I64)
+        {
+            m_flags = Numerical::TYPE_INT;
+            m_bits = 8 * (0x8 >> (Numerical::I64 - m_type));
+        }
+        else if (m_type <= Numerical::UI64)
+        {
+            m_flags = Numerical::TYPE_INT | Numerical::TYPE_UINT;
+            m_bits = 8 * (0x8 >> (Numerical::UI64 - m_type));
+        }
+        else if (m_type <= Numerical::F64)
+        {
+            m_flags = Numerical::TYPE_FLOAT;
+            m_bits = m_type == Numerical::F64 ? 64 : 32;
+        }
+        else
+        {
+            if (cf64.imag() != 0.0)
+                m_flags = Numerical::TYPE_FLOAT | Numerical::TYPE_COMPLEX;
+            else
+                m_flags = Numerical::TYPE_FLOAT;
+
+            m_bits = m_type == Numerical::CF64 ? 64 : 32;
+        }
+    }
+
+    Numerical::NumericalType Numerical::getPromotion(const Numerical& other) const
+    {
+        uint8_t bits = std::max(m_bits, other.m_bits);
+        uint8_t flags = std::max(m_flags, other.m_flags);
+
+        if (flags & Numerical::TYPE_COMPLEX)
+            return bits == 32 ? Numerical::CF32 : Numerical::CF64;
+
+        if (flags & Numerical::TYPE_DATETIME)
+            return Numerical::DATETIME;
+
+        if (flags & Numerical::TYPE_FLOAT)
+            return bits == 32 ? Numerical::F32 : Numerical::F64;
+
+        if (flags & Numerical::TYPE_UINT)
+            return Numerical::NumericalType(Numerical::UI8 + (bits-8)/8);
+
+        if (flags & Numerical::TYPE_INT)
+            return Numerical::NumericalType(Numerical::I8 + (bits-8)/8);
+
+        return Numerical::LOGICAL;
+    }
+
+    Numerical::InternalType Numerical::getConversion(Numerical::NumericalType promotion) const
+    {
+        if (promotion <= Numerical::I64)
+            return Numerical::INT;
+
+        if (promotion <= Numerical::UI64)
+            return Numerical::UINT;
+
+        return Numerical::COMPLEX;
+    }
+
+    int64_t Numerical::asI64() const
+    {
+        if (m_type <= Numerical::I64)
+            return i64;
+
+        if (m_type <= Numerical::UI64)
+            return ui64;
+
+        return intCast(cf64);
+    }
+
+    uint64_t Numerical::asUI64() const
+    {
+        if (m_type <= Numerical::I64)
+            return (uint64_t)i64;
+
+        if (m_type <= Numerical::UI64)
+            return ui64;
+
+        return (uint64_t)intCast(cf64);
+    }
+
+    double Numerical::asF64() const
+    {
+        if (m_type <= Numerical::I64)
+            return i64;
+
+        if (m_type <= Numerical::UI64)
+            return ui64;
+
+        return cf64.real();
+    }
+
+    std::complex<double> Numerical::asCF64() const
+    {
+        if (m_type <= Numerical::I64)
+            return i64;
+
+        if (m_type <= Numerical::UI64)
+            return ui64;
+
+        return cf64;
+    }
 
     Numerical Numerical::operator+(const Numerical& other) const
     {
-        return val + other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            return Numerical(asI64() + other.asI64(), promotion);
+
+        if (conversion == Numerical::UINT)
+            return Numerical(asUI64() + other.asUI64(), promotion);
+
+        return Numerical(asCF64() + other.asCF64(), promotion);
     }
 
     Numerical Numerical::operator-() const
     {
-        return -val;
+        if (m_type <= Numerical::I64)
+            return Numerical(-i64, m_type);
+
+        if (m_type <= Numerical::UI64)
+            return Numerical(-ui64, (Numerical::NumericalType)(m_type-Numerical::I64));
+
+        return Numerical(-cf64, m_type);
     }
 
     Numerical Numerical::operator-(const Numerical& other) const
     {
-        return val - other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            return Numerical(asI64() - other.asI64(), promotion);
+
+        if (conversion == Numerical::UINT)
+            return Numerical(asUI64() - other.asUI64(), promotion);
+
+        return Numerical(asCF64() - other.asCF64(), promotion);
     }
 
     Numerical Numerical::operator/(const Numerical& other) const
     {
-        return val / other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            return Numerical(asI64() / other.asI64(), promotion);
+
+        if (conversion == Numerical::UINT)
+            return Numerical(asUI64() / other.asUI64(), promotion);
+
+        return Numerical(asCF64() / other.asCF64(), promotion);
     }
 
     Numerical Numerical::operator*(const Numerical& other) const
     {
-        return val * other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            return Numerical(asI64() * other.asI64(), promotion);
+
+        if (conversion == Numerical::UINT)
+            return Numerical(asUI64() * other.asUI64(), promotion);
+
+        return Numerical(asCF64() * other.asCF64(), promotion);
     }
 
     Numerical& Numerical::operator+=(const Numerical& other)
     {
-        val += other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            i64 = asI64() + other.asI64();
+        else if (conversion == Numerical::UINT)
+            ui64 = asUI64() + other.asUI64();
+        else
+            cf64 = asCF64() + other.asCF64();
+
+        m_type = promotion;
+        getTypeInfo();
         return *this;
     }
 
     Numerical& Numerical::operator-=(const Numerical& other)
     {
-        val -= other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            i64 = asI64() - other.asI64();
+        else if (conversion == Numerical::UINT)
+            ui64 = asUI64() - other.asUI64();
+        else
+            cf64 = asCF64() - other.asCF64();
+
+        m_type = promotion;
+        getTypeInfo();
         return *this;
     }
 
     Numerical& Numerical::operator/=(const Numerical& other)
     {
-        val /= other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            i64 = asI64() / other.asI64();
+        else if (conversion == Numerical::UINT)
+            ui64 = asUI64() / other.asUI64();
+        else
+            cf64 = asCF64() / other.asCF64();
+
+        m_type = promotion;
+        getTypeInfo();
         return *this;
     }
 
     Numerical& Numerical::operator*=(const Numerical& other)
     {
-        val *= other.val;
+        Numerical::NumericalType promotion = getPromotion(other);
+        Numerical::InternalType conversion = getConversion(promotion);
+
+        if (conversion == Numerical::INT)
+            i64 = asI64() * other.asI64();
+        else if (conversion == Numerical::UINT)
+            ui64 = asUI64() * other.asUI64();
+        else
+            cf64 = asCF64() * other.asCF64();
+
+        m_type = promotion;
+        getTypeInfo();
         return *this;
     }
 
-    int64_t Numerical::asInt() const
+    Numerical Numerical::pow(const Numerical& exponent) const
     {
-        return intCast(val);
+        Numerical::NumericalType promotion = getPromotion(exponent);
+
+        if (exponent.isInt())
+            return Numerical(intPower(asCF64(), exponent.asI64()), promotion);
+
+        return Numerical(std::pow(asCF64(), exponent.asCF64()), promotion);
     }
+
+    Numerical::operator bool() const
+    {
+        if (m_type <= Numerical::I64)
+            return i64 != 0;
+
+        if (m_type <= Numerical::UI64)
+            return ui64 != 0;
+
+        return cf64 != 0.0;
+    }
+
+    bool Numerical::operator!() const
+    {
+        return !bool(*this);
+    }
+
+    bool Numerical::operator==(const Numerical& other) const
+    {
+        Numerical::InternalType conversion = getConversion(getPromotion(other));
+
+        if (conversion == Numerical::INT)
+            return asI64() == other.asI64();
+
+        if (conversion == Numerical::UINT)
+            return asUI64() == other.asUI64();
+
+        return asCF64() == other.asCF64();
+    }
+
+    bool Numerical::operator!=(const Numerical& other) const
+    {
+        return !operator==(other);
+    }
+
+    bool Numerical::operator<(const Numerical& other) const
+    {
+        Numerical::InternalType conversion = getConversion(getPromotion(other));
+
+        if (conversion == Numerical::INT)
+            return asI64() < other.asI64();
+
+        if (conversion == Numerical::UINT)
+            return asUI64() < other.asUI64();
+
+        return asF64() < other.asF64();
+    }
+
+    bool Numerical::operator<=(const Numerical& other) const
+    {
+        return operator<(other) || operator==(other);
+    }
+
+    bool Numerical::operator>(const Numerical& other) const
+    {
+        return !operator<=(other);
+    }
+
+    bool Numerical::operator>=(const Numerical& other) const
+    {
+        return !operator<(other);
+    }
+
+    Numerical::NumericalType Numerical::getType() const
+    {
+        return m_type;
+    }
+
+    std::string Numerical::getTypeAsString() const
+    {
+        switch (m_type)
+        {
+            case Numerical::LOGICAL:
+                return "logical";
+            case Numerical::I8:
+                return "value.i8";
+            case Numerical::I16:
+                return "value.i16";
+            case Numerical::I32:
+                return "value.i32";
+            case Numerical::I64:
+                return "value.i64";
+            case Numerical::UI8:
+                return "value.ui8";
+            case Numerical::UI16:
+                return "value.ui16";
+            case Numerical::UI32:
+                return "value.ui32";
+            case Numerical::UI64:
+                return "value.ui64";
+            case Numerical::DATETIME:
+                return "datetime";
+            case Numerical::F32:
+                return "value.f32";
+            case Numerical::F64:
+                return "value.f64";
+            case Numerical::CF32:
+                return "value.cf32";
+        }
+
+        return "value";
+    }
+
+    std::string Numerical::print(size_t digits) const
+    {
+        if (m_type == Numerical::LOGICAL)
+            return toString((bool)i64);
+
+        if (m_type == Numerical::DATETIME && !isnan(cf64))
+            return toString(to_timePoint(cf64.real()), 0);
+
+        if (m_type <= Numerical::I64)
+            return toString(i64);
+
+        if (m_type <= Numerical::UI64)
+            return toString(ui64);
+
+        return toString(cf64, digits > 0 ? digits : 7);
+    }
+
+    std::string Numerical::printVal(size_t digits) const
+    {
+        if (m_type == Numerical::LOGICAL)
+            return toString((bool)i64);
+
+        if (m_type == Numerical::DATETIME && !isnan(cf64))
+            return toString(to_timePoint(cf64.real()), 0);
+
+        if (m_type <= Numerical::I64)
+            return toString(i64);
+
+        if (m_type <= Numerical::UI64)
+            return toString(ui64);
+
+        // Is one of the components zero, then try to find an
+        // integer optimisation
+        if (cf64.imag() == 0.0)
+        {
+            if (fabs(rint(cf64.real()) - cf64.real()) < 1e-14 && fabs(cf64.real()) >= 1.0)
+                return toString(intCast(cf64.real()));
+        }
+        else if (cf64.real() == 0.0)
+        {
+            if (fabs(rint(cf64.imag()) - cf64.imag()) < 1e-14 && fabs(cf64.imag()) >= 1.0)
+                return toString(intCast(cf64.imag())) + "i";
+        }
+
+        // Otherwise do not optimize due to the fact that the
+        // precision will get halved in this case
+        return toString(cf64, digits > 0 ? digits : 7);
+    }
+
+    size_t Numerical::getBytes() const
+    {
+        return m_flags & Numerical::TYPE_COMPLEX ? m_bits / 4 : m_bits / 8;
+    }
+
+    bool Numerical::isInt() const
+    {
+        return m_flags & Numerical::TYPE_INT || ::isInt(asCF64());
+    }
+
+
 
 
 
@@ -144,6 +632,10 @@ namespace mu
 
         switch (m_type)
         {
+            case TYPE_CATEGORY:
+                m_data = new Category;
+                *static_cast<Category*>(m_data) = *static_cast<Category*>(data.m_data);
+                break;
             case TYPE_NUMERICAL:
                 m_data = new Numerical;
                 *static_cast<Numerical*>(m_data) = data.getNum();
@@ -171,60 +663,65 @@ namespace mu
         *static_cast<Numerical*>(m_data) = data;
     }
 
+    Value::Value(const Category& data)
+    {
+        m_type = TYPE_CATEGORY;
+        m_data = new Category;
+        *static_cast<Category*>(m_data) = data;
+    }
+
     Value::Value(bool logical)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = logical;
+        m_data = new Numerical(logical);
     }
 
-    Value::Value(int value)
+    Value::Value(int32_t value)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
+        m_data = new Numerical(value);
     }
 
-    Value::Value(unsigned int value)
+    Value::Value(uint32_t value)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
-    }
-
-    Value::Value(size_t value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
+        m_data = new Numerical(value);
     }
 
     Value::Value(int64_t value)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
+        m_data = new Numerical(value);
+    }
+
+    Value::Value(uint64_t value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical(value);
     }
 
     Value::Value(double value)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
+        m_data = new Numerical(value);
+    }
+
+    Value::Value(const sys_time_point& value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical(value);
     }
 
     Value::Value(const std::complex<double>& value)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
+        m_data = new Numerical(value);
     }
 
     Value::Value(const std::complex<float>& value)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        static_cast<Numerical*>(m_data)->val = value;
+        m_data = new Numerical(value);
     }
 
     Value::Value(const std::string& sData)
@@ -255,6 +752,12 @@ namespace mu
 
         switch (m_type)
         {
+            case TYPE_CATEGORY:
+                if (!m_data)
+                    m_data = new Category;
+
+                *static_cast<Category*>(m_data) = *static_cast<Category*>(other.m_data);
+                break;
             case TYPE_NUMERICAL:
                 if (!m_data)
                     m_data = new Numerical;
@@ -282,13 +785,10 @@ namespace mu
     {
         switch (m_type)
         {
+            case TYPE_CATEGORY:
+                return "category";
             case TYPE_NUMERICAL:
-            {
-                if (getNum().val.imag() != 0.0)
-                    return "complex";
-
-                return "double";
-            }
+                return getNum().getTypeAsString();
             case TYPE_STRING:
                 return "string";
         }
@@ -305,23 +805,26 @@ namespace mu
     {
         return m_type != TYPE_VOID
             && m_data
-            && ((isString() && getStr().length()) || (isNumerical() && getNum().val == getNum().val));
+            && ((isString() && getStr().length()) || (isNumerical() && getNum().asCF64() == getNum().asCF64()));
     }
 
     bool Value::isNumerical() const
     {
-        return m_type == TYPE_NUMERICAL && m_data;
+        return (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY) && m_data;
     }
 
     bool Value::isString() const
     {
-        return m_type == TYPE_STRING && m_data;
+        return (m_type == TYPE_STRING || m_type == TYPE_CATEGORY) && m_data;
     }
 
     std::string& Value::getStr()
     {
         if (!isString())
             throw ParserError(ecTYPE_NO_STR);
+
+        if (m_type == TYPE_CATEGORY)
+            return ((Category*)m_data)->name;
 
         return *(std::string*)m_data;
     }
@@ -334,6 +837,9 @@ namespace mu
         if (!isString())
             throw ParserError(ecTYPE_NO_STR);
 
+        if (m_type == TYPE_CATEGORY)
+            return ((Category*)m_data)->name;
+
         return *(std::string*)m_data;
     }
 
@@ -341,6 +847,9 @@ namespace mu
     {
         if (!isNumerical())
             throw ParserError(ecTYPE_NO_VAL);
+
+        if (m_type == TYPE_CATEGORY)
+            return ((Category*)m_data)->val;
 
         return *(Numerical*)m_data;
     }
@@ -353,6 +862,9 @@ namespace mu
         if (!isNumerical())
             throw ParserError(ecTYPE_NO_STR);
 
+        if (m_type == TYPE_CATEGORY)
+            return ((Category*)m_data)->val;
+
         return *(Numerical*)m_data;
     }
 
@@ -361,7 +873,10 @@ namespace mu
         if (!isNumerical())
             return NAN;
 
-        return static_cast<Numerical*>(m_data)->val;
+        if (m_type == TYPE_CATEGORY)
+            return ((Category*)m_data)->val.asCF64();
+
+        return static_cast<Numerical*>(m_data)->asCF64();
     }
 
     Value Value::operator+(const Value& other) const
@@ -381,7 +896,7 @@ namespace mu
 
     Value Value::operator-() const
     {
-        if (m_type == TYPE_NUMERICAL)
+        if (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY)
             return -getNum();
 
         throw ParserError(ecTYPE_MISMATCH);
@@ -422,10 +937,10 @@ namespace mu
         if (common == TYPE_MIXED)
         {
             // special allowed cases: str*int and int*str
-            if (m_type == TYPE_NUMERICAL && isInt(getNum().val))
-                return mu::Value(strRepeat(other.getStr(), getNum().asInt()));
-            else if (other.m_type == TYPE_NUMERICAL && isInt(other.getNum().val))
-                return mu::Value(strRepeat(getStr(), other.getNum().asInt()));
+            if (m_type == TYPE_NUMERICAL && getNum().isInt())
+                return mu::Value(strRepeat(other.getStr(), getNum().asUI64()));
+            else if (other.m_type == TYPE_NUMERICAL && other.getNum().isInt())
+                return mu::Value(strRepeat(getStr(), other.getNum().asUI64()));
 
             throw ParserError(ecTYPE_MISMATCH);
         }
@@ -441,8 +956,13 @@ namespace mu
         if (m_type == TYPE_VOID)
             return operator=(other);
 
-        if (m_type != other.m_type)
+        DataType common = detectCommonType(other);
+
+        if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH_OOB);
+
+        if (m_type == TYPE_CATEGORY)
+            return operator=(getNum() + other.getNum());
 
         if (isNumerical())
             getNum() += other.getNum();
@@ -459,8 +979,13 @@ namespace mu
         if (m_type == TYPE_VOID)
             return operator=(-other);
 
-        if (m_type != other.m_type)
+        DataType common = detectCommonType(other);
+
+        if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH_OOB);
+
+        if (m_type == TYPE_CATEGORY)
+            return operator=(getNum() - other.getNum());
 
         if (isNumerical())
             getNum() -= other.getNum();
@@ -472,8 +997,13 @@ namespace mu
 
     Value& Value::operator/=(const Value& other)
     {
-        if (m_type != other.m_type)
+        DataType common = detectCommonType(other);
+
+        if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH_OOB);
+
+        if (m_type == TYPE_CATEGORY)
+            return operator=(getNum() / other.getNum());
 
         if (isNumerical())
             getNum() /= other.getNum();
@@ -488,16 +1018,21 @@ namespace mu
         if (m_type == TYPE_VOID)
             return operator=(other);
 
-        if (m_type != other.m_type)
+        DataType common = detectCommonType(other);
+
+        if (common == TYPE_MIXED)
         {
             // special allowed cases: str*=int and int*=str
-            if (m_type == TYPE_NUMERICAL && isInt(getNum().val))
-                return operator=(mu::Value(strRepeat(other.getStr(), getNum().asInt())));
-            else if (other.m_type == TYPE_NUMERICAL && isInt(other.getNum().val))
-                return operator=(mu::Value(strRepeat(getStr(), other.getNum().asInt())));
+            if (m_type == TYPE_NUMERICAL && getNum().isInt())
+                return operator=(mu::Value(strRepeat(other.getStr(), getNum().asUI64())));
+            else if (other.m_type == TYPE_NUMERICAL && other.getNum().isInt())
+                return operator=(mu::Value(strRepeat(getStr(), other.getNum().asUI64())));
 
             throw ParserError(ecTYPE_MISMATCH_OOB);
         }
+
+        if (m_type == TYPE_CATEGORY)
+            return operator=(getNum() * other.getNum());
 
         if (isNumerical())
             getNum() *= other.getNum();
@@ -515,42 +1050,37 @@ namespace mu
             throw ParserError(ecTYPE_MISMATCH);
 
         if (common == TYPE_NUMERICAL)
-        {
-            if (isInt(exponent.getNum().val))
-                return Numerical(intPower(getNum().val, exponent.getNum().asInt()));
-
-            return Numerical(std::pow(getNum().val, exponent.getNum().val));
-        }
+            return getNum().pow(exponent.getNum());
 
         throw ParserError(ecTYPE_MISMATCH);
     }
 
     Value::operator bool() const
     {
-        return isValid() && ((isString() && getStr().length()) || (isNumerical() && getNum().val != 0.0));
+        return isValid() && ((isString() && getStr().length()) || (isNumerical() && bool(getNum())));
     }
 
     Value Value::operator!() const
     {
-        return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && getNum().val == 0.0));
+        return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && !getNum()));
     }
 
     Value Value::operator==(const Value& other) const
     {
         return m_type == other.m_type
-            && ((isString() && getStr() == other.getStr()) || (isNumerical() && getNum().val == other.getNum().val));
+            && ((isString() && getStr() == other.getStr()) || (isNumerical() && getNum() == other.getNum()));
     }
 
     Value Value::operator!=(const Value& other) const
     {
         return m_type != other.m_type
-            || ((isString() && getStr() != other.getStr()) || (isNumerical() && getNum().val != other.getNum().val));
+            || ((isString() && getStr() != other.getStr()) || (isNumerical() && getNum() != other.getNum()));
     }
 
     Value Value::operator<(const Value& other) const
     {
         return m_type == other.m_type
-            && ((isString() && getStr() < other.getStr()) || (isNumerical() && getNum().val.real() < other.getNum().val.real()));
+            && ((isString() && getStr() < other.getStr()) || (isNumerical() && getNum() < other.getNum()));
     }
 
     Value Value::operator<=(const Value& other) const
@@ -561,7 +1091,7 @@ namespace mu
     Value Value::operator>(const Value& other) const
     {
        return m_type == other.m_type
-            && ((isString() && getStr() > other.getStr()) || (isNumerical() && getNum().val.real() > other.getNum().val.real()));
+            && ((isString() && getStr() > other.getStr()) || (isNumerical() && getNum() > other.getNum()));
     }
 
     Value Value::operator>=(const Value& other) const
@@ -581,8 +1111,8 @@ namespace mu
 
     std::string Value::print(size_t digits, size_t chrs, bool trunc) const
     {
-        if (isNumerical())
-            return toString(getNum().val, digits > 0 ? digits : 7);
+        if (m_type == TYPE_CATEGORY)
+            return toExternalString(getStr()) + ": " + toString(getNum().asI64());
 
         if (isString())
         {
@@ -597,32 +1127,14 @@ namespace mu
             return toExternalString(getStr());
         }
 
+        if (isNumerical())
+            return getNum().print(digits);
+
         return "void";
     }
 
     std::string Value::printVal(size_t digits, size_t chrs) const
     {
-        if (isNumerical())
-        {
-            std::complex<double> val = getNum().val;
-            // Is one of the components zero, then try to find an
-            // integer optimisation
-            if (val.imag() == 0.0)
-            {
-                if (fabs(rint(val.real()) - val.real()) < 1e-14 && fabs(val.real()) >= 1.0)
-                    return toString(intCast(val.real()));
-            }
-            else if (val.real() == 0.0)
-            {
-                if (fabs(rint(val.imag()) - val.imag()) < 1e-14 && fabs(val.imag()) >= 1.0)
-                    return toString(intCast(val.imag())) + "i";
-            }
-
-            // Otherwise do not optimize due to the fact that the
-            // precision will get halved in this case
-            return toString(val, digits > 0 ? digits : 7);
-        }
-
         if (isString())
         {
             if (chrs > 0)
@@ -631,6 +1143,9 @@ namespace mu
             return getStr();
         }
 
+        if (isNumerical())
+            return getNum().printVal(digits);
+
         return "void";
     }
 
@@ -638,6 +1153,9 @@ namespace mu
     {
         switch (m_type)
         {
+            case TYPE_CATEGORY:
+                delete static_cast<Category*>(m_data);
+                break;
             case TYPE_NUMERICAL:
                 delete static_cast<Numerical*>(m_data);
                 break;
@@ -654,10 +1172,11 @@ namespace mu
     {
         switch (m_type)
         {
+            case TYPE_CATEGORY:
             case TYPE_STRING:
                 return getStr().length();
             case TYPE_NUMERICAL:
-                return getNum().val.imag() != 0.0 ? 16 : 8;
+                return getNum().getBytes();
         }
 
         return 0;
@@ -665,6 +1184,10 @@ namespace mu
 
     DataType Value::detectCommonType(const Value& other) const
     {
+        if ((m_type == TYPE_CATEGORY || m_type == TYPE_NUMERICAL)
+            && (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_CATEGORY))
+            return TYPE_NUMERICAL;
+
         if (m_type == other.m_type || other.m_type == TYPE_VOID)
             return m_type;
 
@@ -754,15 +1277,14 @@ namespace mu
     {
         switch (getCommonType())
         {
+            case TYPE_CATEGORY:
+                return "category";
             case TYPE_NUMERICAL:
-            {
-                if (front().getNum().val.imag() != 0.0)
-                    return "complex";
-
-                return "double";
-            }
+                return front().getNum().getTypeAsString();
             case TYPE_STRING:
                 return "string";
+            case TYPE_MIXED:
+                return "cluster";
         }
 
         return "void";
@@ -1132,7 +1654,7 @@ namespace mu
 
     int64_t Array::getAsScalarInt() const
     {
-        return intCast(front().getNum().asInt());
+        return intCast(front().getNum().asI64());
     }
 
     std::vector<std::string> Array::as_str_vector() const
@@ -1210,6 +1732,11 @@ namespace mu
         return ret;
     }
 
+    std::string Array::printDims() const
+    {
+        return toString(size()) + " x 1";
+    }
+
     size_t Array::getBytes() const
     {
         size_t bytes = 0;
@@ -1249,7 +1776,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            if (operator[](i).getNum().val == 0.0)
+            if (operator[](i).getNum().asCF64() == 0.0)
                 operator[](i).clear();
         }
 
@@ -1576,7 +2103,7 @@ namespace mu
 
         for (const auto& val : a)
         {
-            ret.push_back(Numerical(func(val.getNum().val)));
+            ret.push_back(Numerical(func(val.getNum().asCF64())));
         }
 
         return ret;
@@ -1626,8 +2153,8 @@ namespace mu
 
         for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                         a2.get(i).getNum().val)));
+            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
+                                         a2.get(i).getNum().asCF64())));
         }
 
         return ret;
@@ -1653,9 +2180,9 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                         a2.get(i).getNum().val,
-                                         a3.get(i).getNum().val)));
+            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
+                                         a2.get(i).getNum().asCF64(),
+                                         a3.get(i).getNum().asCF64())));
         }
 
         return ret;
@@ -1669,10 +2196,10 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                         a2.get(i).getNum().val,
-                                         a3.get(i).getNum().val,
-                                         a4.get(i).getNum().val)));
+            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
+                                         a2.get(i).getNum().asCF64(),
+                                         a3.get(i).getNum().asCF64(),
+                                         a4.get(i).getNum().asCF64())));
         }
 
         return ret;
@@ -1698,11 +2225,11 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().val,
-                                         a2.get(i).getNum().val,
-                                         a3.get(i).getNum().val,
-                                         a4.get(i).getNum().val,
-                                         a5.get(i).getNum().val)));
+            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
+                                         a2.get(i).getNum().asCF64(),
+                                         a3.get(i).getNum().asCF64(),
+                                         a4.get(i).getNum().asCF64(),
+                                         a5.get(i).getNum().asCF64())));
         }
 
         return ret;
@@ -1739,7 +2266,7 @@ namespace mu
 
             for (int e = 0; e < elems; e++)
             {
-                vVals.push_back(arrs[e].get(i).getNum().val);
+                vVals.push_back(arrs[e].get(i).getNum().asCF64());
             }
 
             res.push_back(Numerical(func(&vVals[0], elems)));

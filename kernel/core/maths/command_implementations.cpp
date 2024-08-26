@@ -314,32 +314,32 @@ bool integrate(CommandLineParser& cmdParser)
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    mu::Array vParVal = cmdParser.getParsedParameterValue("precision");
 
     if (vParVal.size())
         nSamples = std::rint(range / vParVal.front().getNum().val.real());
     else
     {
-        vParVal = cmdParser.getParameterValueAsNumericalValue("p");
+        vParVal = cmdParser.getParsedParameterValue("p");
 
         if (vParVal.size())
             nSamples = std::rint(range / vParVal.front().getNum().val.real());
         else
         {
-            vParVal = cmdParser.getParameterValueAsNumericalValue("eps");
+            vParVal = cmdParser.getParsedParameterValue("eps");
 
             if (vParVal.size())
                 nSamples = std::rint(range / vParVal.front().getNum().val.real());
         }
     }
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("steps");
+    vParVal = cmdParser.getParsedParameterValue("steps");
 
     if (vParVal.size())
         nSamples = std::abs(vParVal.getAsScalarInt());
     else
     {
-        vParVal = cmdParser.getParameterValueAsNumericalValue("s");
+        vParVal = cmdParser.getParsedParameterValue("s");
 
         if (vParVal.size())
             nSamples = std::abs(vParVal.getAsScalarInt());
@@ -508,32 +508,32 @@ bool integrate2d(CommandLineParser& cmdParser)
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    mu::Array vParVal = cmdParser.getParsedParameterValue("precision");
 
     if (vParVal.size())
         nSamples = std::rint(range / vParVal.front().getNum().val.real());
     else
     {
-        vParVal = cmdParser.getParameterValueAsNumericalValue("p");
+        vParVal = cmdParser.getParsedParameterValue("p");
 
         if (vParVal.size())
             nSamples = std::rint(range / vParVal.front().getNum().val.real());
         else
         {
-            vParVal = cmdParser.getParameterValueAsNumericalValue("eps");
+            vParVal = cmdParser.getParsedParameterValue("eps");
 
             if (vParVal.size())
                 nSamples = std::rint(range / vParVal.front().getNum().val.real());
         }
     }
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("steps");
+    vParVal = cmdParser.getParsedParameterValue("steps");
 
     if (vParVal.size())
         nSamples = std::abs(vParVal.getAsScalarInt());
     else
     {
-        vParVal = cmdParser.getParameterValueAsNumericalValue("s");
+        vParVal = cmdParser.getParsedParameterValue("s");
 
         if (vParVal.size())
             nSamples = std::abs(vParVal.getAsScalarInt());
@@ -745,7 +745,7 @@ bool differentiate(CommandLineParser& cmdParser)
     mu::Array paramVal;
 
     // Get the order of the differntiation
-    paramVal = cmdParser.getParameterValueAsNumericalValue("order");
+    paramVal = cmdParser.getParsedParameterValue("order");
 
     if (paramVal.size())
     {
@@ -757,12 +757,12 @@ bool differentiate(CommandLineParser& cmdParser)
     if (!_data.containsTablesOrClusters(sExpr) && cmdParser.getParameterList().length())
     {
         // Is the "eps" parameter available?
-        paramVal = cmdParser.getParameterValueAsNumericalValue("eps");
+        paramVal = cmdParser.getParsedParameterValue("eps");
 
         if (paramVal.size())
             dEps = fabs(paramVal.front().getNum().val);
 
-        paramVal = cmdParser.getParameterValueAsNumericalValue("samples");
+        paramVal = cmdParser.getParsedParameterValue("samples");
 
         if (paramVal.size())
             nSamples = std::abs(paramVal.getAsScalarInt());
@@ -866,7 +866,7 @@ bool differentiate(CommandLineParser& cmdParser)
         Indices& _idx = accessParser.getIndices();
         std::string sTableName = accessParser.getDataObject();
         size_t nFilterSize = 5;
-        paramVal = cmdParser.getParameterValueAsNumericalValue("points");
+        paramVal = cmdParser.getParsedParameterValue("points");
 
         if (paramVal.size())
         {
@@ -2338,7 +2338,7 @@ void taylor(CommandLineParser& cmdParser)
     }
 
     // Evaluate the parameters
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("n");
+    auto vParVal = cmdParser.getParsedParameterValue("n");
 
     if (vParVal.size())
         nth_taylor = abs(intCast(vParVal.front()));
@@ -2350,7 +2350,7 @@ void taylor(CommandLineParser& cmdParser)
         if (sPar != "n")
         {
             sVarName = sPar;
-            dVarValue = cmdParser.getParameterValueAsNumericalValue(sVarName).front();
+            dVarValue = cmdParser.getParsedParameterValue(sVarName).front();
 
             // Ensure that the location was chosen reasonable
             if (mu::isinf(dVarValue.front().getNum().val) || mu::isnan(dVarValue.front()))
@@ -3030,7 +3030,7 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     if (!sType.length() && sParVal.length())
         sType = sParVal;
 
-    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("k");
+    mu::Array vParVal = cmdParser.getParsedParameterValue("k");
 
     if (vParVal.size())
         k = vParVal.getAsScalarInt();
@@ -3236,7 +3236,7 @@ bool evalPoints(CommandLineParser& cmdParser)
     if (!ivl.size())
         ivl.intervals.push_back(Interval(-10.0, 10.0));
 
-    mu::Array vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
+    mu::Array vSamples = cmdParser.getParsedParameterValue("samples");
 
     if (vSamples.size())
         nSamples = vSamples.getAsScalarInt();
@@ -3473,7 +3473,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
     }
 
     // Get the number of samples from the option list
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
+    auto vParVal = cmdParser.getParsedParameterValue("samples");
 
     if (vParVal.size())
     {
@@ -3640,7 +3640,7 @@ bool writeAudioFile(CommandLineParser& cmdParser)
     double dMin = 0.0;
 
     // Samples lesen
-    mu::Array vVals = cmdParser.getParameterValueAsNumericalValue("samples");
+    mu::Array vVals = cmdParser.getParsedParameterValue("samples");
 
     if (vVals.size())
         nSamples = vVals.getAsScalarInt();
@@ -3816,7 +3816,7 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Indices _targetIdx;
     std::string sTarget = cmdParser.getTargetTable(_targetIdx, "audiodata");
-    std::vector<mu::Array> vSeekIndices = cmdParser.parseExprAsNumericalValues();
+    std::vector<mu::Array> vSeekIndices = cmdParser.parseExpr();
 
     if (vSeekIndices.size() < 2)
         return false;
@@ -3909,7 +3909,7 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
     double dXmin, dXmax;
 
     // Samples lesen
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
+    auto vParVal = cmdParser.getParsedParameterValue("samples");
 
     if (vParVal.size())
         nSamples = intCast(vParVal.front());
@@ -4054,7 +4054,7 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     double dFmin = 0.0, dFmax = 1.0;
     double dSampleSize = NAN;
 
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
+    auto vParVal = cmdParser.getParsedParameterValue("samples");
 
     if (vParVal.size())
         nSamples = std::max(intCast(vParVal.front()), 0LL);
@@ -4217,12 +4217,12 @@ void boneDetection(CommandLineParser& cmdParser)
     double dLevel = NAN, dAttrX = 0.0, dAttrY = 1.0, dMinLen = 0.0;
 
     // detect TABLE() -set minval=LVL attract={x,y} minlen=MIN target=TARGET()
-    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("minval");
+    mu::Array vParVal = cmdParser.getParsedParameterValue("minval");
 
     if (vParVal.size())
         dLevel = vParVal.front().getNum().val.real();
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("attract");
+    vParVal = cmdParser.getParsedParameterValue("attract");
 
     if (vParVal.size() > 1)
     {
@@ -4232,7 +4232,7 @@ void boneDetection(CommandLineParser& cmdParser)
     else if (vParVal.size())
         dAttrY = fabs(vParVal[0].getNum().val);
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("minlen");
+    vParVal = cmdParser.getParsedParameterValue("minlen");
 
     if (vParVal.size())
         dMinLen = fabs(vParVal.front().getNum().val);
@@ -4441,7 +4441,7 @@ void rotateTable(CommandLineParser& cmdParser)
     // Find the target of this operation
     std::string sTargetTable = cmdParser.getTargetTable(_idx, "rotdata");
 
-    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
+    mu::Array vParVal = cmdParser.getParsedParameterValue("alpha");
 
     if (vParVal.size())
         dAlpha = -vParVal.front().getNum().val.real() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
@@ -4657,12 +4657,12 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     IntervalSet ivl = cmdParser.parseIntervals();
 
     // Handle parameters
-    mu::Array vParVal = cmdParser.getParameterValueAsNumericalValue("particles");
+    mu::Array vParVal = cmdParser.getParsedParameterValue("particles");
 
     if (vParVal.size())
         nNumParticles = vParVal.getAsScalarInt();
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("iter");
+    vParVal = cmdParser.getParsedParameterValue("iter");
 
     if (vParVal.size())
         nMaxIterations = vParVal.getAsScalarInt();
@@ -4805,8 +4805,8 @@ void urlExecute(CommandLineParser& cmdParser)
     {
         // Get URL, username and password
         std::string sUrl = cmdParser.parseExprAsString();
-        std::string sUserName = cmdParser.getParameterValueAsString("usr", "", true);
-        std::string sPassword = cmdParser.getParameterValueAsString("pwd", "", true);
+        std::string sUserName = cmdParser.getParsedParameterValueAsString("usr", "", true);
+        std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
 
         // Push the response into a file, if necessary
         if (cmdParser.hasParam("file"))

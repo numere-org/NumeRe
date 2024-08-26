@@ -248,7 +248,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 
     if (cmdParser.hasParam("dir"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("dir", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("dir", "", true, true));
         int nReturn = _fSys.setPath(sFileName, true, _option.getExePath());
 
         if (nReturn == 1 && _option.systemPrints())
@@ -258,7 +258,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("script"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("script", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("script", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -278,7 +278,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("proc"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("proc", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("proc", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -302,7 +302,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("file"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("file", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("file", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -328,7 +328,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("plugin"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("plugin", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("plugin", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -454,7 +454,7 @@ static bool editObject(CommandLineParser& cmdParser)
         nFileOpenFlag = 2 | 4;
 
     if (containsStrings(cmdParser.getExpr()))
-        sObject = cmdParser.parseExprAsNumericalValues().front().front().getStr();
+        sObject = cmdParser.parseExpr().front().front().getStr();
     else
         sObject = cmdParser.getExpr();
 
@@ -1762,8 +1762,8 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(_option.getExePath(), false, _option.getExePath());
     _fSys.declareFileType(".exe");
-    string sParams = cmdParser.getParameterValueAsString("params", "", true);
-    string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
+    string sParams = cmdParser.getParsedParameterValueAsString("params", "", true);
+    string sWorkpath = cmdParser.getParsedParameterValueAsString("wp", "");
     string sObject = cmdParser.parseExprAsString();
     int nRetVal = 0;
     bool bWaitForTermination = cmdParser.hasParam("wait");
@@ -2062,7 +2062,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
     size_t nPrecision = _option.getPrecision();
 
     // Update the precision, if the user selected any
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    auto vParVal = cmdParser.getParsedParameterValue("precision");
 
     if (vParVal.size())
         nPrecision = std::min(14LL, intCast(vParVal.front()));
@@ -2090,7 +2090,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
         std::string sFileFormat;
 
         if (cmdParser.hasParam("fileformat"))
-            sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+            sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
         if (cmdParser.getCommand() == "export")
             sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
@@ -2706,8 +2706,8 @@ static CommandReturnValues cmd_readline(string& sCmd)
     CommandLineParser cmdParser(sCmd, "readline", CommandLineParser::CMD_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    std::string sDefault = cmdParser.getParameterValueAsString("dflt", "");
-    std::string sMessage = cmdParser.getParameterValueAsString("msg", "");
+    std::string sDefault = cmdParser.getParsedParameterValueAsString("dflt", "");
+    std::string sMessage = cmdParser.getParsedParameterValueAsString("msg", "");
     std::string sArgument;
 
 
@@ -3420,7 +3420,7 @@ static CommandReturnValues cmd_warn(string& sCmd)
 
     if (sMessage.length())
     {
-        auto vVals = cmdParser.parseExprAsNumericalValues();
+        auto vVals = cmdParser.parseExpr();
         sMessage.clear();
 
         for (size_t i = 0; i < vVals.size(); i++)
@@ -3739,7 +3739,7 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (cmdParser.hasParam("fromline"))
     {
         // Get the line parameter and subtract 1 to match the internal line count
-        mu::Array vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
+        mu::Array vecFromLine = cmdParser.getParsedParameterValue("fromline");
         nFromLine = vecFromLine.getAsScalarInt() - 1;
     }
 
@@ -3847,7 +3847,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     MemoryManager::AppDir dir = MemoryManager::ALL;
 
     // Find the window size
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("order");
+    auto vParVal = cmdParser.getParsedParameterValue("order");
 
     if (vParVal.size())
         nWindowSize = vParVal.getAsScalarInt();
@@ -3856,7 +3856,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     nWindowSize = 2 * nWindowSize + 1;
 
     // Find the window shape (used for type=gaussian)
-    vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
+    vParVal = cmdParser.getParsedParameterValue("alpha");
 
     if (vParVal.size())
         dAlpha = vParVal.front().getNum().val.real();
@@ -4046,7 +4046,7 @@ static CommandReturnValues cmd_pack(string& sCmd)
     if (cmdParser.getExpr().length() && cmdParser.hasParam("file"))
     {
         std::string sTargetPathName = cmdParser.getFileParameterValueForSaving("", "<savepath>", "");
-        std::vector<mu::Array> v = cmdParser.parseExprAsNumericalValues();
+        std::vector<mu::Array> v = cmdParser.parseExpr();
         Archive::Type type = Archive::ARCHIVE_AUTO;
 
         if (cmdParser.hasParam("type"))
@@ -4090,7 +4090,7 @@ static CommandReturnValues cmd_unpack(string& sCmd)
     if (cmdParser.getExpr().length())
     {
         std::string sArchiveFileName = cmdParser.getExprAsFileName(".zip", "<loadpath>");
-        std::string sTargetPathName = replacePathSeparator(cmdParser.getParameterValueAsString("target", ""));
+        std::string sTargetPathName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("target", ""));
 
         if (sTargetPathName.length())
             sTargetPathName = NumeReKernel::getInstance()->getFileSystem().ValidFolderName(sTargetPathName, true, false);
@@ -4222,7 +4222,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
 
     if (_access.getDataObject().length())
     {
-        auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
+        auto vParVal = cmdParser.getParsedParameterValue("samples");
 
         std::pair<size_t, size_t> samples;
 
@@ -4736,7 +4736,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 nArgument = 0;
 
             if (cmdParser.hasParam("fileformat"))
-                sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+                sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
@@ -4822,13 +4822,13 @@ static CommandReturnValues cmd_load(string& sCmd)
                 NumeRe::FileHeaderInfo info;
 
                 // Provide headline
-                auto vParList = cmdParser.getParameterValueAsNumericalValue("head");
+                auto vParList = cmdParser.getParsedParameterValue("head");
 
                 if (vParList.size())
                     nArgument = intCast(vParList.front());
                 else
                 {
-                    vParList = cmdParser.getParameterValueAsNumericalValue("h");
+                    vParList = cmdParser.getParsedParameterValue("h");
 
                     if (vParList.size())
                         nArgument = intCast(vParList.front());
@@ -4943,12 +4943,12 @@ static CommandReturnValues cmd_progress(string& sCmd)
     string sArgument;
     int frst = 1, lst = 100;
 
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("first");
+    auto vParVal = cmdParser.getParsedParameterValue("first");
 
     if (vParVal.size())
         frst = vParVal.getAsScalarInt();
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("last");
+    vParVal = cmdParser.getParsedParameterValue("last");
 
     if (vParVal.size())
         lst = vParVal.getAsScalarInt();
@@ -4956,9 +4956,9 @@ static CommandReturnValues cmd_progress(string& sCmd)
     sArgument = cmdParser.getParameterValue("type");
 
     if (containsStrings(sArgument))
-        sArgument = cmdParser.getParameterValueAsString("type", "std");
+        sArgument = cmdParser.getParsedParameterValueAsString("type", "std");
 
-    auto vVal = cmdParser.parseExprAsNumericalValues();
+    auto vVal = cmdParser.parseExpr();
 
     if (vVal.size())
         make_progressBar(vVal.front().getAsScalarInt(), frst, lst, sArgument);

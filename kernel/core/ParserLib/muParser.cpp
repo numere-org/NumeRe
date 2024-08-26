@@ -148,7 +148,7 @@ namespace mu
         else
             *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
 
-        *a_fVal = Numerical(fVal);
+        *a_fVal = Numerical::autoType(fVal);
         return 1;
     }
 

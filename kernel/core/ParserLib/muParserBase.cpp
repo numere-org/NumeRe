@@ -780,12 +780,12 @@ namespace mu
 
         for (size_t v = 0; v < diff.size(); v++)
         {
-            Numerical d = diff[v].getNum();
-            d.val.real(d.val.real() > 0.0 ? 1.0 : (d.val.real() < 0.0 ? -1.0 : 0.0));
-            d.val.imag(d.val.imag() > 0.0 ? 1.0 : (d.val.imag() < 0.0 ? -1.0 : 0.0));
-            expandVector(firstVal.get(v).getNum().val,
-                         lastVal.get(v).getNum().val,
-                         d.val,
+            std::complex<double> d = diff[v].getNum().asCF64();
+            d.real(d.real() > 0.0 ? 1.0 : (d.real() < 0.0 ? -1.0 : 0.0));
+            d.imag(d.imag() > 0.0 ? 1.0 : (d.imag() < 0.0 ? -1.0 : 0.0));
+            expandVector(firstVal.get(v).getNum().asCF64(),
+                         lastVal.get(v).getNum().asCF64(),
+                         d,
                          ret);
         }
 
@@ -809,9 +809,9 @@ namespace mu
 
         for (size_t v = 0; v < std::max({firstVal.size(), lastVal.size(), incr.size()}); v++)
         {
-            expandVector(firstVal.get(v).getNum().val,
-                         lastVal.get(v).getNum().val,
-                         incr[v].getNum().val,
+            expandVector(firstVal.get(v).getNum().asCF64(),
+                         lastVal.get(v).getNum().asCF64(),
+                         incr[v].getNum().asCF64(),
                          ret);
         }
 
@@ -1417,7 +1417,7 @@ namespace mu
 
 		// Push dummy value representing the function result to the stack
 		token_type token;
-		token.SetVal(Array(Numerical(1.0)));
+		token.SetVal(Array(Value(1.0)));
 		a_stVal.push(token);
 	}
 
@@ -1484,7 +1484,7 @@ namespace mu
 			else
 				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
 
-			resTok.SetVal(Array(Numerical(1.0)));
+			resTok.SetVal(Array(Value(1.0)));
 			a_stVal.push(resTok);
 		}
 	}
@@ -1501,7 +1501,7 @@ namespace mu
         m_compilingState.m_byteCode.AddOp(cmVAL2STR);
 
         // Push a dummy value to the stack
-        resTok.SetVal(Array(Numerical(1.0)));
+        resTok.SetVal(Array(Value(1.0)));
         a_stVal.push(resTok);
 	}
 
@@ -1654,7 +1654,7 @@ namespace mu
 
                 case  cmVAL2STR:
                     --sidx;
-                    Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().val.real());
+                    Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().asUI64());
                     continue;
 
                 case  cmASSIGN:
@@ -1938,7 +1938,7 @@ namespace mu
 
                     case  cmVAL2STR:
                         --sidx;
-                        Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().val.real());
+                        Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().asUI64());
                         continue;
 
                     case  cmASSIGN:

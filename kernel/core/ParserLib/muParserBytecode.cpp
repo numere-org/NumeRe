@@ -108,7 +108,7 @@ namespace mu
 		// optimization does not apply
 		SToken tok;
 		tok.Cmd       = cmVAR;
-		tok.m_data = SValData{.var{a_pVar}, .data{Numerical(1.0)}, .isVect{false}};
+		tok.m_data = SValData{.var{a_pVar}, .data{Value(1.0)}, .isVect{false}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -145,7 +145,7 @@ namespace mu
 		// If optimization does not apply
 		SToken tok;
 		tok.Cmd = cmVAL;
-		tok.m_data = SValData{.data{Numerical(0.0)}, .data2{a_fVal}, .isVect{false}};
+		tok.m_data = SValData{.data{Value(0.0)}, .data2{a_fVal}, .isVect{false}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -218,7 +218,7 @@ namespace mu
 				break;
 
             case cmVAL2STR:
-                x = val2Str(x, y.front().getNum().val.real());
+                x = val2Str(x, y.front().getNum().asUI64());
                 m_vRPN.pop_back();
                 break;
 
@@ -269,7 +269,7 @@ namespace mu
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
 							else if (all(m_vRPN[sz - 1].Val().data2 == Value(4.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.front().getNum().asInt())))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.front().getNum().asI64())))
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
 							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;
@@ -316,10 +316,10 @@ namespace mu
 
 							// Ensure type compatibility for offset by avoiding converting void to numerical
 							if (m_vRPN[sz-1].Val().data2.size() && m_vRPN[sz-1].Val().data2.getCommonType() != TYPE_VOID)
-                                m_vRPN[sz-2].Val().data2 += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data2;
+                                m_vRPN[sz-2].Val().data2 += Array(Value((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data2;
 
 							// Update scale factor
-							m_vRPN[sz-2].Val().data += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data;
+							m_vRPN[sz-2].Val().data += Array(Value((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data;
 							m_vRPN[sz-2].Val().data2.zerosToVoid(); // To convert VARMUL-Offsets to void
 							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
@@ -375,7 +375,7 @@ namespace mu
 					case cmDIV:
                         if (m_vRPN[sz-1].Cmd == cmVAL
                             && m_vRPN[sz-2].Cmd == cmVARMUL
-                            && all(m_vRPN[sz-1].Val().data2 != Array(Numerical(0.0))))
+                            && all(m_vRPN[sz-1].Val().data2 != Array(Value(0.0))))
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[sz - 2].Val().data  /= m_vRPN[sz - 1].Val().data2;

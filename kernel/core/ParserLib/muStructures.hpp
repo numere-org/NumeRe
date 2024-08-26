@@ -23,6 +23,8 @@
 #include <complex>
 #include <vector>
 
+#include "../utils/datetimetools.hpp"
+
 namespace mu
 {
     enum DataType
@@ -30,6 +32,7 @@ namespace mu
         TYPE_VOID,
         TYPE_NUMERICAL,
         TYPE_STRING,
+        TYPE_CATEGORY,
         TYPE_MIXED
     };
 
@@ -37,23 +40,117 @@ namespace mu
     // Abstraction of numerical values
     struct Numerical
     {
-        std::complex<double> val;
+        // Careful during adaption of these values bc. of internal calculations
+        enum NumericalType
+        {
+            LOGICAL,
+            I8,
+            I16,
+            I32,
+            I64,
+            UI8,
+            UI16,
+            UI32,
+            UI64,
+            DATETIME,
+            F32,
+            F64,
+            CF32,
+            CF64
+        };
 
-        Numerical(double data);
-        Numerical(const std::complex<double>& data = 0.0);
+        private:
+            enum TypeFlags
+            {
+                TYPE_LOGICAL = 0x0,
+                TYPE_INT = 0x1,
+                TYPE_UINT = 0x2,
+                TYPE_FLOAT = 0x4,
+                TYPE_DATETIME = 0x8,
+                TYPE_COMPLEX = 0x10
+            };
 
-        Numerical operator+(const Numerical& other) const;
-        Numerical operator-() const;
-        Numerical operator-(const Numerical& other) const;
-        Numerical operator/(const Numerical& other) const;
-        Numerical operator*(const Numerical& other) const;
+            enum InternalType
+            {
+                INT,
+                UINT,
+                COMPLEX
+            };
 
-        Numerical& operator+=(const Numerical& other);
-        Numerical& operator-=(const Numerical& other);
-        Numerical& operator/=(const Numerical& other);
-        Numerical& operator*=(const Numerical& other);
+            union
+            {
+                int64_t i64;
+                uint64_t ui64;
+                std::complex<double> cf64;
+            };
 
-        int64_t asInt() const;
+            NumericalType m_type;
+            uint8_t m_bits;
+            uint8_t m_flags;
+
+            void getTypeInfo();
+            NumericalType getPromotion(const Numerical& other) const;
+            InternalType getConversion(NumericalType promotion) const;
+
+        public:
+            Numerical(int8_t data);
+            Numerical(uint8_t data);
+            Numerical(int16_t data);
+            Numerical(uint16_t data);
+            Numerical(int32_t data);
+            Numerical(uint32_t data);
+            Numerical(int64_t data, NumericalType type = I64);
+            Numerical(uint64_t data, NumericalType type = UI64);
+            Numerical(float data);
+            Numerical(double data);
+            Numerical(bool data);
+            Numerical(const std::complex<float>& data);
+            Numerical(const std::complex<double>& data = 0.0, NumericalType type = CF64);
+            Numerical(const sys_time_point& data);
+
+            static Numerical autoType(const std::complex<double>& data);
+
+            int64_t asI64() const;
+            uint64_t asUI64() const;
+            double asF64() const;
+            std::complex<double> asCF64() const;
+
+            Numerical operator+(const Numerical& other) const;
+            Numerical operator-() const;
+            Numerical operator-(const Numerical& other) const;
+            Numerical operator/(const Numerical& other) const;
+            Numerical operator*(const Numerical& other) const;
+
+            Numerical& operator+=(const Numerical& other);
+            Numerical& operator-=(const Numerical& other);
+            Numerical& operator/=(const Numerical& other);
+            Numerical& operator*=(const Numerical& other);
+
+            Numerical pow(const Numerical& exponent) const;
+
+            operator bool() const;
+
+            bool operator!() const;
+            bool operator==(const Numerical& other) const;
+            bool operator!=(const Numerical& other) const;
+            bool operator<(const Numerical& other) const;
+            bool operator<=(const Numerical& other) const;
+            bool operator>(const Numerical& other) const;
+            bool operator>=(const Numerical& other) const;
+
+            NumericalType getType() const;
+            std::string getTypeAsString() const;
+            std::string print(size_t digits = 0) const;
+            std::string printVal(size_t digits = 0) const;
+            size_t getBytes() const;
+            bool isInt() const;
+    };
+
+
+    struct Category
+    {
+        Numerical val;
+        std::string name;
     };
 
 
@@ -66,12 +163,14 @@ namespace mu
             Value(Value&& data);
 
             Value(const Numerical& data);
+            Value(const Category& data);
             Value(bool logical);
-            Value(int value);
-            Value(unsigned int value);
-            Value(size_t value);
+            Value(int32_t value);
+            Value(uint32_t value);
             Value(int64_t value);
+            Value(uint64_t value);
             Value(double value);
+            Value(const sys_time_point& value);
             Value(const std::complex<float>& value);
             Value(const std::complex<double>& value);
             Value(const std::string& sData);
@@ -197,6 +296,7 @@ namespace mu
             std::vector<std::string> to_string() const;
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVals(size_t digits = 0, size_t chrs = 0) const;
+            std::string printDims() const;
             size_t getBytes() const;
 
             Value& get(size_t i);
