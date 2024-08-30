@@ -71,7 +71,7 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     // Create the default columns
     AddColumn(_guilang.get("GUI_VARVIEWER_NAME"), 150);
     AddColumn(_guilang.get("GUI_VARVIEWER_DIM"), 80, wxALIGN_RIGHT);
-    AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 55);
+    AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 65);
     AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize - (!debugMode)*50);
 
     if (!debugMode)
@@ -640,7 +640,7 @@ void VariableViewer::setDebuggerMode(bool mode)
 
     if (mode)
     {
-        SetColumnWidth(CLASSCOLUMN, 75);
+        SetColumnWidth(CLASSCOLUMN, 85);
 
         // Create or remove the procedure argument
         // root item

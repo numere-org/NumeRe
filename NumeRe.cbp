@@ -1970,6 +1970,8 @@
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
 		</Unit>
+		<Unit filename="kernel/core/ParserLib/muApply.cpp" />
+		<Unit filename="kernel/core/ParserLib/muApply.hpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.cpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.hpp" />
 		<Unit filename="kernel/core/ParserLib/muParser.cpp" />
@@ -1993,6 +1995,8 @@
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />
 		<Unit filename="kernel/core/ParserLib/muStructures.cpp" />
 		<Unit filename="kernel/core/ParserLib/muStructures.hpp" />
+		<Unit filename="kernel/core/ParserLib/muTypes.cpp" />
+		<Unit filename="kernel/core/ParserLib/muTypes.hpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.cpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.hpp" />
 		<Unit filename="kernel/core/ParserLib/parserstandalone.cpp">
@@ -2250,26 +2254,6 @@
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
-		</Unit>
-		<Unit filename="kernel/core/datamanagement/stringmemory.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-		</Unit>
-		<Unit filename="kernel/core/datamanagement/stringmemory.hpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/datamanagement/table.cpp">
 			<Option target="Debug" />

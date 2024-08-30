@@ -444,9 +444,9 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_r_earth", 6.378137e6);
     _parser.DefineConst("_r_sonne", 6.9551e8);
     _parser.DefineConst("_r_sun", 6.9551e8);
-    _parser.DefineConst("true", 1);
+    _parser.DefineConst("true", true);
     _parser.DefineConst("_theta_weinberg", 0.49097621387892);
-    _parser.DefineConst("false", 0);
+    _parser.DefineConst("false", false);
     _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
     _parser.DefineConst("_R", 8.3144622);
     _parser.DefineConst("_alpha_fs", 7.2973525698E-3);
@@ -478,12 +478,12 @@ void NumeReKernel::defineConst()
     _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::Value(TYPE_SYNTAXERROR));
     _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::Value(TYPE_ASSERTIONERROR));
     _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::Value(TYPE_MATHERROR));
-    _parser.DefineConst("ui8_max", UINT8_MAX);
-    _parser.DefineConst("i8_max", INT8_MAX);
-    _parser.DefineConst("i8_min", INT8_MIN);
-    _parser.DefineConst("ui16_max", UINT16_MAX);
-    _parser.DefineConst("i16_max", INT16_MAX);
-    _parser.DefineConst("i16_min", INT16_MIN);
+    _parser.DefineConst("ui8_max", mu::Numerical((uint8_t)UINT8_MAX));
+    _parser.DefineConst("i8_max", mu::Numerical((int8_t)INT8_MAX));
+    _parser.DefineConst("i8_min", mu::Numerical((int8_t)INT8_MIN));
+    _parser.DefineConst("ui16_max", mu::Numerical((uint16_t)UINT16_MAX));
+    _parser.DefineConst("i16_max", mu::Numerical((int16_t)INT16_MAX));
+    _parser.DefineConst("i16_min", mu::Numerical((int16_t)INT16_MIN));
     _parser.DefineConst("ui32_max", UINT32_MAX);
     _parser.DefineConst("i32_max", INT32_MAX);
     _parser.DefineConst("i32_min", INT32_MIN);
@@ -493,15 +493,15 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("f64_max", __DBL_MAX__);
     _parser.DefineConst("f64_min", __DBL_MIN__);
     _parser.DefineConst("f64_eps", __DBL_EPSILON__);
-    _parser.DefineConst("f32_max", __FLT_MAX__);
-    _parser.DefineConst("f32_min", __FLT_MIN__);
-    _parser.DefineConst("f32_eps", __FLT_EPSILON__);
+    _parser.DefineConst("f32_max", mu::Numerical(__FLT_MAX__));
+    _parser.DefineConst("f32_min", mu::Numerical(__FLT_MIN__));
+    _parser.DefineConst("f32_eps", mu::Numerical(__FLT_EPSILON__));
     _parser.DefineConst("cf64_max", std::complex<double>(__DBL_MAX__, __DBL_MAX__));
     _parser.DefineConst("cf64_min", std::complex<double>(__DBL_MIN__, __DBL_MIN__));
     _parser.DefineConst("cf64_eps", std::complex<double>(__DBL_EPSILON__, __DBL_EPSILON__));
-    _parser.DefineConst("cf32_max", std::complex<double>(__FLT_MAX__, __FLT_MAX__));
-    _parser.DefineConst("cf32_min", std::complex<double>(__FLT_MIN__, __FLT_MIN__));
-    _parser.DefineConst("cf32_eps", std::complex<double>(__FLT_EPSILON__, __FLT_EPSILON__));
+    _parser.DefineConst("cf32_max", std::complex<float>(__FLT_MAX__, __FLT_MAX__));
+    _parser.DefineConst("cf32_min", std::complex<float>(__FLT_MIN__, __FLT_MIN__));
+    _parser.DefineConst("cf32_eps", std::complex<float>(__FLT_EPSILON__, __FLT_EPSILON__));
 }
 
 
@@ -787,6 +787,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("is_cluster", strfnc_is_cluster, false);                       // is_cluster(str) <- tables/clusters may change
     _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
+    _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
 }
 
 
@@ -1150,6 +1151,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             if (!_procedure.getCurrentBlockDepth())
             {
                 // this is obviously a time consuming task => to be investigated
+#warning TODO (numere#1#08/27/24): This cannot be deactivated until tables are integrated differently
                 evalRecursiveExpressions(sLine);
             }
 
@@ -2643,7 +2645,7 @@ NumeReVariables NumeReKernel::getVariableList()
     const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
 
-    // Gather all (global) numerical variables
+    // Gather all (global) variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
         if ((iter->first).starts_with("_~")
@@ -2652,7 +2654,7 @@ NumeReVariables NumeReKernel::getVariableList()
             || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\t" + iter->second->getCommonTypeAsString() + "\t"
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
             + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
@@ -2662,7 +2664,6 @@ NumeReVariables NumeReKernel::getVariableList()
     vars.nNumerics = vars.vVariables.size();
 
     // Gather all (global) string variables
-    // Gather all (global) numerical variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
         if ((iter->first).starts_with("_~")
@@ -2671,7 +2672,7 @@ NumeReVariables NumeReKernel::getVariableList()
             || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\t" + iter->second->getCommonTypeAsString() + "\t"
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
             + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
