@@ -209,7 +209,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
             if (_idx.col[j] == VectorIndex::INVALID)
                 break;
 
-            _table->writeData(maxrow, _idx.col[j], 0.0);
+            _table->writeData(maxrow, _idx.col[j], mu::Value(0.0, false));
         }
 
         // Write the contents to the table
@@ -1061,7 +1061,7 @@ static Matrix createMatFromLines(std::string& sCmd, mu::Parser& _parser, MemoryM
             nLineLength = v.size();
 
         for (size_t n = 0; n < v.size(); n++)
-            vLine.push_back(v[n].getNum().val);
+            vLine.push_back(v[n].getNum().asCF64());
 
         _matfl.push_back(vLine);
         vLine.clear();
@@ -1115,7 +1115,7 @@ static Matrix createMatFromLinesFilled(std::string& sCmd, mu::Parser& _parser, M
             nLineLength = v.size();
 
         for (size_t n = 0; n < v.size(); n++)
-            vLine.push_back(v[n].getNum().val);
+            vLine.push_back(v[n].getNum().asCF64());
 
         _matfl.push_back(vLine);
         vLine.clear();
@@ -1497,7 +1497,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
                 _parser.SetExpr(sI[n]);
                 mu::Array v = _parser.Eval();
 
-                if (mu::isnan(v.front().getNum()) || mu::isinf(v.front().getNum().val) || v.front().getNum().val.real() <= 0)
+                if (mu::isnan(v.front().getNum()) || mu::isinf(v.front().getNum().asCF64()) || v.front().getNum().asF64() <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, sI[n]);
 
                 _idx.row.setIndex(n, v.getAsScalarInt()-1);
@@ -1515,7 +1515,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
                 _parser.SetExpr(sJ[n]);
                 mu::Array v = _parser.Eval();
 
-                if (mu::isnan(v.front().getNum()) || mu::isinf(v.front().getNum().val) || v.front().getNum().val.real() <= 0)
+                if (mu::isnan(v.front().getNum()) || mu::isinf(v.front().getNum().asCF64()) || v.front().getNum().asF64() <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, sJ[n]);
 
                 _idx.col.setIndex(n, v.getAsScalarInt()-1);

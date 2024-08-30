@@ -174,12 +174,12 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             {
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    if (!_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable).getNum().val)
-                        || !_histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable).getNum().val)
-                        || !_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().val))
+                    if (!_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable).getNum().asCF64())
+                        || !_histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable).getNum().asCF64())
+                        || !_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().asCF64()))
                         continue;
 
-                    if (ivl.isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER))
+                    if (ivl.isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER))
                         nCount++;
                 }
 
@@ -210,7 +210,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 // are part of the current bin interval
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    std::complex<double> val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().val;
+                    std::complex<double> val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().asCF64();
 
                     if (isXLog)
                     {
@@ -297,7 +297,7 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
                 if (i)
                     sTicks += "\\n";
 
-                sTicks += vCategories[i];
+                sTicks += vCategories[i].getStr();
             }
 
             return sTicks;
@@ -891,7 +891,7 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
 
         while (i < vCategories.size())
         {
-            if (!_histParams.ranges[XCOORD].isInside(vCategories[i].getNum().asInt()))
+            if (!_histParams.ranges[XCOORD].isInside(vCategories[i].getNum().asI64()))
                 vCategories.erase(vCategories.begin() + i - 1, vCategories.begin() + i + 1);
             else
                 i += 2;
@@ -959,12 +959,12 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
         for (size_t j = 2 * _histParams.bGrid; j < _idx.col.size(); j++)
         {
             if (_histParams.bGrid
-                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val)
-                && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().val))
+                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
+                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64())
+                && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().asCF64()))
                 nMax++;
             else if (!_histParams.bGrid
-                     && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().val))
+                     && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().asCF64()))
                 nMax++;
         }
     }
@@ -1140,13 +1140,13 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val)
+            if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
+                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64())
                 && _data.isValidElement(_idx.row[i], _idx.col[2], _histParams.sTable))
             {
-                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val.real();
-                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val.real();
-                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).getNum().val.real();
+                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asF64();
+                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asF64();
+                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).getNum().asF64();
             }
             else
             {
@@ -1163,15 +1163,15 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val.real();
-            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val.real();
+            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asF64();
+            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asF64();
 
             for (size_t j = 0; j < _idx.col.size() - 2; j++)
             {
-                if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
-                    && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val)
+                if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
+                    && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64())
                     && _data.isValidElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable))
-                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable).getNum().val.real();
+                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable).getNum().asF64();
                 else
                     _hist2DData[2].a[i + j * _idx.row.size()] = NAN;
             }
@@ -1214,16 +1214,16 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (ivl.isInside(_data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER))
+            if (ivl.isInside(_data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER))
             {
                 if (_idx.col.size() == 3)
                 {
                     if (_data.isValidElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)
-                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val)
-                        && range.isInside(_data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).getNum().val))
+                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asCF64())
+                        && range.isInside(_data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).getNum().asCF64()))
                     {
                         if (_histParams.bSum || _histParams.bAvg)
-                            dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val.real();
+                            dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asF64();
                         else
                             dSum++;
 
@@ -1237,10 +1237,10 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
                         if (_data.isValidElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)
                             && _data.isValidElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable)
                             && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[(!isHbar*i+isHbar*l)],
-                                                                                    _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().val)
-                            && range.isInside(_data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).getNum().val))
+                                                                                    _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().asCF64())
+                            && range.isInside(_data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).getNum().asCF64()))
                         {
-                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().val.real();
+                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().asF64();
                             nCount++;
                         }
                     }
@@ -1293,15 +1293,15 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
 
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                if (xInterval.isInside(_data.getElement(_idx.row[i], _idx.col[XCOORD], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER)
-                    && yInterval.isInside(_data.getElement(_idx.row[i], _idx.col[YCOORD], _histParams.sTable).getNum().val, Interval::INCLUDE_LOWER))
+                if (xInterval.isInside(_data.getElement(_idx.row[i], _idx.col[XCOORD], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER)
+                    && yInterval.isInside(_data.getElement(_idx.row[i], _idx.col[YCOORD], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER))
                 {
                     if (_idx.col.size() == 3)
                     {
-                        if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val))
+                        if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asCF64()))
                         {
                             if (_histParams.bSum || _histParams.bAvg)
-                                dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().val.real();
+                                dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asF64();
                             else
                                 dSum++;
 
@@ -1312,9 +1312,9 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
                     {
                         for (size_t l = 0; l < _idx.row.size(); l++)
                         {
-                            if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().val))
+                            if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().asCF64()))
                             {
-                                dSum += _data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().val.real();
+                                dSum += _data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().asF64();
                                 nCount++;
                             }
                         }
@@ -1792,8 +1792,8 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         for (size_t j = 2; j < _idx.col.size(); j++)
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable)
-                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().val)
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().val))
+                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
+                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64()))
                 nMax++;
         }
     }
@@ -2035,7 +2035,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
         _histParams.nBin[XCOORD] = vResults.getAsScalarInt();
 
         if (vResults.size() > 1)
-            _histParams.nBin[YCOORD] = vResults[1].getNum().asInt();
+            _histParams.nBin[YCOORD] = vResults[1].getNum().asI64();
         else
             _histParams.nBin[YCOORD] = _histParams.nBin[XCOORD];
 
@@ -2050,10 +2050,10 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     if (vResults.size())
     {
-        _histParams.binWidth[XCOORD] = vResults.front().getNum().val.real();
+        _histParams.binWidth[XCOORD] = vResults.front().getNum().asF64();
 
         if (vResults.size() > 1)
-            _histParams.binWidth[YCOORD] = vResults[1].getNum().val.real();
+            _histParams.binWidth[YCOORD] = vResults[1].getNum().asF64();
         else
             _histParams.binWidth[YCOORD] = _histParams.binWidth[XCOORD];
 

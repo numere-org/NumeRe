@@ -686,7 +686,7 @@ static void readAndParseLegacyIntervals(std::string& sExpr, const std::string& s
         if (isNotEmptyExpression(indices[i]))
         {
             _parser.SetExpr(indices[i]);
-            vInterval.push_back(_parser.Eval().front().getNum().val.real());
+            vInterval.push_back(_parser.Eval().front().getNum().asF64());
         }
         else
             vInterval.push_back(NAN);
@@ -778,7 +778,7 @@ std::vector<double> readAndParseIntervals(std::string& sExpr, mu::Parser& _parse
                     if (isNotEmptyExpression(indices[j]))
                     {
                         _parser.SetExpr(indices[j]);
-                        vInterval.push_back(_parser.Eval().front().getNum().val.real());
+                        vInterval.push_back(_parser.Eval().front().getNum().asF64());
                     }
                     else
                         vInterval.push_back(NAN);

@@ -27,7 +27,7 @@
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
-double intPower(double, int);
+double intPower(double, int64_t);
 
 // toString function implementations
 // There's an overwrite for mostly every variable type

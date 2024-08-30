@@ -355,12 +355,7 @@ size_t Memory::getSize() const
 mu::Value Memory::readMem(size_t _nLine, size_t _nCol) const
 {
     if (memArray.size() > _nCol && memArray[_nCol])
-    {
-        if (memArray[_nCol]->m_type == TableColumn::TYPE_STRING)
-            return memArray[_nCol]->getValueAsInternalString(_nLine);
-        else
-            return memArray[_nCol]->getValue(_nLine);
-    }
+        return memArray[_nCol]->get(_nLine);
 
     return NAN;
 }
@@ -490,10 +485,7 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
                     continue;
                 }
 
-                if (memArray[_vCol[j]]->m_type == TableColumn::TYPE_STRING)
-                    vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsInternalString(_vLine[i]);
-                else
-                    vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
+                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }
         }
     }
@@ -1128,7 +1120,7 @@ std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol) const
 
         for (size_t i = 0; i < vConverted.size(); i++)
         {
-            vConverted[i] = convert(mu::Value(vConverted[i])).front().getNum().val;
+            vConverted[i] = convert(mu::Value(vConverted[i])).front().getNum().asCF64();
         }
 
         return vConverted;
@@ -1375,10 +1367,11 @@ NumeRe::TableMetaData Memory::getMetaData() const
 /// \param _nLine int
 /// \param _nCol int
 /// \param _dData const mu::Value&
+/// \param type TableColumn::ColumnType
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData)
+void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColumn::ColumnType type)
 {
     if (!memArray.size() && !_dData.isValid())
         return;
@@ -1386,12 +1379,8 @@ void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData)
     if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
-    convert_if_empty(memArray[_nCol], _nCol, _dData.isNumerical() ? TableColumn::TYPE_VALUE : TableColumn::TYPE_STRING);
-
-    if (_dData.isNumerical())
-        memArray[_nCol]->setValue(_nLine, _dData.getNum().val);
-    else
-        memArray[_nCol]->setValue(_nLine, _dData.getStr());
+    convert_if_empty(memArray[_nCol], _nCol, type != TableColumn::TYPE_NONE ? type : to_column_type(_dData));
+    memArray[_nCol]->set(_nLine, _dData);
 
     if (nCalcLines != -1 && (!_dData.isValid() || _nLine >= nCalcLines))
         nCalcLines = -1;
@@ -1486,25 +1475,20 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
     else if (_idx.col.size() > 1)
         nDirection = LINES;
 
-    for (size_t i = 0; i < _idx.row.size(); i++)
+    TableColumn::ColumnType t = to_column_type(_values);
+
+    for (size_t j = 0; j < _idx.col.size(); j++)
     {
-        for (size_t j = 0; j < _idx.col.size(); j++)
+        for (size_t i = 0; i < _idx.row.size(); i++)
         {
             if (nDirection == COLS)
             {
                 if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-                {
-                    if (_values[i].isNumerical()
-                        && (_values[i].as_cmplx().imag()
-                            || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
-                                && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
-                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
-                    else if (_values[i].isString())
-                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
-                }
+#warning TODO (numere#1#08/30/24): Auto conversion has a lot of problems
+                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
 
                 if (_values.size() > i)
-                    writeData(_idx.row[i], _idx.col[j], _values[i]);
+                    writeData(_idx.row[i], _idx.col[j], _values[i], t);
             }
             else
             {
@@ -1542,18 +1526,7 @@ void Memory::writeSingletonData(Indices& _idx, const mu::Value& _value)
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
             if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-            {
-                if (_value.isNumerical()
-                    && (_value.as_cmplx().imag()
-                        || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
-                            && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
-                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
-                else if (_value.isString())
-                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
-            }
-
-            if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-                convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
+                convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], to_column_type(_value));
 
             writeData(_idx.row[i], _idx.col[j], _value);
         }
@@ -3090,7 +3063,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().val;
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().asCF64();
 
             if (mu::isnan(val))
                 continue;
@@ -3212,7 +3185,7 @@ std::complex<double> Memory::med(const VectorIndex& _vLine, const VectorIndex& _
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().val;
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().asCF64();
 
             if (!mu::isnan(val))
                 vData.push_back(val.real());
@@ -3282,7 +3255,7 @@ std::complex<double> Memory::pct(const VectorIndex& _vLine, const VectorIndex& _
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().val;
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().asCF64();
 
             if (!mu::isnan(val))
                 vData.push_back(val.real());
@@ -3459,9 +3432,9 @@ std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, c
         vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
                            min(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
 
-        if (isnan(dMin) || dMin > readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real())
+        if (isnan(dMin) || dMin > readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64())
         {
-            dMin = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real();
+            dMin = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64();
             pos = i;
         }
     }
@@ -3546,9 +3519,9 @@ std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, c
         vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
                            max(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
 
-        if (isnan(dMax) || dMax < readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real())
+        if (isnan(dMax) || dMax < readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64())
         {
-            dMax = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real();
+            dMax = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64();
             pos = i;
         }
     }
@@ -3678,7 +3651,7 @@ std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols
             for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
             {
                 if (val.isNumerical()
-                    ? closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().val)
+                    ? closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().asCF64())
                     : memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr())
                     count++;
             }
@@ -3720,7 +3693,7 @@ std::vector<std::complex<double>> Memory::getIndex(size_t col, const mu::Array& 
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
             if (val.isNumerical()
-                ? closeEnough(memArray[col]->getValue(i), val.getNum().val)
+                ? closeEnough(memArray[col]->getValue(i), val.getNum().asCF64())
                 : memArray[col]->getValueAsInternalString(i) == val.getStr())
                 vIndex.push_back(i+1);
         }
@@ -4041,7 +4014,7 @@ std::complex<double> Memory::getCovariance(size_t col1, const VectorIndex& _vInd
 
     for (size_t i = 0; i < minSize; i++)
     {
-        vCov += (readMem(_vIndex1[i], col1).getNum().val - vAvg1) * (readMem(_vIndex2[i], col2).getNum().val - vAvg2);
+        vCov += (readMem(_vIndex1[i], col1).getNum().asCF64() - vAvg1) * std::conj(readMem(_vIndex2[i], col2).getNum().asCF64() - vAvg2);
     }
 
     return vCov / (minSize-1.0);
@@ -4212,7 +4185,7 @@ std::vector<std::complex<double>> Memory::getZScore(size_t col, const VectorInde
 
     for (size_t i = 0; i < _vIndex.size(); i++)
     {
-        vZScore.push_back((readMem(_vIndex[i], col).getNum().val - avgVal) / stdVal);
+        vZScore.push_back((readMem(_vIndex[i], col).getNum().asCF64() - avgVal) / stdVal);
     }
 
     return vZScore;
@@ -4529,7 +4502,7 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                         writeData(_n, _m,
                                   _region.retouch(_n - _boundary.rf() - 1,
                                                   _m - _boundary.cf() - 1,
-                                                  readMem(_n, _m).getNum().val,
+                                                  readMem(_n, _m).getNum().asCF64(),
                                                   med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1))));
                     }
                 }
@@ -4641,9 +4614,9 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     for (size_t n = 0; n < sizes.first; n++)
     {
         if (!_filter->isConvolution())
-            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().val));
+            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().asCF64()));
         else
-            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().val);
+            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().asCF64());
     }
 
     // If the filter is a convolution, store the new value here
@@ -4708,9 +4681,9 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
         for (size_t m = 0; m < sizes.second; m++)
         {
             if (!_filter->isConvolution())
-                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().val));
+                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().asCF64()));
             else
-                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().val);
+                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().asCF64());
         }
     }
 
@@ -5095,7 +5068,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
     {
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().val.real();
+            dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
         }
 
         // If the resampler doesn't accept a further line

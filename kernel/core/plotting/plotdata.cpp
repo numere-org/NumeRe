@@ -21,6 +21,7 @@
 #include <utility>
 #include "plotdata.hpp"
 #include "../../kernel.hpp"
+#include "../utils/filecheck.hpp"
 #define STYLES_COUNT 20
 
 extern mglGraph _fontData;
@@ -280,7 +281,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "alpha", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=')+5));
-            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().front().getNum().val.real();
+            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().front().getNum().asF64();
 
             if (floatSettings[FLOAT_ALPHAVAL] < 0 || floatSettings[FLOAT_ALPHAVAL] > 1)
                 floatSettings[FLOAT_ALPHAVAL] = 0.5;
@@ -289,7 +290,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if (findParameter(sCmd, "transparency", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "transparency", '=')+12));
-            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().front().getNum().val.real();
+            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().front().getNum().asF64();
 
             if (floatSettings[FLOAT_ALPHAVAL] < 0 || floatSettings[FLOAT_ALPHAVAL] > 1)
                 floatSettings[FLOAT_ALPHAVAL] = 0.5;
@@ -431,7 +432,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         intSettings[INT_SAMPLES] = _parser.Eval().getAsScalarInt();
 
-        if (isnan(_parser.Eval().front().getNum().val.real()) || isinf(_parser.Eval().front().getNum().val.real()))
+        if (isnan(_parser.Eval().front().getNum().asF64()) || isinf(_parser.Eval().front().getNum().asF64()))
             intSettings[INT_SAMPLES] = 100;
     }
 
@@ -465,18 +466,18 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             {
                 int nResults;
                 mu::Array* dTemp = evaluateNumerical(nResults, sTemp);
-                dRotateAngles[0] = dTemp[0].front().getNum().val.real();
-                dRotateAngles[1] = dTemp[1].front().getNum().val.real();
+                dRotateAngles[0] = dTemp[0].front().getNum().asF64();
+                dRotateAngles[1] = dTemp[1].front().getNum().asF64();
             }
             else if (!sTemp.find(','))
             {
                 _parser.SetExpr(sTemp.substr(1));
-                dRotateAngles[1] = _parser.Eval().front().getNum().val.real();
+                dRotateAngles[1] = _parser.Eval().front().getNum().asF64();
             }
             else if (sTemp.find(',') == sTemp.length()-1)
             {
                 _parser.SetExpr(sTemp.substr(0,sTemp.length()-1));
-                dRotateAngles[0] = _parser.Eval().front().getNum().val.real();
+                dRotateAngles[0] = _parser.Eval().front().getNum().asF64();
             }
 
             for (size_t i = 0; i < 2; i++)
@@ -517,8 +518,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             {
                 for (size_t i = 0; i < 3; i++)
                 {
-                    if (i < dTemp[0].size() && !isnan(dTemp[0][i].getNum().val.real()) && !isinf(dTemp[0][i].getNum().val.real()))
-                        dOrigin[i] = dTemp[0][i].getNum().val.real();
+                    if (i < dTemp[0].size() && !isnan(dTemp[0][i].getNum().asF64()) && !isinf(dTemp[0][i].getNum().asF64()))
+                        dOrigin[i] = dTemp[0][i].getNum().asF64();
                     else
                         dOrigin[i] = 0.0;
                 }
@@ -550,11 +551,11 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
                 for (size_t i = 0; i < 3; i++)
                 {
                     if (i < dTemp[0].size()
-                        && !isnan(dTemp[0][i].getNum().val.real())
-                        && !isinf(dTemp[0][i].getNum().val.real())
-                        && dTemp[0][i].getNum().val.real() <= 5
-                        && dTemp[0][i].getNum().val.real() >= 0)
-                        nSlices[i] = dTemp[0][i].getNum().asInt();
+                        && !isnan(dTemp[0][i].getNum().asF64())
+                        && !isinf(dTemp[0][i].getNum().asF64())
+                        && dTemp[0][i].getNum().asF64() <= 5
+                        && dTemp[0][i].getNum().asF64() >= 0)
+                        nSlices[i] = dTemp[0][i].getNum().asI64();
                     else
                         nSlices[i] = 1;
                 }
@@ -578,8 +579,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
 
             if (dTemp[0].size() >= 2)
             {
-                nTargetGUI[0] = dTemp[0][0].getNum().asInt();
-                nTargetGUI[1] = dTemp[0][1].getNum().asInt();
+                nTargetGUI[0] = dTemp[0][0].getNum().asI64();
+                nTargetGUI[1] = dTemp[0][1].getNum().asI64();
             }
         }
     }
@@ -595,8 +596,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
 
             if (dTemp[0].size() >= 2)
             {
-                intSettings[INT_SIZE_X] = dTemp[0][0].getNum().asInt();
-                intSettings[INT_SIZE_Y] = dTemp[0][1].getNum().asInt();
+                intSettings[INT_SIZE_X] = dTemp[0][0].getNum().asI64();
+                intSettings[INT_SIZE_Y] = dTemp[0][1].getNum().asI64();
 
                 if (intSettings[INT_SIZE_X] > 0 && intSettings[INT_SIZE_Y] > 0)
                     floatSettings[FLOAT_ASPECT] = intSettings[INT_SIZE_X] / (double)intSettings[INT_SIZE_Y];
@@ -671,7 +672,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         size_t nPos = findParameter(sCmd, "animate", '=')+7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         intSettings[INT_ANIMATESAMPLES] = _parser.Eval().getAsScalarInt();
-        if (intSettings[INT_ANIMATESAMPLES] && !mu::isinf(_parser.Eval().front().getNum().val) && !mu::isnan(_parser.Eval().front().getNum()))
+        if (intSettings[INT_ANIMATESAMPLES] && !mu::isinf(_parser.Eval().front().getNum().asCF64()) && !mu::isnan(_parser.Eval().front().getNum()))
             logicalSettings[LOG_ANIMATE] = true;
         else
         {
@@ -689,7 +690,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         size_t nPos = findParameter(sCmd, "marks", '=')+5;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         intSettings[INT_MARKS] = _parser.Eval().getAsScalarInt();
-        if (!intSettings[INT_MARKS] || isinf(_parser.Eval().front().getNum().val.real()) || isnan(_parser.Eval().front().getNum().val.real()))
+        if (!intSettings[INT_MARKS] || isinf(_parser.Eval().front().getNum().asF64()) || isnan(_parser.Eval().front().getNum().asF64()))
             intSettings[INT_MARKS] = 0;
         if (intSettings[INT_MARKS] > 9)
             intSettings[INT_MARKS] = 9;
@@ -704,7 +705,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         size_t nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        floatSettings[FLOAT_TEXTSIZE] = _parser.Eval().front().getNum().val.real();
+        floatSettings[FLOAT_TEXTSIZE] = _parser.Eval().front().getNum().asF64();
 
         if (isinf(floatSettings[FLOAT_TEXTSIZE]) || isnan(floatSettings[FLOAT_TEXTSIZE]))
             floatSettings[FLOAT_TEXTSIZE] = 5;
@@ -717,7 +718,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     {
         size_t nPos = findParameter(sCmd, "aspect", '=') + 6;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        floatSettings[FLOAT_ASPECT] = _parser.Eval().front().getNum().val.real();
+        floatSettings[FLOAT_ASPECT] = _parser.Eval().front().getNum().asF64();
         if (floatSettings[FLOAT_ASPECT] <= 0 || isnan(floatSettings[FLOAT_ASPECT]) || isinf(floatSettings[FLOAT_ASPECT]))
             floatSettings[FLOAT_ASPECT] = 4/3;
     }
@@ -752,10 +753,10 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "bars", '=')+4));
-        floatSettings[FLOAT_BARS] = _parser.Eval().front().getNum().val.real();
+        floatSettings[FLOAT_BARS] = _parser.Eval().front().getNum().asF64();
         if (floatSettings[FLOAT_BARS]
-            && !isinf(_parser.Eval().front().getNum().val.real())
-            && !isnan(_parser.Eval().front().getNum().val.real())
+            && !isinf(_parser.Eval().front().getNum().asF64())
+            && !isnan(_parser.Eval().front().getNum().asF64())
             && (floatSettings[FLOAT_BARS] < 0.0 || floatSettings[FLOAT_BARS] > 1.0))
             floatSettings[FLOAT_BARS] = 0.9;
         floatSettings[FLOAT_HBARS] = 0.0;
@@ -770,10 +771,10 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "hbars", '=')+5));
-        floatSettings[FLOAT_HBARS] = _parser.Eval().front().getNum().val.real();
+        floatSettings[FLOAT_HBARS] = _parser.Eval().front().getNum().asF64();
         if (floatSettings[FLOAT_HBARS]
-            && !isinf(_parser.Eval().front().getNum().val.real())
-            && !isnan(_parser.Eval().front().getNum().val.real())
+            && !isinf(_parser.Eval().front().getNum().asF64())
+            && !isnan(_parser.Eval().front().getNum().asF64())
             && (floatSettings[FLOAT_HBARS] < 0.0 || floatSettings[FLOAT_HBARS] > 1.0))
             floatSettings[FLOAT_HBARS] = 0.9;
         floatSettings[FLOAT_BARS] = 0.0;
@@ -788,7 +789,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "perspective", '=') && (nType == ALL || nType & GLOBAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "perspective", '=')+11));
-        floatSettings[FLOAT_PERSPECTIVE] = fabs(_parser.Eval().front().getNum().val);
+        floatSettings[FLOAT_PERSPECTIVE] = fabs(_parser.Eval().front().getNum().asCF64());
         if (floatSettings[FLOAT_PERSPECTIVE] >= 1.0)
             floatSettings[FLOAT_PERSPECTIVE] = 0.0;
     }
@@ -839,7 +840,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
                 if (i)
                     _lHlines.push_back(Line());
 
-                _lHlines[i+2].dPos = v[0][i].getNum().val.real();
+                _lHlines[i+2].dPos = v[0][i].getNum().asF64();
             }
 
             std::string sDescList = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
@@ -894,7 +895,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
                 if (i)
                     _lVLines.push_back(Line());
 
-                _lVLines[i+2].dPos = v[0][i].getNum().val.real();
+                _lVLines[i+2].dPos = v[0][i].getNum().asF64();
             }
 
             std::string sDescList = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
@@ -976,7 +977,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[0].dPos = _parser.Eval().front().getNum().val.real();
+            _lVLines[0].dPos = _parser.Eval().front().getNum().asF64();
             _lVLines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
             if (sTemp.length())
                 _lVLines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0, STRINGEXTRACT);
@@ -992,7 +993,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[1].dPos = _parser.Eval().front().getNum().val.real();
+            _lVLines[1].dPos = _parser.Eval().front().getNum().asF64();
             _lVLines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0, STRINGEXTRACT);
             if (sTemp.length())
                 _lVLines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
@@ -1013,8 +1014,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             {
                 int nRes;
                 mu::Array minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
-                _AddAxes[0].ivl.reset(minval.front().getNum().val,
-                                      evaluateNumerical(nRes, getNextArgument(sTemp, true))[0].front().getNum().val);
+                _AddAxes[0].ivl.reset(minval.front().getNum().asCF64(),
+                                      evaluateNumerical(nRes, getNextArgument(sTemp, true))[0].front().getNum().asCF64());
 
                 if (getNextArgument(sTemp, false).length())
                 {
@@ -1059,8 +1060,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             {
                 int nRes;
                 mu::Array minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
-                _AddAxes[1].ivl.reset(minval.front().getNum().val,
-                                      evaluateNumerical(nRes, getNextArgument(sTemp, true))[0].front().getNum().val);
+                _AddAxes[1].ivl.reset(minval.front().getNum().asCF64(),
+                                      evaluateNumerical(nRes, getNextArgument(sTemp, true))[0].front().getNum().asCF64());
 
                 if (getNextArgument(sTemp, false).length())
                 {
@@ -1630,8 +1631,19 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         else if (findParameter(sCmd, "ogif", '='))
             nPos = findParameter(sCmd, "ogif", '=') + 4;
 
-        stringSettings[STR_FILENAME] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        stringSettings[STR_FILENAME] = getArgAtPos(__sCmd, nPos, ARGEXTRACT_NONE);
         StripSpaces(stringSettings[STR_FILENAME]);
+
+        // It is mostly possible to supply a file path without being enclosed
+        // in quotation marks. is_dir checks for that
+        if (!is_dir(stringSettings[STR_FILENAME]))
+        {
+            // String evaluation
+            mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+            _parser.SetExpr(stringSettings[STR_FILENAME]);
+            mu::Array v = _parser.Eval();
+            stringSettings[STR_FILENAME] = v.front().getStr();
+        }
 
         if (stringSettings[STR_FILENAME].length())
         {
@@ -1660,7 +1672,8 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
                      && stringSettings[STR_FILENAME].rfind('.') == std::string::npos)
                 stringSettings[STR_FILENAME] += ".png";
 
-            stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME], stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].rfind('.')));
+            stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME],
+                                                                              stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].rfind('.')));
         }
     }
 
@@ -1787,25 +1800,25 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         if ((nPos = findParameter(sCmd, "xscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[0] = _parser.Eval().front().getNum().val.real();
+            dAxisScale[0] = _parser.Eval().front().getNum().asF64();
         }
 
         if ((nPos = findParameter(sCmd, "yscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[1] = _parser.Eval().front().getNum().val.real();
+            dAxisScale[1] = _parser.Eval().front().getNum().asF64();
         }
 
         if ((nPos = findParameter(sCmd, "zscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[2] = _parser.Eval().front().getNum().val.real();
+            dAxisScale[2] = _parser.Eval().front().getNum().asF64();
         }
 
         if ((nPos = findParameter(sCmd, "cscale", '=')))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
-            dAxisScale[3] = _parser.Eval().front().getNum().val.real();
+            dAxisScale[3] = _parser.Eval().front().getNum().asF64();
         }
 
         for (int i = 0; i < 4; i++)
@@ -1836,8 +1849,17 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
 
         for (size_t i = 0; i < 4; i++)
         {
+            g_logger.info("ticks="+ sCustomTicks[i]);
             // Kind of a hack ...
-            replaceAll(sCustomTicks[i], "\",\"", "\n");
+#warning TODO (numere#1#08/30/24): Has to be done in a better way
+            replaceAll(sCustomTicks[i], "\", \"", "\n");
+            replaceAll(sCustomTicks[i], "\\n", "\n");
+
+            if (sCustomTicks[i].front() == '{' && sCustomTicks[i].back() == '}')
+                sCustomTicks[i] = sCustomTicks[i].substr(1, sCustomTicks[i].length()-2);
+
+            sCustomTicks[i] = removeQuotationMarks(sCustomTicks[i]);
+            g_logger.info("ticks="+ sCustomTicks[i]);
         }
     }
 

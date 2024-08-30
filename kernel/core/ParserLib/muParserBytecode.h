@@ -154,8 +154,8 @@ namespace mu
 			void AddVal(const Array& a_fVal);
 			void AddOp(ECmdCode a_Oprt);
 			void AddIfElse(ECmdCode a_Oprt);
-			void AddAssignOp(Variable* a_pVar);
-			void AddAssignOp(const VarArray& a_varArray);
+			void AddAssignOp(Variable* a_pVar, ECmdCode assignmentCode);
+			void AddAssignOp(const VarArray& a_varArray, ECmdCode assignmentCode);
 			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway);
 			void AddMethod(const std::string& a_method, int a_iArgc);
 

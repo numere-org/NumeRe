@@ -4,7 +4,7 @@
 #include <cmath>
 #include "muParserError.h"
 
-std::complex<double> intPower(const std::complex<double>&, int);
+std::complex<double> intPower(const std::complex<double>&, int64_t);
 
 namespace mu
 {

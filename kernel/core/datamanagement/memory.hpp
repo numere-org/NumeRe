@@ -157,7 +157,7 @@ class Memory : public Sorter
 
 		// WRITE ACCESS METHODS
 		void writeSingletonData(Indices& _idx, const mu::Value& _dData);
-		void writeData(int _nLine, int _nCol, const mu::Value& _dData);
+		void writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColumn::ColumnType type = TableColumn::TYPE_NONE);
 		void writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData);
 		void writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<double>& _dData);
 		void writeData(Indices& _idx, const mu::Array& _values);

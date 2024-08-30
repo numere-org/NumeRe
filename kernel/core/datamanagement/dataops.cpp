@@ -210,14 +210,14 @@ void append_data(CommandLineParser& cmdParser)
             auto vPar = cmdParser.getParsedParameterValue("head");
 
             if (vPar.size())
-                nArgument = intCast(vPar.front());
+                nArgument = vPar.getAsScalarInt();
         }
         else
         {
             auto vPar = cmdParser.getParsedParameterValue("h");
 
             if (vPar.size())
-                nArgument = intCast(vPar.front());
+                nArgument = vPar.getAsScalarInt();
         }
 
         info = _data.openFile(sFileList, false, false, nArgument, "", sFileFormat);
@@ -970,7 +970,7 @@ bool readImage(CommandLineParser& cmdParser)
     Memory* _table = _data.getTable(sTargetCache);
 
     // Write the axes to the target cache
-    for (int i = 0; i < nWidth; i++)
+    for (uint32_t i = 0; i < nWidth; i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;
@@ -978,7 +978,7 @@ bool readImage(CommandLineParser& cmdParser)
         _table->writeData(_idx.row[i], _idx.col.front(), i + 1);
     }
 
-    for (int i = 0; i < nHeight; i++)
+    for (uint32_t i = 0; i < nHeight; i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;
@@ -986,11 +986,11 @@ bool readImage(CommandLineParser& cmdParser)
         _table->writeData(_idx.row[i], _idx.col[1], i + 1);
 
         if (sChannels == "grey")
-            _table->writeData(rowmax, _idx.col[2 + i], 0.0);
+            _table->writeData(rowmax, _idx.col[2 + i], (uint8_t)0);
         else
         {
             for (size_t n = 0; n < sChannels.length(); n++)
-                _table->writeData(rowmax, _idx.col[2 + i + n * nHeight], 0.0);
+                _table->writeData(rowmax, _idx.col[2 + i + n * nHeight], (uint8_t)0);
         }
     }
 

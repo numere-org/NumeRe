@@ -91,7 +91,7 @@ void createQrCode(CommandLineParser& cmdParser)
     {
         mu::Array res = cmdParser.getParsedParameterValue("level");
 
-        if (res.size() && res.front().getNum().val.real() >= 0 && res.front().getNum().val.real() <= 3)
+        if (res.size() && res.front().getNum().asF64() >= 0 && res.front().getNum().asF64() <= 3)
             level = (QrCode::Ecc)res.getAsScalarInt();
     }
 
@@ -108,9 +108,9 @@ void createQrCode(CommandLineParser& cmdParser)
         {
             std::ostringstream Temp;
             Temp << std::hex;
-            Temp << std::setw(2) << std::setfill('0') << res[0].getNum().asInt();
-            Temp << std::setw(2) << std::setfill('0') << res[1].getNum().asInt();
-            Temp << std::setw(2) << std::setfill('0') << res[2].getNum().asInt();
+            Temp << std::setw(2) << std::setfill('0') << res[0].getNum().asI64();
+            Temp << std::setw(2) << std::setfill('0') << res[1].getNum().asI64();
+            Temp << std::setw(2) << std::setfill('0') << res[2].getNum().asI64();
             color = Temp.str();
         }
     }

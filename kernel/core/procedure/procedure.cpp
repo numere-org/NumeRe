@@ -2510,11 +2510,11 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
             // Rethrow to determine the exception type
             rethrow_exception(e_ptr);
         }
-        catch (mu::Parser::exception_type& e)
+        catch (mu::ParserError& e)
         {
             // Catch and convert parser errors
             NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.GetExpr() + "'");
+            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): '" + e.GetExpr() + "'");
         }
         catch (SyntaxError& e)
         {
@@ -2532,11 +2532,17 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
                 NumeReKernel::failMessage("@ " + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
             }
+            else if (e.errorcode == SyntaxError::ASSERTION_ERROR)
+            {
+                // Mark default errors only with the failing expression
+                NumeReKernel::getInstance()->getDebugger().finalizeCatched();
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: '" + e.getExpr() + "'");
+            }
             else
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.getExpr() + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): '" + e.getExpr() + "'");
             }
         }
         catch (...)

@@ -14,7 +14,7 @@
 static bool checkInvalidChars(std::string sPathname)
 {
     // Define the invalid chars
-    const std::string sINVALID_CHARS = "\"#%&|*?";
+    const std::string sINVALID_CHARS = "\"#%&|";
 
     // Go through all chars and check for invalid ones
     for (size_t i = 0; i < sPathname.length(); i++)
@@ -42,7 +42,15 @@ bool is_dir(std::string sPathname)
 
     // Get the FileSystem instance to replace symbols in the file name using an existing method
     FileSystem& fileSystemInstance = NumeReKernel::getInstance()->getFileSystem();
-    sPathname = fileSystemInstance.ValidFolderName(sPathname, false);
+
+    try
+    {
+        sPathname = fileSystemInstance.ValidFolderName(sPathname, false);
+    }
+    catch (...)
+    {
+        return false;
+    }
 
     // Check for double ':' at the beginning of the path or left over '<' '>' symbols
     if (sPathname.find(':', 2) != std::string::npos || sPathname.find_first_of("<>") != std::string::npos)
@@ -72,7 +80,14 @@ bool is_file(std::string sPathname)
 
     // Get the FileSystem instance to replace symbols in the file name using an existing method
     FileSystem& fileSystemInstance = NumeReKernel::getInstance()->getFileSystem();
-    sPathname = fileSystemInstance.ValidFileName(sPathname, "", false, false);
+    try
+    {
+        sPathname = fileSystemInstance.ValidFileName(sPathname, "", false, false);
+    }
+    catch (...)
+    {
+        return false;
+    }
 
     // Check for double ':' at the beginning of the path or left over '<' '>' symbols
     if (sPathname.find(':', 2) != std::string::npos || sPathname.find_first_of("<>") != std::string::npos)

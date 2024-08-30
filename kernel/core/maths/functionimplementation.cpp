@@ -442,7 +442,7 @@ mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
 {
     mu::Value vStd = 0.0;
     mu::Value vMean = numfnc_Avg(vElements, nElements).front();
-    mu::Value vNum = numfnc_Num(vElements, nElements).front();
+    mu::Value vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
 
     if (nElements == 1)
     {
@@ -588,7 +588,7 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
             _mem.writeData(i, 0, vElements[0][i]);
         }
 
-        return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[0].back().getNum().val));
+        return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[0].back().getNum().asCF64()));
     }
 
     for (int i = 0; i < nElements-1; i++)
@@ -596,7 +596,7 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
         _mem.writeData(i, 0, vElements[i].front());
     }
 
-    return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1].front().getNum().val));
+    return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1].front().getNum().asCF64()));
 
 #endif // PARSERSTANDALONE
 }
@@ -1063,7 +1063,7 @@ mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
 {
-    return numfnc_Sum(vElements, nElements) / numfnc_Num(vElements, nElements);
+    return numfnc_Sum(vElements, nElements) / mu::Value(numfnc_Num(vElements, nElements).front().getNum().asCF64());
 }
 
 
@@ -1181,9 +1181,17 @@ static std::complex<double> round_impl(const std::complex<double>& vToRound, con
 }
 
 
-static std::complex<double> numfnc_rint(const std::complex<double>& val)
+static mu::Value numfnc_rint(const mu::Value& val)
 {
-    return std::complex<double>(std::rint(val.real()), std::rint(val.imag()));
+    const mu::Numerical& nval = val.getNum();
+
+    if (nval.getType() <= mu::Numerical::UI64)
+        return nval;
+
+    if (nval.getType() <= mu::Numerical::F64 || nval.isInt())
+        return (int64_t)std::rint(nval.asCF64().real());
+
+    return std::complex<double>(std::rint(nval.asCF64().real()), std::rint(nval.asCF64().imag()));
 }
 
 /////////////////////////////////////////////////
@@ -2513,7 +2521,7 @@ mu::Array numfnc_roof(const mu::Array& x)
 /////////////////////////////////////////////////
 mu::Array numfnc_rect(const mu::Array& x, const mu::Array& x0, const mu::Array& x1)
 {
-    return x > x1 || x < x0;
+    return x > x0 && x < x1;
 }
 
 static std::complex<double> ivl_impl(const std::complex<double>& x, const std::complex<double>& x0, const std::complex<double>& x1, const std::complex<double>& lborder, const std::complex<double>& rborder)

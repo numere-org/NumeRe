@@ -76,8 +76,12 @@ int main()
     _parser.DefineFun("substr", strfnc_substr, true, 1);
     _parser.DefineFun("firstch", strfnc_firstch);
     _parser.DefineFun("lastch", strfnc_lastch);
+    _parser.DefineFun("to_string", strfnc_to_string);
     _parser.DefineFun("strjoin", strfnc_strjoin, true, 2);
+    _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);
     _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);
+
+    _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
 
     std::string sInput;
     int nResults;
@@ -122,7 +126,8 @@ int main()
 
             for (int i = 0; i < nResults; i++)
             {
-                std::cout << i+1 << ">> " << res[i].print() << " [" << res[i].printDims() << " " << res[i].getCommonTypeAsString() << "]" << std::endl;
+                std::cout << i+1 << ">> " << res[i].print() << " [" << res[i].printDims() << " " << res[i].getCommonTypeAsString()
+                          << " w/ " << res[i].getBytes() << " byte]" << std::endl;
             }
         }
         catch (...)

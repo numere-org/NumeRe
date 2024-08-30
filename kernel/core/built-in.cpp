@@ -441,7 +441,7 @@ static bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t
     _parser.SetExpr(sArg);
     mu::Array res = _parser.Eval();
 
-    if (mu::isnan(res.front()) || mu::isinf(_parser.Eval().front().getNum().val))
+    if (mu::isnan(res.front()) || mu::isinf(_parser.Eval().front().getNum().asCF64()))
         return false;
 
     nArgument = abs(res.getAsScalarInt());

@@ -216,9 +216,9 @@ namespace mu
     */
     void Parser::InitOprt()
     {
-        DefineInfixOprt("-", UnaryMinus, -1, true);
-        DefineInfixOprt("+", UnaryPlus, -1, true);
-        DefineInfixOprt("!", LogicalNot, -1, true);
+        DefineInfixOprt("-", UnaryMinus);
+        DefineInfixOprt("+", UnaryPlus);
+        DefineInfixOprt("!", LogicalNot);
     }
 
     //---------------------------------------------------------------------------

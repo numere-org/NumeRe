@@ -224,12 +224,12 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
 /// the GUI. Returns the name of the onopen event
 /// handler, if any.
 ///
-/// \param sLayoutScript std::string&
+/// \param sLayoutScript std::string
 /// \param layout tinyxml2::XMLDocument*
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument* layout)
+static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDocument* layout)
 {
     bool isFile = true;
     std::string sThisFolder;
@@ -442,20 +442,13 @@ static int getItemId(const std::string& sCmd)
 /// window information describing the window with
 /// the selected ID.
 ///
-/// \param sExpr const std::string&
+/// \param cmdParser CommandLineParser&
 /// \return NumeRe::WindowInformation
 ///
 /////////////////////////////////////////////////
-static NumeRe::WindowInformation getWindow(const std::string& sExpr)
+static NumeRe::WindowInformation getWindow(CommandLineParser& cmdParser)
 {
-    std::string sCurExpr = sExpr;
-
-    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sCurExpr))
-        getDataElements(sCurExpr, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
-
-    NumeReKernel::getInstance()->getParser().SetExpr(sCurExpr);
-    int windowID = NumeReKernel::getInstance()->getParser().Eval().getAsScalarInt();
-
+    int64_t windowID = cmdParser.parseExpr().front().getAsScalarInt();
     return NumeReKernel::getInstance()->getWindowManager().getWindowInformation(windowID);
 }
 
@@ -465,22 +458,21 @@ static NumeRe::WindowInformation getWindow(const std::string& sExpr)
 /// reads from windows.
 ///
 /// \param cmdParser CommandLineParser&
-/// \param sExpr const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void getParametersFromWindow(CommandLineParser& cmdParser, const std::string& sExpr)
+static void getParametersFromWindow(CommandLineParser& cmdParser)
 {
     const std::string& sParList = cmdParser.getParameterList();
 
     // Get value of window item
     int itemID = getItemId(sParList);
-    NumeRe::WindowInformation winInfo = getWindow(sExpr);
+    NumeRe::WindowInformation winInfo = getWindow(cmdParser);
 
     // If the window does not exist, the pointer
     // is a nullptr type
     if (!winInfo.window || winInfo.nStatus != NumeRe::STATUS_RUNNING)
-        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), sExpr);
+        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), cmdParser.getExpr());
 
     if (findParameter(sParList, "value"))
     {
@@ -526,22 +518,21 @@ static void getParametersFromWindow(CommandLineParser& cmdParser, const std::str
 /// writes in windows.
 ///
 /// \param cmdParser CommandLineParser&
-/// \param sExpr const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void setParametersInWindow(CommandLineParser& cmdParser, const std::string& sExpr)
+static void setParametersInWindow(CommandLineParser& cmdParser)
 {
     const std::string& sParList = cmdParser.getParameterList();
 
     // Change value of window item
     int itemID = getItemId(sParList);
-    NumeRe::WindowInformation winInfo = getWindow(sExpr);
+    NumeRe::WindowInformation winInfo = getWindow(cmdParser);
 
     // If the window does not exist, the pointer
     // is a nullptr type
     if (!winInfo.window || winInfo.nStatus != NumeRe::STATUS_RUNNING)
-        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), sExpr);
+        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), cmdParser.getExpr());
 
     // Get the new value
     if (findParameter(sParList, "value", '='))
@@ -595,10 +586,10 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
         int sel1 = 1, sel2 = 0;
 
         if (sel.size() > 0)
-            sel1 = sel[0].getNum().asInt();
+            sel1 = sel[0].getNum().asI64();
 
         if (sel.size() > 1)
-            sel2 = sel[1].getNum().asInt();
+            sel2 = sel[1].getNum().asI64();
 
         cmdParser.setReturnValue(toString(winInfo.window->setItemSelection(sel1, sel2, itemID)));
     }
@@ -628,18 +619,14 @@ void windowCommand(CommandLineParser& cmdParser)
     NumeRe::WindowManager& winManager = NumeReKernel::getInstance()->getWindowManager();
 
     // Find the expression part
-    std::string sExpr = cmdParser.getExpr();
-    std::string sParList = cmdParser.getParameterList();
-
-    NumeReKernel::getInstance()->getParser().SetExpr(sExpr);
-    sExpr = NumeReKernel::getInstance()->getParser().Eval().printVals();
+    const std::string& sParList = cmdParser.getParameterList();
 
     // Determine, what the user wants to do
     if (findParameter(sParList, "getitems", '='))
     {
         // get IDs of all selected items
         std::string sItemType = getArgAtPos(sParList, findParameter(sParList, "getitems", '=')+8);
-        NumeRe::WindowInformation winInfo = getWindow(sExpr);
+        NumeRe::WindowInformation winInfo = getWindow(cmdParser);
         mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
         // If the window does not exist, the pointer
@@ -672,13 +659,13 @@ void windowCommand(CommandLineParser& cmdParser)
             throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), cmdParser.getExpr());
     }
     else if (findParameter(sParList, "get"))
-        getParametersFromWindow(cmdParser, sExpr);
+        getParametersFromWindow(cmdParser);
     else if (findParameter(sParList, "set"))
-        setParametersInWindow(cmdParser, sExpr);
+        setParametersInWindow(cmdParser);
     else if (findParameter(sParList, "close"))
     {
         // Close window
-        NumeRe::WindowInformation winInfo = getWindow(sExpr);
+        NumeRe::WindowInformation winInfo = getWindow(cmdParser);
 
         // If the window does not exist, the pointer
         // is a nullptr type
@@ -696,7 +683,7 @@ void windowCommand(CommandLineParser& cmdParser)
         // parse layout
         try
         {
-            sOnOpenEvent = parseLayoutScript(sExpr, layout);
+            sOnOpenEvent = parseLayoutScript(cmdParser.parseExprAsString(), layout);
         }
         catch (...)
         {

@@ -139,10 +139,10 @@ namespace NumeRe
                 {
                     // Re-create the current item as double
                     delete vClusterArray[_idx.row[i]];
-                    vClusterArray[_idx.row[i]] = new ClusterDoubleItem(data.get(i).getNum().val);
+                    vClusterArray[_idx.row[i]] = new ClusterDoubleItem(data.get(i).getNum().asCF64());
                 }
                 else
-                    vClusterArray[_idx.row[i]]->setDouble(data.get(i).getNum().val);
+                    vClusterArray[_idx.row[i]]->setDouble(data.get(i).getNum().asCF64());
             }
             else if (data.get(i).isString())
             {
@@ -561,7 +561,7 @@ namespace NumeRe
         if (v.getType() == mu::TYPE_STRING)
             setString(i, v.getStr());
         else if (v.getType() == mu::TYPE_NUMERICAL)
-            setDouble(i, v.getNum().val);
+            setDouble(i, v.getNum().asCF64());
     }
 
 
@@ -734,7 +734,7 @@ namespace NumeRe
             for (size_t i = 0; i < a.size(); i++)
             {
                 if (a[i].isNumerical())
-                    vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().val);
+                    vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().asCF64());
                 else if (a[i].isString())
                     vClusterArray[i] = new ClusterStringItem(a[i].getStr());
                 else
@@ -746,7 +746,7 @@ namespace NumeRe
             for (size_t i = 0; i < a.size(); i++)
             {
                 if (a[i].isNumerical())
-                    vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().val);
+                    vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().asCF64());
                 else if (a[i].isString())
                     vClusterArray[i] = new ClusterStringItem(a[i].getStr());
                 else

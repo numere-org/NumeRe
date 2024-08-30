@@ -162,6 +162,14 @@ namespace mu
         cmEQ,                  ///< Operator item:  equals
         cmLT,                  ///< Operator item:  less than
         cmGT,                  ///< Operator item:  greater than
+        cmASSIGN,              ///< Operator item:  Assignment operator
+        cmADDASGN,             ///< Operator item:  Addition-assignment operator
+        cmSUBASGN,             ///< Operator item:  Subtraction-assignment operator
+        cmMULASGN,             ///< Operator item:  Multiplication-assignment operator
+        cmDIVASGN,             ///< Operator item:  Division-assignment operator
+        cmPOWASGN,             ///< Operator item:  Power-assignment operator
+        cmINCR,                ///< Operator item:  Increment operator
+        cmDECR,                ///< Operator item:  Decrement operator
         cmADD,                 ///< Operator item:  add
         cmSUB,                 ///< Operator item:  subtract
         cmMUL,                 ///< Operator item:  multiply
@@ -169,7 +177,6 @@ namespace mu
         cmPOW,                 ///< Operator item:  y to the power of ...
         cmLAND,                ///< Operator item:  logical and
         cmLOR,                 ///< Operator item:  logical or
-        cmASSIGN,              ///< Operator item:  Assignment operator
         cmBO,                  ///< Operator item:  opening bracket
         cmBC,                  ///< Operator item:  closing bracket
         cmVO,                  ///< Operator item:  opening vector brace

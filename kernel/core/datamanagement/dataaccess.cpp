@@ -584,7 +584,6 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
 
     if (_idx.col.isString())
         bWriteFileName = true;
-#warning TODO (numere#1#08/06/24): Handle here the var2str parser conversion for tables
 
     // Handle the filename and headline access different from the usual data access
     if (!isCluster && bWriteFileName)
@@ -914,7 +913,7 @@ static void replaceEntityOccurence(std::string& sLine, const std::string& sEntit
                 nType = _parser.Eval().getAsScalarInt();
                 sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
                                       getMatchingParenthesis(StringView(sLine, sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
-                                      createTempVar(sEntityReplacement + "~cmp", isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef.front().getNum().val, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef.front().getNum().val, nType), _parser));
+                                      createTempVar(sEntityReplacement + "~cmp", isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef.front().getNum().asCF64(), nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef.front().getNum().asCF64(), nType), _parser));
             }
             else if (sLeft == "pct(")
             {
@@ -935,7 +934,7 @@ static void replaceEntityOccurence(std::string& sLine, const std::string& sEntit
                 dPct = _parser.Eval();
                 sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
                                       getMatchingParenthesis(StringView(sLine, sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
-                                      createTempVar(sEntityReplacement + "~pct", isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct.front().getNum().val) : _data.pct(sEntityName, _idx.row, _idx.col, dPct.front().getNum().val), _parser));
+                                      createTempVar(sEntityReplacement + "~pct", isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct.front().getNum().asCF64()) : _data.pct(sEntityName, _idx.row, _idx.col, dPct.front().getNum().asCF64()), _parser));
             }
             else //Fallback
                 sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
@@ -1284,7 +1283,7 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
 
     for (size_t i = 0; i < v[0].size(); i++)
     {
-        TableColumn::ColumnType type = _kernel->getMemoryManager().getType(VectorIndex(v[0][i].getNum().asInt() - 1), sTableName);
+        TableColumn::ColumnType type = _kernel->getMemoryManager().getType(VectorIndex(v[0][i].getNum().asI64() - 1), sTableName);
         vRet.push_back(TableColumn::typeToString(type));
     }
 
@@ -1373,7 +1372,7 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
 
     for (size_t i = 0; i < std::min(v[0].size(), v[1].size()); i++)
     {
-        _kernel->getMemoryManager().setUnit(v[0].get(i).getNum().asInt() - 1, sTableName, v[1].get(i).getStr());
+        _kernel->getMemoryManager().setUnit(v[0].get(i).getNum().asI64() - 1, sTableName, v[1].get(i).getStr());
     }
 
     return _kernel->getParser().CreateTempVar(v[1]);
@@ -1759,7 +1758,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
     if (nResults > 2)
     {
-        significance = v[2].front().getNum().val.real();
+        significance = v[2].front().getNum().asF64();
 
         if (nResults > 3)
             vIndex = VectorIndex(v[3]);

@@ -186,6 +186,41 @@ std::complex<double> DateTimeColumn::getValue(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DateTimeColumn::get(size_t elem) const
+{
+    if (elem < m_data.size())
+        return to_timePoint(m_data[elem]);
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Set a single string value.
 ///
 /// \param elem size_t
@@ -585,6 +620,41 @@ std::complex<double> LogicalColumn::getValue(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value LogicalColumn::get(size_t elem) const
+{
+    if (elem < m_data.size() && m_data[elem] != LOGICAL_NAN)
+        return m_data[elem] != 0.0;
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void LogicalColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Set a single string value.
 ///
 /// \param elem size_t
@@ -974,6 +1044,41 @@ std::string StringColumn::getValueAsStringLiteral(size_t elem) const
 std::complex<double> StringColumn::getValue(size_t elem) const
 {
     return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value StringColumn::get(size_t elem) const
+{
+    if (elem < m_data.size())
+        return m_data[elem];
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
 }
 
 
@@ -1448,6 +1553,41 @@ std::complex<double> CategoricalColumn::getValue(size_t elem) const
         return m_data[elem]+1;
 
     return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value CategoricalColumn::get(size_t elem) const
+{
+    if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
+        return mu::Category(m_data[elem]+1, m_categories[m_data[elem]]);
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CategoricalColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
 }
 
 
@@ -2074,6 +2214,116 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             }
         }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the types of a mu::Value
+/// instance into a single
+/// TableColumn::ColumnType type.
+///
+/// \param val const mu::Value&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType to_column_type(const mu::Value& val)
+{
+    if (val.isCategory())
+        return TableColumn::TYPE_CATEGORICAL;
+    else if (val.isString())
+        return TableColumn::TYPE_STRING;
+    else if (val.isNumerical())
+    {
+            g_logger.info(val.getNum().getTypeAsString());
+        switch (val.getNum().getType())
+        {
+            case mu::Numerical::LOGICAL:
+                return TableColumn::TYPE_LOGICAL;
+            case mu::Numerical::I8:
+                return TableColumn::TYPE_VALUE_I8;
+            case mu::Numerical::I16:
+                return TableColumn::TYPE_VALUE_I16;
+            case mu::Numerical::I32:
+                return TableColumn::TYPE_VALUE_I32;
+            case mu::Numerical::I64:
+                return TableColumn::TYPE_VALUE_I64;
+            case mu::Numerical::UI8:
+                return TableColumn::TYPE_VALUE_UI8;
+            case mu::Numerical::UI16:
+                return TableColumn::TYPE_VALUE_UI16;
+            case mu::Numerical::UI32:
+                return TableColumn::TYPE_VALUE_UI32;
+            case mu::Numerical::UI64:
+                return TableColumn::TYPE_VALUE_UI64;
+            case mu::Numerical::DATETIME:
+                return TableColumn::TYPE_DATETIME;
+            case mu::Numerical::F32:
+                return TableColumn::TYPE_VALUE_F32;
+            case mu::Numerical::F64:
+                return TableColumn::TYPE_VALUE_F64;
+            case mu::Numerical::CF32:
+                return TableColumn::TYPE_VALUE_CF32;
+            case mu::Numerical::CF64:
+                return TableColumn::TYPE_VALUE_CF64;
+        }
+    }
+
+    return TableColumn::TYPE_NONE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the types of a mu::Array
+/// instance into a single
+/// TableColumn::ColumnType type.
+///
+/// \param arr const mu::Array&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType to_column_type(const mu::Array& arr)
+{
+    if (arr.getCommonType() == mu::TYPE_CATEGORY)
+        return TableColumn::TYPE_CATEGORICAL;
+    else if (arr.getCommonType() == mu::TYPE_STRING
+             || arr.getCommonType() == mu::TYPE_MIXED)
+        return TableColumn::TYPE_STRING;
+    else if (arr.getCommonType() == TYPE_NUMERICAL)
+    {
+        switch (arr.getCommonNumericalType())
+        {
+            case mu::Numerical::LOGICAL:
+                return TableColumn::TYPE_LOGICAL;
+            case mu::Numerical::I8:
+                return TableColumn::TYPE_VALUE_I8;
+            case mu::Numerical::I16:
+                return TableColumn::TYPE_VALUE_I16;
+            case mu::Numerical::I32:
+                return TableColumn::TYPE_VALUE_I32;
+            case mu::Numerical::I64:
+                return TableColumn::TYPE_VALUE_I64;
+            case mu::Numerical::UI8:
+                return TableColumn::TYPE_VALUE_UI8;
+            case mu::Numerical::UI16:
+                return TableColumn::TYPE_VALUE_UI16;
+            case mu::Numerical::UI32:
+                return TableColumn::TYPE_VALUE_UI32;
+            case mu::Numerical::UI64:
+                return TableColumn::TYPE_VALUE_UI64;
+            case mu::Numerical::DATETIME:
+                return TableColumn::TYPE_DATETIME;
+            case mu::Numerical::F32:
+                return TableColumn::TYPE_VALUE_F32;
+            case mu::Numerical::F64:
+                return TableColumn::TYPE_VALUE_F64;
+            case mu::Numerical::CF32:
+                return TableColumn::TYPE_VALUE_CF32;
+            case mu::Numerical::CF64:
+                return TableColumn::TYPE_VALUE_CF64;
+        }
+    }
+
+    return TableColumn::TYPE_NONE;
 }
 
 

@@ -423,23 +423,23 @@ namespace mu
 
 	    \sa  ParserToken::ECmdCode
 	*/
-	void ParserByteCode::AddAssignOp(Variable* a_pVar)
+	void ParserByteCode::AddAssignOp(Variable* a_pVar, ECmdCode assignmentCode)
 	{
 		--m_iStackPos;
 
 		SToken tok;
-		tok.Cmd = cmASSIGN;
+		tok.Cmd = assignmentCode;
 		tok.m_data = SOprtData{.var{a_pVar}, .offset{0}};
 		m_vRPN.push_back(tok);
 	}
 
 
-	void ParserByteCode::AddAssignOp(const VarArray& a_varArray)
+	void ParserByteCode::AddAssignOp(const VarArray& a_varArray, ECmdCode assignmentCode)
 	{
 		--m_iStackPos;
 
 		SToken tok;
-		tok.Cmd = cmASSIGN;
+		tok.Cmd = assignmentCode;
 		tok.m_data = SOprtData{.var{a_varArray}, .offset{0}};
 		m_vRPN.push_back(tok);
 	}
@@ -754,35 +754,35 @@ namespace mu
 			switch (m_vRPN[i].Cmd)
 			{
 				case cmVAL:
-				    printFormatted("VAL \t[" + m_vRPN[i].Val().data2.print() + "]\n");
+				    printFormatted("VAL       \t[" + m_vRPN[i].Val().data2.print() + "]\n");
 					break;
 
 				case cmVAR:
-				    printFormatted("VAR \t[" + m_vRPN[i].Val().var->print() + "]\n");
+				    printFormatted("VAR       \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
 				case cmVARARRAY:
-				    printFormatted("VARARR \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+				    printFormatted("VARARR    \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
 					break;
 
 				case cmVARPOW2:
-				    printFormatted("VARPOW2 \t[" + m_vRPN[i].Val().var->print() + "]\n");
+				    printFormatted("VARPOW2   \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
 				case cmVARPOW3:
-					printFormatted("VARPOW3 \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					printFormatted("VARPOW3   \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
 				case cmVARPOW4:
-					printFormatted("VARPOW4 \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					printFormatted("VARPOW4   \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
 				case cmVARPOWN:
-					printFormatted("VARPOWN \t[" + m_vRPN[i].Val().var->print() + "] ^ [" + m_vRPN[i].Val().data.print() + "]\n");
+					printFormatted("VARPOWN   \t[" + m_vRPN[i].Val().var->print() + "] ^ [" + m_vRPN[i].Val().data.print() + "]\n");
 					break;
 
 				case cmVARMUL:
-					printFormatted("VARMUL \t[" + m_vRPN[i].Val().var->print() + "]");
+					printFormatted("VARMUL    \t[" + m_vRPN[i].Val().var->print() + "]");
 					printFormatted(" * [" + m_vRPN[i].Val().data.print() + "] + [" + m_vRPN[i].Val().data2.print() + "]\n");
 					break;
 
@@ -792,11 +792,11 @@ namespace mu
 					break;
 
 				case cmFUNC:
-				    printFormatted("CALL \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
+				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
 					break;
 
 				case cmMETHOD:
-				    printFormatted("CALL \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [METHOD: " + m_vRPN[i].Fun().name + "]\n");
+				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [METHOD: " + m_vRPN[i].Fun().name + "]\n");
 					break;
 
 				case cmLT:
@@ -843,11 +843,11 @@ namespace mu
 					break;
 
 				case cmIF:
-				    printFormatted("IF\t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
+				    printFormatted("IF        \t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
 					break;
 
 				case cmELSE:
-					printFormatted("ELSE\t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
+					printFormatted("ELSE      \t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
 					break;
 
 				case cmENDIF:
@@ -855,11 +855,39 @@ namespace mu
 					break;
 
 				case cmASSIGN:
-					printFormatted("ASSIGN \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					printFormatted("ASSIGN    \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmADDASGN:
+					printFormatted("ADDASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmSUBASGN:
+					printFormatted("SUBASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmMULASGN:
+					printFormatted("MULASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmDIVASGN:
+					printFormatted("DIVASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmPOWASGN:
+					printFormatted("POWASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmINCR:
+					printFormatted("INCR      \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmDECR:
+					printFormatted("DECR      \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
 					break;
 
 				default:
-				    printFormatted("(unknown \t(" + toString((int)m_vRPN[i].Cmd) + ")\n");
+				    printFormatted("unknown   \t(" + toString((int)m_vRPN[i].Cmd) + ")\n");
 					break;
 			} // switch cmdCode
 		} // while bytecode

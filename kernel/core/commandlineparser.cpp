@@ -20,6 +20,7 @@
 #include "../kernel.hpp"
 #include "utils/tools.hpp"            // For findCommand, extractCommandString and getMatchingParenthesis
 #include "maths/parser_functions.hpp" // For evaluateTargetOptionInCommand
+#include "utils/filecheck.hpp"
 
 // Prototype needed for file name conversion
 std::string removeQuotationMarks(const std::string& sString);
@@ -348,8 +349,8 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
     if (parseDataObjects && instance->getMemoryManager().containsTablesOrClusters(sExpr))
         getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
 
-    if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
-        convertVectorToExpression(sExpr);
+    //if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
+    //    convertVectorToExpression(sExpr);
 
     StripSpaces(sExpr);
 
@@ -532,11 +533,16 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 
     std::string sFileName = getArgAtPos(sParams, nParPos+4, ARGEXTRACT_NONE);
 
-    // String evaluation
-    mu::Parser& _parser = instance->getParser();
-    _parser.SetExpr(sFileName);
-    mu::Array v = _parser.Eval();
-    sFileName = v.front().getStr();
+    // It is mostly possible to supply a file path without being enclosed
+    // in quotation marks. is_dir checks for that
+    if (!is_dir(sFileName))
+    {
+        // String evaluation
+        mu::Parser& _parser = instance->getParser();
+        _parser.SetExpr(sFileName);
+        mu::Array v = _parser.Eval();
+        sFileName = v.front().getStr();
+    }
 
     // If a filename had been found, parse it here
     if (sFileName.length())
@@ -588,7 +594,7 @@ std::string CommandLineParser::getParsedParameterValueAsString(const std::string
     if (!nParPos)
         return sDefaultValue;
 
-    return getParsedParameterValue(sParameter).front().getStr();
+    return getParsedParameterValue(sParameter).printVals();
 }
 
 
@@ -625,7 +631,7 @@ mu::Array CommandLineParser::getParsedParameterValue(const std::string& sParamet
     // Numerical evaluation
     instance->getParser().SetExpr(sArg);
 
-    int nPrec = instance->getSettings().getPrecision();
+    //int nPrec = instance->getSettings().getPrecision();
     return instance->getParser().Eval();
 }
 

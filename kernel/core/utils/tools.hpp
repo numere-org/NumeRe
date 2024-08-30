@@ -218,12 +218,12 @@ inline int64_t intCast(const std::complex<double>& number)
 /** \brief Calculates the power of a number using an integer as exponent
  *
  * \param dNumber double
- * \param nExponent int
+ * \param nExponent int64_t
  * \return double
  *
  */
-double intPower(double dNumber, int nExponent);
-std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent);
+double intPower(double dNumber, int64_t nExponent);
+std::complex<double> intPower(const std::complex<double>& dNumber, int64_t nExponent);
 
 std::string getNextArgument(std::string& sArgList, bool bCut = true);
 std::string getNextIndex(std::string& sArgList, bool bCut = true);

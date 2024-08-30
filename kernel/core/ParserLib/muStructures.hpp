@@ -19,141 +19,13 @@
 #ifndef MUSTRUCTURES_HPP
 #define MUSTRUCTURES_HPP
 
-#include <string>
-#include <complex>
 #include <vector>
 
-#include "../utils/datetimetools.hpp"
+#include "muTypes.hpp"
+#include "muApply.hpp"
 
 namespace mu
 {
-    enum DataType
-    {
-        TYPE_VOID,
-        TYPE_NUMERICAL,
-        TYPE_STRING,
-        TYPE_CATEGORY,
-        TYPE_MIXED
-    };
-
-
-    // Abstraction of numerical values
-    struct Numerical
-    {
-        // Careful during adaption of these values bc. of internal calculations
-        enum NumericalType
-        {
-            LOGICAL,
-            I8,
-            I16,
-            I32,
-            I64,
-            UI8,
-            UI16,
-            UI32,
-            UI64,
-            DATETIME,
-            F32,
-            F64,
-            CF32,
-            CF64
-        };
-
-        private:
-            enum TypeFlags
-            {
-                TYPE_LOGICAL = 0x0,
-                TYPE_INT = 0x1,
-                TYPE_UINT = 0x2,
-                TYPE_FLOAT = 0x4,
-                TYPE_DATETIME = 0x8,
-                TYPE_COMPLEX = 0x10
-            };
-
-            enum InternalType
-            {
-                INT,
-                UINT,
-                COMPLEX
-            };
-
-            union
-            {
-                int64_t i64;
-                uint64_t ui64;
-                std::complex<double> cf64;
-            };
-
-            NumericalType m_type;
-            uint8_t m_bits;
-            uint8_t m_flags;
-
-            void getTypeInfo();
-            NumericalType getPromotion(const Numerical& other) const;
-            InternalType getConversion(NumericalType promotion) const;
-
-        public:
-            Numerical(int8_t data);
-            Numerical(uint8_t data);
-            Numerical(int16_t data);
-            Numerical(uint16_t data);
-            Numerical(int32_t data);
-            Numerical(uint32_t data);
-            Numerical(int64_t data, NumericalType type = I64);
-            Numerical(uint64_t data, NumericalType type = UI64);
-            Numerical(float data);
-            Numerical(double data);
-            Numerical(bool data);
-            Numerical(const std::complex<float>& data);
-            Numerical(const std::complex<double>& data = 0.0, NumericalType type = CF64);
-            Numerical(const sys_time_point& data);
-
-            static Numerical autoType(const std::complex<double>& data);
-
-            int64_t asI64() const;
-            uint64_t asUI64() const;
-            double asF64() const;
-            std::complex<double> asCF64() const;
-
-            Numerical operator+(const Numerical& other) const;
-            Numerical operator-() const;
-            Numerical operator-(const Numerical& other) const;
-            Numerical operator/(const Numerical& other) const;
-            Numerical operator*(const Numerical& other) const;
-
-            Numerical& operator+=(const Numerical& other);
-            Numerical& operator-=(const Numerical& other);
-            Numerical& operator/=(const Numerical& other);
-            Numerical& operator*=(const Numerical& other);
-
-            Numerical pow(const Numerical& exponent) const;
-
-            operator bool() const;
-
-            bool operator!() const;
-            bool operator==(const Numerical& other) const;
-            bool operator!=(const Numerical& other) const;
-            bool operator<(const Numerical& other) const;
-            bool operator<=(const Numerical& other) const;
-            bool operator>(const Numerical& other) const;
-            bool operator>=(const Numerical& other) const;
-
-            NumericalType getType() const;
-            std::string getTypeAsString() const;
-            std::string print(size_t digits = 0) const;
-            std::string printVal(size_t digits = 0) const;
-            size_t getBytes() const;
-            bool isInt() const;
-    };
-
-
-    struct Category
-    {
-        Numerical val;
-        std::string name;
-    };
-
-
     // 1.2 or "hello" or 2+3i
     class Value
     {
@@ -172,7 +44,7 @@ namespace mu
             Value(double value);
             Value(const sys_time_point& value);
             Value(const std::complex<float>& value);
-            Value(const std::complex<double>& value);
+            Value(const std::complex<double>& value, bool autoType = true);
             Value(const std::string& sData);
             Value(const char* sData);
 
@@ -187,12 +59,16 @@ namespace mu
             bool isValid() const;
             bool isNumerical() const;
             bool isString() const;
+            bool isCategory() const;
 
             std::string& getStr();
             const std::string& getStr() const;
 
             Numerical& getNum();
             const Numerical& getNum() const;
+
+            Category& getCategory();
+            const Category& getCategory() const;
 
             std::complex<double> as_cmplx() const;
 
@@ -258,6 +134,7 @@ namespace mu
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
             std::string getCommonTypeAsString() const;
+            Numerical::NumericalType getCommonNumericalType() const;
             bool isScalar() const;
             bool isDefault() const;
 
@@ -339,6 +216,11 @@ namespace mu
             VarArray(VarArray&& other) = default;
             VarArray& operator=(const VarArray& other) = default;
             Array operator=(const Array& values);
+            Array operator+=(const Array& values);
+            Array operator-=(const Array& values);
+            Array operator*=(const Array& values);
+            Array operator/=(const Array& values);
+            Array pow(const Array& values);
             VarArray& operator=(const std::vector<Array>& arrayList);
 
             bool operator==(const VarArray& other) const;
@@ -371,42 +253,6 @@ namespace mu
     Array operator-(double v, const Array& arr);
     Array operator*(double v, const Array& arr);
     Array operator/(double v, const Array& arr);
-
-
-
-
-    Array apply(std::complex<double>(*)(const std::complex<double>&),
-                const Array& a);
-    Array apply(Value(*)(const Value&),
-                const Array& a);
-    Array apply(std::string(*)(const std::string&),
-                const Array& a);
-
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&),
-                const Array& a1, const Array& a2);
-    Array apply(Value(*)(const Value&, const Value&),
-                const Array& a1, const Array& a2);
-
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
-                const Array& a1, const Array& a2, const Array& a3);
-    Array apply(Value(*)(const Value&, const Value&, const Value&),
-                const Array& a1, const Array& a2, const Array& a3);
-
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
-                const Array& a1, const Array& a2, const Array& a3, const Array& a4);
-    Array apply(Value(*)(const Value&, const Value&, const Value&, const Value&),
-                const Array& a1, const Array& a2, const Array& a3, const Array& a4);
-
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
-                const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
-    Array apply(Value(*)(const Value&, const Value&, const Value&, const Value&, const Value&),
-                const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
-
-    Array apply(std::complex<double>(*)(const std::complex<double>*, int),
-                const Array* arrs, int elems);
-    Array apply(Value(*)(const Value*, int),
-                const Array* arrs, int elems);
-
 }
 
 #endif // MUSTRUCTURES_HPP

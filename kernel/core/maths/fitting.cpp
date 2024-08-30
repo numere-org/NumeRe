@@ -128,6 +128,13 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     _parser.Eval();
     mu::varmap_type varMap = _parser.GetUsedVar();
 
+    // Ensure that no variable is initialized to VOID
+    for (auto& iter : varMap)
+    {
+        if (iter.second->getCommonType() == mu::TYPE_VOID)
+            *iter.second = mu::Value(0.0);
+    }
+
     // Get the map containing all the fitting parameters,
     // which will be used by the fit
     mu::varmap_type paramsMap = getFittingParameters(fitData, varMap, sCmd);
@@ -225,7 +232,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
-        vInitialVals.push_back(iter->second->front().getNum().val.real());
+        vInitialVals.push_back(iter->second->front().getNum().asF64());
     }
 
     // If the user desires a chi^2 map, then it is calculated in the
@@ -531,7 +538,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "tol", '=') + 3));
         eraseToken(sCmd, "tol", true);
         eraseToken(fitData.sFitFunction, "tol", true);
-        fitData.dPrecision = fabs(_parser.Eval().front().getNum().val);
+        fitData.dPrecision = fabs(_parser.Eval().front().getNum().asCF64());
 
         if (isnan(fitData.dPrecision) || isinf(fitData.dPrecision) || fitData.dPrecision == 0)
             fitData.dPrecision = 1e-4;
@@ -872,10 +879,10 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 mu::Value val = getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster);
 
-                if (isValidValue(val.getNum().val.real()) && fitData.ivl[0].isInside(val.getNum().val))
+                if (isValidValue(val.getNum().asF64()) && fitData.ivl[0].isInside(val.getNum().asCF64()))
                 {
                     fitData.vx.push_back(_idx.row[i] + 1);
-                    fitData.vy.push_back(val.getNum().val.real());
+                    fitData.vy.push_back(val.getNum().asF64());
                 }
             }
             else
@@ -886,12 +893,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     mu::Value valx = _data.getElement(_idx.row[i], _idx.col.front(), sDataTable);
                     mu::Value valy = _data.getElement(_idx.row[i], _idx.col.last(), sDataTable);
 
-                    if (!fitData.ivl[0].isInside(valx.getNum().val)
-                        || !fitData.ivl[1].isInside(valy.getNum().val))
+                    if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
+                        || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
                         continue;
 
-                    fitData.vx.push_back(valx.getNum().val.real());
-                    fitData.vy.push_back(valy.getNum().val.real());
+                    fitData.vx.push_back(valx.getNum().asF64());
+                    fitData.vy.push_back(valy.getNum().asF64());
                 }
             }
         }
@@ -918,17 +925,17 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
                     mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
 
-                    if (!fitData.ivl[0].isInside(valx.getNum().val)
-                        || !fitData.ivl[1].isInside(valy.getNum().val))
+                    if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
+                        || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
                         continue;
 
-                    fitData.vx.push_back(valx.getNum().val.real());
-                    fitData.vy.push_back(valy.getNum().val.real());
+                    fitData.vx.push_back(valx.getNum().asF64());
+                    fitData.vy.push_back(valy.getNum().asF64());
 
                     if (nErrorCols == 1)
                     {
                         if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().val.real()));
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().asF64()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -939,15 +946,15 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
                         if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
                             && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                            && valx_w.getNum().val.real()
-                            && valy_w.getNum().val.real())
-                            fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().val.real()) * fabs(valy_w.getNum().val.real())));
+                            && valx_w.getNum().asF64()
+                            && valy_w.getNum().asF64())
+                            fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().asF64()) * fabs(valy_w.getNum().asF64())));
                         else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
-                                 && valx_w.getNum().val.real())
-                            fitData.vy_w.push_back(fabs(valx_w.getNum().val.real()));
+                                 && valx_w.getNum().asF64())
+                            fitData.vy_w.push_back(fabs(valx_w.getNum().asF64()));
                         else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                                 && valy_w.getNum().val.real())
-                            fitData.vy_w.push_back(fabs(valy_w.getNum().val.real()));
+                                 && valy_w.getNum().asF64())
+                            fitData.vy_w.push_back(fabs(valy_w.getNum().asF64()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -961,27 +968,27 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
                     mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
 
-                    if (!fitData.ivl[0].isInside(valx.getNum().val)
-                        || !fitData.ivl[1].isInside(valy.getNum().val))
+                    if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
+                        || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
                         continue;
 
-                    fitData.vx.push_back(valx.getNum().val.real());
-                    fitData.vy.push_back(valy.getNum().val.real());
+                    fitData.vx.push_back(valx.getNum().asF64());
+                    fitData.vy.push_back(valy.getNum().asF64());
 
                     mu::Value valx_w = _data.getElement(_idx.row[i], _idx.col[2], sDataTable);
                     mu::Value valy_w = _data.getElement(_idx.row[i], _idx.col[3], sDataTable);
 
                     if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
                         && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                        && valx_w.getNum().val.real()
-                        && valy_w.getNum().val.real())
-                        fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().val.real()) * fabs(valy_w.getNum().val.real())));
+                        && valx_w.getNum().asF64()
+                        && valy_w.getNum().asF64())
+                        fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().asF64()) * fabs(valy_w.getNum().asF64())));
                     else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
-                             && valx_w.getNum().val.real())
-                        fitData.vy_w.push_back(fabs(valx_w.getNum().val.real()));
+                             && valx_w.getNum().asF64())
+                        fitData.vy_w.push_back(fabs(valx_w.getNum().asF64()));
                     else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                             && valy_w.getNum().val.real())
-                        fitData.vy_w.push_back(fabs(valy_w.getNum().val.real()));
+                             && valy_w.getNum().asF64())
+                        fitData.vy_w.push_back(fabs(valy_w.getNum().asF64()));
                     else
                         fitData.vy_w.push_back(0.0);
                 }
@@ -996,16 +1003,16 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
 
             if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable)
-                || !fitData.ivl[1].isInside(valy.getNum().val))
+                || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
                 continue;
             else
-                fitData.vy.push_back(valy.getNum().val.real());
+                fitData.vy.push_back(valy.getNum().asF64());
 
             if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
-                || !fitData.ivl[0].isInside(valx.getNum().val))
+                || !fitData.ivl[0].isInside(valx.getNum().asCF64()))
                 continue;
             else
-                fitData.vx.push_back(valx.getNum().val.real());
+                fitData.vx.push_back(valx.getNum().asF64());
 
             for (size_t k = 2; k < _idx.col.size(); k++)
             {
@@ -1013,9 +1020,9 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     break;
 
                 if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
-                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).getNum().val))
+                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).getNum().asCF64()))
                     continue;
-                else if (!fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().val))
+                else if (!fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().asCF64()))
                 {
                     vTempZ.push_back(NAN);
 
@@ -1024,12 +1031,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 }
                 else
                 {
-                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().val.real());
+                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().asF64());
 
                     if (fitData.bUseErrors)
                     {
                         if (_data.isValidElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k+_idx.row.size()], sDataTable).getNum().val.real()));
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k+_idx.row.size()], sDataTable).getNum().asF64()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -1056,15 +1063,15 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
                 mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
 
-                if (!fitData.ivl[0].isInside(valx.getNum().val)
-                    || !fitData.ivl[1].isInside(valy.getNum().val))
+                if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
+                    || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
                     continue;
 
-                fitData.vx.push_back(valx.getNum().val.real());
-                fitData.vy.push_back(valy.getNum().val.real());
+                fitData.vx.push_back(valx.getNum().asF64());
+                fitData.vy.push_back(valy.getNum().asF64());
 
                 if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().val.real()));
+                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().asF64()));
                 else
                     fitData.vy_w.push_back(0.0);
             }
@@ -1524,7 +1531,7 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
             // Changed the position of the sqrt as it contained the parameter itself
             sParameterTable += " "
                 + strfill("(" + toString(std::abs(std::sqrt(std::abs(fitData.vz_w[n][n]))
-                                                  / pItem->second->front().getNum().val * 100.0), 4) + "%)", 16) + "\n";
+                                                  / pItem->second->front().getNum().asCF64() * 100.0), 4) + "%)", 16) + "\n";
         else
             sParameterTable += "\n";
 

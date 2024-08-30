@@ -147,7 +147,40 @@ class GenericValueColumn : public TableColumn
             return NAN;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Returns the selected value as a
+        /// mu::Value type or an invalid value, if it
+        /// does not exist.
+        ///
+        /// \param elem size_t
+        /// \return virtual mu::Value
+        ///
+        /////////////////////////////////////////////////
+        virtual mu::Value get(size_t elem) const override
+        {
+            if (elem < m_data.size())
+                return m_data[elem];
+
+            return NAN;
+        }
+
         virtual void setValue(size_t elem, const std::complex<double>& vValue) = 0;
+
+        /////////////////////////////////////////////////
+        /// \brief Set a single mu::Value.
+        ///
+        /// \param elem size_t
+        /// \param val const mu::Value&
+        /// \return virtual void
+        ///
+        /////////////////////////////////////////////////
+        virtual void set(size_t elem, const mu::Value& val) override
+        {
+            if (val.isNumerical())
+                setValue(elem, val.getNum().asCF64());
+            else
+                setValue(elem, val.getStr());
+        }
 
         /////////////////////////////////////////////////
         /// \brief Set a single string value.
@@ -791,7 +824,9 @@ class DateTimeColumn : public TableColumn
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
         virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
@@ -882,7 +917,9 @@ class LogicalColumn : public TableColumn
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
         virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
@@ -966,7 +1003,9 @@ class StringColumn : public TableColumn
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
         virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
@@ -1043,7 +1082,9 @@ class CategoricalColumn : public TableColumn
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
         virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
@@ -1097,6 +1138,8 @@ class CategoricalColumn : public TableColumn
 void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
 bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type, bool convertSimilarTypes = false);
 void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
+TableColumn::ColumnType to_column_type(const mu::Value& val);
+TableColumn::ColumnType to_column_type(const mu::Array& arr);
 
 
 #endif // TABLECOLUMNIMPL_HPP

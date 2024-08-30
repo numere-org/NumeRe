@@ -446,8 +446,8 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
         {
             stringToNumIndex(v[i], sTableName, isAssignment);
 
-            if (isinf(v[i].front().getNum().val.real())) // infinity => last possible index
-                v[i].front().getNum().val = -1; // only -1 because it will be decremented in the following lines
+            if (isinf(v[i].front().getNum().asF64())) // infinity => last possible index
+                v[i].front() = mu::Value(-1); // only -1 because it will be decremented in the following lines
             else if (!v[i].front().isValid() || v[i].getAsScalarInt() <= 0LL)
             {
                 std::string sToken;

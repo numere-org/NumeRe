@@ -86,7 +86,7 @@ int Odesolver::odeFunction(double x, const double y[], double dydx[], void* para
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        dydx[i] = v[i].getNum().val.real();
+        dydx[i] = v[i].getNum().asF64();
     }
 
     return GSL_SUCCESS;
@@ -232,13 +232,13 @@ bool Odesolver::solve(const string& sCmd)
 
         if (v.size() > 1)
         {
-            dRelTolerance = v[0].getNum().val.real();
-            dAbsTolerance = v[1].getNum().val.real();
+            dRelTolerance = v[0].getNum().asF64();
+            dAbsTolerance = v[1].getNum().asF64();
         }
         else
         {
-            dRelTolerance = v[0].getNum().val.real();
-            dAbsTolerance = v[0].getNum().val.real();
+            dRelTolerance = v[0].getNum().asF64();
+            dAbsTolerance = v[0].getNum().asF64();
         }
     }
     else
@@ -262,7 +262,7 @@ bool Odesolver::solve(const string& sCmd)
 
         for (size_t i = 0; i < v.size(); i++)
         {
-            vStartValues.push_back(v[i].getNum().val.real());
+            vStartValues.push_back(v[i].getNum().asF64());
         }
     }
 

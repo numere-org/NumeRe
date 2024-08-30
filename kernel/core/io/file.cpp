@@ -110,9 +110,9 @@ namespace NumeRe
             return std::make_pair(sColumnHead.substr(0, sColumnHead.find(" in ")),
                                   sColumnHead.substr(sColumnHead.find(" in ")+4));
         else*/
-        if (sColumnHead.back() == ']'
-            && pos != std::string::npos
+        if (pos != std::string::npos
             && pos
+            && sColumnHead.back() == ']'
             && getMatchingParenthesis(sColumnHead.subview(pos))+pos == sColumnHead.length()-1)
         {
             if (sColumnHead[pos-1] == ' ' || sColumnHead[pos-1] == '\n')

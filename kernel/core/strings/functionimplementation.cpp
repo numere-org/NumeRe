@@ -2402,10 +2402,7 @@ mu::Array strfnc_to_string(const mu::Array& vals)
 
     for (const auto& v : vals)
     {
-        if (v.isString())
-            ret.push_back(v);
-        else
-            ret.push_back(v.print());
+        ret.push_back(v.printVal());
     }
 
     return ret;
@@ -2579,6 +2576,10 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
 }
 
 
+mu::Array strfnc_gettypeof(const mu::Array& vals)
+{
+    return mu::Value(vals.getCommonTypeAsString());
+}
 
 
 

@@ -94,7 +94,10 @@ namespace mu
 		m_bIgnoreUndefVar = a_Reader.m_bIgnoreUndefVar;
 		m_vIdentFun       = a_Reader.m_vIdentFun;
 		m_iBrackets       = a_Reader.m_iBrackets;
+		m_iVBrackets      = a_Reader.m_iVBrackets;
 		m_cArgSep         = a_Reader.m_cArgSep;
+		m_lastTok         = a_Reader.m_lastTok;
+		m_fZero           = a_Reader.m_fZero;
 	}
 
 	//---------------------------------------------------------------------------
@@ -395,15 +398,21 @@ namespace mu
 					case cmDIV:
 					case cmPOW:
 					case cmASSIGN:
+					case cmADDASGN:
+					case cmSUBASGN:
+					case cmMULASGN:
+					case cmDIVASGN:
+					case cmPOWASGN:
 						//if (len!=sTok.length())
 						//  continue;
 
 						// The assignement operator need special treatment
-						if (i == cmASSIGN && m_iSynFlags & noASSIGN)
+						if (i >= cmASSIGN && i <= cmPOWASGN && m_iSynFlags & noASSIGN)
 							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
 
 						if (!m_pParser->HasBuiltInOprt())
 							continue;
+
 						if (m_iSynFlags & noOPT)
 						{
 							// Maybe its an infix operator not an operator
@@ -417,6 +426,28 @@ namespace mu
 
 						m_iSynFlags  = noBC | noVC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
 						m_iSynFlags |= ( (i != cmEND) && ( i != cmBC) ) ? noEND : 0;
+						break;
+                    case cmINCR:
+                    case cmDECR:
+						// The assignement operator need special treatment
+						if (m_iSynFlags & noASSIGN)
+							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
+
+						if (!m_pParser->HasBuiltInOprt())
+							continue;
+
+						if (m_iSynFlags & noOPT)
+						{
+							// Maybe its an infix operator not an operator
+							// Both operator types can share characters in
+							// their identifiers
+							if ( IsInfixOpTok(a_Tok) )
+								return true;
+
+							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
+						}
+
+                        m_iSynFlags = noVAL | noVAR | noFUN | noMETHOD | noBO | noVO | noPOSTOP | noSTR | noASSIGN;
 						break;
 
 					case cmBO:

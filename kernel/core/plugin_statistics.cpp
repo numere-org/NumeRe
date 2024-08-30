@@ -111,7 +111,7 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
             if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
                 continue;
 
-            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).getNum().val.real();
+            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).getNum().asF64();
 
             if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_STD].back())
                 vStats[STATS_CONFINT].back()++;
@@ -495,7 +495,7 @@ void plugin_statistics(CommandLineParser& cmdParser)
 
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
-            sRet.push_back("\"" + getStatFieldName(n) + "\"");
+            sRet.push_back(getStatFieldName(n));
             _data.writeToTable(_idx.row[n], _idx.col[0], sTarget, getStatFieldName(n));
         }
 

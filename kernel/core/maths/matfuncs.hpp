@@ -1415,7 +1415,7 @@ static Matrix matrixCutoff(const MatFuncData& funcData, const MatFuncErrorInfo& 
     double thresLow(NAN);
 
     // Get the input values
-    double thresInput = funcData.fVal.getNum().val.real();
+    double thresInput = funcData.fVal.getNum().asF64();
     int mode = funcData.nVal;
 
     // Check if the mode is within the acceptable range
@@ -1624,7 +1624,7 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mCoords = createFilledMatrix(2, 1, 0.0);
     _mCoords(0) = -1;
 
-    std::complex<double> dValue = funcData.fVal.getNum().val;
+    std::complex<double> dValue = funcData.fVal.getNum().asCF64();
     int nType = funcData.nVal;
     std::complex<double> dKeep = dValue;
 
@@ -1830,7 +1830,7 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
         _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
     }
 
-    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal.getNum().val));
+    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal.getNum().asCF64()));
 }
 
 
@@ -1846,7 +1846,7 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t nLines = funcData.fVal.getNum().val.real();
+    size_t nLines = funcData.fVal.getNum().asF64();
     size_t nCols = funcData.nVal;
 
     if (funcData.mat1.isEmpty() || !nLines || !nCols)
@@ -2017,7 +2017,7 @@ static Matrix normalize(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t nLines = funcData.fVal.getNum().val.real();
+    size_t nLines = funcData.fVal.getNum().asF64();
     size_t nCols = funcData.nVal;
 
     if (funcData.mat1.isEmpty() || !nLines || !nCols)
@@ -2050,7 +2050,7 @@ static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo&
 /////////////////////////////////////////////////
 static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t n = funcData.fVal.getNum().val.real();
+    size_t n = funcData.fVal.getNum().asF64();
     size_t m = funcData.nVal;
 
     if (n == 0)

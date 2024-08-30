@@ -820,8 +820,8 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
         //                       + (sepChar == '@' ? "\t1 x 1\t(@) complex\t" : "\t1 x 1\tcomplex\t")
         //                       + toString(iter->second, 2*DEFAULT_NUM_PRECISION) + "\t" + (iter->first).substr((iter->first).find(sepChar)+1));
         //else
-        vVars.push_back(iter->first.substr(0, iter->first.find(sepChar))
-                        + (sepChar == '@' ? "\t1 x 1\t(@) " : "\t1 x 1\t")
+        vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()
+                        + (sepChar == '@' ? "\t(@) " : "\t")
                         + iter->second.getCommonTypeAsString() + "\t"
                         + iter->second.print(dt == mu::TYPE_STRING ? MAXSTRINGLENGTH : DEFAULT_NUM_PRECISION) + "\t"
                         + iter->first.substr((iter->first).find(sepChar)+1));
@@ -980,7 +980,7 @@ vector<string> NumeReDebugger::getGlobals()
             && iter->first != "ans"
             && !isDimensionVar(iter->first))
         {
-            mGlobals[iter->first] = "1 x 1\t" + iter->second->getCommonTypeAsString() + "\t"
+            mGlobals[iter->first] = iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
                 + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
         }
     }

@@ -369,13 +369,13 @@ void Interval::refresh()
         // Assign the values depending on their
         // number
         if (v.size() == 1)
-            m_vInterval.assign(2, v.front().getNum().val.real());
+            m_vInterval.assign(2, v.front().getNum().asF64());
         else
         {
             m_vInterval.clear();
 
             for (size_t i = 0; i < v.size(); i++)
-                m_vInterval.push_back(v[i].getNum().val.real());
+                m_vInterval.push_back(v[i].getNum().asF64());
         }
     }
     else
@@ -390,7 +390,7 @@ void Interval::refresh()
                 getDataElements(indices[i], _parser, _data);
 
             _parser.SetExpr(indices[i]);
-            m_vInterval.push_back(_parser.Eval().front().getNum().val.real());
+            m_vInterval.push_back(_parser.Eval().front().getNum().asF64());
         }
     }
 }

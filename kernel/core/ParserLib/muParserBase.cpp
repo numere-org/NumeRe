@@ -140,13 +140,15 @@ namespace mu
 	*/
 	const char_type* ParserBase::c_DefaultOprt[] =
 	{
-		_nrT("<="), _nrT(">="),  _nrT("!="),
-		_nrT("=="), _nrT("<"),   _nrT(">"),
-		_nrT("+"),  _nrT("-"),   _nrT("*"),
-		_nrT("/"),  _nrT("^"),   _nrT("&&"),
-		_nrT("||"), _nrT("="),   _nrT("("),
-		_nrT(")"),  _nrT("{"),  _nrT("}"),
-		_nrT("?"),  _nrT(":"), 0
+		"<=", ">=", "!=",
+		"==", "<",  ">",
+		"=",  "+=", "-=",
+		"*=", "/=", "^=",
+		"++", "--", "+",
+		"-",  "*",  "/",
+		"^",  "&&", "||",
+		"(",  ")",  "{",
+        "}",  "?",  ":", 0
 	};
 
 	//------------------------------------------------------------------------------
@@ -841,18 +843,18 @@ namespace mu
             || (dFirst.imag() > dLast.imag() && dIncrement.imag() > 0)
             || dIncrement == 0.0)
 		{
-			vResults.push_back(Numerical(dFirst));
+			vResults.push_back(Numerical::autoType(dFirst));
 			return;
 		}
 
 		// Store the first value
-		vResults.push_back(Numerical(dFirst));
+		vResults.push_back(Numerical::autoType(dFirst));
 
 		// As long as the next step is possible, add the increment
 		while (stepIsStillPossible(dFirst+dIncrement, dLast+1e-10*dIncrement, dIncrement))
         {
             dFirst += dIncrement;
-            vResults.push_back(Numerical(dFirst));
+            vResults.push_back(Numerical::autoType(dFirst));
         }
 	}
 
@@ -1193,6 +1195,11 @@ namespace mu
 			case cmEXP3:
 				return -3;
 			case cmASSIGN:
+			case cmADDASGN:
+			case cmSUBASGN:
+			case cmMULASGN:
+			case cmDIVASGN:
+			case cmPOWASGN:
 				return -1;
 			case cmELSE:
 			case cmIF:
@@ -1238,6 +1245,13 @@ namespace mu
 		switch (a_Tok.GetCode())
 		{
 			case cmASSIGN:
+			case cmADDASGN:
+			case cmSUBASGN:
+			case cmMULASGN:
+			case cmDIVASGN:
+			case cmPOWASGN:
+			case cmINCR:
+			case cmDECR:
 			case cmLAND:
 			case cmLOR:
 			case cmLT:
@@ -1472,14 +1486,14 @@ namespace mu
 					   optTok  = a_stOpt.pop(),
 					   resTok;
 
-			if (optTok.GetCode() == cmASSIGN)
+			if (optTok.GetCode() >= cmASSIGN && optTok.GetCode() <= cmPOWASGN)
 			{
 			    if (valTok2.GetCode() == cmVARARRAY)
-                    m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVarArray());
+                    m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVarArray(), optTok.GetCode());
 				else if (valTok2.GetCode() == cmVAR)
-                    m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVar());
+                    m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVar(), optTok.GetCode());
                 else
-					Error(ecUNEXPECTED_OPERATOR, -1, _nrT("="));
+                    Error(ecUNEXPECTED_OPERATOR, -1, ParserBase::c_DefaultOprt[optTok.GetCode()]);
 			}
 			else
 				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
@@ -1539,6 +1553,11 @@ namespace mu
 				case cmLAND:
 				case cmLOR:
 				case cmASSIGN:
+                case cmADDASGN:
+                case cmSUBASGN:
+                case cmMULASGN:
+                case cmDIVASGN:
+                case cmPOWASGN:
 					if (stOpt.top().GetCode() == cmOPRT_INFIX)
 						ApplyFunc(stOpt, stVal, 1);
 					else
@@ -1660,6 +1679,41 @@ namespace mu
                 case  cmASSIGN:
                     --sidx;
                     Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
+                    continue;
+
+                case  cmADDASGN:
+                    --sidx;
+                    Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1];
+                    continue;
+
+                case  cmSUBASGN:
+                    --sidx;
+                    Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1];
+                    continue;
+
+                case  cmMULASGN:
+                    --sidx;
+                    Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1];
+                    continue;
+
+                case  cmDIVASGN:
+                    --sidx;
+                    Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1];
+                    continue;
+
+                case  cmPOWASGN:
+                    --sidx;
+                    Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]);
+                    continue;
+
+                case  cmINCR:
+                    //--sidx;
+                    Stack[sidx] = pTok->Oprt().var += Value(1);
+                    continue;
+
+                case  cmDECR:
+                    //--sidx;
+                    Stack[sidx] = pTok->Oprt().var -= Value(1);
                     continue;
 
                 case  cmIF:
@@ -1944,6 +1998,41 @@ namespace mu
                     case  cmASSIGN:
                         --sidx;
                         Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
+                        continue;
+
+                    case  cmADDASGN:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1];
+                        continue;
+
+                    case  cmSUBASGN:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1];
+                        continue;
+
+                    case  cmMULASGN:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1];
+                        continue;
+
+                    case  cmDIVASGN:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1];
+                        continue;
+
+                    case  cmPOWASGN:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]);
+                        continue;
+
+                    case  cmINCR:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var += Value(1);
+                        continue;
+
+                    case  cmDECR:
+                        --sidx;
+                        Stack[sidx] = pTok->Oprt().var -= Value(1);
                         continue;
 
                     case  cmIF:
@@ -2375,6 +2464,11 @@ namespace mu
 				case cmDIV:
 				case cmPOW:
 				case cmASSIGN:
+                case cmADDASGN:
+                case cmSUBASGN:
+                case cmMULASGN:
+                case cmDIVASGN:
+                case cmPOWASGN:
 				case cmOPRT_BIN:
                     varArrayCandidate = false;
 					// A binary operator (user defined or built in) has been found.
@@ -2455,6 +2549,22 @@ namespace mu
 
 					varArrayCandidate = false;
 					break;
+
+                case cmINCR:
+                case cmDECR:
+                {
+                    token_type valTok = stVal.pop();
+
+                    if (valTok.GetCode() == cmVARARRAY)
+                        m_compilingState.m_byteCode.AddAssignOp(valTok.GetVarArray(), opt.GetCode());
+                    else if (valTok.GetCode() == cmVAR)
+                        m_compilingState.m_byteCode.AddAssignOp(valTok.GetVar(), opt.GetCode());
+                    else
+                        Error(ecUNEXPECTED_OPERATOR, -1, ParserBase::c_DefaultOprt[opt.GetCode()]);
+
+                    stVal.push(ParserToken().SetVal(Value(1.0)));
+                    break;
+                }
 
 				case cmOPRT_POSTFIX:
 					stOpt.push(opt);
@@ -2751,7 +2861,7 @@ namespace mu
 
 		while ( !stOprt.empty() )
 		{
-			if (stOprt.top().GetCode() <= cmASSIGN)
+			if (stOprt.top().GetCode() <= cmLOR)
 			{
 			    printFormatted("|   OPRT_INTRNL \"" + string(ParserBase::c_DefaultOprt[stOprt.top().GetCode()]) + "\"\n");
 			}

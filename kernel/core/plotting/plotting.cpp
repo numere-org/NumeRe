@@ -1094,7 +1094,7 @@ bool Plot::createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, b
             }
         }
 
-        double dt_max = _defVars.vValue[TCOORD][0].front().getNum().val.real();
+        double dt_max = _defVars.vValue[TCOORD][0].front().getNum().asF64();
 
         // Apply the title line to the graph
         if (_pData.getSettings(PlotData::STR_PLOTTITLE).length())
@@ -2421,7 +2421,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
 
         for (int i = 0; i < nFunctions; i++)
         {
-            vResults.push_back(vRes[i].front().getNum().val.real());
+            vResults.push_back(vRes[i].front().getNum().asF64());
         }
 
         if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
@@ -2733,7 +2733,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
 
         for (int i = 0; i < nFunctions; i++)
         {
-            vResults.push_back(vRes[i].front().getNum().val.real());
+            vResults.push_back(vRes[i].front().getNum().asF64());
         }
 
         if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
@@ -4131,7 +4131,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                 for (size_t n = 0; n < vAxis.size(); n++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[n].getNum().val.real(), n, XCOORD);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[n].getNum().asF64(), n, XCOORD);
                 }
             }
 
@@ -4145,7 +4145,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                 for (size_t n = 0; n < vVals.size(); n++)
                 {
-                    m_manager.assets[typeCounter].writeData(vVals[n].getNum().val, 0, n);
+                    m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), 0, n);
                 }
             }
             else
@@ -4171,7 +4171,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                         for (size_t n = 0; n < vVals.size(); n++)
                         {
-                            m_manager.assets[typeCounter].writeData(vVals[n].getNum().val, q, n);
+                            m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), q, n);
                         }
                     }
                 }
@@ -4281,7 +4281,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                     for (size_t t = 0; t < vVals.size(); t++)
                     {
-                        m_manager.assets[typeCounter].writeData(vVals[t].getNum().val, q, t);
+                        m_manager.assets[typeCounter].writeData(vVals[t].getNum().asCF64(), q, t);
                     }
                 }
             }
@@ -4324,7 +4324,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                 for (size_t m = 0; m < std::min(samples[axis]-isBars, vAxis.size()); m++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().val.real(), m, (PlotCoords)axis);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
                 }
             }
 
@@ -4391,7 +4391,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
                 for (size_t m = 0; m < std::min(samples[axis], vAxis.size()); m++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().val.real(), m, (PlotCoords)axis);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
                 }
             }
 
@@ -4877,8 +4877,8 @@ void Plot::fillData(double dt_max, int t_animate)
 
             for (int i = 0; i < _pInfo.nFunctions; i++)
             {
-                m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().val.real(), x, XCOORD);
-                m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().val, 0, x);
+                m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x);
             }
         }
     }
@@ -4945,7 +4945,7 @@ void Plot::fillData(double dt_max, int t_animate)
                     if (i >= _pInfo.nFunctions)
                         m_manager.assets[vFuncMap[k]].writeData(0.0, i, t);
                     else
-                        m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().val, i, t);
+                        m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, t);
                 }
             }
 
@@ -4987,9 +4987,9 @@ void Plot::fillData(double dt_max, int t_animate)
 
                 for (size_t i = 0; i < vFuncMap.size(); i++)
                 {
-                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().val.real(), x, XCOORD);
-                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().val.real(), y, YCOORD);
-                    m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().val, 0, x, y);
+                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                    m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x, y);
                 }
             }
         }
@@ -5030,10 +5030,10 @@ void Plot::fillData(double dt_max, int t_animate)
 
                     for (size_t i = 0; i < vFuncMap.size(); i++)
                     {
-                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().val.real(), x, XCOORD);
-                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().val.real(), y, YCOORD);
-                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().val.real(), z, ZCOORD);
-                        m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().val, 0, x, y, z);
+                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
+                        m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x, y, z);
                     }
                 }
             }
@@ -5061,13 +5061,13 @@ void Plot::fillData(double dt_max, int t_animate)
 
                     for (int i = 0; i < 2; i++)
                     {
-                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().val.real(), x, XCOORD);
-                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().val.real(), y, YCOORD);
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
 
                         if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
                             m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y);
                         else
-                            m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().val, i, x, y);
+                            m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, x, y);
                     }
                 }
             }
@@ -5099,14 +5099,14 @@ void Plot::fillData(double dt_max, int t_animate)
 
                         for (int i = 0; i < 3; i++)
                         {
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().val.real(), x, XCOORD);
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().val.real(), y, YCOORD);
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().val.real(), z, ZCOORD);
+                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
 
                             if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
                                 m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
                             else
-                                m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().val, i, x, y, z);
+                                m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, x, y, z);
                         }
                     }
                 }

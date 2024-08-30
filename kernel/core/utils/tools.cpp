@@ -1573,7 +1573,11 @@ static void parseArg(std::string& sArg, int flags)
     if (instance->getMemoryManager().containsTablesOrClusters(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
-    // Numerical evaluation
+    // Ensure that a string evaluation is necessary (buggy fix, hard to derive a more general one)
+    if (flags & ARGEXTRACT_ASSTRING && !containsStrings(sArg))
+        return;
+
+    // evaluation
     instance->getParser().SetExpr(sArg);
 
     int results;
@@ -3367,11 +3371,11 @@ bool fileExists(const std::string& sFilename)
 /// exponent is an integer.
 ///
 /// \param dNumber double
-/// \param nExponent int
+/// \param nExponent int64_t
 /// \return double
 ///
 /////////////////////////////////////////////////
-double intPower(double dNumber, int nExponent)
+double intPower(double dNumber, int64_t nExponent)
 {
     long double dResult = 1.0L;
 
@@ -3380,7 +3384,7 @@ double intPower(double dNumber, int nExponent)
         return 1.0;
 
     // Calculuate the exponentation
-    for (int i = abs(nExponent); i > 0; i--)
+    for (int64_t i = abs(nExponent); i > 0; i--)
     {
         dResult *= (long double)dNumber;
     }
@@ -3400,11 +3404,11 @@ double intPower(double dNumber, int nExponent)
 /// complex-valued bases.
 ///
 /// \param dNumber const std::complex<double>&
-/// \param nExponent int
+/// \param nExponent int64_t
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent)
+std::complex<double> intPower(const std::complex<double>& dNumber, int64_t nExponent)
 {
     if (dNumber.imag() == 0.0)
         return intPower(dNumber.real(), nExponent);
@@ -3416,7 +3420,7 @@ std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent
         return 1.0;
 
     // Calculuate the exponentation
-    for (int i = abs(nExponent); i > 0; i--)
+    for (int64_t i = abs(nExponent); i > 0; i--)
     {
         dResult *= dNumber;
     }

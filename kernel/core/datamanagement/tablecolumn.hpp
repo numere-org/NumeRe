@@ -74,6 +74,7 @@ struct TableColumn
     virtual std::string getValueAsParserString(size_t elem) const = 0;
     virtual std::string getValueAsStringLiteral(size_t elem) const = 0;
     virtual std::complex<double> getValue(size_t elem) const = 0;
+    virtual mu::Value get(size_t elem) const = 0;
 
     void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue);
     void setValue(const VectorIndex& idx, const std::vector<std::complex<double>>& vValue);
@@ -81,6 +82,7 @@ struct TableColumn
 
     virtual void setValue(size_t elem, const std::string& sValue) = 0;
     virtual void setValue(size_t elem, const std::complex<double>& vValue) = 0;
+    virtual void set(size_t elem, const mu::Value& val) = 0;
 
     void assignMetaData(const TableColumn* column);
     TableColumn* copy() const;
