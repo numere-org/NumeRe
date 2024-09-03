@@ -271,6 +271,36 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
 
 
 /////////////////////////////////////////////////
+/// \brief Helper function for converting a
+/// comma-separated expression into a vectored
+/// expression (necessary after parser redesign).
+///
+/// \param sExpr StringView
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string prepareExpressionForScalarArguments(StringView sExpr)
+{
+    EndlessVector<StringView> args = getAllArguments(sExpr);
+
+    if (args.size() == 1)
+        return args.front().to_string();
+
+    std::string sRet;
+
+    for (size_t i = 0; i < args.size(); i++)
+    {
+        if (sRet.length())
+            sRet += ",";
+
+        sRet += args[i].to_string();
+    }
+
+    return "{" + sRet + "}";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This is the actual worker function
 /// for matrix operations. It will be called
 /// recursively for functions and parentheses.
@@ -885,7 +915,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     }
 
     // Set the expression in the parser
-    _parser.SetExpr("{" + sCmd + "}");
+    _parser.SetExpr(prepareExpressionForScalarArguments(sCmd));
 
     g_logger.debug("Matrix calculation");
 

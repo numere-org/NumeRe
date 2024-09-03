@@ -43,7 +43,7 @@ class DataAccessParser
 
     public:
         DataAccessParser();
-        DataAccessParser(StringView sCommand, bool isAssignment);
+        DataAccessParser(StringView sCommand, bool isAssignment, bool isLocal = false);
         DataAccessParser(const DataAccessParser& _accessParser);
         DataAccessParser(DataAccessParser&& moved) = default;
         DataAccessParser& operator=(const DataAccessParser& copied) = default;

@@ -30,7 +30,7 @@ Language _lang;
 int main()
 {
     mu::Parser _parser;
-    _parser.EnableDebugDump(true, false);
+    _parser.EnableDebugDump(true, true);
 
     // trigonometric functions
     _parser.DefineFun("sin", numfnc_sin);

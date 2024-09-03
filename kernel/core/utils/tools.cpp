@@ -1662,11 +1662,11 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
     if (extraction & ARGEXTRACT_PARSED)
         parseArg(sArgument, extraction);
 
+    StripSpaces(sArgument);
+
     // Strip the argument, if necessary
     if (extraction & ARGEXTRACT_STRIPPED)
     {
-        StripSpaces(sArgument);
-
         if (sArgument.front() == '"' && sArgument.back() == '"')
             sArgument = sArgument.substr(1, sArgument.length()-2);
     }

@@ -23,7 +23,7 @@
 #include "../../kernel.hpp"
 #endif
 
-#warning TODO (numere#1#08/14/24): Handle new method types within autocompletion
+#warning TODO (numere#2#08/14/24): Handle new method types within autocompletion -> NEW ISSUE
 #warning TODO (numere#1#08/13/24): Update function language strings
 
 namespace mu
@@ -67,7 +67,7 @@ namespace mu
             std::string sStr = val.printVal();
 #endif // PARSERSTANDALONE
 
-            if (sStr.length() < nLen)
+            if (sStr.length() < nLen && sStr.length() > 0)
                 sStr.insert(0, std::string(nLen-sStr.length(), '0'));
 
             res.push_back(sStr);

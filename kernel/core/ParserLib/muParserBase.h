@@ -43,10 +43,6 @@
 #include "muParserState.hpp"
 #include "muVarFactory.hpp"
 
-#define MU_VECTOR_CREATE "_~vect~create"
-#define MU_VECTOR_EXP2 "_~vect~exp2"
-#define MU_VECTOR_EXP3 "_~vect~exp3"
-
 class StringView;
 class MutableStringView;
 

@@ -174,6 +174,7 @@ namespace mu
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVals(size_t digits = 0, size_t chrs = 0) const;
             std::string printDims() const;
+            std::string printJoined(const std::string& sSep = "", bool keepEmpty = false) const;
             size_t getBytes() const;
 
             Value& get(size_t i);

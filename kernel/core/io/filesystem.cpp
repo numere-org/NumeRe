@@ -28,7 +28,6 @@
 #else
 #include "../utils/tools.hpp"
 #endif
-#include "../utils/datetimetools.hpp"
 
 std::string removeQuotationMarks(const std::string& sString);
 
@@ -699,7 +698,7 @@ std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, co
 /////////////////////////////////////////////////
 std::string FileSystem::resolveLink(const std::string& sLink)
 {
-#warning FIXME (numere#1#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
+#warning FIXME (numere#9#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
 #ifdef NR_HAVE_GSL2
     HRESULT hres;
     IShellLink* psl;
@@ -1137,13 +1136,13 @@ std::vector<std::string> FileSystem::getFileParts(const std::string& sFilePath) 
 
 /////////////////////////////////////////////////
 /// \brief Static function to convert Windows UTC
-/// system time to a double.
+/// system time to a sys_time_point.
 ///
 /// \param stUTC SYSTEMTIME
-/// \return double
+/// \return sys_time_point
 ///
 /////////////////////////////////////////////////
-static double windowSystemTimeToDouble(SYSTEMTIME stUTC)
+static sys_time_point windowSystemTimeToTimePoint(SYSTEMTIME stUTC)
 {
     time_stamp timeStamp;
 
@@ -1153,7 +1152,7 @@ static double windowSystemTimeToDouble(SYSTEMTIME stUTC)
     timeStamp.m_minutes = std::chrono::minutes(stUTC.wMinute);
     timeStamp.m_seconds = std::chrono::seconds(stUTC.wSecond);
 
-    return to_double(getTimePointFromTimeStamp(timeStamp));
+    return getTimePointFromTimeStamp(timeStamp);
 }
 
 
@@ -1196,9 +1195,9 @@ FileInfo FileSystem::getFileInfo(const std::string& sFilePath) const
 
         SYSTEMTIME stUTC;
         FileTimeToSystemTime(&FindFileData.ftCreationTime, &stUTC);
-        fInfo.creationTime = windowSystemTimeToDouble(stUTC);
+        fInfo.creationTime = windowSystemTimeToTimePoint(stUTC);
         FileTimeToSystemTime(&FindFileData.ftLastWriteTime, &stUTC);
-        fInfo.modificationTime = windowSystemTimeToDouble(stUTC);
+        fInfo.modificationTime = windowSystemTimeToTimePoint(stUTC);
 
         fInfo.fileAttributes = FindFileData.dwFileAttributes;
         FindClose(hFind);

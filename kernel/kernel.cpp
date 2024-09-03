@@ -1151,7 +1151,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             if (!_procedure.getCurrentBlockDepth())
             {
                 // this is obviously a time consuming task => to be investigated
-#warning TODO (numere#1#08/27/24): This cannot be deactivated until tables are integrated differently
+#warning TODO (numere#3#08/27/24): This cannot be deactivated until tables are integrated differently -> NEW ISSUE
                 evalRecursiveExpressions(sLine);
             }
 
@@ -1874,8 +1874,7 @@ bool NumeReKernel::uninstallPlugin(const std::string& sLine, const std::string& 
         {
             if (sPlugin != "<<NO_HLP_ENTRY>>")
             {
-                while (sPlugin.find(';') != std::string::npos)
-                    sPlugin[sPlugin.find(';')] = ',';
+                replaceAll(sPlugin, ";", ",");
 
                 while (sPlugin.length())
                 {
@@ -2110,7 +2109,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             {
                 std::string sVarName = "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]";
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
-#warning FIXME (numere#1#08/05/24): Figure out, how to correctly handle multiple return values (instead of using .front())
+#warning FIXME (numere#4#08/05/24): Figure out, how to correctly handle multiple return values (instead of using .front()) -> NEW ISSUE
                 _parser.SetInternalVar(sVarName, _rTemp.valArray.front());
             }
 
@@ -2942,7 +2941,7 @@ void NumeReKernel::printPreFmt(const std::string& __sLine, bool printingEnabled)
 /////////////////////////////////////////////////
 std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
 {
-    Settings& _option = getInstance()->getSettings();
+    size_t prec = getInstance()->getSettings().getPrecision();
     std::string sAns;
 
     for (int n = 0; n < nNum; n++)
@@ -2962,9 +2961,8 @@ std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
             // compose the result
             for (size_t i = 0; i < v[n].size(); ++i)
             {
-#warning TODO (numere#1#08/06/24): Possible improvement: use strrfill for strings
-                sAns += strfill(v[n][i].print(_option.getPrecision(), _option.getPrecision()+TERMINAL_FORMAT_FIELD_LENOFFSET-1, true),
-                                _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
+                sAns += strfill(v[n][i].print(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                                prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
                 if (i < v[n].size() - 1)
                     sAns += ", ";
@@ -2979,9 +2977,9 @@ std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
         {
             // Only one result
             if (n)
-                sAns += "\n|-> ans = " + v[n].print(_option.getPrecision(), 0);
+                sAns += "\n|-> ans = " + v[n].print(prec, 0);
             else
-                sAns = "ans = " + v[n].print(_option.getPrecision(), 0);
+                sAns = "ans = " + v[n].print(prec, 0);
         }
     }
 

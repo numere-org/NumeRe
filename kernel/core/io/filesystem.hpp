@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include "../utils/datetimetools.hpp"
 
 //#include "error.hpp"
 
@@ -47,8 +48,8 @@ struct FileInfo
     std::string ext;
     size_t filesize;
     size_t fileAttributes;
-    double creationTime;
-    double modificationTime;
+    sys_time_point creationTime;
+    sys_time_point modificationTime;
 
     enum Attributes
     {
@@ -79,8 +80,8 @@ struct FileInfo
     {
         filesize = 0;
         fileAttributes = 0;
-        creationTime = 0.0;
-        modificationTime = 0.0;
+        creationTime = to_timePoint(0.0);
+        modificationTime = to_timePoint(0.0);
     }
 };
 

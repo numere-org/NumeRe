@@ -451,10 +451,11 @@ namespace mu
     /// \param a_pFun generic_fun_type
     /// \param a_iArgc int
     /// \param optimizeAway bool
+    /// \param funcName const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway)
+	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway, const std::string& funcName)
 	{
 	    // Shall we try to optimize?
 		if (m_bEnableOptimizer && optimizeAway)
@@ -488,7 +489,10 @@ namespace mu
                 switch (a_iArgc)
                 {
                     case 0:
-                        AddVal((*(fun_type0)a_pFun)());
+                        if (funcName == MU_VECTOR_CREATE)
+                            AddVal((*(multfun_type)a_pFun)(nullptr, 0));
+                        else
+                            AddVal((*(fun_type0)a_pFun)());
                         break;
                     case 1:
                         m_vRPN[sz-1].Val().data2 = (*(fun_type1)a_pFun)(m_vRPN[sz-1].Val().data2);
@@ -607,7 +611,7 @@ namespace mu
 
             SToken tok;
             tok.Cmd = cmFUNC;
-            tok.m_data = SFunData{.ptr{a_pFun}, .argc{a_iArgc}, .idx{0}};
+            tok.m_data = SFunData{.ptr{a_pFun}, .name{funcName}, .argc{a_iArgc}, .idx{0}};
             m_vRPN.push_back(tok);
 		}
 	}
@@ -792,7 +796,7 @@ namespace mu
 					break;
 
 				case cmFUNC:
-				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
+				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [FUNC: " + m_vRPN[i].Fun().name + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
 					break;
 
 				case cmMETHOD:

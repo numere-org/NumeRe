@@ -120,7 +120,7 @@ namespace NumeRe
         nGlobalType = ClusterItem::ITEMTYPE_INVALID;
 
         if (data.size() == 1)
-            _idx.row.setOpenEndIndex(std::max((size_t)_idx.row.front(), size()) - 1);
+            _idx.row.setOpenEndIndex(std::max((int64_t)_idx.row.front(), (int64_t)size() - 1));
 
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
@@ -654,10 +654,10 @@ namespace NumeRe
         // Try to resize the array as copy-efficient as
         // possible
         if (_vLine.size() > 1 && !vClusterArray.size())
-            vTarget->resize(1, NAN);
+            vTarget->resize(1, mu::Value());
         else
         {
-            vTarget->resize(_vLine.size(), NAN);
+            vTarget->resize(_vLine.size(), mu::Value());
 
             // Insert the elements in the passed array
             if (_vLine.size() > 100000)
@@ -672,7 +672,7 @@ namespace NumeRe
                         else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING)
                             (*vTarget)[i] = vClusterArray[_vLine[i]]->getInternalString();
                         else
-                            (*vTarget)[i] = mu::Value(NAN);
+                            (*vTarget)[i] = mu::Value();
                     }
                 }
             }
@@ -687,7 +687,7 @@ namespace NumeRe
                         else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING)
                             (*vTarget)[i] = vClusterArray[_vLine[i]]->getInternalString();
                         else
-                            (*vTarget)[i] = mu::Value(NAN);
+                            (*vTarget)[i] = mu::Value();
                     }
                 }
             }
@@ -709,6 +709,9 @@ namespace NumeRe
     {
         // Free the internal memory first
         clear();
+
+        if (a.getCommonType() == mu::TYPE_VOID)
+            return;
 
         // Create empty space
         vClusterArray.resize(a.size(), nullptr);
@@ -847,6 +850,12 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void Cluster::assignResults(Indices _idx, const mu::Array& data)
     {
+        if (data.getCommonType() == mu::TYPE_VOID)
+        {
+            clear();
+            return;
+        }
+
         // If the indices indicate a complete override
         // do that here and return
         if (_idx.row.isOpenEnd() && _idx.row.front() == 0)

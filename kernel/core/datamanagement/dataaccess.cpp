@@ -39,9 +39,11 @@ DataAccessParser::DataAccessParser()
 /// calculate the corresponding index set.
 ///
 /// \param sCommand StringView
+/// \param isAssignment bool
+/// \param isLocal bool
 ///
 /////////////////////////////////////////////////
-DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
+DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment, bool isLocal)
 {
     size_t pos = std::string::npos;
     bIsCluster = false;
@@ -82,10 +84,16 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                         continue;
                     }
 
-                    // Calculate the indices. Has to use a copy of the parser
-                    mu::Parser p = instance->getParser();
-                    ::getIndices(sCommand.subview(pos), idx, p, instance->getMemoryManager(),
-                                 isAssignment);
+                    if (isLocal)
+                    {
+                        // Calculate the indices. Has to use a copy of the parser
+                        mu::Parser p = instance->getParser();
+                        ::getIndices(sCommand.subview(pos), idx, p, instance->getMemoryManager(),
+                                     isAssignment);
+                    }
+                    else
+                        ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
+                                     isAssignment);
                     break;
                 }
                 else if (sCommand[i] == '{')
@@ -616,7 +624,7 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
         // create a vector, otherwise insert the
         // mixed vector representation
         if (!cluster.size())
-            vEntityContents.push_back(NAN);
+            vEntityContents.push_back(mu::Value());
         else
         {
             // Create the vector using the indices
@@ -795,7 +803,7 @@ static void replaceEntityOccurence(std::string& sLine, const std::string& sEntit
             // Although it seems to be duplicated code, these are only one-liners for each case
             // NOTE: Those lines cannot be removed at the moment due to bytecode issues. Will be fixed
             // with the major parser rework
-            if (sLeft == "std(")
+            /*if (sLeft == "std(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
@@ -936,7 +944,7 @@ static void replaceEntityOccurence(std::string& sLine, const std::string& sEntit
                                       getMatchingParenthesis(StringView(sLine, sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
                                       createTempVar(sEntityReplacement + "~pct", isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct.front().getNum().asCF64()) : _data.pct(sEntityName, _idx.row, _idx.col, dPct.front().getNum().asCF64()), _parser));
             }
-            else //Fallback
+            else */ //Fallback
                 sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
         }
     }

@@ -63,8 +63,8 @@ namespace mu
             enum TypeFlags
             {
                 TYPE_LOGICAL = 0x0,
-                TYPE_INT = 0x1,
-                TYPE_UINT = 0x2,
+                TYPE_UINT = 0x1,
+                TYPE_INT = 0x2,
                 TYPE_FLOAT = 0x4,
                 TYPE_DATETIME = 0x8,
                 TYPE_COMPLEX = 0x10

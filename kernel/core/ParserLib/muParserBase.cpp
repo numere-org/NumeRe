@@ -603,7 +603,7 @@ namespace mu
 								&& sExpr[sExpr.find('=', j) + 1] != '=')
 						{
 						    // This is a target vector
-#warning FIXME (numere#1#07/08/24): Target vectors do not work yet
+#warning FIXME (numere#3#07/08/24): Target vectors do not work yet -> NEW ISSUE
                             int nResults;
                             Array* v = Eval(nResults);
                             // Store the results in the target vector
@@ -730,7 +730,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array ParserBase::VectorCreate(const Array* arrs, int n)
     {
-        // If no arguments have been passed, we simpl
+        // If no arguments have been passed, we simply
         // return void
         if (!n)
             return mu::Value();
@@ -1420,7 +1420,8 @@ namespace mu
 
                 m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(),
                                                    (funTok.GetArgCount() == -1) ? -iArgCount : iArgRequired,
-                                                   funTok.IsOptimizable());
+                                                   funTok.IsOptimizable(),
+                                                   funTok.GetAsString());
 				break;
             case  cmMETHOD:
                 m_compilingState.m_byteCode.AddMethod(funTok.GetAsString(), iArgCount+1);
@@ -1717,7 +1718,7 @@ namespace mu
                     continue;
 
                 case  cmIF:
-#warning TODO (numere#1#08/11/24): Solve this for vectorisation
+#warning TODO (numere#2#08/11/24): Solve this for vectorisation -> NEW ISSUE
                     if (!all(Stack[sidx--]))
                         pTok += pTok->Oprt().offset;
                     continue;
@@ -2036,7 +2037,7 @@ namespace mu
                         continue;
 
                     case  cmIF:
-#warning TODO (numere#1#08/11/24): Solve this for vectorisation
+#warning TODO (numere#2#08/11/24): Solve this for vectorisation -> NEW ISSUE
                         if (!all(Stack[sidx--]))
                             pTok += pTok->Oprt().offset;
                         continue;
@@ -2399,7 +2400,7 @@ namespace mu
 
 							stOpt.pop(); // Take opening bracket from stack
 
-							if (varArrayCandidate)
+							if (varArrayCandidate && iArgCount)
                             {
                                 // Remove the vector create function
                                 stOpt.pop();
@@ -2422,6 +2423,8 @@ namespace mu
 
                                 break;
                             }
+
+                            varArrayCandidate = false;
 
 							if (iArgCount > 1
                                 && (stOpt.size() == 0 || (stOpt.top().GetCode() != cmFUNC && stOpt.top().GetCode() != cmMETHOD)))
@@ -2534,7 +2537,7 @@ namespace mu
 
                 case cmPATHPLACEHOLDER:
                     m_compilingState.m_byteCode.AddVal(Value(opt.GetAsString()));
-                    m_compilingState.m_byteCode.AddFun((generic_fun_type)getPathToken, 1, false);
+                    m_compilingState.m_byteCode.AddFun((generic_fun_type)getPathToken, 1, false, opt.GetAsString());
                     stVal.push(ParserToken().SetVal(Value(opt.GetAsString()), opt.GetAsString()));
                     break;
 
@@ -2587,8 +2590,8 @@ namespace mu
 			// Commented out - might be necessary for deep debugging stuff
 			//if (ParserBase::g_DbgDumpStack)
 			//{
-			//	StackDump(stVal, stOpt);
-			//	m_compilingState.m_byteCode.AsciiDump();
+//				StackDump(stVal, stOpt);
+//				m_compilingState.m_byteCode.AsciiDump();
 			//}
 		} // while (true)
 

@@ -44,6 +44,10 @@
 
 #define MUP_CHARS _nrT("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+#define MU_VECTOR_CREATE "_~vect~create"
+#define MU_VECTOR_EXP2 "_~vect~exp2"
+#define MU_VECTOR_EXP3 "_~vect~exp3"
+
 /** \brief If this macro is defined mathematical exceptions (div by zero) will be thrown as exceptions. */
 //#define MUP_MATH_EXCEPTIONS
 

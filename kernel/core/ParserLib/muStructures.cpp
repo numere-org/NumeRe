@@ -661,7 +661,7 @@ namespace mu
     {
         for (size_t i = 0; i < other.size(); i++)
         {
-            operator[](i) = other[i];
+            operator[](i) = Numerical::autoType(other[i]);
         }
     }
 
@@ -1199,6 +1199,24 @@ namespace mu
     std::string Array::printDims() const
     {
         return toString(size()) + " x 1";
+    }
+
+    std::string Array::printJoined(const std::string& sSep, bool keepEmpty) const
+    {
+        std::string sRet;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            std::string sVal = operator[](i).printVal();
+
+            if ((sRet.length() && sVal.length())
+                || (i && keepEmpty))
+                sRet += sSep;
+
+            sRet += sVal;
+        }
+
+        return sRet;
     }
 
     size_t Array::getBytes() const

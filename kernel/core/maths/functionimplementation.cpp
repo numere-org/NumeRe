@@ -553,6 +553,8 @@ mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
         {
             _mem.writeData(i, 0, vElements[0][i]);
         }
+
+        return mu::Value(_mem.med(VectorIndex(0, vElements[0].size()-1), VectorIndex(0)));
     }
     else
     {
@@ -581,14 +583,14 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
 #ifndef PARSERSTANDALONE
     Memory _mem;
 
-    if (nElements == 1)
+    if (nElements == 2)
     {
-        for (size_t i = 0; i < vElements[0].size()-1; i++)
+        for (size_t i = 0; i < vElements[0].size(); i++)
         {
             _mem.writeData(i, 0, vElements[0][i]);
         }
 
-        return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[0].back().getNum().asCF64()));
+        return mu::Value(_mem.pct(VectorIndex(0, vElements[0].size()-1), VectorIndex(0), vElements[1].front().getNum().asCF64()));
     }
 
     for (int i = 0; i < nElements-1; i++)

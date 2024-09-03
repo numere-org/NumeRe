@@ -1016,13 +1016,17 @@ void ProcedureVarFactory::createLocalVars(std::string sVarList, const mu::Value&
             {
                 if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
-                    _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sVarList,
+                                                 _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
                 }
 
                 try
                 {
-                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef,
+                                                                                                       *_dataRef, *_outRef, *_pDataRef,
+                                                                                                       *_scriptRef, *_optionRef,
+                                                                                                       nth_procedure);
 
                     if (nReturn == FlowCtrl::INTERFACE_ERROR)
                         throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sVarList, SyntaxError::invalid_position);
@@ -1031,7 +1035,8 @@ void ProcedureVarFactory::createLocalVars(std::string sVarList, const mu::Value&
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sVarList,
+                                                 _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.showError(std::current_exception());
                     throw;
                 }

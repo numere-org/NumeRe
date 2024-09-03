@@ -142,9 +142,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Check, whether the user pressed "ESC"
     if (NumeReKernel::GetAsyncCancelState())
-    {
         throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
-    }
 
     // Remove obsolete whitespaces
     StripSpaces(sLine);
@@ -962,7 +960,8 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
 
                 try
                 {
-                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position));
+                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine,
+                                                         SyntaxError::invalid_position));
                 }
                 catch (...)
                 {
@@ -982,7 +981,8 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
             // virtual procedure interface function
             try
             {
-                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, 0);
+                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out,
+                                                                                _pData, _script, _option, 0);
                 // Only those two return values indicate that this line
                 // does contain a procedure or a plugin
                 if ((nRetVal == FlowCtrl::INTERFACE_EMPTY || nRetVal == FlowCtrl::INTERFACE_VALUE)
@@ -1103,7 +1103,8 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
                         _ReturnVal.delayDelete = _varFactory->delayDeletionOfReturnedTable(_ReturnVal.sReturnedTable);
                     }
                     else if (sReturnValue.length())
-                        _ReturnVal = ProcCalc(sReturnValue, sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
+                        _ReturnVal = ProcCalc(sReturnValue, sCurrentCommand, nCurrentByteCode,
+                                              _parser, _functions, _data, _option, _out, _pData, _script);
 
                     break;
                 }
@@ -1113,6 +1114,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
                     _debugger.showError(current_exception());
 
                     nCurrentByteCode = 0;
+                    nByteCode = 0;
                     catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
                 }
             }
@@ -1122,7 +1124,8 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
         // member function
         try
         {
-            ProcCalc(sProcCommandLine, sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
+            ProcCalc(sProcCommandLine, sCurrentCommand, nCurrentByteCode,
+                     _parser, _functions, _data, _option, _out, _pData, _script);
 
             if (getReturnSignal())
             {
@@ -1142,6 +1145,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
+            nByteCode = 0;
             catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
         }
 

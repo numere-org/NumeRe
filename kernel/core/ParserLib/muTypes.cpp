@@ -249,11 +249,11 @@ namespace mu
         if (flags & Numerical::TYPE_FLOAT)
             return bits == 32 ? Numerical::F32 : Numerical::F64;
 
-        if (flags & Numerical::TYPE_UINT)
-            return Numerical::NumericalType(Numerical::UI8 + std::log2(bits)-3);
-
         if (flags & Numerical::TYPE_INT)
             return Numerical::NumericalType(Numerical::I8 + std::log2(bits)-3);
+
+        if (flags & Numerical::TYPE_UINT)
+            return Numerical::NumericalType(Numerical::UI8 + std::log2(bits)-3);
 
         return Numerical::LOGICAL;
     }

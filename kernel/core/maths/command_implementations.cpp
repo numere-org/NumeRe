@@ -1517,8 +1517,7 @@ bool findExtrema(CommandLineParser& cmdParser)
 
     if (findParameter(sParams, "samples", '='))
     {
-        _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-        nSamples = _parser.Eval().getAsScalarInt();
+        nSamples = cmdParser.getParsedParameterValue("samples").getAsScalarInt();
 
         if (nSamples < 21)
             nSamples = 21;
@@ -1528,8 +1527,7 @@ bool findExtrema(CommandLineParser& cmdParser)
 
     if (findParameter(sParams, "points", '='))
     {
-        _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "points", '=') + 6));
-        nOrder = _parser.Eval().getAsScalarInt();
+        nOrder = cmdParser.getParsedParameterValue("points").getAsScalarInt();
 
         if (nOrder <= 3)
             nOrder = 3;
@@ -2107,8 +2105,7 @@ bool findZeroes(CommandLineParser& cmdParser)
 
     if (findParameter(sParams, "samples", '='))
     {
-        _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-        nSamples = _parser.Eval().getAsScalarInt();
+        nSamples = cmdParser.getParsedParameterValue("samples").getAsScalarInt();
 
         if (nSamples < 21)
             nSamples = 21;

@@ -1659,6 +1659,9 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
 
 mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu::Array& tol)
 {
+    if (!arr.size())
+        return mu::Value(false);
+
     mu::Array ret;
 
     for (size_t j = 0; j < std::max(tofind.size(), tol.size()); j++)
@@ -1720,7 +1723,7 @@ mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu:
         }
 
         if (ret.size() == offset)
-            ret.push_back(0);
+            ret.push_back(false);
     }
 
     return ret;
@@ -2349,7 +2352,10 @@ mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with)
 
     for (size_t i = 0; i < std::max(sStr.size(), with.size()); i++)
     {
-        ret.push_back(sStr.get(i).getStr().starts_with(with.get(i).getStr()));
+        if (!with.get(i).getStr().length())
+            ret.push_back(false);
+        else
+            ret.push_back(sStr.get(i).getStr().starts_with(with.get(i).getStr()));
     }
 
     return ret;
@@ -2362,7 +2368,10 @@ mu::Array strfnc_endswith(const mu::Array& sStr, const mu::Array& with)
 
     for (size_t i = 0; i < std::max(sStr.size(), with.size()); i++)
     {
-        ret.push_back(sStr.get(i).getStr().ends_with(with.get(i).getStr()));
+        if (!with.get(i).getStr().length())
+            ret.push_back(false);
+        else
+            ret.push_back(sStr.get(i).getStr().ends_with(with.get(i).getStr()));
     }
 
     return ret;
@@ -2423,7 +2432,7 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
         // Because the object might be a constructed table, we
         // disable the access caching for this expression
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-        DataAccessParser _accessParser(tab.get(i).getStr(), false);
+        DataAccessParser _accessParser(tab.get(i).getStr(), false, true);
 
         if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
         {
