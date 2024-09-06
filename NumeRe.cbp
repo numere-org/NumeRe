@@ -176,6 +176,7 @@
 			<Add option="-D_WIN32_WINNT=0x0601" />
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
+			<Add directory="externals/stduuid" />
 		</Compiler>
 		<ResourceCompiler>
 			<Add directory="$(wx)/include/" />

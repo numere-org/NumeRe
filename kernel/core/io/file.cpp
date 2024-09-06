@@ -105,6 +105,10 @@ namespace NumeRe
     static std::pair<std::string,std::string> findAndParseUnit(StringView sColumnHead)
     {
         sColumnHead.strip();
+
+        if (!sColumnHead.length())
+            return std::make_pair(std::string(), std::string());
+
         size_t pos = sColumnHead.rfind('[');
         /*if (sColumnHead.find(" in ") != std::string::npos)
             return std::make_pair(sColumnHead.substr(0, sColumnHead.find(" in ")),
