@@ -35,41 +35,55 @@ namespace mu
         TYPE_MIXED
     };
 
+    // Careful during adaption of these values bc. of internal calculations
+    enum NumericalType
+    {
+        LOGICAL,
+        UI8,
+        UI16,
+        UI32,
+        UI64,
+        I8,
+        I16,
+        I32,
+        I64,
+        F32,
+        F64,
+        DATETIME,
+        CF32,
+        CF64,
+        AUTO
+    };
+
+
+    struct TypeInfo
+    {
+        enum TypeFlags
+        {
+            TYPE_LOGICAL = 0x0,
+            TYPE_UINT = 0x1,
+            TYPE_INT = 0x2,
+            TYPE_FLOAT = 0x4,
+            TYPE_DATETIME = 0x8,
+            TYPE_COMPLEX = 0x10
+        };
+
+        uint8_t m_flags;
+        uint8_t m_bits;
+
+        TypeInfo() = default;
+        TypeInfo(NumericalType type);
+        void promote(const TypeInfo& other);
+        NumericalType getPromotedType(const TypeInfo& other) const;
+        NumericalType asType() const;
+        std::string printType() const;
+    };
+
 
     // Abstraction of numerical values
     struct Numerical
     {
-        // Careful during adaption of these values bc. of internal calculations
-        enum NumericalType
-        {
-            LOGICAL,
-            I8,
-            I16,
-            I32,
-            I64,
-            UI8,
-            UI16,
-            UI32,
-            UI64,
-            DATETIME,
-            F32,
-            F64,
-            CF32,
-            CF64,
-            AUTO
-        };
-
         private:
-            enum TypeFlags
-            {
-                TYPE_LOGICAL = 0x0,
-                TYPE_UINT = 0x1,
-                TYPE_INT = 0x2,
-                TYPE_FLOAT = 0x4,
-                TYPE_DATETIME = 0x8,
-                TYPE_COMPLEX = 0x10
-            };
-
             enum InternalType
             {
                 INT,
@@ -85,11 +99,8 @@ namespace mu
             };
 
             NumericalType m_type;
-            uint8_t m_bits;
-            uint8_t m_flags;
+            TypeInfo m_info;
 
-            void getTypeInfo();
-            NumericalType getPromotion(const Numerical& other) const;
             InternalType getConversion(NumericalType promotion) const;
 
         public:
@@ -108,7 +119,7 @@ namespace mu
             Numerical(const std::complex<double>& data = 0.0, NumericalType type = AUTO);
             Numerical(const sys_time_point& data);
 
-            static Numerical autoType(const std::complex<double>& data);
+            static Numerical autoType(const std::complex<double>& data, NumericalType hint = AUTO);
 
             int64_t asI64() const;
             uint64_t asUI64() const;
@@ -138,9 +149,8 @@ namespace mu
             bool operator>(const Numerical& other) const;
             bool operator>=(const Numerical& other) const;
 
-            Numerical getPromotedType(const Numerical& other) const;
-
             NumericalType getType() const;
+            TypeInfo getInfo() const;
             std::string getTypeAsString() const;
             std::string print(size_t digits = 0) const;
             std::string printVal(size_t digits = 0) const;

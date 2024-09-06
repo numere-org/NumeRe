@@ -2617,12 +2617,12 @@ static std::string formatByteSize(double bytes)
         bytes /= 1024.0;
 
         if (bytes > 1024.0)
-            return toString(bytes / 1024.0, 5) + " MBytes";
+            return toString(bytes / 1024.0, 5) + " MByte";
 
-        return toString(bytes, 5) + " KBytes";
+        return toString(bytes, 5) + " KByte";
     }
 
-    return toString(bytes, 5) + " Bytes";
+    return toString(bytes, 5) + " Byte";
 }
 
 

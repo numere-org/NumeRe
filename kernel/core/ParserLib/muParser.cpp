@@ -148,7 +148,9 @@ namespace mu
         else
             *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
 
-        *a_fVal = Numerical::autoType(fVal);
+        std::cout << a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).to_string() << " " << (a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).find_first_of(".eE") != std::string::npos) << std::endl;
+
+        *a_fVal = Numerical::autoType(fVal, a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).find_first_of(".eE") != std::string::npos ? F64 : AUTO);
         return 1;
     }
 

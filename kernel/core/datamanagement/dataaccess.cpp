@@ -1553,6 +1553,8 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
     if (nResults < 2)
         return "nan";
 
+#warning TODO (numere#2#09/06/24): Enable method chaining
+#warning TODO (numere#2#09/04/24): Improve types and interface
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().countIfEqual(sTableName, vCols, v[1]));
     return sResultVectorName;
 }

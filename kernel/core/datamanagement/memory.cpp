@@ -781,10 +781,7 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
                     continue;
                 }
 
-                if (memArray[_vCol[j]]->m_type == TableColumn::TYPE_STRING)
-                    (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsInternalString(_vLine[i]);
-                else
-                    (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
+                (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }
         }
     }
@@ -1379,7 +1376,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColu
     if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
-    convert_if_empty(memArray[_nCol], _nCol, type != TableColumn::TYPE_NONE ? type : to_column_type(_dData));
+    promote_if_needed(memArray[_nCol], _nCol, type != TableColumn::TYPE_NONE ? type : to_column_type(_dData));
     memArray[_nCol]->set(_nLine, _dData);
 
     if (nCalcLines != -1 && (!_dData.isValid() || _nLine >= nCalcLines))
@@ -1403,7 +1400,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColu
 /////////////////////////////////////////////////
 void Memory::writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData)
 {
-    convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
+    promote_if_needed(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
     memArray[_nCol]->setValue(_nLine, _dData);
 }
 
@@ -1484,7 +1481,6 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
             if (nDirection == COLS)
             {
                 if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-#warning TODO (numere#1#08/30/24): Auto conversion has a lot of problems
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
 
                 if (_values.size() > i)

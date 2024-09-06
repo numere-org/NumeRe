@@ -134,7 +134,7 @@ namespace mu
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
             std::string getCommonTypeAsString() const;
-            Numerical::NumericalType getCommonNumericalType() const;
+            NumericalType getCommonNumericalType() const;
             bool isScalar() const;
             bool isDefault() const;
 

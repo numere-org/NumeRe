@@ -1134,12 +1134,13 @@ class CategoricalColumn : public TableColumn
         void setCategories(const std::vector<std::string>& vCategories);
 };
 
-
+void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType other);
 void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
 bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type, bool convertSimilarTypes = false);
 void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
 TableColumn::ColumnType to_column_type(const mu::Value& val);
 TableColumn::ColumnType to_column_type(const mu::Array& arr);
+TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableColumn::ColumnType other);
 
 
 #endif // TABLECOLUMNIMPL_HPP

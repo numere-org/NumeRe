@@ -17,7 +17,7 @@ namespace mu
   /** \brief A class singling out integer types at compile time using
              template meta programming.
   */
-  template<typename T>
+  /*template<typename T>
   struct TypeInfo
   {
     static bool IsInteger() { return false; }
@@ -69,7 +69,7 @@ namespace mu
   struct TypeInfo<unsigned long>
   {
     static bool IsInteger() { return true;  }
-  };
+  };*/
 
 
   //-----------------------------------------------------------------------------------------------

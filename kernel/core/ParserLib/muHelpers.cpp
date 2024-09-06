@@ -25,6 +25,11 @@
 
 #warning TODO (numere#2#08/14/24): Handle new method types within autocompletion -> NEW ISSUE
 #warning TODO (numere#1#08/13/24): Update function language strings
+#warning TODO (numere#1#09/06/24): Add code documentation
+#warning TODO (numere#3#09/06/24): Add functions for interacting with types
+#warning TODO (numere#3#09/06/24): Add a function for creating a category as type
+
+
 
 namespace mu
 {

@@ -119,7 +119,7 @@ namespace mu
     Value::Value(const std::complex<double>& value, bool autoType)
     {
         m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value, autoType ? Numerical::AUTO : Numerical::CF64);
+        m_data = new Numerical(value, autoType ? AUTO : CF64);
     }
 
     Value::Value(const std::complex<float>& value)
@@ -723,14 +723,14 @@ namespace mu
                 return "category";
             case TYPE_NUMERICAL:
             {
-                Numerical val = front().getNum();
+                TypeInfo info = front().getNum().getInfo();
 
                 for (size_t i = 1; i < size(); i++)
                 {
-                    val = operator[](i).getNum().getPromotedType(val);
+                    info.promote(operator[](i).getNum().getInfo());
                 }
 
-                return val.getTypeAsString();
+                return info.printType();
             }
             case TYPE_STRING:
                 return "string";
@@ -742,16 +742,16 @@ namespace mu
     }
 
 
-    Numerical::NumericalType Array::getCommonNumericalType() const
+    NumericalType Array::getCommonNumericalType() const
     {
-        Numerical val = front().getNum();
+        TypeInfo info = front().getNum().getInfo();
 
         for (size_t i = 1; i < size(); i++)
         {
-            val = operator[](i).getNum().getPromotedType(val);
+            info.promote(operator[](i).getNum().getInfo());
         }
 
-        return val.getType();
+        return info.asType();
     }
 
 

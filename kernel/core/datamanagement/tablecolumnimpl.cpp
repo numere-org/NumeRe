@@ -2050,6 +2050,35 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
 
 
 
+void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType other)
+{
+    // Only complete new columns are overwritten
+    if (!col)
+    {
+        convert_if_empty(col, colNo, other);
+        return;
+    }
+
+    // Get the promoted type (will default to the current one, if problematic)
+    TableColumn::ColumnType promoted = to_promoted_type(col->m_type, other);
+
+    if (promoted == col->m_type)
+        return;
+    else if (promoted == TableColumn::TYPE_NONE && !col->size())
+    {
+        convert_if_empty(col, colNo, other);
+        return;
+    }
+
+    // Try to convert
+    TableColumn* convertedCol = col->convert(promoted);
+
+    if (!convertedCol)
+        return;
+
+    if (convertedCol != col.get())
+        col.reset(convertedCol);
+}
 
 
 /////////////////////////////////////////////////
@@ -2159,14 +2188,18 @@ bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
 /////////////////////////////////////////////////
 void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
 {
-    if (!col || (!col->size() && col->m_type != type))
+    if (!col)// || (!col->size() && col->m_type != type))
     {
         convert_if_empty(col, colNo, type);
         return;
     }
 
-    if (col->m_type == type)
+    TableColumn::ColumnType promoted = to_promoted_type(col->m_type, type);
+
+    if (col->m_type == promoted)
         return;
+    else if (promoted == TableColumn::TYPE_NONE)
+        promoted = type;
 
     std::string sHeadLine = col->m_sHeadLine;
     std::string sUnit = col->m_sUnit;
@@ -2174,7 +2207,7 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
     if (!sHeadLine.length())
         sHeadLine = TableColumn::getDefaultColumnHead(colNo);
 
-    switch (type)
+    switch (promoted)
     {
         case TableColumn::TYPE_STRING:
         {
@@ -2234,36 +2267,35 @@ TableColumn::ColumnType to_column_type(const mu::Value& val)
         return TableColumn::TYPE_STRING;
     else if (val.isNumerical())
     {
-            g_logger.info(val.getNum().getTypeAsString());
         switch (val.getNum().getType())
         {
-            case mu::Numerical::LOGICAL:
+            case mu::LOGICAL:
                 return TableColumn::TYPE_LOGICAL;
-            case mu::Numerical::I8:
+            case mu::I8:
                 return TableColumn::TYPE_VALUE_I8;
-            case mu::Numerical::I16:
+            case mu::I16:
                 return TableColumn::TYPE_VALUE_I16;
-            case mu::Numerical::I32:
+            case mu::I32:
                 return TableColumn::TYPE_VALUE_I32;
-            case mu::Numerical::I64:
+            case mu::I64:
                 return TableColumn::TYPE_VALUE_I64;
-            case mu::Numerical::UI8:
+            case mu::UI8:
                 return TableColumn::TYPE_VALUE_UI8;
-            case mu::Numerical::UI16:
+            case mu::UI16:
                 return TableColumn::TYPE_VALUE_UI16;
-            case mu::Numerical::UI32:
+            case mu::UI32:
                 return TableColumn::TYPE_VALUE_UI32;
-            case mu::Numerical::UI64:
+            case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
-            case mu::Numerical::DATETIME:
+            case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
-            case mu::Numerical::F32:
+            case mu::F32:
                 return TableColumn::TYPE_VALUE_F32;
-            case mu::Numerical::F64:
+            case mu::F64:
                 return TableColumn::TYPE_VALUE_F64;
-            case mu::Numerical::CF32:
+            case mu::CF32:
                 return TableColumn::TYPE_VALUE_CF32;
-            case mu::Numerical::CF64:
+            case mu::CF64:
                 return TableColumn::TYPE_VALUE_CF64;
         }
     }
@@ -2292,37 +2324,130 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
     {
         switch (arr.getCommonNumericalType())
         {
-            case mu::Numerical::LOGICAL:
+            case mu::LOGICAL:
                 return TableColumn::TYPE_LOGICAL;
-            case mu::Numerical::I8:
+            case mu::I8:
                 return TableColumn::TYPE_VALUE_I8;
-            case mu::Numerical::I16:
+            case mu::I16:
                 return TableColumn::TYPE_VALUE_I16;
-            case mu::Numerical::I32:
+            case mu::I32:
                 return TableColumn::TYPE_VALUE_I32;
-            case mu::Numerical::I64:
+            case mu::I64:
                 return TableColumn::TYPE_VALUE_I64;
-            case mu::Numerical::UI8:
+            case mu::UI8:
                 return TableColumn::TYPE_VALUE_UI8;
-            case mu::Numerical::UI16:
+            case mu::UI16:
                 return TableColumn::TYPE_VALUE_UI16;
-            case mu::Numerical::UI32:
+            case mu::UI32:
                 return TableColumn::TYPE_VALUE_UI32;
-            case mu::Numerical::UI64:
+            case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
-            case mu::Numerical::DATETIME:
+            case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
-            case mu::Numerical::F32:
+            case mu::F32:
                 return TableColumn::TYPE_VALUE_F32;
-            case mu::Numerical::F64:
+            case mu::F64:
                 return TableColumn::TYPE_VALUE_F64;
-            case mu::Numerical::CF32:
+            case mu::CF32:
                 return TableColumn::TYPE_VALUE_CF32;
-            case mu::Numerical::CF64:
+            case mu::CF64:
                 return TableColumn::TYPE_VALUE_CF64;
         }
     }
 
+    return TableColumn::TYPE_NONE;
+}
+
+
+static mu::NumericalType to_numerical_type(TableColumn::ColumnType type)
+{
+    switch (type)
+    {
+        case TableColumn::TYPE_VALUE_UI8:
+            return mu::UI8;
+        case TableColumn::TYPE_VALUE_UI16:
+            return mu::UI16;
+        case TableColumn::TYPE_VALUE_UI32:
+            return mu::UI32;
+        case TableColumn::TYPE_VALUE_UI64:
+            return mu::UI64;
+        case TableColumn::TYPE_VALUE_I8:
+            return mu::I8;
+        case TableColumn::TYPE_VALUE_I16:
+            return mu::I16;
+        case TableColumn::TYPE_VALUE_I32:
+            return mu::I32;
+        case TableColumn::TYPE_VALUE_I64:
+            return mu::I64;
+        case TableColumn::TYPE_VALUE_F32:
+            return mu::F32;
+        case TableColumn::TYPE_VALUE_F64:
+            return mu::F64;
+        case TableColumn::TYPE_VALUE_CF32:
+            return mu::CF32;
+        case TableColumn::TYPE_VALUE_CF64:
+        //case TableColumn::TYPE_VALUE:
+            return mu::CF64;
+        case TableColumn::TYPE_DATETIME:
+            return mu::DATETIME;
+        case TableColumn::TYPE_LOGICAL:
+            return mu::LOGICAL;
+    }
+
+    return mu::AUTO;
+}
+
+
+TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableColumn::ColumnType other)
+{
+    if (current == other)
+        return current;
+
+    else if ((current == TableColumn::TYPE_CATEGORICAL || current == TableColumn::TYPE_STRING)
+             && (other == TableColumn::TYPE_CATEGORICAL || other == TableColumn::TYPE_STRING))
+        return TableColumn::TYPE_CATEGORICAL;
+    else if (current > TableColumn::VALUELIKE
+             && current <= TableColumn::TYPE_LOGICAL
+             && other > TableColumn::VALUELIKE
+             && other <= TableColumn::TYPE_LOGICAL)
+    {
+        mu::TypeInfo info(to_numerical_type(current));
+        info.promote(to_numerical_type(other));
+
+        switch (info.asType())
+        {
+            case mu::LOGICAL:
+                return TableColumn::TYPE_LOGICAL;
+            case mu::I8:
+                return TableColumn::TYPE_VALUE_I8;
+            case mu::I16:
+                return TableColumn::TYPE_VALUE_I16;
+            case mu::I32:
+                return TableColumn::TYPE_VALUE_I32;
+            case mu::I64:
+                return TableColumn::TYPE_VALUE_I64;
+            case mu::UI8:
+                return TableColumn::TYPE_VALUE_UI8;
+            case mu::UI16:
+                return TableColumn::TYPE_VALUE_UI16;
+            case mu::UI32:
+                return TableColumn::TYPE_VALUE_UI32;
+            case mu::UI64:
+                return TableColumn::TYPE_VALUE_UI64;
+            case mu::DATETIME:
+                return TableColumn::TYPE_DATETIME;
+            case mu::F32:
+                return TableColumn::TYPE_VALUE_F32;
+            case mu::F64:
+                return TableColumn::TYPE_VALUE_F64;
+            case mu::CF32:
+                return TableColumn::TYPE_VALUE_CF32;
+            case mu::CF64:
+                return TableColumn::TYPE_VALUE_CF64;
+        }
+    }
+
+    // No promotion possible
     return TableColumn::TYPE_NONE;
 }
 

@@ -72,10 +72,10 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     AddColumn(_guilang.get("GUI_VARVIEWER_NAME"), 150);
     AddColumn(_guilang.get("GUI_VARVIEWER_DIM"), 80, wxALIGN_RIGHT);
     AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 65);
-    AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize - (!debugMode)*50);
+    AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize - (!debugMode)*90);
 
     if (!debugMode)
-        AddColumn(_guilang.get("GUI_VARVIEWER_SIZE"), 120);
+        AddColumn(_guilang.get("GUI_VARVIEWER_SIZE"), 90);
 
     // Create root node
     AddRoot("ROOT");

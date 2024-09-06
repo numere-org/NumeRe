@@ -65,105 +65,243 @@ namespace mu
 
 
 
-
-    Numerical::Numerical(int8_t data) : m_type(Numerical::I8)
+    TypeInfo::TypeInfo(NumericalType type)
     {
-        i64 = data;
-        getTypeInfo();
+        if (type == LOGICAL)
+        {
+            m_bits = 8;
+            m_flags = TYPE_LOGICAL;
+        }
+        else if (type == DATETIME)
+        {
+            m_bits = 64;
+            m_flags = TYPE_FLOAT | TYPE_DATETIME;
+        }
+        else if (type <= I64)
+        {
+            m_flags = TYPE_INT;
+            m_bits = 8 * (0x8 >> (I64 - type));
+        }
+        else if (type <= UI64)
+        {
+            m_flags = TYPE_INT | TYPE_UINT;
+            m_bits = 8 * (0x8 >> (UI64 - type));
+        }
+        else if (type <= F64)
+        {
+            m_flags = TYPE_FLOAT;
+            m_bits = type == F64 ? 64 : 32;
+        }
+        else
+        {
+            m_flags = TYPE_FLOAT | TYPE_COMPLEX;
+            m_bits = type == CF64 ? 64 : 32;
+        }
     }
 
-    Numerical::Numerical(uint8_t data) : m_type(Numerical::UI8)
+    void TypeInfo::promote(const TypeInfo& other)
+    {
+        m_bits = std::max(m_bits, other.m_bits);
+        m_flags = std::max(m_flags, other.m_flags);
+    }
+
+
+    NumericalType TypeInfo::getPromotedType(const TypeInfo& other) const
+    {
+        uint8_t bits = std::max(m_bits, other.m_bits);
+        uint8_t flags = std::max(m_flags, other.m_flags);
+
+        if (flags & TYPE_COMPLEX)
+            return bits == 32 ? CF32 : CF64;
+
+        if (flags & TYPE_DATETIME)
+            return DATETIME;
+
+        if (flags & TYPE_FLOAT)
+            return bits == 32 ? F32 : F64;
+
+        if (flags & TYPE_INT)
+            return NumericalType(I8 + std::log2(bits)-3);
+
+        if (flags & TYPE_UINT)
+            return NumericalType(UI8 + std::log2(bits)-3);
+
+        return LOGICAL;
+    }
+
+
+    NumericalType TypeInfo::asType() const
+    {
+        if (m_flags & TYPE_COMPLEX)
+            return m_bits == 32 ? CF32 : CF64;
+
+        if (m_flags & TYPE_DATETIME)
+            return DATETIME;
+
+        if (m_flags & TYPE_FLOAT)
+            return m_bits == 32 ? F32 : F64;
+
+        if (m_flags & TYPE_INT)
+            return NumericalType(I8 + std::log2(m_bits)-3);
+
+        if (m_flags & TYPE_UINT)
+            return NumericalType(UI8 + std::log2(m_bits)-3);
+
+        return LOGICAL;
+    }
+
+
+    std::string TypeInfo::printType() const
+    {
+        switch (asType())
+        {
+            case LOGICAL:
+                return "logical";
+            case I8:
+                return "value.i8";
+            case I16:
+                return "value.i16";
+            case I32:
+                return "value.i32";
+            case I64:
+                return "value.i64";
+            case UI8:
+                return "value.ui8";
+            case UI16:
+                return "value.ui16";
+            case UI32:
+                return "value.ui32";
+            case UI64:
+                return "value.ui64";
+            case DATETIME:
+                return "datetime";
+            case F32:
+                return "value.f32";
+            case F64:
+                return "value.f64";
+            case CF32:
+                return "value.cf32";
+        }
+
+        return "value.cf64";
+    }
+
+
+
+    Numerical::Numerical(int8_t data) : m_type(I8)
+    {
+        i64 = data;
+        m_info = TypeInfo(m_type);
+    }
+
+    Numerical::Numerical(uint8_t data) : m_type(UI8)
     {
         ui64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(int16_t data) : m_type(Numerical::I16)
+    Numerical::Numerical(int16_t data) : m_type(I16)
     {
         i64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(uint16_t data) : m_type(Numerical::UI16)
+    Numerical::Numerical(uint16_t data) : m_type(UI16)
     {
         ui64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(int32_t data) : m_type(Numerical::I32)
+    Numerical::Numerical(int32_t data) : m_type(I32)
     {
         i64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(uint32_t data) : m_type(Numerical::UI32)
+    Numerical::Numerical(uint32_t data) : m_type(UI32)
     {
         ui64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(int64_t data, Numerical::NumericalType type) : m_type(type)
+    Numerical::Numerical(int64_t data, NumericalType type) : m_type(type)
     {
         i64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
+
+        if (m_type != I64)
+        {
+            while ((i64 < -(1LL << (m_info.m_bits-1)) || i64 > (1LL << (m_info.m_bits-1))-1) && m_info.m_bits != 64)
+                m_info.m_bits *= 2;
+
+            m_type = m_info.asType();
+        }
     }
 
-    Numerical::Numerical(uint64_t data, Numerical::NumericalType type) : m_type(type)
+    Numerical::Numerical(uint64_t data, NumericalType type) : m_type(type)
     {
         ui64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
+
+        if (m_type != UI64)
+        {
+            while (ui64 > (1ULL << m_info.m_bits)-1 && m_info.m_bits != 64)
+                m_info.m_bits *= 2;
+
+            m_type = m_info.asType();
+        }
     }
 
-    Numerical::Numerical(float data) : m_type(Numerical::F32)
+    Numerical::Numerical(float data) : m_type(F32)
     {
         cf64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(double data) : m_type(Numerical::F64)
+    Numerical::Numerical(double data) : m_type(F64)
     {
         cf64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(bool data) : m_type(Numerical::LOGICAL)
+    Numerical::Numerical(bool data) : m_type(LOGICAL)
     {
         i64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(const std::complex<float>& data) : m_type(Numerical::CF32)
+    Numerical::Numerical(const std::complex<float>& data) : m_type(CF32)
     {
         cf64 = data;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(const std::complex<double>& data, Numerical::NumericalType type)
+    Numerical::Numerical(const std::complex<double>& data, NumericalType type)
     {
         cf64 = data;
 
-        if (type == Numerical::AUTO)
+        if (type == AUTO)
         {
             if (data.imag() == 0.0)
-                m_type = Numerical::F64;
+                m_type = F64;
             else
-                m_type = Numerical::CF64;
+                m_type = CF64;
         }
         else
             m_type = type;
 
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical::Numerical(const sys_time_point& time) : m_type(Numerical::DATETIME)
+    Numerical::Numerical(const sys_time_point& time) : m_type(DATETIME)
     {
         cf64 = to_double(time);
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
     }
 
-    Numerical Numerical::autoType(const std::complex<double>& data)
+    Numerical Numerical::autoType(const std::complex<double>& data, NumericalType hint)
     {
-        if (data.imag() == 0.0 && std::rint(data.real()) == data.real())
+        if (data.imag() == 0.0 && std::rint(data.real()) == data.real() && hint != F64)
         {
             /*if (data.real() >= 0)
             {
@@ -197,73 +335,12 @@ namespace mu
         return Numerical(data);
     }
 
-    void Numerical::getTypeInfo()
+    Numerical::InternalType Numerical::getConversion(NumericalType promotion) const
     {
-        if (m_type == Numerical::LOGICAL)
-        {
-            m_bits = 8;
-            m_flags = Numerical::TYPE_LOGICAL;
-        }
-        else if (m_type == Numerical::DATETIME)
-        {
-            m_bits = 64;
-            m_flags = Numerical::TYPE_FLOAT | Numerical::TYPE_DATETIME;
-        }
-        else if (m_type <= Numerical::I64)
-        {
-            m_flags = Numerical::TYPE_INT;
-            m_bits = 8 * (0x8 >> (Numerical::I64 - m_type));
-        }
-        else if (m_type <= Numerical::UI64)
-        {
-            m_flags = Numerical::TYPE_INT | Numerical::TYPE_UINT;
-            m_bits = 8 * (0x8 >> (Numerical::UI64 - m_type));
-        }
-        else if (m_type <= Numerical::F64)
-        {
-            m_flags = Numerical::TYPE_FLOAT;
-            m_bits = m_type == Numerical::F64 ? 64 : 32;
-        }
-        else
-        {
-            if (cf64.imag() != 0.0)
-                m_flags = Numerical::TYPE_FLOAT | Numerical::TYPE_COMPLEX;
-            else
-                m_flags = Numerical::TYPE_FLOAT;
-
-            m_bits = m_type == Numerical::CF64 ? 64 : 32;
-        }
-    }
-
-    Numerical::NumericalType Numerical::getPromotion(const Numerical& other) const
-    {
-        uint8_t bits = std::max(m_bits, other.m_bits);
-        uint8_t flags = std::max(m_flags, other.m_flags);
-
-        if (flags & Numerical::TYPE_COMPLEX)
-            return bits == 32 ? Numerical::CF32 : Numerical::CF64;
-
-        if (flags & Numerical::TYPE_DATETIME)
-            return Numerical::DATETIME;
-
-        if (flags & Numerical::TYPE_FLOAT)
-            return bits == 32 ? Numerical::F32 : Numerical::F64;
-
-        if (flags & Numerical::TYPE_INT)
-            return Numerical::NumericalType(Numerical::I8 + std::log2(bits)-3);
-
-        if (flags & Numerical::TYPE_UINT)
-            return Numerical::NumericalType(Numerical::UI8 + std::log2(bits)-3);
-
-        return Numerical::LOGICAL;
-    }
-
-    Numerical::InternalType Numerical::getConversion(Numerical::NumericalType promotion) const
-    {
-        if (promotion <= Numerical::I64)
+        if (promotion <= I64)
             return Numerical::INT;
 
-        if (promotion <= Numerical::UI64)
+        if (promotion <= UI64)
             return Numerical::UINT;
 
         return Numerical::COMPLEX;
@@ -271,10 +348,10 @@ namespace mu
 
     int64_t Numerical::asI64() const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return i64;
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return ui64;
 
         return intCast(cf64);
@@ -282,10 +359,10 @@ namespace mu
 
     uint64_t Numerical::asUI64() const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return (uint64_t)i64;
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return ui64;
 
         return (uint64_t)intCast(cf64);
@@ -293,10 +370,10 @@ namespace mu
 
     double Numerical::asF64() const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return i64;
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return ui64;
 
         return cf64.real();
@@ -304,10 +381,10 @@ namespace mu
 
     std::complex<double> Numerical::asCF64() const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return i64;
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return ui64;
 
         return cf64;
@@ -315,7 +392,7 @@ namespace mu
 
     Numerical Numerical::operator+(const Numerical& other) const
     {
-        Numerical::NumericalType promotion = getPromotion(other);
+        NumericalType promotion = m_info.getPromotedType(other.m_info);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -329,18 +406,18 @@ namespace mu
 
     Numerical Numerical::operator-() const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return Numerical(-i64, m_type);
 
-        if (m_type <= Numerical::UI64)
-            return Numerical(-ui64, (Numerical::NumericalType)(m_type-Numerical::I64));
+        if (m_type <= UI64)
+            return Numerical(-ui64, (NumericalType)(m_type-I64));
 
         return Numerical(-cf64, m_type);
     }
 
     Numerical Numerical::operator-(const Numerical& other) const
     {
-        Numerical::NumericalType promotion = getPromotion(other);
+        NumericalType promotion = m_info.getPromotedType(other.m_info);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -354,10 +431,10 @@ namespace mu
 
     Numerical Numerical::operator/(const Numerical& other) const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return autoType(i64 / other.asCF64());
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return autoType(ui64 / other.asCF64());
 
         return autoType(cf64 / other.asCF64());
@@ -365,7 +442,7 @@ namespace mu
 
     Numerical Numerical::operator*(const Numerical& other) const
     {
-        Numerical::NumericalType promotion = getPromotion(other);
+        NumericalType promotion = m_info.getPromotedType(other.m_info);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -379,7 +456,7 @@ namespace mu
 
     Numerical& Numerical::operator+=(const Numerical& other)
     {
-        Numerical::NumericalType promotion = getPromotion(other);
+        NumericalType promotion = m_info.getPromotedType(other.m_info);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -390,13 +467,13 @@ namespace mu
             cf64 = asCF64() + other.asCF64();
 
         m_type = promotion;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
         return *this;
     }
 
     Numerical& Numerical::operator-=(const Numerical& other)
     {
-        Numerical::NumericalType promotion = getPromotion(other);
+        NumericalType promotion = m_info.getPromotedType(other.m_info);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -407,7 +484,7 @@ namespace mu
             cf64 = asCF64() - other.asCF64();
 
         m_type = promotion;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
         return *this;
     }
 
@@ -419,7 +496,7 @@ namespace mu
 
     Numerical& Numerical::operator*=(const Numerical& other)
     {
-        Numerical::NumericalType promotion = getPromotion(other);
+        NumericalType promotion = m_info.getPromotedType(other.m_info);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -430,7 +507,7 @@ namespace mu
             cf64 = asCF64() * other.asCF64();
 
         m_type = promotion;
-        getTypeInfo();
+        m_info = TypeInfo(m_type);
         return *this;
     }
 
@@ -444,10 +521,10 @@ namespace mu
 
     Numerical::operator bool() const
     {
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return i64 != 0;
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return ui64 != 0;
 
         return cf64 != 0.0;
@@ -460,7 +537,7 @@ namespace mu
 
     bool Numerical::operator==(const Numerical& other) const
     {
-        Numerical::InternalType conversion = getConversion(getPromotion(other));
+        Numerical::InternalType conversion = getConversion(m_info.getPromotedType(other.m_info));
 
         if (conversion == Numerical::INT)
             return asI64() == other.asI64();
@@ -478,7 +555,7 @@ namespace mu
 
     bool Numerical::operator<(const Numerical& other) const
     {
-        Numerical::InternalType conversion = getConversion(getPromotion(other));
+        Numerical::InternalType conversion = getConversion(m_info.getPromotedType(other.m_info));
 
         if (conversion == Numerical::INT)
             return asI64() < other.asI64();
@@ -504,65 +581,33 @@ namespace mu
         return !operator<(other);
     }
 
-    Numerical Numerical::getPromotedType(const Numerical& other) const
-    {
-        Numerical::NumericalType promotion = getPromotion(other);
-
-        return Numerical(asCF64().imag() != 0.0 ? asCF64() : other.asCF64(), promotion);
-    }
-
-    Numerical::NumericalType Numerical::getType() const
+    NumericalType Numerical::getType() const
     {
         return m_type;
     }
 
+    TypeInfo Numerical::getInfo() const
+    {
+        return m_info;
+    }
+
     std::string Numerical::getTypeAsString() const
     {
-        switch (m_type)
-        {
-            case Numerical::LOGICAL:
-                return "logical";
-            case Numerical::I8:
-                return "value.i8";
-            case Numerical::I16:
-                return "value.i16";
-            case Numerical::I32:
-                return "value.i32";
-            case Numerical::I64:
-                return "value.i64";
-            case Numerical::UI8:
-                return "value.ui8";
-            case Numerical::UI16:
-                return "value.ui16";
-            case Numerical::UI32:
-                return "value.ui32";
-            case Numerical::UI64:
-                return "value.ui64";
-            case Numerical::DATETIME:
-                return "datetime";
-            case Numerical::F32:
-                return "value.f32";
-            case Numerical::F64:
-                return "value.f64";
-            case Numerical::CF32:
-                return "value.cf32";
-        }
-
-        return "value.cf64";
+        return m_info.printType();
     }
 
     std::string Numerical::print(size_t digits) const
     {
-        if (m_type == Numerical::LOGICAL)
+        if (m_type == LOGICAL)
             return toString((bool)i64);
 
-        if (m_type == Numerical::DATETIME && !isnan(cf64))
+        if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);
 
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return toString(i64);
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return toString(ui64);
 
         return toString(cf64, digits > 0 ? digits : 7);
@@ -570,16 +615,16 @@ namespace mu
 
     std::string Numerical::printVal(size_t digits) const
     {
-        if (m_type == Numerical::LOGICAL)
+        if (m_type == LOGICAL)
             return toString((bool)i64);
 
-        if (m_type == Numerical::DATETIME && !isnan(cf64))
+        if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);
 
-        if (m_type <= Numerical::I64)
+        if (m_type <= I64)
             return toString(i64);
 
-        if (m_type <= Numerical::UI64)
+        if (m_type <= UI64)
             return toString(ui64);
 
         // Is one of the components zero, then try to find an
@@ -602,13 +647,14 @@ namespace mu
 
     size_t Numerical::getBytes() const
     {
-        return m_flags & Numerical::TYPE_COMPLEX ? m_bits / 4 : m_bits / 8;
+        return m_info.m_flags & TypeInfo::TYPE_COMPLEX ? m_info.m_bits / 4 : m_info.m_bits / 8;
     }
 
     bool Numerical::isInt() const
     {
-        return m_flags & Numerical::TYPE_INT || ::isInt(asCF64());
+        return m_info.m_flags & TypeInfo::TYPE_INT || ::isInt(asCF64());
     }
+
 
 
     bool Category::operator==(const Category& other) const

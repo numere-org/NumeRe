@@ -1187,10 +1187,10 @@ static mu::Value numfnc_rint(const mu::Value& val)
 {
     const mu::Numerical& nval = val.getNum();
 
-    if (nval.getType() <= mu::Numerical::UI64)
+    if (nval.getType() <= mu::UI64)
         return nval;
 
-    if (nval.getType() <= mu::Numerical::F64 || nval.isInt())
+    if (nval.getType() <= mu::F64 || nval.isInt())
         return (int64_t)std::rint(nval.asCF64().real());
 
     return std::complex<double>(std::rint(nval.asCF64().real()), std::rint(nval.asCF64().imag()));
