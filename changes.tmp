@@ -19,3 +19,4 @@ Added	A new Table method to perform kmeans clustering on specified columns of nu
 Fixed	Procedures with relative namespaces can also be used within control flow blocks.
 New	Table columns can now have (physical) units to represent data even better. The units will be detected automatically (if possible), or you can use the dedicated methods to modify the unit of each column.
 New	The table method "TAB().toSIunits()" can be used for symbolic unit calculations.
+Applied	The kernel was greatly rewritten and supports much more different types and functionalities. Strange typing problems shouldn't appear any more. Overall performance should be improved (although at the cost that some segments might run slower).
