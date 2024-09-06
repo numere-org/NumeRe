@@ -20,6 +20,7 @@
 #include "../utils/tools.hpp"
 #include "../utils/filecheck.hpp"
 #include "../../../common/compareFiles.hpp"
+#include "../../../externals/stduuid/include/uuid.h"
 #ifndef PARSERSTANDALONE
 #include "../../kernel.hpp"
 #endif
@@ -2268,6 +2269,17 @@ mu::Array strfnc_getversioninfo()
 mu::Array strfnc_getuilang()
 {
     return mu::Value(_lang.get("LANGUAGE"));
+}
+
+
+mu::Array strfnc_getuuid()
+{
+    std::mt19937& generator = getRandGenInstance();
+    uuids::uuid_random_generator gen{generator};
+
+    const uuids::uuid id = gen();
+
+    return mu::Value(uuids::to_string(id));
 }
 
 

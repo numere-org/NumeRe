@@ -85,6 +85,7 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align); // OPT=1
 mu::Array strfnc_getlasterror();
 mu::Array strfnc_getversioninfo();
 mu::Array strfnc_getuilang();
+mu::Array strfnc_getuuid();
 mu::Array strfnc_getfileinfo(const mu::Array& file);
 mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts); // OPT=1
 mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with);

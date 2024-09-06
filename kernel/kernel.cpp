@@ -775,6 +775,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("getlasterror", strfnc_getlasterror, false);                   // getlasterror()
     _parser.DefineFun("getversioninfo", strfnc_getversioninfo);                      // getversioninfo()
     _parser.DefineFun("getuilang", strfnc_getuilang);                                // getuilang()
+    _parser.DefineFun("uuid", strfnc_getuuid, false);                                // getuuid()
     _parser.DefineFun("getfileinfo", strfnc_getfileinfo, false);                     // getfileinfo(str)
     _parser.DefineFun("sha256", strfnc_sha256, false, 1);                            // sha256(str,n) <- can access a file
     _parser.DefineFun("startswith", strfnc_startswith);                              // startswith(str,str)
