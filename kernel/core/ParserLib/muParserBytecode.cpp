@@ -112,6 +112,13 @@ namespace mu
 		m_vRPN.push_back(tok);
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief Add a Vararray to the bytecode.
+    ///
+    /// \param a_varArray const VarArray&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserByteCode::AddVarArray(const VarArray& a_varArray)
 	{
 		++m_iStackPos;
@@ -434,6 +441,15 @@ namespace mu
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Add an assignment operator together
+    /// with its associated VarArray instance.
+    ///
+    /// \param a_varArray const VarArray&
+    /// \param assignmentCode ECmdCode
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserByteCode::AddAssignOp(const VarArray& a_varArray, ECmdCode assignmentCode)
 	{
 		--m_iStackPos;
@@ -616,6 +632,14 @@ namespace mu
 		}
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief Add a method to the bytecode.
+    ///
+    /// \param a_method const std::string&
+    /// \param a_iArgc int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserByteCode::AddMethod(const std::string& a_method, int a_iArgc)
 	{
 	    if (a_iArgc >= 0)
@@ -629,6 +653,13 @@ namespace mu
         m_vRPN.push_back(tok);
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief Remove the topmost element from the
+    /// bytecode.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserByteCode::pop()
 	{
 	    if (m_vRPN.size())

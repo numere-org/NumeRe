@@ -62,11 +62,25 @@ namespace mu
         return -v;
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Callback for the unary plus operator.
+    ///
+    /// \param v const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Parser::UnaryPlus(const Array& v)
     {
         return v;
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Callback for the logical NOT operator.
+    ///
+    /// \param v const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Parser::LogicalNot(const Array& v)
     {
         return !v;

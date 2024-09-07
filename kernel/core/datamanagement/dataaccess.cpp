@@ -94,6 +94,7 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment, bool 
                     else
                         ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
                                      isAssignment);
+
                     break;
                 }
                 else if (sCommand[i] == '{')
@@ -112,9 +113,18 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment, bool 
                     // Calculate the indices and switch the access
                     // to a cluster access. Has to use a copy of the parser
                     bIsCluster = true;
-                    mu::Parser p = instance->getParser();
-                    ::getIndices(sCommand.subview(pos), idx, p, instance->getMemoryManager(),
-                                 isAssignment);
+
+                    if (isLocal)
+                    {
+                        // Calculate the indices. Has to use a copy of the parser
+                        mu::Parser p = instance->getParser();
+                        ::getIndices(sCommand.subview(pos), idx, p, instance->getMemoryManager(),
+                                     isAssignment);
+                    }
+                    else
+                        ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
+                                     isAssignment);
+
                     break;
                 }
                 else

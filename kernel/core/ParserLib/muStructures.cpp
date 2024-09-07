@@ -24,12 +24,22 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Construct an empty Value instance.
+    /////////////////////////////////////////////////
     Value::Value()
     {
         m_type = TYPE_VOID;
         m_data = nullptr;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param data const Value&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Value& data)
     {
         m_type = data.m_type;
@@ -53,6 +63,13 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor.
+    ///
+    /// \param data Value&&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(Value&& data)
     {
         m_type = data.m_type;
@@ -60,6 +77,13 @@ namespace mu
         data.m_data = nullptr;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an Numerical.
+    ///
+    /// \param data const Numerical&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Numerical& data)
     {
         m_type = TYPE_NUMERICAL;
@@ -67,6 +91,13 @@ namespace mu
         *static_cast<Numerical*>(m_data) = data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a Category.
+    ///
+    /// \param data const Category&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Category& data)
     {
         m_type = TYPE_CATEGORY;
@@ -74,60 +105,133 @@ namespace mu
         *static_cast<Category*>(m_data) = data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a logical value.
+    ///
+    /// \param logical bool
+    ///
+    /////////////////////////////////////////////////
     Value::Value(bool logical)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(logical);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an int32_t.
+    ///
+    /// \param value int32_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(int32_t value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a uint32_t.
+    ///
+    /// \param value uint32_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(uint32_t value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an int64_t.
+    ///
+    /// \param value int64_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(int64_t value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a uint64_t.
+    ///
+    /// \param value uint64_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(uint64_t value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a double.
+    ///
+    /// \param value double
+    ///
+    /////////////////////////////////////////////////
     Value::Value(double value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a time point.
+    ///
+    /// \param value const sys_time_point&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const sys_time_point& value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a std::complex
+    /// allowing for autotyping.
+    ///
+    /// \param value const std::complex<double>&
+    /// \param autoType bool
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const std::complex<double>& value, bool autoType)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value, autoType ? AUTO : CF64);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a float variant
+    /// of a std::complex.
+    ///
+    /// \param value const std::complex<float>&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const std::complex<float>& value)
     {
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical(value);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a std::string.
+    ///
+    /// \param sData const std::string&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const std::string& sData)
     {
         m_type = TYPE_STRING;
@@ -135,6 +239,13 @@ namespace mu
         *static_cast<std::string*>(m_data) = sData;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a const char*.
+    ///
+    /// \param sData const char*
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const char* sData)
     {
         m_type = TYPE_STRING;
@@ -142,11 +253,23 @@ namespace mu
         *static_cast<std::string*>(m_data) = sData;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Destroy a Value.
+    /////////////////////////////////////////////////
     Value::~Value()
     {
         clear();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a Value.
+    ///
+    /// \param other const Value&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
     Value& Value::operator=(const Value& other)
     {
         if (m_data && m_type != other.m_type)
@@ -180,11 +303,26 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the contained general type.
+    ///
+    /// \return DataType
+    ///
+    /////////////////////////////////////////////////
     DataType Value::getType() const
     {
         return m_type;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the contained type as a
+    /// std::string.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Value::getTypeAsString() const
     {
         switch (m_type)
@@ -200,11 +338,25 @@ namespace mu
         return "void";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is empty.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isVoid() const
     {
         return m_type == TYPE_VOID;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isValid() const
     {
         return m_type != TYPE_VOID
@@ -212,21 +364,52 @@ namespace mu
             && ((isString() && getStr().length()) || (isNumerical() && getNum().asCF64() == getNum().asCF64()));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value can be
+    /// interpreted as a numerical value.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isNumerical() const
     {
         return (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY) && m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value can be
+    /// interpreted as a string.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isString() const
     {
         return (m_type == TYPE_STRING || m_type == TYPE_CATEGORY) && m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// category.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isCategory() const
     {
         return m_type == TYPE_CATEGORY && m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained string.
+    ///
+    /// \return std::string&
+    ///
+    /////////////////////////////////////////////////
     std::string& Value::getStr()
     {
         if (!isString())
@@ -238,6 +421,13 @@ namespace mu
         return *(std::string*)m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained string.
+    ///
+    /// \return const std::string&
+    ///
+    /////////////////////////////////////////////////
     const std::string& Value::getStr() const
     {
         if (isVoid())
@@ -252,6 +442,13 @@ namespace mu
         return *(std::string*)m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Numerical.
+    ///
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
     Numerical& Value::getNum()
     {
         if (!isNumerical())
@@ -263,6 +460,13 @@ namespace mu
         return *(Numerical*)m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Numerical.
+    ///
+    /// \return const Numerical&
+    ///
+    /////////////////////////////////////////////////
     const Numerical& Value::getNum() const
     {
         if (isVoid())
@@ -277,6 +481,13 @@ namespace mu
         return *(Numerical*)m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Category.
+    ///
+    /// \return Category&
+    ///
+    /////////////////////////////////////////////////
     Category& Value::getCategory()
     {
         if (!isCategory())
@@ -285,6 +496,13 @@ namespace mu
         return *(Category*)m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Category.
+    ///
+    /// \return const Category&
+    ///
+    /////////////////////////////////////////////////
     const Category& Value::getCategory() const
     {
         if (!isCategory())
@@ -293,6 +511,15 @@ namespace mu
         return *(Category*)m_data;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the contained type to a
+    /// complex in a fail-safe mode (returning NAN if
+    /// a conversion is not possible).
+    ///
+    /// \return std::complex<double>
+    ///
+    /////////////////////////////////////////////////
     std::complex<double> Value::as_cmplx() const
     {
         if (!isNumerical())
@@ -304,6 +531,14 @@ namespace mu
         return static_cast<Numerical*>(m_data)->asCF64();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator+(const Value& other) const
     {
         DataType common = detectCommonType(other);
@@ -319,6 +554,13 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Unary minus operator.
+    ///
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator-() const
     {
         if (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY)
@@ -327,6 +569,14 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Minus operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator-(const Value& other) const
     {
         DataType common = detectCommonType(other);
@@ -340,6 +590,14 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Division operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator/(const Value& other) const
     {
         DataType common = detectCommonType(other);
@@ -355,6 +613,14 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiplication operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator*(const Value& other) const
     {
         DataType common = detectCommonType(other);
@@ -376,6 +642,14 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add-assign operator.
+    ///
+    /// \param other const Value&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
     Value& Value::operator+=(const Value& other)
     {
         if (m_type == TYPE_VOID)
@@ -404,6 +678,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract-assign operator.
+    ///
+    /// \param other const Value&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
     Value& Value::operator-=(const Value& other)
     {
         if (m_type == TYPE_VOID)
@@ -425,6 +707,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide-assign operator.
+    ///
+    /// \param other const Value&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
     Value& Value::operator/=(const Value& other)
     {
         DataType common = detectCommonType(other);
@@ -443,6 +733,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply-assign operator.
+    ///
+    /// \param other const Value&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
     Value& Value::operator*=(const Value& other)
     {
         if (m_type == TYPE_VOID)
@@ -472,6 +770,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Optimized power-function.
+    ///
+    /// \param exponent const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::pow(const Value& exponent) const
     {
         DataType common = detectCommonType(exponent);
@@ -485,16 +791,39 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Interpret the contained value as a
+    /// bool.
+    ///
+    /// \return Value::operator
+    ///
+    /////////////////////////////////////////////////
     Value::operator bool() const
     {
         return isValid() && ((isString() && getStr().length()) || (isNumerical() && bool(getNum())));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical not.
+    ///
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator!() const
     {
         return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && !getNum()));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Equal operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator==(const Value& other) const
     {
         return m_type == other.m_type
@@ -503,6 +832,14 @@ namespace mu
                 || (isNumerical() && getNum() == other.getNum()));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Not-equal operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator!=(const Value& other) const
     {
         return m_type != other.m_type
@@ -511,6 +848,14 @@ namespace mu
             || (isNumerical() && getNum() != other.getNum());
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-than operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator<(const Value& other) const
     {
         return m_type == other.m_type
@@ -519,11 +864,27 @@ namespace mu
                 || (isNumerical() && getNum() < other.getNum()));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-or-equal operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator<=(const Value& other) const
     {
         return operator<(other) || operator==(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-than operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator>(const Value& other) const
     {
        return m_type == other.m_type
@@ -532,21 +893,59 @@ namespace mu
                 || (isNumerical() && getNum() > other.getNum()));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greator-or-equal operator.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator>=(const Value& other) const
     {
         return operator>(other) || operator==(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical and.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator&&(const Value& other) const
     {
         return bool(*this) && bool(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical or.
+    ///
+    /// \param other const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
     Value Value::operator||(const Value& other) const
     {
         return bool(*this) || bool(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the contained value into a
+    /// string for printing on the terminal. Will
+    /// append quotation marks to string values, if
+    /// necessary, and can truncate the value to a
+    /// number of characters.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Value::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isCategory())
@@ -571,6 +970,19 @@ namespace mu
         return "void";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the contained value into a
+    /// string for printing on the terminal. Won't
+    /// append quotation marks to string values and
+    /// can truncate the value to a number of
+    /// characters.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Value::printVal(size_t digits, size_t chrs) const
     {
         if (isString())
@@ -587,6 +999,14 @@ namespace mu
         return "void";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Clear the contained value and free the
+    /// associated memory space.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Value::clear()
     {
         switch (m_type)
@@ -606,6 +1026,14 @@ namespace mu
         m_data = nullptr;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the number of acquired bytes
+    /// for this value.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Value::getBytes() const
     {
         switch (m_type)
@@ -620,6 +1048,16 @@ namespace mu
         return 0;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Detect the common (general) type for
+    /// this and another value enabling the selection
+    /// of the correct operator implementation.
+    ///
+    /// \param other const Value&
+    /// \return DataType
+    ///
+    /////////////////////////////////////////////////
     DataType Value::detectCommonType(const Value& other) const
     {
         if ((m_type == TYPE_CATEGORY || m_type == TYPE_NUMERICAL)
@@ -642,21 +1080,65 @@ namespace mu
 
 
 
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an empty Array.
+    /////////////////////////////////////////////////
     Array::Array() : std::vector<Value>(), m_commonType(TYPE_VOID)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param other const Array&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(const Array& other) : std::vector<Value>(other), m_commonType(other.m_commonType)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Fill constructor.
+    ///
+    /// \param n size_t
+    /// \param fillVal const Value&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(size_t n, const Value& fillVal) : std::vector<Value>(n, fillVal), m_commonType(fillVal.getType())
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a single Value.
+    ///
+    /// \param singleton const Value&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(const Value& singleton) : std::vector<Value>({singleton}), m_commonType(singleton.getType())
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a Variable.
+    ///
+    /// \param var const Variable&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
+    /// of std::complex values.
+    ///
+    /// \param other const std::vector<std::complex<double>>&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(const std::vector<std::complex<double>>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
     {
         for (size_t i = 0; i < other.size(); i++)
@@ -665,6 +1147,14 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
+    /// of Numericals.
+    ///
+    /// \param other const std::vector<Numerical>&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
     {
         for (size_t i = 0; i < other.size(); i++)
@@ -673,6 +1163,14 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
+    /// of std::strings.
+    ///
+    /// \param other const std::vector<std::string>&
+    ///
+    /////////////////////////////////////////////////
     Array::Array(const std::vector<std::string>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_STRING)
     {
         for (size_t i = 0; i < other.size(); i++)
@@ -681,6 +1179,14 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign an Array.
+    ///
+    /// \param other const Array&
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
     Array& Array::operator=(const Array& other)
     {
         std::vector<Value>::operator=(other);
@@ -689,6 +1195,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the (general) data types of every
+    /// contained Value.
+    ///
+    /// \return std::vector<DataType>
+    ///
+    /////////////////////////////////////////////////
     std::vector<DataType> Array::getType() const
     {
         std::vector<DataType> types;
@@ -707,6 +1221,14 @@ namespace mu
         return types;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the common (general) data type
+    /// representing all contained Values best.
+    ///
+    /// \return DataType
+    ///
+    /////////////////////////////////////////////////
     DataType Array::getCommonType() const
     {
         if (m_commonType == TYPE_VOID && size())
@@ -715,6 +1237,15 @@ namespace mu
         return m_commonType;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the common (general) data type
+    /// representing all contained Values best as a
+    /// printable std::string.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Array::getCommonTypeAsString() const
     {
         switch (getCommonType())
@@ -742,6 +1273,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Get the common (promoted)
+    /// NumericalType of all contained Values
+    /// assuming that all Values are Numericals.
+    ///
+    /// \return NumericalType
+    ///
+    /////////////////////////////////////////////////
     NumericalType Array::getCommonNumericalType() const
     {
         TypeInfo info = front().getNum().getInfo();
@@ -755,16 +1294,40 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief True, if only a single value is
+    /// contained within this Array.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Array::isScalar() const
     {
         return size() == 1u;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if this Array represents a
+    /// default value (an empty array in this
+    /// implementation).
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Array::isDefault() const
     {
         return !size();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator+(const Array& other) const
     {
         Array ret;
@@ -777,6 +1340,13 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Unary minus operator.
+    ///
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator-() const
     {
         Array ret;
@@ -789,6 +1359,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator-(const Array& other) const
     {
         Array ret;
@@ -801,6 +1379,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator/(const Array& other) const
     {
         Array ret;
@@ -813,6 +1399,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator*(const Array& other) const
     {
         Array ret;
@@ -825,6 +1419,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add-assign operator.
+    ///
+    /// \param other const Array&
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
     Array& Array::operator+=(const Array& other)
     {
         if (size() < other.size())
@@ -840,6 +1442,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract-assign operator.
+    ///
+    /// \param other const Array&
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
     Array& Array::operator-=(const Array& other)
     {
         if (size() < other.size())
@@ -855,6 +1465,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide-assign operator.
+    ///
+    /// \param other const Array&
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
     Array& Array::operator/=(const Array& other)
     {
         if (size() < other.size())
@@ -870,6 +1488,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply-assign operator.
+    ///
+    /// \param other const Array&
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
     Array& Array::operator*=(const Array& other)
     {
         if (size() < other.size())
@@ -885,6 +1511,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Optimized power function.
+    ///
+    /// \param exponent const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::pow(const Array& exponent) const
     {
         Array ret;
@@ -897,6 +1531,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Optimized power function.
+    ///
+    /// \param exponent const Numerical&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::pow(const Numerical& exponent) const
     {
         Array ret;
@@ -909,6 +1551,13 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical not.
+    ///
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator!() const
     {
         Array ret;
@@ -921,6 +1570,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Equal operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator==(const Array& other) const
     {
         Array ret;
@@ -933,6 +1590,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Not-equal operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator!=(const Array& other) const
     {
         Array ret;
@@ -945,6 +1610,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-than operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator<(const Array& other) const
     {
         Array ret;
@@ -957,6 +1630,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-or-equal operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator<=(const Array& other) const
     {
         Array ret;
@@ -969,6 +1650,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-than operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator>(const Array& other) const
     {
         Array ret;
@@ -981,6 +1670,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-or-equal operator.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator>=(const Array& other) const
     {
         Array ret;
@@ -993,6 +1690,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical and.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator&&(const Array& other) const
     {
         Array ret;
@@ -1005,6 +1710,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical or.
+    ///
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::operator||(const Array& other) const
     {
         Array ret;
@@ -1017,6 +1730,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod) const
     {
         if (sMethod == "len")
@@ -1063,6 +1784,15 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1) const
     {
         if (sMethod == "at")
@@ -1093,6 +1823,16 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
     {
         if (sMethod == "sub")
@@ -1116,11 +1856,29 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Interpret the Array as a scalar
+    /// (ignoring all other values) and return the
+    /// first value as an int64_t.
+    ///
+    /// \return int64_t
+    ///
+    /////////////////////////////////////////////////
     int64_t Array::getAsScalarInt() const
     {
         return front().getNum().asI64();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the whole Array into a
+    /// std::vector full of std::strings assuming
+    /// that only strings are contained within this
+    /// Array.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
     std::vector<std::string> Array::as_str_vector() const
     {
         std::vector<std::string> ret;
@@ -1133,6 +1891,16 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the whole Array into a
+    /// std::vector full of std::complex assuming
+    /// that only Numericals are contained within
+    /// this Array.
+    ///
+    /// \return std::vector<std::complex<double>>
+    ///
+    /////////////////////////////////////////////////
     std::vector<std::complex<double>> Array::as_cmplx_vector() const
     {
         std::vector<std::complex<double>> ret;
@@ -1145,6 +1913,15 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the whole Array into a
+    /// std::vector full of std::strings by printing
+    /// every value.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
     std::vector<std::string> Array::to_string() const
     {
         std::vector<std::string> ret;
@@ -1157,6 +1934,18 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print all contained Values into a
+    /// single std::string (possibly adding quotation
+    /// marks).
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Array::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isDefault())
@@ -1178,6 +1967,16 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print all contained Values into a
+    /// single std::string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Array::printVals(size_t digits, size_t chrs) const
     {
         if (isDefault())
@@ -1196,11 +1995,28 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print the dimensions of this Array.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Array::printDims() const
     {
         return toString(size()) + " x 1";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print all values using a strjoin
+    /// logic with a customizable separator.
+    ///
+    /// \param sSep const std::string&
+    /// \param keepEmpty bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Array::printJoined(const std::string& sSep, bool keepEmpty) const
     {
         std::string sRet;
@@ -1219,6 +2035,14 @@ namespace mu
         return sRet;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the number of acquired bytes
+    /// for this Array.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Array::getBytes() const
     {
         size_t bytes = 0;
@@ -1231,6 +2055,14 @@ namespace mu
         return bytes;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the i-th element.
+    ///
+    /// \param i size_t
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
     Value& Array::get(size_t i)
     {
         if (size() == 1u)
@@ -1241,6 +2073,14 @@ namespace mu
         return operator[](i);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the i-th element.
+    ///
+    /// \param i size_t
+    /// \return const Value&
+    ///
+    /////////////////////////////////////////////////
     const Value& Array::get(size_t i) const
     {
         if (size() == 1u)
@@ -1251,6 +2091,15 @@ namespace mu
         return operator[](i);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Helper method to convert all contained
+    /// numerical types to void values (needed for
+    /// some parser optimizations).
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Array::zerosToVoid()
     {
         if (getCommonType() != TYPE_NUMERICAL)
@@ -1265,6 +2114,16 @@ namespace mu
         m_commonType = TYPE_VOID;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Helper method returning true, if the
+    /// underlying data type is commutative, i.e.
+    /// A+B == B+A (which is not true for strings,
+    /// for example).
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Array::isCommutative() const
     {
         return getCommonType() == TYPE_NUMERICAL;
@@ -1273,21 +2132,64 @@ namespace mu
 
 
 
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an empty Variable.
+    /////////////////////////////////////////////////
     Variable::Variable() : Array()
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Variable from a Value.
+    ///
+    /// \param data const Value&
+    ///
+    /////////////////////////////////////////////////
     Variable::Variable(const Value& data) : Array(data)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Variable from an Array.
+    ///
+    /// \param data const Array&
+    ///
+    /////////////////////////////////////////////////
     Variable::Variable(const Array& data) : Array(data)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param data const Variable&
+    ///
+    /////////////////////////////////////////////////
     Variable::Variable(const Variable& data) : Array(data)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor.
+    ///
+    /// \param data Array&&
+    ///
+    /////////////////////////////////////////////////
     Variable::Variable(Array&& data) : Array(data)
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a Value checking for type
+    /// compatibility.
+    ///
+    /// \param other const Value&
+    /// \return Variable&
+    ///
+    /////////////////////////////////////////////////
     Variable& Variable::operator=(const Value& other)
     {
         if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
@@ -1299,6 +2201,15 @@ namespace mu
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign an Array checking for type
+    /// compatibility.
+    ///
+    /// \param other const Array&
+    /// \return Variable&
+    ///
+    /////////////////////////////////////////////////
     Variable& Variable::operator=(const Array& other)
     {
         if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
@@ -1310,6 +2221,15 @@ namespace mu
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a Variable checking for type
+    /// compatibility.
+    ///
+    /// \param other const Variable&
+    /// \return Variable&
+    ///
+    /////////////////////////////////////////////////
     Variable& Variable::operator=(const Variable& other)
     {
         if (getCommonType() == TYPE_VOID || getType() == other.getType())
@@ -1321,17 +2241,45 @@ namespace mu
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Force-overwrite the contained values
+    /// of this Array with another Array.
+    ///
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Variable::overwrite(const Array& other)
     {
         Array::operator=(other);
     }
 
 
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a VarArray from a single
+    /// Variable.
+    ///
+    /// \param var Variable*
+    ///
+    /////////////////////////////////////////////////
     VarArray::VarArray(Variable* var) : std::vector<Variable*>(1, var)
     {
         //
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign the values of an Array.
+    ///
+    /// \param values const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::operator=(const Array& values)
     {
         if (values.isScalar())
@@ -1354,6 +2302,14 @@ namespace mu
         return values;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add-assign the values of an Array.
+    ///
+    /// \param values const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::operator+=(const Array& values)
     {
         Array ret;
@@ -1380,6 +2336,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract-assign the values of an Array.
+    ///
+    /// \param values const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::operator-=(const Array& values)
     {
         Array ret;
@@ -1406,6 +2370,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply-assign the values of an Array.
+    ///
+    /// \param values const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::operator*=(const Array& values)
     {
         Array ret;
@@ -1432,6 +2404,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide-assign the values of an Array.
+    ///
+    /// \param values const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::operator/=(const Array& values)
     {
         Array ret;
@@ -1458,6 +2438,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Optimized power function.
+    ///
+    /// \param values const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::pow(const Array& values)
     {
         Array ret;
@@ -1484,6 +2472,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a std::vector of Arrays.
+    ///
+    /// \param arrayList const std::vector<Array>&
+    /// \return VarArray&
+    ///
+    /////////////////////////////////////////////////
     VarArray& VarArray::operator=(const std::vector<Array>& arrayList)
     {
         if (arrayList.size() == 1u)
@@ -1504,6 +2500,15 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Equal operator, checking the equality
+    /// of pointers.
+    ///
+    /// \param other const VarArray&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool VarArray::operator==(const VarArray& other) const
     {
         if (size() != other.size())
@@ -1518,11 +2523,27 @@ namespace mu
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return true, if this VarArray does not
+    /// contain any Variables.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool VarArray::isNull() const
     {
         return size() == 0u;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print the pointer addresses in
+    /// hexadecimal numbers.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string VarArray::print() const
     {
         std::string ret;
@@ -1541,6 +2562,14 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert this VarArray as a single
+    /// Array.
+    ///
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array VarArray::asArray() const
     {
         Array ret;
@@ -1555,11 +2584,25 @@ namespace mu
 
 
 
+
+
+    // Instantiation of the static member variables
     const std::string Value::m_defString;
     const Numerical Value::m_defVal;
     const Value Array::m_default;
 
 
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check if all Values in the Array
+    /// evaluate to true (vector-and).
+    ///
+    /// \param arr const Array&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool all(const Array& arr)
     {
         for (size_t i = 0; i < arr.size(); i++)
@@ -1571,6 +2614,15 @@ namespace mu
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Check if at least one Value in the
+    /// Array evaluates to true (vector-or).
+    ///
+    /// \param arr const Array&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool any(const Array& arr)
     {
         for (size_t i = 0; i < arr.size(); i++)
@@ -1584,6 +2636,15 @@ namespace mu
 
 
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param arr const Array&
+    /// \param v const Value&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator+(const Array& arr, const Value& v)
     {
         Array ret;
@@ -1596,6 +2657,15 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract operator.
+    ///
+    /// \param arr const Array&
+    /// \param v const Value&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator-(const Array& arr, const Value& v)
     {
         Array ret;
@@ -1608,6 +2678,15 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply operator.
+    ///
+    /// \param arr const Array&
+    /// \param v const Value&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator*(const Array& arr, const Value& v)
     {
         Array ret;
@@ -1620,6 +2699,15 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide operator.
+    ///
+    /// \param arr const Array&
+    /// \param v const Value&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator/(const Array& arr, const Value& v)
     {
         Array ret;
@@ -1632,11 +2720,29 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param v const Value&
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator+(const Value& v, const Array& arr)
     {
         return arr+v;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract operator.
+    ///
+    /// \param v const Value&
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator-(const Value& v, const Array& arr)
     {
         Array ret;
@@ -1649,11 +2755,29 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply operator.
+    ///
+    /// \param v const Value&
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator*(const Value& v, const Array& arr)
     {
         return arr*v;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide operator.
+    ///
+    /// \param v const Value&
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator/(const Value& v, const Array& arr)
     {
         Array ret;
@@ -1667,41 +2791,114 @@ namespace mu
     }
 
 
+
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param arr const Array&
+    /// \param v double
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator+(const Array& arr, double v)
     {
         return arr+Value(v);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract operator.
+    ///
+    /// \param arr const Array&
+    /// \param v double
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator-(const Array& arr, double v)
     {
         return arr-Value(v);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply operator.
+    ///
+    /// \param arr const Array&
+    /// \param v double
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator*(const Array& arr, double v)
     {
         return arr*Value(v);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide operator.
+    ///
+    /// \param arr const Array&
+    /// \param v double
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator/(const Array& arr, double v)
     {
         return arr/Value(v);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param v double
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator+(double v, const Array& arr)
     {
         return arr+Value(v);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract operator.
+    ///
+    /// \param v double
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator-(double v, const Array& arr)
     {
         return Value(v)-arr;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply operator.
+    ///
+    /// \param v double
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator*(double v, const Array& arr)
     {
         return arr*Value(v);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide operator.
+    ///
+    /// \param v double
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array operator/(double v, const Array& arr)
     {
         return Value(v)/arr;

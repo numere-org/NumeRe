@@ -26,7 +26,17 @@
 
 namespace mu
 {
-    // 1.2 or "hello" or 2+3i
+    // Forward declaration of the Variable class
+    class Variable;
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class is an abstract value, which
+    /// can be filled with a string or a numerical
+    /// value (or any other value, which will be
+    /// added to this implementation in the future,
+    /// e.g. classes).
+    /////////////////////////////////////////////////
     class Value
     {
         public:
@@ -111,10 +121,15 @@ namespace mu
             DataType detectCommonType(const Value& other) const;
     };
 
-    class Variable;
 
-
-    // {1,2,3,4,...}
+    /////////////////////////////////////////////////
+    /// \brief This class handles the scalar-vector
+    /// interactions and is the general datatype
+    /// within the parser. It is an extended
+    /// std::vector with mu::Value as underlying
+    /// template parameter and a bunch of customized
+    /// operators.
+    /////////////////////////////////////////////////
     class Array : public std::vector<Value>
     {
         public:
@@ -189,6 +204,12 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class represents a variable which
+    /// is an extension to mu::Array, where
+    /// overwriting has been restricted to keeping
+    /// the general data type.
+    /////////////////////////////////////////////////
     class Variable : public Array
     {
         public:
@@ -207,7 +228,13 @@ namespace mu
     };
 
 
-    // {a,b,c,d,...}
+    /////////////////////////////////////////////////
+    /// \brief This class is a handler for an array
+    /// of variables, which can be used within result
+    /// assignment, where the results are distributed
+    /// accordingly. This class is only intended for
+    /// parser-internal use.
+    /////////////////////////////////////////////////
     class VarArray : public std::vector<Variable*>
     {
         public:

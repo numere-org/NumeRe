@@ -42,6 +42,10 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief A structure representing some value or
+    /// variable.
+    /////////////////////////////////////////////////
     struct SValData
     {
         Variable* var;
@@ -50,6 +54,10 @@ namespace mu
         bool isVect;
     };
 
+    /////////////////////////////////////////////////
+    /// \brief A structure representing a function or
+    /// a custom operator.
+    /////////////////////////////////////////////////
     struct SFunData
     {
         // Note: generic_fun_type is merely a placeholder. The real type could be
@@ -62,12 +70,21 @@ namespace mu
         int   idx;
     };
 
+    /////////////////////////////////////////////////
+    /// \brief A special structure for the assignment
+    /// operator.
+    /////////////////////////////////////////////////
     struct SOprtData
     {
         VarArray var;
         int offset;
     };
 
+    /////////////////////////////////////////////////
+    /// \brief This struct represents an already
+    /// classified token together with its associated
+    /// data.
+    /////////////////////////////////////////////////
 	struct SToken
 	{
 		ECmdCode Cmd;

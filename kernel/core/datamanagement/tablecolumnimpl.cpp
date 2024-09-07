@@ -2050,6 +2050,17 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
 
 
 
+/////////////////////////////////////////////////
+/// \brief Promote the datatype of the passed
+/// column towards the necessary datatype or
+/// convert if empty.
+///
+/// \param col TblColPtr&
+/// \param colNo size_t
+/// \param other TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
 void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType other)
 {
     // Only complete new columns are overwritten
@@ -2359,6 +2370,14 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Convert the column type to the
+/// corresponding numerical type.
+///
+/// \param type TableColumn::ColumnType
+/// \return mu::NumericalType
+///
+/////////////////////////////////////////////////
 static mu::NumericalType to_numerical_type(TableColumn::ColumnType type)
 {
     switch (type)
@@ -2398,6 +2417,14 @@ static mu::NumericalType to_numerical_type(TableColumn::ColumnType type)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Calculate the column type promotion.
+///
+/// \param current TableColumn::ColumnType
+/// \param other TableColumn::ColumnType
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
 TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableColumn::ColumnType other)
 {
     if (current == other)

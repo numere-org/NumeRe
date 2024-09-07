@@ -21,6 +21,14 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to an Array.
+    ///
+    /// \param func std::complex<double>(*func)(const std::complex<double>&)
+    /// \param a const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::complex<double>(*func)(const std::complex<double>&), const Array& a)
     {
         Array ret;
@@ -33,6 +41,15 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to an Array.
+    ///
+    /// \param func Value(*func)(const Value&)
+    /// \param a const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(Value(*func)(const Value&), const Array& a)
     {
         Array ret;
@@ -45,6 +62,15 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to an Array
+    ///
+    /// \param func std::string(*func)(const std::string&)
+    /// \param a const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::string(*func)(const std::string&), const Array& a)
     {
         Array ret;
@@ -59,6 +85,15 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to two Arrays.
+    ///
+    /// \param func Value(*func)(const Value&, const Value&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(Value(*func)(const Value&, const Value&), const Array& a1, const Array& a2)
     {
         Array ret;
@@ -71,6 +106,16 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to two Arrays.
+    ///
+    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2)
     {
         Array ret;
@@ -86,6 +131,16 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to three Arrays.
+    ///
+    /// \param func Value(*func)(const Value&, const Value&, const Value&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \param a3 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(Value(*func)(const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
@@ -98,6 +153,16 @@ namespace mu
         return ret;
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to three Arrays.
+    ///
+    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \param a3 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
@@ -114,6 +179,17 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to four Arrays.
+    ///
+    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \param a3 const Array&
+    /// \param a4 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
@@ -129,6 +205,18 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to four Arrays.
+    ///
+    /// \param func Value(*func)(const Value&, const Value&, const Value&, const Value&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \param a3 const Array&
+    /// \param a4 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
@@ -143,6 +231,18 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to five Arrays.
+    ///
+    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \param a3 const Array&
+    /// \param a4 const Array&
+    /// \param a5 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
@@ -159,6 +259,19 @@ namespace mu
         return ret;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to five Arrays.
+    ///
+    /// \param func Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&)
+    /// \param a1 const Array&
+    /// \param a2 const Array&
+    /// \param a3 const Array&
+    /// \param a4 const Array&
+    /// \param a5 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
@@ -173,10 +286,20 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to an array of Arrays.
+    ///
+    /// \param std::complex<double>(*func)(const std::complex<double>*, int)
+    /// \param arr const Array*
+    /// \param elems int
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(std::complex<double>(*func)(const std::complex<double>*, int), const Array* arrs, int elems)
     {
         size_t nCount = 0;
 
+        // Find the maximum along all arrays
         for (int i = 0; i < elems; i++)
         {
             nCount = std::max(nCount, arrs[i].size());
@@ -199,10 +322,20 @@ namespace mu
         return res;
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a function to an array of Arrays.
+    ///
+    /// \param func Value(*func)(const Value*, int)
+    /// \param arr const Array*
+    /// \param elems int
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array apply(Value(*func)(const Value*, int), const Array* arrs, int elems)
     {
         size_t nCount = 0;
 
+        // Find the maximum along all arrays
         for (int i = 0; i < elems; i++)
         {
             nCount = std::max(nCount, arrs[i].size());

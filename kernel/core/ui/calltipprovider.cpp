@@ -675,6 +675,8 @@ namespace NumeRe
             sToken = "acosh";
         else if (sToken == "artanh")
             sToken = "atanh";
+        else if (sToken == "ceil")
+            sToken = "roof";
 
         if (m_returnUnmatchedTokens
             || _lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*") != "PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")
@@ -779,14 +781,18 @@ namespace NumeRe
     /////////////////////////////////////////////////
     CallTip CallTipProvider::getMethod(std::string sToken) const
     {
+        static const char* pref = "PARSERFUNCS_LISTFUNC_METHOD_";
+
         if (!m_returnUnmatchedTokens
-            && _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_*") == "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_*")
+            && _lang.get(pref + toUpperCase(sToken) + "_*") == pref + toUpperCase(sToken) + "_*")
             return CallTip();
 
-        if (_lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]") != "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]")
-            sToken = "STRINGVAR." + _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]");
+        if (_lang.get(pref + toUpperCase(sToken) + "_[ANY]") != pref + toUpperCase(sToken) + "_[ANY]")
+            sToken = "VAR." + _lang.get(pref + toUpperCase(sToken) + "_[ANY]");
+        else if (_lang.get(pref + toUpperCase(sToken) + "_[STRING]") != pref + toUpperCase(sToken) + "_[STRING]")
+            sToken = "STRINGVAR." + _lang.get(pref + toUpperCase(sToken) + "_[STRING]");
         else
-            sToken = "TABLE()." + _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[DATA]");
+            sToken = "TABLE()." + _lang.get(pref + toUpperCase(sToken) + "_[DATA]");
 
         CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);
         _cTip.nStart = _cTip.sDefinition.find('.')+1;

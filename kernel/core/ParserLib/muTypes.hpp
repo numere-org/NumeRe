@@ -26,6 +26,10 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Defines the general data type, which
+    /// can be embedded into a mu::Value instance.
+    /////////////////////////////////////////////////
     enum DataType
     {
         TYPE_VOID,
@@ -35,7 +39,15 @@ namespace mu
         TYPE_MIXED
     };
 
-    // Careful during adaption of these values bc. of internal calculations
+
+    /////////////////////////////////////////////////
+    /// \brief Defines the specialisation of the
+    /// value represented within a TYPE_NUMERICAL
+    /// instantiated mu::Value.
+    ///
+    /// \remark Be careful during adaption of these
+    /// values bc. of internal calculations.
+    /////////////////////////////////////////////////
     enum NumericalType
     {
         LOGICAL,
@@ -56,6 +68,13 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This structure separates a
+    /// NumericalType value into its number of bits
+    /// and the type-specific flags. Can be used to
+    /// determine type promotion within the numerical
+    /// regime.
+    /////////////////////////////////////////////////
     struct TypeInfo
     {
         enum TypeFlags
@@ -80,7 +99,13 @@ namespace mu
     };
 
 
-    // Abstraction of numerical values
+    /////////////////////////////////////////////////
+    /// \brief This structure abstrahizes all
+    /// available numerical types, i.e. each
+    /// NumericalType specialisation can be used
+    /// identical without the need of knowing the
+    /// specialisation.
+    /////////////////////////////////////////////////
     struct Numerical
     {
         private:
@@ -159,6 +184,12 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This structure represents a
+    /// categorical datatype, i.e. a combination of
+    /// the string representation together with the
+    /// associated ID.
+    /////////////////////////////////////////////////
     struct Category
     {
         Numerical val;

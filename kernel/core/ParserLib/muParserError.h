@@ -48,7 +48,6 @@ namespace mu
     /** \brief Error codes. */
     enum EErrorCodes
     {
-#warning TODO (numere#1#08/07/24): Sync this with the error messages
         // Formula syntax errors
         ecUNEXPECTED_OPERATOR    = 0,  ///< Unexpected binary operator found
         ecUNASSIGNABLE_TOKEN     = 1,  ///< Token cant be identified.

@@ -65,6 +65,15 @@ namespace mu
 
 
 
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a TypeInfo from a
+    /// NumericalType value.
+    ///
+    /// \param type NumericalType
+    ///
+    /////////////////////////////////////////////////
     TypeInfo::TypeInfo(NumericalType type)
     {
         if (type == LOGICAL)
@@ -99,6 +108,15 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Promote this instance using the
+    /// information from the passed TypeInfo instance.
+    ///
+    /// \param other const TypeInfo&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TypeInfo::promote(const TypeInfo& other)
     {
         m_bits = std::max(m_bits, other.m_bits);
@@ -106,6 +124,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Calculate the promotion of this
+    /// TypeInfo instance with the passed one and
+    /// return it as a NumericalType value.
+    ///
+    /// \param other const TypeInfo&
+    /// \return NumericalType
+    ///
+    /////////////////////////////////////////////////
     NumericalType TypeInfo::getPromotedType(const TypeInfo& other) const
     {
         uint8_t bits = std::max(m_bits, other.m_bits);
@@ -130,6 +157,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Convert this instance into a
+    /// NumericalType value.
+    ///
+    /// \return NumericalType
+    ///
+    /////////////////////////////////////////////////
     NumericalType TypeInfo::asType() const
     {
         if (m_flags & TYPE_COMPLEX)
@@ -151,6 +185,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Format this TypeInfo into a
+    /// std::string for printing on the terminal.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string TypeInfo::printType() const
     {
         switch (asType())
@@ -188,42 +229,95 @@ namespace mu
 
 
 
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from an int8_t.
+    ///
+    /// \param data int8_t
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(int8_t data) : m_type(I8)
     {
         i64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a uint8_t.
+    ///
+    /// \param data uint8_t
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(uint8_t data) : m_type(UI8)
     {
         ui64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from an int16_t.
+    ///
+    /// \param data int16_t
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(int16_t data) : m_type(I16)
     {
         i64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a uint16_t.
+    ///
+    /// \param data uint16_t
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(uint16_t data) : m_type(UI16)
     {
         ui64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from an int32_t.
+    ///
+    /// \param data int32_t
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(int32_t data) : m_type(I32)
     {
         i64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a uint32_t.
+    ///
+    /// \param data uint32_t
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(uint32_t data) : m_type(UI32)
     {
         ui64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from an int64_t.
+    /// The additional parameter allows for defining
+    /// the target type if different than int64_t.
+    ///
+    /// \param data int64_t
+    /// \param type NumericalType
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(int64_t data, NumericalType type) : m_type(type)
     {
         i64 = data;
@@ -238,6 +332,16 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a uint64_t.
+    /// The additional parameter allows for defining
+    /// the target type if different than uint64_t.
+    ///
+    /// \param data uint64_t
+    /// \param type NumericalType
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(uint64_t data, NumericalType type) : m_type(type)
     {
         ui64 = data;
@@ -252,30 +356,70 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a float.
+    ///
+    /// \param data float
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(float data) : m_type(F32)
     {
         cf64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a double.
+    ///
+    /// \param data double
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(double data) : m_type(F64)
     {
         cf64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a bool.
+    ///
+    /// \param data bool
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(bool data) : m_type(LOGICAL)
     {
         i64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a
+    /// std::complex in the float variant.
+    ///
+    /// \param data const std::complex<float>&
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(const std::complex<float>& data) : m_type(CF32)
     {
         cf64 = data;
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a
+    /// std::complex in the double variant. The
+    /// additional parameter allows for defining the
+    /// target type if different than std::complex.
+    ///
+    /// \param data const std::complex<double>&
+    /// \param type NumericalType
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(const std::complex<double>& data, NumericalType type)
     {
         cf64 = data;
@@ -293,12 +437,33 @@ namespace mu
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Numerical from a time
+    /// point.
+    ///
+    /// \param time const sys_time_point&
+    ///
+    /////////////////////////////////////////////////
     Numerical::Numerical(const sys_time_point& time) : m_type(DATETIME)
     {
         cf64 = to_double(time);
         m_info = TypeInfo(m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Create a Numerical instance by
+    /// determining the underlying type automatically.
+    /// The second parameter can indicate, whether
+    /// the target type should be a float although it
+    /// would fit into an int.
+    ///
+    /// \param data const std::complex<double>&
+    /// \param hint NumericalType
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::autoType(const std::complex<double>& data, NumericalType hint)
     {
         if (data.imag() == 0.0 && std::rint(data.real()) == data.real() && hint != F64)
@@ -335,6 +500,15 @@ namespace mu
         return Numerical(data);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Determine the internal conversion from
+    /// the promoted type.
+    ///
+    /// \param promotion NumericalType
+    /// \return Numerical::InternalType
+    ///
+    /////////////////////////////////////////////////
     Numerical::InternalType Numerical::getConversion(NumericalType promotion) const
     {
         if (promotion <= I64)
@@ -346,6 +520,14 @@ namespace mu
         return Numerical::COMPLEX;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the represented value as an
+    /// int64_t.
+    ///
+    /// \return int64_t
+    ///
+    /////////////////////////////////////////////////
     int64_t Numerical::asI64() const
     {
         if (m_type <= I64)
@@ -357,6 +539,14 @@ namespace mu
         return intCast(cf64);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the represented value as a
+    /// uint64_t.
+    ///
+    /// \return uint64_t
+    ///
+    /////////////////////////////////////////////////
     uint64_t Numerical::asUI64() const
     {
         if (m_type <= I64)
@@ -368,6 +558,14 @@ namespace mu
         return (uint64_t)intCast(cf64);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the represented value as a
+    /// double.
+    ///
+    /// \return double
+    ///
+    /////////////////////////////////////////////////
     double Numerical::asF64() const
     {
         if (m_type <= I64)
@@ -379,6 +577,14 @@ namespace mu
         return cf64.real();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the represented value as a
+    /// std::complex.
+    ///
+    /// \return std::complex<double>
+    ///
+    /////////////////////////////////////////////////
     std::complex<double> Numerical::asCF64() const
     {
         if (m_type <= I64)
@@ -390,6 +596,14 @@ namespace mu
         return cf64;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::operator+(const Numerical& other) const
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
@@ -404,6 +618,13 @@ namespace mu
         return Numerical(asCF64() + other.asCF64(), promotion);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Unary minus operator.
+    ///
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::operator-() const
     {
         if (m_type <= I64)
@@ -415,6 +636,14 @@ namespace mu
         return Numerical(-cf64, m_type);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::operator-(const Numerical& other) const
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
@@ -429,6 +658,14 @@ namespace mu
         return Numerical(asCF64() - other.asCF64(), promotion);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::operator/(const Numerical& other) const
     {
         if (m_type <= I64)
@@ -440,6 +677,14 @@ namespace mu
         return autoType(cf64 / other.asCF64());
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::operator*(const Numerical& other) const
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
@@ -454,6 +699,14 @@ namespace mu
         return Numerical(asCF64() * other.asCF64(), promotion);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Add-assign operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
     Numerical& Numerical::operator+=(const Numerical& other)
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
@@ -471,6 +724,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract-assign operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
     Numerical& Numerical::operator-=(const Numerical& other)
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
@@ -488,12 +749,28 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Divide-assign operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
     Numerical& Numerical::operator/=(const Numerical& other)
     {
         *this = operator/(other);
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply-assign operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
     Numerical& Numerical::operator*=(const Numerical& other)
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
@@ -511,6 +788,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Optimized power function.
+    ///
+    /// \param exponent const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
     Numerical Numerical::pow(const Numerical& exponent) const
     {
         if (exponent.isInt())
@@ -519,6 +804,13 @@ namespace mu
         return Numerical::autoType(std::pow(asCF64(), exponent.asCF64()));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Represent the value as a boolean.
+    ///
+    /// \return Numerical::operator
+    ///
+    /////////////////////////////////////////////////
     Numerical::operator bool() const
     {
         if (m_type <= I64)
@@ -530,11 +822,26 @@ namespace mu
         return cf64 != 0.0;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Logical not.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator!() const
     {
         return !bool(*this);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Equal operator.
+    ///
+    /// \param other const Numerical&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator==(const Numerical& other) const
     {
         Numerical::InternalType conversion = getConversion(m_info.getPromotedType(other.m_info));
@@ -548,11 +855,27 @@ namespace mu
         return asCF64() == other.asCF64();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Not-equal operator.
+    ///
+    /// \param other const Numerical&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator!=(const Numerical& other) const
     {
         return !operator==(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-than operator.
+    ///
+    /// \param other const Numerical&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator<(const Numerical& other) const
     {
         Numerical::InternalType conversion = getConversion(m_info.getPromotedType(other.m_info));
@@ -566,36 +889,93 @@ namespace mu
         return asF64() < other.asF64();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-or-equal operator.
+    ///
+    /// \param other const Numerical&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator<=(const Numerical& other) const
     {
         return operator<(other) || operator==(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-than operator.
+    ///
+    /// \param other const Numerical&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator>(const Numerical& other) const
     {
         return !operator<=(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-or-equal operator.
+    ///
+    /// \param other const Numerical&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::operator>=(const Numerical& other) const
     {
         return !operator<(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the NumeericalType of the
+    /// contained value.
+    ///
+    /// \return NumericalType
+    ///
+    /////////////////////////////////////////////////
     NumericalType Numerical::getType() const
     {
         return m_type;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the TypeInfo corresponding to the
+    /// contained value.
+    ///
+    /// \return TypeInfo
+    ///
+    /////////////////////////////////////////////////
     TypeInfo Numerical::getInfo() const
     {
         return m_info;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the NumericalType information
+    /// into a std::string.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Numerical::getTypeAsString() const
     {
         return m_info.printType();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contained value into a
+    /// std::string.
+    ///
+    /// \param digits size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Numerical::print(size_t digits) const
     {
         if (m_type == LOGICAL)
@@ -613,6 +993,16 @@ namespace mu
         return toString(cf64, digits > 0 ? digits : 7);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contained value into a
+    /// std::string considering some integer
+    /// optimisations.
+    ///
+    /// \param digits size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Numerical::printVal(size_t digits) const
     {
         if (m_type == LOGICAL)
@@ -645,11 +1035,27 @@ namespace mu
         return toString(cf64, digits > 0 ? digits : 7);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the number of acquired bytes
+    /// for this instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Numerical::getBytes() const
     {
         return m_info.m_flags & TypeInfo::TYPE_COMPLEX ? m_info.m_bits / 4 : m_info.m_bits / 8;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value can
+    /// safely be interpreted as an integer.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Numerical::isInt() const
     {
         return m_info.m_flags & TypeInfo::TYPE_INT || ::isInt(asCF64());
@@ -657,31 +1063,81 @@ namespace mu
 
 
 
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Equal operator.
+    ///
+    /// \param other const Category&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Category::operator==(const Category& other) const
     {
         return val == other.val && name == other.name;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Not-equal operator.
+    ///
+    /// \param other const Category&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Category::operator!=(const Category& other) const
     {
         return !operator==(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-than operator.
+    ///
+    /// \param other const Category&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Category::operator<(const Category& other) const
     {
         return val < other.val || name < other.name;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Less-or-equal operator.
+    ///
+    /// \param other const Category&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Category::operator<=(const Category& other) const
     {
         return operator<(other) || operator==(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-than operator.
+    ///
+    /// \param other const Category&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Category::operator>(const Category& other) const
     {
         return !operator<=(other);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-or-equal operator.
+    ///
+    /// \param other const Category&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Category::operator>=(const Category& other) const
     {
         return !operator<(other);

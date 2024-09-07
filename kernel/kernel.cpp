@@ -58,7 +58,6 @@ Language _lang;
 mglGraph _fontData;
 extern mu::Variable vAns;
 extern DefaultVariables _defVars;
-__time64_t tTimeZero = _time64(0);
 
 // Initialization of the static member variables
 NumeReKernel* NumeReKernel::kernelInstance = nullptr;
@@ -396,8 +395,8 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("'d", unit_day);
     _parser.DefinePostfixOprt("'h", unit_hour);
     _parser.DefinePostfixOprt("'min", unit_minute);
-    _parser.DefinePostfixOprt("!", numfnc_Faculty);
-    _parser.DefinePostfixOprt("!!", numfnc_doubleFaculty);
+    _parser.DefinePostfixOprt("!", numfnc_Factorial);
+    _parser.DefinePostfixOprt("!!", numfnc_doubleFactorial);
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
 
     // --> Operatoren <--
@@ -523,10 +522,10 @@ void NumeReKernel::defineNumFunctions()
     // function search in the parser.
     /////////////////////////////////////////////////////////////////////
 
-    _parser.DefineFun("faculty", numfnc_Faculty);                                // faculty(n)
-    _parser.DefineFun("factorial", numfnc_Faculty);                              // factorial(n)
-    _parser.DefineFun("dblfacul", numfnc_doubleFaculty);                         // dblfacul(n)
-    _parser.DefineFun("dblfact", numfnc_doubleFaculty);                          // dblfact(n)
+    _parser.DefineFun("faculty", numfnc_Factorial);                              // faculty(n)
+    _parser.DefineFun("factorial", numfnc_Factoral);                             // factorial(n)
+    _parser.DefineFun("dblfacul", numfnc_doubleFactorial);                       // dblfacul(n)
+    _parser.DefineFun("dblfact", numfnc_doubleFactorial);                        // dblfact(n)
     _parser.DefineFun("binom", numfnc_Binom);                                    // binom(Wert1,Wert2)
     _parser.DefineFun("num", numfnc_Num);                                        // num(a,b,c,...)
     _parser.DefineFun("cnt", numfnc_Cnt);                                        // num(a,b,c,...)

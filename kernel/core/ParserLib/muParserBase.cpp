@@ -1328,6 +1328,13 @@ namespace mu
 		return m_FunDef;
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief Return a reference to the internal
+    /// variables.
+    ///
+    /// \return const varmap_type&
+    ///
+    /////////////////////////////////////////////////
 	const varmap_type& ParserBase::GetInternalVars() const
 	{
 	    return mInternalVars;
@@ -2486,14 +2493,12 @@ namespace mu
 
 						if (stOpt.top().GetCode() == opt.GetCode())
 						{
-
 							// Deal with operator associativity
 							EOprtAssociativity eOprtAsct = GetOprtAssociativity(opt);
-							if ( (eOprtAsct == oaRIGHT && (nPrec1 <= nPrec2)) ||
-									(eOprtAsct == oaLEFT  && (nPrec1 <  nPrec2)) )
-							{
+
+                                if ((eOprtAsct == oaRIGHT && (nPrec1 <= nPrec2))
+                                    || (eOprtAsct == oaLEFT && (nPrec1 <  nPrec2)))
 								break;
-							}
 						}
 						else if (nPrec1 < nPrec2)
 						{

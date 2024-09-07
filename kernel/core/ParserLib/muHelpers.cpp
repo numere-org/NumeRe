@@ -24,15 +24,21 @@
 #endif
 
 #warning TODO (numere#2#08/14/24): Handle new method types within autocompletion -> NEW ISSUE
-#warning TODO (numere#1#08/13/24): Update function language strings
-#warning TODO (numere#1#09/06/24): Add code documentation
-#warning TODO (numere#3#09/06/24): Add functions for interacting with types
+#warning TODO (numere#3#08/13/24): Update user documentation
+#warning TODO (numere#3#09/06/24): Add functions for interacting with types and obtaining the message for an error code
 #warning TODO (numere#3#09/06/24): Add a function for creating a category as type
 
 
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Print a string on the terminal.
+    ///
+    /// \param msg const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void print(const std::string& msg)
     {
 #ifdef PARSERSTANDALONE
@@ -42,6 +48,15 @@ namespace mu
 #endif
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print a formatted string on the
+    /// terminal.
+    ///
+    /// \param msg const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void printFormatted(const std::string& msg)
     {
 #ifdef PARSERSTANDALONE
@@ -51,6 +66,14 @@ namespace mu
 #endif
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Toggle the table printing mode (i.e.
+    /// delay/refresh after) to avoid flickering.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void toggleTableMode()
     {
 #ifdef PARSERSTANDALONE
@@ -60,6 +83,15 @@ namespace mu
 #endif
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Implements the val2str operator.
+    ///
+    /// \param arr const Array&
+    /// \param nLen size_t
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array val2Str(const Array& arr, size_t nLen)
     {
         Array res;
@@ -81,13 +113,22 @@ namespace mu
         return res;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Implements the path tokens within the
+    /// parser.
+    ///
+    /// \param arr const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array getPathToken(const Array& arr)
     {
-        #ifndef PARSERSTANDALONE
+#ifndef PARSERSTANDALONE
         return mu::Value(NumeReKernel::getInstance()->getFileSystem().getTokenValue(arr.front().getStr()));
-        #else
+#else
         return arr;
-        #endif // PARSERSTANDALONE
+#endif // PARSERSTANDALONE
     }
 }
 

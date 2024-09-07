@@ -606,6 +606,7 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 void windowCommand(CommandLineParser& cmdParser)
 {
+#warning TODO (numere#3#09/06/24): Improve the interface towards custom windows with mu::Arrays
     NumeRe::WindowManager& winManager = NumeReKernel::getInstance()->getWindowManager();
 
     // Find the expression part

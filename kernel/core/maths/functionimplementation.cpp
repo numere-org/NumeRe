@@ -24,18 +24,8 @@
 #include "../ParserLib/muParserTemplateMagic.h"
 #define _USE_MATH_DEFINES
 
-#include <cstdlib>
 #include <cmath>
-#include <fstream>
 #include <string>
-#include <iostream>
-#include <locale>
-#include <limits>
-#include <ios>
-#include <iomanip>
-#include <numeric>
-#include <ctime>
-#include <csignal>
 #include <boost/math/common_factor.hpp>
 #include <gsl/gsl_sf.h>
 #include <gsl/gsl_rng.h>
@@ -51,10 +41,6 @@
 #endif
 #include "../utils/tools.hpp"
 #include "../version.h"
-
-int nErrorIndices[2] = {-1,-1};
-std::string sErrorToken = "";
-extern time_t tTimeZero;
 
 /*
  * Ende der globalen Variablen
@@ -208,6 +194,14 @@ mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Return a subset of an Array.
+///
+/// \param a const mu::Array&
+/// \param idx const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
 {
     mu::Array res;
@@ -224,6 +218,14 @@ mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the factorial
+/// function.
+///
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> factorial_impl(const std::complex<double>& v)
 {
     if (mu::isnan(v) || mu::isinf(v))
@@ -241,7 +243,7 @@ static std::complex<double> factorial_impl(const std::complex<double>& v)
     /* --> Zaehlschleife, die die Fakultaet bildet: allerdings in der Form 1*2*3*...*(n-1)*n und nicht
      *     in der Form, wie sie normal definiert wird: n*(n-1)*(n-2)*...*3*2*1 <--
      */
-    for (int i = 1; i <= abs(intCast(v)); i++)
+    for (int i = 2; i <= abs(intCast(v)); i++)
     {
         vResult *= i;
     }
@@ -251,19 +253,27 @@ static std::complex<double> factorial_impl(const std::complex<double>& v)
 }
 
 /////////////////////////////////////////////////
-/// \brief Function representing the faculty of
+/// \brief Function representing the factorial of
 /// any natural number.
 ///
 /// \param v const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Faculty(const mu::Array& v)
+mu::Array numfnc_Factorial(const mu::Array& v)
 {
     return mu::apply(factorial_impl, v);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the double factorial
+/// function.
+///
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> double_factorial_impl(const std::complex<double>& v)
 {
     if (mu::isnan(v) || mu::isinf(v))
@@ -285,18 +295,27 @@ static std::complex<double> double_factorial_impl(const std::complex<double>& v)
 
 /////////////////////////////////////////////////
 /// \brief Function representing the double
-/// faculty of any natural number.
+/// factorial of any natural number.
 ///
 /// \param v const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_doubleFaculty(const mu::Array& v)
+mu::Array numfnc_doubleFactorial(const mu::Array& v)
 {
     return mu::apply(double_factorial_impl, v);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the binomial
+/// coefficient.
+///
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> binom_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     if (mu::isnan(v1) || mu::isnan(v2) || mu::isinf(v1) || mu::isinf(v2))
@@ -422,6 +441,13 @@ mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the conj() function.
+///
+/// \param val const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value conj(const mu::Value& val)
 {
     return mu::Numerical(std::conj(val.getNum().asCF64()));
@@ -604,6 +630,15 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the cmp() function.
+///
+/// \param vElements const mu::Array&
+/// \param value const mu::Value&
+/// \param mode const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value, const mu::Value& mode)
 {
     enum
@@ -695,7 +730,6 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
 
     return nKeep+1;
 }
-
 
 
 /////////////////////////////////////////////////
@@ -1171,6 +1205,15 @@ mu::Array numfnc_MaxPos(const mu::Array& vElements)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the round()
+/// function.
+///
+/// \param vToRound const std::complex<double>&
+/// \param vDecimals const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> round_impl(const std::complex<double>& vToRound, const std::complex<double>& vDecimals)
 {
     if (mu::isinf(vToRound) || mu::isinf(vDecimals) || mu::isnan(vToRound) || mu::isnan(vDecimals))
@@ -1183,6 +1226,14 @@ static std::complex<double> round_impl(const std::complex<double>& vToRound, con
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the rint()
+/// function.
+///
+/// \param val const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value numfnc_rint(const mu::Value& val)
 {
     const mu::Numerical& nval = val.getNum();
@@ -1195,6 +1246,7 @@ static mu::Value numfnc_rint(const mu::Value& val)
 
     return std::complex<double>(std::rint(nval.asCF64().real()), std::rint(nval.asCF64().imag()));
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Implements the rint() function.
@@ -1252,6 +1304,15 @@ mu::Array numfnc_toDegree(const mu::Array& v)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// Legendre polynomials.
+///
+/// \param vn const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
@@ -1268,6 +1329,16 @@ static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// associated Legendre polynomials.
+///
+/// \param vl const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& v)
 {
     if (mu::isinf(vl) || mu::isnan(vl) || mu::isinf(vm) || mu::isnan(vm) || mu::isinf(v) || mu::isnan(v))
@@ -1291,6 +1362,17 @@ static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// spherical harmonics.
+///
+/// \param vl const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param theta const std::complex<double>&
+/// \param phi const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& theta, const std::complex<double>& phi)
 {
     if (std::isinf(vl.real()) || std::isnan(vl.real())
@@ -1329,6 +1411,17 @@ mu::Array numfnc_SphericalHarmonics(const mu::Array& vl, const mu::Array& vm, co
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// imaginary spherical harmonics.
+///
+/// \param vl const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param theta const std::complex<double>&
+/// \param phi const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> imSphericalHarmonics_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& theta, const std::complex<double>& phi)
 {
     if (std::isinf(vl.real()) || std::isnan(vl.real())
@@ -1406,6 +1499,17 @@ static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the Zernike
+/// polynomials.
+///
+/// \param vn const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param rho const std::complex<double>&
+/// \param phi const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> Zernike_impl(const std::complex<double>& vn, const std::complex<double>& vm, const std::complex<double>& rho, const std::complex<double>& phi)
 {
     if (std::isinf(vn.real()) || std::isnan(vn.real())
@@ -1444,6 +1548,14 @@ mu::Array numfnc_Zernike(const mu::Array& vn, const mu::Array& vm, const mu::Arr
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// cardinal sine function.
+///
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> SinusCardinalis_impl(const std::complex<double>& v)
 {
     if (mu::isinf(v) || mu::isnan(v))
@@ -1454,6 +1566,7 @@ static std::complex<double> SinusCardinalis_impl(const std::complex<double>& v)
     else
         return std::sin(v)/v;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This function calculates the cardinal
@@ -1469,6 +1582,15 @@ mu::Array numfnc_SinusCardinalis(const mu::Array& v)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// spherical bessel function.
+///
+/// \param vn const std::complex<double>&
+/// \param vc const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> SphericalBessel_impl(const std::complex<double>& vn, const std::complex<double>& vc)
 {
     if (mu::isinf(vn) || mu::isinf(vc) || mu::isnan(vn) || mu::isnan(vc))
@@ -1509,10 +1631,9 @@ static std::complex<double> SphericalBessel_impl(const std::complex<double>& vn,
 }
 
 
-
 /////////////////////////////////////////////////
 /// \brief This function calculates the spherical
-/// bessel function.
+/// Bessel functions.
 ///
 /// \param vn const mu::Array&
 /// \param vc const mu::Array&
@@ -1525,6 +1646,15 @@ mu::Array numfnc_SphericalBessel(const mu::Array& vn, const mu::Array& vc)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// spherical von Neumann functions.
+///
+/// \param vn const std::complex<double>&
+/// \param vc const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> SphericalNeumann_impl(const std::complex<double>& vn, const std::complex<double>& vc)
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(vc) || mu::isnan(vc))
@@ -1610,6 +1740,15 @@ mu::Array numfnc_AssociatedLegendrePolynomial(const mu::Array& vl, const mu::Arr
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// Laguerre polynomials.
+///
+/// \param vn const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
@@ -1640,6 +1779,16 @@ mu::Array numfnc_LaguerrePolynomial(const mu::Array& vn, const mu::Array& v)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// associated Laguerre polynomials.
+///
+/// \param vn const std::complex<double>&
+/// \param vk const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& vk, const std::complex<double>& v)
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(vk) || mu::isnan(vk) || mu::isinf(v) || mu::isnan(v))
@@ -1679,6 +1828,15 @@ mu::Array numfnc_AssociatedLaguerrePolynomial(const mu::Array& vn, const mu::Arr
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the Hermite
+/// polynomials.
+///
+/// \param vn const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> HermitePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
@@ -1713,6 +1871,15 @@ mu::Array numfnc_HermitePolynomial(const mu::Array& vn, const mu::Array& v)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// Bethe-Weizsaecker mass formula.
+///
+/// \param vN const std::complex<double>&
+/// \param vZ const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> BetheWeizsaecker_impl(const std::complex<double>& vN, const std::complex<double>& vZ)
 {
     if (std::isinf(vN.real()) || std::isnan(vN.real()) || std::isinf(vZ.real()) || std::isnan(vZ.real()))
@@ -1776,6 +1943,15 @@ mu::Array numfnc_Heaviside(const mu::Array& v)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the phi()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \param y const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> phi_impl(const std::complex<double>& x, const std::complex<double>& y)
 {
     if (isinf(x.real()) || isnan(x.real()) || isinf(y.real()) || isnan(y.real()))
@@ -1802,6 +1978,16 @@ mu::Array numfnc_phi(const mu::Array& x, const mu::Array& y)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the theta()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \param y const std::complex<double>&
+/// \param z const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 std::complex<double> theta_impl(const std::complex<double>& x, const std::complex<double>& y, const std::complex<double>& z)
 {
     if (mu::isinf(x) || mu::isnan(x) || mu::isinf(y) || mu::isnan(y) || mu::isinf(z) || mu::isnan(z))
@@ -1829,6 +2015,15 @@ mu::Array numfnc_theta(const mu::Array& x, const mu::Array& y, const mu::Array& 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the rand()
+/// function.
+///
+/// \param vRandMin const std::complex<double>&
+/// \param vRandMax const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> rand_impl(const std::complex<double>& vRandMin, const std::complex<double>& vRandMax)
 {
     if (mu::isinf(vRandMin) || mu::isnan(vRandMin) || mu::isinf(vRandMax) || mu::isnan(vRandMax))
@@ -1839,6 +2034,15 @@ static std::complex<double> rand_impl(const std::complex<double>& vRandMin, cons
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the gauss()
+/// function.
+///
+/// \param vRandAvg const std::complex<double>&
+/// \param vRandstd const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> gauss_rand_impl(const std::complex<double>& vRandAvg, const std::complex<double>& vRandstd)
 {
     if (mu::isinf(vRandAvg) || mu::isnan(vRandAvg) || mu::isinf(vRandstd) || mu::isnan(vRandstd))
@@ -1906,6 +2110,15 @@ mu::Array rndfnc_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd, c
     return ret;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the error
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> erf_impl(const std::complex<double>& x)
 {
     if (mu::isinf(x.real()) || mu::isnan(x.real()))
@@ -1913,6 +2126,15 @@ static std::complex<double> erf_impl(const std::complex<double>& x)
     return std::erf(x.real());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// complementary error function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> erfc_impl(const std::complex<double>& x)
 {
     if (mu::isinf(x.real()) || mu::isnan(x.real()))
@@ -1948,6 +2170,15 @@ mu::Array numfnc_erfc(const mu::Array& x)
     return mu::apply(erfc_impl, x);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the gamma()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> gamma_impl(const std::complex<double>& x)
 {
     if (mu::isinf(x) || mu::isnan(x))
@@ -1978,12 +2209,28 @@ mu::Array numfnc_gamma(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the Airy
+/// function Ai().
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> AiryA_impl(const std::complex<double>& x)
 {
     return gsl_sf_airy_Ai(x.real(), GSL_PREC_DOUBLE);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the Airy
+/// Bi() function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> AiryB_impl(const std::complex<double>& x)
 {
     return gsl_sf_airy_Bi(x.real(), GSL_PREC_DOUBLE);
@@ -2018,6 +2265,15 @@ mu::Array numfnc_AiryB(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the regular
+/// Bessel function.
+///
+/// \param n const std::complex<double>&
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> RegularCylBessel_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
     if (n.real() >= 0.0)
@@ -2027,6 +2283,15 @@ static std::complex<double> RegularCylBessel_impl(const std::complex<double>& n,
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// irregular Bessel function.
+///
+/// \param n const std::complex<double>&
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> IrregularCylBessel_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
     if (x != 0.0 && n.real() >= 0.0)
@@ -2066,6 +2331,15 @@ mu::Array numfnc_IrregularCylBessel(const mu::Array& n, const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// ellipticF() function.
+///
+/// \param phic const std::complex<double>&
+/// \param kc const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> EllipticF_impl(const std::complex<double>& phic, const std::complex<double>& kc)
 {
     double k = kc.real();
@@ -2095,6 +2369,15 @@ static std::complex<double> EllipticF_impl(const std::complex<double>& phic, con
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// ellipticE() function.
+///
+/// \param phic const std::complex<double>&
+/// \param kc const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> EllipticE_impl(const std::complex<double>& phic, const std::complex<double>& kc)
 {
     double phi = phic.real();
@@ -2124,6 +2407,16 @@ static std::complex<double> EllipticE_impl(const std::complex<double>& phic, con
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// ellipticP() function.
+///
+/// \param phi const std::complex<double>&
+/// \param n const std::complex<double>&
+/// \param k const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> EllipticP_impl(const std::complex<double>& phi, const std::complex<double>& n, const std::complex<double>& k)
 {
     if (mu::isnan(k.real()) || mu::isnan(phi.real()) || mu::isinf(k.real()) || mu::isinf(phi.real()) || mu::isnan(n.real()) || mu::isinf(n.real()))
@@ -2150,6 +2443,15 @@ static std::complex<double> EllipticP_impl(const std::complex<double>& phi, cons
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// ellipticD() function.
+///
+/// \param phi const std::complex<double>&
+/// \param k const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> EllipticD_impl(const std::complex<double>& phi, const std::complex<double>& k)
 {
     if (mu::isnan(k.real()) || mu::isnan(phi.real()) || mu::isinf(k.real()) || mu::isinf(phi.real()))
@@ -2256,6 +2558,15 @@ mu::Array numfnc_EllipticD(const mu::Array& phi, const mu::Array& k)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the beta
+/// function.
+///
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> beta_impl(const std::complex<double>& a, const std::complex<double>& b)
 {
     if (mu::isnan(a.real()) || mu::isnan(b.real()) || mu::isinf(a.real()) || mu::isinf(b.real()))
@@ -2266,6 +2577,7 @@ static std::complex<double> beta_impl(const std::complex<double>& a, const std::
 
     return gsl_sf_beta(a.real(), b.real());
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
@@ -2340,6 +2652,14 @@ static std::complex<double> complex_zeta(const std::complex<double>& s)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the zeta
+/// function.
+///
+/// \param s const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> zeta_impl(const std::complex<double>& s)
 {
     if (mu::isnan(s) || mu::isinf(s))
@@ -2368,6 +2688,14 @@ mu::Array numfnc_zeta(const mu::Array& s)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the Clausen
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> clausen_impl(const std::complex<double>& x)
 {
     if (mu::isnan(x.real()) || mu::isinf(x.real()))
@@ -2375,7 +2703,6 @@ static std::complex<double> clausen_impl(const std::complex<double>& x)
 
     return gsl_sf_clausen(x.real());
 }
-
 
 
 /////////////////////////////////////////////////
@@ -2392,6 +2719,14 @@ mu::Array numfnc_clausen(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the Digamma
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> digamma_impl(const std::complex<double>& x)
 {
     if (mu::isnan(x.real()) || mu::isinf(x.real()))
@@ -2421,6 +2756,15 @@ mu::Array numfnc_digamma(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// Polygamma function.
+///
+/// \param n const std::complex<double>&
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> polygamma_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
     if (mu::isnan(n.real()) || mu::isnan(x.real()) || mu::isinf(n.real()) || mu::isinf(x.real()) || x.real() <= 0 || n.real() < 0)
@@ -2445,6 +2789,14 @@ mu::Array numfnc_polygamma(const mu::Array& n, const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// dilogarithm.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> dilogarithm_impl(const std::complex<double>& x)
 {
     if (mu::isnan(x) || mu::isinf(x))
@@ -2475,11 +2827,28 @@ mu::Array numfnc_dilogarithm(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the floor()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> floor_impl(const std::complex<double>& x)
 {
     return std::complex<double>(std::floor(x.real()), std::floor(x.imag()));
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the roof()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> roof_impl(const std::complex<double>& x)
 {
     return std::complex<double>(std::ceil(x.real()), std::ceil(x.imag()));
@@ -2526,6 +2895,19 @@ mu::Array numfnc_rect(const mu::Array& x, const mu::Array& x0, const mu::Array& 
     return x > x0 && x < x1;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the ivl()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \param x0 const std::complex<double>&
+/// \param x1 const std::complex<double>&
+/// \param lborder const std::complex<double>&
+/// \param rborder const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> ivl_impl(const std::complex<double>& x, const std::complex<double>& x0, const std::complex<double>& x1, const std::complex<double>& lborder, const std::complex<double>& rborder)
 {
     double lb = lborder.real();
@@ -2568,6 +2950,7 @@ static std::complex<double> ivl_impl(const std::complex<double>& x, const std::c
     return 1;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief This function describes an interval
 /// with borders of a selected type (including,
@@ -2587,6 +2970,15 @@ mu::Array numfnc_ivl(const mu::Array& x, const mu::Array& x0, const mu::Array& x
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// student_t() function.
+///
+/// \param vFreedoms const std::complex<double>&
+/// \param vAlpha const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> studentFactor_impl(const std::complex<double>& vFreedoms, const std::complex<double>& vAlpha)
 {
     if (vAlpha.real() >= 1.0 || vAlpha.real() <= 0.0 || vFreedoms.real() < 2.0)
@@ -2611,15 +3003,36 @@ mu::Array numfnc_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlp
     return mu::apply(studentFactor_impl, vFreedoms, vAlpha);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the gcd()
+/// function.
+///
+/// \param n const std::complex<double>&
+/// \param k const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> gcd_impl(const std::complex<double>& n, const std::complex<double>& k)
 {
     return boost::math::gcd(intCast(n), intCast(k));
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the lcm()
+/// function.
+///
+/// \param n const std::complex<double>&
+/// \param k const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> lcm_impl(const std::complex<double>& n, const std::complex<double>& k)
 {
     return boost::math::lcm(intCast(n), intCast(k));
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This function returns the greatest
@@ -2651,6 +3064,15 @@ mu::Array numfnc_lcm(const mu::Array& n, const mu::Array& k)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the modulo
+/// operator.
+///
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> mod_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     if (std::isinf(v2.real()) || std::isnan(v2.real()) || std::isinf(v2.imag()) || std::isnan(v2.imag()))
@@ -2679,6 +3101,15 @@ mu::Array oprt_Mod(const mu::Array& v1, const mu::Array& v2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the XOR
+/// operator.
+///
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> xor_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
@@ -2688,6 +3119,15 @@ static std::complex<double> xor_impl(const std::complex<double>& v1, const std::
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// OR operator.
+///
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> binOr_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
@@ -2697,6 +3137,15 @@ static std::complex<double> binOr_impl(const std::complex<double>& v1, const std
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// AND operator.
+///
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> binAnd_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
@@ -2825,12 +3274,27 @@ mu::Array numfnc_sleep(const mu::Array& ms)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the exp() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_exp(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Exp, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the abs()
+/// function.
+///
+/// \param val const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> numfnc_abs(const std::complex<double>& val)
 {
     if (val.imag() == 0.0)
@@ -2839,47 +3303,109 @@ static std::complex<double> numfnc_abs(const std::complex<double>& val)
     return std::abs(val);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the abs() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_abs(const mu::Array& a)
 {
     return mu::apply(numfnc_abs, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the sqrt() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_sqrt(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Sqrt, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the sign()
+/// function.
+///
+/// \param val const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> numfnc_sign(const std::complex<double>& val)
 {
     return std::complex<double>(val.real() == 0.0 ? 0 : (val.real() > 0.0 ? 1.0 : -1.0),
                                 val.imag() == 0.0 ? 0 : (val.imag() > 0.0 ? 1.0 : -1.0));
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the sign() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_sign(const mu::Array& a)
 {
     return mu::apply(numfnc_sign, a);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the log2() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_log2(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Log2, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the log10() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_log10(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Log10, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the ln() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_ln(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Log, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the log_b()
+/// function.
+///
+/// \param b const std::complex<double>&
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> log_b_impl(const std::complex<double>& b, const std::complex<double>& x)
 {
     if (std::isnan(b.real()) || mu::isnan(x) || std::isinf(b.real()) || x.real() <= 0.0 || b.real() <= 0.0)
@@ -2933,6 +3459,15 @@ mu::Array numfnc_omp_threads()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the date()
+/// function.
+///
+/// \param vTime const mu::Value&
+/// \param vType const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value date_impl(const mu::Value& vTime, const mu::Value& vType)
 {
     sys_time_point tp = to_timePoint(vTime.getNum().asF64());
@@ -2995,6 +3530,14 @@ static mu::Value date_impl(const mu::Value& vTime, const mu::Value& vType)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// weeknum() function.
+///
+/// \param vTime const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> weeknum_impl(const std::complex<double>& vTime)
 {
     return getWeekNum(to_timePoint(vTime.real()));
@@ -3044,6 +3587,16 @@ mu::Array numfnc_isnan(const mu::Array& v)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the range()
+/// function.
+///
+/// \param v const std::complex<double>&
+/// \param vLeft const std::complex<double>&
+/// \param vRight const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> interval_impl(const std::complex<double>& v, const std::complex<double>& vLeft, const std::complex<double>& vRight)
 {
     if (vRight.real() <= vLeft.real())
@@ -3056,6 +3609,14 @@ static std::complex<double> interval_impl(const std::complex<double>& v, const s
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementatio of the cot()
+/// function.
+///
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> cot_impl(const std::complex<double>& x)
 {
     if (mu::isnan(x) || mu::isinf(x))
@@ -3099,72 +3660,156 @@ mu::Array numfnc_cot(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the sin() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_sin(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Sin, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the cos() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_cos(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Cos, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the tan() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_tan(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Tan, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the asin() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_asin(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::ASin, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the acos() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_acos(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::ACos, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the atan() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_atan(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::ATan, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the sinh() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_sinh(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Sinh, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the cosh() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_cosh(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Cosh, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the tanh() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_tanh(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Tanh, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the asinh() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_asinh(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::ASinh, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the acosh() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_acosh(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::ACosh, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the atanh() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_atanh(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::ATanh, a);
@@ -3283,6 +3928,16 @@ mu::Array numfnc_acsch(const mu::Array& x)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// as_date() function.
+///
+/// \param year const mu::Value&
+/// \param month const mu::Value&
+/// \param day const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, const mu::Value& day)
 {
     time_stamp ts;
@@ -3291,6 +3946,18 @@ static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, con
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the
+/// as_time() function.
+///
+/// \param hours const mu::Value&
+/// \param minutes const mu::Value&
+/// \param seconds const mu::Value&
+/// \param milliseconds const mu::Value&
+/// \param microseconds const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value as_time_impl(const mu::Value& hours, const mu::Value& minutes, const mu::Value& seconds, const mu::Value& milliseconds, const mu::Value& microseconds)
 {
     time_stamp ts;
@@ -3347,6 +4014,7 @@ mu::Array timfnc_as_time(const mu::Array& h, const mu::Array& m, const mu::Array
                      ms.isDefault() ? mu::Value(0.0) : ms,
                      mus.isDefault() ? mu::Value(0.0) : mus);
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This function returns a random value
@@ -4120,7 +4788,6 @@ static std::complex<double> rndfnc_student_t_inv_q(const std::complex<double>& q
     // Get the value from the probability density function
     return gsl_cdf_tdist_Qinv(q.real(), intCast(nu.real()));
 }
-
 
 
 /////////////////////////////////////////////////

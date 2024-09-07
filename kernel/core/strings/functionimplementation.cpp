@@ -86,6 +86,15 @@ static std::string formatNumberToTex(const mu::Value& number, size_t precision =
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_tex()
+/// function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_tex(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
@@ -109,30 +118,70 @@ mu::Array strfnc_to_tex(const mu::Array& a1, const mu::Array& a2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_uppercase()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_uppercase(const mu::Array& a)
 {
     return mu::apply(toUpperCase, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_lowercase()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_lowercase(const mu::Array& a)
 {
     return mu::apply(toLowerCase, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_ansi()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_utf8ToAnsi(const mu::Array& a)
 {
     return mu::apply(utf8ToAnsi, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_utf8()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_ansiToUtf8(const mu::Array& a)
 {
     return mu::apply(ansiToUtf8, a);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getenvvar()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getenvvar(const mu::Array& a)
 {
     mu::Array ret;
@@ -154,6 +203,14 @@ mu::Array strfnc_getenvvar(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getfileparts()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getFileParts(const mu::Array& a)
 {
     mu::Array ret;
@@ -173,6 +230,15 @@ mu::Array strfnc_getFileParts(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getfilediff()
+/// function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
@@ -197,7 +263,15 @@ mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 }
 
 
-
+/////////////////////////////////////////////////
+/// \brief Implementation of the getfilelist()
+/// function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
@@ -219,6 +293,15 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getfolderlist()
+/// function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
@@ -240,6 +323,14 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strlen()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strlen(const mu::Array& a)
 {
     mu::Array ret;
@@ -253,6 +344,14 @@ mu::Array strfnc_strlen(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the firstch()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_firstch(const mu::Array& a)
 {
     mu::Array ret;
@@ -269,6 +368,14 @@ mu::Array strfnc_firstch(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the lastch()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_lastch(const mu::Array& a)
 {
     mu::Array ret;
@@ -285,6 +392,14 @@ mu::Array strfnc_lastch(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the
+/// getmatchingparens() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getmatchingparens(const mu::Array& a)
 {
     mu::Array ret;
@@ -298,6 +413,13 @@ mu::Array strfnc_getmatchingparens(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the ascii() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_ascii(const mu::Array& a)
 {
     mu::Array ret;
@@ -314,6 +436,14 @@ mu::Array strfnc_ascii(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_blank()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isblank(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -342,6 +472,14 @@ mu::Array strfnc_isblank(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_alnum()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isalnum(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -370,6 +508,14 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_alpha()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isalpha(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -398,6 +544,14 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_cntrl()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_iscntrl(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -426,6 +580,14 @@ mu::Array strfnc_iscntrl(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_digit()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isdigit(const mu::Array& a)
 {
     mu::Array ret;
@@ -451,6 +613,14 @@ mu::Array strfnc_isdigit(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_graph()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isgraph(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -479,6 +649,14 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_lower()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_islower(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -506,6 +684,14 @@ mu::Array strfnc_islower(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_print()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isprint(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -534,6 +720,14 @@ mu::Array strfnc_isprint(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_punct()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_ispunct(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -562,6 +756,14 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_space()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isspace(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -590,6 +792,14 @@ mu::Array strfnc_isspace(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_upper()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isupper(const mu::Array& a)
 {
     static Umlauts _umlauts;
@@ -617,6 +827,14 @@ mu::Array strfnc_isupper(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_xdigit()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isxdigit(const mu::Array& a)
 {
     mu::Array ret;
@@ -642,6 +860,14 @@ mu::Array strfnc_isxdigit(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_dirpath()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isdir(const mu::Array& a)
 {
     mu::Array ret;
@@ -655,6 +881,14 @@ mu::Array strfnc_isdir(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation if the is_filepath()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_isfile(const mu::Array& a)
 {
     mu::Array ret;
@@ -668,6 +902,15 @@ mu::Array strfnc_isfile(const mu::Array& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_char()
+/// function.
+///
+/// \param arrs const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_char(const mu::Array* arrs, int n)
 {
     std::string sToChar;
@@ -693,6 +936,15 @@ mu::Array strfnc_to_char(const mu::Array* arrs, int n)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the findfile()
+/// function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
@@ -729,6 +981,15 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the split() function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \param a3 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array& a3)
 {
     mu::Array ret;
@@ -758,6 +1019,15 @@ mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_time()
+/// function.
+///
+/// \param a1 const mu::Array&
+/// \param a2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_time(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
@@ -855,6 +1125,16 @@ mu::Array strfnc_to_time(const mu::Array& a1, const mu::Array& a2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strfnd()
+/// function.
+///
+/// \param what const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strfnd(const mu::Array& what, const mu::Array& where, const mu::Array& from)
 {
     mu::Array ret;
@@ -881,6 +1161,16 @@ mu::Array strfnc_strfnd(const mu::Array& what, const mu::Array& where, const mu:
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strrfnd()
+/// function.
+///
+/// \param what const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strrfnd(const mu::Array& what, const mu::Array& where, const mu::Array& from)
 {
     mu::Array ret;
@@ -907,6 +1197,16 @@ mu::Array strfnc_strrfnd(const mu::Array& what, const mu::Array& where, const mu
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strmatch()
+/// function.
+///
+/// \param chars const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strmatch(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
     mu::Array ret;
@@ -933,6 +1233,16 @@ mu::Array strfnc_strmatch(const mu::Array& chars, const mu::Array& where, const 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strrmatch()
+/// function.
+///
+/// \param chars const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strrmatch(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
     mu::Array ret;
@@ -959,6 +1269,16 @@ mu::Array strfnc_strrmatch(const mu::Array& chars, const mu::Array& where, const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the str_not_match()
+/// function.
+///
+/// \param chars const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_str_not_match(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
     mu::Array ret;
@@ -985,6 +1305,16 @@ mu::Array strfnc_str_not_match(const mu::Array& chars, const mu::Array& where, c
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the str_not_rmatch()
+/// function.
+///
+/// \param chars const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_str_not_rmatch(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
     mu::Array ret;
@@ -1011,6 +1341,17 @@ mu::Array strfnc_str_not_rmatch(const mu::Array& chars, const mu::Array& where, 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strfndall()
+/// function.
+///
+/// \param what const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \param to const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const mu::Array& from, const mu::Array& to)
 {
     mu::Array ret;
@@ -1059,6 +1400,17 @@ mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strmatchall()
+/// function.
+///
+/// \param chars const mu::Array&
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \param to const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, const mu::Array& from, const mu::Array& to)
 {
     mu::Array ret;
@@ -1101,6 +1453,16 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the findparam
+/// function.
+///
+/// \param par const mu::Array&
+/// \param line const mu::Array&
+/// \param following const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_findparam(const mu::Array& par, const mu::Array& line, const mu::Array& following)
 {
     mu::Array ret;
@@ -1131,6 +1493,16 @@ mu::Array strfnc_findparam(const mu::Array& par, const mu::Array& line, const mu
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the substr()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param pos const mu::Array&
+/// \param len const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::Array& len)
 {
     mu::Array ret;
@@ -1153,6 +1525,15 @@ mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::A
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the repeat()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param rep const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_repeat(const mu::Array& sStr, const mu::Array& rep)
 {
     mu::Array ret;
@@ -1182,6 +1563,15 @@ static std::string padWithZeros(int nTime, size_t nLength)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the timeformat()
+/// function.
+///
+/// \param fmt const mu::Array&
+/// \param time const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
 {
     mu::Array ret;
@@ -1261,6 +1651,15 @@ mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the weekday()
+/// function.
+///
+/// \param daynum const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
 {
     mu::Array ret;
@@ -1289,6 +1688,14 @@ mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the char() function.
+///
+/// \param sStr const mu::Array&
+/// \param pos const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
 {
     mu::Array ret;
@@ -1310,6 +1717,15 @@ mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getopt()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param pos const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
 {
     mu::Array ret;
@@ -1332,6 +1748,17 @@ mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the replace()
+/// function.
+///
+/// \param where const mu::Array&
+/// \param from const mu::Array&
+/// \param len const mu::Array&
+/// \param rep const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_replace(const mu::Array& where, const mu::Array& from, const mu::Array& len, const mu::Array& rep)
 {
     mu::Array ret;
@@ -1435,6 +1862,17 @@ static double extractLaTeXExponent(std::string& sExpr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the textparse()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param pattern const mu::Array&
+/// \param p1 const mu::Array&
+/// \param p2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, const mu::Array& p1, const mu::Array& p2)
 {
     mu::Array ret;
@@ -1658,6 +2096,16 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the locate()
+/// function.
+///
+/// \param arr const mu::Array&
+/// \param tofind const mu::Array&
+/// \param tol const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu::Array& tol)
 {
     if (!arr.size())
@@ -1731,6 +2179,15 @@ mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu:
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strunique()
+/// function.
+///
+/// \param arr const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
 {
     mu::Array ret;
@@ -1785,6 +2242,16 @@ mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strjoin()
+/// function.
+///
+/// \param arr const mu::Array&
+/// \param sep const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strjoin(const mu::Array& arr, const mu::Array& sep, const mu::Array& opts)
 {
     mu::Array ret;
@@ -1820,6 +2287,17 @@ mu::Array strfnc_strjoin(const mu::Array& arr, const mu::Array& sep, const mu::A
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getkeyval()
+/// function.
+///
+/// \param kvlist const mu::Array&
+/// \param key const mu::Array&
+/// \param defs const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const mu::Array& defs, const mu::Array& opts)
 {
     mu::Array ret;
@@ -1868,6 +2346,16 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the findtoken()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param tok const mu::Array&
+/// \param sep const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu::Array& sep)
 {
     mu::Array ret;
@@ -1906,6 +2394,18 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the replaceall()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param fnd const mu::Array&
+/// \param rep const mu::Array&
+/// \param pos1 const mu::Array&
+/// \param pos2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const mu::Array& rep, const mu::Array& pos1, const mu::Array& pos2)
 {
     mu::Array ret;
@@ -1941,6 +2441,16 @@ mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const m
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the strip() function.
+///
+/// \param sStr const mu::Array&
+/// \param frnt const mu::Array&
+/// \param bck const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_strip(const mu::Array& sStr, const mu::Array& frnt, const mu::Array& bck, const mu::Array& opts)
 {
     mu::Array ret;
@@ -1990,6 +2500,16 @@ mu::Array strfnc_strip(const mu::Array& sStr, const mu::Array& frnt, const mu::A
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the regex() function.
+///
+/// \param rgx const mu::Array&
+/// \param sStr const mu::Array&
+/// \param pos const mu::Array&
+/// \param len const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Array& pos, const mu::Array& len)
 {
     mu::Array ret;
@@ -2087,6 +2607,15 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the basetodec()
+/// function.
+///
+/// \param base const mu::Array&
+/// \param val const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val)
 {
     mu::Array ret;
@@ -2110,6 +2639,15 @@ mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the dectobase()
+/// function.
+///
+/// \param base const mu::Array&
+/// \param val const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_dectobase(const mu::Array& base, const mu::Array& val)
 {
     mu::Array ret;
@@ -2158,6 +2696,15 @@ mu::Array strfnc_dectobase(const mu::Array& base, const mu::Array& val)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the justify()
+/// function.
+///
+/// \param arr const mu::Array&
+/// \param align const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
 {
     mu::Array ret;
@@ -2214,6 +2761,13 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getlasterror()
+/// function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getlasterror()
 {
     mu::Array ret;
@@ -2225,10 +2779,32 @@ mu::Array strfnc_getlasterror()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Simple helper to convert the build
+/// date into a time point.
+///
+/// \return sys_time_point
+///
+/////////////////////////////////////////////////
+static sys_time_point getBuildDate()
+{
+    time_stamp ts;
+    ts.m_ymd = date::year(std::atoi(AutoVersion::YEAR)) / date::month(std::atoi(AutoVersion::MONTH)) / date::day(std::atoi(AutoVersion::DATE));
+    return getTimePointFromTimeStamp(ts);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the getversioninfo()
+/// function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getversioninfo()
 {
 #ifndef PARSERSTANDALONE
-    static std::string sBUILDDATE = std::string(AutoVersion::YEAR) + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE;
+    static sys_time_point BUILDDATE = getBuildDate();
     static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
         + toString((int)AutoVersion::MINOR) + "."
         + toString((int)AutoVersion::BUILD) + "."
@@ -2250,7 +2826,7 @@ mu::Array strfnc_getversioninfo()
     sVersionInfo.push_back("Version");
     sVersionInfo.push_back(sVersion);
     sVersionInfo.push_back("BuildDate");
-    sVersionInfo.push_back(sBUILDDATE);
+    sVersionInfo.push_back(BUILDDATE);
     sVersionInfo.push_back("FullVersion");
     sVersionInfo.push_back(sINTVERSION);
     sVersionInfo.push_back("FileVersion");
@@ -2266,12 +2842,25 @@ mu::Array strfnc_getversioninfo()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getuilang()
+/// function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getuilang()
 {
     return mu::Value(_lang.get("LANGUAGE"));
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the uuid() function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getuuid()
 {
     std::mt19937& generator = getRandGenInstance();
@@ -2283,6 +2872,14 @@ mu::Array strfnc_getuuid()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getfileinfo()
+/// function.
+///
+/// \param file const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getfileinfo(const mu::Array& file)
 {
     mu::Array sFileInfo;
@@ -2330,6 +2927,15 @@ mu::Array strfnc_getfileinfo(const mu::Array& file)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the sha256()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
 {
     mu::Array ret;
@@ -2358,6 +2964,15 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the startswith()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param with const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with)
 {
     mu::Array ret;
@@ -2374,6 +2989,15 @@ mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the endswith()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param with const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_endswith(const mu::Array& sStr, const mu::Array& with)
 {
     mu::Array ret;
@@ -2390,6 +3014,14 @@ mu::Array strfnc_endswith(const mu::Array& sStr, const mu::Array& with)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_value()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_value(const mu::Array& sStr)
 {
     mu::Array ret;
@@ -2417,6 +3049,14 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_string()
+/// function.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_to_string(const mu::Array& vals)
 {
     mu::Array ret;
@@ -2430,6 +3070,15 @@ mu::Array strfnc_to_string(const mu::Array& vals)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the getindices()
+/// function.
+///
+/// \param tab const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
 {
     mu::Array ret;
@@ -2492,6 +3141,14 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_data()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_is_data(const mu::Array& sStr)
 {
     mu::Array ret;
@@ -2507,6 +3164,14 @@ mu::Array strfnc_is_data(const mu::Array& sStr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_table()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_is_table(const mu::Array& sStr)
 {
     mu::Array ret;
@@ -2522,6 +3187,14 @@ mu::Array strfnc_is_table(const mu::Array& sStr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_cluster()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_is_cluster(const mu::Array& sStr)
 {
     mu::Array ret;
@@ -2537,6 +3210,15 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the findcolumn()
+/// function.
+///
+/// \param tab const mu::Array&
+/// \param col const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
 {
     mu::Array ret;
@@ -2564,6 +3246,16 @@ mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the valtostr()
+/// function.
+///
+/// \param vals const mu::Array&
+/// \param cfill const mu::Array&
+/// \param len const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const mu::Array& len)
 {
     mu::Array ret;
@@ -2597,6 +3289,14 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the gettypeof()
+/// function.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array strfnc_gettypeof(const mu::Array& vals)
 {
     return mu::Value(vals.getCommonTypeAsString());
