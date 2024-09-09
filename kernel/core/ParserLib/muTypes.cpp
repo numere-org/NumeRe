@@ -990,7 +990,7 @@ namespace mu
         if (m_type <= UI64)
             return toString(ui64);
 
-        return toString(cf64, digits > 0 ? digits : 7);
+        return toString(cf64, (cf64.imag() != 0.0 ? 2 : 1) * (digits > 0 ? digits : 7));
     }
 
 
@@ -1032,7 +1032,7 @@ namespace mu
 
         // Otherwise do not optimize due to the fact that the
         // precision will get halved in this case
-        return toString(cf64, digits > 0 ? digits : 7);
+        return toString(cf64, (cf64.imag() != 0.0 ? 2 : 1) * (digits > 0 ? digits : 7));
     }
 
 

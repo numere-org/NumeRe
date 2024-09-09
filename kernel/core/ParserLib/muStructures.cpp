@@ -19,6 +19,8 @@
 #include "muStructures.hpp"
 #include "muParserError.h"
 #include "../utils/tools.hpp"
+#include "../utils/timer.hpp"
+#include "muHelpers.hpp"
 #include "../strings/functionimplementation.hpp" // for string method callees
 #include "../maths/functionimplementation.hpp" // for numerical method callees
 
@@ -272,9 +274,15 @@ namespace mu
     /////////////////////////////////////////////////
     Value& Value::operator=(const Value& other)
     {
+        //Timer t("Value::operator=");
         if (m_data && m_type != other.m_type)
             clear();
 
+        mu::print("sizeof(void*) = " + toString(sizeof(void*)));
+        mu::print("sizeof(Value) = " + toString(sizeof(Value)));
+        mu::print("sizeof(string) = " + toString(sizeof(std::string)));
+        mu::print("sizeof(Numerical) = " + toString(sizeof(Numerical)));
+        mu::print("sizeof(Category) = " + toString(sizeof(Category)));
         m_type = other.m_type;
 
         switch (m_type)
@@ -289,12 +297,13 @@ namespace mu
                 if (!m_data)
                     m_data = new Numerical;
 
-                getNum() = other.getNum();
+                *static_cast<Numerical*>(m_data) = *static_cast<Numerical*>(other.m_data);
                 break;
             case TYPE_STRING:
                 if (!m_data)
                     m_data = new std::string;
-                getStr() = other.getStr();
+
+                *static_cast<std::string*>(m_data) = *static_cast<std::string*>(other.m_data);
                 break;
             default:
                 clear();
@@ -1189,7 +1198,20 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Array::operator=(const Array& other)
     {
-        std::vector<Value>::operator=(other);
+        Timer t("Array::operator=");
+        if (size() == 1 && other.size() == 1)
+            front() = other.front();
+        else
+        {
+            resize(other.size());
+
+            #pragma omp parallel for if(size() > 500)
+            for (size_t i = 0; i < size(); i++)
+            {
+                operator[](i) = other[i];
+            }
+        }
+
         m_commonType = other.m_commonType;
 
         return *this;
@@ -2212,6 +2234,7 @@ namespace mu
     /////////////////////////////////////////////////
     Variable& Variable::operator=(const Array& other)
     {
+        //Timer t("Variable::operator=");
         if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
         {
             Array::operator=(other);
@@ -2282,15 +2305,16 @@ namespace mu
     /////////////////////////////////////////////////
     Array VarArray::operator=(const Array& values)
     {
-        if (values.isScalar())
+        Timer t("VarArray::operator=");
+        if (size() == 1)
+            *front() = values;
+        else if (values.isScalar())
         {
             for (size_t i = 0; i < size(); i++)
             {
-                *operator[](i) = values.front();
+                *operator[](i) = values;
             }
         }
-        else if (size() == 1)
-            *front() = values;
         else
         {
             for (size_t i = 0; i < std::min(size(), values.size()); i++)

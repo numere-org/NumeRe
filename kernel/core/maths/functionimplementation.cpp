@@ -616,7 +616,14 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
             _mem.writeData(i, 0, vElements[0][i]);
         }
 
-        return mu::Value(_mem.pct(VectorIndex(0, vElements[0].size()-1), VectorIndex(0), vElements[1].front().getNum().asCF64()));
+        mu::Array ret;
+
+        for (size_t i = 0; i < vElements[1].size(); i++)
+        {
+            ret.push_back(_mem.pct(VectorIndex(0, vElements[0].size()-1), VectorIndex(0), vElements[1].get(i).getNum().asCF64()));
+        }
+
+        return ret;
     }
 
     for (int i = 0; i < nElements-1; i++)
@@ -2071,11 +2078,17 @@ mu::Array rndfnc_Random(const mu::Array& vRandMin, const mu::Array& vRandMax, co
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({vRandMax.size(), vRandMin.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max({vRandMax.size(), vRandMin.size(), nRandCount}); i++)
+    if (vRandMin.getCommonType() != mu::TYPE_NUMERICAL || vRandMax.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rand_impl(vRandMin.get(i).getNum().asCF64(), vRandMax.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rand_impl(vRandMin.get(i).getNum().asCF64(), vRandMax.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -2100,11 +2113,17 @@ mu::Array rndfnc_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd, c
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({vRandAvg.size(), vRandStd.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max({vRandAvg.size(), vRandStd.size(), nRandCount}); i++)
+    if (vRandAvg.getCommonType() != mu::TYPE_NUMERICAL || vRandStd.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(gauss_rand_impl(vRandAvg.get(i).getNum().asCF64(), vRandStd.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(gauss_rand_impl(vRandAvg.get(i).getNum().asCF64(), vRandStd.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -2801,9 +2820,6 @@ static std::complex<double> dilogarithm_impl(const std::complex<double>& x)
 {
     if (mu::isnan(x) || mu::isinf(x))
         return NAN;
-
-    if (x.imag() == 0.0)
-        return gsl_sf_dilog(x.real());
 
     gsl_sf_result re;
     gsl_sf_result im;
@@ -4806,11 +4822,17 @@ mu::Array rndfnc_laplace_rd(const mu::Array& a, const mu::Array& n)
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({a.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max(a.size(), nRandCount); i++)
+    if (a.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_laplace_rd(a.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_laplace_rd(a.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -4914,11 +4936,17 @@ mu::Array rndfnc_cauchy_rd(const mu::Array& a, const mu::Array& n)
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({a.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max(a.size(), nRandCount); i++)
+    if (a.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_cauchy_rd(a.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_cauchy_rd(a.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -5021,11 +5049,17 @@ mu::Array rndfnc_rayleigh_rd(const mu::Array& sigma, const mu::Array& n)
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({sigma.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max(sigma.size(), nRandCount); i++)
+    if (sigma.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_rayleigh_rd(sigma.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_rayleigh_rd(sigma.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -5128,11 +5162,12 @@ mu::Array rndfnc_landau_rd(const mu::Array& n)
         return mu::Value(gsl_ran_landau(getGslRandGenInstance()));
     }
 
-    mu::Array ret;
+    mu::Array ret(n.getAsScalarInt(), mu::Value());
 
+    #pragma omp parallel for if(n.getAsScalarInt() > 500)
     for (size_t i = 0; (int64_t)i < n.getAsScalarInt(); i++)
     {
-        ret.push_back(mu::Value(gsl_ran_landau(getGslRandGenInstance())));
+        ret[i] = mu::Value(gsl_ran_landau(getGslRandGenInstance()));
     }
 
     return ret;
@@ -5170,11 +5205,17 @@ mu::Array rndfnc_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha, 
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({c.size(), alpha.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max({c.size(), alpha.size(), nRandCount}); i++)
+    if (c.getCommonType() != mu::TYPE_NUMERICAL || alpha.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_levyAlphaStable_rd(c.get(i).getNum().asCF64(), alpha.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_levyAlphaStable_rd(c.get(i).getNum().asCF64(), alpha.get(i).getNum().asCF64()));;
     }
 
     return ret;
@@ -5198,11 +5239,17 @@ mu::Array rndfnc_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2, const m
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({nu1.size(), nu2.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max({nu1.size(), nu2.size(), nRandCount}); i++)
+    if (nu1.getCommonType() != mu::TYPE_NUMERICAL || nu2.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_fisher_f_rd(nu1.get(i).getNum().asCF64(), nu2.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_fisher_f_rd(nu1.get(i).getNum().asCF64(), nu2.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -5311,11 +5358,17 @@ mu::Array rndfnc_weibull_rd(const mu::Array& a, const mu::Array& b, const mu::Ar
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({a.size(), b.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max({a.size(), b.size(), nRandCount}); i++)
+    if (b.getCommonType() != mu::TYPE_NUMERICAL || a.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_weibull_rd(a.get(i).getNum().asCF64(), b.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_weibull_rd(a.get(i).getNum().asCF64(), b.get(i).getNum().asCF64()));
     }
 
     return ret;
@@ -5423,11 +5476,17 @@ mu::Array rndfnc_student_t_rd(const mu::Array& nu, const mu::Array& n)
     if (!n.isDefault())
         nRandCount = n.getAsScalarInt();
 
-    mu::Array ret;
+    nRandCount = std::max({nu.size(), nRandCount});
 
-    for (size_t i = 0; i < std::max(nu.size(), nRandCount); i++)
+    if (nu.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+
+    mu::Array ret(nRandCount, mu::Value());
+
+    #pragma omp parallel for if(nRandCount > 500)
+    for (size_t i = 0; i < nRandCount; i++)
     {
-        ret.push_back(mu::Value(rndfnc_student_t_rd(nu.get(i).getNum().asCF64())));
+        ret[i] = mu::Value(rndfnc_student_t_rd(nu.get(i).getNum().asCF64()));
     }
 
     return ret;

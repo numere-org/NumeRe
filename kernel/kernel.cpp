@@ -523,7 +523,7 @@ void NumeReKernel::defineNumFunctions()
     /////////////////////////////////////////////////////////////////////
 
     _parser.DefineFun("faculty", numfnc_Factorial);                              // faculty(n)
-    _parser.DefineFun("factorial", numfnc_Factorial);                             // factorial(n)
+    _parser.DefineFun("factorial", numfnc_Factorial);                            // factorial(n)
     _parser.DefineFun("dblfacul", numfnc_doubleFactorial);                       // dblfacul(n)
     _parser.DefineFun("dblfact", numfnc_doubleFactorial);                        // dblfact(n)
     _parser.DefineFun("binom", numfnc_Binom);                                    // binom(Wert1,Wert2)
@@ -2253,8 +2253,8 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, mu::Array* v)
 {
-    vAns.overwrite(v[0]);
-    getAns().setValueArray(v[0]);
+    //vAns.overwrite(v[0]);
+    //getAns().setValueArray(v[0]);
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());

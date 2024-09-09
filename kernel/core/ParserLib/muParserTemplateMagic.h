@@ -105,13 +105,13 @@ namespace mu
 
     inline static T ASin(const T& v)
     {
-        return v.imag() == 0.0 ? std::asin(v.real()) : std::asin(v);
+        return v.imag() == 0.0 && std::abs(v.real()) <= 1.0 ? std::asin(v.real()) : std::asin(v);
     }
 
 
     inline static T ACos(const T& v)
     {
-        return v.imag() == 0.0 ? std::acos(v.real()) : std::acos(v);
+        return v.imag() == 0.0 && std::abs(v.real()) <= 1.0 ? std::acos(v.real()) : std::acos(v);
     }
 
 
@@ -149,7 +149,7 @@ namespace mu
 
     inline static T Sqrt(const T& v)
     {
-        return v.imag() == 0.0 ? std::sqrt(v.real()) : std::sqrt(v);
+        return v.imag() == 0.0 && v.real() >= 0.0 ? std::sqrt(v.real()) : std::sqrt(v);
     }
 
 

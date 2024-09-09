@@ -1658,11 +1658,11 @@ namespace mu
                     continue;
                 case  cmMUL:
                     --sidx;
-                    Stack[sidx] = Stack[sidx] * Stack[1 + sidx]; // Uses the optimized version
+                    Stack[sidx] *= Stack[1 + sidx];
                     continue;
                 case  cmDIV:
                     --sidx;
-                    Stack[sidx] = Stack[sidx] / Stack[1 + sidx]; // Uses the optimized version
+                    Stack[sidx] /= Stack[1 + sidx];
                     continue;
 
                 case  cmPOW:
@@ -1977,11 +1977,11 @@ namespace mu
                         continue;
                     case  cmMUL:
                         --sidx;
-                        Stack[sidx] = Stack[sidx] * Stack[1 + sidx]; // Uses the optimized version
+                        Stack[sidx] *= Stack[1 + sidx];
                         continue;
                     case  cmDIV:
                         --sidx;
-                        Stack[sidx] = Stack[sidx] / Stack[1 + sidx]; // Uses the optimized version
+                        Stack[sidx] /= Stack[1 + sidx];
                         continue;
 
                     case  cmPOW:
