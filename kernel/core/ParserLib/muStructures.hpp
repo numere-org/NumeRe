@@ -61,6 +61,7 @@ namespace mu
             virtual ~Value();
 
             Value& operator=(const Value& other);
+            //Value& operator=(Value&& other) = default;
 
             DataType getType() const;
             std::string getTypeAsString() const;
@@ -145,6 +146,7 @@ namespace mu
             Array(const std::vector<std::string>& other);
 
             Array& operator=(const Array& other);
+            //Array& operator=(Array&& other) = default;
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;

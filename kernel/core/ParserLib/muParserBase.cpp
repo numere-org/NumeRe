@@ -27,6 +27,7 @@
 #include "muParserTemplateMagic.h"
 #include "muHelpers.hpp"
 #include "../utils/tools.hpp"
+#include "../utils/timer.hpp"
 #include "../structures.hpp"
 
 //--- Standard includes ------------------------------------------------------------------------
@@ -1606,6 +1607,7 @@ namespace mu
 	*/
 	void ParserBase::ParseCmdCodeBulk(int nOffset, int nThreadID)
 	{
+	    //Timer t("ParserBase::ParseCmdCodeBulk");
 		assert(nThreadID <= nMaxThreads);
 
 		// Note: The check for nOffset==0 and nThreadID here is not necessary but

@@ -2314,7 +2314,7 @@ static std::complex<double> RegularCylBessel_impl(const std::complex<double>& n,
 static std::complex<double> IrregularCylBessel_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
     if (x != 0.0 && n.real() >= 0.0)
-        return x.real()/fabs(x.real())*gsl_sf_bessel_Yn(intCast(n), fabs(x.real()));
+        return intPower(x.real()/fabs(x.real()), intCast(n))*gsl_sf_bessel_Yn(intCast(n), fabs(x.real()));
     else
         return -INFINITY;
 }
@@ -2751,13 +2751,13 @@ static std::complex<double> digamma_impl(const std::complex<double>& x)
     if (mu::isnan(x.real()) || mu::isinf(x.real()))
         return NAN;
 
-    if (x.real() == 0.0)
+    if (::isInt(x) && x.real() <= 0.0)
         return NAN;
 
-    if ((int)x.real() == intCast(x) && x.real() > 0)
+    if (::isInt(x) && x.real() > 0)
         return gsl_sf_psi_int(intCast(x));
-    else
-        return gsl_sf_psi(x.real());
+
+    return gsl_sf_psi(x.real());
 }
 
 

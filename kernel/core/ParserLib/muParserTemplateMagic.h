@@ -155,7 +155,7 @@ namespace mu
 
     inline static T Log(const T& v)
     {
-        return v.imag() == 0.0 ? std::log(v.real()) : std::log(v);
+        return v.imag() == 0.0 && v.real() > 0.0 ? std::log(v.real()) : std::log(v);
     }
 
 
@@ -179,13 +179,14 @@ namespace mu
 
     inline static T ACosh(const T& v)
     {
-        return Log(v + Sqrt(v * v - 1.0));
+        return Log(v + Sqrt(v + 1.0) * Sqrt(v - 1.0));
     }
 
 
     inline static T ATanh(const T& v)
     {
-        return (0.5 * Log((1.0 + v) / (1.0 - v)));
+        T arg = (1.0 + v) * Pow(1.0 - v, -1); // To break optimisation in this case
+        return (0.5 * Log(arg));
     }
 
 

@@ -2253,8 +2253,8 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, mu::Array* v)
 {
-    //vAns.overwrite(v[0]);
-    //getAns().setValueArray(v[0]);
+    vAns.overwrite(v[0]);
+    getAns().setValueArray(v[0]);
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());

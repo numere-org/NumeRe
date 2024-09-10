@@ -278,11 +278,11 @@ namespace mu
         if (m_data && m_type != other.m_type)
             clear();
 
-        mu::print("sizeof(void*) = " + toString(sizeof(void*)));
-        mu::print("sizeof(Value) = " + toString(sizeof(Value)));
-        mu::print("sizeof(string) = " + toString(sizeof(std::string)));
-        mu::print("sizeof(Numerical) = " + toString(sizeof(Numerical)));
-        mu::print("sizeof(Category) = " + toString(sizeof(Category)));
+        //mu::print("sizeof(void*) = " + toString(sizeof(void*)));
+        //mu::print("sizeof(Value) = " + toString(sizeof(Value)));
+        //mu::print("sizeof(string) = " + toString(sizeof(std::string)));
+        //mu::print("sizeof(Numerical) = " + toString(sizeof(Numerical)));
+        //mu::print("sizeof(Category) = " + toString(sizeof(Category)));
         m_type = other.m_type;
 
         switch (m_type)
@@ -1198,14 +1198,14 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Array::operator=(const Array& other)
     {
-        Timer t("Array::operator=");
+        //Timer t("Array::operator=");
         if (size() == 1 && other.size() == 1)
             front() = other.front();
         else
         {
             resize(other.size());
 
-            #pragma omp parallel for if(size() > 500)
+            //#pragma omp parallel for if(size() > 500)
             for (size_t i = 0; i < size(); i++)
             {
                 operator[](i) = other[i];
@@ -2305,7 +2305,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array VarArray::operator=(const Array& values)
     {
-        Timer t("VarArray::operator=");
+        //Timer t("VarArray::operator=");
         if (size() == 1)
             *front() = values;
         else if (values.isScalar())
