@@ -3914,10 +3914,9 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
         wxString fileName = edit->GetFileNameAndPath();
 
         // the file hasn't been saved yet, grab the "<untitled> #" bit from the tab
-        if(fileName == wxEmptyString)
+        if (fileName == wxEmptyString)
         {
-            int selectedTab = m_book->GetSelection();
-            wxString tabText = m_book->GetPageText(selectedTab);
+            wxString tabText = m_book->GetPageText(pageNr);
 
             int idx = tabText.Index('*');
 

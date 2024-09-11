@@ -1118,7 +1118,7 @@ void PlotData::setParams(const std::string& sCmd, int nType)
     if (findParameter(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         size_t nPos = findParameter(sCmd, "colorscheme", '=') + 11;
-        std::string sTemp = getArgAtPos(sCmd, nPos);
+        std::string sTemp = getArgAtPos(sCmd, nPos, ARGEXTRACT_NONE);
 
         if (sTemp.front() == '"')
         {
@@ -1218,7 +1218,7 @@ void PlotData::setParams(const std::string& sCmd, int nType)
     if (findParameter(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         size_t nPos = findParameter(sCmd, "bgcolorscheme", '=') + 13;
-        std::string sTemp = getArgAtPos(sCmd, nPos);
+        std::string sTemp = getArgAtPos(sCmd, nPos, ARGEXTRACT_NONE);
 
         if (sTemp.front() == '"')
         {

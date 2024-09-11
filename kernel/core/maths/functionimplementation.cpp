@@ -1340,32 +1340,37 @@ static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& 
 /// \brief Internal implementation of the
 /// associated Legendre polynomials.
 ///
-/// \param vl const std::complex<double>&
-/// \param vm const std::complex<double>&
-/// \param v const std::complex<double>&
+/// \param fl const std::complex<double>&
+/// \param fm const std::complex<double>&
+/// \param x const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& v)
+static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex<double>& fl, const std::complex<double>& fm, const std::complex<double>& x)
 {
-    if (mu::isinf(vl) || mu::isnan(vl) || mu::isinf(vm) || mu::isnan(vm) || mu::isinf(v) || mu::isnan(v))
+    if (mu::isinf(fl) || mu::isnan(fl) || mu::isinf(fm) || mu::isnan(fm) || mu::isinf(x) || mu::isnan(x))
         return NAN;
-    int l = intCast(fabs(vl));
-    int m = intCast(fabs(vm));
+
+    int l = intCast(fabs(fl));
+    int m = intCast(fm);
+
     if (m > l)
         return NAN;
-    if (!m)
-        return LegendrePolynomial_impl(l,v);
-    else if (m < 0)
-        return intPower(-1.0,m)* factorial_impl(l-m) / factorial_impl(l+m) * AssociatedLegendrePolynomial_impl(l,m,v);
-    else if (l == m)
-        return intPower(-1.0,l)*double_factorial_impl((2.0*l-1.0))*pow(1.0-v*v,(double)l/2.0);//intPower(sqrt(1-v*v), l);
-    else if (m == l-1)
-        return v*(2.0*l-1.0)*intPower(-1.0,l-1)*double_factorial_impl((2.0*l-3.0))*pow(1.0-v*v,((double)l-1.0)/2.0);//intPower(sqrt(1-v*v), l-1);
-    else
-        return 1.0/(double)(l-m)*(v*(2.0*l-1)*AssociatedLegendrePolynomial_impl(l-1,m,v) - (double)(l+m-1)*AssociatedLegendrePolynomial_impl(l-2,m,v));
 
-    return 0.0;
+    if (!m)
+        return LegendrePolynomial_impl(l, x);
+
+    if (m < 0) // m already negative
+        return intPower(-1.0,-m) * factorial_impl(l-(-m)) / factorial_impl(l+(-m)) * AssociatedLegendrePolynomial_impl(l,-m,x);
+
+    if (l == m)
+        return intPower(-1.0,l) * double_factorial_impl(2.0*l-1.0) * pow(1.0 - x*x, 0.5*l);
+
+    if (m == l-1)
+        return x * (2.0*l - 1.0) * intPower(-1.0, l-1) * double_factorial_impl(2.0*l-3.0) * pow(1.0 - x*x, 0.5*(l-1.0));
+
+    return 1.0/(double)(l-m) * (x*(2.0*l - 1.0)*AssociatedLegendrePolynomial_impl(l-1,m,x)
+                                - (l + m - 1.0)*AssociatedLegendrePolynomial_impl(l-2,m,x));
 }
 
 
@@ -1790,30 +1795,31 @@ mu::Array numfnc_LaguerrePolynomial(const mu::Array& vn, const mu::Array& v)
 /// \brief Internal implementation of the
 /// associated Laguerre polynomials.
 ///
-/// \param vn const std::complex<double>&
-/// \param vk const std::complex<double>&
-/// \param v const std::complex<double>&
+/// \param fn const std::complex<double>&
+/// \param fk const std::complex<double>&
+/// \param x const std::complex<double>&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& vk, const std::complex<double>& v)
+static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex<double>& fn, const std::complex<double>& fk, const std::complex<double>& x)
 {
-    if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(vk) || mu::isnan(vk) || mu::isinf(v) || mu::isnan(v))
+    if (mu::isinf(fn) || mu::isnan(fn) || mu::isinf(fk) || mu::isnan(fk) || mu::isinf(x) || mu::isnan(x))
         return NAN;
-    int n = intCast(fabs(vn));
-    int k = intCast(fabs(vk));
-//    if (k > n)
-//        return NAN;
+
+    int n = intCast(fabs(fn));
+    int k = intCast(fabs(fk));
 
     if (n == 0)
         return 1.0;
 
     std::complex<double> dResult = 0.0;
-    std::complex<double> vFaculty = factorial_impl(n+k);
+    std::complex<double> binom_above = factorial_impl(n+k);
+
     for (int m = 0; m <= n; m++)
     {
-        dResult += vFaculty * intPower(-v,m) / (factorial_impl(n-m)*factorial_impl(k+m)*factorial_impl(m));
-    }
+        dResult += binom_above / (factorial_impl(n-m)*factorial_impl(k+m)) * intPower(-x,m) / factorial_impl(m);
+    }           // -----------------binom(n+k, n-m) ----------------------
+
     return dResult;
 }
 
@@ -2591,8 +2597,11 @@ static std::complex<double> beta_impl(const std::complex<double>& a, const std::
     if (mu::isnan(a.real()) || mu::isnan(b.real()) || mu::isinf(a.real()) || mu::isinf(b.real()))
         return NAN;
 
-    if ((intCast(a) == (int)a.real() && a.real() < 0) || (intCast(b) == (int)b.real() && b.real() < 0))
+    if ((::isInt(a) && a.real() <= 0) || (::isInt(b) && b.real() <= 0))
         return NAN;
+
+    if (::isInt(a+b) && (a+b).real() <= 0)
+        return 0;
 
     return gsl_sf_beta(a.real(), b.real());
 }
@@ -3024,14 +3033,14 @@ mu::Array numfnc_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlp
 /// \brief Internal implementation of the gcd()
 /// function.
 ///
-/// \param n const std::complex<double>&
-/// \param k const std::complex<double>&
-/// \return std::complex<double>
+/// \param n const mu::Value&
+/// \param k const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
-static std::complex<double> gcd_impl(const std::complex<double>& n, const std::complex<double>& k)
+static mu::Value gcd_impl(const mu::Value& n, const mu::Value& k)
 {
-    return boost::math::gcd(intCast(n), intCast(k));
+    return boost::math::gcd(n.getNum().asI64(), k.getNum().asI64());
 }
 
 
@@ -3039,14 +3048,14 @@ static std::complex<double> gcd_impl(const std::complex<double>& n, const std::c
 /// \brief Internal implementation of the lcm()
 /// function.
 ///
-/// \param n const std::complex<double>&
-/// \param k const std::complex<double>&
-/// \return std::complex<double>
+/// \param n const mu::Value&
+/// \param k const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
-static std::complex<double> lcm_impl(const std::complex<double>& n, const std::complex<double>& k)
+static mu::Value lcm_impl(const mu::Value& n, const mu::Value& k)
 {
-    return boost::math::lcm(intCast(n), intCast(k));
+    return boost::math::lcm(n.getNum().asI64(), k.getNum().asI64());
 }
 
 
