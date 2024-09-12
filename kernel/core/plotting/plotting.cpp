@@ -4860,6 +4860,9 @@ void Plot::fillData(double dt_max, int t_animate)
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
             convertVectorToExpression(sFunc);
 
+        // Necessary, because of evaluatio of the legend entries
+        _parser.SetExpr(sFunc);
+
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
             if (x != 0)
@@ -4963,6 +4966,9 @@ void Plot::fillData(double dt_max, int t_animate)
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
             convertVectorToExpression(sFunc);
 
+        // Necessary, because of evaluatio of the legend entries
+        _parser.SetExpr(sFunc);
+
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
             if (x != 0)
@@ -4998,6 +5004,9 @@ void Plot::fillData(double dt_max, int t_animate)
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
             convertVectorToExpression(sFunc);
+
+        // Necessary, because of evaluatio of the legend entries
+        _parser.SetExpr(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {

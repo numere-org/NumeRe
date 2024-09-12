@@ -855,6 +855,13 @@ namespace mu
 		while (stepIsStillPossible(dFirst+dIncrement, dLast+1e-10*dIncrement, dIncrement))
         {
             dFirst += dIncrement;
+
+            if (dFirst.real()*dIncrement.real() > dLast.real()*dIncrement.real())
+                dFirst.real(dLast.real());
+
+            if (dFirst.imag()*dIncrement.real() > dLast.imag()*dIncrement.real())
+                dFirst.imag(dLast.imag());
+
             vResults.push_back(Numerical::autoType(dFirst));
         }
 	}

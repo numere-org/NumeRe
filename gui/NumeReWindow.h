@@ -238,6 +238,8 @@ class NumeReWindow : public wxFrame
         wxString getTreePath(const wxTreeItemId& itemId);
         wxString getTreeFolderPath(const wxTreeItemId& itemId);
 
+        void ShowEditorCarets();
+
         void Ready();
         void Busy();
 

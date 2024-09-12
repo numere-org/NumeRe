@@ -1398,11 +1398,9 @@ static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& 
 
     if (abs(m) > l)
         return NAN;
-    else
-        return std::sqrt((2.0*l+1.0) * factorial_impl(l-m) / (4.0 * M_PI * factorial_impl(l+m)))
-            * AssociatedLegendrePolynomial_impl(l, m, std::cos(theta.real())) * std::exp(std::complex<double>(0, m*phi.real()));
 
-    return 0.0;
+    return std::sqrt((2.0*l+1.0) * factorial_impl(l-m) / (4.0 * M_PI * factorial_impl(l+m)))
+        * AssociatedLegendrePolynomial_impl(l, m, std::cos(theta.real())) * std::exp(std::complex<double>(0, m*phi.real()));
 }
 
 
@@ -1537,7 +1535,7 @@ static std::complex<double> Zernike_impl(const std::complex<double>& vn, const s
         return NAN;
 
     if (m < 0)
-        return zernikeRadial_impl(n, -m, rho) * std::sin(-(double)m*phi);
+        return zernikeRadial_impl(n, std::abs(m), rho) * std::sin((double)std::abs(m)*phi);
     else
         return zernikeRadial_impl(n, m, rho) * std::cos((double)m*phi);
 }
@@ -1898,31 +1896,35 @@ static std::complex<double> BetheWeizsaecker_impl(const std::complex<double>& vN
     if (std::isinf(vN.real()) || std::isnan(vN.real()) || std::isinf(vZ.real()) || std::isnan(vZ.real()))
         return NAN;
     // nan/inf
-    double a_V = 15.67;
-    double a_S = 17.23;
-    double a_F = 23.2875;
-    double a_C = 0.714;
-    double a_p = 11.2;
-    double A = vN.real() + vZ.real();
-    double dEnergy = 0.0;
+    constexpr double a_V = 15.67;
+    constexpr double a_S = 17.23;
+    constexpr double a_F = 23.2875;
+    constexpr double a_C = 0.714;
+    constexpr double a_p = 11.2;
+    double N = vN.real();
+    double Z = vZ.real();
+    double A = N + Z;
     int delta = 0;
-    unsigned int N = (unsigned int)intCast(round_impl(vN,0));
-    unsigned int Z = (unsigned int)intCast(round_impl(vZ,0));
+    unsigned int nN = (unsigned int)intCast(round_impl(N,0));
+    unsigned int nZ = (unsigned int)intCast(round_impl(Z,0));
 
-    if (A < 0 || vZ.real() < 0 || vN.real() < 0)
+    if (A < 0 || Z < 0 || Z < 0)
         return NAN;
+
     if (A == 0)
         return 0.0;
-    if (N % 2 && Z % 2)
+
+    if (nN % 2 && nZ % 2)
         delta = -1;
-    else if (!(N % 2 || Z % 2))
+    else if (!(nN % 2 || nZ % 2))
         delta = 1;
 
-    dEnergy = a_V*A - a_S*pow(A,2.0/3.0) - a_F*(vN.real()-vZ.real())*(vN.real()-vZ.real())/A - a_C*vZ.real()*(vZ.real()-1)/pow(A,1.0/3.0) + (double)delta*a_p/sqrt(A);
+    double dEnergy = a_V*A - a_S*pow(A,2.0/3.0) - a_F*(N-Z)*(N-Z)/A - a_C*Z*(Z-1)*pow(A,-1.0/3.0) + (double)delta*a_p/sqrt(A);
+
     if (dEnergy >= 0)
         return dEnergy;
-    else
-        return 0.0;
+
+    return 0.0;
 }
 
 

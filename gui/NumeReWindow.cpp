@@ -370,6 +370,8 @@ bool MyApp::OnInit()
     if (splash)
         splash->Destroy();
 
+    NumeReMainFrame->ShowEditorCarets();
+
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
     {
@@ -1136,10 +1138,9 @@ void NumeReWindow::prepareSession()
                 {
                     OpenSourceFile(wxArrayString(1, sFileName));
                     NumeReEditor* currentEd = m_book->getCurrentEditor();
-                    currentEd->GotoPos(nLine);
-                    currentEd->ToggleSettings(nSetting);
-                    currentEd->EnsureVisible(currentEd->LineFromPosition(nLine));
                     currentEd->setBookmarks(toIntVector(sBookmarks));
+                    currentEd->ToggleSettings(nSetting);
+                    currentEd->GotoPos(nLine);
                 }
                 else
                 {
@@ -4366,6 +4367,26 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
         pathName = data->filename;
 
     return pathName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Show the carets of all editors
+/// (ignoring folding and such).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::ShowEditorCarets()
+{
+    for (size_t page = 0; page < m_book->GetPageCount(); page++)
+    {
+        NumeReEditor* currentEd = m_book->getEditor(page);
+        int nLine = currentEd->GetCurrentLine();
+        currentEd->EnsureVisible(nLine);
+        currentEd->SetFirstVisibleLine(currentEd->VisibleFromDocLine(nLine) - m_options->GetDebuggerFocusLine());
+        currentEd->Refresh();
+    }
 }
 
 

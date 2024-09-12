@@ -931,8 +931,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // replace "sqrt()"
     while ((nPos = sReturn.find("sqrt(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+4));
-        sReturn.replace(nPos, len + 6, "@{\\sqrt{" + sReturn.substr(nPos+5, len) + "}}");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+4));
+        sReturn[nBrace+nPos+4] = '}';
+        sReturn.replace(nPos, 5, "\\sqrt{");
     }
 
     nPos = 0;
@@ -940,8 +941,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // replace "norm()"
     while ((nPos = sReturn.find("norm(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+4));
-        sReturn.replace(nPos, len + 6, "|" + sReturn.substr(nPos+5, len) + "|");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+4));
+        sReturn[nBrace+nPos+4] = '|';
+        sReturn.replace(nPos, 5, "|");
     }
 
     nPos = 0;
@@ -949,8 +951,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // replace "abs()"
     while ((nPos = sReturn.find("abs(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+3));
-        sReturn.replace(nPos, len + 5, "|" + sReturn.substr(nPos+4, len) + "|");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+3));
+        sReturn[nPos+3+nBrace] = '|';
+        sReturn.replace(nPos, 4, "|");
     }
 
     nPos = 0;
@@ -958,8 +961,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // Long exponents
     while ((nPos = sReturn.find("^(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+1));
-        sReturn.replace(nPos+1, len + 2, "{" + sReturn.substr(nPos+2, len) + "}");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+1));
+        sReturn[nBrace+nPos+1] = '}';
+        sReturn[nPos+1] = '{';
     }
 
     // --> Entferne die Leerzeichen am Anfang und Ende und gib sReturn zurueck <--
