@@ -111,7 +111,7 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
             if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
                 continue;
 
-            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).real();
+            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).getNum().asF64();
 
             if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_STD].back())
                 vStats[STATS_CONFINT].back()++;
@@ -264,7 +264,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
                 continue;
             }
 
-            sOut[i + nHeadlines][j] = toString(_data.getElement(_idx.row[i], _idx.col[j], sTable), _option.getPrecision()); // Kopieren der Matrix in die Ausgabe
+            sOut[i + nHeadlines][j] = _data.getElement(_idx.row[i], _idx.col[j], sTable).print(_option.getPrecision()); // Kopieren der Matrix in die Ausgabe
         }
 
         // Write the calculated stats to the columns
@@ -453,12 +453,12 @@ void plugin_statistics(CommandLineParser& cmdParser)
     else if (cmdParser.hasParam("save"))
     {
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
-        sSavePath = cmdParser.getParameterValueAsString("save", "", true, true);
+        sSavePath = cmdParser.getParsedParameterValueAsString("save", "", true, true);
     }
     else if (cmdParser.hasParam("export"))
     {
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
-        sSavePath = cmdParser.getParameterValueAsString("export", "", true, true);
+        sSavePath = cmdParser.getParsedParameterValueAsString("export", "", true, true);
     }
 
     _out.setStatus(sSavePath.length() != 0);
@@ -495,7 +495,7 @@ void plugin_statistics(CommandLineParser& cmdParser)
 
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
-            sRet.push_back("\"" + getStatFieldName(n) + "\"");
+            sRet.push_back(getStatFieldName(n));
             _data.writeToTable(_idx.row[n], _idx.col[0], sTarget, getStatFieldName(n));
         }
 

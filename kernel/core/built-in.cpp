@@ -21,6 +21,11 @@
 #include "../kernel.hpp"
 #include "io/fileops.hpp"
 #include "datamanagement/dataops.hpp"
+
+//static std::string evaluateParameterValues(const std::string& sCmd);
+//static bool extractFirstParameterStringValue(const std::string& sCmd, std::string& sArgument);
+static bool parseCmdArg(const std::string& sCmd, size_t nPos, mu::Parser& _parser, size_t& nArgument);
+
 #include "commandfunctions.hpp"
 
 
@@ -84,331 +89,6 @@ CommandReturnValues commandHandler(string& sCmd)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the string
-/// argument for a single parameter in the
-/// command line.
-///
-/// \param sCmd const string&
-/// \param sArgument string&
-/// \return bool
-///
-/// It will also parse it directly, which means
-/// that it won't contain further string operations.
-/////////////////////////////////////////////////
-bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
-{
-    // Don't do anything, if no string is found in this expression
-	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-		return false;
-
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-	string sTemp = sCmd;
-
-    // Get the contents of the contained data tables
-	if (_data.containsTablesOrClusters(sTemp))
-		getDataElements(sTemp, _parser, _data);
-
-	//
-	for (size_t i = 0; i < sTemp.length(); i++)
-	{
-	    // Jump over this parenthesis, if its contents don't contain
-	    // strings or string variables
-		if (sTemp[i] == '('
-            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, i, getMatchingParenthesis(StringView(sTemp, i))))
-            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, i)))
-			i += getMatchingParenthesis(StringView(sTemp, i));
-
-		// Evaluate parameter starts, i.e. the minus sign of the command line
-		if (sTemp[i] == '-'	&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, i)))
-		{
-		    // No string left of the minus sign, erase this part
-		    // and break the loop
-			sTemp.erase(0, i);
-			break;
-		}
-		else if (sTemp[i] == '-' && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, i)))
-		{
-		    // There are strings left of the minus sign
-		    // Find now the last string element in this part of the expression
-			for (int j = (int)i; j >= 0; j--)
-			{
-			    // Find the start of this function or data element, which
-			    // ends at this character
-				if (sTemp[j] == '(' && j && (isalnum(sTemp[j - 1]) || sTemp[j - 1] == '_'))
-				{
-					while (j && (isalnum(sTemp[j - 1]) || sTemp[j - 1] == '_'))
-						j--;
-				}
-
-				// This is now the location, where all string-related stuff is
-				// to the right and everything else is to the left
-				if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, j))
-                    && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, j, i - j)))
-				{
-				    // Erase the left part and break the loop
-					sTemp.erase(0, j);
-					break;
-				}
-			}
-
-			break;
-		}
-	}
-
-	// If there are no strings, sTemp will be empty
-	if (!sTemp.length())
-		return false;
-
-    // Get the string variable values
-	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sTemp))
-		NumeReKernel::getInstance()->getStringParser().getStringValues(sTemp);
-
-    // Get now the string argument, which may contain pure
-    // strings, string functions and concatenations
-	if (!getStringArgument(sTemp, sArgument))
-		return false;
-
-    // If there are path tokens in the string part, ensure that
-    // they are valid. Additionally, replace the "<this>" path token
-	if (sArgument.find('<') != string::npos && sArgument.find('>', sArgument.find('<')) != string::npos)
-	{
-		for (size_t i = 0; i < sArgument.length(); i++)
-		{
-			if (sArgument.find('<', i) == string::npos)
-				break;
-
-			if (sArgument[i] == '<' && sArgument.find('>', i) != string::npos)
-			{
-				string sToken = sArgument.substr(i, sArgument.find('>', i) + 1 - i);
-
-				if (sToken == "<this>")
-					sToken = _option.getExePath();
-
-				if (sToken.find('/') == string::npos)
-				{
-				    // Is the token valid?
-					if (_option.getTokenPaths().find(sToken) == string::npos)
-						throw SyntaxError(SyntaxError::UNKNOWN_PATH_TOKEN, sCmd, sToken, sToken);
-				}
-
-				i = sArgument.find('>', i);
-			}
-		}
-	}
-
-	// Clear the temporary variable
-	sTemp.clear();
-
-	// Parse the string expression
-    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sTemp, true, false, true);
-    sArgument = sArgument.substr(1, sArgument.length() - 2);
-    return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function evaluates a passed
-/// parameter string, so that the values of the
-/// parameters are only values. No expressions
-/// exist after this call anymore.
-///
-/// \param sCmd const string&
-/// \return string
-///
-/////////////////////////////////////////////////
-string evaluateParameterValues(const string& sCmd)
-{
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-
-	string sReturn = sCmd;
-	string sTemp = "";
-	string sDummy = "";
-	size_t nPos = 0;
-	size_t nLength = 0;
-	vector<double> vInterval;
-
-	// Add a whitespace character at the end
-	if (sReturn.back() != ' ')
-		sReturn += " ";
-
-    // Try to detect the interval syntax
-	if (sReturn.find('-') != string::npos
-        && (sReturn.find('[') != string::npos
-            || findParameter(sReturn, "x", '=')
-            || findParameter(sReturn, "y", '=')
-            || findParameter(sReturn, "z", '=')))
-	{
-	    // Get the parameter part of the string and remove
-	    // the parameter string part from the original expression
-		if (sReturn.find("-set") != string::npos)
-		{
-			sTemp = sReturn.substr(sReturn.find("-set"));
-			sReturn.erase(sReturn.find("-set"));
-		}
-		else if (sReturn.find("--") != string::npos)
-		{
-			sTemp = sReturn.substr(sReturn.find("--"));
-			sReturn.erase(sReturn.find("--"));
-		}
-		else
-		{
-			sTemp = sReturn.substr(sReturn.find('-'));
-			sReturn.erase(sReturn.find("-"));
-		}
-
-		// Parse the interval syntax
-		vInterval = readAndParseIntervals(sTemp, _parser, _data, _functions, true);
-
-		// Append the remaining part of the parameter string to the expression
-		sReturn += sTemp;
-	}
-
-	// Get the string var values, if any
-	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sReturn))
-		NumeReKernel::getInstance()->getStringParser().getStringValues(sReturn);
-
-	// Repeat as long as an equal sign is found after
-	// the current position in the command line
-	while (sReturn.find('=', nPos) != string::npos)
-	{
-	    // Get the position after the equal sign
-		nPos = sReturn.find('=', nPos) + 1;
-
-		// Ignore equal signs in strings
-		if (isInQuotes(sReturn, nPos))
-        {
-            nPos++;
-            continue;
-        }
-
-		// jump over whitespaces
-		while (nPos < sReturn.length() - 1 && sReturn[nPos] == ' ')
-			nPos++;
-
-        // Parse the parameter values into evaluated values for the commands
-		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sReturn, nPos, sReturn.find(' ', nPos) - nPos)))
-		{
-		    // This is a string value
-			if (!getStringArgument(sReturn.substr(nPos - 1), sTemp)) // mit "=" uebergeben => fixes getStringArgument issues
-				return "";
-
-			// Get the current length of the string
-			nLength = sTemp.length();
-			sTemp += " -kmq";
-
-			// Parse the string
-			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTemp, sDummy, true, false, true);
-
-            // Replace the parsed string
-			sReturn.replace(nPos, nLength, sTemp);
-		}
-		else if ((nPos > 5 && sReturn.substr(nPos - 5, 5) == "save=")
-			|| (nPos > 7 && sReturn.substr(nPos - 7, 7) == "export="))
-		{
-		    // This is a path value without quotation marks
-		    // (otherwise it would be catched by the previous block)
-			sTemp = sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos);
-			nLength = sTemp.length();
-
-			// Add quotation marks and replace the prvious path definition
-			sTemp = "\"" + sTemp + "\"";
-			sReturn.replace(nPos, nLength, sTemp);
-		}
-		else if ((nPos > 8 && sReturn.substr(nPos - 8, 8) == "tocache=")
-            || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "totable=")
-			|| (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
-            || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
-            || (nPos > 7 && sReturn.substr(nPos - 7, 7) == "method=")
-            || (nPos > 7 && sReturn.substr(nPos - 7, 7) == "target=")
-            || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))
-		{
-		    // do nothing here
-			nPos++;
-		}
-		else
-		{
-		    // All other cases, i.e. numerical values
-		    // evaluate the value correspondingly
-
-		    // Get the value and its length
-			sTemp = sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos);
-			nLength = sTemp.length();
-
-			// Call functions
-			if (!_functions.call(sTemp))
-				return "";
-
-            // Get data elements
-			if (_data.containsTablesOrClusters(sTemp))
-				getDataElements(sTemp, _parser, _data);
-
-            int nResult = 0;
-            mu::value_type* v = nullptr;
-
-            // If the string contains a colon operator,
-            // replace it with a comma
-            if (sTemp.find(':') != string::npos)
-            {
-                string sTemp_2 = sTemp;
-				sTemp = getNextIndex(sTemp_2, true);
-				sTemp += ", " + sTemp_2;
-            }
-
-            // Set the expression and evaluate it numerically
-            _parser.SetExpr(sTemp);
-            v = _parser.Eval(nResult);
-
-            // Clear the temporary variable
-            sTemp.clear();
-
-            // convert the doubles into strings and remove the trailing comma
-            for (int i = 0; i < nResult; i++)
-                sTemp += toString(v[i], _option.getPrecision()) + ":";
-
-            sTemp.pop_back();
-
-            // Replace the string
-			sReturn.replace(nPos, nLength, sTemp);
-		}
-
-	}
-
-	// Convert the calculated intervals into their string definitions
-	if (vInterval.size())
-	{
-	    // x interval
-		if (vInterval.size() >= 2)
-		{
-			if (!isnan(vInterval[0]) && !isnan(vInterval[1]))
-				sReturn += " -x=" + toCmdString(vInterval[0]) + ":" + toCmdString(vInterval[1]);
-		}
-
-		// y interval
-		if (vInterval.size() >= 4)
-		{
-			if (!isnan(vInterval[2]) && !isnan(vInterval[3]))
-				sReturn += " -y=" + toCmdString(vInterval[2]) + ":" + toCmdString(vInterval[3]);
-		}
-
-		// z interval
-		if (vInterval.size() >= 6)
-		{
-			if (!isnan(vInterval[4]) && !isnan(vInterval[5]))
-				sReturn += " -z=" + toCmdString(vInterval[4]) + ":" + toCmdString(vInterval[5]);
-		}
-	}
-
-	return sReturn;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function finds the numerical
 /// argument to the selected command line
 /// parameter and evaluates it.
@@ -420,7 +100,7 @@ string evaluateParameterValues(const string& sCmd)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
+static bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
 {
 	if (!sCmd.length() || !nPos)
 		return false;
@@ -439,11 +119,12 @@ bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgu
         sArg = sArg.substr(0, sArg.find(' '));
 
     _parser.SetExpr(sArg);
+    mu::Array res = _parser.Eval();
 
-    if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
+    if (mu::isnan(res.front()) || mu::isinf(_parser.Eval().front().getNum().asCF64()))
         return false;
 
-    nArgument = abs(intCast(_parser.Eval()));
+    nArgument = abs(res.getAsScalarInt());
     return true;
 }
 

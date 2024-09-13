@@ -57,7 +57,7 @@ struct CellValueShaderCondition
     };
 
     ConditionType m_type;
-    std::vector<mu::value_type> m_vals;
+    std::vector<std::complex<double>> m_vals;
     std::vector<wxString> m_strs;
 };
 
@@ -129,11 +129,11 @@ class CellValueShader
         /// \brief Calculate the colour for a numerical
         /// value.
         ///
-        /// \param val const mu::value_type&
+        /// \param val const std::complex<double>&
         /// \return wxColour
         ///
         /////////////////////////////////////////////////
-        wxColour getColour(const mu::value_type& val) const
+        wxColour getColour(const std::complex<double>& val) const
         {
             switch (m_condition.m_type)
             {

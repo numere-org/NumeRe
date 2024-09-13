@@ -249,19 +249,17 @@ class VectorIndex
         /// The third argument is used only to avoid
         /// misinterpretation from the compiler.
         ///
-        /// \param indices const mu::value_type*
-        /// \param nResults int
-        /// \param unused int
+        /// \param indices const mu::Array&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const mu::value_type* indices, int nResults, int unused)
+        VectorIndex(const mu::Array& indices)
         {
             // Store the indices and convert them to integers
             // using the intCast() function
-            for (int i = 0; i < nResults; i++)
+            for (size_t i = 0; i < indices.size(); i++)
             {
-                if (!std::isnan(indices[i].real()) && !std::isinf(indices[i].real()))
-                    vStorage.push_back(intCast(indices[i]) - 1);
+                if (!std::isnan(indices[i].getNum().asF64()) && !std::isinf(indices[i].getNum().asF64()))
+                    vStorage.push_back(indices[i].getNum().asI64() - 1);
                 else
                     vStorage.push_back(INVALID);
             }
@@ -3208,8 +3206,7 @@ struct Point
 /////////////////////////////////////////////////
 struct Returnvalue
 {
-    std::vector<mu::value_type> vNumVal;
-    std::vector<std::string> vStringVal;
+    std::vector<mu::Array> valArray;
     std::string sReturnedTable;
     bool delayDelete;
     Indices sourceIdx;
@@ -3219,20 +3216,9 @@ struct Returnvalue
     // clear method
     void clear()
     {
-        vNumVal.clear();
-        vStringVal.clear();
+        valArray.clear();
         sReturnedTable.clear();
         delayDelete = false;
-    }
-
-    // boolean checkers
-    bool isString() const
-    {
-        return vStringVal.size();
-    }
-    bool isNumeric() const
-    {
-        return vNumVal.size() && !vStringVal.size();
     }
 };
 
@@ -3244,7 +3230,7 @@ struct Returnvalue
 struct DefaultVariables
 {
     std::string sName[4] = {"x", "y", "z", "t"};
-    mu::value_type vValue[4][4];
+    mu::Variable vValue[4][4];
 };
 
 

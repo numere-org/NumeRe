@@ -114,9 +114,9 @@ namespace NumeRe
             return std::make_pair(sColumnHead.substr(0, sColumnHead.find(" in ")),
                                   sColumnHead.substr(sColumnHead.find(" in ")+4));
         else*/
-        if (sColumnHead.back() == ']'
-            && pos != std::string::npos
+        if (pos != std::string::npos
             && pos
+            && sColumnHead.back() == ']'
             && getMatchingParenthesis(sColumnHead.subview(pos))+pos == sColumnHead.length()-1)
         {
             if (sColumnHead[pos-1] == ' ' || sColumnHead[pos-1] == '\n')
@@ -1046,8 +1046,8 @@ namespace NumeRe
             // Store the position of the next column
             writeNumField<uint32_t>(lenPos);
 
-            std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
-            writeNumBlock<mu::value_type>(&values[0], values.size());
+            std::vector<std::complex<double>> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+            writeNumBlock<std::complex<double>>(&values[0], values.size());
 
             uint32_t endPos = tellp();
             seekp(lenPos);
@@ -1327,8 +1327,8 @@ namespace NumeRe
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
-            mu::value_type* values = readNumBlock<mu::value_type>(size);
-            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            std::complex<double>* values = readNumBlock<std::complex<double>>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::complex<double>>(values, values+size));
             delete[] values;
         }
         else if (sDataType == "DTYPE=LOGICAL")
@@ -1337,8 +1337,8 @@ namespace NumeRe
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
-            mu::value_type* values = readNumBlock<mu::value_type>(size);
-            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            std::complex<double>* values = readNumBlock<std::complex<double>>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::complex<double>>(values, values+size));
             delete[] values;
         }
         else if (sDataType == "DTYPE=DATETIME")
@@ -1347,8 +1347,8 @@ namespace NumeRe
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
-            mu::value_type* values = readNumBlock<mu::value_type>(size);
-            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            std::complex<double>* values = readNumBlock<std::complex<double>>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::complex<double>>(values, values+size));
             delete[] values;
         }
         else if (sDataType == "DTYPE=STRING")
@@ -1412,8 +1412,8 @@ namespace NumeRe
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
-            mu::value_type* values = readNumBlock<mu::value_type>(size);
-            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            std::complex<double>* values = readNumBlock<std::complex<double>>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::complex<double>>(values, values+size));
             delete[] values;
         }
         else if (sDataType == "DTYPE=STRING")
@@ -2766,11 +2766,11 @@ namespace NumeRe
     /// \brief This member function formats a complex
     /// as LaTeX number string.
     ///
-    /// \param number const mu::value_type&
+    /// \param number const std::complex<double>&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string LaTeXTable::formatNumber(const mu::value_type& number)
+    std::string LaTeXTable::formatNumber(const std::complex<double>& number)
     {
         std::string sNumber = toString(number, nPrecFields);
 
@@ -4752,7 +4752,7 @@ namespace NumeRe
                 {
                     if (bReadComplexData)
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
-                                                                        mu::value_type(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
+                                                                        std::complex<double>(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, dData[i+j*(nDim[0])]);
                 }
@@ -4760,7 +4760,7 @@ namespace NumeRe
                 {
                     if (bReadComplexData)
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
-                                                                        mu::value_type(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
+                                                                        std::complex<double>(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)fData[i+j*(nDim[0])]);
                 }
@@ -4768,7 +4768,7 @@ namespace NumeRe
                 {
                     if (bReadComplexData)
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
-                                                                        mu::value_type(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
+                                                                        std::complex<double>(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n8_tData[i+j*(nDim[0])]);
 
@@ -4777,7 +4777,7 @@ namespace NumeRe
                 {
                     if (bReadComplexData)
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
-                                                                        mu::value_type(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
+                                                                        std::complex<double>(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n16_tData[i+j*(nDim[0])]);
                 }
@@ -4785,7 +4785,7 @@ namespace NumeRe
                 {
                     if (bReadComplexData)
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
-                                                                        mu::value_type(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
+                                                                        std::complex<double>(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n32_tData[i+j*(nDim[0])]);
                 }

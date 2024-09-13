@@ -823,7 +823,8 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
             if (useSmartSense)
             {
                 if (selectMethods && (iter->second.second != SYNTAX_METHODS
-                                      || iter->first.find(methodSelector) == std::string::npos))
+                                      || (iter->first.find(methodSelector) == std::string::npos
+                                          && iter->first.find(".any") == std::string::npos)))
                     continue;
                 else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
                     continue;

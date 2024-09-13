@@ -34,22 +34,22 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
     for (size_t i = 0; i < factors[facIdx].size(); i++)
     {
         //positions of all elements, which correspond to the passed values
-        std::vector<mu::value_type> catIndex1 = mem->getIndex(facIdx+1, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[facIdx][i]));
+        std::vector<std::complex<double>> catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factors[facIdx][i]));
 
         if (mu::isnan(catIndex1.front()))
             continue;
 
         if (parent == nullptr)
         {
-            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
+            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(catIndex1))));
             catIndex.push_back(catIndex1);
         } else
         {
             // Intersect with parent groups
-            std::vector<std::vector<mu::value_type>> catIndicesParent = parent->catIndex;
-            for(std::vector<mu::value_type> catIndex2 : catIndicesParent)
+            std::vector<std::vector<std::complex<double>>> catIndicesParent = parent->catIndex;
+            for(std::vector<std::complex<double>> catIndex2 : catIndicesParent)
             {
-                std::vector<mu::value_type> intersection;
+                std::vector<std::complex<double>> intersection;
                 for(auto a : catIndex1)
                     for(auto b : catIndex2)
                         if(a == b)
@@ -58,7 +58,7 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
                 if (intersection.size() == 0)
                     continue;
 
-                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
+                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(intersection))));
                 catIndex.push_back(intersection);
             }
         }
@@ -77,7 +77,7 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FactorNode::calculateSS(const mu::value_type overallMean)
+void FactorNode::calculateSS(const std::complex<double> overallMean)
 {
     for(size_t i = 0; i < means.size(); i++)
         SS += nums[i] * intPower(means[i]-overallMean,2);
@@ -176,8 +176,8 @@ void AnovaCalculationStructure::calculateSSInteraction(FactorNode* node)
     if(node->parent == nullptr)
         return;
 
-    std::vector<mu::value_type> child_SS = getAllSubSetSS(node->subset);
-    node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),mu::value_type());
+    std::vector<std::complex<double>> child_SS = getAllSubSetSS(node->subset);
+    node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),std::complex<double>());
 }
 
 /////////////////////////////////////////////////
@@ -195,10 +195,10 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
 
     for(size_t i = 0; i < node->catIndex.size(); i++)
     {
-        for(mu::value_type idx : node->catIndex[i])
+        for(std::complex<double> idx : node->catIndex[i])
         {
             // these indeces start at 1 ?
-            mu::value_type val_j = mem->memArray[0].get()->getValue(idx.real()-1);
+            std::complex<double> val_j = mem->memArray[0].get()->getValue(idx.real()-1);
             SS_Within +=  intPower(val_j - node->means[i],2);
         }
     }
@@ -208,12 +208,12 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
 /// \brief get all SS of elements which are subset of set
 ///
 /// \param set std::vector<size_t>
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> AnovaCalculationStructure::getAllSubSetSS(std::vector<size_t> set)
+std::vector<std::complex<double>> AnovaCalculationStructure::getAllSubSetSS(std::vector<size_t> set)
 {
-    std::vector<mu::value_type> retvec;
+    std::vector<std::complex<double>> retvec;
     getAllChild_SS_helper(root, set, retvec);
     return retvec;
 }
@@ -223,11 +223,11 @@ std::vector<mu::value_type> AnovaCalculationStructure::getAllSubSetSS(std::vecto
 ///
 /// \param node FactorNode*
 /// \param set std::vector<size_t>
-/// \param retvec std::vector<mu::value_type>&
+/// \param retvec std::vector<std::complex<double>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void AnovaCalculationStructure::getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<mu::value_type> &retvec)
+void AnovaCalculationStructure::getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<std::complex<double>> &retvec)
 {
     if (isSubSet(set, node->subset))
     {
@@ -272,7 +272,7 @@ void AnovaCalculationStructure::getResultsHelper(FactorNode* node, std::vector<A
     if(node->subset.size() == depth)
     {
         AnovaResult r;
-        mu::value_type SS = node->subset.size() > 1 ? node->SS_interaction : node->SS ;
+        std::complex<double> SS = node->subset.size() > 1 ? node->SS_interaction : node->SS ;
         double dof = node->dof;
         SS /= dof;
         SS /= SS_Within;

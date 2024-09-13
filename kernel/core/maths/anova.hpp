@@ -29,9 +29,9 @@
 struct AnovaResult
 {
     std::string prefix;
-    mu::value_type m_FRatio;
-    mu::value_type m_significanceVal;
-    mu::value_type m_significance;
+    std::complex<double> m_FRatio;
+    std::complex<double> m_significanceVal;
+    std::complex<double> m_significance;
     bool m_isSignificant;
     size_t m_numCategories;
 };

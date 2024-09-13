@@ -38,11 +38,11 @@ public:
     // this is used for "navigation" in the tree, to access correct elements
     std::vector<size_t> subset;
 
-    std::vector<std::vector<mu::value_type>> catIndex;
-    std::vector<mu::value_type> means;
-    std::vector<mu::value_type> nums;
-    mu::value_type SS;
-    mu::value_type SS_interaction;
+    std::vector<std::vector<std::complex<double>>> catIndex;
+    std::vector<std::complex<double>> means;
+    std::vector<std::complex<double>> nums;
+    std::complex<double> SS;
+    std::complex<double> SS_interaction;
     double dof;
 
     /////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public:
             delete child;
     }
 
-    void calculateSS(const mu::value_type overallMean);
+    void calculateSS(const std::complex<double> overallMean);
     void calculateMean(const Memory *mem, const std::vector<std::vector<std::string>> &factors, size_t facIdx);
     void calculateDof(size_t factorCnt);
 };
@@ -94,9 +94,9 @@ private:
     double significance = 0;
     std::vector<std::vector<std::string>> factors;
 
-    mu::value_type overallMean;
-    mu::value_type overallNum;
-    mu::value_type SS_Within;
+    std::complex<double> overallMean;
+    std::complex<double> overallNum;
+    std::complex<double> SS_Within;
     double dof_within = 0;
     size_t max_depth = 0;
 
@@ -105,8 +105,8 @@ private:
 
     void calculateSSInteraction(FactorNode* node);
     void calculateSSWithin(FactorNode* node);
-    std::vector<mu::value_type> getAllSubSetSS(std::vector<size_t> set);
-    void getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<mu::value_type> &retvec);
+    std::vector<std::complex<double>> getAllSubSetSS(std::vector<size_t> set);
+    void getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<std::complex<double>> &retvec);
     bool isSubSet(std::vector<size_t> set, std::vector<size_t> subSet);
     void getResultsHelper(FactorNode* node, std::vector<AnovaResult>& res, size_t depth);
 

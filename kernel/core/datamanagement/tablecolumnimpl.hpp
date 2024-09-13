@@ -123,7 +123,7 @@ class GenericValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual std::string getValueAsStringLiteral(size_t elem) const override
         {
-#warning FIXME (numere#1#11/09/23): Using the explicit constructor is a hack
+#warning FIXME (numere#6#11/09/23): Using the explicit constructor is a hack
             if (elem < m_data.size())
                 return toString(std::complex<double>(m_data[elem]), NumeReKernel::getInstance()->getSettings().getPrecision()) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
 
@@ -136,10 +136,10 @@ class GenericValueColumn : public TableColumn
         /// does not exist.
         ///
         /// \param elem size_t
-        /// \return mu::value_type
+        /// \return std::complex<double>
         ///
         /////////////////////////////////////////////////
-        virtual mu::value_type getValue(size_t elem) const override
+        virtual std::complex<double> getValue(size_t elem) const override
         {
             if (elem < m_data.size())
                 return m_data[elem];
@@ -147,7 +147,40 @@ class GenericValueColumn : public TableColumn
             return NAN;
         }
 
-        virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;
+        /////////////////////////////////////////////////
+        /// \brief Returns the selected value as a
+        /// mu::Value type or an invalid value, if it
+        /// does not exist.
+        ///
+        /// \param elem size_t
+        /// \return virtual mu::Value
+        ///
+        /////////////////////////////////////////////////
+        virtual mu::Value get(size_t elem) const override
+        {
+            if (elem < m_data.size())
+                return m_data[elem];
+
+            return NAN;
+        }
+
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) = 0;
+
+        /////////////////////////////////////////////////
+        /// \brief Set a single mu::Value.
+        ///
+        /// \param elem size_t
+        /// \param val const mu::Value&
+        /// \return virtual void
+        ///
+        /////////////////////////////////////////////////
+        virtual void set(size_t elem, const mu::Value& val) override
+        {
+            if (val.isNumerical())
+                setValue(elem, val.getNum().asCF64());
+            else
+                setValue(elem, val.getStr());
+        }
 
         /////////////////////////////////////////////////
         /// \brief Set a single string value.
@@ -473,11 +506,11 @@ class BaseFloatColumn : public GenericValueColumn<T, COLTYPE>
         /// \brief Set a single numerical value.
         ///
         /// \param elem size_t
-        /// \param vValue const mu::value_type&
+        /// \param vValue const std::complex<double>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override
         {
             if (elem >= this->m_data.size() && mu::isnan(vValue))
                 return;
@@ -568,11 +601,11 @@ class BaseComplexColumn : public GenericValueColumn<T, COLTYPE>
         /// \brief Set a single numerical value.
         ///
         /// \param elem size_t
-        /// \param vValue const mu::value_type&
+        /// \param vValue const std::complex<double>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override
         {
             if (elem >= this->m_data.size() && mu::isnan(vValue))
                 return;
@@ -664,11 +697,11 @@ class BaseIntColumn : public GenericValueColumn<T, COLTYPE>
         /// \brief Set a single numerical value.
         ///
         /// \param elem size_t
-        /// \param vValue const mu::value_type&
+        /// \param vValue const std::complex<double>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override
         {
             if (elem >= this->m_data.size() && mu::isnan(vValue))
                 return;
@@ -790,10 +823,12 @@ class DateTimeColumn : public TableColumn
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
-        virtual mu::value_type getValue(size_t elem) const override;
+        virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
         virtual DateTimeColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
@@ -881,10 +916,12 @@ class LogicalColumn : public TableColumn
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
-        virtual mu::value_type getValue(size_t elem) const override;
+        virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
         virtual LogicalColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
@@ -965,10 +1002,12 @@ class StringColumn : public TableColumn
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
-        virtual mu::value_type getValue(size_t elem) const override;
+        virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
         virtual StringColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
@@ -1042,10 +1081,12 @@ class CategoricalColumn : public TableColumn
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
         virtual std::string getValueAsStringLiteral(size_t elem) const override;
-        virtual mu::value_type getValue(size_t elem) const override;
+        virtual std::complex<double> getValue(size_t elem) const override;
+        virtual mu::Value get(size_t elem) const override;
 
+        virtual void set(size_t elem, const mu::Value& val) override;
         virtual void setValue(size_t elem, const std::string& sValue) override;
-        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
+        virtual void setValue(size_t elem, const std::complex<double>& vValue) override;
 
         virtual CategoricalColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
@@ -1093,10 +1134,13 @@ class CategoricalColumn : public TableColumn
         void setCategories(const std::vector<std::string>& vCategories);
 };
 
-
+void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType other);
 void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
 bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type, bool convertSimilarTypes = false);
 void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
+TableColumn::ColumnType to_column_type(const mu::Value& val);
+TableColumn::ColumnType to_column_type(const mu::Array& arr);
+TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableColumn::ColumnType other);
 
 
 #endif // TABLECOLUMNIMPL_HPP

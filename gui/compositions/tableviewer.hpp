@@ -83,12 +83,12 @@ class TableViewer : public wxGrid
         void createZeroElementTable();
         wxGridCellCoords CreateEmptyGridSpace(int rows, int headrows, int cols, bool useCursor = false);
 
-        mu::value_type CellToCmplx(int row, int col);
+        std::complex<double> CellToCmplx(int row, int col);
 
         double calculateMin(const wxGridCellCoordsContainer& coords);
         double calculateMax(const wxGridCellCoordsContainer& coords);
-        mu::value_type calculateSum(const wxGridCellCoordsContainer& coords);
-        mu::value_type calculateAvg(const wxGridCellCoordsContainer& coords);
+        std::complex<double> calculateSum(const wxGridCellCoordsContainer& coords);
+        std::complex<double> calculateAvg(const wxGridCellCoordsContainer& coords);
 
         void updateStatusBar(const wxGridCellCoordsContainer& coords, wxGridCellCoords* cursor = nullptr);
         void createMenuBar();

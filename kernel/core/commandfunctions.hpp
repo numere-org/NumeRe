@@ -30,6 +30,7 @@
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
 #include "utils/tools.hpp"
+#include "utils/filecheck.hpp"
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
 
@@ -104,23 +105,14 @@ static bool confirmOperation(const std::string& sMessage)
 static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
     mu::varmap_type mNumVars = _parser.GetVar();
-    map<string, string> mStringVars = NumeReKernel::getInstance()->getStringParser().getStringVars();
-    map<string, int> mVars;
 
     string sSep = ", ";
     string sReturn = "";
-
-    // Fill the vars map with the names and the
-    // types of the variables
-    for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
-        mVars[iter->first] = 0;
-
-    for (auto iter = mStringVars.begin(); iter != mStringVars.end(); ++iter)
-        mVars[iter->first] = 1;
+    bool asString = findParameter(sCmd, "asstr");
 
     // Change the separation characters, if the user
     // wants the return value to be a string
-    if (findParameter(sCmd, "asstr"))
+    if (asString)
     {
         sSep = "\", \"";
         sReturn = "\"";
@@ -129,20 +121,9 @@ static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _da
     // Return all variables, when "vars" was passed
     if (findCommand(sCmd).sString == "vars")
     {
-        for (auto iter = mVars.begin(); iter != mVars.end(); ++iter)
+        for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
         {
-            sReturn += iter->first + " = ";
-
-            if (iter->second)
-            {
-                if (findParameter(sCmd, "asstr"))
-                    sReturn += "\\\"" + mStringVars[iter->first] + "\\\"";
-                else
-                    sReturn += "\"" + mStringVars[iter->first] + "\"";
-            }
-            else
-                sReturn += toString(*mNumVars[iter->first], _option.getPrecision());
-
+            sReturn += iter->first + " = " + (asString ? toExternalString(iter->second->print()) : iter->second->print());
             sReturn += sSep;
         }
     }
@@ -151,15 +132,12 @@ static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _da
     // passed
     if (findCommand(sCmd).sString == "strings")
     {
-        for (auto iter = mStringVars.begin(); iter != mStringVars.end(); ++iter)
+        for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
         {
-            sReturn += iter->first + " = ";
+            if (iter->second->getCommonType() != mu::TYPE_STRING)
+                continue;
 
-            if (findParameter(sCmd, "asstr"))
-                sReturn += "\\\"" + iter->second + "\\\"";
-            else
-                sReturn += "\"" + iter->second + "\"";
-
+            sReturn += iter->first + " = " + (asString ? toExternalString(iter->second->print()) : iter->second->print());
             sReturn += sSep;
         }
 
@@ -173,8 +151,10 @@ static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _da
     {
         for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
         {
-            sReturn += iter->first + " = ";
-            sReturn += toString(*iter->second, _option.getPrecision());
+            if (iter->second->getCommonType() != mu::TYPE_NUMERICAL)
+                continue;
+
+            sReturn += iter->first + " = " + iter->second->print();
             sReturn += sSep;
         }
     }
@@ -269,7 +249,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 
     if (cmdParser.hasParam("dir"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("dir", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("dir", "", true, true));
         int nReturn = _fSys.setPath(sFileName, true, _option.getExePath());
 
         if (nReturn == 1 && _option.systemPrints())
@@ -279,7 +259,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("script"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("script", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("script", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -299,7 +279,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("proc"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("proc", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("proc", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -323,7 +303,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("file"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("file", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("file", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -349,7 +329,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("plugin"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("plugin", "", true, true));
+        sFileName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("plugin", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -397,7 +377,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
         {
             // Create new tables
             std::string sReturnVal = "";
-            std::string sObject = cmdParser.parseExprAsString();
+            std::string sObject = cmdParser.getExpr();
 
             if (!sObject.length())
                 return false;
@@ -457,42 +437,32 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 /// \brief This function opens the object in the
 /// editor to edit its contents.
 ///
-/// \param sCmd std::string&
-/// \param _data Datafile&
-/// \param _option Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _option)
+static bool editObject(CommandLineParser& cmdParser)
 {
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     std::string sObject;
     int nType = 0;
     int nFileOpenFlag = 0;
 
-    if (findParameter(sCmd, "norefresh"))
+    if (cmdParser.hasParam("norefresh"))
         nFileOpenFlag = 1;
 
-    if (findParameter(sCmd, "refresh"))
+    if (cmdParser.hasParam("refresh"))
         nFileOpenFlag = 2 | 4;
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        extractFirstParameterStringValue(sCmd, sObject);
-    else
-    {
-        sObject = sCmd.substr(findCommand(sCmd).sString.length());
-
-        // remove flags from object
-        if (nFileOpenFlag)
-            sObject.erase(sObject.rfind('-'));
-    }
-
-    StripSpaces(sObject);
-
     // Open the table for editing
-    if (_data.containsTables(sObject))
+    if (_data.containsTables(cmdParser.getExpr()))
     {
-        StripSpaces(sObject);
-        std::string sTableName = sObject.substr(0, sObject.find('('));
+        DataAccessParser access = cmdParser.getExprAsDataObject();
+
+        if (!access.getDataObject().length())
+            throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, cmdParser.getCommandLine(), cmdParser.getExpr());
+
+        std::string sTableName = access.getDataObject();
 
         NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
         NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
@@ -507,15 +477,21 @@ static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _optio
         return true;
     }
 
+    if (!is_dir(cmdParser.getExpr()))
+        sObject = cmdParser.parseExprAsString();
+    else
+        sObject = cmdParser.getExpr();
+
     std::string sDefaultExtension = ".dat";
     FileSystem _fSys;
-    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.initializeFromKernel();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sObject.find('.') != std::string::npos)
         _fSys.declareFileType(sObject.substr(sObject.rfind('.')));
 
     if (!sObject.length())
-        throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     if (sObject[0] == '$' && sObject[1] != '\'')
         sObject.insert(0, "<procpath>/");
@@ -620,46 +596,46 @@ static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _optio
         if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
             return true;
 
-        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position, sObject);
     }
 
     // Determine the file type of the file to be edited
     if (sObject.ends_with(".dat")
-            || sObject.ends_with(".txt")
-            || sObject.ends_with(".tex")
-            || sObject.ends_with(".ini")
-            || sObject.ends_with(".cfg")
-            || sObject.ends_with(".conf")
-            || sObject.ends_with(".xml")
-            || sObject.ends_with(".yaml")
-            || sObject.ends_with(".yml")
-            || sObject.ends_with(".json")
-            || sObject.ends_with(".csv")
-            || sObject.ends_with(".labx")
-            || sObject.ends_with(".jdx")
-            || sObject.ends_with(".jcm")
-            || sObject.ends_with(".dx")
-            || sObject.ends_with(".nscr")
-            || sObject.ends_with(".nprc")
-            || sObject.ends_with(".nhlp")
-            || sObject.ends_with(".nlyt")
-            || sObject.ends_with(".png")
-            || sObject.ends_with(".gif")
-            || sObject.ends_with(".m")
-            || sObject.ends_with(".cpp")
-            || sObject.ends_with(".cxx")
-            || sObject.ends_with(".c")
-            || sObject.ends_with(".hpp")
-            || sObject.ends_with(".hxx")
-            || sObject.ends_with(".h")
-            || sObject.ends_with(".log"))
+        || sObject.ends_with(".txt")
+        || sObject.ends_with(".tex")
+        || sObject.ends_with(".ini")
+        || sObject.ends_with(".cfg")
+        || sObject.ends_with(".conf")
+        || sObject.ends_with(".xml")
+        || sObject.ends_with(".yaml")
+        || sObject.ends_with(".yml")
+        || sObject.ends_with(".json")
+        || sObject.ends_with(".csv")
+        || sObject.ends_with(".labx")
+        || sObject.ends_with(".jdx")
+        || sObject.ends_with(".jcm")
+        || sObject.ends_with(".dx")
+        || sObject.ends_with(".nscr")
+        || sObject.ends_with(".nprc")
+        || sObject.ends_with(".nhlp")
+        || sObject.ends_with(".nlyt")
+        || sObject.ends_with(".png")
+        || sObject.ends_with(".gif")
+        || sObject.ends_with(".m")
+        || sObject.ends_with(".cpp")
+        || sObject.ends_with(".cxx")
+        || sObject.ends_with(".c")
+        || sObject.ends_with(".hpp")
+        || sObject.ends_with(".hxx")
+        || sObject.ends_with(".h")
+        || sObject.ends_with(".log"))
         nType = 1;
     else if (sObject.ends_with(".svg")
              || sObject.ends_with(".eps"))
         nType = 2;
 
     if (!nType)
-        throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, sObject);
+        throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, cmdParser.getCommandLine(), SyntaxError::invalid_position, sObject);
 
     if (nType == 1)
     {
@@ -1265,35 +1241,16 @@ static void listLogicalOperators(const Settings& _option)
 static void listDeclaredVariables(Parser& _parser, const Settings& _option, const MemoryManager& _data)
 {
     int nDataSetNum = 1;
-    map<string, int> VarMap;
     int nBytesSum = 0;
 
     // Query the used variables
     //
     // Get the numerical variables
-    mu::varmap_type variables = _parser.GetVar();
-
-    // Get the string variables
-    map<string, string> StringMap = NumeReKernel::getInstance()->getStringParser().getStringVars();
+    const mu::varmap_type& variables = _parser.GetVar();
 
     // Get the current defined data tables
-    map<string, std::pair<size_t, size_t>> CacheMap = _data.getTableMap();
-
+    const map<string, std::pair<size_t, size_t>>& CacheMap = _data.getTableMap();
     const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
-
-    // Combine string and numerical variables to have
-    // them sorted after their name
-    for (auto iter = variables.begin(); iter != variables.end(); ++iter)
-    {
-        VarMap[iter->first] = 0;
-    }
-    for (auto iter = StringMap.begin(); iter != StringMap.end(); ++iter)
-    {
-        VarMap[iter->first] = 1;
-    }
-
-    // Get data table and string table sizes
-    string sStringSize = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
 
     NumeReKernel::toggleTableStatus();
     make_hline();
@@ -1337,74 +1294,43 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     if (mClusterMap.size())
         NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
 
-
-    // Print now the dimension of the string table
-    if (_data.getStringElements())
-    {
-        NumeReKernel::printPreFmt("|   string()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 6 + _option.getWindow(0) % 2) + strfill(sStringSize, (_option.getWindow(0) - 50) / 2) + strfill("[string x string]", 19));
-        if (_data.getStringSize() >= 1024 * 1024)
-            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-        else if (_data.getStringSize() >= 1024)
-            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0), 4), 9) + " KBytes\n");
-        else
-            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize()), 9) + "  Bytes\n");
-        nBytesSum += _data.getStringSize();
-
-        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
-    }
-
     // Print now the set of variables
-    for (auto item = VarMap.begin(); item != VarMap.end(); ++item)
+    for (auto item = variables.begin(); item != variables.end(); ++item)
     {
-        // The second member indicates, whether a
-        // variable is a string or a numerical variable
-        if (item->second)
-        {
-            // This is a string
-            NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
-            if (StringMap[item->first].length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
-                NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first].substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 7) + "...\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
-            else
-                NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first] + "\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
-            NumeReKernel::printPreFmt(strfill("[string]", 19) + strfill(toString(StringMap[item->first].size()), 9) + "  Bytes\n");
-            nBytesSum += StringMap[item->first].size();
-        }
+        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
+
+        std::string printed = item->second->print();
+        size_t bytes = item->second->getBytes();
+
+        if (printed.length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
+            NumeReKernel::printPreFmt(strfill(printed.substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 9) + "...", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
         else
-        {
-            // This is a numerical variable
-            NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2) + strfill(toString(*variables[item->first], _option.getPrecision()), (_option.getWindow(0) - 60) / 2 + _option.getPrecision()) + (variables[item->first]->imag() ? strfill("[complex]", 19) + strfill("16", 9) + "  Bytes\n" : strfill("[double]", 19) + strfill("8", 9) + "  Bytes\n"));
-            nBytesSum += variables[item->first]->imag() ? sizeof(std::complex<double>) : sizeof(double);
-        }
+            NumeReKernel::printPreFmt(strfill(printed, (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+
+        NumeReKernel::printPreFmt(strfill("[" + item->second->getCommonTypeAsString() + "]", 19) + strfill(toString(bytes), 9) + "  Bytes\n");
+        nBytesSum += bytes;
+
     }
 
     // Create now the footer of the list:
     // Combine the number of variables and data
     // tables first
-    NumeReKernel::printPreFmt("|   -- " + toString(VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
-    if (_data.isValid() || _data.getStringElements())
+    NumeReKernel::printPreFmt("|   -- " + toString(variables.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
+    if (_data.isValid())
     {
-        if (_data.isValid() && _data.getStringElements())
-        {
-            NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
-            nDataSetNum = CacheMap.size() + 1;
-        }
-        else if (_data.isValid())
-        {
-            NumeReKernel::printPreFmt(toString(CacheMap.size()));
-            nDataSetNum = CacheMap.size();
-        }
-        else
-            NumeReKernel::printPreFmt("1");
+        NumeReKernel::printPreFmt(toString(CacheMap.size()));
+        nDataSetNum = CacheMap.size();
     }
     else
         NumeReKernel::printPreFmt("0");
+
     NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_DATATABLES")) + " --");
 
     // Calculate now the needed memory for the stored values and print it at the
     // end of the footer line
-    if (VarMap.size() > 9 && nDataSetNum > 9)
+    if (variables.size() > 9 && nDataSetNum > 9)
         NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
-    else if (VarMap.size() > 9 || nDataSetNum > 9)
+    else if (variables.size() > 9 || nDataSetNum > 9)
         NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     else
         NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
@@ -1475,7 +1401,7 @@ static void listConstants(const Parser& _parser, const Settings& _option)
     {
         if (item->first[0] != '_')
             continue;
-        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow() - 10) / 2 + 2 - _option.getPrecision() - (item->first).length() + _option.getWindow() % 2) + strfill(toString(item->second, _option.getPrecision()), _option.getPrecision() + (_option.getWindow() - 50) / 2));
+        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow() - 10) / 2 + 2 - _option.getPrecision() - (item->first).length() + _option.getWindow() % 2) + strfill(item->second.print(_option.getPrecision()), _option.getPrecision() + (_option.getWindow() - 50) / 2));
         for (int i = 0; i < nUnits; i++)
         {
             if (sUnits[i].substr(0, sUnits[i].find('[')) == (item->first).substr(0, sUnits[i].find('[')))
@@ -1677,11 +1603,11 @@ std::vector<size_t> calcTableWidth(size_t maxWidth, std::vector<size_t> minDesir
 void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> lineColSizes)
 {
     // Format the string
-    string sDummy = "";
     for (auto& thisEntry : lineEntries)
     {
-        thisEntry = '"' + thisEntry + "\" -nq";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true, false, true);
+        thisEntry = '"' + thisEntry + "\"";
+        NumeReKernel::getInstance()->getParser().SetExpr(thisEntry);
+        thisEntry = NumeReKernel::getInstance()->getParser().Eval().printVals();
     }
 
     // Split all columns into multiple lines if necessary
@@ -1838,8 +1764,8 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(_option.getExePath(), false, _option.getExePath());
     _fSys.declareFileType(".exe");
-    string sParams = cmdParser.getParameterValueAsString("params", "", true);
-    string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
+    string sParams = cmdParser.getParsedParameterValueAsString("params", "", true);
+    string sWorkpath = cmdParser.getParsedParameterValueAsString("wp", "");
     string sObject = cmdParser.parseExprAsString();
     int nRetVal = 0;
     bool bWaitForTermination = cmdParser.hasParam("wait");
@@ -1971,7 +1897,9 @@ static string getPathForSetting(string& sCmd, size_t pos)
     while (sCmd.find('\\') != string::npos)
         sCmd[sCmd.find('\\')] = '/';
 
-    if (!extractFirstParameterStringValue(sCmd, sPath))
+    sPath = getArgAtPos(sCmd, pos, ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED | ARGEXTRACT_ASSTRING);
+
+    if (!sPath.length())
     {
         NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
 
@@ -2067,11 +1995,6 @@ static CommandReturnValues swapTables(string& sCmd, MemoryManager& _data, Settin
 {
     string sArgument;
 
-    // If the current command line contains strings
-    // handle them here
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = evaluateParameterValues(sCmd);
-
     // Handle legacy and new syntax in these two cases
     if (_data.matchTableAsParameter(sCmd, '=').length())
     {
@@ -2141,10 +2064,10 @@ static CommandReturnValues saveDataObject(string& sCmd)
     size_t nPrecision = _option.getPrecision();
 
     // Update the precision, if the user selected any
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    auto vParVal = cmdParser.getParsedParameterValue("precision");
 
     if (vParVal.size())
-        nPrecision = std::min(14LL, intCast(vParVal.front()));
+        nPrecision = std::min(14LL, vParVal.getAsScalarInt());
 
     // Copy the selected data into another datafile instance and
     // save the copied data
@@ -2165,16 +2088,11 @@ static CommandReturnValues saveDataObject(string& sCmd)
         if (_access.getDataObject() != "table")
             _cache.renameTable("table", _access.getDataObject(), true);
 
-        // If the command line contains string variables
-        // get those values here
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
         std::string sFileName;
         std::string sFileFormat;
 
         if (cmdParser.hasParam("fileformat"))
-            sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+            sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
         if (cmdParser.getCommand() == "export")
             sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
@@ -2612,7 +2530,7 @@ static CommandReturnValues cmd_get(string& sCmd)
         if (asVal)
         {
             if (!nPos)
-                sCmd = convertedValue;
+                sCmd = "{x,y} = {" + toString(mSettings.at(SETTING_V_WINDOW_X).value() + 1) + ", " + toString(mSettings.at(SETTING_V_WINDOW_Y).value() + 1) + "}";
             else
                 sCmd.replace(nPos, sCommand.length(), "{" + toString(mSettings.at(SETTING_V_WINDOW_X).value() + 1) + ", " + toString(mSettings.at(SETTING_V_WINDOW_Y).value() + 1) + "}");
 
@@ -2790,8 +2708,8 @@ static CommandReturnValues cmd_readline(string& sCmd)
     CommandLineParser cmdParser(sCmd, "readline", CommandLineParser::CMD_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    std::string sDefault = cmdParser.getParameterValueAsString("dflt", "");
-    std::string sMessage = cmdParser.getParameterValueAsString("msg", "");
+    std::string sDefault = cmdParser.getParsedParameterValueAsString("dflt", "");
+    std::string sMessage = cmdParser.getParsedParameterValueAsString("msg", "");
     std::string sArgument;
 
 
@@ -2825,7 +2743,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
             sArgument = sDefault;
     }
 
-    if (cmdParser.hasParam("asstr") && sArgument[0] != '"' && sArgument[sArgument.length() - 1] != '"')
+    if (cmdParser.hasParam("asstr") && sArgument.front() != '"' && sArgument.back() != '"')
         cmdParser.setReturnValue("\"" + sArgument + "\"");
     else
         cmdParser.setReturnValue(sArgument);
@@ -2904,18 +2822,15 @@ static CommandReturnValues cmd_new(string& sCmd)
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (findParameter(sCmd, "dir", '=')
-            || findParameter(sCmd, "script", '=')
-            || findParameter(sCmd, "proc", '=')
-            || findParameter(sCmd, "file", '=')
-            || findParameter(sCmd, "plugin", '=')
-            || findParameter(sCmd, "cache", '=')
-            || sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos
-            || sCmd.find('$', findCommand(sCmd).nPos + 3) != string::npos)
+        || findParameter(sCmd, "script", '=')
+        || findParameter(sCmd, "proc", '=')
+        || findParameter(sCmd, "file", '=')
+        || findParameter(sCmd, "plugin", '=')
+        || findParameter(sCmd, "cache", '=')
+        || sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos
+        || sCmd.find('$', findCommand(sCmd).nPos + 3) != string::npos)
     {
         _data.setUserdefinedFuncs(_functions.getNamesOfDefinedFunctions());
-
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-            sCmd = evaluateParameterValues(sCmd);
 
         if (!newObject(sCmd, _parser, _data, _option))
             doc_Help("new", _option);
@@ -2937,23 +2852,12 @@ static CommandReturnValues cmd_new(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_edit(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
     if (sCmd.length() > 5)
-    {
-        string sArgument;
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        {
-            extractFirstParameterStringValue(sCmd, sArgument);
-            sArgument = "edit " + sArgument;
-            editObject(sArgument, _data, _option);
-        }
-        else
-            editObject(sCmd, _data, _option);
-    }
+        editObject(cmdParser);
     else
-        doc_Help("edit", _option);
+        doc_Help("edit", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -3049,9 +2953,6 @@ static CommandReturnValues cmd_delete(string& sCmd)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    string sArgument;
-    int nArgument;
-
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
     if (_data.containsTablesOrClusters(cmdParser.getExpr()))
@@ -3070,18 +2971,6 @@ static CommandReturnValues cmd_delete(string& sCmd)
         else
             throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
     }
-    else if (accessParser.getDataObject() == "string")
-    {
-        nArgument = accessParser.getIndices().row.front();
-
-        if (_data.removeStringElements(nArgument))
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
-        }
-
-        return COMMAND_PROCESSED;
-    }
 
     return COMMAND_PROCESSED;
 }
@@ -3096,10 +2985,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
 /////////////////////////////////////////////////
 static void clear_variables()
 {
-    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-    _stringParser.clearStringVar();
-
-    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlens", "nlines", "nrows", "ans"};
+    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlen", "nlines", "nrows", "ans"};
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     varmap_type mVariables = _parser.GetVar();
 
@@ -3108,6 +2994,7 @@ static void clear_variables()
     {
         bool isTemporaryVar = iter->first.starts_with("_~");
         bool isDefaultVar = std::find(defaultVars.begin(), defaultVars.end(), iter->first) != defaultVars.end();
+
         if (!isTemporaryVar && !isDefaultVar)
             _parser.RemoveVar(iter->first);
     }
@@ -3153,9 +3040,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
         else
             clear_cache(_data, _option);
 
-        // Clear also the string table
-        _data.clearStringElements();
-
         // Clear also user-defined variables if called from terminal
         clear_variables();
 
@@ -3164,16 +3048,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
         NumeRe::Cluster& ans = _data.newCluster("ans");
         ans.setDouble(0, NAN);
         NumeReKernel::getInstance()->setAns(&ans);
-    }
-    else if (cmdParser.getExpr() == "string()")
-    {
-        if (_data.clearStringElements())
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
-        }
-
-        return COMMAND_PROCESSED;
     }
 
     return COMMAND_PROCESSED;
@@ -3222,9 +3096,6 @@ static CommandReturnValues cmd_ifndefined(string& sCmd)
 
     if (sCmd.find(' ') != string::npos)
     {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
         if (findParameter(sCmd, "comment", '='))
             addArgumentQuotes(sCmd, "comment");
 
@@ -3257,18 +3128,16 @@ static CommandReturnValues cmd_ifndefined(string& sCmd)
 static CommandReturnValues cmd_install(string& sCmd)
 {
     Script& _script = NumeReKernel::getInstance()->getScript();
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_EXPR_set_PAR);
 
     string sArgument;
 
     if (!_script.isOpen())
     {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
         _script.setInstallProcedures();
 
         if (containsStrings(sCmd))
-            extractFirstParameterStringValue(sCmd, sArgument);
+            sArgument = cmdParser.getExprAsFileName(".nscr", "<scriptpath>");
         else
             sArgument = sCmd.substr(findCommand(sCmd).nPos + 8);
 
@@ -3377,7 +3246,7 @@ static CommandReturnValues cmd_append(string& sCmd)
 
         double j1 = _data.getCols("data") + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), "data"), j1, _data.getCols("data")}));
+        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), "data"), j1, _data.getCols("data")}));
 
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
@@ -3550,24 +3419,16 @@ static CommandReturnValues cmd_warn(string& sCmd)
 
     if (sMessage.length())
     {
-        if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMessage))
+        auto vVals = cmdParser.parseExpr();
+        sMessage.clear();
+
+        for (size_t i = 0; i < vVals.size(); i++)
         {
-            auto vVals = cmdParser.parseExprAsNumericalValues();
+            if (sMessage.length())
+                sMessage += ", ";
 
-            if (vVals.size() > 1)
-            {
-                sMessage = "{";
-
-                for (size_t i = 0; i < vVals.size(); i++)
-                    sMessage += " " + toString(vVals[i], _option.getPrecision()) + ",";
-
-                sMessage.back() = '}';
-            }
-            else
-                sMessage = toString(vVals.front(), _option.getPrecision());
+            sMessage += vVals[i].printVals(_option.getPrecision(), 0);
         }
-        else
-            sMessage = cmdParser.parseExprAsString();
 
         NumeReKernel::issueWarning(sMessage);
     }
@@ -3693,9 +3554,6 @@ static CommandReturnValues cmd_set(string& sCmd)
     size_t pos;
     string sArgument;
 
-    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-        NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
     for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
         if (iter->second.isMutable() && (pos = findSettingOption(sCmd, iter->first.substr(iter->first.find('.') + 1))))
@@ -3765,14 +3623,10 @@ static CommandReturnValues cmd_set(string& sCmd)
                         if (sCmd[pos] == '=')
                             addArgumentQuotes(sCmd, pos);
 
-                        if (extractFirstParameterStringValue(sCmd, sArgument))
+                        sArgument = getArgAtPos(sCmd, pos, ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED | ARGEXTRACT_ASSTRING);
+
+                        if (sArgument.length())
                         {
-                            if (sArgument.front() == '"')
-                                sArgument.erase(0, 1);
-
-                            if (sArgument.back() == '"')
-                                sArgument.erase(sArgument.length() - 1);
-
                             if (iter->first == SETTING_S_PLOTFONT)
                             {
                                 _option.setDefaultPlotFont(sArgument);
@@ -3884,8 +3738,8 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (cmdParser.hasParam("fromline"))
     {
         // Get the line parameter and subtract 1 to match the internal line count
-        std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
-        nFromLine = intCast(vecFromLine.front()) - 1;
+        mu::Array vecFromLine = cmdParser.getParsedParameterValue("fromline");
+        nFromLine = vecFromLine.getAsScalarInt() - 1;
     }
 
     _script.openScript(sFileName, nFromLine);
@@ -3944,27 +3798,6 @@ static CommandReturnValues cmd_show(string& sCmd)
 
             return COMMAND_PROCESSED;
         }
-        else if (_accessParser.getDataObject() == "string")
-        {
-            // Create the target container
-            NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size());
-
-            // Copy the data to the new container and add surrounding
-            // quotation marks
-            for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
-            {
-                for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
-                {
-                    if ((int)_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
-                        break;
-
-                    _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
-                }
-            }
-
-            // Redirect control
-            NumeReKernel::showStringTable(_stringTable, "string()");
-        }
         else
         {
             MemoryManager _cache;
@@ -4013,19 +3846,19 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     MemoryManager::AppDir dir = MemoryManager::ALL;
 
     // Find the window size
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("order");
+    auto vParVal = cmdParser.getParsedParameterValue("order");
 
     if (vParVal.size())
-        nWindowSize = intCast(vParVal.front());
+        nWindowSize = vParVal.getAsScalarInt();
 
     // Ensure that the windowsize is odd (we don't need even window sizes)
     nWindowSize = 2 * nWindowSize + 1;
 
     // Find the window shape (used for type=gaussian)
-    vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
+    vParVal = cmdParser.getParsedParameterValue("alpha");
 
     if (vParVal.size())
-        dAlpha = vParVal.front().real();
+        dAlpha = vParVal.front().getNum().asF64();
 
     // Find the smoothing filter type
     std::string sFilterType = cmdParser.getParameterValue("type");
@@ -4212,7 +4045,7 @@ static CommandReturnValues cmd_pack(string& sCmd)
     if (cmdParser.getExpr().length() && cmdParser.hasParam("file"))
     {
         std::string sTargetPathName = cmdParser.getFileParameterValueForSaving("", "<savepath>", "");
-        std::string sExpression = cmdParser.getExpr();
+        std::vector<mu::Array> v = cmdParser.parseExpr();
         Archive::Type type = Archive::ARCHIVE_AUTO;
 
         if (cmdParser.hasParam("type"))
@@ -4227,21 +4060,12 @@ static CommandReturnValues cmd_pack(string& sCmd)
                 type = Archive::ARCHIVE_TAR;
         }
 
-        if (instance->getStringParser().isStringExpression(sExpression)
-                || instance->getMemoryManager().containsClusters(sExpression))
-        {
-            sExpression += " -komq";
-            std::string sDummy = "";
-            instance->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
-        }
-
         std::vector<std::string> vFileNames;
 
-        while (sExpression.length())
+        for (size_t i = 0; i < v[0].size(); i++)
         {
-            vFileNames.push_back(instance->getFileSystem().ValidFileName(removeQuotationMarks(getNextArgument(sExpression)), "", false, false));
+            vFileNames.push_back(instance->getFileSystem().ValidFileName(v[0][i].getStr(), "", false, false));
         }
-
 
         Archive::pack(vFileNames, sTargetPathName, type);
     }
@@ -4265,7 +4089,7 @@ static CommandReturnValues cmd_unpack(string& sCmd)
     if (cmdParser.getExpr().length())
     {
         std::string sArchiveFileName = cmdParser.getExprAsFileName(".zip", "<loadpath>");
-        std::string sTargetPathName = replacePathSeparator(cmdParser.getParameterValueAsString("target", ""));
+        std::string sTargetPathName = replacePathSeparator(cmdParser.getParsedParameterValueAsString("target", ""));
 
         if (sTargetPathName.length())
             sTargetPathName = NumeReKernel::getInstance()->getFileSystem().ValidFolderName(sTargetPathName, true, false);
@@ -4274,12 +4098,6 @@ static CommandReturnValues cmd_unpack(string& sCmd)
 
         if (vFiles.size())
         {
-            for (auto& file : vFiles)
-            {
-                file.insert(0, 1, '"');
-                file += '"';
-            }
-
             cmdParser.setReturnValue(vFiles);
 
             sCmd = cmdParser.getReturnValueStatement();
@@ -4361,9 +4179,6 @@ static CommandReturnValues cmd_redefine(string& sCmd)
 
     if (sCmd.length() > findCommand(sCmd).sString.length() + 1)
     {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
         if (findParameter(sCmd, "comment", '='))
             addArgumentQuotes(sCmd, "comment");
 
@@ -4400,19 +4215,19 @@ static CommandReturnValues cmd_resample(string& sCmd)
 
     if (_access.getDataObject().length())
     {
-        auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
+        auto vParVal = cmdParser.getParsedParameterValue("samples");
 
         std::pair<size_t, size_t> samples;
 
         if (vParVal.size() > 1)
         {
-            samples.first = intCast(vParVal[0]);
-            samples.second = intCast(vParVal[1]);
+            samples.first = vParVal[0].getNum().asUI64();
+            samples.second = vParVal[1].getNum().asUI64();
         }
         else if (vParVal.size() == 1)
         {
-            samples.first = intCast(vParVal.front());
-            samples.second = intCast(vParVal.front());
+            samples.first = vParVal.getAsScalarInt();
+            samples.second = vParVal.getAsScalarInt();
         }
         else
         {
@@ -4486,7 +4301,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
             {
                 size_t nPos = sTable.find(iter->first + "()");
 
-                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos - 1])) && iter->first != "table")
+                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos - 1])) && iter->first != "table" && iter->first != "string")
                 {
                     sTable = iter->first;
 
@@ -4538,11 +4353,6 @@ static CommandReturnValues cmd_rename(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
-
-    // If the current command line contains strings
-    // handle them here
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = evaluateParameterValues(sCmd);
 
     // Handle legacy and new syntax in these two cases
     if (_data.matchTableAsParameter(sCmd, '=').length())
@@ -4691,9 +4501,6 @@ static CommandReturnValues cmd_define(string& sCmd)
     if (sCmd.length() > 8)
     {
         _functions.setTableList(_data.getTableNames());
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
         if (findParameter(sCmd, "comment", '='))
             addArgumentQuotes(sCmd, "comment");
@@ -4901,7 +4708,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         {
             double j1 = _data.getCols("data") + 1;
             append_data(cmdParser);
-            cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data"), j1, _data.getCols("data")}));
+            cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data"), j1, _data.getCols("data")}));
             sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;
@@ -4922,7 +4729,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 nArgument = 0;
 
             if (cmdParser.hasParam("fileformat"))
-                sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+                sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
@@ -4940,7 +4747,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
-                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4999,7 +4806,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (!_data.isEmpty("data") && _option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -5008,16 +4815,16 @@ static CommandReturnValues cmd_load(string& sCmd)
                 NumeRe::FileHeaderInfo info;
 
                 // Provide headline
-                auto vParList = cmdParser.getParameterValueAsNumericalValue("head");
+                auto vParList = cmdParser.getParsedParameterValue("head");
 
                 if (vParList.size())
-                    nArgument = intCast(vParList.front());
+                    nArgument = vParList.getAsScalarInt();
                 else
                 {
-                    vParList = cmdParser.getParameterValueAsNumericalValue("h");
+                    vParList = cmdParser.getParsedParameterValue("h");
 
                     if (vParList.size())
-                        nArgument = intCast(vParList.front());
+                        nArgument = vParList.getAsScalarInt();
                 }
 
                 info = _data.openFile(sFileName, false, false, nArgument, "", sFileFormat);
@@ -5027,7 +4834,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
-                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -5084,7 +4891,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
         cmd_load(sArgument);
     }
 
-    _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
+    _parser.SetInternalVar("_~load[~_~]", std::vector<std::complex<double>>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
     sCmd.replace(_mMatch.nPos, string::npos, "_~load[~_~]");
 
     return COMMAND_HAS_RETURNVALUE;
@@ -5129,25 +4936,25 @@ static CommandReturnValues cmd_progress(string& sCmd)
     string sArgument;
     int frst = 1, lst = 100;
 
-    auto vParVal = cmdParser.getParameterValueAsNumericalValue("first");
+    auto vParVal = cmdParser.getParsedParameterValue("first");
 
     if (vParVal.size())
-        frst = intCast(vParVal.front());
+        frst = vParVal.getAsScalarInt();
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("last");
+    vParVal = cmdParser.getParsedParameterValue("last");
 
     if (vParVal.size())
-        lst = intCast(vParVal.front());
+        lst = vParVal.getAsScalarInt();
 
     sArgument = cmdParser.getParameterValue("type");
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sArgument))
-        sArgument = cmdParser.getParameterValueAsString("type", "std");
+    if (containsStrings(sArgument))
+        sArgument = cmdParser.getParsedParameterValueAsString("type", "std");
 
-    auto vVal = cmdParser.parseExprAsNumericalValues();
+    auto vVal = cmdParser.parseExpr();
 
     if (vVal.size())
-        make_progressBar(intCast(vVal.front()), frst, lst, sArgument);
+        make_progressBar(vVal.front().getAsScalarInt(), frst, lst, sArgument);
 
     return COMMAND_PROCESSED;
 }
@@ -5163,19 +4970,19 @@ static CommandReturnValues cmd_progress(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_print(string& sCmd)
 {
-    string sArgument = sCmd.substr(findCommand(sCmd).nPos + 6);
-    string sDummy;
+    CommandLineParser cmdParser(sCmd, "print", CommandLineParser::CMD_EXPR_set_PAR);
+    std::vector<mu::Array> res = cmdParser.parseExpr();
 
-    if (!NumeReKernel::getInstance()->getDefinitions().call(sArgument))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sArgument);
+    NumeReKernel::toggleTableStatus();
 
-    if (sArgument.find("??") != string::npos)
-        sArgument = promptForUserInput(sArgument);
+    for (size_t i = 0; i < res.size(); i++)
+    {
+        std::string sArgument = res[i].printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
+        replaceAll(sArgument, "\n", "\n|   ");
+        NumeReKernel::printPreFmt("\r|-> " + sArgument + "\n");
+    }
 
-    sArgument += " -print";
-
-    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, false, false, true);
-
+    NumeReKernel::toggleTableStatus();
     return COMMAND_PROCESSED;
 }
 

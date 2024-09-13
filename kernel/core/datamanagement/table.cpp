@@ -285,11 +285,11 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
-    /// \param _dValue const mu::value_type&
+    /// \param _dValue const std::complex<double>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setValue(size_t i, size_t j, const mu::value_type& _dValue)
+    void Table::setValue(size_t i, size_t j, const std::complex<double>& _dValue)
     {
         this->setMinSize(i+1, j+1);
 
@@ -557,10 +557,10 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Table::getValue(size_t i, size_t j) const
+    std::complex<double> Table::getValue(size_t i, size_t j) const
     {
         if (vTableData.size() > j && vTableData[j])
             return vTableData[j]->getValue(i);

@@ -1392,16 +1392,16 @@ namespace NumeRe
 
             /////////////////////////////////////////////////
             /// \brief Returns the value stored at the passed
-            /// positions. A default constructed mu::value_type
+            /// positions. A default constructed std::complex<double>
             /// object instance is returned, if the element
             /// does not exist.
             ///
             /// \param row int64_t
             /// \param col int64_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type getElement(int64_t row, int64_t col) const
+            std::complex<double> getElement(int64_t row, int64_t col) const
             {
                 if (m_file)
                 {
@@ -1416,7 +1416,7 @@ namespace NumeRe
                         return arr->at(col)->getValue(row);
                 }
 
-                return mu::value_type();
+                return std::complex<double>();
             }
 
             /////////////////////////////////////////////////
@@ -1781,7 +1781,7 @@ namespace NumeRe
             void writeTableHeads();
             size_t countHeadLines();
             std::string replaceNonASCII(const std::string& sText);
-            std::string formatNumber(const mu::value_type& number);
+            std::string formatNumber(const std::complex<double>& number);
 
         public:
             LaTeXTable(const std::string& filename);

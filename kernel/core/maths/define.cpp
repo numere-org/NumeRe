@@ -446,7 +446,8 @@ bool FunctionDefinition::convertToValues()
             {
                 if (defString.match(iter->first, i) && defString.is_delimited_sequence(i, iter->first.length()))
                 {
-                    defString.replace(i, (iter->first).length(), toString(*iter->second, NumeReKernel::getInstance()->getSettings().getPrecision()));
+                    defString.replace(i, (iter->first).length(),
+                                      iter->second->print(NumeReKernel::getInstance()->getSettings().getPrecision()));
                 }
             }
         }

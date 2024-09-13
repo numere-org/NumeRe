@@ -51,31 +51,31 @@ class Interval
 
         Interval() : m_sDefinition(), m_vInterval({NAN,NAN}), name() {}
         Interval(const std::string& sDef);
-        Interval(mu::value_type dFront, mu::value_type dBack);
+        Interval(std::complex<double> dFront, std::complex<double> dBack);
         Interval(const Interval& ivl);
 
         Interval& operator=(const Interval& ivl);
-        mu::value_type operator()(size_t n, size_t nSamples = 100) const;
-        mu::value_type log(size_t n, size_t nSamples = 100) const;
+        std::complex<double> operator()(size_t n, size_t nSamples = 100) const;
+        std::complex<double> log(size_t n, size_t nSamples = 100) const;
 
-        mu::value_type front() const;
-        mu::value_type back() const;
+        std::complex<double> front() const;
+        std::complex<double> back() const;
 
-        mu::value_type cmin() const;
-        mu::value_type cmax() const;
+        std::complex<double> cmin() const;
+        std::complex<double> cmax() const;
 
         double min() const;
         double max() const;
         double range() const;
         double middle() const;
 
-        bool isInside(mu::value_type val, int bnds = INCLUDE_BOTH) const;
+        bool isInside(std::complex<double> val, int bnds = INCLUDE_BOTH) const;
         bool contains(const std::string& sVarName) const;
         size_t getSamples() const;
 
         void refresh();
         void reset(const std::string& sDef);
-        void reset(mu::value_type dFront, mu::value_type dBack);
+        void reset(std::complex<double> dFront, std::complex<double> dBack);
 
         void expand(double perc, double dMin = -INFINITY);
         Interval combine(const Interval& _ivl) const;
@@ -101,7 +101,7 @@ struct IntervalSet
 
     bool hasDependentIntervals() const;
     size_t size() const;
-    std::vector<mu::value_type> convert();
+    std::vector<std::complex<double>> convert();
     void setNames(const std::vector<std::string>& vNames);
 };
 

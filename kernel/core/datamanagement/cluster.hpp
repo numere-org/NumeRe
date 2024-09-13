@@ -71,10 +71,10 @@ namespace NumeRe
             /// \brief Base implementation. Returns always
             /// NaN.
             ///
-            /// \return virtual mu::value_type
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type getDouble()
+            virtual std::complex<double> getDouble()
             {
                 return NAN;
             }
@@ -82,11 +82,11 @@ namespace NumeRe
             /////////////////////////////////////////////////
             /// \brief Base implementation. Does nothing.
             ///
-            /// \param val const mu::value_type&
+            /// \param val const std::complex<double>&
             /// \return virtual void
             ///
             /////////////////////////////////////////////////
-            virtual void setDouble(const mu::value_type& val) {}
+            virtual void setDouble(const std::complex<double>& val) {}
 
             /////////////////////////////////////////////////
             /// \brief Base implementation. Always returns an
@@ -144,19 +144,19 @@ namespace NumeRe
     class ClusterDoubleItem : public ClusterItem
     {
         private:
-            mu::value_type dData;
+            std::complex<double> dData;
 
         public:
-            ClusterDoubleItem(const mu::value_type& value) : ClusterItem(ClusterItem::ITEMTYPE_DOUBLE), dData(value) {}
+            ClusterDoubleItem(const std::complex<double>& value) : ClusterItem(ClusterItem::ITEMTYPE_DOUBLE), dData(value) {}
             virtual ~ClusterDoubleItem() override {}
 
             /////////////////////////////////////////////////
             /// \brief Returns the internal value.
             ///
-            /// \return virtual mu::value_type
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type getDouble() override
+            virtual std::complex<double> getDouble() override
             {
                 return dData;
             }
@@ -164,11 +164,11 @@ namespace NumeRe
             /////////////////////////////////////////////////
             /// \brief Overwrites the internal value.
             ///
-            /// \param val const mu::value_type&
+            /// \param val const std::complex<double>&
             /// \return virtual void
             ///
             /////////////////////////////////////////////////
-            virtual void setDouble(const mu::value_type& val) override
+            virtual void setDouble(const std::complex<double>& val) override
             {
                 dData = val;
             }
@@ -252,10 +252,10 @@ namespace NumeRe
             /// \brief Returns the internal string converted
             /// to a value.
             ///
-            /// \return virtual mu::value_type
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type getDouble() override
+            virtual std::complex<double> getDouble() override
             {
                 if (isConvertible(sData, CONVTYPE_VALUE))
                     return StrToCmplx(sData);
@@ -268,11 +268,11 @@ namespace NumeRe
             /// the passed value, which will be converted to
             /// a string first.
             ///
-            /// \param val const mu::value_type&
+            /// \param val const std::complex<double>&
             /// \return virtual void
             ///
             /////////////////////////////////////////////////
-            virtual void setDouble(const mu::value_type& val) override
+            virtual void setDouble(const std::complex<double>& val) override
             {
                 sData = toString(val, 7);
             }
@@ -329,9 +329,9 @@ namespace NumeRe
             mutable int nGlobalType;
 
             void assign(const Cluster& cluster);
-            void assign(const std::vector<mu::value_type>& vVals);
+            void assign(const std::vector<std::complex<double>>& vVals);
             void assign(const std::vector<std::string>& vStrings);
-            void assignVectorResults(Indices _idx, int nNum, mu::value_type* data);
+            void assignVectorResults(Indices _idx, const mu::Array& data);
             virtual int compare(int i, int j, int col) override;
             virtual bool isValue(int line, int col) override;
             void reorderElements(std::vector<int> vIndex, int i1, int i2);
@@ -347,7 +347,7 @@ namespace NumeRe
             {
                 assign(cluster);
             }
-            Cluster(const std::vector<mu::value_type>& vVals)
+            Cluster(const std::vector<std::complex<double>>& vVals)
             {
                 assign(vVals);
             }
@@ -366,7 +366,7 @@ namespace NumeRe
                 assign(cluster);
                 return *this;
             }
-            Cluster& operator=(const std::vector<mu::value_type>& vVals)
+            Cluster& operator=(const std::vector<std::complex<double>>& vVals)
             {
                 assign(vVals);
                 return *this;
@@ -378,7 +378,7 @@ namespace NumeRe
             }
 
             void push_back(ClusterItem* item);
-            void push_back(const mu::value_type& val);
+            void push_back(const std::complex<double>& val);
             void push_back(const std::string& strval);
             void pop_back();
 
@@ -392,13 +392,16 @@ namespace NumeRe
 
             unsigned short getType(size_t i) const;
 
-            mu::value_type getDouble(size_t i) const;
-            void setDouble(size_t i, const mu::value_type& value);
-            std::vector<mu::value_type> getDoubleArray() const;
-            void insertDataInArray(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine);
-            void setDoubleArray(const std::vector<mu::value_type>& vVals);
-            void setDoubleArray(int nNum, mu::value_type* data);
-            void assignResults(Indices _idx, int nNum, mu::value_type* data);
+            mu::Value getValue(size_t i) const;
+            void setValue(size_t i, const mu::Value& v);
+            std::complex<double> getDouble(size_t i) const;
+            void setDouble(size_t i, const std::complex<double>& value);
+            std::vector<std::complex<double>> getDoubleArray() const;
+            void insertDataInArray(mu::Variable* vTarget, const VectorIndex& _vLine);
+            void setValueArray(const mu::Array& a);
+            void setDoubleArray(const std::vector<std::complex<double>>& vVals);
+            void setDoubleArray(int nNum, std::complex<double>* data);
+            void assignResults(Indices _idx, const mu::Array& data);
 
             std::string getString(size_t i) const;
             std::string getInternalString(size_t i) const;
@@ -417,24 +420,24 @@ namespace NumeRe
             void deleteItems(long long int i1, long long int i2);
             void deleteItems(const VectorIndex& vLines);
 
-            mu::value_type std(const VectorIndex& _vLine);
-            mu::value_type avg(const VectorIndex& _vLine);
-            mu::value_type max(const VectorIndex& _vLine);
+            std::complex<double> std(const VectorIndex& _vLine);
+            std::complex<double> avg(const VectorIndex& _vLine);
+            std::complex<double> max(const VectorIndex& _vLine);
             std::string strmax(const VectorIndex& _vLine);
-            mu::value_type min(const VectorIndex& _vLine);
+            std::complex<double> min(const VectorIndex& _vLine);
             std::string strmin(const VectorIndex& _vLine);
-            mu::value_type prd(const VectorIndex& _vLine);
-            mu::value_type sum(const VectorIndex& _vLine);
+            std::complex<double> prd(const VectorIndex& _vLine);
+            std::complex<double> sum(const VectorIndex& _vLine);
             std::string strsum(const VectorIndex& _vLine);
-            mu::value_type num(const VectorIndex& _vLine);
-            mu::value_type and_func(const VectorIndex& _vLine);
-            mu::value_type or_func(const VectorIndex& _vLine);
-            mu::value_type xor_func(const VectorIndex& _vLine);
-            mu::value_type cnt(const VectorIndex& _vLine);
-            mu::value_type norm(const VectorIndex& _vLine);
-            mu::value_type cmp(const VectorIndex& _vLine, mu::value_type dRef, int _nType);
-            mu::value_type med(const VectorIndex& _vLine);
-            mu::value_type pct(const VectorIndex& _vLine, mu::value_type dPct);
+            std::complex<double> num(const VectorIndex& _vLine);
+            std::complex<double> and_func(const VectorIndex& _vLine);
+            std::complex<double> or_func(const VectorIndex& _vLine);
+            std::complex<double> xor_func(const VectorIndex& _vLine);
+            std::complex<double> cnt(const VectorIndex& _vLine);
+            std::complex<double> norm(const VectorIndex& _vLine);
+            std::complex<double> cmp(const VectorIndex& _vLine, std::complex<double> dRef, int _nType);
+            std::complex<double> med(const VectorIndex& _vLine);
+            std::complex<double> pct(const VectorIndex& _vLine, std::complex<double> dPct);
 
     };
 
@@ -454,10 +457,10 @@ namespace NumeRe
             std::map<std::string, Cluster>::const_iterator mapStringViewFind(StringView view) const;
 
         public:
-            ClusterManager() {dClusterElementsCount = 0.0;}
+            ClusterManager() {dClusterElementsCount = mu::Value(0.0);}
             ~ClusterManager() {}
 
-            mu::value_type dClusterElementsCount;
+            mu::Variable dClusterElementsCount;
 
             bool containsClusters(const std::string& sCmdLine) const;
             bool isCluster(StringView sCluster) const;

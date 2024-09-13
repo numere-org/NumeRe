@@ -1211,7 +1211,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             // A collapsible group is currently very buggy (if used
             // with the current GroupPanel).
-#warning TODO (numere#1#08/15/21): Fix the collapsible group
+#warning TODO (numere#6#08/15/21): Fix the collapsible group
             if (label.length())
             {
                 if (isCollapsible)

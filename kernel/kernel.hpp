@@ -39,7 +39,6 @@
 #include "core/io/output.hpp"
 
 #include "core/maths/define.hpp"
-#include "core/maths/functionimplementation.hpp"
 #include "core/maths/parser_functions.hpp"
 
 #include "core/ParserLib/muParser.h"
@@ -49,8 +48,6 @@
 
 #include "core/procedure/procedure.hpp"
 #include "core/procedure/procedurelibrary.hpp"
-
-#include "core/strings/stringparser.hpp"
 
 #include "core/ui/error.hpp"
 #include "core/ui/language.hpp"
@@ -149,7 +146,7 @@ class NumeReKernel
         Output _out;
         MemoryManager _memoryManager;
         mu::Parser _parser;
-        NumeRe::StringParser _stringParser;
+        //NumeRe::StringParser _stringParser;
         FunctionDefinitionManager _functions;
         PlotData _pData;
         Script _script;
@@ -170,8 +167,7 @@ class NumeReKernel
         bool evaluateProcedureCalls(std::string& sLine);
         bool executePlugins(std::string& sLine);
         bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal);
-        void createCalculationAnswer(int nNum, mu::value_type* v);
+        void createCalculationAnswer(int nNum, mu::Array* v);
         void printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos);
         void resetAfterError();
         std::string getGreeting();
@@ -180,7 +176,8 @@ class NumeReKernel
         // Functions for initializing the numerical parser
         void defineOperators();
         void defineConst();
-        void defineFunctions();
+        void defineNumFunctions();
+        void defineStrFunctions();
 
     public:
         // Static public class members
@@ -228,8 +225,7 @@ class NumeReKernel
         static void flush();
         static void print(const std::string& __sLine, bool printingEnabled = true);
         static void printPreFmt(const std::string& __sLine, bool printingEnabled = true);
-        static std::string formatResultOutput(int nNum, mu::value_type* v);
-        static std::string formatResultOutput(const std::vector<std::string>& vStringResults);
+        static std::string formatResultOutput(int nNum, mu::Array* v);
         static void issueWarning(std::string sWarningMessage);
         static void failMessage(std::string sFailMessage);
         static int numberOfNumbersPerLine();
@@ -283,11 +279,6 @@ class NumeReKernel
         mu::Parser& getParser()
         {
             return _parser;
-        }
-
-        NumeRe::StringParser& getStringParser()
-        {
-            return _stringParser;
         }
 
         FunctionDefinitionManager& getDefinitions()

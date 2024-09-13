@@ -65,11 +65,12 @@ namespace mu
     /////////////////////////////////////////////////
     void ExpressionTarget::assign(const valbuf_type& buffer, int nResults)
     {
+        m_targets = buffer[0];
         //g_logger.debug("Using target. Size = " + toString(m_targets.size()));
         // Assign the results to the target variables
         // and consider also singletons
-        for (size_t i = 0; i < m_targets.size(); i++)
-            *m_targets[i] = buffer[nResults == 1 ? 0 : std::min((int)i, nResults-1)];
+        //for (size_t i = 0; i < m_targets.size(); i++)
+        //    *m_targets[i] = buffer[nResults == 1 ? 0 : std::min((int)i, nResults-1)];
     }
 }
 

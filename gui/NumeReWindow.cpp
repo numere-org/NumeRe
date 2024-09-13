@@ -370,6 +370,8 @@ bool MyApp::OnInit()
     if (splash)
         splash->Destroy();
 
+    NumeReMainFrame->ShowEditorCarets();
+
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
     {
@@ -1136,10 +1138,9 @@ void NumeReWindow::prepareSession()
                 {
                     OpenSourceFile(wxArrayString(1, sFileName));
                     NumeReEditor* currentEd = m_book->getCurrentEditor();
-                    currentEd->GotoPos(nLine);
-                    currentEd->ToggleSettings(nSetting);
-                    currentEd->EnsureVisible(currentEd->LineFromPosition(nLine));
                     currentEd->setBookmarks(toIntVector(sBookmarks));
+                    currentEd->ToggleSettings(nSetting);
+                    currentEd->GotoPos(nLine);
                 }
                 else
                 {
@@ -2207,7 +2208,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 
 /////////////////////////////////////////////////
 /// \brief This member function displays the
-/// contents of the "string()" table or a cluster.
+/// contents of a cluster.
 ///
 /// \param _stringTable NumeRe::Container<std::string>
 /// \param tableDisplayName const std::string&
@@ -2258,8 +2259,8 @@ void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDispl
 
 /////////////////////////////////////////////////
 /// \brief This member function displays the
-/// contents of the "string()" table or a cluster
-/// and enables editing its contents.
+/// contents of a cluster and enables editing its
+/// contents.
 ///
 /// \param _stringTable NumeRe::Container<std::string>
 /// \param tableDisplayName const std::string&
@@ -2316,7 +2317,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDispl
 /////////////////////////////////////////////////
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
-    if (tableDisplayName == "string()" || tableDisplayName.find("{}") != std::string::npos)
+    if (tableDisplayName.find("{}") != std::string::npos)
         openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
     else
         openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
@@ -3914,10 +3915,9 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
         wxString fileName = edit->GetFileNameAndPath();
 
         // the file hasn't been saved yet, grab the "<untitled> #" bit from the tab
-        if(fileName == wxEmptyString)
+        if (fileName == wxEmptyString)
         {
-            int selectedTab = m_book->GetSelection();
-            wxString tabText = m_book->GetPageText(selectedTab);
+            wxString tabText = m_book->GetPageText(pageNr);
 
             int idx = tabText.Index('*');
 
@@ -4367,6 +4367,26 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
         pathName = data->filename;
 
     return pathName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Show the carets of all editors
+/// (ignoring folding and such).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::ShowEditorCarets()
+{
+    for (size_t page = 0; page < m_book->GetPageCount(); page++)
+    {
+        NumeReEditor* currentEd = m_book->getEditor(page);
+        int nLine = currentEd->GetCurrentLine();
+        currentEd->EnsureVisible(nLine);
+        currentEd->SetFirstVisibleLine(currentEd->VisibleFromDocLine(nLine) - m_options->GetDebuggerFocusLine());
+        currentEd->Refresh();
+    }
 }
 
 
@@ -6157,7 +6177,7 @@ void NumeReWindow::prepareFunctionTree()
         currentNode = m_functionTree->AppendItem(methodNode, _guilang.get("PARSERFUNCS_LISTFUNC_METHODS_TYPE_" + toUpperCase(vKeyList[i])),
                                                  idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[" + toUpperCase(vKeyList[i]) + "]");
-        std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : "STRINGVAR";
+        std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : (vKeyList[i] == "string" ? "STRINGVAR" : "VAR");
 
         for (size_t j = 0; j < vDirList.size(); j++)
         {

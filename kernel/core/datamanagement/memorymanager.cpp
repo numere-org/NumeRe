@@ -40,7 +40,7 @@ using namespace std;
 /// Creates the default table and initializes the
 /// list of predefined commands.
 /////////////////////////////////////////////////
-MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::ClusterManager()
+MemoryManager::MemoryManager() : NumeRe::FileAdapter(), NumeRe::ClusterManager()
 {
 	bSaveMutex = false;
 	sCache_file = "<>/numere.cache";
@@ -49,10 +49,12 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;imread;implot;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
 	mCachesMap["table"] = std::make_pair(0u, 0u);
+	mCachesMap["string"] = std::make_pair(1u, 1u);
+	vMemory.push_back(new Memory());
 	vMemory.push_back(new Memory());
 
-	tableColumnsCount = 0.0;
-	tableLinesCount = 0.0;
+	tableColumnsCount = mu::Value(0.0);
+	tableLinesCount = mu::Value(0.0);
 }
 
 
@@ -95,6 +97,8 @@ void MemoryManager::removeTablesFromMemory()
 		bSaveMutex = false;
 		mCachesMap.clear();
 		mCachesMap["table"] = std::make_pair(0u, 0u);
+		mCachesMap["string"] = std::make_pair(1u, 1u);
+		vMemory.push_back(new Memory());
 		vMemory.push_back(new Memory());
 		sDataFile.clear();
 	}
@@ -400,6 +404,17 @@ bool MemoryManager::loadFromNewCacheFile()
                 vMemory.back()->m_meta.comment = cacheFile.getComment();
         }
 
+        if (mCachesMap.find("table") == mCachesMap.end())
+        {
+            mCachesMap["table"] = std::make_pair(vMemory.size(), vMemory.size());
+            vMemory.push_back(new Memory());
+        }
+        if (mCachesMap.find("string") == mCachesMap.end())
+        {
+            mCachesMap["string"] = std::make_pair(vMemory.size(), vMemory.size());
+            vMemory.push_back(new Memory());
+        }
+
         bSaveMutex = false;
         return true;
 
@@ -696,23 +711,23 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             // Definition contains a vector expression
             _parser.SetExpr(sEveryCell);
             int nResults;
-            mu::value_type* v = _parser.Eval(nResults);
+            mu::Array* v = _parser.Eval(nResults);
 
-            return VectorIndex(v, nResults, 0);
+            return VectorIndex(v[0]);
         }
         else
         {
             // Usual expression
             _parser.SetExpr(sEveryCell);
             int nResults;
-            mu::value_type* v = _parser.Eval(nResults);
+            mu::Array* v = _parser.Eval(nResults);
 
             if (nResults == 1)
             {
                 // Single result: usual every=a,a representation
                 std::vector<int> idx;
 
-                for (int i = intCast(v[0])-1; i < iterationDimension; i += intCast(v[0]))
+                for (int i = v[0].getAsScalarInt()-1; i < iterationDimension; i += v[0].getAsScalarInt())
                 {
                     idx.push_back(i);
                 }
@@ -724,7 +739,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 // Two results: usual every=a,b representation
                 std::vector<int> idx;
 
-                for (int i = intCast(v[0])-1; i < iterationDimension; i += intCast(v[1]))
+                for (int i = v[0].getAsScalarInt()-1; i < iterationDimension; i += v[1].getAsScalarInt())
                 {
                     idx.push_back(i);
                 }
@@ -732,7 +747,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return VectorIndex(v, nResults, 0);
+                return VectorIndex(v[0]);
         }
     }
 
@@ -748,13 +763,13 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
 ///
 /// \param sTableName std::string& const
 /// \param sDir std::string
-/// \param MAF (mu::value_type*)
-/// \return std::vector<mu::value_type>
+/// \param MAF (std::complex<double>*)
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> MemoryManager::resolveMAF(const std::string& sTableName, std::string sDir, mu::value_type (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const
+std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& sTableName, std::string sDir, std::complex<double> (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const
 {
-    std::vector<mu::value_type> vResults;
+    std::vector<std::complex<double>> vResults;
     int nlines = getLines(sTableName, false);
     int ncols = getCols(sTableName, false);
 
@@ -765,7 +780,7 @@ std::vector<mu::value_type> MemoryManager::resolveMAF(const std::string& sTableN
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), VectorIndex(), GRID);
+        std::vector<std::complex<double>> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), VectorIndex(), GRID);
         nlines = vSize.front().real();
         ncols = vSize.back().real()+nGridOffset; // compensate the offset
     }
@@ -976,21 +991,10 @@ void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget
 /////////////////////////////////////////////////
 bool MemoryManager::updateDimensionVariables(StringView sTableName) const
 {
-    // Determine the type of table
-    if (sTableName != "string")
-    {
-        // Update the dimensions for the selected
-        // numerical table
-        tableLinesCount = getLines(sTableName, false);
-        tableColumnsCount = getCols(sTableName, false);
-    }
-    else
-    {
-        // Update the dimensions for the selected
-        // string table
-        tableLinesCount = getStringElements();
-        tableColumnsCount = getStringCols();
-    }
+    // Update the dimensions for the selected
+    // table
+    tableLinesCount = mu::Value(getLines(sTableName, false));
+    tableColumnsCount = mu::Value(getCols(sTableName, false));
 
     return true;
 }
@@ -1012,6 +1016,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 
     // Check the first character directly
     size_t nQuotes = sCmdLine.front() == '"';
+    size_t nVar2StrParserEnd = 0;
 
     // Search through the expression -> We do not need to examine the first character
     for (size_t i = 1; i < sCmdLine.length(); i++)
@@ -1023,14 +1028,28 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
         if (nQuotes % 2)
             continue;
 
+        // Jump over the var2str parser operator
+        if (sCmdLine[i-1] == '#')
+        {
+            while (sCmdLine[i] == '~')
+            {
+                i++;
+                nVar2StrParserEnd = i;
+            }
+        }
+
         // Is this a candidate for a table
         if (sCmdLine[i] == '('
-            && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~'))
+            && (isalnum(sCmdLine[i-1])
+                || sCmdLine[i-1] == '_'
+                || sCmdLine[i-1] == '~'))
         {
             size_t nStartPos = i-1;
 
             // Try to find the starting position
-            while (nStartPos > 0 && (isalnum(sCmdLine[nStartPos-1]) || sCmdLine[nStartPos-1] == '_' || sCmdLine[nStartPos-1] == '~'))
+            while (nStartPos > nVar2StrParserEnd && (isalnum(sCmdLine[nStartPos-1])
+                                                     || sCmdLine[nStartPos-1] == '_'
+                                                     || sCmdLine[nStartPos-1] == '~'))
             {
                 nStartPos--;
             }
@@ -1042,16 +1061,20 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 
         // Is this a candidate for a table
         if (sCmdLine[i] == '{'
-            && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~' || sCmdLine[i-1] == '[' || sCmdLine[i-1] == ']'))
+            && (isalnum(sCmdLine[i-1])
+                || sCmdLine[i-1] == '_'
+                || sCmdLine[i-1] == '~'
+                || sCmdLine[i-1] == '['
+                || sCmdLine[i-1] == ']'))
         {
             size_t nStartPos = i-1;
 
             // Try to find the starting position
-            while (nStartPos > 0 && (isalnum(sCmdLine[nStartPos-1])
-                                     || sCmdLine[nStartPos-1] == '_'
-                                     || sCmdLine[nStartPos-1] == '~'
-                                     || sCmdLine[nStartPos-1] == '['
-                                     || sCmdLine[nStartPos-1] == ']'))
+            while (nStartPos > nVar2StrParserEnd && (isalnum(sCmdLine[nStartPos-1])
+                                                     || sCmdLine[nStartPos-1] == '_'
+                                                     || sCmdLine[nStartPos-1] == '~'
+                                                     || sCmdLine[nStartPos-1] == '['
+                                                     || sCmdLine[nStartPos-1] == ']'))
             {
                 nStartPos--;
             }
@@ -1126,6 +1149,7 @@ bool MemoryManager::containsTables(const std::string& sExpression)
 
     // Check the first character directly
     size_t nQuotes = sExpression.front() == '"';
+    size_t nVar2StrParserEnd = 0;
 
     // Search through the expression -> We do not need to examine the first character
     for (size_t i = 1; i < sExpression.length(); i++)
@@ -1134,15 +1158,32 @@ bool MemoryManager::containsTables(const std::string& sExpression)
         if (sExpression[i] == '"' && sExpression[i-1] != '\\')
             nQuotes++;
 
+        if (nQuotes % 2)
+            continue;
+
+        // Jump over the var2str parser operator
+        if (sExpression[i-1] == '#')
+        {
+            while (sExpression[i] == '~')
+            {
+                i++;
+                nVar2StrParserEnd = i;
+            }
+        }
+
         // Is this a candidate for a table
-        if (!(nQuotes % 2)
-            && sExpression[i] == '('
-            && (isalnum(sExpression[i-1]) || sExpression[i-1] == '_' || sExpression[i-1] == '~'))
+        if (sExpression[i] == '('
+            && (isalnum(sExpression[i-1])
+                || sExpression[i-1] == '_'
+                || sExpression[i-1] == '~'))
         {
             size_t nStartPos = i-1;
 
             // Try to find the starting position
-            while (nStartPos > 0 && (isalnum(sExpression[nStartPos-1]) || sExpression[nStartPos-1] == '_' || sExpression[nStartPos-1] == '~'))
+            while (nStartPos > nVar2StrParserEnd
+                   && (isalnum(sExpression[nStartPos-1])
+                       || sExpression[nStartPos-1] == '_'
+                       || sExpression[nStartPos-1] == '~'))
             {
                 nStartPos--;
             }
@@ -1151,30 +1192,6 @@ bool MemoryManager::containsTables(const std::string& sExpression)
             if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
                 return true;
         }
-
-        /*if (!(nQuotes % 2))
-        {
-            // If the current character might probably be an
-            // identifier for a table, search for the next
-            // nonmatching character and try to find the obtained
-            // string in the internal map
-            if (isalpha(sExpression[i]) || sExpression[i] == '_' || sExpression[i] == '~')
-            {
-                size_t nStartPos = i;
-
-                do
-                {
-                    i++;
-                }
-                while (isalnum(sExpression[i]) || sExpression[i] == '_' || sExpression[i] == '~');
-
-                if (sExpression[i] == '(')
-                {
-                    if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
-                        return true;
-                }
-            }
-        }*/
     }
 
     return false;
@@ -1239,18 +1256,18 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
 /// \brief This member function removes the
 /// selected table.
 ///
-/// \param sCache const string&
+/// \param sTable const string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::deleteTable(const string& sCache)
+bool MemoryManager::deleteTable(const string& sTable)
 {
-    if (sCache == "table")
+    if (sTable == "table" || sTable == "string")
         return false;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
-        if (iter->first == sCache)
+        if (iter->first == sTable)
         {
             if (vMemory.size() > iter->second.first)
             {

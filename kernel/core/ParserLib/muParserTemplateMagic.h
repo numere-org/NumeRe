@@ -4,7 +4,7 @@
 #include <cmath>
 #include "muParserError.h"
 
-std::complex<double> intPower(const std::complex<double>&, int);
+std::complex<double> intPower(const std::complex<double>&, int64_t);
 
 namespace mu
 {
@@ -17,7 +17,7 @@ namespace mu
   /** \brief A class singling out integer types at compile time using
              template meta programming.
   */
-  template<typename T>
+  /*template<typename T>
   struct TypeInfo
   {
     static bool IsInteger() { return false; }
@@ -69,7 +69,7 @@ namespace mu
   struct TypeInfo<unsigned long>
   {
     static bool IsInteger() { return true;  }
-  };
+  };*/
 
 
   //-----------------------------------------------------------------------------------------------
@@ -105,13 +105,13 @@ namespace mu
 
     inline static T ASin(const T& v)
     {
-        return v.imag() == 0.0 ? std::asin(v.real()) : std::asin(v);
+        return v.imag() == 0.0 && std::abs(v.real()) <= 1.0 ? std::asin(v.real()) : std::asin(v);
     }
 
 
     inline static T ACos(const T& v)
     {
-        return v.imag() == 0.0 ? std::acos(v.real()) : std::acos(v);
+        return v.imag() == 0.0 && std::abs(v.real()) <= 1.0 ? std::acos(v.real()) : std::acos(v);
     }
 
 
@@ -149,13 +149,13 @@ namespace mu
 
     inline static T Sqrt(const T& v)
     {
-        return v.imag() == 0.0 ? std::sqrt(v.real()) : std::sqrt(v);
+        return v.imag() == 0.0 && v.real() >= 0.0 ? std::sqrt(v.real()) : std::sqrt(v);
     }
 
 
     inline static T Log(const T& v)
     {
-        return v.imag() == 0.0 ? std::log(v.real()) : std::log(v);
+        return v.imag() == 0.0 && v.real() > 0.0 ? std::log(v.real()) : std::log(v);
     }
 
 
@@ -179,13 +179,14 @@ namespace mu
 
     inline static T ACosh(const T& v)
     {
-        return Log(v + Sqrt(v * v - 1.0));
+        return Log(v + Sqrt(v + 1.0) * Sqrt(v - 1.0));
     }
 
 
     inline static T ATanh(const T& v)
     {
-        return (0.5 * Log((1.0 + v) / (1.0 - v)));
+        T arg = (1.0 + v) * Pow(1.0 - v, -1); // To break optimisation in this case
+        return (0.5 * Log(arg));
     }
 
 

@@ -37,77 +37,49 @@
 
 namespace mu
 {
-  /** \brief Mathematical expressions parser.
+    /** \brief Mathematical expressions parser.
 
-    Standard implementation of the mathematical expressions parser.
-    Can be used as a reference implementation for subclassing the parser.
+      Standard implementation of the mathematical expressions parser.
+      Can be used as a reference implementation for subclassing the parser.
 
-    <small>
-    (C) 2011 Ingo Berg<br>
-    muparser(at)gmx.de
-    </small>
-  */
-  /* final */ class Parser : public ParserBase
-  {
-  public:
+      <small>
+      (C) 2011 Ingo Berg<br>
+      muparser(at)gmx.de
+      </small>
+    */
+    /* final */ class Parser : public ParserBase
+    {
+        public:
 
-    Parser();
+            Parser();
 
-    virtual void InitCharSets() override;
-    virtual void InitFun() override;
-    virtual void InitConst() override;
-    virtual void InitOprt() override;
-    virtual void OnDetectVar(string_type *pExpr, int &nStart, int &nEnd) override;
+            virtual void InitCharSets() override;
+            virtual void InitFun() override;
+            virtual void InitConst() override;
+            virtual void InitOprt() override;
+            virtual void OnDetectVar(string_type* pExpr, int& nStart, int& nEnd) override;
 
-    value_type Diff(value_type *a_Var,
-                    value_type a_fPos,
-                    value_type a_fEpsilon = 0,
-                    size_t order = 1);
+            Array Diff(Variable* a_Var,
+                       const Array& a_fPos,
+                       Value a_fEpsilon = 0.0,
+                       size_t order = 1);
 
-  protected:
+        protected:
 
-    // Trigonometric functions
-    static value_type  Sin(const value_type&);
-    static value_type  Cos(const value_type&);
-    static value_type  Tan(const value_type&);
-    static value_type  Tan2(const value_type&, const value_type&);
-    // arcus functions
-    static value_type  ASin(const value_type&);
-    static value_type  ACos(const value_type&);
-    static value_type  ATan(const value_type&);
-    static value_type  ATan2(const value_type&, const value_type&);
+            // Prefix operators
+            // !!! Unary Minus is a MUST if you want to use negative signs !!!
+            static Array  UnaryMinus(const Array&);
+            static Array  UnaryPlus(const Array&);
+            static Array  LogicalNot(const Array&);
 
-    // hyperbolic functions
-    static value_type  Sinh(const value_type&);
-    static value_type  Cosh(const value_type&);
-    static value_type  Tanh(const value_type&);
-    // arcus hyperbolic functions
-    static value_type  ASinh(const value_type&);
-    static value_type  ACosh(const value_type&);
-    static value_type  ATanh(const value_type&);
-    // Logarithm functions
-    static value_type  Log2(const value_type&);  // Logarithm Base 2
-    static value_type  Log10(const value_type&); // Logarithm Base 10
-    static value_type  Ln(const value_type&);    // Logarithm Base e (natural logarithm)
-    // misc
-    static value_type  Exp(const value_type&);
-    static value_type  Abs(const value_type&);
-    static value_type  Sqrt(const value_type&);
-    static value_type  Rint(const value_type&);
-    static value_type  Sign(const value_type&);
+            // Functions with variable number of arguments
+            static Array Sum(const Array*, int);  // sum
+            static Array Avg(const Array*, int);  // mean value
+            static Array Min(const Array*, int);  // minimum
+            static Array Max(const Array*, int);  // maximum
 
-    // Prefix operators
-    // !!! Unary Minus is a MUST if you want to use negative signs !!!
-    static value_type  UnaryMinus(const value_type&);
-
-    // Functions with variable number of arguments
-    static value_type Sum(const value_type*, int);  // sum
-    static value_type Avg(const value_type*, int);  // mean value
-    static value_type Min(const value_type*, int);  // minimum
-    static value_type Max(const value_type*, int);  // maximum
-
-    static int IsVal(const char_type* a_szExpr, int *a_iPos, value_type *a_fVal);
-  };
+            static int IsVal(StringView a_szExpr, int* a_iPos, Value* a_fVal);
+    };
 } // namespace mu
 
 #endif

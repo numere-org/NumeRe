@@ -20,6 +20,7 @@
 #include "../kernel.hpp"
 #include "utils/tools.hpp"            // For findCommand, extractCommandString and getMatchingParenthesis
 #include "maths/parser_functions.hpp" // For evaluateTargetOptionInCommand
+#include "utils/filecheck.hpp"
 
 // Prototype needed for file name conversion
 std::string removeQuotationMarks(const std::string& sString);
@@ -218,9 +219,7 @@ std::string CommandLineParser::parseFileName(std::string& sFileName, std::string
 
     // There are some protected ones
     if (sFileExt == ".exe" || sFileExt == ".dll" || sFileExt == ".sys")
-    {
         throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, m_commandLine, SyntaxError::invalid_position, sFileExt);
-    }
 
     if (!sFileExt.length())
         return _fSys.ValidFolderName(sFileName);
@@ -238,28 +237,13 @@ std::string CommandLineParser::parseFileName(std::string& sFileName, std::string
 /// variable creation functionality of the
 /// parser.
 ///
-/// \param vRetVal const std::vector<mu::value_type>&
+/// \param vRetVal const mu::Array&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CommandLineParser::setReturnValue(const std::vector<mu::value_type>& vRetVal)
+void CommandLineParser::setReturnValue(const mu::Array& vRetVal)
 {
-    m_returnValueStatement += NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vRetVal);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Simple wrapper around the vector
-/// variable creation functionality of the string
-/// parser.
-///
-/// \param vRetVal const std::vector<std::string>&
-/// \return void
-///
-/////////////////////////////////////////////////
-void CommandLineParser::setReturnValue(const std::vector<std::string>& vRetVal)
-{
-    m_returnValueStatement += NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vRetVal);
+    m_returnValueStatement += NumeReKernel::getInstance()->getParser().CreateTempVar(vRetVal);
 }
 
 
@@ -296,9 +280,6 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
     if (!NumeReKernel::getInstance()->getDefinitions().call(sFileName))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sFileName, SyntaxError::invalid_position);
 
-    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sFileName))
-        NumeReKernel::getInstance()->getStringParser().getStringValues(sFileName);
-
     if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sFileName))
         getDataElements(sFileName, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
 
@@ -308,14 +289,16 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
     if (!sFileName.length())
         return "";
 
-    // If there's a string in the file name, parse it here
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))
+    // It is mostly possible to supply a file path without being enclosed
+    // in quotation marks. is_dir checks for that
+    if (!is_dir(sFileName))
     {
-        std::string sDummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true, false, true);
+        // String evaluation
+        mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+        _parser.SetExpr(sFileName);
+        mu::Array v = _parser.Eval();
+        sFileName = v.front().getStr();
     }
-
-    sFileName = removeQuotationMarks(sFileName);
 
     // Parse the prepared file path
     return parseFileName(sFileName, sFileExt, sBasePath);
@@ -372,8 +355,8 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
     if (parseDataObjects && instance->getMemoryManager().containsTablesOrClusters(sExpr))
         getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
 
-    if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
-        convertVectorToExpression(sExpr);
+    //if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
+    //    convertVectorToExpression(sExpr);
 
     StripSpaces(sExpr);
 
@@ -391,28 +374,7 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
 /////////////////////////////////////////////////
 std::string CommandLineParser::parseExprAsString() const
 {
-    NumeReKernel* instance = NumeReKernel::getInstance();
-    // Make a copy
-    std::string sExpr = m_expr;
-
-    // Call functions first
-    if (!instance->getDefinitions().call(sExpr))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
-
-    StripSpaces(sExpr);
-
-    if (sExpr.find("??") != std::string::npos)
-        sExpr = promptForUserInput(sExpr);
-
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
-    {
-        sExpr += " -nq";
-        std::string sDummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, sDummy, true, false, true);
-        return toInternalString(sExpr);
-    }
-
-    return sExpr;
+    return parseExpr().front().printVals();
 }
 
 
@@ -420,10 +382,10 @@ std::string CommandLineParser::parseExprAsString() const
 /// \brief Parses the expression into numerical
 /// values, returned as a vector of doubles.
 ///
-/// \return std::vector<mu::value_type>
+/// \return std::vector<mu::Array>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> CommandLineParser::parseExprAsNumericalValues() const
+std::vector<mu::Array> CommandLineParser::parseExpr() const
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
     // Make a copy
@@ -433,24 +395,21 @@ std::vector<mu::value_type> CommandLineParser::parseExprAsNumericalValues() cons
     if (!instance->getDefinitions().call(sValue))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sValue, SyntaxError::invalid_position);
 
-    // Parse strings (if any)
-    if (instance->getStringParser().isStringExpression(sValue))
-    {
-        std::string sDummy = "";
-        instance->getStringParser().evalAndFormat(sValue, sDummy, true, false, true);
-    }
-
     // Resolve table accesses
     if (instance->getMemoryManager().containsTablesOrClusters(sValue))
         getDataElements(sValue, instance->getParser(), instance->getMemoryManager());
 
+    StripSpaces(sValue);
+
+    if (sValue.find("??") != std::string::npos)
+        sValue = promptForUserInput(sValue);
+
     instance->getParser().SetExpr(sValue);
     int nRes;
-    mu::value_type* v;
+    mu::Array* v;
 
     v = instance->getParser().Eval(nRes);
-
-    std::vector<mu::value_type> vVals(v, v+nRes);
+    std::vector<mu::Array> vVals(v, v+nRes);
 
     return vVals;
 }
@@ -486,7 +445,8 @@ IntervalSet CommandLineParser::parseIntervals(bool bErase)
 std::string CommandLineParser::getTargetTable(Indices& _targetIndices, const std::string& sDefaultTableName)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
-    return evaluateTargetOptionInCommand(m_parlist, sDefaultTableName, _targetIndices, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+    return evaluateTargetOptionInCommand(m_parlist, sDefaultTableName, _targetIndices,
+                                         instance->getParser(), instance->getMemoryManager(), instance->getSettings());
 }
 
 
@@ -567,9 +527,6 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
     if (!instance->getDefinitions().call(sParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sParams, SyntaxError::invalid_position);
 
-    if (instance->getStringParser().containsStringVars(sParams))
-        instance->getStringParser().getStringValues(sParams);
-
     if (instance->getMemoryManager().containsTablesOrClusters(sParams))
         getDataElements(sParams, instance->getParser(), instance->getMemoryManager());
 
@@ -582,14 +539,16 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 
     std::string sFileName = getArgAtPos(sParams, nParPos+4, ARGEXTRACT_NONE);
 
-    // String evaluation
-    if (instance->getStringParser().isStringExpression(sFileName))
+    // It is mostly possible to supply a file path without being enclosed
+    // in quotation marks. is_dir checks for that
+    if (!is_dir(sFileName))
     {
-        std::string dummy;
-        instance->getStringParser().evalAndFormat(sFileName, dummy, true, false, true);
+        // String evaluation
+        mu::Parser& _parser = instance->getParser();
+        _parser.SetExpr(sFileName);
+        mu::Array v = _parser.Eval();
+        sFileName = v.front().getStr();
     }
-
-    sFileName = removeQuotationMarks(sFileName);
 
     // If a filename had been found, parse it here
     if (sFileName.length())
@@ -634,56 +593,52 @@ std::string CommandLineParser::getFileParameterValueForSaving(std::string sFileE
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string CommandLineParser::getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways, bool onlyStringEvaluation) const
+std::string CommandLineParser::getParsedParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways, bool onlyStringEvaluation) const
 {
     int nParPos = findParameter(m_parlist, sParameter, '=');
 
     if (!nParPos)
         return sDefaultValue;
 
-    std::string arg = getArgAtPos(m_parlist,
-                                  nParPos+sParameter.length(),
-                                  ARGEXTRACT_PARSED | (onlyStringEvaluation ? ARGEXTRACT_ASSTRING : ARGEXTRACT_NONE));
-    StripSpaces(arg);
-
-    if (!stripAlways && arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)
-        return arg;
-    else if (arg.front() == '"' && arg.back() == '"')
-    {
-        arg = removeQuotationMarks(arg);
-        replaceAll(arg, "\\\"", "\""); // toInternalString() would probably delete too many characters
-    }
-
-    return arg;
+    return getParsedParameterValue(sParameter).printVals();
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Parses the selected parameter as (one
-/// or more) numerical value(s) and returns them
-/// as a vector of doubles. If the parameter is
-/// not found, an empty vector is returned.
+/// \brief Parses the selected parameter and
+/// returns them as a mu::Array. If the parameter
+/// is not found, an empty mu::Array is returned.
 ///
 /// \param sParameter const std::string&
-/// \return std::vector<mu::value_type>
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> CommandLineParser::getParameterValueAsNumericalValue(const std::string& sParameter) const
+mu::Array CommandLineParser::getParsedParameterValue(const std::string& sParameter) const
 {
     int nParPos = findParameter(m_parlist, sParameter, '=');
 
     if (!nParPos)
-        return std::vector<mu::value_type>();
+        return mu::Array();
 
-    std::string arg = getArgAtPos(m_parlist, nParPos+sParameter.length(), ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED);
-    std::vector<mu::value_type> vArgs;
+    std::string sArg = getArgAtPos(m_parlist,
+                                   nParPos+sParameter.length(),
+                                   ARGEXTRACT_NONE);
 
-    while (arg.length())
-    {
-        vArgs.push_back(StrToDb(getNextArgument(arg, true)));
-    }
+    NumeReKernel* instance = NumeReKernel::getInstance();
 
-    return vArgs;
+    // Function call
+    if (!instance->getDefinitions().call(sArg))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
+
+    // Read data
+    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
+        getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
+
+    // Numerical evaluation
+    instance->getParser().SetExpr(sArg);
+
+    //int nPrec = instance->getSettings().getPrecision();
+    return instance->getParser().Eval();
 }
 
 

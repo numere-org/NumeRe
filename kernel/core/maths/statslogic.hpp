@@ -39,21 +39,21 @@ struct StatsLogic
         OPERATION_NUM
     };
 
-    mu::value_type m_val;
-    mu::value_type m_compval;
+    std::complex<double> m_val;
+    std::complex<double> m_compval;
     OperationType m_type;
 
-    StatsLogic(OperationType type, double baseVal = 0.0, mu::value_type compVal = 0.0)
+    StatsLogic(OperationType type, double baseVal = 0.0, std::complex<double> compVal = 0.0)
         : m_val(baseVal), m_compval(compVal), m_type(type) {}
 
     /////////////////////////////////////////////////
     /// \brief Implements the statistics logic.
     ///
-    /// \param newVal const mu::value_type&
+    /// \param newVal const std::complex<double>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void operator()(const mu::value_type& newVal)
+    void operator()(const std::complex<double>& newVal)
     {
         if (mu::isnan(newVal))
             return;

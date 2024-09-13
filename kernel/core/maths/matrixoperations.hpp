@@ -34,7 +34,7 @@ Matrix createZeroesMatrix(size_t nLines, size_t nCols);
 Matrix transposeMatrix(const Matrix& _mMatrix);
 Indices getIndices(const std::string& sCmd, const Matrix& _mMatrix, mu::Parser& _parser, MemoryManager& _data);
 
-void showMatrix(const std::vector<std::vector<mu::value_type> >&);
+void showMatrix(const std::vector<std::vector<std::complex<double>>>&);
 
 #endif // MATRIXOPERATIONS_HPP
 

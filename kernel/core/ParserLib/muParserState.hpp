@@ -186,9 +186,10 @@ namespace mu
     /// expression target, if it is composed out of a
     /// temporary vector like {a,b}.
     /////////////////////////////////////////////////
+#warning TODO (numere#6#09/12/24): This thing is likely dead now
 	struct ExpressionTarget
 	{
-	    std::vector<mu::value_type*> m_targets;
+	    VarArray m_targets;
 
 	    void create(StringView sTargets, const varmap_type& usedVars);
 	    void assign(const valbuf_type& buffer, int nResults);

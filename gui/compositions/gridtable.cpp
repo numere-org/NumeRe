@@ -222,7 +222,7 @@ bool GridNumeReTable::GetValueAsBool(int row, int col)
 /////////////////////////////////////////////////
 /// \brief This member function will return the
 /// internal data as a void pointer referencing
-/// the internal mu::value_type attribute.
+/// the internal std::complex<double> attribute.
 ///
 /// \param row int
 /// \param col int
@@ -591,12 +591,12 @@ double GridNumeReTable::max(const wxGridCellCoordsContainer& coords) const
 /// average value of the range (r1,c1)->(r2,c2).
 ///
 /// \param coords const wxGridCellCoordsContainer&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) const
+std::complex<double> GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) const
 {
-    mu::value_type dSum = 0;
+    std::complex<double> dSum = 0;
     size_t nCount = 0;
     const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
@@ -608,7 +608,7 @@ mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) con
             if (!coords.contains(i, j))
                 continue;
 
-            mu::value_type val = _table.getValue(i - nHeadLines, j);
+            std::complex<double> val = _table.getValue(i - nHeadLines, j);
 
             if (!mu::isnan(val))
             {
@@ -630,12 +630,12 @@ mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) con
 /// sum of the range (r1,c1)->(r2,c2).
 ///
 /// \param coords const wxGridCellCoordsContainer&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) const
+std::complex<double> GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) const
 {
-    mu::value_type dSum = 0;
+    std::complex<double> dSum = 0;
     const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
@@ -646,7 +646,7 @@ mu::value_type GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) con
             if (!coords.contains(i, j))
                 continue;
 
-            mu::value_type val = _table.getValue(i - nHeadLines, j);
+            std::complex<double> val = _table.getValue(i - nHeadLines, j);
 
             if (!mu::isnan(val))
                 dSum += val;

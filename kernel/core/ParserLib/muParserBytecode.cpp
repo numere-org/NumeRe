@@ -24,8 +24,8 @@
 */
 
 #include "muParserBytecode.h"
-#include "../../kernel.hpp"
-#include "../utils/stringtools.hpp"
+#include "muHelpers.hpp"
+#include "../utils/tools.hpp"
 
 #include <cassert>
 #include <string>
@@ -100,7 +100,7 @@ namespace mu
 	    \param a_pVar Pointer to be added.
 	    \throw nothrow
 	*/
-	void ParserByteCode::AddVar(value_type* a_pVar)
+	void ParserByteCode::AddVar(Variable* a_pVar)
 	{
 		++m_iStackPos;
 		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
@@ -108,10 +108,26 @@ namespace mu
 		// optimization does not apply
 		SToken tok;
 		tok.Cmd       = cmVAR;
-		tok.Val.ptr   = a_pVar;
-		tok.Val.data  = 1;
-		tok.Val.data2 = 0;
-		tok.Val.isVect = false;
+		tok.m_data = SValData{.var{a_pVar}, .data{Value(1.0)}, .isVect{false}};
+		m_vRPN.push_back(tok);
+	}
+
+    /////////////////////////////////////////////////
+    /// \brief Add a Vararray to the bytecode.
+    ///
+    /// \param a_varArray const VarArray&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::AddVarArray(const VarArray& a_varArray)
+	{
+		++m_iStackPos;
+		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+		// optimization does not apply
+		SToken tok;
+		tok.Cmd       = cmVARARRAY;
+		tok.m_data = SOprtData{.var{a_varArray}, .offset{0}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -128,7 +144,7 @@ namespace mu
 	    \param a_pVal Value to be added.
 	    \throw nothrow
 	*/
-	void ParserByteCode::AddVal(value_type a_fVal)
+	void ParserByteCode::AddVal(const Array& a_fVal)
 	{
 		++m_iStackPos;
 		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
@@ -136,9 +152,7 @@ namespace mu
 		// If optimization does not apply
 		SToken tok;
 		tok.Cmd = cmVAL;
-		tok.Val.ptr   = nullptr;
-		tok.Val.data  = 0;
-		tok.Val.data2 = a_fVal;
+		tok.m_data = SValData{.data{Value(0.0)}, .data2{a_fVal}, .isVect{false}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -146,32 +160,32 @@ namespace mu
 	void ParserByteCode::ConstantFolding(ECmdCode a_Oprt)
 	{
 		std::size_t sz = m_vRPN.size();
-		value_type& x = m_vRPN[sz - 2].Val.data2,
-					&y = m_vRPN[sz - 1].Val.data2;
+		Array& x = m_vRPN[sz - 2].Val().data2;
+		Array& y = m_vRPN[sz - 1].Val().data2;
 		switch (a_Oprt)
 		{
 			case cmLAND:
-				x = x != 0.0 && y != 0.0;
+				x = x && y;
 				m_vRPN.pop_back();
 				break;
 			case cmLOR:
-				x = x != 0.0 || y != 0.0;
+				x = x || y;
 				m_vRPN.pop_back();
 				break;
 			case cmLT:
-				x = x.real() < y.real();
+				x = x < y;
 				m_vRPN.pop_back();
 				break;
 			case cmGT:
-				x = x.real() > y.real();
+				x = x > y;
 				m_vRPN.pop_back();
 				break;
 			case cmLE:
-				x = x.real() <= y.real();
+				x = x <= y;
 				m_vRPN.pop_back();
 				break;
 			case cmGE:
-				x = x.real() >= y.real();
+				x = x >= y;
 				m_vRPN.pop_back();
 				break;
 			case cmNEQ:
@@ -206,9 +220,14 @@ namespace mu
 				break;
 
 			case cmPOW:
-				x = MathImpl<value_type>::Pow(x, y);
+				x = x.pow(y);
 				m_vRPN.pop_back();
 				break;
+
+            case cmVAL2STR:
+                x = val2Str(x, y.front().getNum().asUI64());
+                m_vRPN.pop_back();
+                break;
 
 			default:
 				break;
@@ -251,16 +270,16 @@ namespace mu
 						// Optimization for ploynomials of low order
 						if (m_vRPN[sz - 2].Cmd == cmVAR && m_vRPN[sz - 1].Cmd == cmVAL)
 						{
-							if (m_vRPN[sz - 1].Val.data2 == 2.0)
+							if (all(m_vRPN[sz - 1].Val().data2 == Value(2.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW2;
-							else if (m_vRPN[sz - 1].Val.data2 == 3.0)
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(3.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
-							else if (m_vRPN[sz - 1].Val.data2 == 4.0)
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(4.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (m_vRPN[sz - 1].Val.data2 == (double)intCast(m_vRPN[sz - 1].Val.data2.real()))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.getAsScalarInt())))
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
-							    m_vRPN[sz - 2].Val.data = m_vRPN[sz - 1].Val.data2;
+							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;
 							}
                             else
 								break;
@@ -278,20 +297,38 @@ namespace mu
                             || (m_vRPN[sz-1].Cmd == cmVAL && m_vRPN[sz-2].Cmd == cmVAR)
                             || (m_vRPN[sz-1].Cmd == cmVAL && m_vRPN[sz-2].Cmd == cmVARMUL)
                             || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVAL)
-                            || (m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVAR && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr)
-                            || (m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVARMUL && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr)
-                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVAR && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr)
-                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVARMUL && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr))
+                            || (m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVAR && m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var)
+                            || (m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVARMUL && m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var)
+                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVAR && m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var)
+                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVARMUL && m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var))
 						{
-                            assert((m_vRPN[sz-2].Val.ptr == NULL && m_vRPN[sz-1].Val.ptr != NULL)
-                                   || (m_vRPN[sz-2].Val.ptr != NULL && m_vRPN[sz-1].Val.ptr == NULL)
-                                   || (m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr));
+                            assert((m_vRPN[sz-2].Val().var == nullptr && m_vRPN[sz-1].Val().var != nullptr)
+                                   || (m_vRPN[sz-2].Val().var != nullptr && m_vRPN[sz-1].Val().var== nullptr)
+                                   || (m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var));
 
-							m_vRPN[sz-2].Cmd = cmVARMUL;
-							m_vRPN[sz-2].Val.ptr = (value_type*)((long long)(m_vRPN[sz-2].Val.ptr) | (long long)(m_vRPN[sz-1].Val.ptr)); // variable
-							m_vRPN[sz-2].Val.data2 += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz-1].Val.data2; // offset
-							m_vRPN[sz-2].Val.data += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz-1].Val.data; // multiplikatior
-							m_vRPN[sz-2].Val.isVect = false;
+                            // Some vars might not be commutative
+                            if (m_vRPN[sz-2].Val().var == nullptr
+                                && m_vRPN[sz-1].Val().var != nullptr
+                                && !m_vRPN[sz-1].Val().var->isCommutative())
+                                m_vRPN[sz-2].Cmd = cmREVVARMUL; // Only makes sense, if variables are really not commutative
+                            else if (m_vRPN[sz-2].Cmd == cmVARMUL
+                                && m_vRPN[sz-1].Cmd == cmVAR
+                                && !m_vRPN[sz-2].Val().var->isCommutative())
+                                break; // Do not chain operations of variables, which are not commutative
+                            else
+                                m_vRPN[sz-2].Cmd = cmVARMUL;
+
+							// Update var pointer
+							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
+
+							// Ensure type compatibility for offset by avoiding converting void to numerical
+							if (m_vRPN[sz-1].Val().data2.size() && m_vRPN[sz-1].Val().data2.getCommonType() != TYPE_VOID)
+                                m_vRPN[sz-2].Val().data2 += Array(Value((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data2;
+
+							// Update scale factor
+							m_vRPN[sz-2].Val().data += Array(Value((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data;
+							m_vRPN[sz-2].Val().data2.zerosToVoid(); // To convert VARMUL-Offsets to void
+							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -302,10 +339,10 @@ namespace mu
                             || (m_vRPN[sz - 1].Cmd == cmVAL && m_vRPN[sz - 2].Cmd == cmVAR) )
 						{
 							m_vRPN[sz-2].Cmd = cmVARMUL;
-							m_vRPN[sz-2].Val.ptr = (value_type*)((long long)(m_vRPN[sz-2].Val.ptr) | (long long)(m_vRPN[sz-1].Val.ptr));
-							m_vRPN[sz-2].Val.data = m_vRPN[sz-2].Val.data2 + m_vRPN[sz-1].Val.data2;
-							m_vRPN[sz-2].Val.data2 = 0;
-							m_vRPN[sz-2].Val.isVect = false;
+							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
+							m_vRPN[sz-2].Val().data = m_vRPN[sz-2].Val().data2 + m_vRPN[sz-1].Val().data2;
+							m_vRPN[sz-2].Val().data2 = Array(Value());
+							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -314,25 +351,26 @@ namespace mu
 						{
 							// Optimization: 2*(3*b+1) or (3*b+1)*2 -> 6*b+2
 							m_vRPN[sz-2].Cmd = cmVARMUL;
-							m_vRPN[sz-2].Val.ptr = (value_type*)((long long)(m_vRPN[sz-2].Val.ptr) | (long long)(m_vRPN[sz-1].Val.ptr));
-							m_vRPN[sz-2].Val.isVect = false;
+							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
+							m_vRPN[sz-2].Val().isVect = false;
 
 							if (m_vRPN[sz-1].Cmd == cmVAL)
 							{
-								m_vRPN[sz-2].Val.data  *= m_vRPN[sz-1].Val.data2;
-								m_vRPN[sz-2].Val.data2 *= m_vRPN[sz-1].Val.data2;
+								m_vRPN[sz-2].Val().data  *= m_vRPN[sz-1].Val().data2;
+								m_vRPN[sz-2].Val().data2 *= m_vRPN[sz-1].Val().data2;
 							}
 							else
 							{
-								m_vRPN[sz-2].Val.data  = m_vRPN[sz-1].Val.data  * m_vRPN[sz-2].Val.data2;
-								m_vRPN[sz-2].Val.data2 = m_vRPN[sz-1].Val.data2 * m_vRPN[sz-2].Val.data2;
+								m_vRPN[sz-2].Val().data  = m_vRPN[sz-1].Val().data  * m_vRPN[sz-2].Val().data2;
+								m_vRPN[sz-2].Val().data2 = m_vRPN[sz-1].Val().data2 * m_vRPN[sz-2].Val().data2;
 							}
+							m_vRPN[sz-2].Val().data2.zerosToVoid(); // To convert VARMUL-Offsets to void
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
                         else if (m_vRPN[sz-1].Cmd == cmVAR
                                  && m_vRPN[sz-2].Cmd == cmVAR
-                                 && m_vRPN[sz-1].Val.ptr == m_vRPN[sz-2].Val.ptr)
+                                 && m_vRPN[sz-1].Val().var == m_vRPN[sz-2].Val().var)
 						{
 							// Optimization: a*a -> a^2
 							m_vRPN[sz - 2].Cmd = cmVARPOW2;
@@ -344,11 +382,11 @@ namespace mu
 					case cmDIV:
                         if (m_vRPN[sz-1].Cmd == cmVAL
                             && m_vRPN[sz-2].Cmd == cmVARMUL
-                            && m_vRPN[sz-1].Val.data2 != 0.0)
+                            && all(m_vRPN[sz-1].Val().data2 != Array(Value(0.0))))
 						{
 							// Optimization: 4*a/2 -> 2*a
-							m_vRPN[sz - 2].Val.data  /= m_vRPN[sz - 1].Val.data2;
-							m_vRPN[sz - 2].Val.data2 /= m_vRPN[sz - 1].Val.data2;
+							m_vRPN[sz - 2].Val().data  /= m_vRPN[sz - 1].Val().data2;
+							m_vRPN[sz - 2].Val().data2 /= m_vRPN[sz - 1].Val().data2;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -377,6 +415,7 @@ namespace mu
 	{
 		SToken tok;
 		tok.Cmd = a_Oprt;
+		tok.m_data = SOprtData{.offset{0}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -391,14 +430,33 @@ namespace mu
 
 	    \sa  ParserToken::ECmdCode
 	*/
-	void ParserByteCode::AddAssignOp(value_type* a_pVar)
+	void ParserByteCode::AddAssignOp(Variable* a_pVar, ECmdCode assignmentCode)
 	{
 		--m_iStackPos;
 
 		SToken tok;
-		tok.Cmd = cmASSIGN;
-		tok.Val.ptr = a_pVar;
-		tok.Val.isVect = false;
+		tok.Cmd = assignmentCode;
+		tok.m_data = SOprtData{.var{a_pVar}, .offset{0}};
+		m_vRPN.push_back(tok);
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief Add an assignment operator together
+    /// with its associated VarArray instance.
+    ///
+    /// \param a_varArray const VarArray&
+    /// \param assignmentCode ECmdCode
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::AddAssignOp(const VarArray& a_varArray, ECmdCode assignmentCode)
+	{
+		--m_iStackPos;
+
+		SToken tok;
+		tok.Cmd = assignmentCode;
+		tok.m_data = SOprtData{.var{a_varArray}, .offset{0}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -409,10 +467,11 @@ namespace mu
     /// \param a_pFun generic_fun_type
     /// \param a_iArgc int
     /// \param optimizeAway bool
+    /// \param funcName const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway)
+	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway, const std::string& funcName)
 	{
 	    // Shall we try to optimize?
 		if (m_bEnableOptimizer && optimizeAway)
@@ -446,90 +505,93 @@ namespace mu
                 switch (a_iArgc)
                 {
                     case 0:
-                        AddVal((*(fun_type0)a_pFun)());
+                        if (funcName == MU_VECTOR_CREATE)
+                            AddVal((*(multfun_type)a_pFun)(nullptr, 0));
+                        else
+                            AddVal((*(fun_type0)a_pFun)());
                         break;
                     case 1:
-                        m_vRPN[sz-1].Val.data2 = (*(fun_type1)a_pFun)(m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-1].Val().data2 = (*(fun_type1)a_pFun)(m_vRPN[sz-1].Val().data2);
                         break;
                     case 2:
-                        m_vRPN[sz-2].Val.data2 = (*(fun_type2)a_pFun)(m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-2].Val().data2 = (*(fun_type2)a_pFun)(m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.pop_back();
                         break;
                     case 3:
-                        m_vRPN[sz-3].Val.data2 = (*(fun_type3)a_pFun)(m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-3].Val().data2 = (*(fun_type3)a_pFun)(m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-2);
                         break;
                     case 4:
-                        m_vRPN[sz-4].Val.data2 = (*(fun_type4)a_pFun)(m_vRPN[sz-4].Val.data2,
-                                                                      m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-4].Val().data2 = (*(fun_type4)a_pFun)(m_vRPN[sz-4].Val().data2,
+                                                                        m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-3);
                         break;
                     case 5:
-                        m_vRPN[sz-5].Val.data2 = (*(fun_type5)a_pFun)(m_vRPN[sz-5].Val.data2,
-                                                                      m_vRPN[sz-4].Val.data2,
-                                                                      m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-5].Val().data2 = (*(fun_type5)a_pFun)(m_vRPN[sz-5].Val().data2,
+                                                                        m_vRPN[sz-4].Val().data2,
+                                                                        m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-4);
                         break;
                     case 6:
-                        m_vRPN[sz-6].Val.data2 = (*(fun_type6)a_pFun)(m_vRPN[sz-6].Val.data2,
-                                                                      m_vRPN[sz-5].Val.data2,
-                                                                      m_vRPN[sz-4].Val.data2,
-                                                                      m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-6].Val().data2 = (*(fun_type6)a_pFun)(m_vRPN[sz-6].Val().data2,
+                                                                        m_vRPN[sz-5].Val().data2,
+                                                                        m_vRPN[sz-4].Val().data2,
+                                                                        m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-5);
                         break;
                     case 7:
-                        m_vRPN[sz-7].Val.data2 = (*(fun_type7)a_pFun)(m_vRPN[sz-7].Val.data2,
-                                                                      m_vRPN[sz-6].Val.data2,
-                                                                      m_vRPN[sz-5].Val.data2,
-                                                                      m_vRPN[sz-4].Val.data2,
-                                                                      m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-7].Val().data2 = (*(fun_type7)a_pFun)(m_vRPN[sz-7].Val().data2,
+                                                                        m_vRPN[sz-6].Val().data2,
+                                                                        m_vRPN[sz-5].Val().data2,
+                                                                        m_vRPN[sz-4].Val().data2,
+                                                                        m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-6);
                         break;
                     case 8:
-                        m_vRPN[sz-8].Val.data2 = (*(fun_type8)a_pFun)(m_vRPN[sz-8].Val.data2,
-                                                                      m_vRPN[sz-7].Val.data2,
-                                                                      m_vRPN[sz-6].Val.data2,
-                                                                      m_vRPN[sz-5].Val.data2,
-                                                                      m_vRPN[sz-4].Val.data2,
-                                                                      m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-8].Val().data2 = (*(fun_type8)a_pFun)(m_vRPN[sz-8].Val().data2,
+                                                                        m_vRPN[sz-7].Val().data2,
+                                                                        m_vRPN[sz-6].Val().data2,
+                                                                        m_vRPN[sz-5].Val().data2,
+                                                                        m_vRPN[sz-4].Val().data2,
+                                                                        m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-7);
                         break;
                     case 9:
-                        m_vRPN[sz-9].Val.data2 = (*(fun_type9)a_pFun)(m_vRPN[sz-9].Val.data2,
-                                                                      m_vRPN[sz-8].Val.data2,
-                                                                      m_vRPN[sz-7].Val.data2,
-                                                                      m_vRPN[sz-6].Val.data2,
-                                                                      m_vRPN[sz-5].Val.data2,
-                                                                      m_vRPN[sz-4].Val.data2,
-                                                                      m_vRPN[sz-3].Val.data2,
-                                                                      m_vRPN[sz-2].Val.data2,
-                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-9].Val().data2 = (*(fun_type9)a_pFun)(m_vRPN[sz-9].Val().data2,
+                                                                        m_vRPN[sz-8].Val().data2,
+                                                                        m_vRPN[sz-7].Val().data2,
+                                                                        m_vRPN[sz-6].Val().data2,
+                                                                        m_vRPN[sz-5].Val().data2,
+                                                                        m_vRPN[sz-4].Val().data2,
+                                                                        m_vRPN[sz-3].Val().data2,
+                                                                        m_vRPN[sz-2].Val().data2,
+                                                                        m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-8);
                         break;
                     case 10:
-                        m_vRPN[sz-10].Val.data2 = (*(fun_type10)a_pFun)(m_vRPN[sz-10].Val.data2,
-                                                                        m_vRPN[sz-9].Val.data2,
-                                                                        m_vRPN[sz-8].Val.data2,
-                                                                        m_vRPN[sz-7].Val.data2,
-                                                                        m_vRPN[sz-6].Val.data2,
-                                                                        m_vRPN[sz-5].Val.data2,
-                                                                        m_vRPN[sz-4].Val.data2,
-                                                                        m_vRPN[sz-3].Val.data2,
-                                                                        m_vRPN[sz-2].Val.data2,
-                                                                        m_vRPN[sz-1].Val.data2);
+                        m_vRPN[sz-10].Val().data2 = (*(fun_type10)a_pFun)(m_vRPN[sz-10].Val().data2,
+                                                                          m_vRPN[sz-9].Val().data2,
+                                                                          m_vRPN[sz-8].Val().data2,
+                                                                          m_vRPN[sz-7].Val().data2,
+                                                                          m_vRPN[sz-6].Val().data2,
+                                                                          m_vRPN[sz-5].Val().data2,
+                                                                          m_vRPN[sz-4].Val().data2,
+                                                                          m_vRPN[sz-3].Val().data2,
+                                                                          m_vRPN[sz-2].Val().data2,
+                                                                          m_vRPN[sz-1].Val().data2);
                         m_vRPN.resize(sz-9);
                         break;
                     default:
@@ -537,15 +599,15 @@ namespace mu
                         if (a_iArgc > 0) // function with variable arguments store the number as a negative value
                             throw ParserError(ecINTERNAL_ERROR);
 
-                        std::vector<mu::value_type> vStack;
+                        std::vector<Array> vStack;
 
                         // Copy the values to the temporary stack
                         for (size_t s = sz-nArg; s < sz; s++)
                         {
-                            vStack.push_back(m_vRPN[s].Val.data2);
+                            vStack.push_back(m_vRPN[s].Val().data2);
                         }
 
-                        m_vRPN[sz-nArg].Val.data2 = (*(multfun_type)a_pFun)(&vStack[0], nArg);
+                        m_vRPN[sz-nArg].Val().data2 = (*(multfun_type)a_pFun)(&vStack[0], nArg);
                         m_vRPN.resize(sz-nArg+1);
                     }
                 }
@@ -565,52 +627,43 @@ namespace mu
 
             SToken tok;
             tok.Cmd = cmFUNC;
-            tok.Fun.argc = a_iArgc;
-            tok.Fun.ptr = a_pFun;
+            tok.m_data = SFunData{.ptr{a_pFun}, .name{funcName}, .argc{a_iArgc}, .idx{0}};
             m_vRPN.push_back(tok);
 		}
-
-
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Add a bulk function to bytecode.
-
-	    \param a_iArgc Number of arguments, negative numbers indicate multiarg functions.
-	    \param a_pFun Pointer to function callback.
-	*/
-	void ParserByteCode::AddBulkFun(generic_fun_type a_pFun, int a_iArgc)
+    /////////////////////////////////////////////////
+    /// \brief Add a method to the bytecode.
+    ///
+    /// \param a_method const std::string&
+    /// \param a_iArgc int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::AddMethod(const std::string& a_method, int a_iArgc)
 	{
-		m_iStackPos = m_iStackPos - a_iArgc + 1;
-		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+	    if (a_iArgc >= 0)
+            m_iStackPos = m_iStackPos - a_iArgc + 1;
 
-		SToken tok;
-		tok.Cmd = cmFUNC_BULK;
-		tok.Fun.argc = a_iArgc;
-		tok.Fun.ptr = a_pFun;
-		m_vRPN.push_back(tok);
+        m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+        SToken tok;
+        tok.Cmd = cmMETHOD;
+        tok.m_data = SFunData{.name{a_method}, .argc{a_iArgc}, .idx{0}};
+        m_vRPN.push_back(tok);
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Add Strung function entry to the parser bytecode.
-	    \throw nothrow
-
-	    A string function entry consists of the stack position of the return value,
-	    followed by a cmSTRFUNC code, the function pointer and an index into the
-	    string buffer maintained by the parser.
-	*/
-	void ParserByteCode::AddStrFun(generic_fun_type a_pFun, int a_iArgc, int a_iIdx)
+    /////////////////////////////////////////////////
+    /// \brief Remove the topmost element from the
+    /// bytecode.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::pop()
 	{
-		m_iStackPos = m_iStackPos - a_iArgc + 1;
-
-		SToken tok;
-		tok.Cmd = cmFUNC_STR;
-		tok.Fun.argc = a_iArgc;
-		tok.Fun.idx = a_iIdx;
-		tok.Fun.ptr = a_pFun;
-		m_vRPN.push_back(tok);
-
-		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+	    if (m_vRPN.size())
+            m_vRPN.pop_back();
 	}
 
 	//---------------------------------------------------------------------------
@@ -639,12 +692,12 @@ namespace mu
 				case  cmELSE:
 					stElse.push(i);
 					idx = stIf.pop();
-					m_vRPN[idx].Oprt.offset = i - idx;
+					m_vRPN[idx].Oprt().offset = i - idx;
 					break;
 
 				case cmENDIF:
 					idx = stElse.pop();
-					m_vRPN[idx].Oprt.offset = i - idx;
+					m_vRPN[idx].Oprt().offset = i - idx;
 					break;
 
 				default:
@@ -666,21 +719,21 @@ namespace mu
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserByteCode::ChangeVar(value_type* a_pOldVar, value_type* a_pNewVar, bool isVect)
+	void ParserByteCode::ChangeVar(Variable* a_pOldVar, Variable* a_pNewVar, bool isVect)
 	{
 	    for (size_t i = 0; i < m_vRPN.size(); ++i)
         {
-            if (m_vRPN[i].Cmd >= cmVAR && m_vRPN[i].Cmd < cmVAR_END && m_vRPN[i].Val.ptr == a_pOldVar)
+            if (m_vRPN[i].Cmd >= cmVAR && m_vRPN[i].Cmd < cmVAR_END && m_vRPN[i].Val().var == a_pOldVar)
             {
-                m_vRPN[i].Val.ptr = a_pNewVar;
-                m_vRPN[i].Val.isVect = isVect;
+                m_vRPN[i].Val().var = a_pNewVar;
+                m_vRPN[i].Val().isVect = isVect;
             }
         }
 	}
 
 
 	//---------------------------------------------------------------------------
-	const SToken* ParserByteCode::GetBase() const
+	SToken* ParserByteCode::GetBase()
 	{
 		if (m_vRPN.size() == 0)
 			throw ParserError(ecINTERNAL_ERROR);
@@ -723,114 +776,158 @@ namespace mu
 	{
 		if (!m_vRPN.size())
 		{
-			NumeReKernel::print("No bytecode available");
+			print("No bytecode available");
 			return;
 		}
 
-		NumeReKernel::toggleTableStatus();
-		NumeReKernel::print("Number of RPN tokens: " + toString(m_vRPN.size()));
+		toggleTableMode();
+		print("Number of RPN tokens: " + toString(m_vRPN.size()));
 
 		for (std::size_t i = 0; i < m_vRPN.size() && m_vRPN[i].Cmd != cmEND; ++i)
 		{
-		    NumeReKernel::printPreFmt("|   " + toString(i) + " : \t");
+		    printFormatted("|   " + toString(i) + " : \t");
 			switch (m_vRPN[i].Cmd)
 			{
 				case cmVAL:
-				    NumeReKernel::printPreFmt("VAL \t[" + toString(m_vRPN[i].Val.data2, 7) + "]\n");
+				    printFormatted("VAL       \t[" + m_vRPN[i].Val().data2.print() + "]\n");
 					break;
 
 				case cmVAR:
-				    NumeReKernel::printPreFmt("VAR \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
+				    printFormatted("VAR       \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					break;
+
+				case cmVARARRAY:
+				    printFormatted("VARARR    \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
 					break;
 
 				case cmVARPOW2:
-				    NumeReKernel::printPreFmt("VARPOW2 \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
+				    printFormatted("VARPOW2   \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
 				case cmVARPOW3:
-					NumeReKernel::printPreFmt("VARPOW3 \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
+					printFormatted("VARPOW3   \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
 				case cmVARPOW4:
-					NumeReKernel::printPreFmt("VARPOW4 \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
+					printFormatted("VARPOW4   \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					break;
+
+				case cmVARPOWN:
+					printFormatted("VARPOWN   \t[" + m_vRPN[i].Val().var->print() + "] ^ [" + m_vRPN[i].Val().data.print() + "]\n");
 					break;
 
 				case cmVARMUL:
-					NumeReKernel::printPreFmt("VARMUL \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]");
-					NumeReKernel::printPreFmt(" * [" + toString(m_vRPN[i].Val.data, 7) + "] + [" + toString(m_vRPN[i].Val.data2, 7) + "]\n");
+					printFormatted("VARMUL    \t[" + m_vRPN[i].Val().var->print() + "]");
+					printFormatted(" * [" + m_vRPN[i].Val().data.print() + "] + [" + m_vRPN[i].Val().data2.print() + "]\n");
+					break;
+
+				case cmREVVARMUL:
+					printFormatted("REVVARMUL \t[" + m_vRPN[i].Val().data2.print() + "]");
+					printFormatted(" + [" + m_vRPN[i].Val().var->print() + "] * [" + m_vRPN[i].Val().data.print() + "]\n");
 					break;
 
 				case cmFUNC:
-				    NumeReKernel::printPreFmt("CALL \t[ARG: " + toString(m_vRPN[i].Fun.argc) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun.ptr) + "]\n");
+				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [FUNC: " + m_vRPN[i].Fun().name + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
 					break;
 
-				case cmFUNC_STR:
-				    NumeReKernel::printPreFmt("CALL STRFUNC\t[ARG:" + toString(m_vRPN[i].Fun.argc) + "] [IDX: "+ toString(m_vRPN[i].Fun.idx) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun.ptr) + "]\n");
+				case cmMETHOD:
+				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [METHOD: " + m_vRPN[i].Fun().name + "]\n");
 					break;
 
 				case cmLT:
-				    NumeReKernel::printPreFmt("LT\n");
+				    printFormatted("LT\n");
 					break;
 				case cmGT:
-					NumeReKernel::printPreFmt("GT\n");
+					printFormatted("GT\n");
 					break;
 				case cmLE:
-					NumeReKernel::printPreFmt("LE\n");
+					printFormatted("LE\n");
 					break;
 				case cmGE:
-					NumeReKernel::printPreFmt("GE\n");
+					printFormatted("GE\n");
 					break;
 				case cmEQ:
-					NumeReKernel::printPreFmt("EQ\n");
+					printFormatted("EQ\n");
 					break;
 				case cmNEQ:
-					NumeReKernel::printPreFmt("NEQ\n");
+					printFormatted("NEQ\n");
 					break;
 				case cmADD:
-					NumeReKernel::printPreFmt("ADD\n");
+					printFormatted("ADD\n");
 					break;
 				case cmLAND:
-					NumeReKernel::printPreFmt("AND\n");
+					printFormatted("AND\n");
 					break;
 				case cmLOR:
-					NumeReKernel::printPreFmt("OR\n");
+					printFormatted("OR\n");
 					break;
 				case cmSUB:
-					NumeReKernel::printPreFmt("SUB\n");
+					printFormatted("SUB\n");
 					break;
 				case cmMUL:
-					NumeReKernel::printPreFmt("MUL\n");
+					printFormatted("MUL\n");
 					break;
 				case cmDIV:
-					NumeReKernel::printPreFmt("DIV\n");
+					printFormatted("DIV\n");
 					break;
 				case cmPOW:
-					NumeReKernel::printPreFmt("POW\n");
+					printFormatted("POW\n");
+					break;
+				case cmVAL2STR:
+					printFormatted("VAL2STR\n");
 					break;
 
 				case cmIF:
-				    NumeReKernel::printPreFmt("IF\t[OFFSET: " + toString(m_vRPN[i].Oprt.offset) + "]\n");
+				    printFormatted("IF        \t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
 					break;
 
 				case cmELSE:
-					NumeReKernel::printPreFmt("ELSE\t[OFFSET: " + toString(m_vRPN[i].Oprt.offset) + "]\n");
+					printFormatted("ELSE      \t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
 					break;
 
 				case cmENDIF:
-					NumeReKernel::printPreFmt("ENDIF\n");
+					printFormatted("ENDIF\n");
 					break;
 
 				case cmASSIGN:
-					NumeReKernel::printPreFmt("ASSIGN \t[" + toHexString((size_t)m_vRPN[i].Oprt.ptr) + "]\n");
+					printFormatted("ASSIGN    \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmADDASGN:
+					printFormatted("ADDASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmSUBASGN:
+					printFormatted("SUBASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmMULASGN:
+					printFormatted("MULASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmDIVASGN:
+					printFormatted("DIVASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmPOWASGN:
+					printFormatted("POWASGN   \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmINCR:
+					printFormatted("INCR      \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
+				case cmDECR:
+					printFormatted("DECR      \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
 					break;
 
 				default:
-				    NumeReKernel::printPreFmt("(unknown \t(" + toString((int)m_vRPN[i].Cmd) + ")\n");
+				    printFormatted("unknown   \t(" + toString((int)m_vRPN[i].Cmd) + ")\n");
 					break;
 			} // switch cmdCode
 		} // while bytecode
 
-		NumeReKernel::toggleTableStatus();
-		NumeReKernel::printPreFmt("|   END\n");
+		toggleTableMode();
+		printFormatted("|   END\n");
 	}
 } // namespace mu

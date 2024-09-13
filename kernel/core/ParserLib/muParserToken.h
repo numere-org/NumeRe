@@ -57,19 +57,20 @@ namespace mu
 
      \author (C) 2004-2012 Ingo Berg
     */
-    template<typename TBase, typename TString>
     class ParserToken
     {
         private:
 
-            ECmdCode  m_iCode;  ///< Type of the token; The token type is a constant of type #ECmdCode.
+            ECmdCode  m_iCode;      ///< Type of the token; The token type is a constant of type #ECmdCode.
             ETypeCode m_iType;
-            void*  m_pTok;      ///< Stores Token pointer; not applicable for all tokens
-            int  m_iIdx;        ///< An otional index to an external buffer storing the token data
-            TString m_strTok;   ///< Token string
-            TString m_strVal;   ///< Value for string variables
-            value_type m_fVal;  ///< the value
+            Variable*  m_var;       ///< Stores Token pointer; not applicable for all tokens
+            int  m_iIdx;            ///< An otional index to an external buffer storing the token data
+            std::string m_strTok;   ///< Token string
+            std::string m_strVal;   ///< Value for string variables
+            Array m_fVal;           ///< the value
+            VarArray m_varArray;
             std::unique_ptr<ParserCallback> m_pCallback;
+            size_t m_val2StrLen;    ///< Length of val2str operator
 
         public:
 
@@ -83,7 +84,7 @@ namespace mu
             ParserToken()
                 : m_iCode(cmUNKNOWN)
                 , m_iType(tpVOID)
-                , m_pTok(0)
+                , m_var(nullptr)
                 , m_iIdx(-1)
                 , m_strTok()
                 , m_pCallback()
@@ -123,7 +124,7 @@ namespace mu
             void Assign(const ParserToken& a_Tok)
             {
                 m_iCode = a_Tok.m_iCode;
-                m_pTok = a_Tok.m_pTok;
+                m_var = a_Tok.m_var;
                 m_strTok = a_Tok.m_strTok;
                 m_iIdx = a_Tok.m_iIdx;
                 m_strVal = a_Tok.m_strVal;
@@ -131,6 +132,8 @@ namespace mu
                 m_fVal = a_Tok.m_fVal;
                 // create new callback object if a_Tok has one
                 m_pCallback.reset(a_Tok.m_pCallback.get() ? a_Tok.m_pCallback->Clone() : 0);
+                m_val2StrLen = a_Tok.m_val2StrLen;
+                m_varArray = a_Tok.m_varArray;
             }
 
             //------------------------------------------------------------------------------
@@ -142,27 +145,67 @@ namespace mu
               \pre [assert] a_iType!=cmVAL
               \pre [assert] a_iType!=cmFUNC
               \post m_fVal = 0
-              \post m_pTok = 0
+              \post m_vars = 0
             */
-            ParserToken& Set(ECmdCode a_iType, const TString& a_strTok = TString())
+            ParserToken& Set(ECmdCode a_iType, const std::string& a_strTok = std::string())
             {
                 // The following types cant be set this way, they have special Set functions
                 assert(a_iType != cmVAR);
                 assert(a_iType != cmVAL);
                 assert(a_iType != cmFUNC);
+                assert(a_iType != cmMETHOD);
 
                 m_iCode = a_iType;
                 m_iType = tpVOID;
-                m_pTok = 0;
+                m_var = nullptr;
                 m_strTok = a_strTok;
                 m_iIdx = -1;
+                m_val2StrLen = 0;
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set the val2str operator.
+            ///
+            /// \param len size_t
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
+            ParserToken& SetVal2Str(size_t len)
+            {
+                m_iCode = cmVAL2STR;
+                m_iType = tpVOID;
+                m_var = nullptr;
+                m_strTok = "#";
+                m_iIdx = -1;
+                m_val2StrLen = len;
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set a path placeholder to be resolved.
+            ///
+            /// \param sPlaceholder const std::string&
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
+            ParserToken& SetPathPlaceholder(const std::string& sPlaceholder)
+            {
+                m_iCode = cmPATHPLACEHOLDER;
+                m_iType = tpVOID;
+                m_var = nullptr;
+                m_strTok = sPlaceholder;
+                m_iIdx = -1;
+                m_val2StrLen = 0;
 
                 return *this;
             }
 
             //------------------------------------------------------------------------------
             /** \brief Set Callback type. */
-            ParserToken& Set(const ParserCallback& a_pCallback, const TString& a_sTok)
+            ParserToken& Set(const ParserCallback& a_pCallback, const std::string& a_sTok)
             {
                 assert(a_pCallback.GetAddr());
 
@@ -171,8 +214,30 @@ namespace mu
                 m_strTok = a_sTok;
                 m_pCallback.reset(new ParserCallback(a_pCallback));
 
-                m_pTok = 0;
+                m_var = nullptr;
                 m_iIdx = -1;
+                m_val2StrLen = 0;
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set a method to be called.
+            ///
+            /// \param a_sTok const std::string&
+            /// \param noargs bool
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
+            ParserToken& SetMethod(const std::string& a_sTok, bool noargs)
+            {
+                m_iCode = cmMETHOD;
+                m_iType = noargs ? tpNOARGS : tpVOID;
+                m_strTok = a_sTok;
+
+                m_var = nullptr;
+                m_iIdx = -1;
+                m_val2StrLen = 0;
 
                 return *this;
             }
@@ -183,7 +248,7 @@ namespace mu
                 Member variables not necessary for value tokens will be invalidated.
                 \throw nothrow
             */
-            ParserToken& SetVal(TBase a_fVal, const TString& a_strTok = TString())
+            ParserToken& SetVal(const Array& a_fVal, const std::string& a_strTok = std::string())
             {
                 m_iCode = cmVAL;
                 m_iType = tpDBL;
@@ -191,7 +256,7 @@ namespace mu
                 m_strTok = a_strTok;
                 m_iIdx = -1;
 
-                m_pTok = 0;
+                m_var = nullptr;
                 m_pCallback.reset(0);
 
                 return *this;
@@ -203,32 +268,34 @@ namespace mu
                 Member variables not necessary for variable tokens will be invalidated.
                 \throw nothrow
             */
-            ParserToken& SetVar(TBase* a_pVar, const TString& a_strTok)
+            ParserToken& SetVar(Variable* a_pVar, const std::string& a_strTok)
             {
                 m_iCode = cmVAR;
                 m_iType = tpDBL;
                 m_strTok = a_strTok;
                 m_iIdx = -1;
-                m_pTok = (void*)a_pVar;
+                m_var = a_pVar;
                 m_pCallback.reset(0);
                 return *this;
             }
 
-            //------------------------------------------------------------------------------
-            /** \brief Make this token a variable token.
-
-                Member variables not necessary for variable tokens will be invalidated.
-                \throw nothrow
-            */
-            ParserToken& SetString(const TString& a_strTok, std::size_t a_iSize)
+            /////////////////////////////////////////////////
+            /// \brief Set a variable array.
+            ///
+            /// \param a_varArray const VarArray&
+            /// \param a_strTok const std::string&
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
+            ParserToken& SetVarArray(const VarArray& a_varArray, const std::string& a_strTok)
             {
-                m_iCode = cmSTRING;
-                m_iType = tpSTR;
+                m_iCode = cmVARARRAY;
+                m_iType = tpDBL;
                 m_strTok = a_strTok;
-                m_iIdx = static_cast<int>(a_iSize);
-
-                m_pTok = 0;
+                m_iIdx = -1;
+                m_var = nullptr;
                 m_pCallback.reset(0);
+                m_varArray = a_varArray;
                 return *this;
             }
 
@@ -281,7 +348,12 @@ namespace mu
                 }
             }
 
-            //------------------------------------------------------------------------------
+            /////////////////////////////////////////////////
+            /// \brief Get the type code (deprecated)
+            ///
+            /// \return ETypeCode
+            ///
+            /////////////////////////////////////////////////
             ETypeCode GetType() const
             {
                 if (m_pCallback.get())
@@ -294,7 +366,12 @@ namespace mu
                 }
             }
 
-            //------------------------------------------------------------------------------
+            /////////////////////////////////////////////////
+            /// \brief Get token priority.
+            ///
+            /// \return int
+            ///
+            /////////////////////////////////////////////////
             int GetPri() const
             {
                 if ( !m_pCallback.get())
@@ -306,7 +383,12 @@ namespace mu
                 return m_pCallback->GetPri();
             }
 
-            //------------------------------------------------------------------------------
+            /////////////////////////////////////////////////
+            /// \brief Get the operator associativity.
+            ///
+            /// \return EOprtAssociativity
+            ///
+            /////////////////////////////////////////////////
             EOprtAssociativity GetAssociativity() const
             {
                 if (m_pCallback.get() == nullptr || m_pCallback->GetCode() != cmOPRT_BIN)
@@ -316,6 +398,12 @@ namespace mu
             }
 
 
+            /////////////////////////////////////////////////
+            /// \brief Is this function optimizable?
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool IsOptimizable() const
             {
                 if (!m_pCallback)
@@ -323,11 +411,12 @@ namespace mu
 
                 return m_pCallback->IsOptimizable();
             }
+
             //------------------------------------------------------------------------------
             /** \brief Return the address of the callback function assoziated with
                        function and operator tokens.
 
-                \return The pointer stored in #m_pTok.
+                \return The pointer stored in #m_vars.
                 \throw exception_type if token type is non of:
                        <ul>
                          <li>cmFUNC</li>
@@ -344,19 +433,19 @@ namespace mu
             }
 
             //------------------------------------------------------------------------------
-            /** \biref Get value of the token.
+            /** \brief Get value of the token.
 
                 Only applicable to variable and value tokens.
                 \throw exception_type if token is no value/variable token.
             */
-            TBase GetVal() const
+            Array GetVal() const
             {
                 switch (m_iCode)
                 {
                     case cmVAL:
                         return m_fVal;
                     case cmVAR:
-                        return *((TBase*)m_pTok);
+                        return *m_var;
                     default:
                         throw ParserError(ecVAL_EXPECTED);
                 }
@@ -368,12 +457,26 @@ namespace mu
               Valid only if m_iType==CmdVar.
               \throw exception_type if token is no variable token.
             */
-            TBase* GetVar() const
+            Variable* GetVar() const
             {
                 if (m_iCode != cmVAR)
                     throw ParserError(ecINTERNAL_ERROR);
 
-                return (TBase*)m_pTok;
+                return m_var;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the variable array.
+            ///
+            /// \return VarArray
+            ///
+            /////////////////////////////////////////////////
+            VarArray GetVarArray() const
+            {
+                if (m_iCode != cmVARARRAY)
+                    throw ParserError(ecINTERNAL_ERROR);
+
+                return m_varArray;
             }
 
             //------------------------------------------------------------------------------
@@ -391,6 +494,23 @@ namespace mu
                 return m_pCallback->GetArgc();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get the number of optional function
+            /// arguments.
+            ///
+            /// \return int
+            ///
+            /////////////////////////////////////////////////
+            int GetOptArgCount() const
+            {
+                assert(m_pCallback.get());
+
+                if (!m_pCallback->GetAddr())
+                    throw ParserError(ecINTERNAL_ERROR);
+
+                return m_pCallback->GetOptC();
+            }
+
             //------------------------------------------------------------------------------
             /** \brief Return the token identifier.
 
@@ -400,9 +520,20 @@ namespace mu
                 \throw nothrow
                 \sa m_strTok
             */
-            const TString& GetAsString() const
+            const std::string& GetAsString() const
             {
                 return m_strTok;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the val2str length information.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t GetLen() const
+            {
+                return m_val2StrLen;
             }
     };
 } // namespace mu

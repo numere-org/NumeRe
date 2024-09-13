@@ -27,7 +27,7 @@
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
-double intPower(double, int);
+double intPower(double, int64_t);
 
 // toString function implementations
 // There's an overwrite for mostly every variable type
@@ -134,7 +134,9 @@ std::string toString(int nNumber)
 /////////////////////////////////////////////////
 std::string toString(size_t nNumber)
 {
-    return toString((long long int)nNumber);
+    std::ostringstream Temp;
+    Temp << nNumber;
+    return Temp.str();
 }
 
 
@@ -1814,7 +1816,7 @@ std::vector<std::string> split(const std::string& sStr, char cSplit)
 std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 {
     if (sLongString.length() > nMaxStringLength)
-        return sLongString.substr(0, nMaxStringLength/2-2) + "[...]" + sLongString.substr(sLongString.length()-nMaxStringLength+2);
+        return sLongString.substr(0, nMaxStringLength/2-2) + "[...]" + sLongString.substr(sLongString.length()-nMaxStringLength/2+2);
 
     return sLongString;
 }
@@ -1913,6 +1915,31 @@ void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewV
 
 
 /////////////////////////////////////////////////
+/// \brief Repeat a string nCount times.
+///
+/// \param sStr const std::string&
+/// \param nCount int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strRepeat(const std::string& sStr, int nCount)
+{
+    if (nCount <= 0)
+        return "";
+
+    std::string ret;
+
+    while (nCount)
+    {
+        ret += sStr;
+        nCount--;
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a simple wrapper for
 /// replaceAll() and specialized to remove
 /// control characters from strings.
@@ -1993,6 +2020,60 @@ bool isEqualStripped(StringView str1, StringView str2)
     str2.strip();
 
     return str1 == str2;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function removes the escape
+/// characters from the passed string.
+///
+/// \param sString const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string removeMaskedStrings(const std::string& sString)
+{
+    std::string sRet = sString;
+
+    // Go through the string and remove all relevant escape characters
+    // Omit the characters, which are identifying LaTeX command sequences
+    for (size_t i = 0; i < sRet.length(); i++)
+    {
+        if (sRet.compare(i, 2, "\\\"") == 0)
+            sRet.erase(i, 1);
+
+        if (sRet.compare(i, 2, "\\t") == 0
+            && sRet.compare(i, 4, "\\tau") != 0
+            && sRet.compare(i, 6, "\\theta") != 0
+            && sRet.compare(i, 6, "\\times") != 0)
+            sRet.replace(i, 2, "\t");
+
+        if (sRet.compare(i, 2, "\\n") == 0
+            && sRet.compare(i, 3, "\\nu") != 0)
+            sRet.replace(i, 2, "\n");
+
+        if (sRet.compare(i, 2, "\\ ") == 0)
+            sRet.erase(i + 1, 1);
+    }
+
+    return sRet;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function simply removes the
+/// surrounding quotation marks.
+///
+/// \param sString const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string removeQuotationMarks(const std::string& sString)
+{
+    if (sString.find('"') == std::string::npos || sString.front() != '"' || sString.back() != '"')
+        return sString;
+
+    return sString.substr(1, sString.length() - 2);
 }
 
 

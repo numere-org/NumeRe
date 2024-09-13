@@ -173,15 +173,50 @@ std::string DateTimeColumn::getValueAsStringLiteral(size_t elem) const
 /// does not exist.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type DateTimeColumn::getValue(size_t elem) const
+std::complex<double> DateTimeColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size())
         return m_data[elem];
 
     return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DateTimeColumn::get(size_t elem) const
+{
+    if (elem < m_data.size())
+        return to_timePoint(m_data[elem]);
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
 }
 
 
@@ -206,11 +241,11 @@ void DateTimeColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DateTimeColumn::setValue(size_t elem, const mu::value_type& vValue)
+void DateTimeColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -572,15 +607,50 @@ std::string LogicalColumn::getValueAsStringLiteral(size_t elem) const
 /// does not exist.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type LogicalColumn::getValue(size_t elem) const
+std::complex<double> LogicalColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size() && m_data[elem] != LOGICAL_NAN)
         return m_data[elem] ? 1.0 : 0.0;
 
     return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value LogicalColumn::get(size_t elem) const
+{
+    if (elem < m_data.size() && m_data[elem] != LOGICAL_NAN)
+        return m_data[elem] != 0.0;
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void LogicalColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
 }
 
 
@@ -605,11 +675,11 @@ void LogicalColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void LogicalColumn::setValue(size_t elem, const mu::value_type& vValue)
+void LogicalColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -968,12 +1038,47 @@ std::string StringColumn::getValueAsStringLiteral(size_t elem) const
 /// conversion is not possible.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type StringColumn::getValue(size_t elem) const
+std::complex<double> StringColumn::getValue(size_t elem) const
 {
     return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value StringColumn::get(size_t elem) const
+{
+    if (elem < m_data.size())
+        return m_data[elem];
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
 }
 
 
@@ -1001,11 +1106,11 @@ void StringColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringColumn::setValue(size_t elem, const mu::value_type& vValue)
+void StringColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -1346,7 +1451,6 @@ TableColumn* StringColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
-            // TODO Marco 1
             std::string strval = m_data[i];
             strChangeNumberFormat(strval, numFormat);
             col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
@@ -1440,15 +1544,50 @@ std::string CategoricalColumn::getValueAsStringLiteral(size_t elem) const
 /// conversion is not possible.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type CategoricalColumn::getValue(size_t elem) const
+std::complex<double> CategoricalColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
         return m_data[elem]+1;
 
     return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// mu::Value type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value CategoricalColumn::get(size_t elem) const
+{
+    if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
+        return mu::Category(m_data[elem]+1, m_categories[m_data[elem]]);
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single mu::Value.
+///
+/// \param elem size_t
+/// \param val const mu::Value&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CategoricalColumn::set(size_t elem, const mu::Value& val)
+{
+    if (val.isNumerical())
+        setValue(elem, val.getNum().asCF64());
+    else
+        setValue(elem, val.getStr());
 }
 
 
@@ -1490,11 +1629,11 @@ void CategoricalColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CategoricalColumn::setValue(size_t elem, const mu::value_type& vValue)
+void CategoricalColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -1846,10 +1985,8 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
-            // TODO Marco 2
             std::string strval = m_categories[m_data[i]];
             strChangeNumberFormat(strval, NumFormat);
-            //replaceAll(strval, ",", ".");
             col->setValue(i, StrToCmplx(strval));
         }
         else if (convType == CONVTYPE_LOGICAL)
@@ -1913,6 +2050,46 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
 
 
 
+/////////////////////////////////////////////////
+/// \brief Promote the datatype of the passed
+/// column towards the necessary datatype or
+/// convert if empty.
+///
+/// \param col TblColPtr&
+/// \param colNo size_t
+/// \param other TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
+void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType other)
+{
+    // Only complete new columns are overwritten
+    if (!col)
+    {
+        convert_if_empty(col, colNo, other);
+        return;
+    }
+
+    // Get the promoted type (will default to the current one, if problematic)
+    TableColumn::ColumnType promoted = to_promoted_type(col->m_type, other);
+
+    if (promoted == col->m_type)
+        return;
+    else if (promoted == TableColumn::TYPE_NONE && !col->size())
+    {
+        convert_if_empty(col, colNo, other);
+        return;
+    }
+
+    // Try to convert
+    TableColumn* convertedCol = col->convert(promoted);
+
+    if (!convertedCol)
+        return;
+
+    if (convertedCol != col.get())
+        col.reset(convertedCol);
+}
 
 
 /////////////////////////////////////////////////
@@ -2022,14 +2199,18 @@ bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
 /////////////////////////////////////////////////
 void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
 {
-    if (!col || (!col->size() && col->m_type != type))
+    if (!col)// || (!col->size() && col->m_type != type))
     {
         convert_if_empty(col, colNo, type);
         return;
     }
 
-    if (col->m_type == type)
+    TableColumn::ColumnType promoted = to_promoted_type(col->m_type, type);
+
+    if (col->m_type == promoted)
         return;
+    else if (promoted == TableColumn::TYPE_NONE)
+        promoted = type;
 
     std::string sHeadLine = col->m_sHeadLine;
     std::string sUnit = col->m_sUnit;
@@ -2037,7 +2218,7 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
     if (!sHeadLine.length())
         sHeadLine = TableColumn::getDefaultColumnHead(colNo);
 
-    switch (type)
+    switch (promoted)
     {
         case TableColumn::TYPE_STRING:
         {
@@ -2077,6 +2258,224 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             }
         }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the types of a mu::Value
+/// instance into a single
+/// TableColumn::ColumnType type.
+///
+/// \param val const mu::Value&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType to_column_type(const mu::Value& val)
+{
+    if (val.isCategory())
+        return TableColumn::TYPE_CATEGORICAL;
+    else if (val.isString())
+        return TableColumn::TYPE_STRING;
+    else if (val.isNumerical())
+    {
+        switch (val.getNum().getType())
+        {
+            case mu::LOGICAL:
+                return TableColumn::TYPE_LOGICAL;
+            case mu::I8:
+                return TableColumn::TYPE_VALUE_I8;
+            case mu::I16:
+                return TableColumn::TYPE_VALUE_I16;
+            case mu::I32:
+                return TableColumn::TYPE_VALUE_I32;
+            case mu::I64:
+                return TableColumn::TYPE_VALUE_I64;
+            case mu::UI8:
+                return TableColumn::TYPE_VALUE_UI8;
+            case mu::UI16:
+                return TableColumn::TYPE_VALUE_UI16;
+            case mu::UI32:
+                return TableColumn::TYPE_VALUE_UI32;
+            case mu::UI64:
+                return TableColumn::TYPE_VALUE_UI64;
+            case mu::DATETIME:
+                return TableColumn::TYPE_DATETIME;
+            case mu::F32:
+                return TableColumn::TYPE_VALUE_F32;
+            case mu::F64:
+                return TableColumn::TYPE_VALUE_F64;
+            case mu::CF32:
+                return TableColumn::TYPE_VALUE_CF32;
+            case mu::CF64:
+                return TableColumn::TYPE_VALUE_CF64;
+        }
+    }
+
+    return TableColumn::TYPE_NONE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the types of a mu::Array
+/// instance into a single
+/// TableColumn::ColumnType type.
+///
+/// \param arr const mu::Array&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType to_column_type(const mu::Array& arr)
+{
+    if (arr.getCommonType() == mu::TYPE_CATEGORY)
+        return TableColumn::TYPE_CATEGORICAL;
+    else if (arr.getCommonType() == mu::TYPE_STRING
+             || arr.getCommonType() == mu::TYPE_MIXED)
+        return TableColumn::TYPE_STRING;
+    else if (arr.getCommonType() == TYPE_NUMERICAL)
+    {
+        switch (arr.getCommonNumericalType())
+        {
+            case mu::LOGICAL:
+                return TableColumn::TYPE_LOGICAL;
+            case mu::I8:
+                return TableColumn::TYPE_VALUE_I8;
+            case mu::I16:
+                return TableColumn::TYPE_VALUE_I16;
+            case mu::I32:
+                return TableColumn::TYPE_VALUE_I32;
+            case mu::I64:
+                return TableColumn::TYPE_VALUE_I64;
+            case mu::UI8:
+                return TableColumn::TYPE_VALUE_UI8;
+            case mu::UI16:
+                return TableColumn::TYPE_VALUE_UI16;
+            case mu::UI32:
+                return TableColumn::TYPE_VALUE_UI32;
+            case mu::UI64:
+                return TableColumn::TYPE_VALUE_UI64;
+            case mu::DATETIME:
+                return TableColumn::TYPE_DATETIME;
+            case mu::F32:
+                return TableColumn::TYPE_VALUE_F32;
+            case mu::F64:
+                return TableColumn::TYPE_VALUE_F64;
+            case mu::CF32:
+                return TableColumn::TYPE_VALUE_CF32;
+            case mu::CF64:
+                return TableColumn::TYPE_VALUE_CF64;
+        }
+    }
+
+    return TableColumn::TYPE_NONE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert the column type to the
+/// corresponding numerical type.
+///
+/// \param type TableColumn::ColumnType
+/// \return mu::NumericalType
+///
+/////////////////////////////////////////////////
+static mu::NumericalType to_numerical_type(TableColumn::ColumnType type)
+{
+    switch (type)
+    {
+        case TableColumn::TYPE_VALUE_UI8:
+            return mu::UI8;
+        case TableColumn::TYPE_VALUE_UI16:
+            return mu::UI16;
+        case TableColumn::TYPE_VALUE_UI32:
+            return mu::UI32;
+        case TableColumn::TYPE_VALUE_UI64:
+            return mu::UI64;
+        case TableColumn::TYPE_VALUE_I8:
+            return mu::I8;
+        case TableColumn::TYPE_VALUE_I16:
+            return mu::I16;
+        case TableColumn::TYPE_VALUE_I32:
+            return mu::I32;
+        case TableColumn::TYPE_VALUE_I64:
+            return mu::I64;
+        case TableColumn::TYPE_VALUE_F32:
+            return mu::F32;
+        case TableColumn::TYPE_VALUE_F64:
+            return mu::F64;
+        case TableColumn::TYPE_VALUE_CF32:
+            return mu::CF32;
+        case TableColumn::TYPE_VALUE_CF64:
+        //case TableColumn::TYPE_VALUE:
+            return mu::CF64;
+        case TableColumn::TYPE_DATETIME:
+            return mu::DATETIME;
+        case TableColumn::TYPE_LOGICAL:
+            return mu::LOGICAL;
+    }
+
+    return mu::AUTO;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate the column type promotion.
+///
+/// \param current TableColumn::ColumnType
+/// \param other TableColumn::ColumnType
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableColumn::ColumnType other)
+{
+    if (current == other)
+        return current;
+
+    else if ((current == TableColumn::TYPE_CATEGORICAL || current == TableColumn::TYPE_STRING)
+             && (other == TableColumn::TYPE_CATEGORICAL || other == TableColumn::TYPE_STRING))
+        return TableColumn::TYPE_CATEGORICAL;
+    else if (current > TableColumn::VALUELIKE
+             && current <= TableColumn::TYPE_LOGICAL
+             && other > TableColumn::VALUELIKE
+             && other <= TableColumn::TYPE_LOGICAL)
+    {
+        mu::TypeInfo info(to_numerical_type(current));
+        info.promote(to_numerical_type(other));
+
+        switch (info.asType())
+        {
+            case mu::LOGICAL:
+                return TableColumn::TYPE_LOGICAL;
+            case mu::I8:
+                return TableColumn::TYPE_VALUE_I8;
+            case mu::I16:
+                return TableColumn::TYPE_VALUE_I16;
+            case mu::I32:
+                return TableColumn::TYPE_VALUE_I32;
+            case mu::I64:
+                return TableColumn::TYPE_VALUE_I64;
+            case mu::UI8:
+                return TableColumn::TYPE_VALUE_UI8;
+            case mu::UI16:
+                return TableColumn::TYPE_VALUE_UI16;
+            case mu::UI32:
+                return TableColumn::TYPE_VALUE_UI32;
+            case mu::UI64:
+                return TableColumn::TYPE_VALUE_UI64;
+            case mu::DATETIME:
+                return TableColumn::TYPE_DATETIME;
+            case mu::F32:
+                return TableColumn::TYPE_VALUE_F32;
+            case mu::F64:
+                return TableColumn::TYPE_VALUE_F64;
+            case mu::CF32:
+                return TableColumn::TYPE_VALUE_CF32;
+            case mu::CF64:
+                return TableColumn::TYPE_VALUE_CF64;
+        }
+    }
+
+    // No promotion possible
+    return TableColumn::TYPE_NONE;
 }
 
 

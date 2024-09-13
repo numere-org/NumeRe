@@ -54,14 +54,7 @@ enum CommandReturnValues
     COMMAND_HAS_RETURNVALUE = 2
 };
 
-/*
- * Built-In-Funktionen
- * -> Diese Funktionen setzen die Basisfunktionen dieses Frameworks um
- */
 CommandReturnValues commandHandler(std::string& sCmd);
-std::string evaluateParameterValues(const std::string& sCmd);
-bool extractFirstParameterStringValue(const std::string& sCmd, std::string& sArgument);
-bool parseCmdArg(const std::string& sCmd, size_t nPos, mu::Parser& _parser, size_t& nArgument);
 
 
 #endif
