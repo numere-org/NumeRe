@@ -471,8 +471,8 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_feigenbaum_alpha", 2.50290787509589282228);
     _parser.DefineConst("_day_secs", 86400);
     _parser.DefineConst("_hour_secs", 3600 );
-     _parser.DefineConst("_week_secs", 604800);
-    _parser.DefineConst("_year_secs", 31536000);
+    _parser.DefineConst("_week_secs", 604800);
+    _parser.DefineConst("_year_secs", 31537600);
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", mu::Value());
@@ -2249,7 +2249,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 
 
 /////////////////////////////////////////////////
-/// \brief his private member function will
+/// \brief This private member function will
 /// create the answer line for the parser which is
 /// then passed to NumeReKernel::printResult().
 ///

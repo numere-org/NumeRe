@@ -42,40 +42,40 @@
 #include "../utils/tools.hpp"
 #include "../version.h"
 
-
-
-
 /*
  * Ende der globalen Variablen
  */
 
-// --> Umrechnungsfunktionen: diese werden aufgerufen, wenn eine spezielle Syntax verwendet wird <--
+
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1M.
+/// \brief Multiplies a number with the imaginary
+/// unit.
 ///
-/// \param a_fVal const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 {
     mu::Array res;
-///
+
     for (size_t i = 0; i < v.size(); i++)
     {
         res.push_back(mu::Numerical(std::complex<double>(v[i].getNum().asCF64().imag() != 0.0 ? -v[i].getNum().asCF64().imag() : 0.0,
                                                          v[i].getNum().asCF64().real())));
     }
-/////////////////////////////////////////////////
+
     return res;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1m.
+/// \brief Extracts the real part of a complex
+/// number.
 ///
-/// \param a_fVal const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_real(const mu::Array& v)
 {
@@ -91,12 +91,12 @@ mu::Array numfnc_real(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1G.
+/// \brief Extracts the imaginary part of a
+/// complex number.
 ///
-/// \param a_fVal const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_imag(const mu::Array& v)
 {
@@ -112,57 +112,57 @@ mu::Array numfnc_imag(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1k.
+/// \brief Converts a rectangular representation
+/// into polar representation and returns it as a
+/// new complex number.
 ///
-/// \param a_fVal const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-
-
 mu::Array numfnc_rect2polar(const mu::Array& v)
 {
     mu::Array res;
-/////////////////////////////////////////////////
+
     for (size_t i = 0; i < v.size(); i++)
     {
         res.push_back(mu::Numerical(std::complex<double>(std::abs(v[i].getNum().asCF64()),
                                                          std::arg(v[i].getNum().asCF64()))));
     }
-/// \brief Conversion function for 1mu.
+
     return res;
 }
-///
-/// \param a_fVal const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1n.
+/// \brief Converts a polar representation into a
+/// rectangular representation and returns it as
+/// a new complex number.
 ///
-/// \param a_fVal const value_type&
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_polar2rect(const mu::Array& v)
 {
     mu::Array res;
-/// \return value_type
+
     for (size_t i = 0; i < v.size(); i++)
     {
         res.push_back(mu::Numerical(std::polar(v[i].getNum().asCF64().real(),
                                                v[i].getNum().asCF64().imag())));
     }
-///
+
     return res;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Function representing the logical NOT
-/// operator.
+/// \brief Calculates the complex conjugate
+/// number of the passed complex number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_conj(const mu::Array& v)
@@ -172,13 +172,13 @@ mu::Array numfnc_conj(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Identity function. Used for ignoring
-/// functions and parameters in special cases.
+/// \brief Construct a complex number from two
+/// real numbers.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param re const mu::Array&
+/// \param im const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 {
@@ -194,12 +194,12 @@ mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 }
 
 
-// --> Einheitenumrechnung: eV, fm, A, b, Torr, AU, etc... <--
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1eV.
+/// \brief Return a subset of an Array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \param idx const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
@@ -213,19 +213,19 @@ mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
         if (n > 0 && (size_t)n <= a.size())
             res.push_back(a.get(n-1));
     }
-/////////////////////////////////////////////////
+
     return res;
 }
-/// \brief Conversion function for 1fm.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1A.
+/// \brief Implementation of the factorial
+/// function.
+///
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> factorial_impl(const std::complex<double>& v)
 {
     if (mu::isnan(v) || mu::isinf(v))
@@ -236,28 +236,28 @@ static std::complex<double> factorial_impl(const std::complex<double>& v)
     // --> Falls v == 0 ist, dann ist die Fakultaet 1 und nicht 0. Fangen wir hier ab <--
     if (intCast(v) == 0)
         return 1;
-/////////////////////////////////////////////////
+
     if (intCast(v) < 0)
         return NAN;
-/// \brief Conversion function for 1bn.
+
     /* --> Zaehlschleife, die die Fakultaet bildet: allerdings in der Form 1*2*3*...*(n-1)*n und nicht
-///
-/// \param v const value_type&
+     *     in der Form, wie sie normal definiert wird: n*(n-1)*(n-2)*...*3*2*1 <--
+     */
     for (int i = 2; i <= abs(intCast(v)); i++)
     {
         vResult *= i;
     }
-/// \return value_type
+
     return vResult;
-///
+
 }
 
-
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1Torr/1mmhg.
+/// \brief Function representing the factorial of
+/// any natural number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_Factorial(const mu::Array& v)
@@ -267,12 +267,12 @@ mu::Array numfnc_Factorial(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1AU.
+/// \brief Implementation of the double factorial
+/// function.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 static std::complex<double> double_factorial_impl(const std::complex<double>& v)
 {
@@ -283,47 +283,47 @@ static std::complex<double> double_factorial_impl(const std::complex<double>& v)
 
     if (intCast(v) < 0)
         return NAN;
-/////////////////////////////////////////////////
+
     for (int n = intCast(std::abs(v)); n > 0; n -= 2)
     {
         vResult *= n;
     }
-/// \brief Conversion function for 1ly.
+
     return vResult;
 }
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1pc.
+/// \brief Function representing the double
+/// factorial of any natural number.
 ///
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_doubleFactorial(const mu::Array& v)
 {
     return mu::apply(double_factorial_impl, v);
 }
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1mi.
+/// \brief Implementation of the binomial
+/// coefficient.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> binom_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     if (mu::isnan(v1) || mu::isnan(v2) || mu::isinf(v1) || mu::isinf(v2))
         return NAN;
     /* --> Bevor wir die bekannte Formel verwenden, pruefen wir einige Spezialfaelle, die den
-
-
-/////////////////////////////////////////////////
+     *     Algorithmus deutlich beschleunigen. Hier sei der Artikel auf Wikipedia zum Binomial-
+     *     koeffzienten empfohlen <--
+     */
     if (intCast(v2) < 0 || intCast(v1) < 0)
         return NAN;
     else if (intCast(v2) > intCast(v1)) // v2 > v1 ==> binom = 0!
@@ -337,23 +337,23 @@ static std::complex<double> binom_impl(const std::complex<double>& v1, const std
     else
     {
         /* --> In allen anderen Faellen muessen wir den Binomialkoeffzienten muehsam mithilfe der Formel
-/// \brief Conversion function for 1yd.
-///
-/// \param v const value_type&
+         *     binom(v1,v2) = v1!/(v2!*(v1-v2)!) ausrechnen. Das machen wir, indem wir die Funktion
+         *     numfnc_Faculty(mu::Array) aufrufen <--
+         */
         return factorial_impl(v1) / (factorial_impl(v2)*factorial_impl(intCast(v1) - intCast(v2)));
     }
 }
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1ft.
+/// \brief Function representing the binomial
+/// coefficient.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_Binom(const mu::Array& v1, const mu::Array& v2)
 {
     return mu::apply(binom_impl, v1, v2);
@@ -361,22 +361,22 @@ mu::Array numfnc_Binom(const mu::Array& v1, const mu::Array& v2)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1in.
+/// \brief This function returns the number of
+/// valid elements in its array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-
-
 mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
 {
     size_t elems;
-/////////////////////////////////////////////////
+
     if (nElements == 1)
     {
         elems = vElements[0].size();
-/// \brief Conversion function for 1cal.
+
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
             if (!vElements[0][i].isValid())
@@ -386,44 +386,44 @@ mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
     else
     {
         elems = nElements;
-///
+
         for (int i = 0; i < nElements; i++)
         {
             if (!vElements[i].front().isValid())
                 elems--;
         }
     }
-/// \param v const value_type&
+
     return mu::Array(mu::Value(elems));
     /*mu::Array ret;
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
+    for (int i = 0; i < nElements; i++)
+    {
+        size_t elems = vElements[i].size();
 
-/////////////////////////////////////////////////
-/// \brief Conversion function for 1psi.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+        for (size_t j = 0; j < vElements[i].size(); j++)
+        {
+            if (!vElements[i][j].isValid())
+                elems--;
+        }
 
+        ret.push_back(Numerical(elems));
+    }
 
-/////////////////////////////////////////////////
+    return ret;*/
 }
-/// \brief Conversion function for 1kn.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1l.
+/// \brief This functioon simply returns the
+/// number of elements in its array (even the
+/// invalid ones).
 ///
-/// \param v const value_type&
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
@@ -432,20 +432,20 @@ mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
     return mu::Array(mu::Value(nElements));
     /*mu::Array ret;
 
-/////////////////////////////////////////////////
-/// \brief Conversion function for 1kmh.
-///
-/// \param v const value_type&
-/// \return value_type
-///
+    for (int i = 0; i < nElements; i++)
+    {
+        ret.push_back(vElements[i].size());
+    }
+
+    return ret;*/
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1mph.
+/// \brief Implementation of the conj() function.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param val const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
 static mu::Value conj(const mu::Value& val)
@@ -455,21 +455,21 @@ static mu::Value conj(const mu::Value& val)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1°C.
+/// \brief This function calculates the standard
+/// deviation of the elements in the passed
+/// array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
-
-
 /////////////////////////////////////////////////
 mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
 {
     mu::Value vStd = 0.0;
     mu::Value vMean = numfnc_Avg(vElements, nElements).front();
     mu::Value vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
-/// \brief Conversion function for 1°F.
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
@@ -486,24 +486,24 @@ mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
                 vStd += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean);
         }
     }
-///
+
     return mu::Value(std::sqrt((vStd / (vNum-mu::Numerical(1.0))).getNum().asCF64()));
 }
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1C.
+/// \brief This function calculates the product
+/// of all elements in the passed array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_product(const mu::Array* vElements, int nElements)
 {
     mu::Value vProd = 1.0;
-///
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
@@ -520,24 +520,24 @@ mu::Array numfnc_product(const mu::Array* vElements, int nElements)
                 vProd *= vElements[i].front();
         }
     }
-/////////////////////////////////////////////////
+
     return vProd;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1Gs.
+/// \brief This function calculates the vector
+/// norm of the elements in the passed array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-
-
 mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
 {
     mu::Value vProd = 0.0;
-/////////////////////////////////////////////////
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
@@ -554,32 +554,32 @@ mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
                 vProd += vElements[i].front() * conj(vElements[i].front());
         }
     }
-/// \brief Conversion function for 1Ps.
+
     return mu::Value(std::sqrt(vProd.getNum().asCF64()));
 }
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1mol.
+/// \brief This function calculates the median of
+/// the elements in the passed array.
 ///
-/// \param v const value_type&
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
 {
 #ifndef PARSERSTANDALONE
     Memory _mem;
-/// \return value_type
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
             _mem.writeData(i, 0, vElements[0][i]);
         }
-///
+
         return mu::Value(_mem.med(VectorIndex(0, vElements[0].size()-1), VectorIndex(0)));
     }
     else
@@ -589,20 +589,20 @@ mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
             _mem.writeData(i, 0, vElements[i].front());
         }
     }
-/////////////////////////////////////////////////
+
     return mu::Value(_mem.med(VectorIndex(0, nElements-1), VectorIndex(0)));
 #endif // PARSERSTANDALONE
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Multiplies a number with the imaginary
-/// unit.
+/// \brief This function calculates the selected
+/// percentile of the passed array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
 {
@@ -617,35 +617,35 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
         }
 
         mu::Array ret;
-/////////////////////////////////////////////////
+
         for (size_t i = 0; i < vElements[1].size(); i++)
         {
             ret.push_back(_mem.pct(VectorIndex(0, vElements[0].size()-1), VectorIndex(0), vElements[1].get(i).getNum().asCF64()));
         }
-/// \brief Extracts the real part of a complex
+
         return ret;
     }
-/// number.
+
     for (int i = 0; i < nElements-1; i++)
     {
         _mem.writeData(i, 0, vElements[i].front());
     }
-///
+
     return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1].front().getNum().asCF64()));
-/// \param v const value_type&
+
 #endif // PARSERSTANDALONE
 }
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Extracts the imaginary part of a
-/// complex number.
+/// \brief Implementation of the cmp() function.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array&
+/// \param value const mu::Value&
+/// \param mode const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value, const mu::Value& mode)
 {
     enum
@@ -655,9 +655,9 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
         RETURN_GE = 4,
         RETURN_FIRST = 8
     };
-///
+
     int nType = 0;
-/////////////////////////////////////////////////
+
     mu::Value vRef = value;
     mu::Value vKeep = vRef;
     int nKeep = -1;
@@ -679,17 +679,17 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             nType |= RETURN_FIRST | RETURN_VALUE;
             break;
     }
-/////////////////////////////////////////////////
+
     for (size_t i = 0; i < vElements.size(); i++)
     {
         if (!vElements[i].isValid())
             continue;
-/// \brief Converts a rectangular representation
+
         if (vElements[i] == vRef)
         {
             if (nType & RETURN_VALUE)
                 return vElements[i];
-/// into polar representation and returns it as a
+
             return i+1;
         }
         else if (nType & RETURN_GE && vElements[i] > vRef)
@@ -698,10 +698,10 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             {
                 if (nType & RETURN_VALUE)
                     return vElements[i];
-/// new complex number.
+
                 return i+1;
             }
-///
+
             if (nKeep == -1 || vElements[i] < vKeep)
             {
                 vKeep = vElements[i];
@@ -716,10 +716,10 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             {
                 if (nType & RETURN_VALUE)
                     return vElements[i];
-/// \param v const value_type&
+
                 return i+1;
             }
-/// \return value_type
+
             if (nKeep == -1 || vElements[i] > vKeep)
             {
                 vKeep = vElements[i];
@@ -729,25 +729,25 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
                 continue;
         }
     }
-///
+
     if (nKeep == -1)
         return NAN;
     else if (nType & RETURN_VALUE)
         return vKeep;
-/////////////////////////////////////////////////
+
     return nKeep+1;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Converts a polar representation into a
-/// rectangular representation and returns it as
-/// a new complex number.
+/// \brief This function searches for elements of
+/// a specified type in the passed array.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vElements const mu::Array&
+/// \param value const mu::Array&
+/// \param mode const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, const mu::Array& mode)
 {
@@ -760,18 +760,18 @@ mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, con
 
     return res;
 }
-/////////////////////////////////////////////////
-/// \brief Calculates the complex conjugate
-/// number of the passed complex number.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Construct a complex number from two
+/// \brief This function calculates the logical
+/// AND operation between all elements in the
+/// passed array.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
@@ -784,21 +784,21 @@ mu::Array numfnc_and(const mu::Array* vElements, int nElements)
                 return mu::Value(false);
         }
     }
-/// real numbers.
+
     return mu::Value(true);
 }
-///
-/// \param re const value_type&
-/// \param im const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////
-/// \brief Function representing the faculty of
-/// any natural number.
+/// \brief This function calculates the logical
+/// OR operation between all elements in the
+/// passed array.
 ///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
@@ -817,13 +817,13 @@ mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
-/// \brief Function representing the double
-/// faculty of any natural number.
+/// \brief This function calculates the logical
+/// XOR operation between all elements in the
+/// passed array.
 ///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
@@ -862,12 +862,12 @@ mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
-/// \brief Function representing the binomial
-/// coefficient.
+/// \brief This function implements an abstract
+/// polynomial of an arbitrary order.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_polynomial(const mu::Array* vElements, int nElements)
@@ -876,50 +876,50 @@ mu::Array numfnc_polynomial(const mu::Array* vElements, int nElements)
         return mu::Value(NAN);
     else if (nElements == 1)
         return mu::Value(0.0);
-     *     Algorithmus deutlich beschleunigen. Hier sei der Artikel auf Wikipedia zum Binomial-
+
     mu::Array res = vElements[1];
-     *     koeffzienten empfohlen <--
+
     for (int i = 2; i < nElements; i++)
         res += vElements[i] * vElements[0].pow(mu::Numerical(i-1));
-     */
+
     return res;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the number of
-/// valid elements in its array.
+/// \brief This function implements the perlin
+/// noise function.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param x const mu::Array&
+/// \param y const mu::Array& OPTIONAL
+/// \param z const mu::Array& OPTIONAL
+/// \param seed const mu::Array& OPTIONAL
+/// \param freq const mu::Array& OPTIONAL
+/// \param octave const mu::Array& OPTIONAL
+/// \param persistence const mu::Array& OPTIONAL
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
-
-
-
-
 /////////////////////////////////////////////////
 mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence)
 {
     noise::module::Perlin perlinNoise;
-/// \brief This functioon simply returns the
+
     mu::Array res;
-/// number of elements in its array (even the
+
     for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}); i++)
     {
         if (!persistence.isDefault())
             perlinNoise.SetPersistence(persistence.get(i).getNum().asF64());
-/// invalid ones).
+
         if (!octave.isDefault())
             perlinNoise.SetOctaveCount(octave.get(i).getNum().asI64());
-///
+
         if (!freq.isDefault())
             perlinNoise.SetFrequency(freq.get(i).getNum().asF64());
-/// \param vElements const value_type*
+
         if (!seed.isDefault())
             perlinNoise.SetSeed(seed.get(i).getNum().asI64());
-/// \param nElements int
+
         if (z.isDefault() && y.isDefault())
             res.push_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
                                                0,
@@ -933,20 +933,20 @@ mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array&
                                                y.get(i).getNum().asF64(),
                                                z.get(i).getNum().asF64()));
     }
-/// \return value_type
+
     return res;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the standard
-/// deviation of the elements in the passed
-/// array.
+/// \brief Adaption of the logtoidx() function
+/// for 1D data arrays.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param v const mu::Array*
+/// \param n int
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_logtoidx(const mu::Array* v, int n)
 {
     mu::Array vIdx;
@@ -976,12 +976,12 @@ mu::Array numfnc_logtoidx(const mu::Array* v, int n)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the product
-/// of all elements in the passed array.
+/// \brief Adaption of the idxtolog() function
+/// for 1D data arrays.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param v const mu::Array*
+/// \param n int
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_idxtolog(const mu::Array* v, int n)
@@ -1019,12 +1019,12 @@ mu::Array numfnc_idxtolog(const mu::Array* v, int n)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the vector
-/// norm of the elements in the passed array.
+/// \brief Function for getting the order of an
+/// array.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param v const mu::Array*
+/// \param n int
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_order(const mu::Array* v, int n)
@@ -1062,12 +1062,12 @@ mu::Array numfnc_order(const mu::Array* v, int n)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the median of
-/// the elements in the passed array.
+/// \brief This function summarizes all elements
+/// in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
@@ -1096,12 +1096,12 @@ mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the selected
-/// percentile of the passed array.
+/// \brief This function calculates the average
+/// of all elements in passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
@@ -1111,12 +1111,12 @@ mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
-/// \brief This function searches for elements of
-/// a specified type in the passed array.
+/// \brief This function calculates the minimal
+/// value of all elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
@@ -1148,19 +1148,19 @@ mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the logical
-/// AND operation between all elements in the
-/// passed array.
+/// \brief This function calculates the maximal
+/// value of all elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
 {
     if (!nElements)
         return mu::Value(NAN);
-/////////////////////////////////////////////////
+
     mu::Value res = vElements[0][0];
 
     if (nElements == 1)
@@ -1185,13 +1185,13 @@ mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the logical
-/// OR operation between all elements in the
-/// passed array.
+/// \brief This function returns the index of the
+/// (first) minimal value in the array.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vElements const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_MinPos(const mu::Array& vElements)
 {
     return numfnc_compare(vElements, numfnc_Min(&vElements, 1), mu::Value(0.0));
@@ -1199,13 +1199,13 @@ mu::Array numfnc_MinPos(const mu::Array& vElements)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the logical
-/// XOR operation between all elements in the
-/// passed array.
+/// \brief This function returns the index of the
+/// (first) maximal value in the array.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vElements const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_MaxPos(const mu::Array& vElements)
 {
     return numfnc_compare(vElements, numfnc_Max(&vElements, 1), mu::Value(0.0));
@@ -1213,12 +1213,12 @@ mu::Array numfnc_MaxPos(const mu::Array& vElements)
 
 
 /////////////////////////////////////////////////
-/// \brief This function implements an abstract
-/// polynomial of an arbitrary order.
+/// \brief Internal implementation of the round()
+/// function.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vToRound const std::complex<double>&
+/// \param vDecimals const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> round_impl(const std::complex<double>& vToRound, const std::complex<double>& vDecimals)
@@ -1234,13 +1234,13 @@ static std::complex<double> round_impl(const std::complex<double>& vToRound, con
 
 
 /////////////////////////////////////////////////
-/// \brief This function implements the perlin
-/// noise function.
+/// \brief Internal implementation of the rint()
+/// function.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param val const mu::Value&
+/// \return mu::Value
 ///
+/////////////////////////////////////////////////
 static mu::Value numfnc_rint(const mu::Value& val)
 {
     const mu::Numerical& nval = val.getNum();
@@ -1256,12 +1256,12 @@ static mu::Value numfnc_rint(const mu::Value& val)
 
 
 /////////////////////////////////////////////////
-/// \brief This function summarizes all elements
-/// in the passed array.
+/// \brief Implements the rint() function.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_rint(const mu::Array& a)
 {
     return mu::apply(numfnc_rint, a);
@@ -1269,12 +1269,12 @@ mu::Array numfnc_rint(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the average
-/// of all elements in passed array.
+/// \brief This function rounds the passed value
+/// to the selected number of decimals.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vToRound const mu::Array&
+/// \param vDecimals const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_round(const mu::Array& vToRound, const mu::Array& vDecimals)
@@ -1284,13 +1284,13 @@ mu::Array numfnc_round(const mu::Array& vToRound, const mu::Array& vDecimals)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the minimal
-/// value of all elements in the passed array.
+/// \brief This function converts degree to
+/// radian.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_toRadian(const mu::Array& v)
 {
     return v * mu::Value(M_PI/180.0);
@@ -1298,13 +1298,13 @@ mu::Array numfnc_toRadian(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the maximal
-/// value of all elements in the passed array.
+/// \brief This function converts radian to
+/// degree.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_toDegree(const mu::Array& v)
 {
     return v * mu::Value(180.0 / M_PI);
@@ -1312,12 +1312,12 @@ mu::Array numfnc_toDegree(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the index of the
-/// (first) minimal value in the array.
+/// \brief Internal implementation of the
+/// Legendre polynomials.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vn const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
@@ -1337,14 +1337,14 @@ static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& 
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the index of the
-/// (first) maximal value in the array.
+/// \brief Internal implementation of the
+/// associated Legendre polynomials.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param fl const std::complex<double>&
+/// \param fm const std::complex<double>&
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex<double>& fl, const std::complex<double>& fm, const std::complex<double>& x)
 {
@@ -1359,32 +1359,32 @@ static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex
 
     if (!m)
         return LegendrePolynomial_impl(l, x);
-/////////////////////////////////////////////////
+
     if (m < 0) // m already negative
         return intPower(-1.0,-m) * factorial_impl(l-(-m)) / factorial_impl(l+(-m)) * AssociatedLegendrePolynomial_impl(l,-m,x);
-/// \brief This function rounds the passed value
+
     if (l == m)
         return intPower(-1.0,l) * double_factorial_impl(2.0*l-1.0) * pow(1.0 - x*x, 0.5*l);
-/// to the selected number of decimals.
+
     if (m == l-1)
         return x * (2.0*l - 1.0) * intPower(-1.0, l-1) * double_factorial_impl(2.0*l-3.0) * pow(1.0 - x*x, 0.5*(l-1.0));
-///
+
     return 1.0/(double)(l-m) * (x*(2.0*l - 1.0)*AssociatedLegendrePolynomial_impl(l-1,m,x)
                                 - (l + m - 1.0)*AssociatedLegendrePolynomial_impl(l-2,m,x));
 }
-/// \param vToRound const value_type&
-/// \param vDecimals const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-
 
 
 /////////////////////////////////////////////////
-/// \brief This function converts degree to
-/// radian.
+/// \brief Internal implementation of the
+/// spherical harmonics.
 ///
-/// \param v const value_type&
+/// \param vl const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param theta const std::complex<double>&
+/// \param phi const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& theta, const std::complex<double>& phi)
 {
     if (std::isinf(vl.real()) || std::isnan(vl.real())
@@ -1392,10 +1392,10 @@ static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& 
         || std::isinf(theta.real()) || std::isnan(theta.real())
         || std::isinf(phi.real()) || std::isnan(phi.real()))
         return NAN;
-/// \return value_type
+
     int l = intCast(fabs(vl));
     int m = intCast(vm);
-///
+
     if (abs(m) > l)
         return NAN;
 
@@ -1405,13 +1405,13 @@ static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& 
 
 
 /////////////////////////////////////////////////
-/// \brief This function converts radian to
-/// degree.
+/// \brief This function calculates the real part
+/// of the selected spherical harmonics.
 ///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param vl const mu::Array&
+/// \param vm const mu::Array&
+/// \param theta const mu::Array&
+/// \param phi const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
@@ -1422,14 +1422,14 @@ mu::Array numfnc_SphericalHarmonics(const mu::Array& vl, const mu::Array& vm, co
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the real part
-/// of the selected spherical harmonics.
+/// \brief Internal implementation of the
+/// imaginary spherical harmonics.
 ///
-/// \param vl const value_type&
-/// \param vm const value_type&
-/// \param theta const value_type&
-/// \param phi const value_type&
-/// \return value_type
+/// \param vl const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param theta const std::complex<double>&
+/// \param phi const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> imSphericalHarmonics_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& theta, const std::complex<double>& phi)
@@ -1457,11 +1457,11 @@ static std::complex<double> imSphericalHarmonics_impl(const std::complex<double>
 /// \brief This function calculates the imaginary
 /// part of the selected spherical harmonics.
 ///
-/// \param vl const value_type&
-/// \param vm const value_type&
-/// \param theta const value_type&
-/// \param phi const value_type&
-/// \return value_type
+/// \param vl const mu::Array&
+/// \param vm const mu::Array&
+/// \param theta const mu::Array&
+/// \param phi const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_imSphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
@@ -1510,14 +1510,14 @@ static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the selected
-/// Zernike polynomials.
+/// \brief Internal implementation of the Zernike
+/// polynomials.
 ///
-/// \param vn const value_type&
-/// \param vm const value_type&
-/// \param rho const value_type&
-/// \param phi const value_type&
-/// \return value_type
+/// \param vn const std::complex<double>&
+/// \param vm const std::complex<double>&
+/// \param rho const std::complex<double>&
+/// \param phi const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> Zernike_impl(const std::complex<double>& vn, const std::complex<double>& vm, const std::complex<double>& rho, const std::complex<double>& phi)
@@ -1542,15 +1542,15 @@ static std::complex<double> Zernike_impl(const std::complex<double>& vn, const s
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the radial
-/// part of the Zernike polynomials.
+/// \brief This function calculates the selected
+/// Zernike polynomials.
 ///
-/// \param n int
-/// \param m int
-/// \param rho const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param vm const mu::Array&
+/// \param rho const mu::Array&
+/// \param phi const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_Zernike(const mu::Array& vn, const mu::Array& vm, const mu::Array& rho, const mu::Array& phi)
 {
@@ -1559,11 +1559,11 @@ mu::Array numfnc_Zernike(const mu::Array& vn, const mu::Array& vm, const mu::Arr
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the cardinal
-/// sine of x.
+/// \brief Internal implementation of the
+/// cardinal sine function.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> SinusCardinalis_impl(const std::complex<double>& v)
@@ -1579,18 +1579,18 @@ static std::complex<double> SinusCardinalis_impl(const std::complex<double>& v)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the spherical
-/// bessel function.
+/// \brief This function calculates the cardinal
+/// sine of x.
 ///
-/// \param vn const value_type&
-/// \param vc const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_SinusCardinalis(const mu::Array& v)
 {
     return mu::apply(SinusCardinalis_impl, v);
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief Internal implementation of the
@@ -1643,11 +1643,11 @@ static std::complex<double> SphericalBessel_impl(const std::complex<double>& vn,
 
 /////////////////////////////////////////////////
 /// \brief This function calculates the spherical
-/// von Neumann function.
+/// Bessel functions.
 ///
-/// \param vn const value_type&
-/// \param vc const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param vc const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_SphericalBessel(const mu::Array& vn, const mu::Array& vc)
@@ -1704,12 +1704,12 @@ static std::complex<double> SphericalNeumann_impl(const std::complex<double>& vn
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the Legendre
-/// polynomials of the selected order.
+/// \brief This function calculates the spherical
+/// von Neumann function.
 ///
-/// \param vn const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param vc const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_SphericalNeumann(const mu::Array& vn, const mu::Array& vc)
@@ -1738,10 +1738,10 @@ mu::Array numfnc_LegendrePolynomial(const mu::Array& vn, const mu::Array& v)
 /// associated Legendre polynomials of the
 /// selected order.
 ///
-/// \param vl const value_type&
-/// \param vm const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vl const mu::Array&
+/// \param vm const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_AssociatedLegendrePolynomial(const mu::Array& vl, const mu::Array& vm, const mu::Array& v)
@@ -1751,12 +1751,12 @@ mu::Array numfnc_AssociatedLegendrePolynomial(const mu::Array& vl, const mu::Arr
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the Laguerre
-/// polynomials of the selected order.
+/// \brief Internal implementation of the
+/// Laguerre polynomials.
 ///
-/// \param vn const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vn const std::complex<double>&
+/// \param v const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
@@ -1775,20 +1775,20 @@ static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& 
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the
-/// associated Laguerre polynomials of the
-/// selected order.
+/// \brief This function calculates the Laguerre
+/// polynomials of the selected order.
 ///
-/// \param vn const value_type&
-/// \param vk const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_LaguerrePolynomial(const mu::Array& vn, const mu::Array& v)
 {
     return mu::apply(LaguerrePolynomial_impl, vn, v);
 }
-///
-/////////////////////////////////////////////////
+
+
 /////////////////////////////////////////////////
 /// \brief Internal implementation of the
 /// associated Laguerre polynomials.
@@ -1803,10 +1803,10 @@ static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex
 {
     if (mu::isinf(fn) || mu::isnan(fn) || mu::isinf(fk) || mu::isnan(fk) || mu::isinf(x) || mu::isnan(x))
         return NAN;
-//    if (k > n)
+
     int n = intCast(fabs(fn));
     int k = intCast(fabs(fk));
-//        return NAN;
+
     if (n == 0)
         return 1.0;
 
@@ -1823,14 +1823,14 @@ static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the Hermite
-/// polynomials of the selected order.
+/// \brief This function calculates the
+/// associated Laguerre polynomials of the
+/// selected order.
 ///
-/// \param vn const value_type&
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param vn const mu::Array&
+/// \param vk const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_AssociatedLaguerrePolynomial(const mu::Array& vn, const mu::Array& vk, const mu::Array& v)
@@ -1868,19 +1868,19 @@ static std::complex<double> HermitePolynomial_impl(const std::complex<double>& v
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the nucleic
-/// core binding energy according the Bethe
-/// Weizsäcker formula.
+/// \brief This function calculates the Hermite
+/// polynomials of the selected order.
 ///
-/// \param vN const value_type&
-/// \param vZ const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_HermitePolynomial(const mu::Array& vn, const mu::Array& v)
 {
     return mu::apply(HermitePolynomial_impl, vn, v);
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief Internal implementation of the
@@ -1929,13 +1929,13 @@ static std::complex<double> BetheWeizsaecker_impl(const std::complex<double>& vN
 
 
 /////////////////////////////////////////////////
-/// \brief This function represents the Heaviside
-/// (theta) function.
+/// \brief This function calculates the nucleic
+/// core binding energy according the Bethe
+/// Weizsäcker formula.
 ///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param vN const mu::Array&
+/// \param vZ const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_BetheWeizsaecker(const mu::Array& vN, const mu::Array& vZ)
@@ -1959,14 +1959,14 @@ mu::Array numfnc_Heaviside(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the angle of
-/// a vector and the x axis in the x-y plane (the
-/// azimuthal angle phi).
+/// \brief Internal implementation of the phi()
+/// function.
 ///
-/// \param x const value_type&
-/// \param y const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param y const std::complex<double>&
+/// \return std::complex<double>
 ///
+/////////////////////////////////////////////////
 static std::complex<double> phi_impl(const std::complex<double>& x, const std::complex<double>& y)
 {
     if (isinf(x.real()) || isnan(x.real()) || isinf(y.real()) || isnan(y.real()))
@@ -1977,22 +1977,22 @@ static std::complex<double> phi_impl(const std::complex<double>& x, const std::c
 }
 
 
-// --> Polarwinkel theta <--
 /////////////////////////////////////////////////
 /// \brief This function calculates the angle of
-/// a vector and the z axis in any z-r plane (the
-/// polar angle theta).
+/// a vector and the x axis in the x-y plane (the
+/// azimuthal angle phi).
 ///
-/// \param x const value_type&
-/// \param y const value_type&
-/// \param z const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \param y const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_phi(const mu::Array& x, const mu::Array& y)
 {
     return mu::apply(phi_impl, x, y);
 }
-///
-/////////////////////////////////////////////////
+
+
 /////////////////////////////////////////////////
 /// \brief Internal implementation of the theta()
 /// function.
@@ -2014,15 +2014,15 @@ std::complex<double> theta_impl(const std::complex<double>& x, const std::comple
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns a uniformly
-/// distributed random number between both
-/// boundaries.
+/// \brief This function calculates the angle of
+/// a vector and the z axis in any z-r plane (the
+/// polar angle theta).
 ///
-/// \param vRandMin const value_type&
-/// \param vRandMax const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \param y const mu::Array&
+/// \param z const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_theta(const mu::Array& x, const mu::Array& y, const mu::Array& z)
 {
@@ -2050,14 +2050,14 @@ static std::complex<double> rand_impl(const std::complex<double>& vRandMin, cons
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns a gaussian
-/// distributed random number using the passed
-/// values as mean and standard deviation.
+/// \brief Internal implementation of the gauss()
+/// function.
 ///
-/// \param vRandAvg const value_type&
-/// \param vRandstd const value_type&
-/// \return value_type
+/// \param vRandAvg const std::complex<double>&
+/// \param vRandstd const std::complex<double>&
+/// \return std::complex<double>
 ///
+/////////////////////////////////////////////////
 static std::complex<double> gauss_rand_impl(const std::complex<double>& vRandAvg, const std::complex<double>& vRandstd)
 {
     if (mu::isinf(vRandAvg) || mu::isnan(vRandAvg) || mu::isinf(vRandstd) || mu::isnan(vRandstd))
@@ -2069,13 +2069,13 @@ static std::complex<double> gauss_rand_impl(const std::complex<double>& vRandAvg
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the gaussian
-/// error function.
+/// \brief This function returns a uniformly
+/// distributed random number between both
+/// boundaries.
 ///
-/// \param x const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param vRandMin const mu::Array&
+/// \param vRandMax const mu::Array&
+/// \param n const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
@@ -2155,11 +2155,11 @@ static std::complex<double> erf_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the
-/// complementary gaussian error function.
+/// \brief Internal implementation of the
+/// complementary error function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> erfc_impl(const std::complex<double>& x)
@@ -2171,11 +2171,11 @@ static std::complex<double> erfc_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the
-/// riemannian Gamma function.
+/// \brief This function calculates the gaussian
+/// error function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_erf(const mu::Array& x)
@@ -2223,11 +2223,11 @@ static std::complex<double> gamma_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the Airy
-/// function Ai(x).
+/// \brief This function calculates the
+/// riemannian Gamma function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_gamma(const mu::Array& x)
@@ -2251,11 +2251,11 @@ static std::complex<double> AiryA_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the Airy
-/// function Bi(x).
+/// \brief Internal implementation of the Airy
+/// Bi() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> AiryB_impl(const std::complex<double>& x)
@@ -2265,18 +2265,18 @@ static std::complex<double> AiryB_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the regulary
-/// bessel function.
+/// \brief This function calculates the Airy
+/// function Ai(x).
 ///
-/// \param n const value_type&
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_AiryA(const mu::Array& x)
 {
     return mu::apply(AiryA_impl, x);
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief This function calculates the Airy
@@ -2311,12 +2311,12 @@ static std::complex<double> RegularCylBessel_impl(const std::complex<double>& n,
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the
-/// irregulary bessel (von Neumann) function.
+/// \brief Internal implementation of the
+/// irregular Bessel function.
 ///
-/// \param n const value_type&
-/// \param x const value_type&
-/// \return value_type
+/// \param n const std::complex<double>&
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> IrregularCylBessel_impl(const std::complex<double>& n, const std::complex<double>& x)
@@ -2329,12 +2329,12 @@ static std::complex<double> IrregularCylBessel_impl(const std::complex<double>& 
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal F(phi,k).
+/// \brief This function calculates the regulary
+/// bessel function.
 ///
-/// \param phic const value_type&
-/// \param kc const value_type&
-/// \return value_type
+/// \param n const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_RegularCylBessel(const mu::Array& n, const mu::Array& x)
@@ -2397,12 +2397,12 @@ static std::complex<double> EllipticF_impl(const std::complex<double>& phic, con
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal E(phi,k).
+/// \brief Internal implementation of the
+/// ellipticE() function.
 ///
-/// \param phic const value_type&
-/// \param kc const value_type&
-/// \return value_type
+/// \param phic const std::complex<double>&
+/// \param kc const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> EllipticE_impl(const std::complex<double>& phic, const std::complex<double>& kc)
@@ -2435,13 +2435,13 @@ static std::complex<double> EllipticE_impl(const std::complex<double>& phic, con
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal Pi(phi,n,k).
+/// \brief Internal implementation of the
+/// ellipticP() function.
 ///
-/// \param phi const value_type&
-/// \param n const value_type&
-/// \param k const value_type&
-/// \return value_type
+/// \param phi const std::complex<double>&
+/// \param n const std::complex<double>&
+/// \param k const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> EllipticP_impl(const std::complex<double>& phi, const std::complex<double>& n, const std::complex<double>& k)
@@ -2471,12 +2471,12 @@ static std::complex<double> EllipticP_impl(const std::complex<double>& phi, cons
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal D(phi,k).
+/// \brief Internal implementation of the
+/// ellipticD() function.
 ///
-/// \param phi const value_type&
-/// \param k const value_type&
-/// \return value_type
+/// \param phi const std::complex<double>&
+/// \param k const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> EllipticD_impl(const std::complex<double>& phi, const std::complex<double>& k)
@@ -2526,11 +2526,11 @@ static std::complex<double> EllipticD_impl(const std::complex<double>& phi, cons
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// Beta function.
+/// elliptic intergal F(phi,k).
 ///
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param phic const mu::Array&
+/// \param kc const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_EllipticF(const mu::Array& phic, const mu::Array& kc)
@@ -2610,12 +2610,12 @@ static std::complex<double> beta_impl(const std::complex<double>& a, const std::
 
 
 /////////////////////////////////////////////////
-/// \brief Calculates the sum of binomial
-/// coefficients from k to N.
+/// \brief This function returns the value of the
+/// Beta function.
 ///
-/// \param k int
-/// \param N int
-/// \return double
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_beta(const mu::Array& a, const mu::Array& b)
@@ -2683,11 +2683,11 @@ static std::complex<double> complex_zeta(const std::complex<double>& s)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// Zeta function.
+/// \brief Internal implementation of the zeta
+/// function.
 ///
-/// \param s const value_type&
-/// \return value_type
+/// \param s const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> zeta_impl(const std::complex<double>& s)
@@ -2706,10 +2706,10 @@ static std::complex<double> zeta_impl(const std::complex<double>& s)
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// Clausen function.
+/// Zeta function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param s const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_zeta(const mu::Array& s)
@@ -2737,10 +2737,10 @@ static std::complex<double> clausen_impl(const std::complex<double>& x)
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// Digamma function.
+/// Clausen function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_clausen(const mu::Array& x)
@@ -2773,18 +2773,18 @@ static std::complex<double> digamma_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value if the
-/// Polygamma function.
+/// \brief This function returns the value of the
+/// Digamma function.
 ///
-/// \param n const value_type&
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_digamma(const mu::Array& x)
 {
     return mu::apply(digamma_impl, x);
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief Internal implementation of the
@@ -2805,13 +2805,13 @@ static std::complex<double> polygamma_impl(const std::complex<double>& n, const 
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// Dilogarithm Li2(x).
+/// \brief This function returns the value if the
+/// Polygamma function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param n const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_polygamma(const mu::Array& n, const mu::Array& x)
 {
@@ -2841,12 +2841,12 @@ static std::complex<double> dilogarithm_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This is the floor function.
+/// \brief This function returns the value of the
+/// Dilogarithm Li2(x).
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_dilogarithm(const mu::Array& x)
 {
@@ -2855,12 +2855,12 @@ mu::Array numfnc_dilogarithm(const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This is the roof (ceil) function.
+/// \brief Internal implementation of the floor()
+/// function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 static std::complex<double> floor_impl(const std::complex<double>& x)
 {
@@ -2869,18 +2869,18 @@ static std::complex<double> floor_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This is the rect function.
+/// \brief Internal implementation of the roof()
+/// function.
 ///
-/// \param x const value_type&
-/// \param x0 const value_type&
-/// \param x1 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
+/////////////////////////////////////////////////
 static std::complex<double> roof_impl(const std::complex<double>& x)
 {
     return std::complex<double>(std::ceil(x.real()), std::ceil(x.imag()));
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief This is the floor function.
@@ -2896,22 +2896,22 @@ mu::Array numfnc_floor(const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function describes an interval
-/// with borders of a selected type (including,
-/// excluding, ignore).
+/// \brief This is the roof (ceil) function.
 ///
-/// \param x const value_type&
-/// \param x0 const value_type&
+/// \param x const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_roof(const mu::Array& x)
 {
     return mu::apply(roof_impl, x);
 }
-/// \param x1 const value_type&
-/// \param lborder const value_type&
-/// \param rborder const value_type&
-/// \return value_type
-///
+
+
 /////////////////////////////////////////////////
+/// \brief This is the rect function.
+///
+/// \param x const mu::Array&
 /// \param x0 const mu::Array&
 /// \param x1 const mu::Array&
 /// \return mu::Array
@@ -2979,15 +2979,15 @@ static std::complex<double> ivl_impl(const std::complex<double>& x, const std::c
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the Student
-/// factor s_t for the selected degrees of
-/// freedom and a confidence interval.
+/// \brief This function describes an interval
+/// with borders of a selected type (including,
+/// excluding, ignore).
 ///
-/// \param vFreedoms const value_type&
-/// \param vAlpha const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param x const mu::Array&
+/// \param x0 const mu::Array&
+/// \param x1 const mu::Array&
+/// \param lborder const mu::Array&
+/// \param rborder const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
@@ -3016,14 +3016,14 @@ static std::complex<double> studentFactor_impl(const std::complex<double>& vFree
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the greatest
-/// common divisor of both argments.
+/// \brief This function returns the Student
+/// factor s_t for the selected degrees of
+/// freedom and a confidence interval.
 ///
-/// \param n const value_type&
-/// \param k const value_type&
-/// \return value_type
+/// \param vFreedoms const mu::Array&
+/// \param vAlpha const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 mu::Array numfnc_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlpha)
 {
@@ -3032,12 +3032,12 @@ mu::Array numfnc_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlp
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the least common
-/// multiple of both arguments.
+/// \brief Internal implementation of the gcd()
+/// function.
 ///
-/// \param n const value_type&
-/// \param k const value_type&
-/// \return value_type
+/// \param n const mu::Value&
+/// \param k const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
 static mu::Value gcd_impl(const mu::Value& n, const mu::Value& k)
@@ -3047,12 +3047,12 @@ static mu::Value gcd_impl(const mu::Value& n, const mu::Value& k)
 
 
 /////////////////////////////////////////////////
-/// \brief This function represents the Modulo
-/// operator.
+/// \brief Internal implementation of the lcm()
+/// function.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param n const mu::Value&
+/// \param k const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
 static mu::Value lcm_impl(const mu::Value& n, const mu::Value& k)
@@ -3114,12 +3114,12 @@ static std::complex<double> mod_impl(const std::complex<double>& v1, const std::
 
 
 /////////////////////////////////////////////////
-/// \brief This function represent the XOR
+/// \brief This function represents the Modulo
 /// operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array oprt_Mod(const mu::Array& v1, const mu::Array& v2)
@@ -3147,12 +3147,12 @@ static std::complex<double> xor_impl(const std::complex<double>& v1, const std::
 
 
 /////////////////////////////////////////////////
-/// \brief This function represents the binary
+/// \brief Internal implementation of the binary
 /// OR operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> binOr_impl(const std::complex<double>& v1, const std::complex<double>& v2)
@@ -3165,12 +3165,12 @@ static std::complex<double> binOr_impl(const std::complex<double>& v1, const std
 
 
 /////////////////////////////////////////////////
-/// \brief This function represents the binary
+/// \brief Internal implementation of the binary
 /// AND operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> binAnd_impl(const std::complex<double>& v1, const std::complex<double>& v2)
@@ -3183,12 +3183,12 @@ static std::complex<double> binAnd_impl(const std::complex<double>& v1, const st
 
 
 /////////////////////////////////////////////////
-/// \brief This function is a numerical version
-/// of the string is_string() function. Used as a
-/// fallback.
+/// \brief This function represent the XOR
+/// operator.
 ///
-/// \param v const value_type&
-/// \return const value_type&
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array oprt_XOR(const mu::Array& v1, const mu::Array& v2)
@@ -3213,12 +3213,12 @@ mu::Array oprt_BinOR(const mu::Array& v1, const mu::Array& v2)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the current UNIX
-/// time.
+/// \brief This function represents the binary
+/// AND operator.
 ///
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array oprt_BinAND(const mu::Array& v1, const mu::Array& v2)
@@ -3228,12 +3228,12 @@ mu::Array oprt_BinAND(const mu::Array& v1, const mu::Array& v2)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the current CPU
-/// clock count.
+/// \brief This function is a numerical version
+/// of the string is_string() function. Used as a
+/// fallback.
 ///
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param v const mu::Array&
+/// \return const mu::Array&
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_is_string(const mu::Array& v)
@@ -3260,17 +3260,17 @@ mu::Array numfnc_is_string(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Sleeps for the passed amount of
-/// milliseconds and returns this number.
+/// \brief This function returns the current UNIX
+/// time.
 ///
-/// \param milliseconds const value_type&
-/// \return value_type
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array timfnc_time()
 {
     return mu::Value(sys_time_now());
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief This function returns the current CPU
@@ -3286,20 +3286,20 @@ mu::Array timfnc_clock()
 
 
 /////////////////////////////////////////////////
-/// \brief Calculates the logarithm of x using
-/// the base b.
+/// \brief Sleeps for the passed amount of
+/// milliseconds and returns this number.
 ///
-/// \param b const value_type&
-/// \param x const value_type&
-/// \return value_type
+/// \param ms const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_sleep(const mu::Array& ms)
 {
     int64_t msec = ms.front().getNum().asI64();
     Sleep(msec);
     return mu::Value(msec);
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief Implementation of the exp() function.
@@ -3446,12 +3446,12 @@ static std::complex<double> log_b_impl(const std::complex<double>& b, const std:
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the version number of NumeRe
-/// as a natural number.
+/// \brief Calculates the logarithm of x using
+/// the base b.
 ///
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param b const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_log_b(const mu::Array& b, const mu::Array& x)
@@ -3461,10 +3461,10 @@ mu::Array numfnc_log_b(const mu::Array& b, const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the number of available OMP
-/// threads.
+/// \brief Returns the version number of NumeRe
+/// as a natural number.
 ///
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_numereversion()
@@ -3474,12 +3474,12 @@ mu::Array numfnc_numereversion()
 
 
 /////////////////////////////////////////////////
-/// \brief This function converts UNIX time
-/// values into a selected part of a time stamp.
+/// \brief Returns the number of available OMP
+/// threads.
 ///
-/// \param vTime const value_type&
-/// \param vType const value_type&
-/// \return value_type
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array numfnc_omp_threads()
 {
     return mu::Value(omp_get_max_threads());
@@ -3558,11 +3558,11 @@ static mu::Value date_impl(const mu::Value& vTime, const mu::Value& vType)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the calendar
-/// week associated with the passed time value.
+/// \brief Internal implementation of the
+/// weeknum() function.
 ///
-/// \param vTime const value_type&
-/// \return value_type
+/// \param vTime const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> weeknum_impl(const std::complex<double>& vTime)
@@ -3572,19 +3572,13 @@ static std::complex<double> weeknum_impl(const std::complex<double>& vTime)
 
 
 /////////////////////////////////////////////////
-/// \brief Returns, whether the selected value is
-/// NaN.
+/// \brief This function converts UNIX time
+/// values into a selected part of a time stamp.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vTime const mu::Array&
+/// \param vType const mu::Array&
+/// \return mu::Array
 ///
-/////////////////////////////////////////////////
-mu::Array numfnc_isnan(const mu::Array& v)
-{
-    return v != v;
-}
-
-
 /////////////////////////////////////////////////
 mu::Array timfnc_date(const mu::Array& vTime, const mu::Array& vType)
 {
@@ -3607,74 +3601,17 @@ mu::Array timfnc_weeknum(const mu::Array& vTime)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the utc offset
+/// \brief Returns, whether the selected value is
+/// NaN.
 ///
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_get_utc_offset()
+mu::Array numfnc_isnan(const mu::Array& v)
 {
-    time_zone tz = getCurrentTimeZone();
-    int utc_offset = tz.Bias.count() + tz.DayLightBias.count();
-    // return values in seconds
-    return -1 * utc_offset * 60;
+    return v != v;
 }
-
-
-/////////////////////////////////////////////////
-/// \brief This function returns whether the year
-/// is a leap year
-///
-/// \param nYear const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_is_leap_year(const value_type& nDate)
-{
-    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
-    int nYear = int(ts.m_ymd.year());
-
-    if (intCast(nYear) % 4 == 0){
-        if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0) {
-            return 1.0;
-        }
-    }
-    return 0.0;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function returns whether the
-/// current time is a summer time
-///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_is_daylightsavingtime(const value_type& nDate)
-{
-    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
-    int year = int(ts.m_ymd.year());
-    int day = unsigned(ts.m_ymd.day());
-    int month = unsigned(ts.m_ymd.month());
-
-    std::tm time_info = {};
-    time_info.tm_year = year - 1900;
-    time_info.tm_mon = month - 1;
-    time_info.tm_mday = day;
-    time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
-
-    std::time_t timestamp = std::mktime(&time_info);
-    std::tm* local_time = std::localtime(&timestamp);
-
-    if (local_time != nullptr && local_time->tm_isdst > 0) {
-        return 1.0;
-    } else {
-        return 0.0;
-    }
-}
-
 
 
 /////////////////////////////////////////////////
@@ -3700,11 +3637,11 @@ static std::complex<double> interval_impl(const std::complex<double>& v, const s
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the cotangent of
-/// the passed value.
+/// \brief Internal implementatio of the cot()
+/// function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> cot_impl(const std::complex<double>& x)
@@ -3720,14 +3657,14 @@ static std::complex<double> cot_impl(const std::complex<double>& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function represents the numerical
-/// variable factory. New memory is allocated in
-/// this function and stored in an internal list
-/// managed by the parser.
+/// \brief This function numerically defines a
+/// valid value range (the value is set to NaN,
+/// if outside of this range).
 ///
-/// \param a_szName const char_type*
-/// \param a_pUserData void*
-/// \return value_type*
+/// \param v const mu::Array&
+/// \param vLeft const mu::Array&
+/// \param vRight const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_interval(const mu::Array& v, const mu::Array& vLeft, const mu::Array& vRight)
@@ -3751,17 +3688,17 @@ mu::Array numfnc_cot(const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the secant of
-/// the passed value.
+/// \brief Implementation of the sin() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
 ///
+/////////////////////////////////////////////////
 mu::Array numfnc_sin(const mu::Array& a)
 {
     return mu::apply(mu::MathImpl<std::complex<double>>::Sin, a);
 }
-/////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////
 /// \brief Implementation of the cos() function.
@@ -3777,11 +3714,10 @@ mu::Array numfnc_cos(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the cosecant of
-/// the passed value.
+/// \brief Implementation of the tan() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_tan(const mu::Array& a)
@@ -3804,11 +3740,10 @@ mu::Array numfnc_asin(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the inverse
-/// secant of the passed value.
+/// \brief Implementation of the acos() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_acos(const mu::Array& a)
@@ -3831,11 +3766,10 @@ mu::Array numfnc_atan(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the inverse
-/// cosecant of the passed value.
+/// \brief Implementation of the sinh() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_sinh(const mu::Array& a)
@@ -3858,11 +3792,10 @@ mu::Array numfnc_cosh(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the hyperbolic
-/// secant of the passed value.
+/// \brief Implementation of the tanh() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_tanh(const mu::Array& a)
@@ -3885,11 +3818,10 @@ mu::Array numfnc_asinh(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the hyperbolic
-/// cosecant of the passed value.
+/// \brief Implementation of the acosh() function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param a const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_acosh(const mu::Array& a)
@@ -3912,11 +3844,11 @@ mu::Array numfnc_atanh(const mu::Array& a)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the inverse
-/// hyperbolic secant of the passed value.
+/// \brief This function returns the secant of
+/// the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_sec(const mu::Array& x)
@@ -3926,11 +3858,11 @@ mu::Array numfnc_sec(const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the inverse
-/// hyperbolic cosecant of the passed value.
+/// \brief This function returns the cosecant of
+/// the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_csc(const mu::Array& x)
@@ -3940,12 +3872,11 @@ mu::Array numfnc_csc(const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the date from
-/// the passed vElements.
+/// \brief This function returns the inverse
+/// secant of the passed value.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_asec(const mu::Array& x)
@@ -3983,18 +3914,18 @@ mu::Array numfnc_sech(const mu::Array& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the time from
-/// the passed vElements
+/// \brief This function returns the hyperbolic
+/// cosecant of the passed value.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
 mu::Array numfnc_csch(const mu::Array& x)
 {
     return mu::Value(1.0) / mu::apply(std::sinh, x);
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This function returns the inverse
@@ -4071,14 +4002,14 @@ static mu::Value as_time_impl(const mu::Value& hours, const mu::Value& minutes, 
     return mu::Value(getTimePointFromTimeStamp(ts));
 }
 
+
 /////////////////////////////////////////////////
-/// \brief This function returns a random value
-/// from the Laplace distribution function.
+/// \brief This function returns the date from
+/// the passed vElements.
 ///
-/// \param a const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
+/// \param year const mu::Array&
+/// \param month const mu::Array& OPTIONAL
+/// \param day const mu::Array& OPTIONAL
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
@@ -4136,9 +4067,9 @@ static std::complex<double> rndfnc_laplace_rd(const std::complex<double>& a)
 /// density function p at a given position for the
 /// Laplace distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_laplace_pdf(const std::complex<double>& x, const std::complex<double>& a)
@@ -4157,9 +4088,9 @@ static std::complex<double> rndfnc_laplace_pdf(const std::complex<double>& x, co
 /// density function p at a given position for the
 /// Laplace distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_laplace_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
@@ -4178,9 +4109,9 @@ static std::complex<double> rndfnc_laplace_cdf_p(const std::complex<double>& x, 
 /// density function q at a given position for the
 /// Laplace distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_laplace_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
@@ -4195,9 +4126,9 @@ static std::complex<double> rndfnc_laplace_cdf_q(const std::complex<double>& x, 
 /// the cumulative density function p at a given
 /// position for the Laplace distribution function.
 ///
-/// \param p const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_laplace_inv_p(const std::complex<double>& p, const std::complex<double>& a)
@@ -4216,9 +4147,9 @@ static std::complex<double> rndfnc_laplace_inv_p(const std::complex<double>& p, 
 /// the cumulative density function q at a given
 /// position for the Laplace distribution function.
 ///
-/// \param q const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_laplace_inv_q(const std::complex<double>& q, const std::complex<double>& a)
@@ -4236,8 +4167,8 @@ static std::complex<double> rndfnc_laplace_inv_q(const std::complex<double>& q, 
 /// \brief This function returns a random value
 /// from the Cauchy distribution function.
 ///
-/// \param a const value_type&
-/// \return value_type
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_cauchy_rd(const std::complex<double>& a)
@@ -4256,9 +4187,9 @@ static std::complex<double> rndfnc_cauchy_rd(const std::complex<double>& a)
 /// density function p at a given position for the
 /// Cauchy distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_cauchy_pdf(const std::complex<double>& x, const std::complex<double>& a)
@@ -4277,9 +4208,9 @@ static std::complex<double> rndfnc_cauchy_pdf(const std::complex<double>& x, con
 /// density function p at a given position for the
 /// Cauchy distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_cauchy_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
@@ -4298,9 +4229,9 @@ static std::complex<double> rndfnc_cauchy_cdf_p(const std::complex<double>& x, c
 /// density function q at a given position for the
 /// Cauchy distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_cauchy_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
@@ -4315,9 +4246,9 @@ static std::complex<double> rndfnc_cauchy_cdf_q(const std::complex<double>& x, c
 /// the cumulative density function p at a given
 /// position for the Cauchy distribution function.
 ///
-/// \param p const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_cauchy_inv_p(const std::complex<double>& p, const std::complex<double>& a)
@@ -4336,9 +4267,9 @@ static std::complex<double> rndfnc_cauchy_inv_p(const std::complex<double>& p, c
 /// the cumulative density function q at a given
 /// position for the Cauchy distribution function.
 ///
-/// \param q const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_cauchy_inv_q(const std::complex<double>& q, const std::complex<double>& a)
@@ -4356,8 +4287,8 @@ static std::complex<double> rndfnc_cauchy_inv_q(const std::complex<double>& q, c
 /// \brief This function returns a random value
 /// from the Rayleigh distribution function.
 ///
-/// \param sigma const value_type&
-/// \return value_type
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_rayleigh_rd(const std::complex<double>& sigma)
@@ -4376,9 +4307,9 @@ static std::complex<double> rndfnc_rayleigh_rd(const std::complex<double>& sigma
 /// density function p at a given position for the
 /// Rayleigh distribution function.
 ///
-/// \param x const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_rayleigh_pdf(const std::complex<double>& x, const std::complex<double>& sigma)
@@ -4397,9 +4328,9 @@ static std::complex<double> rndfnc_rayleigh_pdf(const std::complex<double>& x, c
 /// density function p at a given position for the
 /// Rayleigh distribution function.
 ///
-/// \param x const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_rayleigh_cdf_p(const std::complex<double>& x, const std::complex<double>& sigma)
@@ -4418,9 +4349,9 @@ static std::complex<double> rndfnc_rayleigh_cdf_p(const std::complex<double>& x,
 /// density function q at a given position for the
 /// Rayleigh distribution function.
 ///
-/// \param x const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_rayleigh_cdf_q(const std::complex<double>& x, const std::complex<double>& sigma)
@@ -4435,9 +4366,9 @@ static std::complex<double> rndfnc_rayleigh_cdf_q(const std::complex<double>& x,
 /// the cumulative density function p at a given
 /// position for the Rayleigh distribution function.
 ///
-/// \param p const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_rayleigh_inv_p(const std::complex<double>& p, const std::complex<double>& sigma)
@@ -4456,9 +4387,9 @@ static std::complex<double> rndfnc_rayleigh_inv_p(const std::complex<double>& p,
 /// the cumulative density function q at a given
 /// position for the Rayleigh distribution function.
 ///
-/// \param q const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_rayleigh_inv_q(const std::complex<double>& q, const std::complex<double>& sigma)
@@ -4473,13 +4404,13 @@ static std::complex<double> rndfnc_rayleigh_inv_q(const std::complex<double>& q,
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns a random value
-/// from the Landau distribution function.
+/// \brief his function computes the probability
+/// density function p at a given position for the
+/// Landau distribution function.
 ///
-/// \return value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-
 static std::complex<double> rndfnc_landau_pdf(const std::complex<double>& x)
 {
     // Check the input values
@@ -4495,9 +4426,9 @@ static std::complex<double> rndfnc_landau_pdf(const std::complex<double>& x)
 /// \brief This function returns a random value
 /// from the Levy alpha-stable distribution function.
 ///
-/// \param c const value_type&
-/// \param alpha const value_type&
-/// \return value_type
+/// \param c const std::complex<double>&
+/// \param alpha const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_levyAlphaStable_rd(const std::complex<double>& c, const std::complex<double>& alpha)
@@ -4515,9 +4446,9 @@ static std::complex<double> rndfnc_levyAlphaStable_rd(const std::complex<double>
 /// \brief This function returns a random value
 /// from the Fisher F-distribution function.
 ///
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_fisher_f_rd(const std::complex<double>& nu1, const std::complex<double>& nu2)
@@ -4536,10 +4467,10 @@ static std::complex<double> rndfnc_fisher_f_rd(const std::complex<double>& nu1, 
 /// density function p at a given position for the
 /// Fisher F-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_fisher_f_pdf(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
@@ -4558,10 +4489,10 @@ static std::complex<double> rndfnc_fisher_f_pdf(const std::complex<double>& x, c
 /// density function p at a given position for the
 /// Fisher F-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_fisher_f_cdf_p(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
@@ -4580,10 +4511,10 @@ static std::complex<double> rndfnc_fisher_f_cdf_p(const std::complex<double>& x,
 /// density function q at a given position for the
 /// Fisher F-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_fisher_f_cdf_q(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
@@ -4598,10 +4529,10 @@ static std::complex<double> rndfnc_fisher_f_cdf_q(const std::complex<double>& x,
 /// the cumulative density function p at a given
 /// position for the Fisher F-distribution function.
 ///
-/// \param p const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_fisher_f_inv_p(const std::complex<double>& p, const std::complex<double>& nu1, const std::complex<double>& nu2)
@@ -4620,10 +4551,10 @@ static std::complex<double> rndfnc_fisher_f_inv_p(const std::complex<double>& p,
 /// the cumulative density function q at a given
 /// position for the Fisher F-distribution function.
 ///
-/// \param q const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_fisher_f_inv_q(const std::complex<double>& q, const std::complex<double>& nu1, const std::complex<double>& nu2)
@@ -4641,9 +4572,9 @@ static std::complex<double> rndfnc_fisher_f_inv_q(const std::complex<double>& q,
 /// \brief This function returns a random value
 /// from the Weibull-distribution function.
 ///
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_weibull_rd(const std::complex<double>& a, const std::complex<double>& b)
@@ -4662,10 +4593,10 @@ static std::complex<double> rndfnc_weibull_rd(const std::complex<double>& a, con
 /// density function p at a given position for the
 /// Weibull-distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_weibull_pdf(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
@@ -4684,10 +4615,10 @@ static std::complex<double> rndfnc_weibull_pdf(const std::complex<double>& x, co
 /// density function p at a given position for the
 /// Weibull-distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_weibull_cdf_p(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
@@ -4706,10 +4637,10 @@ static std::complex<double> rndfnc_weibull_cdf_p(const std::complex<double>& x, 
 /// density function q at a given position for the
 /// Weibull-distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_weibull_cdf_q(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
@@ -4727,10 +4658,10 @@ static std::complex<double> rndfnc_weibull_cdf_q(const std::complex<double>& x, 
 /// the cumulative density function p at a given
 /// position for the Weibull-distribution function.
 ///
-/// \param p const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_weibull_inv_p(const std::complex<double>& p, const std::complex<double>& a, const std::complex<double>& b)
@@ -4749,10 +4680,10 @@ static std::complex<double> rndfnc_weibull_inv_p(const std::complex<double>& p, 
 /// the cumulative density function q at a given
 /// position for the Weibull-distribution function.
 ///
-/// \param q const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_weibull_inv_q(const std::complex<double>& q, const std::complex<double>& a, const std::complex<double>& b)
@@ -4770,8 +4701,8 @@ static std::complex<double> rndfnc_weibull_inv_q(const std::complex<double>& q, 
 /// \brief This function returns a random value
 /// from the Student t-distribution function.
 ///
-/// \param nu const value_type&
-/// \return value_type
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_student_t_rd(const std::complex<double>& nu)
@@ -4790,9 +4721,9 @@ static std::complex<double> rndfnc_student_t_rd(const std::complex<double>& nu)
 /// density function p at a given position for the
 /// Student t-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_student_t_pdf(const std::complex<double>& x, const std::complex<double>& nu)
@@ -4811,9 +4742,9 @@ static std::complex<double> rndfnc_student_t_pdf(const std::complex<double>& x, 
 /// density function p at a given position for the
 /// Student t-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_student_t_cdf_p(const std::complex<double>& x, const std::complex<double>& nu)
@@ -4832,9 +4763,9 @@ static std::complex<double> rndfnc_student_t_cdf_p(const std::complex<double>& x
 /// density function q at a given position for the
 /// Student t-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_student_t_cdf_q(const std::complex<double>& x, const std::complex<double>& nu)
@@ -4849,9 +4780,9 @@ static std::complex<double> rndfnc_student_t_cdf_q(const std::complex<double>& x
 /// the cumulative density function p at a given
 /// position for the Student t-distribution function.
 ///
-/// \param p const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_student_t_inv_p(const std::complex<double>& p, const std::complex<double>& nu)
@@ -4870,9 +4801,9 @@ static std::complex<double> rndfnc_student_t_inv_p(const std::complex<double>& p
 /// the cumulative density function q at a given
 /// position for the Student t-distribution function.
 ///
-/// \param q const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 static std::complex<double> rndfnc_student_t_inv_q(const std::complex<double>& q, const std::complex<double>& nu)
@@ -5650,5 +5581,76 @@ mu::Array rndfnc_student_t_inv_p(const mu::Array& p, const mu::Array& nu)
 mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
 {
     return mu::apply(rndfnc_student_t_inv_q, q, nu);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the utc offset
+/// in seconds.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_get_utc_offset()
+{
+    time_zone tz = getCurrentTimeZone();
+    int utc_offset = tz.Bias.count() + tz.DayLightBias.count();
+    // return values in seconds
+    return -1 * utc_offset * 60;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns whether the year
+/// is a leap year
+///
+/// \param nYear const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_is_leap_year(const value_type& nDate)
+{
+    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
+    int nYear = int(ts.m_ymd.year());
+
+    if (intCast(nYear) % 4 == 0){
+        if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0) {
+            return 1.0;
+        }
+    }
+    return 0.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns whether the
+/// current time is a summer time
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_is_daylightsavingtime(const value_type& nDate)
+{
+    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
+    int year = int(ts.m_ymd.year());
+    int day = unsigned(ts.m_ymd.day());
+    int month = unsigned(ts.m_ymd.month());
+
+    std::tm time_info = {};
+    time_info.tm_year = year - 1900;
+    time_info.tm_mon = month - 1;
+    time_info.tm_mday = day;
+    time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
+
+    std::time_t timestamp = std::mktime(&time_info);
+    std::tm* local_time = std::localtime(&timestamp);
+
+    if (local_time != nullptr && local_time->tm_isdst > 0) {
+        return 1.0;
+    } else {
+        return 0.0;
+    }
 }
 
