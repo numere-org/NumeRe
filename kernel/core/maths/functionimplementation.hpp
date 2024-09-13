@@ -27,13 +27,13 @@
 #include "units.hpp"
 
 
-// Scaling operator callback functions
+// Index selectors
 mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx);
 
-// Unit conversion callback functions
+// Imaginary unit
 mu::Array numfnc_imaginaryUnit(const mu::Array&);
 
-// Imaginary unit
+// Actual math functions
 mu::Array numfnc_real(const mu::Array&);
 mu::Array numfnc_imag(const mu::Array&);
 mu::Array numfnc_rect2polar(const mu::Array&);
@@ -143,7 +143,6 @@ mu::Array numfnc_sech(const mu::Array&);
 mu::Array numfnc_csch(const mu::Array&);
 mu::Array numfnc_asech(const mu::Array&);
 mu::Array numfnc_acsch(const mu::Array&);
-// Actual math functions
 mu::Array timfnc_time();
 mu::Array timfnc_clock();
 mu::Array timfnc_date(const mu::Array&, const mu::Array&);
@@ -203,8 +202,6 @@ mu::Array oprt_Mod(const mu::Array&, const mu::Array&);
 mu::Array oprt_XOR(const mu::Array&, const mu::Array&);
 mu::Array oprt_BinOR(const mu::Array&, const mu::Array&);
 mu::Array oprt_BinAND(const mu::Array&, const mu::Array&);
-
-// Numerical variable factory
 
 #endif
 

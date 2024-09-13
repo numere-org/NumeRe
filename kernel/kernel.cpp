@@ -318,7 +318,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _parser.DefineVar(_defVars.sName[2], &_defVars.vValue[2][0]);
     _parser.DefineVar(_defVars.sName[3], &_defVars.vValue[3][0]);
 
-    // Declare the table dimension variables
+    // Initialize the default variables to a reasonable
     // default value
     _defVars.vValue[0][0] = mu::Value(0.0);
     _defVars.vValue[1][0] = mu::Value(0.0);
@@ -331,7 +331,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
     _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
-    // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
+    // Define the operators
     g_logger.debug("Defining operators.");
     defineOperators();
 
@@ -399,7 +399,7 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("!!", numfnc_doubleFactorial);
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
 
-    // --> Logisches NICHT <--
+    // --> Operatoren <--
     _parser.DefineOprt("%", oprt_Mod, prMUL_DIV, oaLEFT);
     _parser.DefineOprt("|||", oprt_XOR, prLOGIC, oaLEFT);
     _parser.DefineOprt("|", oprt_BinOR, prLOGIC, oaLEFT);
@@ -709,8 +709,8 @@ void NumeReKernel::defineNumFunctions()
 
 
 /////////////////////////////////////////////////
-/// \brief Starts the stack tracker, which will
-/// prevent stack overflows.
+/// \brief This member function declares all
+/// string functions.
 ///
 /// \return void
 ///
@@ -1199,7 +1199,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 sLine.erase(sLine.find(":="), 1);
             }
 
-            // evaluate strings
+            // --> Wenn die Ergebnisse in den Cache geschrieben werden sollen, bestimme hier die entsprechenden Koordinaten <--
             Indices _idx;
 
             if (bWriteToCache)
@@ -2249,15 +2249,15 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 
 
 /////////////////////////////////////////////////
-/// \brief This private member function redirects
-/// the processing of strings to the string parser.
+/// \brief his private member function will
+/// create the answer line for the parser which is
+/// then passed to NumeReKernel::printResult().
 ///
-/// \param sLine std::string&
-/// \param sCache std::string&
-/// \param bWriteToCache bool&
-/// \param nReturnVal KernelStatus&
-/// \return bool
+/// \param nNum int
+/// \param v mu::Array*
+/// \return void
 ///
+/////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, mu::Array* v)
 {
     vAns.overwrite(v[0]);
@@ -2942,7 +2942,7 @@ void NumeReKernel::printPreFmt(const std::string& __sLine, bool printingEnabled)
 /// numerical-only results.
 ///
 /// \param nNum int
-/// \param v value_type*
+/// \param v mu::Array*
 /// \return std::string
 ///
 /////////////////////////////////////////////////
@@ -3533,7 +3533,7 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
 {
     if (_memoryManager.isCluster(sStringTableName))
     {
-        // Create the container for the string table
+        // Create the container for the selected cluster
         NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
         NumeRe::Container<std::string> stringTable(clust.size(), 1);
 
@@ -3657,7 +3657,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
             mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
     }
 
-    // Get the string variable map
+    // Get the table variable map
     std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
 
     for (const auto& iter : tableMap)
