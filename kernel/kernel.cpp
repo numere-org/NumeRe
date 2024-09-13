@@ -472,7 +472,7 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_day_secs", 86400);
     _parser.DefineConst("_hour_secs", 3600 );
     _parser.DefineConst("_week_secs", 604800);
-    _parser.DefineConst("_year_secs", 31537600);
+    _parser.DefineConst("_year_secs", 31557600);
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", mu::Value());
@@ -646,11 +646,11 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("time", timfnc_time, false);                               // time()
     _parser.DefineFun("clock", timfnc_clock, false);                             // clock()
     _parser.DefineFun("date", timfnc_date);                                      // date(TIME,TYPE)
-    _parser.DefineFun("weeknum", timfnc_weeknum);                                // date(TIME,TYPE)
+    _parser.DefineFun("weeknum", timfnc_weeknum);                                // weeknum(tDate)
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);                       // as_date(nYear, nMounth, nDay)
     _parser.DefineFun("as_time", timfnc_as_time, true, 4);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
-    _parser.DefineFun("get_utc_offset", timfnc_get_utc_offset, true);            // get_utc_offset()
-    _parser.DefineFun("is_leapyear", timfnc_is_leap_year, true);                 // is_leap_year(nDate)
+    _parser.DefineFun("get_utc_offset", timfnc_get_utc_offset, false);           // get_utc_offset()
+    _parser.DefineFun("is_leapyear", timfnc_is_leap_year);                       // is_leap_year(nDate)
     _parser.DefineFun("is_daylightsavingtime", timfnc_is_daylightsavingtime);    // is_daylightsavingtime(nDate)
 
     _parser.DefineFun("perlin", rndfnc_perlin, true, 6);                         // perlin(x,y,z,seed,freq,oct,pers)
