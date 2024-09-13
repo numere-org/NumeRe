@@ -5583,3 +5583,78 @@ mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
     return mu::apply(rndfnc_student_t_inv_q, q, nu);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the utc offset
+/// in seconds.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_get_utc_offset()
+{
+    time_zone tz = getCurrentTimeZone();
+    int utc_offset = tz.Bias.count() + tz.DayLightBias.count();
+
+    // return values in seconds
+    return mu::Value(-1 * utc_offset * 60);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns whether the year
+/// is a leap year
+///
+/// \param nDate const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_is_leap_year(const mu::Array& nDate)
+{
+    mu::Array ret;
+
+    for (size_t i = 0; i < nDate.size(); i++)
+    {
+        time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.get(i).getNum().asF64()));
+        int nYear = int(ts.m_ymd.year());
+        ret.push_back(nYear % 4 == 0 && (nYear % 100 != 0 || nYear % 400 == 0));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns whether the
+/// current time is a summer time
+///
+/// \param nDate const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
+{
+    mu::Array ret;
+
+    for (size_t i = 0; i < nDate.size(); i++)
+    {
+        time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.get(i).getNum().asF64()));
+        int year = int(ts.m_ymd.year());
+        int day = unsigned(ts.m_ymd.day());
+        int month = unsigned(ts.m_ymd.month());
+
+        std::tm time_info = {};
+        time_info.tm_year = year - 1900;
+        time_info.tm_mon = month - 1;
+        time_info.tm_mday = day;
+        time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
+
+        __time64_t timestamp = _mktime64(&time_info);
+        std::tm* local_time = _localtime64(&timestamp);
+
+        ret.push_back(local_time != nullptr && local_time->tm_isdst > 0);
+    }
+
+    return ret;
+}
+
