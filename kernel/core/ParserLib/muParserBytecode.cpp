@@ -276,7 +276,7 @@ namespace mu
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
 							else if (all(m_vRPN[sz - 1].Val().data2 == Value(4.0)))
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.front().getNum().asI64())))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.getAsScalarInt())))
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
 							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;

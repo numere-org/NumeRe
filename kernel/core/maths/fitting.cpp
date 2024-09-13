@@ -1736,7 +1736,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
 
         oTeXExport << "\t\t$" <<  replaceToTeX(pItem->first, true) << "$ & $"
                    << vInitialVals[n] << "$ & $"
-                   << pItem->second->front().as_cmplx() << "$ & $\\pm"
+                   << pItem->second->front().printVal() << "$ & $\\pm"
                    << sqrt(abs(fitData.vz_w[n][n]));
 
         // Append the percentual error value, if the current parameter

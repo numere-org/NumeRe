@@ -86,15 +86,15 @@ namespace mu
             m_bits = 64;
             m_flags = TYPE_FLOAT | TYPE_DATETIME;
         }
+        else if (type <= UI64)
+        {
+            m_flags = TYPE_UINT;
+            m_bits = 8 * (0x8 >> (UI64 - type));
+        }
         else if (type <= I64)
         {
             m_flags = TYPE_INT;
             m_bits = 8 * (0x8 >> (I64 - type));
-        }
-        else if (type <= UI64)
-        {
-            m_flags = TYPE_INT | TYPE_UINT;
-            m_bits = 8 * (0x8 >> (UI64 - type));
         }
         else if (type <= F64)
         {

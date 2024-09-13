@@ -1061,7 +1061,7 @@ mu::Value StringColumn::get(size_t elem) const
     if (elem < m_data.size())
         return m_data[elem];
 
-    return "";
+    return NAN;
 }
 
 

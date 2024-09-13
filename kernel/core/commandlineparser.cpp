@@ -289,10 +289,16 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
     if (!sFileName.length())
         return "";
 
-    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
-    _parser.SetExpr(sFileName);
-    mu::Array v = _parser.Eval();
-    sFileName = v.front().getStr();
+    // It is mostly possible to supply a file path without being enclosed
+    // in quotation marks. is_dir checks for that
+    if (!is_dir(sFileName))
+    {
+        // String evaluation
+        mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+        _parser.SetExpr(sFileName);
+        mu::Array v = _parser.Eval();
+        sFileName = v.front().getStr();
+    }
 
     // Parse the prepared file path
     return parseFileName(sFileName, sFileExt, sBasePath);

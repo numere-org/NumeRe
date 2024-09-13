@@ -30,6 +30,7 @@
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
 #include "utils/tools.hpp"
+#include "utils/filecheck.hpp"
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
 
@@ -453,18 +454,15 @@ static bool editObject(CommandLineParser& cmdParser)
     if (cmdParser.hasParam("refresh"))
         nFileOpenFlag = 2 | 4;
 
-    if (containsStrings(cmdParser.getExpr()))
-        sObject = cmdParser.parseExpr().front().front().getStr();
-    else
-        sObject = cmdParser.getExpr();
-
-    StripSpaces(sObject);
-
     // Open the table for editing
-    if (_data.containsTables(sObject))
+    if (_data.containsTables(cmdParser.getExpr()))
     {
-        StripSpaces(sObject);
-        std::string sTableName = sObject.substr(0, sObject.find('('));
+        DataAccessParser access = cmdParser.getExprAsDataObject();
+
+        if (!access.getDataObject().length())
+            throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, cmdParser.getCommandLine(), cmdParser.getExpr());
+
+        std::string sTableName = access.getDataObject();
 
         NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
         NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
@@ -478,6 +476,11 @@ static bool editObject(CommandLineParser& cmdParser)
         _data.importTable(_table, sTableName);
         return true;
     }
+
+    if (!is_dir(cmdParser.getExpr()))
+        sObject = cmdParser.parseExprAsString();
+    else
+        sObject = cmdParser.getExpr();
 
     std::string sDefaultExtension = ".dat";
     FileSystem _fSys;
@@ -1600,7 +1603,6 @@ std::vector<size_t> calcTableWidth(size_t maxWidth, std::vector<size_t> minDesir
 void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> lineColSizes)
 {
     // Format the string
-    string sDummy = "";
     for (auto& thisEntry : lineEntries)
     {
         thisEntry = '"' + thisEntry + "\"";
@@ -3244,7 +3246,7 @@ static CommandReturnValues cmd_append(string& sCmd)
 
         double j1 = _data.getCols("data") + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<std::complex<double>>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), "data"), j1, _data.getCols("data")}));
+        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), "data"), j1, _data.getCols("data")}));
 
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
@@ -4706,7 +4708,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         {
             double j1 = _data.getCols("data") + 1;
             append_data(cmdParser);
-            cmdParser.setReturnValue(std::vector<std::complex<double>>({1, _data.getLines("data"), j1, _data.getCols("data")}));
+            cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data"), j1, _data.getCols("data")}));
             sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;
@@ -4745,7 +4747,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
-                    cmdParser.setReturnValue(std::vector<std::complex<double>>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4804,7 +4806,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (!_data.isEmpty("data") && _option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    cmdParser.setReturnValue(std::vector<std::complex<double>>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4832,7 +4834,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
-                    cmdParser.setReturnValue(std::vector<std::complex<double>>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;

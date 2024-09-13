@@ -767,14 +767,12 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    mu::Array* v = nullptr;
-                    int nResults;
                     _parserRef->SetExpr(sCurrentValue);
-                    v = _parserRef->Eval(nResults);
+                    mu::Array v = _parserRef->Eval();
                     Indices _idx;
                     _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                     _idx.col = VectorIndex(0);
-                    _dataRef->writeToTable(_idx, sNewArgName, v[0]);
+                    _dataRef->writeToTable(_idx, sNewArgName, v);
                 }
                 catch (...)
                 {
@@ -830,11 +828,9 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    mu::Array* v = nullptr;
-                    int nResults;
                     _parserRef->SetExpr(sCurrentValue);
-                    v = _parserRef->Eval(nResults);
-                    newCluster.setValueArray(v[0]);
+                    mu::Array v = _parserRef->Eval();
+                    newCluster.setValueArray(v);
                 }
                 catch (...)
                 {
@@ -918,20 +914,19 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
 
                     // Evaluate numerical expressions
                     _parserRef->SetExpr(currentValue);
-                    int nRes = 0;
-                    mu::Array* v = _parserRef->Eval(nRes);
+                    mu::Array v = _parserRef->Eval();
 
-                    if (nRes > 1)
+                    if (v.size() > 1)
                     {
                         NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-                        newCluster.setValueArray(v[0]);
+                        newCluster.setValueArray(v);
                         currentValue = sNewArgName + "{}";
                         mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
                     }
                     else
                     {
                         mu::Variable* newVar = _parserRef->CreateVar(sNewArgName);
-                        *newVar = v[0];
+                        *newVar = v;
                         currentValue = sNewArgName;
                         mLocalArgs[sNewArgName] = NUMTYPE;
                     }
@@ -1162,14 +1157,12 @@ void ProcedureVarFactory::createLocalTables(std::string sTableList)
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    mu::Array* v = nullptr;
-                    int nResults;
                     _parserRef->SetExpr(sCurrentValue);
-                    v = _parserRef->Eval(nResults);
+                    mu::Array v = _parserRef->Eval();
                     Indices _idx;
                     _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                     _idx.col = VectorIndex(0);
-                    _dataRef->writeToTable(_idx, currentVar, v[0]);
+                    _dataRef->writeToTable(_idx, currentVar, v);
                 }
             }
         }
@@ -1261,11 +1254,9 @@ void ProcedureVarFactory::createLocalClusters(std::string sClusterList)
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    mu::Array* v = nullptr;
-                    int nResults;
                     _parserRef->SetExpr(sCurrentValue);
-                    v = _parserRef->Eval(nResults);
-                    cluster.setValueArray(v[0]);
+                    mu::Array v = _parserRef->Eval();
+                    cluster.setValueArray(v);
                 }
             }
         }

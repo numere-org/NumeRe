@@ -49,8 +49,6 @@
 #include "core/procedure/procedure.hpp"
 #include "core/procedure/procedurelibrary.hpp"
 
-//#include "core/strings/stringparser.hpp"
-
 #include "core/ui/error.hpp"
 #include "core/ui/language.hpp"
 
@@ -282,11 +280,6 @@ class NumeReKernel
         {
             return _parser;
         }
-
-//        NumeRe::StringParser& getStringParser()
-//        {
-//            return _stringParser;
-//        }
 
         FunctionDefinitionManager& getDefinitions()
         {

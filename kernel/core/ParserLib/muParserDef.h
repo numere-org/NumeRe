@@ -352,30 +352,12 @@ namespace mu
 	    return std::isinf(v.real()) || std::isinf(v.imag());
 	}
 
-	//inline bool isnan(const std::complex<double>& v)
-	//{
-	//    return v != v;
-	//}
-
 	inline bool isnan(const Value& v)
 	{
 	    return (bool)(v != v) || v.isString();
 	}
 
-	inline bool isreal(std::complex<double>* v, int nElem)
-	{
-	    for (int i = 0; i < nElem; i++)
-        {
-            if (v[i].imag())
-                return false;
-        }
-
-        return true;
-	}
-
     std::vector<double> real(const std::vector<std::complex<double>>& vVec);
-    std::vector<double> imag(const std::vector<std::complex<double>>& vVec);
-    std::complex<double> rint(std::complex<double> v);
 
 } // end of namespace
 

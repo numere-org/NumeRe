@@ -165,6 +165,13 @@ namespace mu
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Set the val2str operator.
+            ///
+            /// \param len size_t
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
             ParserToken& SetVal2Str(size_t len)
             {
                 m_iCode = cmVAL2STR;
@@ -177,6 +184,13 @@ namespace mu
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Set a path placeholder to be resolved.
+            ///
+            /// \param sPlaceholder const std::string&
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
             ParserToken& SetPathPlaceholder(const std::string& sPlaceholder)
             {
                 m_iCode = cmPATHPLACEHOLDER;
@@ -207,6 +221,14 @@ namespace mu
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Set a method to be called.
+            ///
+            /// \param a_sTok const std::string&
+            /// \param noargs bool
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
             ParserToken& SetMethod(const std::string& a_sTok, bool noargs)
             {
                 m_iCode = cmMETHOD;
@@ -257,6 +279,14 @@ namespace mu
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Set a variable array.
+            ///
+            /// \param a_varArray const VarArray&
+            /// \param a_strTok const std::string&
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
             ParserToken& SetVarArray(const VarArray& a_varArray, const std::string& a_strTok)
             {
                 m_iCode = cmVARARRAY;
@@ -318,7 +348,12 @@ namespace mu
                 }
             }
 
-            //------------------------------------------------------------------------------
+            /////////////////////////////////////////////////
+            /// \brief Get the type code (deprecated)
+            ///
+            /// \return ETypeCode
+            ///
+            /////////////////////////////////////////////////
             ETypeCode GetType() const
             {
                 if (m_pCallback.get())
@@ -331,7 +366,12 @@ namespace mu
                 }
             }
 
-            //------------------------------------------------------------------------------
+            /////////////////////////////////////////////////
+            /// \brief Get token priority.
+            ///
+            /// \return int
+            ///
+            /////////////////////////////////////////////////
             int GetPri() const
             {
                 if ( !m_pCallback.get())
@@ -343,7 +383,12 @@ namespace mu
                 return m_pCallback->GetPri();
             }
 
-            //------------------------------------------------------------------------------
+            /////////////////////////////////////////////////
+            /// \brief Get the operator associativity.
+            ///
+            /// \return EOprtAssociativity
+            ///
+            /////////////////////////////////////////////////
             EOprtAssociativity GetAssociativity() const
             {
                 if (m_pCallback.get() == nullptr || m_pCallback->GetCode() != cmOPRT_BIN)
@@ -353,6 +398,12 @@ namespace mu
             }
 
 
+            /////////////////////////////////////////////////
+            /// \brief Is this function optimizable?
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool IsOptimizable() const
             {
                 if (!m_pCallback)
@@ -360,6 +411,7 @@ namespace mu
 
                 return m_pCallback->IsOptimizable();
             }
+
             //------------------------------------------------------------------------------
             /** \brief Return the address of the callback function assoziated with
                        function and operator tokens.
@@ -413,6 +465,12 @@ namespace mu
                 return m_var;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get the variable array.
+            ///
+            /// \return VarArray
+            ///
+            /////////////////////////////////////////////////
             VarArray GetVarArray() const
             {
                 if (m_iCode != cmVARARRAY)
@@ -436,6 +494,13 @@ namespace mu
                 return m_pCallback->GetArgc();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get the number of optional function
+            /// arguments.
+            ///
+            /// \return int
+            ///
+            /////////////////////////////////////////////////
             int GetOptArgCount() const
             {
                 assert(m_pCallback.get());
@@ -460,6 +525,12 @@ namespace mu
                 return m_strTok;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Return the val2str length information.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             size_t GetLen() const
             {
                 return m_val2StrLen;

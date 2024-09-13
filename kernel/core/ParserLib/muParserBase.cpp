@@ -56,6 +56,14 @@ size_t getMatchingParenthesis(const StringView&);
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Helper function to convert a complex
+    /// vector to a real vector.
+    ///
+    /// \param vVec const std::vector<std::complex<double>>&
+    /// \return std::vector<double>
+    ///
+    /////////////////////////////////////////////////
     std::vector<double> real(const std::vector<std::complex<double>>& vVec)
     {
 	    std::vector<double> vReal;
@@ -65,67 +73,6 @@ namespace mu
 
         return vReal;
     }
-
-
-	std::vector<double> imag(const std::vector<std::complex<double>>& vVec)
-	{
-	    std::vector<double> vImag;
-
-	    for (const auto& val : vVec)
-            vImag.push_back(val.imag());
-
-        return vImag;
-	}
-
-
-	std::complex<double> rint(std::complex<double> v)
-	{
-	    return std::complex<double>(std::rint(v.real()), std::rint(v.imag()));
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief Custom implementation for the complex
-    /// multiplication operator with a scalar
-    /// optimization.
-    ///
-    /// \param __x const std::complex<double>&
-    /// \param __y const std::complex<double>&
-    /// \return std::complex<double>
-    ///
-    /////////////////////////////////////////////////
-    inline std::complex<double> operator*(const std::complex<double>& __x, const std::complex<double>& __y)
-    {
-        if (__x.imag() == 0.0)
-            return std::complex<double>(__y.real()*__x.real(), __y.imag()*__x.real());
-        else if (__y.imag() == 0.0)
-            return std::complex<double>(__x.real()*__y.real(), __x.imag()*__y.real());
-
-        std::complex<double> __r = __x;
-        __r *= __y;
-        return __r;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Custom implementation for the complex
-    /// division operator with a scalar optimization.
-    ///
-    /// \param __x const std::complex<double>&
-    /// \param __y const std::complex<double>&
-    /// \return std::complex<double>
-    ///
-    /////////////////////////////////////////////////
-    inline std::complex<double> operator/(const std::complex<double>& __x, const std::complex<double>& __y)
-    {
-        if (__y.imag() == 0.0)
-            return std::complex<double>(__x.real() / __y.real(), __x.imag() / __y.real());
-
-        std::complex<double> __r = __x;
-        __r /= __y;
-        return __r;
-    }
-
 
 
 	std::locale ParserBase::s_locale = std::locale(std::locale::classic(), new change_dec_sep<char_type>('.'));

@@ -301,20 +301,6 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         return "\t" + toString(nDim) + " x 1\tcluster\t";
     }
 
-    // Equals the current argument the string table?
-    /*if (sArgumentValue.starts_with("string("))
-    {
-        // Replace the value with its actual value and mark the
-        // argument type as reference
-        sArgumentValue = "{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}";
-
-        // Determine whether this is a templated variable
-        if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
-            return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&@) string\t";
-
-        return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&) string\t";
-    }*/
-
     // Is the current argument a numerical variable?
     if (_parser.GetVar().find(sArgumentValue) != _parser.GetVar().end())
     {
@@ -322,12 +308,8 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         // argument type as reference
         mu::Variable* address = _parser.GetVar().find(sArgumentValue)->second;
         sArgumentValue = address->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
-        //sArgumentValue = toString(*address, (address->imag() ? 2*DEFAULT_NUM_PRECISION : DEFAULT_NUM_PRECISION));
 
-        //if (address->imag())
-            return "\t1 x 1\t" + isRef + address->getCommonTypeAsString() + "\t";
-
-        //return "\t1 x 1\t" + isRef + "double\t";
+        return "\t1 x 1\t" + isRef + address->getCommonTypeAsString() + "\t";
     }
 
     // Is it a constant numerical expression or value?
@@ -595,18 +577,6 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         mLocalVars[iter.first + "\t" + iter.second.first] = *iter.second.second;
     }
 
-    // Store the local string variables and replace their
-    // occurence with their definition in the command lines
-    //for (const auto& iter : _mLocalStrings)
-    //{
-    //    // Replace the occurences
-    //    if (iter.first != iter.second.first)
-    //        replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
-    //
-    //    //const std::string sValue = toExternalString(instance->getStringParser().getStringVars().at(iter.second.first));
-    //    //mLocalStrings[iter.first + "\t" + iter.second.first] = replaceControlCharacters(ellipsize(sValue, MAXSTRINGLENGTH));
-    //}
-
     // Store the local tables and replace their
     // occurence with their definition in the command lines
     for (const auto& iter : _mLocalTables)
@@ -733,8 +703,6 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
 
                     mLocalVars[iter->first + "@" + iter->second] = iterData.getValue(nItem);
                 }
-                //else if (instance->getStringParser().isStringVar(sVarArray[i]))
-                //    mLocalStrings[iter->first + "\t" + iter->second] = toExternalString(instance->getStringParser().getStringValue(sVarArray[i]));
                 else
                     mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
 
@@ -815,11 +783,6 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
         if (iter->second.getCommonType() != dt)
             continue;
 
-        //if (iter->second.imag() && !(isnan(iter->second.real()) && isnan(iter->second.imag())))
-        //    vVars.push_back((iter->first).substr(0, (iter->first).find(sepChar))
-        //                       + (sepChar == '@' ? "\t1 x 1\t(@) complex\t" : "\t1 x 1\tcomplex\t")
-        //                       + toString(iter->second, 2*DEFAULT_NUM_PRECISION) + "\t" + (iter->first).substr((iter->first).find(sepChar)+1));
-        //else
         vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()
                         + (sepChar == '@' ? "\t(@) " : "\t")
                         + iter->second.getCommonTypeAsString() + "\t"
@@ -937,14 +900,6 @@ vector<string> NumeReDebugger::getGlobals()
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-    // Is there anything in the string object?
-    /*if (_data.getStringElements())
-    {
-        mGlobals["string()"] = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols())
-                               + "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ...,\""
-                               + replaceControlCharacters(_data.maxString()) + "\"}";
-    }*/
-
     // List all relevant caches
     for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
@@ -965,13 +920,6 @@ vector<string> NumeReDebugger::getGlobals()
                 + replaceControlCharacters(iter->second.getShortVectorRepresentation(MAXSTRINGLENGTH));
         }
     }
-
-    // List all relevant string variables
-    //for (auto iter = _stringParser.getStringVars().begin(); iter != _stringParser.getStringVars().end(); ++iter)
-    //{
-    //    if (!iter->first.starts_with("_~"))
-    //        mGlobals[iter->first] = "1 x 1\tstring\t" + replaceControlCharacters(ellipsize(toExternalString(iter->second), MAXSTRINGLENGTH));
-    //}
 
     // List all relevant numerical variables
     for (auto iter = _parser.GetVar().begin(); iter != _parser.GetVar().end(); ++iter)
