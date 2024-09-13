@@ -5649,8 +5649,8 @@ mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
         time_info.tm_mday = day;
         time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
 
-        std::time_t timestamp = std::mktime(&time_info);
-        std::tm* local_time = std::localtime(&timestamp);
+        __time64_t timestamp = _mktime64(&time_info);
+        std::tm* local_time = _localtime64(&timestamp);
 
         ret.push_back(local_time != nullptr && local_time->tm_isdst > 0);
     }
