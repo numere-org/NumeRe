@@ -5588,15 +5588,16 @@ mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
 /// \brief This function returns the utc offset
 /// in seconds.
 ///
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_get_utc_offset()
+mu::Array timfnc_get_utc_offset()
 {
     time_zone tz = getCurrentTimeZone();
     int utc_offset = tz.Bias.count() + tz.DayLightBias.count();
+
     // return values in seconds
-    return -1 * utc_offset * 60;
+    return mu::Value(-1 * utc_offset * 60);
 }
 
 
@@ -5604,21 +5605,22 @@ value_type parser_get_utc_offset()
 /// \brief This function returns whether the year
 /// is a leap year
 ///
-/// \param nYear const value_type&
-/// \return value_type
+/// \param nDate const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_is_leap_year(const value_type& nDate)
+mu::Array timfnc_is_leap_year(const mu::Array& nDate)
 {
-    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
-    int nYear = int(ts.m_ymd.year());
+    mu::Array ret;
 
-    if (intCast(nYear) % 4 == 0){
-        if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0) {
-            return 1.0;
-        }
+    for (size_t i = 0; i < nDate.size(); i++)
+    {
+        time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.get(i).getNum().asF64()));
+        int nYear = int(ts.m_ymd.year());
+        ret.push_back(nYear % 4 == 0 && (nYear % 100 != 0 || nYear % 400 == 0));
     }
-    return 0.0;
+
+    return ret;
 }
 
 
@@ -5626,31 +5628,33 @@ value_type parser_is_leap_year(const value_type& nDate)
 /// \brief This function returns whether the
 /// current time is a summer time
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param nDate const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_is_daylightsavingtime(const value_type& nDate)
+mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
 {
-    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
-    int year = int(ts.m_ymd.year());
-    int day = unsigned(ts.m_ymd.day());
-    int month = unsigned(ts.m_ymd.month());
+    mu::Array ret;
 
-    std::tm time_info = {};
-    time_info.tm_year = year - 1900;
-    time_info.tm_mon = month - 1;
-    time_info.tm_mday = day;
-    time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
+    for (size_t i = 0; i < nDate.size(); i++)
+    {
+        time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.get(i).getNum().asF64()));
+        int year = int(ts.m_ymd.year());
+        int day = unsigned(ts.m_ymd.day());
+        int month = unsigned(ts.m_ymd.month());
 
-    std::time_t timestamp = std::mktime(&time_info);
-    std::tm* local_time = std::localtime(&timestamp);
+        std::tm time_info = {};
+        time_info.tm_year = year - 1900;
+        time_info.tm_mon = month - 1;
+        time_info.tm_mday = day;
+        time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
 
-    if (local_time != nullptr && local_time->tm_isdst > 0) {
-        return 1.0;
-    } else {
-        return 0.0;
+        std::time_t timestamp = std::mktime(&time_info);
+        std::tm* local_time = std::localtime(&timestamp);
+
+        ret.push_back(local_time != nullptr && local_time->tm_isdst > 0);
     }
+
+    return ret;
 }
 
