@@ -72,13 +72,13 @@ std::vector<std::string> TableColumn::getValueAsInternalString(const VectorIndex
 /// a vector of numerical types.
 ///
 /// \param idx const VectorIndex&
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> TableColumn::getValue(const VectorIndex& idx) const
+std::vector<std::complex<double>> TableColumn::getValue(const VectorIndex& idx) const
 {
     idx.setOpenEndIndex(size()-1);
-    std::vector<mu::value_type> vVect(idx.size());
+    std::vector<std::complex<double>> vVect(idx.size());
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -115,11 +115,11 @@ void TableColumn::setValue(const VectorIndex& idx, const std::vector<std::string
 /// specified indices.
 ///
 /// \param idx const VectorIndex&
-/// \param vValue const std::vector<mu::value_type>&
+/// \param vValue const std::vector<std::complex<double>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue)
+void TableColumn::setValue(const VectorIndex& idx, const std::vector<std::complex<double>>& vValue)
 {
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -136,12 +136,12 @@ void TableColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_t
 /// specified indices.
 ///
 /// \param idx const VectorIndex&
-/// \param _dData mu::value_type*
+/// \param _dData std::complex<double>*
 /// \param _nNum size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, size_t _nNum)
+void TableColumn::setValue(const VectorIndex& idx, std::complex<double>* _dData, size_t _nNum)
 {
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -150,6 +150,24 @@ void TableColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, size_
 
         setValue(idx[i], _dData[i]);
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Assign the generic meta data from the
+/// passed column.
+///
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::assignMetaData(const TableColumn* column)
+{
+    if (!column)
+        return;
+
+    m_sHeadLine = column->m_sHeadLine;
+    m_sUnit = column->m_sUnit;
 }
 
 

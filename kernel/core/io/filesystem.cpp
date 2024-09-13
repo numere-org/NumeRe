@@ -23,10 +23,14 @@
 #include <shobjidl.h>
 
 #include "filesystem.hpp"
+#ifndef PARSERSTANDALONE
 #include "../../kernel.hpp"
-#include "../utils/datetimetools.hpp"
+#else
+#include "../utils/tools.hpp"
+#endif
 
 std::string removeQuotationMarks(const std::string& sString);
+
 
 
 /////////////////////////////////////////////////
@@ -132,12 +136,16 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
             sFilePath[i] = (char)0xDF;
         else if (sFilePath[i] == '~')
         {
+#ifndef PARSERSTANDALONE
             NumeReKernel::issueWarning("INTERNAL ISSUE: Replaced a tilde character in \"" + sFilePath + "\" with a slash. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
+#endif
             sFilePath[i] = '/';
         }
         else if (sINVALID_CHARS.find(sFilePath[i]) != std::string::npos)
         {
+#ifndef PARSERSTANDALONE
             NumeReKernel::issueWarning("Replaced an invalid character in \"" + sFilePath + "\" with an underscore. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
+#endif
             sFilePath[i] = '_';
         }
     }
@@ -581,7 +589,11 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
             if (sValid == ".*")
                 sValid = _sFileName.substr(0,nPos);
             else
+#ifndef PARSERSTANDALONE
                 throw SyntaxError(SyntaxError::INVALID_FILETYPE, _sFileName, _sFileName.substr(nPos), _sFileName);
+#else
+                throw std::runtime_error("INVALID_FILETYPE");
+#endif
         }
     }
     else
@@ -686,7 +698,7 @@ std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, co
 /////////////////////////////////////////////////
 std::string FileSystem::resolveLink(const std::string& sLink)
 {
-#warning FIXME (numere#1#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
+#warning FIXME (numere#9#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
 #ifdef NR_HAVE_GSL2
     HRESULT hres;
     IShellLink* psl;
@@ -1124,13 +1136,13 @@ std::vector<std::string> FileSystem::getFileParts(const std::string& sFilePath) 
 
 /////////////////////////////////////////////////
 /// \brief Static function to convert Windows UTC
-/// system time to a double.
+/// system time to a sys_time_point.
 ///
 /// \param stUTC SYSTEMTIME
-/// \return double
+/// \return sys_time_point
 ///
 /////////////////////////////////////////////////
-static double windowSystemTimeToDouble(SYSTEMTIME stUTC)
+static sys_time_point windowSystemTimeToTimePoint(SYSTEMTIME stUTC)
 {
     time_stamp timeStamp;
 
@@ -1140,7 +1152,7 @@ static double windowSystemTimeToDouble(SYSTEMTIME stUTC)
     timeStamp.m_minutes = std::chrono::minutes(stUTC.wMinute);
     timeStamp.m_seconds = std::chrono::seconds(stUTC.wSecond);
 
-    return to_double(getTimePointFromTimeStamp(timeStamp));
+    return getTimePointFromTimeStamp(timeStamp);
 }
 
 
@@ -1183,9 +1195,9 @@ FileInfo FileSystem::getFileInfo(const std::string& sFilePath) const
 
         SYSTEMTIME stUTC;
         FileTimeToSystemTime(&FindFileData.ftCreationTime, &stUTC);
-        fInfo.creationTime = windowSystemTimeToDouble(stUTC);
+        fInfo.creationTime = windowSystemTimeToTimePoint(stUTC);
         FileTimeToSystemTime(&FindFileData.ftLastWriteTime, &stUTC);
-        fInfo.modificationTime = windowSystemTimeToDouble(stUTC);
+        fInfo.modificationTime = windowSystemTimeToTimePoint(stUTC);
 
         fInfo.fileAttributes = FindFileData.dwFileAttributes;
         FindClose(hFind);
@@ -1215,6 +1227,26 @@ void FileSystem::setTokens(std::string _sTokens)
         if (!_sTokens.length())
             break;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the value of a selected path
+/// token.
+///
+/// \param _sToken const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string FileSystem::getTokenValue(const std::string& _sToken) const
+{
+    for (int i = 0; i < 7; i++)
+    {
+        if (sTokens[i][0] == '<' + _sToken + '>')
+            return sTokens[i][1];
+    }
+
+    return _sToken;
 }
 
 
@@ -1262,11 +1294,13 @@ bool FileSystem::isFile(const std::string& _sPath) const
 /////////////////////////////////////////////////
 void FileSystem::initializeFromKernel()
 {
+#ifndef PARSERSTANDALONE
     NumeReKernel* _instance = NumeReKernel::getInstance();
 
     if (!_instance)
         return;
 
     assign(_instance->getFileSystem());
+#endif
 }
 

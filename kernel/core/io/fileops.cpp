@@ -100,7 +100,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     if (!cmdParser.getExpr().length())
         return false;
 
-    std::string sSource = cmdParser.getExpr();
+    std::string sSource = cmdParser.parseExprAsString();
     std::string sTarget = "";
     std::string _sTarget = "";
     std::string sDummy = "";
@@ -121,9 +121,9 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     if (cmdParser.hasParam("target") || cmdParser.hasParam("t"))
     {
         if (cmdParser.hasParam("target"))
-            sTarget = cmdParser.getParameterValueAsString("target", "");
+            sTarget = cmdParser.getParsedParameterValueAsString("target", "");
         else
-            sTarget = cmdParser.getParameterValueAsString("t", "");
+            sTarget = cmdParser.getParsedParameterValueAsString("t", "");
 
         StripSpaces(sTarget);
     }
@@ -133,10 +133,6 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     // Clean source and target paths
     sSource = replacePathSeparator(sSource);
     sTarget = replacePathSeparator(sTarget);
-
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sSource))
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sSource, sDummy, true, false, true);
-
     sSource = removeQuotationMarks(sSource);
 
     // In 'all' case it is necessary to set the return value
@@ -215,8 +211,8 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
             }
         }
 
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true, false, true);
+//        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
+//            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true, false, true);
 
         _sTarget = removeQuotationMarks(_sTarget);
         StripSpaces(_sTarget);

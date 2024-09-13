@@ -50,8 +50,9 @@ namespace NumeRe
         int32_t versionBuild;
         float fileVersion;
         __time64_t timeStamp;
+        bool needsConversion;
 
-        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0) {}
+        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0), needsConversion(true) {}
     };
 
 
@@ -75,6 +76,7 @@ namespace NumeRe
             int64_t nRows;
             int64_t nCols;
             unsigned short nPrecFields;
+            bool needsConversion;
 
             // Flag for using external data, i.e. data, which won't be deleted
             // by this class upon calling "clearStorage()" or the destructor
@@ -217,7 +219,7 @@ namespace NumeRe
             /// \return std::pair<size_t, size_t>
             ///
             /////////////////////////////////////////////////
-            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents)
+            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents, const std::string& sUnit)
             {
                 // Prepare the std::pair<> to contain the extents of the cell.
                 // (One line is the minimal value)
@@ -252,6 +254,14 @@ namespace NumeRe
 
                         nLastLineBreak = i+1;
                     }*/
+                }
+
+                if (sUnit.length())
+                {
+                    pCellExtents.second++;
+
+                    if (pCellExtents.first < sUnit.length()+2)
+                        pCellExtents.first = sUnit.length()+2;
                 }
 
                 // Examine the last part of the string, which won't be
@@ -322,6 +332,11 @@ namespace NumeRe
                 // the for loop
                 if (!nLineNumber)
                     return sHeadLine.substr(nLastLineBreak);
+
+                // If we have only one line remaining, we return the unit instead
+                // (if any)
+                if (nLineNumber == 1 && fileData->at(nCol)->m_sUnit.length())
+                    return "[" + fileData->at(nCol)->m_sUnit + "]";
 
                 // Not enough lines in this string, return a whitespace character
                 return " ";
@@ -842,6 +857,7 @@ namespace NumeRe
                 sFileExtension = file.sFileExtension;
                 sTableName = file.sTableName;
                 sComment = file.sComment;
+                needsConversion = file.needsConversion;
 
                 // Creates only the vector but leaves the
                 // actual columns untouched
@@ -862,7 +878,7 @@ namespace NumeRe
             /// \param fileName const std::string&
             ///
             /////////////////////////////////////////////////
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), needsConversion(true), useExternalData(false), fileData(nullptr)
             {
                 // Initializes the file system from the kernel
                 initializeFromKernel();
@@ -1099,6 +1115,7 @@ namespace NumeRe
                 info.sFileName = sFileName;
                 info.sTableName = getTableName();
                 info.sComment = sComment;
+                info.needsConversion = needsConversion;
 
                 return info;
             }
@@ -1375,16 +1392,16 @@ namespace NumeRe
 
             /////////////////////////////////////////////////
             /// \brief Returns the value stored at the passed
-            /// positions. A default constructed mu::value_type
+            /// positions. A default constructed std::complex<double>
             /// object instance is returned, if the element
             /// does not exist.
             ///
             /// \param row int64_t
             /// \param col int64_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type getElement(int64_t row, int64_t col) const
+            std::complex<double> getElement(int64_t row, int64_t col) const
             {
                 if (m_file)
                 {
@@ -1399,7 +1416,7 @@ namespace NumeRe
                         return arr->at(col)->getValue(row);
                 }
 
-                return mu::value_type();
+                return std::complex<double>();
             }
 
             /////////////////////////////////////////////////
@@ -1590,6 +1607,7 @@ namespace NumeRe
                 info.versionBuild = versionBuild;
                 info.fileVersion = fileVersionRead;
                 info.timeStamp = timeStamp;
+                info.needsConversion = needsConversion;
 
                 return info;
             }
@@ -1763,7 +1781,7 @@ namespace NumeRe
             void writeTableHeads();
             size_t countHeadLines();
             std::string replaceNonASCII(const std::string& sText);
-            std::string formatNumber(const mu::value_type& number);
+            std::string formatNumber(const std::complex<double>& number);
 
         public:
             LaTeXTable(const std::string& filename);

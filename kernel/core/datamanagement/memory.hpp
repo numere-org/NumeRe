@@ -24,6 +24,7 @@
 #include "tablecolumn.hpp"
 #include "../maths/filtering.hpp"
 #include "../maths/anovaimpl.hpp"
+#include "../maths/units.hpp"
 
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
@@ -44,8 +45,13 @@ namespace NumeRe
 /// \brief This type defines a generic value
 /// vector.
 /////////////////////////////////////////////////
-typedef std::vector<std::string> ValueVector;
+typedef mu::Array ValueVector;
 
+struct KMeansResult
+{
+    std::vector<std::complex<double>> cluster_labels;
+    long double inertia;
+};
 
 /////////////////////////////////////////////////
 /// \brief This class represents a single table
@@ -69,6 +75,13 @@ class Memory : public Sorter
             RANK_DENSE,
             RANK_COMPETETIVE,
             RANK_FRACTIONAL
+        };
+
+        enum KmeansInit
+        {
+            INVALID,
+            INIT_RANDOM,
+            INIT_KMEANSPP
         };
 
 	private:
@@ -122,34 +135,35 @@ class Memory : public Sorter
 
 
         // READ ACCESS METHODS
-		mu::value_type readMem(size_t _nLine, size_t _nCol) const;
-		mu::value_type readMemInterpolated(double _dLine, double _dCol) const;
-		std::vector<mu::value_type> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		mu::Value readMem(size_t _nLine, size_t _nCol) const;
+		std::complex<double> readMemInterpolated(double _dLine, double _dCol) const;
+		mu::Array readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		mu::Array readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		Matrix readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		ValueVector readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		ValueVector readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		TableColumn::ColumnType getType(const VectorIndex& _vCol) const;
 		bool isValueLike(const VectorIndex& _vCol) const;
-		ValueVector getCategoryList(const VectorIndex& _vCol) const;
+		mu::Array getCategoryList(const VectorIndex& _vCol) const;
 		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		void copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(size_t _i) const;
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
+		std::string getUnit(int nCol) const;
+		std::vector<std::complex<double>> asSiUnits(size_t nCol) const;
+		std::string showUnitConversion(size_t nCol, UnitConversionMode mode) const;
 		size_t getAppendedZeroes(size_t _i) const;
 		size_t getHeadlineCount() const;
 		std::string getComment() const;
 		NumeRe::TableMetaData getMetaData() const;
 
 		// WRITE ACCESS METHODS
-		void writeSingletonData(Indices& _idx, const mu::value_type& _dData);
-		void writeSingletonData(Indices& _idx, const std::string& _sValue);
-		void writeData(int _nLine, int _nCol, const mu::value_type& _dData);
-		void writeDataDirect(int _nLine, int _nCol, const mu::value_type& _dData);
-		void writeDataDirectUnsafe(int _nLine, int _nCol, const mu::value_type& _dData);
-		void writeData(int _nLine, int _nCol, const std::string& sValue);
-		void writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum);
-		void writeData(Indices& _idx, const ValueVector& _values);
+		void writeSingletonData(Indices& _idx, const mu::Value& _dData);
+		void writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColumn::ColumnType type = TableColumn::TYPE_NONE);
+		void writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData);
+		void writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<double>& _dData);
+		void writeData(Indices& _idx, const mu::Array& _values);
 		bool setHeadLineElement(size_t _i, const std::string& _sHead);
+		bool setUnit(int nCol, const std::string& sUnit);
+		std::vector<std::string> toSiUnits(const VectorIndex& _vCols, UnitConversionMode mode);
 		void writeComment(const std::string& comment);
 		void setMetaData(const NumeRe::TableMetaData& meta);
 		void markModified();
@@ -175,33 +189,33 @@ class Memory : public Sorter
         bool reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder);
 
         // MAFIMPLEMENTATIONS
-        mu::value_type std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type max(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type min(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type num(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dRef = 0.0, int _nType = 0) const;
-        mu::value_type med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        mu::value_type pct(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dPct = 0.5) const;
-        std::vector<mu::value_type> size(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> minpos(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> maxpos(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
-        std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
-        std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
-        mu::value_type getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
-        mu::value_type getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
-        mu::value_type getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
-        std::vector<mu::value_type> getRank(size_t col, const VectorIndex& _vIndex, RankingStrategy _strat) const;
-        std::vector<mu::value_type> getZScore(size_t col, const VectorIndex& _vIndex) const;
-        std::vector<mu::value_type> getBins(size_t col, size_t nBins) const;
+        std::complex<double> std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> max(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> min(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> num(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dRef = 0.0, int _nType = 0) const;
+        std::complex<double> med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> pct(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dPct = 0.5) const;
+        std::vector<std::complex<double>> size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
+        std::vector<std::complex<double>> minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
+        std::vector<std::complex<double>> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
+        std::vector<std::complex<double>> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
+        std::vector<std::complex<double>> countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const;
+        std::vector<std::complex<double>> getIndex(size_t col, const mu::Array& vValues) const;
+        std::complex<double> getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        std::complex<double> getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        std::complex<double> getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        std::vector<std::complex<double>> getRank(size_t col, const VectorIndex& _vIndex, RankingStrategy _strat) const;
+        std::vector<std::complex<double>> getZScore(size_t col, const VectorIndex& _vIndex) const;
+        std::vector<std::complex<double>> getBins(size_t col, size_t nBins) const;
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
@@ -209,6 +223,9 @@ class Memory : public Sorter
 
         std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
 
+
+        static KmeansInit stringToKmeansInit(const std::string& init_type);
+        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const;
 };
 
 #endif

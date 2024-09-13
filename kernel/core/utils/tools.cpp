@@ -18,11 +18,14 @@
 
 
 #include "tools.hpp"
+#ifndef PARSERSTANDALONE
 #include "../../kernel.hpp"
 #include "../io/file.hpp"
+#endif
 #include <libsha.hpp>
 #include <cstdlib>
 #include <omp.h>
+
 
 
 /////////////////////////////////////////////////
@@ -183,7 +186,7 @@ const gsl_rng* getGslRandGenInstance()
     return gslRandGenerator.getGenerator();
 }
 
-
+#ifndef PARSERSTANDALONE
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -358,9 +361,6 @@ bool getStringArgument(const string& sCmd, string& sArgument)
         if (sCmd.find("to_string(") != string::npos && (sCmd.find("to_string(") < nPos || nPos == string::npos))
             nPos = sCmd.find("to_string(");
 
-        if (sCmd.find("string(") != string::npos && (sCmd.find("string(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("string(");
-
         if (sCmd.find("substr(") != string::npos && (sCmd.find("substr(") < nPos || nPos == string::npos))
             nPos = sCmd.find("substr(");
 
@@ -489,83 +489,6 @@ string extractStringToken(const string& sCmd, size_t nPos)
         return sCmd.substr(nPos);
 
     return sCmd.substr(nPos, nPos_2 - nPos + 1);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the position of the closing
-/// parenthesis.
-///
-/// \param sLine StringView
-/// \return size_t The position of the closing parenthesis
-///
-/// This function determines the type of the
-/// desired parenthesis by itself by using the
-/// first parenthesis-like character that might be
-/// found in the passed string. This function also
-/// considers quotation marks, so that parentheses
-/// in strings are not considered as matching. If
-/// the function does not find the matching
-/// parenthesis, it returns string::npos
-/////////////////////////////////////////////////
-size_t getMatchingParenthesis(const StringView& sLine)
-{
-    size_t pos = sLine.find_first_of("([{");
-
-    if (pos == string::npos)
-        return pos;
-
-    // Get the opening parenthesis
-    char cParenthesis = sLine[pos];
-    char cClosingParenthesis = 0;
-
-    // Depending on the opening parenthesis, determine the closing one
-    switch (cParenthesis)
-    {
-        case '(':
-            cClosingParenthesis = ')';
-            break;
-        case '{':
-            cClosingParenthesis = '}';
-            break;
-        case '[':
-            cClosingParenthesis = ']';
-            break;
-        default:
-            // Default case will handle that the user didn't pass a string, which begins with a parenthesis
-            cParenthesis = '(';
-            cClosingParenthesis = ')';
-    }
-
-    int nOpenParenthesis = 0;
-    size_t nQuotes = 0;
-
-    // Go through the string and count the opening and closing parentheses
-    // Consider also whether the the current position is part of a larger string
-    for (size_t i = 0; i < sLine.length(); i++)
-    {
-        // Count unmasked quotation marks
-        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
-            nQuotes++;
-
-        if (nQuotes % 2)
-            continue;
-
-        // Increment the counter at opening paretheses
-        if (sLine[i] == cParenthesis)
-            nOpenParenthesis++;
-
-        // Decrement the counter at closing parentheses
-        if (sLine[i] == cClosingParenthesis)
-            nOpenParenthesis--;
-
-        // All parentheses are closed -> Return the position of this parenthesis
-        if (!nOpenParenthesis && i > pos)
-            return i;
-    }
-
-    // --> Falls die Klammer nicht schliesst, gebe -1 zurueck (analog zu string::find()) <--
-    return string::npos;
 }
 
 
@@ -1008,8 +931,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // replace "sqrt()"
     while ((nPos = sReturn.find("sqrt(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+4));
-        sReturn.replace(nPos, len + 6, "@{\\sqrt{" + sReturn.substr(nPos+5, len) + "}}");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+4));
+        sReturn[nBrace+nPos+4] = '}';
+        sReturn.replace(nPos, 5, "\\sqrt{");
     }
 
     nPos = 0;
@@ -1017,8 +941,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // replace "norm()"
     while ((nPos = sReturn.find("norm(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+4));
-        sReturn.replace(nPos, len + 6, "|" + sReturn.substr(nPos+5, len) + "|");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+4));
+        sReturn[nBrace+nPos+4] = '|';
+        sReturn.replace(nPos, 5, "|");
     }
 
     nPos = 0;
@@ -1026,8 +951,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // replace "abs()"
     while ((nPos = sReturn.find("abs(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+3));
-        sReturn.replace(nPos, len + 5, "|" + sReturn.substr(nPos+4, len) + "|");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+3));
+        sReturn[nPos+3+nBrace] = '|';
+        sReturn.replace(nPos, 4, "|");
     }
 
     nPos = 0;
@@ -1035,8 +961,9 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
     // Long exponents
     while ((nPos = sReturn.find("^(", nPos)) != string::npos)
     {
-        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+1));
-        sReturn.replace(nPos+1, len + 2, "{" + sReturn.substr(nPos+2, len) + "}");
+        size_t nBrace = getMatchingParenthesis(StringView(sReturn, nPos+1));
+        sReturn[nBrace+nPos+1] = '}';
+        sReturn[nPos+1] = '{';
     }
 
     // --> Entferne die Leerzeichen am Anfang und Ende und gib sReturn zurueck <--
@@ -1647,32 +1574,19 @@ static void parseArg(std::string& sArg, int flags)
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
 
     // Read data
-    if (instance->getMemoryManager().containsTablesOrClusters(sArg)
-        && !instance->getStringParser().isStringExpression(sArg))
+    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
-    // String evaluation
-    if (instance->getStringParser().isStringExpression(sArg))
-    {
-        std::string dummy;
-        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sArg, dummy, true);
-
-        if (_ret == NumeRe::StringParser::STRING_SUCCESS)
-        {
-            sArg = NumeReKernel::getInstance()->getAns().serialize();
-            return;
-        }
-    }
-
-    if (flags & ARGEXTRACT_ASSTRING)
+    // Ensure that a string evaluation is necessary (buggy fix, hard to derive a more general one)
+    if (flags & ARGEXTRACT_ASSTRING && !containsStrings(sArg))
         return;
 
-    // Numerical evaluation
+    // evaluation
     instance->getParser().SetExpr(sArg);
 
     int results;
     int nPrec = instance->getSettings().getPrecision();
-    mu::value_type* v = instance->getParser().Eval(results);
+    mu::Array* v = instance->getParser().Eval(results);
 
     sArg.clear();
 
@@ -1682,9 +1596,11 @@ static void parseArg(std::string& sArg, int flags)
             sArg += ",";
 
         if (flags & ARGEXTRACT_ASINT)
-            sArg += toString(intCast(v[i]));
+            sArg += toString(v[i].getAsScalarInt());
+        else if (flags & ARGEXTRACT_ASSTRING)
+            sArg += v[i].print(nPrec);
         else
-            sArg += toString(v[i], nPrec);
+            sArg += v[i].printVals(nPrec);
     }
 }
 
@@ -1734,7 +1650,7 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
         {
             size_t cont = isStringContinuation(sCmd, i);
 
-            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sCmd, nPos, i-nPos)))
+            if (cont < sCmd.length() && containsStrings(StringView(sCmd, nPos, i-nPos)))
                 i = cont-1;
             else
             {
@@ -1750,11 +1666,11 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
     if (extraction & ARGEXTRACT_PARSED)
         parseArg(sArgument, extraction);
 
+    StripSpaces(sArgument);
+
     // Strip the argument, if necessary
     if (extraction & ARGEXTRACT_STRIPPED)
     {
-        StripSpaces(sArgument);
-
         if (sArgument.front() == '"' && sArgument.back() == '"')
             sArgument = sArgument.substr(1, sArgument.length()-2);
     }
@@ -1896,42 +1812,6 @@ bool isToStringArg(const string& sExpr, size_t nPos)
 
     // No part of any of the functions' arguments
     return false;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Determines, whether the content of a
-/// complex value is actually a regular integer.
-///
-/// \param number const std::complex<double>&
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool isInt(const std::complex<double>& number)
-{
-    return number.imag() == 0.0 && fabs(number.real() - rint(number.real())) < 1e-12;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function determines, if the
-/// passed character is a delimiter character.
-///
-/// \param c char
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool isDelimiter(char c)
-{
-    // Characters converted to a single logical expression (should be faster in principle)
-    return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
-    // Only construct the string once
-    //static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
-
-    // Try to find the current character
-    /*if (sDelimiter.find(cChar) != string::npos)
-        return true;
-    return false;*/
 }
 
 
@@ -2279,189 +2159,6 @@ double Linearize(double x_0, double y_0, double x_1, double y_1)
 
 
 /////////////////////////////////////////////////
-/// \brief This function gets the first argument
-/// in the passed argument list if the boolean
-/// bCut is true then the argument is erased from
-/// the string
-///
-/// \param sArgList StringView&
-/// \param cSep char
-/// \return StringView
-///
-/////////////////////////////////////////////////
-static StringView getNextCommandLineToken(StringView& sArgList, char cSep)
-{
-    if (!sArgList.length())
-        return StringView();
-
-    size_t nPos = 0;
-    size_t nMatching = 0;
-    size_t nQuotes = 0;
-
-    // Go through the complete string
-    for (size_t i = 0; i < sArgList.length(); i++)
-    {
-        if (sArgList[i] == '"' && (!i || sArgList[i-1] != '\\'))
-            nQuotes++;
-
-        if (nQuotes % 2)
-            continue;
-
-        // Jump over parentheses
-        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' ) && (nMatching = getMatchingParenthesis(sArgList.subview(i))) != string::npos)
-            i += nMatching;
-
-        // A comma was found -> break the loop
-        if (sArgList[i] == cSep)
-        {
-            nPos = i;
-            break;
-        }
-    }
-
-    // If no comma was found, simply use the complete string
-    if (!nPos && sArgList[0] != cSep)
-        nPos = sArgList.length();
-
-    // If the comma was at the first position, then return nothing
-    if (!nPos)
-    {
-        if (sArgList[0] == cSep)
-            sArgList.trim_front(1);
-        return StringView();
-    }
-
-    // Get the first argument
-    StringView sArg = sArgList.subview(0, nPos);
-    sArg.strip();
-
-    sArgList.trim_front(nPos+1);
-
-    // return the first argument
-    return sArg;
-}
-
-string getNextArgument(string& sArgList, bool bCut)
-{
-    StringView argList(sArgList);
-    string sArg = getNextCommandLineToken(argList, ',').to_string();
-
-    if (bCut)
-        sArgList = argList.to_string();
-
-    return sArg;
-}
-
-string getNextIndex(string& sArgList, bool bCut)
-{
-    StringView argList(sArgList);
-    string sArg = getNextCommandLineToken(argList, ':').to_string();
-
-    if (bCut)
-        sArgList = argList.to_string();
-
-    return sArg;
-}
-
-string getNextSemiColonSeparatedToken(string& sArgList, bool bCut)
-{
-    StringView argList(sArgList);
-    string sArg = getNextCommandLineToken(argList, ';').to_string();
-
-    if (bCut)
-        sArgList = argList.to_string();
-
-    return sArg;
-}
-
-StringView getNextViewedArgument(StringView& sView)
-{
-    return getNextCommandLineToken(sView, ',');
-}
-
-StringView getNextViewedIndex(StringView& sView)
-{
-    return getNextCommandLineToken(sView, ':');
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Splits up the complete argument list
-/// and returns them as an EndlessVector.
-///
-/// \param sArgList StringView
-/// \return EndlessVector<StringView>
-///
-/////////////////////////////////////////////////
-EndlessVector<StringView> getAllArguments(StringView sArgList)
-{
-    EndlessVector<StringView> vArgs;
-
-    while (sArgList.length())
-        vArgs.push_back(getNextViewedArgument(sArgList));
-
-    return vArgs;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Splits up the complete argument list
-/// and returns them as an EndlessVector.
-///
-/// \param sArgList string
-/// \return EndlessVector<string>
-///
-/////////////////////////////////////////////////
-EndlessVector<string> getAllArguments(string sArgList)
-{
-    EndlessVector<string> vArgs;
-
-    while (sArgList.length())
-        vArgs.push_back(getNextArgument(sArgList, true));
-
-    return vArgs;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Splits up the complete index list
-/// and returns them as an EndlessVector.
-///
-/// \param sArgList string
-/// \return EndlessVector<string>
-///
-/////////////////////////////////////////////////
-EndlessVector<string> getAllIndices(string sArgList)
-{
-    EndlessVector<string> vIndices;
-
-    while (sArgList.length())
-        vIndices.push_back(getNextIndex(sArgList, true));
-
-    return vIndices;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Splits up the complete index list
-/// and returns them as an EndlessVector.
-///
-/// \param sArgList string
-/// \return EndlessVector<string>
-///
-/////////////////////////////////////////////////
-EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList)
-{
-    EndlessVector<string> vIndices;
-
-    while (sArgList.length())
-        vIndices.push_back(getNextSemiColonSeparatedToken(sArgList, true));
-
-    return vIndices;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Wrapper for the static member function
 /// of the kernel.
 ///
@@ -2485,11 +2182,11 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 /// through the list of known clusters for
 /// string-containing clusters.
 ///
-/// \param sLine const string&
+/// \param sLine StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool containsStringClusters(const string& sLine)
+static bool containsStringClusters(StringView sLine)
 {
     const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
 
@@ -2499,7 +2196,7 @@ static bool containsStringClusters(const string& sLine)
         {
             size_t pos = sLine.find(iter->first + "{");
 
-            if (pos != string::npos && (!pos || isDelimiter(sLine[pos-1])))
+            if (pos != std::string::npos && (!pos || isDelimiter(sLine[pos-1])))
                 return true;
         }
     }
@@ -2513,54 +2210,29 @@ static bool containsStringClusters(const string& sLine)
 /// passed expression contains strings or
 /// valtostring parser.
 ///
-/// \param sLine const string&
+/// \param sLine StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool containsStrings(const string& sLine)
+bool containsStrings(StringView sLine)
 {
     if (!sLine.length())
         return false;
 
     // It's only necessary to check the following functions.
     // All other string functions need strings as input
-    if (sLine.find_first_of("\"#") != string::npos
-            || sLine.find("string(") != string::npos
-            || sLine.find("string_cast(") != string::npos
-            || sLine.find("char(") != string::npos
-            || sLine.find("getlasterror(") != string::npos
-            || sLine.find("getuilang(") != string::npos
-            || sLine.find("getversioninfo(") != string::npos
-            || sLine.find("valtostr(") != string::npos
-            || sLine.find("weekday(") != string::npos
-            || sLine.find("to_tex(") != std::string::npos)
+    if (sLine.find_first_of("\"#") != std::string::npos
+        || sLine.find("string_cast(") != std::string::npos
+        || sLine.find("char(") != std::string::npos
+        || sLine.find("getlasterror(") != std::string::npos
+        || sLine.find("getuilang(") != std::string::npos
+        || sLine.find("getversioninfo(") != std::string::npos
+        || sLine.find("valtostr(") != std::string::npos
+        || sLine.find("weekday(") != std::string::npos
+        || sLine.find("to_tex(") != std::string::npos)
         return true;
 
     return containsStringClusters(sLine);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function checks, whether the file
-/// with the passed file name exists.
-///
-/// \param sFilename const string&
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool fileExists(const string& sFilename)
-{
-    if (sFilename.length())
-    {
-        string _sFile = sFilename;
-        _sFile = fromSystemCodePage(_sFile);
-
-        // Open the ifstream (ifstream doesn't create a file)
-        ifstream ifFile(_sFile.c_str());
-        return ifFile.good(); // If the stream is good(), the file exists
-    }
-    else
-        return false;
 }
 
 
@@ -3265,74 +2937,6 @@ void addArgumentQuotes(string& sToAdd, size_t pos)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the power of
-/// a value with the specialization that the
-/// exponent is an integer.
-///
-/// \param dNumber double
-/// \param nExponent int
-/// \return double
-///
-/////////////////////////////////////////////////
-double intPower(double dNumber, int nExponent)
-{
-    long double dResult = 1.0L;
-
-    // An exponent of zero returns always 1
-    if (!nExponent)
-        return 1.0;
-
-    // Calculuate the exponentation
-    for (int i = abs(nExponent); i > 0; i--)
-    {
-        dResult *= (long double)dNumber;
-    }
-
-    // Apply the sign of the exponent
-    if (nExponent > 0)
-        return dResult;
-    else
-        return 1.0 / dResult;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function calculates the power of
-/// a value with the specialization that the
-/// exponent is an integer. Function overload for
-/// complex-valued bases.
-///
-/// \param dNumber const std::complex<double>&
-/// \param nExponent int
-/// \return std::complex<double>
-///
-/////////////////////////////////////////////////
-std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent)
-{
-    if (dNumber.imag() == 0.0)
-        return intPower(dNumber.real(), nExponent);
-
-    std::complex<double> dResult = 1.0;
-
-    // An exponent of zero returns always 1
-    if (!nExponent)
-        return 1.0;
-
-    // Calculuate the exponentation
-    for (int i = abs(nExponent); i > 0; i--)
-    {
-        dResult *= dNumber;
-    }
-
-    // Apply the sign of the exponent
-    if (nExponent > 0)
-        return dResult;
-    else
-        return 1.0 / dResult;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function evaluates, whether the
 /// desired position is part of the argument of a
 /// to_cmd() function.
@@ -3737,4 +3341,399 @@ std::string incrementVersion(std::string _sVer)
     // the build count)
     return intToVersion(versionToInt(_sVer)+1);
 }
+
+#endif
+
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the file
+/// with the passed file name exists.
+///
+/// \param sFilename const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool fileExists(const std::string& sFilename)
+{
+    if (sFilename.length())
+    {
+        std::string _sFile = sFilename;
+        _sFile = fromSystemCodePage(_sFile);
+
+        // Open the ifstream (ifstream doesn't create a file)
+        std::ifstream ifFile(_sFile.c_str());
+        return ifFile.good(); // If the stream is good(), the file exists
+    }
+    else
+        return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the power of
+/// a value with the specialization that the
+/// exponent is an integer.
+///
+/// \param dNumber double
+/// \param nExponent int64_t
+/// \return double
+///
+/////////////////////////////////////////////////
+double intPower(double dNumber, int64_t nExponent)
+{
+    long double dResult = 1.0L;
+
+    // An exponent of zero returns always 1
+    if (!nExponent)
+        return 1.0;
+
+    // Calculuate the exponentation
+    for (int64_t i = abs(nExponent); i > 0; i--)
+    {
+        dResult *= (long double)dNumber;
+    }
+
+    // Apply the sign of the exponent
+    if (nExponent > 0)
+        return dResult;
+    else
+        return 1.0 / dResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the power of
+/// a value with the specialization that the
+/// exponent is an integer. Function overload for
+/// complex-valued bases.
+///
+/// \param dNumber const std::complex<double>&
+/// \param nExponent int64_t
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> intPower(const std::complex<double>& dNumber, int64_t nExponent)
+{
+    if (dNumber.imag() == 0.0)
+        return intPower(dNumber.real(), nExponent);
+
+    std::complex<double> dResult = 1.0;
+
+    // An exponent of zero returns always 1
+    if (!nExponent)
+        return 1.0;
+
+    // Calculuate the exponentation
+    for (int64_t i = abs(nExponent); i > 0; i--)
+    {
+        dResult *= dNumber;
+    }
+
+    // Apply the sign of the exponent
+    if (nExponent > 0)
+        return dResult;
+    else
+        return 1.0 / dResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the position of the closing
+/// parenthesis.
+///
+/// \param sLine StringView
+/// \return size_t The position of the closing parenthesis
+///
+/// This function determines the type of the
+/// desired parenthesis by itself by using the
+/// first parenthesis-like character that might be
+/// found in the passed string. This function also
+/// considers quotation marks, so that parentheses
+/// in strings are not considered as matching. If
+/// the function does not find the matching
+/// parenthesis, it returns string::npos
+/////////////////////////////////////////////////
+size_t getMatchingParenthesis(const StringView& sLine)
+{
+    size_t pos = sLine.find_first_of("([{");
+
+    if (pos == std::string::npos)
+        return pos;
+
+    // Get the opening parenthesis
+    char cParenthesis = sLine[pos];
+    char cClosingParenthesis = 0;
+
+    // Depending on the opening parenthesis, determine the closing one
+    switch (cParenthesis)
+    {
+        case '(':
+            cClosingParenthesis = ')';
+            break;
+        case '{':
+            cClosingParenthesis = '}';
+            break;
+        case '[':
+            cClosingParenthesis = ']';
+            break;
+        default:
+            // Default case will handle that the user didn't pass a string, which begins with a parenthesis
+            cParenthesis = '(';
+            cClosingParenthesis = ')';
+    }
+
+    int nOpenParenthesis = 0;
+    size_t nQuotes = 0;
+
+    // Go through the string and count the opening and closing parentheses
+    // Consider also whether the the current position is part of a larger string
+    for (size_t i = 0; i < sLine.length(); i++)
+    {
+        // Count unmasked quotation marks
+        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
+        // Increment the counter at opening paretheses
+        if (sLine[i] == cParenthesis)
+            nOpenParenthesis++;
+
+        // Decrement the counter at closing parentheses
+        if (sLine[i] == cClosingParenthesis)
+            nOpenParenthesis--;
+
+        // All parentheses are closed -> Return the position of this parenthesis
+        if (!nOpenParenthesis && i > pos)
+            return i;
+    }
+
+    // --> Falls die Klammer nicht schliesst, gebe -1 zurueck (analog zu string::find()) <--
+    return std::string::npos;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function determines, if the
+/// passed character is a delimiter character.
+///
+/// \param c char
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isDelimiter(char c)
+{
+    // Characters converted to a single logical expression (should be faster in principle)
+    return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
+    // Only construct the string once
+    //static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
+
+    // Try to find the current character
+    /*if (sDelimiter.find(cChar) != string::npos)
+        return true;
+    return false;*/
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function gets the first argument
+/// in the passed argument list if the boolean
+/// bCut is true then the argument is erased from
+/// the string
+///
+/// \param sArgList StringView&
+/// \param cSep char
+/// \return StringView
+///
+/////////////////////////////////////////////////
+static StringView getNextCommandLineToken(StringView& sArgList, char cSep)
+{
+    if (!sArgList.length())
+        return StringView();
+
+    size_t nPos = 0;
+    size_t nMatching = 0;
+    size_t nQuotes = 0;
+
+    // Go through the complete string
+    for (size_t i = 0; i < sArgList.length(); i++)
+    {
+        if (sArgList[i] == '"' && (!i || sArgList[i-1] != '\\'))
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
+        // Jump over parentheses
+        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' )
+             && (nMatching = getMatchingParenthesis(sArgList.subview(i))) != std::string::npos)
+            i += nMatching;
+
+        // A separator was found -> break the loop
+        if (sArgList[i] == cSep)
+        {
+            nPos = i;
+            break;
+        }
+    }
+
+    // If no comma was found, simply use the complete string
+    if (!nPos && sArgList[0] != cSep)
+        nPos = sArgList.length();
+
+    // If the comma was at the first position, then return nothing
+    if (!nPos)
+    {
+        if (sArgList[0] == cSep)
+            sArgList.trim_front(1);
+        return StringView();
+    }
+
+    // Get the first argument
+    StringView sArg = sArgList.subview(0, nPos);
+    sArg.strip();
+
+    sArgList.trim_front(nPos+1);
+
+    // return the first argument
+    return sArg;
+}
+
+
+std::string getNextArgument(std::string& sArgList, bool bCut)
+{
+    StringView argList(sArgList);
+    std::string sArg = getNextCommandLineToken(argList, ',').to_string();
+
+    if (bCut)
+        sArgList = argList.to_string();
+
+    return sArg;
+}
+
+std::string getNextIndex(std::string& sArgList, bool bCut)
+{
+    StringView argList(sArgList);
+    std::string sArg = getNextCommandLineToken(argList, ':').to_string();
+
+    if (bCut)
+        sArgList = argList.to_string();
+
+    return sArg;
+}
+
+std::string getNextSemiColonSeparatedToken(std::string& sArgList, bool bCut)
+{
+    StringView argList(sArgList);
+    std::string sArg = getNextCommandLineToken(argList, ';').to_string();
+
+    if (bCut)
+        sArgList = argList.to_string();
+
+    return sArg;
+}
+
+StringView getNextViewedArgument(StringView& sView)
+{
+    return getNextCommandLineToken(sView, ',');
+}
+
+StringView getNextViewedIndex(StringView& sView)
+{
+    return getNextCommandLineToken(sView, ':');
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete argument list
+/// and returns them as an EndlessVector.
+///
+/// \param sArgList StringView
+/// \return EndlessVector<StringView>
+///
+/////////////////////////////////////////////////
+EndlessVector<StringView> getAllArguments(StringView sArgList)
+{
+    EndlessVector<StringView> vArgs;
+
+    while (sArgList.length())
+        vArgs.push_back(getNextViewedArgument(sArgList));
+
+    return vArgs;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete argument list
+/// and returns them as an EndlessVector.
+///
+/// \param sArgList std::string
+/// \return EndlessVector<std::string>
+///
+/////////////////////////////////////////////////
+EndlessVector<std::string> getAllArguments(std::string sArgList)
+{
+    EndlessVector<std::string> vArgs;
+
+    while (sArgList.length())
+        vArgs.push_back(getNextArgument(sArgList, true));
+
+    return vArgs;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete index list
+/// and returns them as an EndlessVector.
+///
+/// \param sArgList std::string
+/// \return EndlessVector<string>
+///
+/////////////////////////////////////////////////
+EndlessVector<std::string> getAllIndices(std::string sArgList)
+{
+    EndlessVector<std::string> vIndices;
+
+    while (sArgList.length())
+        vIndices.push_back(getNextIndex(sArgList, true));
+
+    return vIndices;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete index list
+/// and returns them as an EndlessVector.
+///
+/// \param sArgList string
+/// \return EndlessVector<std::string>
+///
+/////////////////////////////////////////////////
+EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList)
+{
+    EndlessVector<std::string> vIndices;
+
+    while (sArgList.length())
+        vIndices.push_back(getNextSemiColonSeparatedToken(sArgList, true));
+
+    return vIndices;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the content of a
+/// complex value is actually a regular integer.
+///
+/// \param number const std::complex<double>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isInt(const std::complex<double>& number)
+{
+    return number.imag() == 0.0 && fabs(number.real() - rint(number.real())) < 1e-12;
+}
+
+
+
 

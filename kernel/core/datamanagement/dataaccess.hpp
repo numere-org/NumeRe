@@ -43,13 +43,16 @@ class DataAccessParser
 
     public:
         DataAccessParser();
-        DataAccessParser(StringView sCommand, bool isAssignment);
+        DataAccessParser(StringView sCommand, bool isAssignment, bool isLocal = false);
         DataAccessParser(const DataAccessParser& _accessParser);
-        void evalIndices();
+        DataAccessParser(DataAccessParser&& moved) = default;
+        DataAccessParser& operator=(const DataAccessParser& copied) = default;
+        void evalIndices(bool asMatrix = true);
         std::string& getDataObject();
         std::string getIndexString();
         Indices& getIndices();
         bool isCluster() const;
+        bool isMatrix() const;
         std::vector<size_t> getDataGridDimensions() const;
 };
 
@@ -62,15 +65,15 @@ enum DataOptions
 };
 
 
-bool parser_CheckMultArgFunc(const std::string&, const std::string&);
+bool parser_CheckMultArgFunc(StringView, StringView);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options = REPLACE_NAN);
 void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, int options = NO_OPTION);
 Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
 bool isNotEmptyExpression(StringView);
 bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
-mu::value_type getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
-std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);
+mu::Value getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
+mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 

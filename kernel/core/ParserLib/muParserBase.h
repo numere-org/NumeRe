@@ -41,6 +41,7 @@
 #include "muParserBytecode.h"
 #include "muParserError.h"
 #include "muParserState.hpp"
+#include "muVarFactory.hpp"
 
 class StringView;
 class MutableStringView;
@@ -50,9 +51,6 @@ namespace mu
 	/** \file
 	    \brief This file contains the class definition of the muparser engine.
 	*/
-
-    typedef std::map<std::string,std::vector<value_type>> vectormap_type;
-
 
 	//--------------------------------------------------------------------------------------------------
 	/** \brief Mathematical expressions parser (base parser engine).
@@ -85,7 +83,7 @@ namespace mu
 			typedef ParserTokenReader token_reader_type;
 
 			/** \brief Type used for parser tokens. */
-			typedef ParserToken<value_type, string_type> token_type;
+			typedef ParserToken token_type;
 
 		public:
 
@@ -95,8 +93,7 @@ namespace mu
 			*/
 			typedef ParserError exception_type;
 
-			mutable std::map<std::string, std::string>* mVarMapPntr;
-			mutable std::list<mu::value_type*> m_lDataStorage;
+			void SetVarAliases(std::map<std::string, std::string>* aliases);
 
 			// Bytecode caching and loop caching interface section
 			void ActivateLoopMode(size_t _nLoopLength);
@@ -129,12 +126,10 @@ namespace mu
 
 			virtual ~ParserBase();
 
-			value_type  Eval();
-			value_type* Eval(int& nStackSize);
-			void Eval(value_type* results, int nBulkSize);
+			Array  Eval();
+			Array* Eval(int& nStackSize);
 
 			void SetExpr(StringView a_sExpr);
-			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
 
 			void SetDecSep(char_type cDecSep);
 			void SetThousandsSep(char_type cThousandsSep = 0);
@@ -153,9 +148,9 @@ namespace mu
 			    \param optimizeAway A flag indicating this function may be optimized
 			*/
 			template<typename T>
-			void DefineFun(const string_type& a_strName, T a_pFun, bool optimizeAway = true)
+			void DefineFun(const string_type& a_strName, T a_pFun, bool optimizeAway = true, int numOpt = 0)
 			{
-				AddCallback( a_strName, ParserCallback(a_pFun, optimizeAway), m_FunDef, ValidNameChars() );
+				AddCallback( a_strName, ParserCallback(a_pFun, optimizeAway, numOpt), m_FunDef, ValidNameChars() );
 			}
 
 			void DefineOprt(const string_type& a_strName,
@@ -163,9 +158,9 @@ namespace mu
 							unsigned a_iPri = 0,
 							EOprtAssociativity a_eAssociativity = oaLEFT,
 							bool optimizeAway = true);
-			void DefineConst(const string_type& a_sName, value_type a_fVal);
-			void DefineStrConst(const string_type& a_sName, const string_type& a_strVal);
-			void DefineVar(const string_type& a_sName, value_type* a_fVar);
+			void DefineConst(const string_type& a_sName, Value a_fVal);
+			Variable* CreateVar(const string_type& a_sName);
+			void DefineVar(const string_type& a_sName, Variable* a_fVar);
 			void DefinePostfixOprt(const string_type& a_strFun, fun_type1 a_pOprt, bool optimizeAway = true);
 			void DefineInfixOprt(const string_type& a_strName, fun_type1 a_pOprt, int a_iPrec = prINFIX, bool optimizeAway = true);
 
@@ -180,10 +175,10 @@ namespace mu
 			void RemoveVar(const string_type& a_strVarName);
 			const varmap_type& GetUsedVar();
 			const varmap_type& GetVar() const;
+			const varmap_type& GetInternalVars() const;
 			const valmap_type& GetConst() const;
 			const string_type& GetExpr() const;
 			const funmap_type& GetFunDef() const;
-			const std::map<std::string, std::vector<mu::value_type> >& GetVectors() const;
 			string_type GetVersion(EParserVersionInfo eInfo = pviFULL) const;
 
 			const char_type** GetOprtDef() const;
@@ -206,12 +201,11 @@ namespace mu
 						int a_iPos = (int)mu::string_type::npos,
 						const string_type& a_strTok = string_type() ) const;
 
-			string_type CreateTempVectorVar(const std::vector<mu::value_type>& vVar);
-			void SetVectorVar(const std::string& sVarName, const std::vector<mu::value_type>& vVar, bool bAddVectorType = false);
-			std::vector<mu::value_type>* GetVectorVar(const std::string& sVarName);
-			void UpdateVectorVar(const std::string& sVarName);
-			void ClearVectorVars(bool bIgnoreProcedureVects = false);
-			bool ContainsVectorVars(StringView sExpr, bool ignoreSingletons);
+			std::string CreateTempVar(const Array& vVar);
+			void SetInternalVar(const std::string& sVarName, const Array& vVar);
+			Variable* GetInternalVar(const std::string& sVarName);
+			void ClearInternalVars(bool bIgnoreProcedureVects = false);
+			bool ContainsInternalVars(StringView sExpr, bool ignoreSingletons);
 
 		protected:
 
@@ -266,19 +260,23 @@ namespace mu
 					char_type m_cThousandsSep;
 			};
 
+            static Array VectorCreate(const Array*, int);  // vector creation
+            static Array expandVector2(const Array& firstVal,
+                                       const Array& lastVal);
+            static Array expandVector3(const Array& firstVal,
+                                       const Array& incr,
+                                       const Array& lastVal);
+            static void expandVector(std::complex<double> dFirst,
+                                     const std::complex<double>& dLast,
+                                     const std::complex<double>& dIncrement,
+                                     Array& vResults);
+
 		private:
-			void replaceLocalVars(MutableStringView sLine);
 			MutableStringView compileVectors(MutableStringView sExpr);
 			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
-            void expandVector(mu::value_type dFirst,
-                              const mu::value_type& dLast,
-                              const mu::value_type& dIncrement,
-                              std::vector<mu::value_type>& vResults);
-			void evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize);
-			string_type getNextVarObject(std::string& sArgList, bool bCut);
-			string_type getNextVectorVarIndex();
+			string_type getNextTempVarIndex();
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();
 			void ReInit();
@@ -293,6 +291,8 @@ namespace mu
 									ParserStack<token_type>& a_stVal) const;
 			void ApplyBinOprt(ParserStack<token_type>& a_stOpt,
 							  ParserStack<token_type>& a_stVal) const;
+			void ApplyVal2Str(ParserStack<token_type>& a_stOpt,
+							  ParserStack<token_type>& a_stVal) const;
 
 			void ApplyIfElse(ParserStack<token_type>& a_stOpt,
 							 ParserStack<token_type>& a_stVal) const;
@@ -300,9 +300,6 @@ namespace mu
 			void ApplyFunc(ParserStack<token_type>& a_stOpt,
 						   ParserStack<token_type>& a_stVal,
 						   int iArgCount) const;
-
-			token_type ApplyStrFunc(const token_type& a_FunTok,
-									const std::vector<token_type>& a_vArg) const;
 
 			int GetOprtPrecedence(const token_type& a_Tok) const;
 			EOprtAssociativity GetOprtAssociativity(const token_type& a_Tok) const;
@@ -314,10 +311,10 @@ namespace mu
 			void ParseCmdCodeBulk(int nOffset, int nThreadID);
 			void ParseCmdCodeBulkParallel(size_t nVectorLength);
 
-			void  CheckName(const string_type& a_strName, const string_type& a_CharSet) const;
-			void  CheckOprt(const string_type& a_sName,
-							const ParserCallback& a_Callback,
-							const string_type& a_szCharSet) const;
+			void CheckName(const string_type& a_strName, const string_type& a_CharSet) const;
+			void CheckOprt(const string_type& a_sName,
+                           const ParserCallback& a_Callback,
+                           const string_type& a_szCharSet) const;
 
 			void StackDump(const ParserStack<token_type >& a_stVal,
 						   const ParserStack<token_type >& a_stOprt) const;
@@ -333,10 +330,7 @@ namespace mu
 			State* m_state;
 			mutable valbuf_type m_buffer;
 
-			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
-			//static const int s_MaxNumOpenMPThreads = 4;
-
-			mutable vectormap_type mVectorVars;
+			mutable varmap_type mInternalVars;
 
 			size_t nthLoopElement;
 			size_t nthLoopPartEquation;
@@ -347,9 +341,6 @@ namespace mu
 			bool bCompiling;
 			int nMaxThreads;
 
-			mutable stringbuf_type  m_vStringBuf; ///< String buffer, used for storing string function arguments
-			stringbuf_type  m_vStringVarBuf;
-
 			std::unique_ptr<token_reader_type> m_pTokenReader; ///< Managed pointer to the token reader object.
 
 			funmap_type  m_FunDef;         ///< Map of function names and pointers.
@@ -357,8 +348,8 @@ namespace mu
 			funmap_type  m_InfixOprtDef;   ///< unary infix operator.
 			funmap_type  m_OprtDef;        ///< Binary operator callbacks
 			valmap_type  m_ConstDef;       ///< user constants.
-			strmap_type  m_StrVarDef;      ///< user defined string constants
-			varmap_type  m_VarDef;         ///< user defind variables.
+
+			std::shared_ptr<VarFactory> m_factory;
 
 			bool m_bBuiltInOp;             ///< Flag that can be used for switching built in operators on and off
 

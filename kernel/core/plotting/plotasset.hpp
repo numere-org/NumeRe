@@ -50,7 +50,7 @@ struct PlotAsset
     }
 
     void create(PlotType _t, size_t nDim, size_t nAxes, const std::vector<size_t>& samples, size_t nLayers = 1);
-    void writeData(const mu::value_type& val, size_t layer, size_t x, size_t y = 0, size_t z = 0);
+    void writeData(const std::complex<double>& val, size_t layer, size_t x, size_t y = 0, size_t z = 0);
     void writeAxis(double val, size_t pos, PlotCoords c = XCOORD);
     void duplicatePoints();
     void removeNegativeValues(PlotCoords c);
@@ -216,6 +216,7 @@ class PlotAssetManager
         void weightedRange(int coord, Interval& ivl) const;
         bool hasDataPlots() const;
         void applyCoordSys(CoordinateSystem coords, size_t every = 1);
+        void resize(size_t x_max, size_t y_max);
 };
 
 #endif // PLOTASSET_HPP

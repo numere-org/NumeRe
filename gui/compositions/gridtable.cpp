@@ -20,11 +20,13 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
 
+std::string removeQuotationMarks(const std::string& sString);
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable()
+GridNumeReTable::GridNumeReTable() : m_showQMarks(true)
 {
     _table = NumeRe::Table();
 }
@@ -38,7 +40,7 @@ GridNumeReTable::GridNumeReTable()
 /// \param numCols int
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(int numRows, int numCols)
+GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true)
 {
     _table = NumeRe::Table(numRows-2, numCols-1);
 }
@@ -49,9 +51,10 @@ GridNumeReTable::GridNumeReTable(int numRows, int numCols)
 /// of the passed table.
 ///
 /// \param _extTable NumeRe::Table&&
+/// \param showQMarks bool
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable)
+GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m_showQMarks(showQMarks)
 {
     _table = std::move(_extTable);
 }
@@ -219,7 +222,7 @@ bool GridNumeReTable::GetValueAsBool(int row, int col)
 /////////////////////////////////////////////////
 /// \brief This member function will return the
 /// internal data as a void pointer referencing
-/// the internal mu::value_type attribute.
+/// the internal std::complex<double> attribute.
 ///
 /// \param row int
 /// \param col int
@@ -249,8 +252,31 @@ wxString GridNumeReTable::GetValue(int row, int col)
         return _table.getCleanHeadPart(col, row);
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
+    else if (!m_showQMarks)
+        return removeQuotationMarks(_table.getValueAsString(row - getNumHeadlines(), col));
     else
         return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function returns
+/// the value of the selected cell as "editable"
+/// string, i.e. without additional unit.
+///
+/// \param row int
+/// \param col int
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString GridNumeReTable::GetEditableValue(int row, int col)
+{
+    if (row < getNumHeadlines() && col < (int)_table.getCols())
+        return _table.getCleanHeadPart(col, row);
+    else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+        return "";
+    else
+        return replaceControlCharacters(_table.getValueAsInternalString(row - getNumHeadlines(), col));
 }
 
 
@@ -565,12 +591,12 @@ double GridNumeReTable::max(const wxGridCellCoordsContainer& coords) const
 /// average value of the range (r1,c1)->(r2,c2).
 ///
 /// \param coords const wxGridCellCoordsContainer&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) const
+std::complex<double> GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) const
 {
-    mu::value_type dSum = 0;
+    std::complex<double> dSum = 0;
     size_t nCount = 0;
     const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
@@ -582,7 +608,7 @@ mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) con
             if (!coords.contains(i, j))
                 continue;
 
-            mu::value_type val = _table.getValue(i - nHeadLines, j);
+            std::complex<double> val = _table.getValue(i - nHeadLines, j);
 
             if (!mu::isnan(val))
             {
@@ -604,12 +630,12 @@ mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) con
 /// sum of the range (r1,c1)->(r2,c2).
 ///
 /// \param coords const wxGridCellCoordsContainer&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) const
+std::complex<double> GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) const
 {
-    mu::value_type dSum = 0;
+    std::complex<double> dSum = 0;
     const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
@@ -620,7 +646,7 @@ mu::value_type GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) con
             if (!coords.contains(i, j))
                 continue;
 
-            mu::value_type val = _table.getValue(i - nHeadLines, j);
+            std::complex<double> val = _table.getValue(i - nHeadLines, j);
 
             if (!mu::isnan(val))
                 dSum += val;

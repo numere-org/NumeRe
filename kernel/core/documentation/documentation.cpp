@@ -19,6 +19,7 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <regex>
 #include "documentation.hpp"
 #include "../../kernel.hpp"
 #include "../datamanagement/database.hpp"
@@ -47,17 +48,17 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
 
     for (size_t i = 0; i < vSplitted.size(); i++)
     {
-        if (vSplitted[i][4] != '-')
+        if (std::regex_match(vSplitted[i].substr(4, 10), std::regex("\\d+\\. +.+")))
         {
-            if (isInList)
+            if (!isInList)
             {
-                vDoc.push_back("</list>");
-                isInList = false;
+                vDoc.push_back("<list type=\"enum\">");
+                isInList = true;
             }
 
-            vDoc.push_back(vSplitted[i].substr(4));
+            vDoc.push_back("<item node=\"*\">" + vSplitted[i].substr(vSplitted[i].find_first_not_of(' ', vSplitted[i].find_first_of(' ', 4))) + "</item>");
         }
-        else
+        else if (vSplitted[i][4] == '-')
         {
             if (!isInList)
             {
@@ -72,7 +73,7 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
             {
                 sText = vSplitted[i].substr(vSplitted[i].find(": ")+2);
                 sNode = vSplitted[i].substr(5, vSplitted[i].find(": ")-5);
-                replaceAll(sNode, "\"", "");
+                replaceAll(sNode, "\"", "&quot;");
             }
             else
                 sText = vSplitted[i].substr(5);
@@ -81,6 +82,16 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
             StripSpaces(sText);
 
             vDoc.push_back("<item node=\"" + sNode + "\">" + sText + "</item>");
+        }
+        else
+        {
+            if (isInList)
+            {
+                vDoc.push_back("</list>");
+                isInList = false;
+            }
+
+            vDoc.push_back(vSplitted[i].substr(4));
         }
     }
 

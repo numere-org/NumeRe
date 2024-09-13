@@ -197,9 +197,6 @@ void OptionsDialog::CreateConfigPage()
     // Create a group
     wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_USERINTERFACE"));
 
-    m_compactTables = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_COMPACTTABLES"));
-    m_showGridLines = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOWGRIDLINES"));
-    m_autoGroupCols = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOGROUPCOLS"));
     m_ExtendedInfo = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
@@ -207,6 +204,7 @@ void OptionsDialog::CreateConfigPage()
     //m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
 
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_TOOLBAR"));
+
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
     m_enableToolbarStretch = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ENABLE_TOOLBARSTRETCH"));
     wxStaticText* iconStyleText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _guilang.get("GUI_OPTIONS_ICONSTYLE"), wxDefaultPosition, wxDefaultSize, 0);
@@ -219,6 +217,14 @@ void OptionsDialog::CreateConfigPage()
     m_iconStyle = new wxComboBox( group->GetStaticBox(), wxID_ANY, "Focused", wxDefaultPosition, wxDefaultSize, iconStyles, wxCB_READONLY );
     m_iconStyle->SetStringSelection("Focused");
     group->Add(m_iconStyle, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
+
+    // Create a group
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_TABLEREP"));
+
+    m_compactTables = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_COMPACTTABLES"));
+    m_showGridLines = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOWGRIDLINES"));
+    m_autoGroupCols = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOGROUPCOLS"));
+    m_showQMarks = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOWQMARKS"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_INTERNALS"));
@@ -811,6 +817,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_COMPACT].active() = m_compactTables->IsChecked();
     mSettings[SETTING_B_SHOWGRIDLINES].active() = m_showGridLines->IsChecked();
     mSettings[SETTING_B_AUTOGROUPCOLS].active() = m_autoGroupCols->IsChecked();
+    mSettings[SETTING_B_SHOWQMARKS].active() = m_showQMarks->IsChecked();
     mSettings[SETTING_B_DEFCONTROL].active() = m_AutoLoadDefines->IsChecked();
     mSettings[SETTING_B_GREETING].active() = m_showGreeting->IsChecked();
     mSettings[SETTING_B_LOADEMPTYCOLS].active() = m_LoadCompactTables->IsChecked();
@@ -927,6 +934,7 @@ void OptionsDialog::InitializeDialog()
     m_compactTables->SetValue(mSettings[SETTING_B_COMPACT].active());
     m_showGridLines->SetValue(mSettings[SETTING_B_SHOWGRIDLINES].active());
     m_autoGroupCols->SetValue(mSettings[SETTING_B_AUTOGROUPCOLS].active());
+    m_showQMarks->SetValue(mSettings[SETTING_B_SHOWQMARKS].active());
     m_AutoLoadDefines->SetValue(mSettings[SETTING_B_DEFCONTROL].active());
     m_showGreeting->SetValue(mSettings[SETTING_B_GREETING].active());
     m_LoadCompactTables->SetValue(mSettings[SETTING_B_LOADEMPTYCOLS].active());

@@ -21,7 +21,6 @@
 #include "procedure.hpp"
 #include "../../kernel.hpp"
 
-using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief Static helper function to detect free
@@ -30,14 +29,14 @@ using namespace std;
 /// as long as arguments are not converted into
 /// real variables.
 ///
-/// \param sString const string&
+/// \param sString const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool containsFreeOperators(const string& sString)
+static bool containsFreeOperators(const std::string& sString)
 {
     size_t nQuotes = 0;
-    static string sOperators = "+-*/&|?!^<>=";
+    static std::string sOperators = "+-*/&|?!^<>=";
 
     for (size_t i = 0; i < sString.length(); i++)
     {
@@ -51,10 +50,10 @@ static bool containsFreeOperators(const string& sString)
         {
             size_t nMatch;
 
-            if ((nMatch = getMatchingParenthesis(StringView(sString, i))) != string::npos)
+            if ((nMatch = getMatchingParenthesis(StringView(sString, i))) != std::string::npos)
                 i += nMatch;
         }
-        else if (sOperators.find(sString[i]) != string::npos)
+        else if (sOperators.find(sString[i]) != std::string::npos)
             return true;
     }
 
@@ -76,12 +75,12 @@ ProcedureVarFactory::ProcedureVarFactory()
 /// available procedure instance.
 ///
 /// \param _procedure Procedure*
-/// \param sProc const string&
+/// \param sProc const std::string&
 /// \param currentProc size_t
 /// \param _inliningMode bool
 ///
 /////////////////////////////////////////////////
-ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, size_t currentProc, bool _inliningMode)
+ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const std::string& sProc, size_t currentProc, bool _inliningMode)
 {
     init();
     _currentProcedure = _procedure;
@@ -126,7 +125,6 @@ void ProcedureVarFactory::init()
 
     inliningMode = false;
     sInlineVarDef.clear();
-    sInlineStringDef.clear();
 }
 
 
@@ -150,8 +148,6 @@ void ProcedureVarFactory::reset()
         {
             if (iter.second == NUMTYPE)
                 _parserRef->RemoveVar(iter.first);
-            else if (iter.second == STRINGTYPE)
-                NumeReKernel::getInstance()->getStringParser().removeStringVar(iter.first);
             else if (iter.second == CLUSTERTYPE)
                 _dataRef->removeCluster(iter.first.substr(0, iter.first.find('{')));
             else if (iter.second == TABLETYPE)
@@ -168,19 +164,10 @@ void ProcedureVarFactory::reset()
             if (_parserRef)
                 _parserRef->RemoveVar(iter.second.first);
 
-            // Deleting a nullptr is harmless
             delete iter.second.second;
         }
 
         mLocalVars.clear();
-    }
-
-    if (mLocalStrings.size())
-    {
-        for (auto iter : mLocalStrings)
-            NumeReKernel::getInstance()->getStringParser().removeStringVar(iter.second.first);
-
-        mLocalStrings.clear();
     }
 
     if (mLocalTables.size())
@@ -200,7 +187,6 @@ void ProcedureVarFactory::reset()
     }
 
     sInlineVarDef.clear();
-    sInlineStringDef.clear();
     vInlineArgDef.clear();
 
     mArguments.clear();
@@ -263,11 +249,11 @@ bool ProcedureVarFactory::isReference(const std::string& sArgName) const
 /// to create variable names fitting for an non-
 /// relative procedure.
 ///
-/// \param sProcedureName string
-/// \return string
+/// \param sProcedureName std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string ProcedureVarFactory::replaceProcedureName(string sProcedureName) const
+std::string ProcedureVarFactory::replaceProcedureName(std::string sProcedureName) const
 {
     for (size_t i = 0; i < sProcedureName.length(); i++)
     {
@@ -310,13 +296,13 @@ std::string ProcedureVarFactory::createMangledVarName(const std::string& sDefine
 /// the number of elements in the passed string
 /// list.
 ///
-/// \param sVarList const string&
+/// \param sVarList const std::string&
 /// \return size_t
 ///
 /// This can be used to determine the size of the
 /// to be allocated data object.
 /////////////////////////////////////////////////
-size_t ProcedureVarFactory::countVarListElements(const string& sVarList)
+size_t ProcedureVarFactory::countVarListElements(const std::string& sVarList)
 {
     int nParenthesis = 0;
     size_t nElements = 1;
@@ -346,15 +332,15 @@ size_t ProcedureVarFactory::countVarListElements(const string& sVarList)
 /// argument name contains invalid characters and
 /// throws an exception, if this is the case.
 ///
-/// \param sArgument const string&
-/// \param sArgumentList const string&
+/// \param sArgument const std::string&
+/// \param sArgumentList const std::string&
 /// \param nCurrentIndex size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::checkArgument(const string& sArgument, const string& sArgumentList, size_t nCurrentIndex)
+void ProcedureVarFactory::checkArgument(const std::string& sArgument, const std::string& sArgumentList, size_t nCurrentIndex)
 {
-    string sCommand = findCommand(sArgument).sString;
+    std::string sCommand = findCommand(sArgument).sString;
 
     // Was a keyword used as a argument?
     if (sCommand == "var" || sCommand == "tab" || sCommand == "str" || sCommand == "cst")
@@ -393,15 +379,15 @@ void ProcedureVarFactory::checkArgument(const string& sArgument, const string& s
 /// are used in the current argument value and
 /// throws an exception, if this is the case.
 ///
-/// \param sArgument const string&
-/// \param sArgumentList const string&
+/// \param sArgument const std::string&
+/// \param sArgumentList const std::string&
 /// \param nCurrentIndex size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::checkArgumentValue(const string& sArgument, const string& sArgumentList, size_t nCurrentIndex)
+void ProcedureVarFactory::checkArgumentValue(const std::string& sArgument, const std::string& sArgumentList, size_t nCurrentIndex)
 {
-    string sCommand = findCommand(sArgument).sString;
+    std::string sCommand = findCommand(sArgument).sString;
 
     // Was a keyword used as a argument?
     if (sCommand == "var" || sCommand == "tab" || sCommand == "str")
@@ -436,13 +422,14 @@ bool ProcedureVarFactory::checkSymbolName(const std::string& sSymbolName) const
 /// \brief This private member function creates
 /// the local variables for inlined procedures.
 ///
-/// \param sVarList string
+/// \param sVarList std::string
+/// \param defVal const mu::Value&
 /// \return void
 ///
 /// The created variables are redirected to
 /// cluster items.
 /////////////////////////////////////////////////
-void ProcedureVarFactory::createLocalInlineVars(string sVarList)
+void ProcedureVarFactory::createLocalInlineVars(std::string sVarList, const mu::Value& defVal)
 {
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
@@ -450,7 +437,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     size_t nLocalVarMapSize = countVarListElements(sVarList);
 
     // Create a new temporary cluster
-    string sTempCluster = _dataRef->createTemporaryCluster("var");
+    std::string sTempCluster = _dataRef->createTemporaryCluster("var");
     sInlineVarDef = sTempCluster + " = {";
 
     sTempCluster.erase(sTempCluster.length()-2);
@@ -465,12 +452,12 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
-        if (currentDef.find('=') != string::npos)
+        if (currentDef.find('=') != std::string::npos)
         {
-            string sVarValue = currentDef.substr(currentDef.find('=')+1);
+            std::string sVarValue = currentDef.substr(currentDef.find('=')+1);
             sInlineVarDef += sVarValue + ",";
 
-            if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
+            if (sVarValue.find('$') != std::string::npos && sVarValue.find('(') != std::string::npos)
             {
                 _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                 _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
@@ -478,12 +465,6 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 
             try
             {
-                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
-                {
-                    string sTemp;
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarList, sTemp, true);
-                }
-
                 if (_dataRef->containsTablesOrClusters(sVarValue))
                 {
                     getDataElements(sVarValue, *_parserRef, *_dataRef);
@@ -493,19 +474,19 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 
                 _parserRef->SetExpr(sVarValue);
                 currentDef.erase(currentDef.find('='));
-                tempCluster.setDouble(i, _parserRef->Eval());
+                tempCluster.setValue(i, _parserRef->Eval().front());
             }
             catch (...)
             {
                 _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                _debugger.showError(current_exception());
+                _debugger.showError(std::current_exception());
                 throw;
             }
         }
         else
         {
-            tempCluster.setDouble(i, 0.0);
-            sInlineVarDef += "0,";
+            tempCluster.setValue(i, defVal);
+            sInlineVarDef += defVal.print() + ",";
         }
 
         StripSpaces(currentDef);
@@ -519,104 +500,17 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 
 
 /////////////////////////////////////////////////
-/// \brief This private member function creates
-/// the local string variables for inlined
-/// procedures.
-///
-/// \param sStringList string
-/// \return void
-///
-/// the created variables are redirected to
-/// cluster items.
-/////////////////////////////////////////////////
-void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
-{
-    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
-
-    // Get the number of declared variables
-    size_t nLocalStrMapSize = countVarListElements(sStringList);
-
-    // Create a new temporary cluster
-    string sTempCluster = _dataRef->createTemporaryCluster("str");
-    sInlineStringDef = sTempCluster + " = {";
-    sTempCluster.erase(sTempCluster.length()-2);
-
-    // Get a reference to the temporary cluster
-    NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
-
-    // Decode the variable list
-    for (size_t i = 0; i < nLocalStrMapSize; i++)
-    {
-        std::string currentDef = getNextArgument(sStringList, true);
-        std::string sVarValue;
-
-        // Fill in the value of the variable by either
-        // using the default or the explicit passed value
-        if (currentDef.find('=') != string::npos)
-        {
-            sVarValue = currentDef.substr(currentDef.find('=')+1);
-            sInlineStringDef += sVarValue + ",";
-
-            if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
-            {
-                _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                mLocalStrings.clear();
-                nLocalStrMapSize = 0;
-
-                _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
-            }
-
-            try
-            {
-                sVarValue = resolveLocalStrings(sVarValue, i);
-
-                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
-                {
-                    string sTemp;
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
-                }
-
-                currentDef.erase(currentDef.find('='));
-                tempCluster.setString(i, toInternalString(sVarValue));
-            }
-            catch (...)
-            {
-                _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                mLocalStrings.clear();
-                nLocalStrMapSize = 0;
-
-                _debugger.showError(current_exception());
-                throw;
-            }
-        }
-        else
-        {
-            tempCluster.setString(i, "");
-            sInlineStringDef += "\"\",";
-        }
-
-        StripSpaces(currentDef);
-        mLocalStrings[currentDef] = std::make_pair(sTempCluster + "{" + toString(i+1) + "}", sVarValue);
-    }
-
-    sInlineStringDef.back() = '}';
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function will create the
 /// procedure arguments for the current procedure.
 ///
-/// \param sArgumentList string
-/// \param sArgumentValues string
-/// \return map<string,string>
+/// \param sArgumentList std::string
+/// \param sArgumentValues std::string
+/// \return std::map<std::string,std::string>
 ///
 /////////////////////////////////////////////////
-map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumentList, string sArgumentValues)
+std::map<std::string,std::string> ProcedureVarFactory::createProcedureArguments(std::string sArgumentList, std::string sArgumentValues)
 {
-    map<string,string> mVarMap;
+    std::map<std::string,std::string> mVarMap;
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     if (!sArgumentList.length() && sArgumentValues.length())
@@ -655,21 +549,21 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
 
         checkArgumentValue(currentValue, sArgListBack, i);
 
-        if (currentValue.length() && currentArg.find('=') != string::npos)
+        if (currentValue.length() && currentArg.find('=') != std::string::npos)
         {
             currentArg.erase(currentArg.find('='));
             StripSpaces(currentArg);
         }
-        else if (!currentValue.length() && currentArg.find('=') != string::npos)
+        else if (!currentValue.length() && currentArg.find('=') != std::string::npos)
         {
             currentValue = currentArg.substr(currentArg.find('=')+1);
             currentArg.erase(currentArg.find('='));
             StripSpaces(currentArg);
             StripSpaces(currentValue);
         }
-        else if (!currentValue.length() && currentArg.find('=') == string::npos)
+        else if (!currentValue.length() && currentArg.find('=') == std::string::npos)
         {
-            string sErrorToken = currentArg;
+            std::string sErrorToken = currentArg;
             nArgumentMapSize = 0;
 
             if (_optionRef->useDebugger())
@@ -724,9 +618,9 @@ static bool isCompleteTable(StringView sArgumentValue, MemoryManager* _dataRef)
 {
     size_t pos = sArgumentValue.find('(');
 
-    return _dataRef->isTable(sArgumentValue.to_string()) && (sArgumentValue.subview(pos, 2) == "()"
-                                                             || sArgumentValue.subview(pos, 3) == "(:)"
-                                                             || sArgumentValue.subview(pos, 5) == "(:,:)");
+    return _dataRef->isTable(sArgumentValue) && (sArgumentValue.subview(pos, 2) == "()"
+                                                 || sArgumentValue.subview(pos, 3) == "(:)"
+                                                 || sArgumentValue.subview(pos, 5) == "(:,:)");
 }
 
 
@@ -744,14 +638,13 @@ static bool isCompleteTable(StringView sArgumentValue, MemoryManager* _dataRef)
 void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, std::string& currentValue, const std::string& sArgumentList)
 {
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
-    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
     bool isTemplate = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_TEMPLATE;
     bool isMacro = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO;
     bool isMacroOrInlining = isMacro || inliningMode;
 
     // Evaluate procedure calls first (but not for tables)
-    if (currentValue.find('$') != string::npos
-        && currentValue.find('(') != string::npos
+    if (currentValue.find('$') != std::string::npos
+        && currentValue.find('(') != std::string::npos
         && !currentArg.ends_with("()"))
     {
         if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
@@ -785,7 +678,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
     {
         currentArg.pop_back();
 
-#warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
         if (_optionRef->getSetting(SETTING_B_TABLEREFS).active() && !isRef)
         {
             isRef = true;
@@ -801,12 +693,11 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, currentValue, "", currentArg + ")"));
             }
 
-            if (currentValue.find('(') != string::npos)
+            if (currentValue.find('(') != std::string::npos)
                 currentValue.erase(currentValue.find('('));
         }
         else if (!isRef && !isMacroOrInlining) // Macros do the old copy-paste logic
         {
-#warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
             if (!_optionRef->getSetting(SETTING_B_TABLEREFS).active()
                 && _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
@@ -815,21 +706,27 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             std::string sNewArgName = "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
 
             // Evaluate procedure calls first
-            if (currentValue.find('$') != string::npos
-                && currentValue.find('(') != string::npos)
+            if (currentValue.find('$') != std::string::npos
+                && currentValue.find('(') != std::string::npos)
             {
                 if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
-                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList,
+                                                 _currentProcedure->getCurrentProcedureName(),
+                                                 _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
                 }
 
                 currentValue.insert(0, sNewArgName + "() = ");
-                FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef,
+                                                                                                   *_dataRef, *_outRef, *_pDataRef,
+                                                                                                   *_scriptRef, *_optionRef, nth_procedure);
 
                 if (nReturn == FlowCtrl::INTERFACE_ERROR)
                 {
-                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList,
+                                                 _currentProcedure->getCurrentProcedureName(),
+                                                 _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_ERROR, sArgumentList, SyntaxError::invalid_position));
                 }
                 else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
@@ -848,8 +745,16 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 }
             }
 
-            if (isCompleteTable(currentValue, _dataRef))
-                _dataRef->copyTable(currentValue.substr(0, currentValue.find('(')), sNewArgName);
+            if (_dataRef->isTable(currentValue)
+                && getMatchingParenthesis(currentValue) == currentValue.length()-1)
+            {
+                DataAccessParser _access(currentValue, false);
+                _access.evalIndices();
+                Indices tgt;
+                tgt.row = VectorIndex(0, VectorIndex::OPEN_END);
+                tgt.col = VectorIndex(0, VectorIndex::OPEN_END);
+                _dataRef->copyTable(_access.getDataObject(), _access.getIndices(), sNewArgName, tgt);
+            }
             else
             {
                 // Evaluate the expression and create a new
@@ -862,27 +767,19 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-                    {
-                        std::string sTable = sNewArgName + "(:,1)";
-                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sTable, true);
-                    }
-                    else
-                    {
-                        mu::value_type* v = nullptr;
-                        int nResults;
-                        _parserRef->SetExpr(sCurrentValue);
-                        v = _parserRef->Eval(nResults);
-                        Indices _idx;
-                        _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
-                        _idx.col = VectorIndex(0);
-                        _dataRef->writeToTable(_idx, sNewArgName, v, nResults);
-                    }
+                    _parserRef->SetExpr(sCurrentValue);
+                    mu::Array v = _parserRef->Eval();
+                    Indices _idx;
+                    _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
+                    _idx.col = VectorIndex(0);
+                    _dataRef->writeToTable(_idx, sNewArgName, v);
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.showError(current_exception());
+                    _debugger.gatherInformations(this, sArgumentList,
+                                                 _currentProcedure->getCurrentProcedureName(),
+                                                 _currentProcedure->GetCurrentLine());
+                    _debugger.showError(std::current_exception());
 
                     if (_dataRef->isTable(sNewArgName))
                         _dataRef->deleteTable(sNewArgName);
@@ -898,7 +795,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         }
         else if (inliningMode) // Only for checking, whether the table is a reference
         {
-            #warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
             if (!_optionRef->getSetting(SETTING_B_TABLEREFS).active())
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
         }
@@ -932,24 +828,14 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-                    {
-                        std::string sCluster = sNewArgName + "{}";
-                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
-                    }
-                    else
-                    {
-                        mu::value_type* v = nullptr;
-                        int nResults;
-                        _parserRef->SetExpr(sCurrentValue);
-                        v = _parserRef->Eval(nResults);
-                        newCluster.setDoubleArray(nResults, v);
-                    }
+                    _parserRef->SetExpr(sCurrentValue);
+                    mu::Array v = _parserRef->Eval();
+                    newCluster.setValueArray(v);
                 }
                 catch (...)
                 {
                     _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.showError(current_exception());
+                    _debugger.showError(std::current_exception());
                     _dataRef->removeCluster(sNewArgName);
                     throw;
                 }
@@ -967,7 +853,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             currentValue = sTempCluster;
         }
 
-        if (!isMacro && currentValue.find('{') != string::npos) // changed, because obsolete in macro context
+        if (!isMacro && currentValue.find('{') != std::string::npos) // changed, because obsolete in macro context
             currentValue.erase(currentValue.find('{'));
     }
     else
@@ -975,13 +861,10 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         if (isRef)
         {
             const auto& varMap = _parserRef->GetVar();
-            const auto& stringMap = _stringParser.getStringVars();
 
             // Reference
             if (varMap.find(currentValue) == varMap.end()
-                && stringMap.find(currentValue) == stringMap.end()
                 && !(isTemplate && _dataRef->isCluster(currentValue))
-                && !(isTemplate && currentValue.starts_with("string("))
                 && !(isTemplate && _dataRef->isTable(currentValue)))
             {
                 _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
@@ -995,7 +878,9 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
 
             if (!_functionRef->call(currentValue))
             {
-                _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.gatherInformations(this, currentValue,
+                                             _currentProcedure->getCurrentProcedureName(),
+                                             _currentProcedure->GetCurrentLine());
                 _debugger.throwException(SyntaxError(SyntaxError::FUNCTION_ERROR, currentArg, SyntaxError::invalid_position));
             }
 
@@ -1027,51 +912,21 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     if (_dataRef->containsTablesOrClusters(currentValue))
                         getDataElements(currentValue, *_parserRef, *_dataRef);
 
-                    // Evaluate strings
-                    if (_stringParser.isStringExpression(currentValue))
-                    {
-                        NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-                        std::string sCluster = sNewArgName + "{}";
-                        NumeRe::StringParser::StringParserRetVal ret =  _stringParser.evalAndFormat(currentValue, sCluster, true);
-
-                        if (ret == NumeRe::StringParser::STRING_SUCCESS)
-                        {
-                            if (newCluster.size() == 1)
-                            {
-                                _stringParser.setStringValue(sNewArgName, newCluster.getParserString(0));
-                                _dataRef->removeCluster(sNewArgName);
-                                currentValue = sNewArgName;
-                                mLocalArgs[sNewArgName] = STRINGTYPE;
-                            }
-                            else
-                            {
-                                currentValue = sNewArgName + "{}";
-                                mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
-                            }
-
-                            mArguments[currentArg] = currentValue;
-                            return;
-                        }
-                    }
-
                     // Evaluate numerical expressions
                     _parserRef->SetExpr(currentValue);
-                    int nRes = 0;
-                    mu::value_type* v = _parserRef->Eval(nRes);
+                    mu::Array v = _parserRef->Eval();
 
-                    if (nRes > 1)
+                    if (v.size() > 1)
                     {
                         NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-                        newCluster.setDoubleArray(nRes, v);
+                        newCluster.setValueArray(v);
                         currentValue = sNewArgName + "{}";
                         mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
                     }
                     else
                     {
-                        mu::value_type* newVar = new mu::value_type;
-                        *newVar = v[0];
-                        _parserRef->m_lDataStorage.push_back(newVar);
-                        _parserRef->DefineVar(sNewArgName, newVar);
+                        mu::Variable* newVar = _parserRef->CreateVar(sNewArgName);
+                        *newVar = v;
                         currentValue = sNewArgName;
                         mLocalArgs[sNewArgName] = NUMTYPE;
                     }
@@ -1085,23 +940,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     if (_dataRef->containsTablesOrClusters(currentValue))
                         getDataElements(currentValue, *_parserRef, *_dataRef);
 
-                    // Evaluate strings
-                    if (_stringParser.isStringExpression(currentValue))
-                    {
-                        std::string dummy;
-                        NumeRe::StringParser::StringParserRetVal ret =  _stringParser.evalAndFormat(currentValue, dummy, true);
-
-                        if (ret == NumeRe::StringParser::STRING_SUCCESS)
-                        {
-                            NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
-                            _stringParser.setStringValue(sNewArgName, ans.getParserString(0));
-                            currentValue = sNewArgName;
-                            mLocalArgs[sNewArgName] = STRINGTYPE;
-                            mArguments[currentArg] = currentValue;
-                            return;
-                        }
-                    }
-
                     // Evaluate numerical expressions
                     _parserRef->SetExpr(sNewArgName + " = " + currentValue);
                     _parserRef->Eval();
@@ -1110,7 +948,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             catch (...)
             {
                 _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                _debugger.showError(current_exception());
+                _debugger.showError(std::current_exception());
                 throw;
             }
 
@@ -1128,18 +966,19 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
 /// local numerical variables for the current
 /// procedure.
 ///
-/// \param sVarList string
+/// \param sVarList std::string
+/// \param defVal const mu::Value&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::createLocalVars(string sVarList)
+void ProcedureVarFactory::createLocalVars(std::string sVarList, const mu::Value& defVal)
 {
     if (!_currentProcedure)
         return;
 
     if (inliningMode)
     {
-        createLocalInlineVars(sVarList);
+        createLocalInlineVars(sVarList, defVal);
         return;
     }
 
@@ -1152,7 +991,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     for (size_t i = 0; i < nLocalVarMapSize; i++)
     {
         std::string currentDef = getNextArgument(sVarList, true);
-        mu::value_type currentVal = 0;
+        mu::Array currentVal(defVal);
 
         std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
@@ -1164,21 +1003,25 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
-        if (currentDef.find('=') != string::npos)
+        if (currentDef.find('=') != std::string::npos)
         {
             std::string sVarValue = currentDef.substr(currentDef.find('=')+1);
 
-            if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
+            if (sVarValue.find('$') != std::string::npos && sVarValue.find('(') != std::string::npos)
             {
                 if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
-                    _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sVarList,
+                                                 _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
                 }
 
                 try
                 {
-                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef,
+                                                                                                       *_dataRef, *_outRef, *_pDataRef,
+                                                                                                       *_scriptRef, *_optionRef,
+                                                                                                       nth_procedure);
 
                     if (nReturn == FlowCtrl::INTERFACE_ERROR)
                         throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sVarList, SyntaxError::invalid_position);
@@ -1187,8 +1030,9 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.showError(current_exception());
+                    _debugger.gatherInformations(this, sVarList,
+                                                 _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.showError(std::current_exception());
                     throw;
                 }
             }
@@ -1197,16 +1041,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             {
                 sVarValue = resolveLocalVars(sVarValue+" ", i); // Needs a terminating separator
 
-                if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue) &&  _dataRef->containsTablesOrClusters(sVarValue))
-                {
+                if (_dataRef->containsTablesOrClusters(sVarValue))
                     getDataElements(sVarValue, *_parserRef, *_dataRef);
-                }
-
-                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
-                {
-                    string sTemp;
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
-                }
 
                 _parserRef->SetExpr(sVarValue);
                 currentDef.erase(currentDef.find('='));
@@ -1215,7 +1051,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             catch (...)
             {
                 _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                _debugger.showError(current_exception());
+                _debugger.showError(std::current_exception());
                 throw;
             }
         }
@@ -1223,112 +1059,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
         StripSpaces(currentDef);
         std::string currentVar = createMangledVarName(currentDef);
 
-        mLocalVars[currentDef] = std::make_pair(currentVar, new mu::value_type);
-        *mLocalVars[currentDef].second = currentVal;
-
+        mLocalVars[currentDef] = std::make_pair(currentVar, new mu::Variable(currentVal));
         _parserRef->DefineVar(currentVar, mLocalVars[currentDef].second);
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function will create the
-/// local string variables for the current
-/// procedure.
-///
-/// \param sStringList string
-/// \return void
-///
-/////////////////////////////////////////////////
-void ProcedureVarFactory::createLocalStrings(string sStringList)
-{
-    if (!_currentProcedure)
-        return;
-
-    if (inliningMode)
-    {
-        createLocalInlineStrings(sStringList);
-        return;
-    }
-
-    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
-
-    // Get the number of declared variables
-    size_t nLocalStrMapSize = countVarListElements(sStringList);
-
-    // Decode the variable list
-    for (size_t i = 0; i < nLocalStrMapSize; i++)
-    {
-        std::string currentDef = getNextArgument(sStringList, true);
-        std::string sVarValue;
-
-        std::string sSymbol = currentDef.substr(0, currentDef.find('='));
-
-        if (!checkSymbolName(sSymbol))
-        {
-            _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-            _debugger.throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sStringList, SyntaxError::invalid_position, sSymbol));
-        }
-        // Fill in the value of the variable by either
-        // using the default or the explicit passed value
-        if (currentDef.find('=') != string::npos)
-        {
-            sVarValue = currentDef.substr(currentDef.find('=')+1);
-
-            if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
-            {
-                if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
-                {
-                    _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
-                }
-
-                try
-                {
-                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
-
-                    if (nReturn == FlowCtrl::INTERFACE_ERROR)
-                        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sStringList, SyntaxError::invalid_position);
-                    else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
-                        sVarValue = "false";
-                }
-                catch (...)
-                {
-                    _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.showError(current_exception());
-                    throw;
-                }
-            }
-
-            sVarValue = resolveLocalStrings(sVarValue + " ", i); // Needs a terminating separator
-
-            if (_dataRef->containsTablesOrClusters(sVarValue))
-                getDataElements(sVarValue, *_parserRef, *_dataRef);
-
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
-            {
-                string sTemp;
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
-            }
-
-            currentDef.erase(currentDef.find('='));
-        }
-
-        StripSpaces(currentDef);
-        std::string currentVar = createMangledVarName(currentDef);
-
-        try
-        {
-            NumeReKernel::getInstance()->getStringParser().setStringValue(currentVar, sVarValue);
-        }
-        catch (...)
-        {
-            _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-            _debugger.showError(current_exception());
-            throw;
-        }
-
-        mLocalStrings[currentDef] = std::make_pair(currentVar, sVarValue);
     }
 }
 
@@ -1337,11 +1069,11 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 /// \brief This member function will create the
 /// local tables for the current procedure.
 ///
-/// \param sTableList string
+/// \param sTableList std::string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::createLocalTables(string sTableList)
+void ProcedureVarFactory::createLocalTables(std::string sTableList)
 {
     if (!_currentProcedure)
         return;
@@ -1365,10 +1097,10 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
             NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sTableList, SyntaxError::invalid_position, sSymbol));
         }
 
-        if (currentDef.find('=') != string::npos)
+        if (currentDef.find('=') != std::string::npos)
             sCurrentValue = currentDef.substr(currentDef.find('=')+1);
 
-        if (currentDef.find('(') != string::npos)
+        if (currentDef.find('(') != std::string::npos)
             currentDef.erase(currentDef.find('('));
 
         StripSpaces(currentDef);
@@ -1383,7 +1115,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
             {
                 sCurrentValue = resolveLocalTables(sCurrentValue, i);
 
-                if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
+                if (sCurrentValue.find('$') != std::string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
                 {
                     if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                     {
@@ -1410,36 +1142,34 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
                     }
                 }
 
-                if (isCompleteTable(sCurrentValue, _dataRef))
-                    _dataRef->copyTable(sCurrentValue.substr(0, sCurrentValue.find('(')), currentVar);
+                if (_dataRef->isTable(sCurrentValue)
+                    && getMatchingParenthesis(sCurrentValue) == sCurrentValue.length()-1)
+                {
+                    DataAccessParser _access(sCurrentValue, false);
+                    _access.evalIndices();
+                    Indices tgt;
+                    tgt.row = VectorIndex(0, VectorIndex::OPEN_END);
+                    tgt.col = VectorIndex(0, VectorIndex::OPEN_END);
+                    _dataRef->copyTable(_access.getDataObject(), _access.getIndices(), currentVar, tgt);
+                }
                 else
                 {
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-                    {
-                        std::string sTable = currentVar + "(:,1)";
-                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sTable, true);
-                    }
-                    else
-                    {
-                        mu::value_type* v = nullptr;
-                        int nResults;
-                        _parserRef->SetExpr(sCurrentValue);
-                        v = _parserRef->Eval(nResults);
-                        Indices _idx;
-                        _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
-                        _idx.col = VectorIndex(0);
-                        _dataRef->writeToTable(_idx, currentVar, v, nResults);
-                    }
+                    _parserRef->SetExpr(sCurrentValue);
+                    mu::Array v = _parserRef->Eval();
+                    Indices _idx;
+                    _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
+                    _idx.col = VectorIndex(0);
+                    _dataRef->writeToTable(_idx, currentVar, v);
                 }
             }
         }
         catch (...)
         {
             NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-            NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+            NumeReKernel::getInstance()->getDebugger().showError(std::current_exception());
 
             if (_dataRef->isTable(currentVar))
                 _dataRef->deleteTable(currentVar);
@@ -1456,11 +1186,11 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
 /// \brief This member function will create the
 /// local clusters for the current procedure.
 ///
-/// \param sClusterList string
+/// \param sClusterList std::string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::createLocalClusters(string sClusterList)
+void ProcedureVarFactory::createLocalClusters(std::string sClusterList)
 {
     if (!_currentProcedure)
         return;
@@ -1484,10 +1214,10 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
             NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sClusterList, SyntaxError::invalid_position, sSymbol));
         }
 
-        if (currentDef.find('=') != string::npos)
+        if (currentDef.find('=') != std::string::npos)
             sCurrentValue = currentDef.substr(currentDef.find('=')+1);
 
-        if (currentDef.find('{') != string::npos)
+        if (currentDef.find('{') != std::string::npos)
             currentDef.erase(currentDef.find('{'));
 
         StripSpaces(sCurrentValue);
@@ -1502,7 +1232,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
             {
                 sCurrentValue = resolveLocalClusters(sCurrentValue, i);
 
-                if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
+                if (sCurrentValue.find('$') != std::string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
                 {
                     if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                     {
@@ -1524,26 +1254,16 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
                         getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
-                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-                    {
-                        string sCluster = currentVar + "{}";
-                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
-                    }
-                    else
-                    {
-                        value_type* v = nullptr;
-                        int nResults;
-                        _parserRef->SetExpr(sCurrentValue);
-                        v = _parserRef->Eval(nResults);
-                        cluster.setDoubleArray(nResults, v);
-                    }
+                    _parserRef->SetExpr(sCurrentValue);
+                    mu::Array v = _parserRef->Eval();
+                    cluster.setValueArray(v);
                 }
             }
         }
         catch (...)
         {
             NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-            NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+            NumeReKernel::getInstance()->getDebugger().showError(std::current_exception());
 
             if (_dataRef->isCluster(currentVar))
                 _dataRef->removeCluster(currentVar);
@@ -1587,12 +1307,12 @@ std::string ProcedureVarFactory::createTestStatsCluster()
 /// resolve the calls to arguments in the passed
 /// procedure command line.
 ///
-/// \param sProcedureCommandLine string
+/// \param sProcedureCommandLine std::string
 /// \param nMapSize size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_t nMapSize)
+std::string ProcedureVarFactory::resolveArguments(std::string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
         return sProcedureCommandLine;
@@ -1605,7 +1325,7 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
         if (iter.first.back() == '(' || iter.first.back() == '{')
             nArgumentBaseLength--;
 
-        while ((nPos = sProcedureCommandLine.find(iter.first.substr(0, nArgumentBaseLength), nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first.substr(0, nArgumentBaseLength), nPos)) != std::string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
                 || (iter.first.back() != '(' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '(')
@@ -1640,12 +1360,12 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
 /// resolve the calls to numerical variables in
 /// the passed procedure command line.
 ///
-/// \param sProcedureCommandLine string
+/// \param sProcedureCommandLine std::string
 /// \param nMapSize size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_t nMapSize)
+std::string ProcedureVarFactory::resolveLocalVars(std::string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
         return sProcedureCommandLine;
@@ -1655,60 +1375,7 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(iter.first, nPos)) != string::npos)
-        {
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
-                || sProcedureCommandLine[nPos+iter.first.length()] == '(')
-            {
-                nPos += iter.first.length();
-                continue;
-            }
-
-            nDelimCheck = nPos-1;
-
-            if (sProcedureCommandLine[nDelimCheck] == '~'
-                && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#')
-                nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
-
-            nDelimCheck++;
-
-            if (StringView(sProcedureCommandLine).is_delimited_sequence(nDelimCheck, iter.first.length()+nPos-nDelimCheck)
-                && (!isInQuotes(sProcedureCommandLine, nPos, true)
-                    || isToCmd(sProcedureCommandLine, nPos)))
-            {
-                sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second.first);
-                nPos += iter.second.first.length();
-            }
-            else
-                nPos += iter.first.length();
-        }
-    }
-
-    return sProcedureCommandLine;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This private member function will
-/// resolve the calls to string variables in the
-/// passed procedure command line.
-///
-/// \param sProcedureCommandLine string
-/// \param nMapSize size_t
-/// \return string
-///
-/////////////////////////////////////////////////
-string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, size_t nMapSize)
-{
-    if (!nMapSize)
-        return sProcedureCommandLine;
-
-    for (const auto& iter : mLocalStrings)
-    {
-        size_t nPos = 0;
-        size_t nDelimCheck = 0;
-
-        while ((nPos = sProcedureCommandLine.find(iter.first, nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first, nPos)) != std::string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos+iter.first.length()] == '(')
@@ -1727,13 +1394,10 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
 
             if (StringView(sProcedureCommandLine).is_delimited_sequence(nDelimCheck, iter.first.length()+nPos-nDelimCheck,
                                                                         StringViewBase::STRING_DELIMITER)
-                && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
+                && (!isInQuotes(sProcedureCommandLine, nPos, true)
+                    || isToCmd(sProcedureCommandLine, nPos)))
             {
-                if (inliningMode)
-                    replaceStringMethod(sProcedureCommandLine, nPos, iter.first.length(), iter.second.first);
-                else
-                    sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second.first);
-
+                sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second.first);
                 nPos += iter.second.first.length();
             }
             else
@@ -1750,12 +1414,12 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
 /// resolve the calls to local tables in the
 /// passed procedure command line.
 ///
-/// \param sProcedureCommandLine string
+/// \param sProcedureCommandLine std::string
 /// \param nMapSize size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, size_t nMapSize)
+std::string ProcedureVarFactory::resolveLocalTables(std::string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
         return sProcedureCommandLine;
@@ -1765,7 +1429,7 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(iter.first + "(", nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first + "(", nPos)) != std::string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos-1] == '$')
@@ -1803,12 +1467,12 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
 /// resolve the calls to local clusters in the
 /// passed procedure command line.
 ///
-/// \param sProcedureCommandLine string
+/// \param sProcedureCommandLine std::string
 /// \param nMapSize size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize)
+std::string ProcedureVarFactory::resolveLocalClusters(std::string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
         return sProcedureCommandLine;
@@ -1818,7 +1482,7 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(iter.first + "{", nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first + "{", nPos)) != std::string::npos)
         {
             if (sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
             {

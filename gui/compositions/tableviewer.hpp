@@ -47,6 +47,7 @@ class TableViewer : public wxGrid
         bool readOnly;
         bool isGridNumeReTable;
         wxGridCellCoords lastCursorPosition;
+        wxGridCellCoords selectionStart;
         wxGridCellCoordsArray selectedCells;
         std::vector<int> m_currentColTypes;
         std::string m_displayName;
@@ -58,6 +59,7 @@ class TableViewer : public wxGrid
 
         void layoutGrid();
 
+        void moveCursor(int key, bool shiftDown, bool controlDown);
         void OnKeyDown(wxKeyEvent& event);
         void OnChar(wxKeyEvent& event);
         void OnEnter(wxMouseEvent& event);
@@ -81,12 +83,12 @@ class TableViewer : public wxGrid
         void createZeroElementTable();
         wxGridCellCoords CreateEmptyGridSpace(int rows, int headrows, int cols, bool useCursor = false);
 
-        mu::value_type CellToCmplx(int row, int col);
+        std::complex<double> CellToCmplx(int row, int col);
 
         double calculateMin(const wxGridCellCoordsContainer& coords);
         double calculateMax(const wxGridCellCoordsContainer& coords);
-        mu::value_type calculateSum(const wxGridCellCoordsContainer& coords);
-        mu::value_type calculateAvg(const wxGridCellCoordsContainer& coords);
+        std::complex<double> calculateSum(const wxGridCellCoordsContainer& coords);
+        std::complex<double> calculateAvg(const wxGridCellCoordsContainer& coords);
 
         void updateStatusBar(const wxGridCellCoordsContainer& coords, wxGridCellCoords* cursor = nullptr);
         void createMenuBar();
@@ -136,6 +138,7 @@ class TableViewer : public wxGrid
             ID_MENU_REMOVE_COL,
             ID_MENU_REMOVE_CELL,
             ID_MENU_COPY,
+            ID_MENU_CUT,
             ID_MENU_PASTE,
             ID_MENU_PASTE_HERE,
             ID_MENU_RELOAD,

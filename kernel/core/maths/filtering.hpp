@@ -104,8 +104,8 @@ namespace NumeRe
     /// \brief Typedef for simplifying the usage of
     /// the buffer.
     /////////////////////////////////////////////////
-    using FilterBuffer = std::queue<mu::value_type>;
-    using FilterBuffer2D = std::queue<std::vector<mu::value_type>>;
+    using FilterBuffer = std::queue<std::complex<double>>;
+    using FilterBuffer2D = std::queue<std::vector<std::complex<double>>>;
 
 
     /////////////////////////////////////////////////
@@ -162,11 +162,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \return mu::value_type
+            /// \param val const std::complex<double>&
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const = 0;
+            virtual std::complex<double> apply(size_t i, size_t j, const std::complex<double>& val) const = 0;
 
             /////////////////////////////////////////////////
             /// \brief This method returns, whether the
@@ -346,11 +346,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \return virtual mu::value_type
+            /// \param val const std::complex<double>&
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
+            virtual std::complex<double> apply(size_t i, size_t j, const std::complex<double>& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
@@ -453,11 +453,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \return virtual mu::value_type
+            /// \param val const std::complex<double>&
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
+            virtual std::complex<double> apply(size_t i, size_t j, const std::complex<double>& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
@@ -489,10 +489,10 @@ namespace NumeRe
             /// size.
             ///
             /// \param _view const FileView&
-            /// \return long long int
+            /// \return size_t
             ///
             /////////////////////////////////////////////////
-            long long int findColumn(const FileView& _view)
+            size_t findColumn(const FileView& _view)
             {
                 std::vector<size_t> vWindowSizes;
 
@@ -513,7 +513,7 @@ namespace NumeRe
                     return 0;
                 }
 
-                for (long long int j = 0; j < vWindowSizes.size(); j++)
+                for (size_t j = 0; j < vWindowSizes.size(); j++)
                 {
                     // Found a perfect match?
                     if (m_windowSize.first == vWindowSizes[j])
@@ -587,13 +587,13 @@ namespace NumeRe
                     FileView _view(_file);
 
                     // Find the possible window sizes
-                    long long int j = findColumn(_view);
+                    int64_t j = findColumn(_view);
 
                     // First element in the column is the
                     // central element in the matrix
                     m_filterKernel[m_windowSize.first/2][m_windowSize.first/2] = _view.getElement(m_windowSize.first*m_windowSize.first/2, j).real();
 
-                    for (long long int i = 0; i < m_windowSize.first*m_windowSize.first/2; i++)
+                    for (long long int i = 0; i < (long long int)(m_windowSize.first*m_windowSize.first/2); i++)
                     {
                         // left part
                         m_filterKernel[m_windowSize.first - 1 - i % m_windowSize.first][i / m_windowSize.first] = _view.getElement(i, j).real();
@@ -666,11 +666,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \return virtual mu::value_type
+            /// \param val const std::complex<double>&
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
+            virtual std::complex<double> apply(size_t i, size_t j, const std::complex<double>& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
@@ -781,11 +781,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \return virtual mu::value_type
+            /// \param val const std::complex<double>&
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
+            virtual std::complex<double> apply(size_t i, size_t j, const std::complex<double>& val) const override
             {
                 if (i >= m_windowSize.first)
                     return NAN;
@@ -837,13 +837,13 @@ namespace NumeRe
     class RetouchRegion : public Filter
     {
         private:
-            std::vector<mu::value_type> m_left;
-            std::vector<mu::value_type> m_right;
-            std::vector<mu::value_type> m_top;
-            std::vector<mu::value_type> m_bottom;
+            std::vector<std::complex<double>> m_left;
+            std::vector<std::complex<double>> m_right;
+            std::vector<std::complex<double>> m_top;
+            std::vector<std::complex<double>> m_bottom;
             bool is2D;
             std::vector<std::vector<double> > m_filterKernel;
-            mu::value_type m_fallback;
+            std::complex<double> m_fallback;
             bool m_invertedKernel;
 
             /////////////////////////////////////////////////
@@ -882,10 +882,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type left(size_t i, size_t j) const
+            std::complex<double> left(size_t i, size_t j) const
             {
                 if (!is2D)
                     return validize(m_left.front());
@@ -899,10 +899,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type right(size_t i, size_t j) const
+            std::complex<double> right(size_t i, size_t j) const
             {
                 if (!is2D)
                     return validize(m_right.front());
@@ -916,10 +916,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type top(size_t i, size_t j) const
+            std::complex<double> top(size_t i, size_t j) const
             {
                 if (!is2D)
                     return 0.0;
@@ -933,10 +933,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type bottom(size_t i, size_t j) const
+            std::complex<double> bottom(size_t i, size_t j) const
             {
                 if (!is2D)
                     return 0.0;
@@ -951,10 +951,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type topleft(size_t i, size_t j) const
+            std::complex<double> topleft(size_t i, size_t j) const
             {
                 if (i >= j)
                     return validize(m_left[i-j]);
@@ -969,10 +969,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type topright(size_t i, size_t j) const
+            std::complex<double> topright(size_t i, size_t j) const
             {
                 if (i+j <= m_windowSize.second-1)
                     return validize(m_top[i+j+2]); // size(m_top) + 2 == m_order
@@ -987,10 +987,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type bottomleft(size_t i, size_t j) const
+            std::complex<double> bottomleft(size_t i, size_t j) const
             {
                 if (i+j <= m_windowSize.first-1)
                     return validize(m_left[i+j+2]); // size(m_left) + 2 == m_order
@@ -1005,10 +1005,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return mu::value_type
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type bottomright(size_t i, size_t j) const
+            std::complex<double> bottomright(size_t i, size_t j) const
             {
                 if (i >= j)
                     return validize(m_bottom[m_windowSize.second-(i-j)+1]); // size(m_bottom) + 2 == m_order
@@ -1022,11 +1022,11 @@ namespace NumeRe
             /// is not, it will be replaced by the fallback
             /// value.
             ///
-            /// \param val mu::value_type
-            /// \return mu::value_type
+            /// \param val std::complex<double>
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type validize(mu::value_type val) const
+            std::complex<double> validize(std::complex<double> val) const
             {
                 if (mu::isnan(val))
                     return m_fallback;
@@ -1041,10 +1041,10 @@ namespace NumeRe
             ///
             /// \param _row size_t
             /// \param _col size_t
-            /// \param _dMedian const mu::value_type&
+            /// \param _dMedian const std::complex<double>&
             ///
             /////////////////////////////////////////////////
-            RetouchRegion(size_t _row, size_t _col, const mu::value_type& _dMedian) : Filter(_row, _col)
+            RetouchRegion(size_t _row, size_t _col, const std::complex<double>& _dMedian) : Filter(_row, _col)
             {
                 m_type = FilterSettings::FILTER_WEIGHTED_LINEAR;
                 m_isConvolution = false;
@@ -1089,11 +1089,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \return virtual mu::value_type
+            /// \param val const std::complex<double>&
+            /// \return virtual std::complex<double>
             ///
             /////////////////////////////////////////////////
-            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
+            virtual std::complex<double> apply(size_t i, size_t j, const std::complex<double>& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
@@ -1108,7 +1108,7 @@ namespace NumeRe
 
                 // cross hair: summarize the linearily interpolated values along the rows and cols at the desired position
                 // Summarize implies that the value is not averaged yet
-                mu::value_type dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
+                std::complex<double> dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
                                         + left(i,j) + (right(i,j) - left(i,j)) / (m_windowSize.second + 1.0) * (j+1.0);
 
                 // Additional weighting because are the nearest neighbours
@@ -1141,14 +1141,14 @@ namespace NumeRe
             /// \brief This method is used to update the
             /// internal filter boundaries.
             ///
-            /// \param left const std::vector<mu::value_type>&
-            /// \param right const std::vector<mu::value_type>&
-            /// \param top const std::vector<mu::value_type>&
-            /// \param bottom const std::vector<mu::value_type>&
+            /// \param left const std::vector<std::complex<double>>&
+            /// \param right const std::vector<std::complex<double>>&
+            /// \param top const std::vector<std::complex<double>>&
+            /// \param bottom const std::vector<std::complex<double>>&
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setBoundaries(const std::vector<mu::value_type>& left, const std::vector<mu::value_type>& right, const std::vector<mu::value_type>& top = std::vector<mu::value_type>(), const std::vector<mu::value_type>& bottom = std::vector<mu::value_type>())
+            void setBoundaries(const std::vector<std::complex<double>>& left, const std::vector<std::complex<double>>& right, const std::vector<std::complex<double>>& top = std::vector<std::complex<double>>(), const std::vector<std::complex<double>>& bottom = std::vector<std::complex<double>>())
             {
                 m_left = left;
                 m_right = right;
@@ -1164,12 +1164,12 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val const mu::value_type&
-            /// \param med const mu::value_type&
-            /// \return mu::value_type
+            /// \param val const std::complex<double>&
+            /// \param med const std::complex<double>&
+            /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            mu::value_type retouch(size_t i, size_t j, const mu::value_type& val, const mu::value_type& med)
+            std::complex<double> retouch(size_t i, size_t j, const std::complex<double>& val, const std::complex<double>& med)
             {
                 if (mu::isnan(val) && !mu::isnan(med))
                     return 0.5*(apply(i, j, m_fallback) + med);

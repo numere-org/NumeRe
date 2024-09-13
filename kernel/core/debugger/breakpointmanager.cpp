@@ -43,58 +43,29 @@ bool Breakpoint::isActive(bool needsLocks)
 
     NumeReKernel* instance = NumeReKernel::getInstance();
     mu::Parser& _parser = instance->getParser();
-    std::string sCache;
-    int nNum;
 
     // Replace the function definitions, if not already done
     if (!instance->getDefinitions().call(m_condition))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_condition, SyntaxError::invalid_position);
 
     // Catch and evaluate all data and cache calls
-    if (instance->getMemoryManager().containsTablesOrClusters(m_condition)
-        && !instance->getStringParser().isStringExpression(m_condition))
-        sCache = getDataElements(m_condition, _parser, instance->getMemoryManager());
-
-    // Evaluate std::strings
-    if (instance->getStringParser().isStringExpression(m_condition))
-    {
-        if (needsLocks)
-            _parser.PauseLoopMode();
-
-        // Call the std::string parser
-        auto retVal = instance->getStringParser().evalAndFormat(m_condition, sCache, true, false, true);
-
-        if (needsLocks)
-            _parser.PauseLoopMode(false);
-
-        // Evaluate the return value
-        if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
-        {
-            StripSpaces(m_condition);
-
-            if (m_condition != "\"\"")
-                return true;
-
-            return false;
-        }
-
-        // It's possible that the user might have done
-        // something weird with std::string operations transformed
-        // into a regular expression. Replace the local
-        // variables here
-        //replaceLocalVars(m_condition);
-    }
+    if (instance->getMemoryManager().containsTablesOrClusters(m_condition))
+        getDataElements(m_condition, _parser, instance->getMemoryManager());
 
     // Evalute the already prepared equation
     if (!_parser.IsAlreadyParsed(m_condition))
         _parser.SetExpr(m_condition);
 
-    mu::value_type* v = _parser.Eval(nNum);
+    int nNum;
+    mu::Array* v = _parser.Eval(nNum);
 
     for (int i = 0; i < nNum; i++)
     {
-        if (v[i] == 0.0 || mu::isnan(v[i]))
-            return false;
+        for (size_t j = 0; j < v[i].size(); j++)
+        {
+            if ((bool)!v[i][j] || !v[i][j].isValid())
+                return false;
+        }
     }
 
     return true;

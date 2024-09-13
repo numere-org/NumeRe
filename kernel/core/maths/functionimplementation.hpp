@@ -24,198 +24,187 @@
 #define FUNCTIONIMPLEMENTATION_HPP
 
 #include "../ParserLib/muParser.h"
+#include "units.hpp"
 
-using namespace mu;
 
 // Scaling operator callback functions
-value_type parser_Mega(const value_type&);
-value_type parser_Giga(const value_type&);
-value_type parser_Kilo(const value_type&);
-value_type parser_Milli(const value_type&);
-value_type parser_Micro(const value_type&);
-value_type parser_Nano(const value_type&);
+mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx);
 
 // Unit conversion callback functions
-value_type parser_ElectronVolt(const value_type&);
-value_type parser_Fermi(const value_type&);
-value_type parser_Angstroem(const value_type&);
-value_type parser_Barn(const value_type&);
-value_type parser_Torr(const value_type&);
-value_type parser_AstroUnit(const value_type&);
-value_type parser_Lightyear(const value_type&);
-value_type parser_Parsec(const value_type&);
-value_type parser_Mile(const value_type&);
-value_type parser_Yard(const value_type&);
-value_type parser_Foot(const value_type&);
-value_type parser_Inch(const value_type&);
-value_type parser_Calorie(const value_type&);
-value_type parser_PSI(const value_type&);
-value_type parser_Knoten(const value_type&);
-value_type parser_liter(const value_type&);
-value_type parser_kmh(const value_type&);
-value_type parser_mph(const value_type&);
-value_type parser_Celsius(const value_type&);
-value_type parser_Fahrenheit(const value_type&);
-value_type parser_Curie(const value_type&);
-value_type parser_Gauss(const value_type&);
-value_type parser_Poise(const value_type&);
-value_type parser_mol(const value_type&);
+mu::Array numfnc_imaginaryUnit(const mu::Array&);
 
 // Imaginary unit
-value_type parser_imaginaryUnit(const value_type&);
-value_type parser_real(const value_type&);
-value_type parser_imag(const value_type&);
-value_type parser_rect2polar(const value_type&);
-value_type parser_polar2rect(const value_type&);
-value_type parser_conj(const value_type&);
-value_type parser_complex(const value_type&, const value_type&);
+mu::Array numfnc_real(const mu::Array&);
+mu::Array numfnc_imag(const mu::Array&);
+mu::Array numfnc_rect2polar(const mu::Array&);
+mu::Array numfnc_polar2rect(const mu::Array&);
+mu::Array numfnc_conj(const mu::Array&);
+mu::Array numfnc_complex(const mu::Array&, const mu::Array&);
+mu::Array numfnc_Factorial(const mu::Array&);
+mu::Array numfnc_doubleFactorial(const mu::Array&);
+mu::Array numfnc_Binom(const mu::Array&, const mu::Array&);
+mu::Array numfnc_Sum(const mu::Array*, int);
+mu::Array numfnc_Avg(const mu::Array*, int);
+mu::Array numfnc_Min(const mu::Array*, int);
+mu::Array numfnc_Max(const mu::Array*, int);
+mu::Array numfnc_MinPos(const mu::Array&);
+mu::Array numfnc_MaxPos(const mu::Array&);
+mu::Array numfnc_Num(const mu::Array*, int);
+mu::Array numfnc_Cnt(const mu::Array*, int);
+mu::Array numfnc_Std(const mu::Array*, int);
+mu::Array numfnc_product(const mu::Array*, int);
+mu::Array numfnc_Norm(const mu::Array*, int);
+mu::Array numfnc_Med(const mu::Array*, int);
+mu::Array numfnc_Pct(const mu::Array*, int);
+mu::Array numfnc_rint(const mu::Array&);
+mu::Array numfnc_round(const mu::Array&, const mu::Array&);
+mu::Array numfnc_compare(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_and(const mu::Array*, int);
+mu::Array numfnc_or(const mu::Array*, int);
+mu::Array numfnc_xor(const mu::Array*, int);
+mu::Array numfnc_polynomial(const mu::Array*, int);
+mu::Array numfnc_logtoidx(const mu::Array*, int);
+mu::Array numfnc_idxtolog(const mu::Array*, int);
+mu::Array numfnc_order(const mu::Array*, int);
+mu::Array numfnc_toRadian(const mu::Array&);
+mu::Array numfnc_toDegree(const mu::Array&);
+mu::Array numfnc_SphericalHarmonics(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_imSphericalHarmonics(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_Zernike(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_SphericalBessel(const mu::Array&, const mu::Array&);
+mu::Array numfnc_SphericalNeumann(const mu::Array&, const mu::Array&);
+mu::Array numfnc_LegendrePolynomial(const mu::Array&, const mu::Array&);
+mu::Array numfnc_AssociatedLegendrePolynomial(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_LaguerrePolynomial(const mu::Array&, const mu::Array&);
+mu::Array numfnc_AssociatedLaguerrePolynomial(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_HermitePolynomial(const mu::Array&, const mu::Array&);
+mu::Array numfnc_BetheWeizsaecker(const mu::Array&, const mu::Array&);
+mu::Array numfnc_Heaviside(const mu::Array&);
+mu::Array numfnc_theta(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_phi(const mu::Array&, const mu::Array&);
+mu::Array numfnc_erf(const mu::Array&);
+mu::Array numfnc_erfc(const mu::Array&);
+mu::Array numfnc_gamma(const mu::Array&);
+mu::Array numfnc_AiryA(const mu::Array&);
+mu::Array numfnc_AiryB(const mu::Array&);
+mu::Array numfnc_RegularCylBessel(const mu::Array&, const mu::Array&);
+mu::Array numfnc_IrregularCylBessel(const mu::Array&, const mu::Array&);
+mu::Array numfnc_EllipticF(const mu::Array&, const mu::Array&);
+mu::Array numfnc_EllipticE(const mu::Array&, const mu::Array&);
+mu::Array numfnc_EllipticP(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_EllipticD(const mu::Array&, const mu::Array&);
+mu::Array numfnc_beta(const mu::Array&, const mu::Array&);
+mu::Array numfnc_zeta(const mu::Array&);
+mu::Array numfnc_clausen(const mu::Array&);
+mu::Array numfnc_digamma(const mu::Array&);
+mu::Array numfnc_polygamma(const mu::Array&, const mu::Array&);
+mu::Array numfnc_dilogarithm(const mu::Array&);
+mu::Array numfnc_floor(const mu::Array&);
+mu::Array numfnc_roof(const mu::Array&);
+mu::Array numfnc_rect(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_ivl(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_studentFactor(const mu::Array&, const mu::Array&);
+mu::Array numfnc_gcd(const mu::Array&, const mu::Array&);
+mu::Array numfnc_lcm(const mu::Array&, const mu::Array&);
+mu::Array numfnc_is_string(const mu::Array&);
+mu::Array numfnc_isnan(const mu::Array&);
+mu::Array numfnc_interval(const mu::Array&, const mu::Array&, const mu::Array&);
+mu::Array numfnc_numereversion();
+mu::Array numfnc_omp_threads();
+mu::Array numfnc_sleep(const mu::Array&);
+mu::Array numfnc_exp(const mu::Array&);
+mu::Array numfnc_abs(const mu::Array&);
+mu::Array numfnc_sqrt(const mu::Array&);
+mu::Array numfnc_sign(const mu::Array&);
+mu::Array numfnc_log2(const mu::Array&);
+mu::Array numfnc_log10(const mu::Array&);
+mu::Array numfnc_ln(const mu::Array&);
+mu::Array numfnc_log_b(const mu::Array&, const mu::Array&);
 
+mu::Array numfnc_SinusCardinalis(const mu::Array&);
+mu::Array numfnc_sin(const mu::Array&);
+mu::Array numfnc_cos(const mu::Array&);
+mu::Array numfnc_tan(const mu::Array&);
+mu::Array numfnc_cot(const mu::Array&);
+mu::Array numfnc_asin(const mu::Array&);
+mu::Array numfnc_acos(const mu::Array&);
+mu::Array numfnc_atan(const mu::Array&);
+mu::Array numfnc_sinh(const mu::Array&);
+mu::Array numfnc_cosh(const mu::Array&);
+mu::Array numfnc_tanh(const mu::Array&);
+mu::Array numfnc_asinh(const mu::Array&);
+mu::Array numfnc_acosh(const mu::Array&);
+mu::Array numfnc_atanh(const mu::Array&);
+mu::Array numfnc_sec(const mu::Array&);
+mu::Array numfnc_csc(const mu::Array&);
+mu::Array numfnc_asec(const mu::Array&);
+mu::Array numfnc_acsc(const mu::Array&);
+mu::Array numfnc_sech(const mu::Array&);
+mu::Array numfnc_csch(const mu::Array&);
+mu::Array numfnc_asech(const mu::Array&);
+mu::Array numfnc_acsch(const mu::Array&);
 // Actual math functions
-value_type parser_Faculty(const value_type&);
-value_type parser_doubleFaculty(const value_type&);
-value_type parser_Binom(const value_type&, const value_type&);
-value_type parser_Sum(const value_type*, int);
-value_type parser_Avg(const value_type*, int);
-value_type parser_Min(const value_type*, int);
-value_type parser_Max(const value_type*, int);
-value_type parser_MinPos(const value_type*, int);
-value_type parser_MaxPos(const value_type*, int);
-value_type parser_Num(const value_type*, int);
-value_type parser_Cnt(const value_type*, int);
-value_type parser_Std(const value_type*, int);
-value_type parser_product(const value_type*, int);
-value_type parser_Norm(const value_type*, int);
-value_type parser_Med(const value_type*, int);
-value_type parser_Pct(const value_type*, int);
-value_type parser_round(const value_type&, const value_type&);
-value_type parser_compare(const value_type*, int);
-value_type parser_and(const value_type*, int);
-value_type parser_or(const value_type*, int);
-value_type parser_xor(const value_type*, int);
-value_type parser_polynomial(const value_type*, int);
-value_type parser_perlin(const value_type*, int);
-value_type parser_toRadian(const value_type&);
-value_type parser_toDegree(const value_type&);
-value_type parser_SphericalHarmonics(const value_type&, const value_type&, const value_type&, const value_type&);
-value_type parser_imSphericalHarmonics(const value_type&, const value_type&, const value_type&, const value_type&);
-value_type parser_Zernike(const value_type&, const value_type&, const value_type&, const value_type&);
-value_type parser_ZernikeRadial(int, int, const value_type&);
-value_type parser_SinusCardinalis(const value_type&);
-value_type parser_SphericalBessel(const value_type&, const value_type&);
-value_type parser_SphericalNeumann(const value_type&, const value_type&);
-value_type parser_LegendrePolynomial(const value_type&, const value_type&);
-value_type parser_AssociatedLegendrePolynomial(const value_type&, const value_type&, const value_type&);
-value_type parser_LaguerrePolynomial(const value_type&, const value_type&);
-value_type parser_AssociatedLaguerrePolynomial(const value_type&, const value_type&, const value_type&);
-value_type parser_HermitePolynomial(const value_type&, const value_type&);
-value_type parser_BetheWeizsaecker(const value_type&, const value_type&);
-value_type parser_Heaviside(const value_type&);
-value_type parser_theta(const value_type&, const value_type&, const value_type&);
-value_type parser_phi(const value_type&, const value_type&);
-value_type parser_Random(const value_type&, const value_type&);
-value_type parser_gRandom(const value_type&, const value_type&);
-value_type parser_erf(const value_type&);
-value_type parser_erfc(const value_type&);
-value_type parser_gamma(const value_type&);
-value_type parser_AiryA(const value_type&);
-value_type parser_AiryB(const value_type&);
-value_type parser_RegularCylBessel(const value_type&, const value_type&);
-value_type parser_IrregularCylBessel(const value_type&, const value_type&);
-value_type parser_EllipticF(const value_type&, const value_type&);
-value_type parser_EllipticE(const value_type&, const value_type&);
-value_type parser_EllipticP(const value_type&, const value_type&, const value_type&);
-value_type parser_EllipticD(const value_type&, const value_type&);
-value_type parser_beta(const value_type&, const value_type&);
-value_type parser_zeta(const value_type&);
-value_type parser_clausen(const value_type&);
-value_type parser_digamma(const value_type&);
-value_type parser_polygamma(const value_type&, const value_type&);
-value_type parser_dilogarithm(const value_type&);
-value_type parser_floor(const value_type&);
-value_type parser_roof(const value_type&);
-value_type parser_rect(const value_type&, const value_type&, const value_type&);
-value_type parser_ivl(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
-value_type parser_studentFactor(const value_type&, const value_type&);
-value_type parser_gcd(const value_type&, const value_type&);
-value_type parser_lcm(const value_type&, const value_type&);
-value_type parser_is_string(const value_type&);
-value_type parser_time();
-value_type parser_clock();
-value_type parser_date(const value_type&, const value_type&);
-value_type parser_weeknum(const value_type&);
-value_type parser_isnan(const value_type&);
-value_type parser_interval(const value_type&, const value_type&, const value_type&);
-value_type parser_numereversion();
-value_type parser_omp_threads();
-value_type parser_cot(const value_type&);
-value_type parser_sleep(const value_type&);
-value_type parser_log_b(const value_type&, const value_type&);
-value_type parser_sec(const value_type&);
-value_type parser_csc(const value_type&);
-value_type parser_asec(const value_type&);
-value_type parser_acsc(const value_type&);
-value_type parser_sech(const value_type&);
-value_type parser_csch(const value_type&);
-value_type parser_asech(const value_type&);
-value_type parser_acsch(const value_type&);
-value_type parser_as_date(const value_type*, int);
-value_type parser_as_time(const value_type*, int);
-value_type parser_get_utc_offset();
-value_type parser_is_daylightsavingtime(const value_type&);
-value_type parser_is_leap_year(const value_type&);
+mu::Array timfnc_time();
+mu::Array timfnc_clock();
+mu::Array timfnc_date(const mu::Array&, const mu::Array&);
+mu::Array timfnc_weeknum(const mu::Array&);
+mu::Array timfnc_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
+mu::Array timfnc_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4
+mu::Array timfnc_get_utc_offset();
+mu::Array timfnc_is_daylightsavingtime(const mu::Array&);
+mu::Array timfnc_is_leap_year(const mu::Array&);
 
 // Distribution functions
-value_type parser_rd_laplace_rd(const value_type& a);
-value_type parser_rd_laplace_pdf(const value_type& x, const value_type& a);
-value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& a);
-value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a);
-value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a);
-value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& a);
-value_type parser_rd_cauchy_rd(const value_type& a);
-value_type parser_rd_cauchy_pdf(const value_type& x, const value_type& a);
-value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a);
-value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a);
-value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a);
-value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a);
-value_type parser_rd_rayleigh_rd(const value_type& sigma);
-value_type parser_rd_rayleigh_pdf(const value_type& x, const value_type& sigma);
-value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma);
-value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma);
-value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma);
-value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma);
-value_type parser_rd_landau_rd();
-value_type parser_rd_landau_pdf(const value_type& x);
-value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& alpha);
-value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2);
-value_type parser_rd_fisher_f_pdf(const value_type& x, const value_type& nu1, const value_type& nu2);
-value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, const value_type& nu2);
-value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, const value_type& nu2);
-value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, const value_type& nu2);
-value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, const value_type& nu2);
-value_type parser_rd_weibull_rd(const value_type& a, const value_type& b);
-value_type parser_rd_weibull_pdf(const value_type& x, const value_type& a, const value_type& b);
-value_type parser_rd_weibull_cdf_p(const value_type& x, const value_type& a, const value_type& b);
-value_type parser_rd_weibull_cdf_q(const value_type& x, const value_type& a, const value_type& b);
-value_type parser_rd_weibull_inv_p(const value_type& p, const value_type& a, const value_type& b);
-value_type parser_rd_weibull_inv_q(const value_type& q, const value_type& a, const value_type& b);
-value_type parser_rd_student_t_rd(const value_type& nu);
-value_type parser_rd_student_t_pdf(const value_type& x, const value_type& nu);
-value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu);
-value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu);
-value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu);
-value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu);
+mu::Array rndfnc_perlin(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=6
+mu::Array rndfnc_Random(const mu::Array& xmin, const mu::Array& xmax, const mu::Array& n); // OPT=1
+mu::Array rndfnc_gRandom(const mu::Array& avg, const mu::Array& stdev, const mu::Array& n); // OPT=1
+mu::Array rndfnc_laplace_rd(const mu::Array& a, const mu::Array& n); // OPT=1
+mu::Array rndfnc_laplace_pdf(const mu::Array& x, const mu::Array& a);
+mu::Array rndfnc_laplace_cdf_p(const mu::Array& x, const mu::Array& a);
+mu::Array rndfnc_laplace_cdf_q(const mu::Array& x, const mu::Array& a);
+mu::Array rndfnc_laplace_inv_p(const mu::Array& p, const mu::Array& a);
+mu::Array rndfnc_laplace_inv_q(const mu::Array& q, const mu::Array& a);
+mu::Array rndfnc_cauchy_rd(const mu::Array& a, const mu::Array& n); // OPT=1
+mu::Array rndfnc_cauchy_pdf(const mu::Array& x, const mu::Array& a);
+mu::Array rndfnc_cauchy_cdf_p(const mu::Array& x, const mu::Array& a);
+mu::Array rndfnc_cauchy_cdf_q(const mu::Array& x, const mu::Array& a);
+mu::Array rndfnc_cauchy_inv_p(const mu::Array& p, const mu::Array& a);
+mu::Array rndfnc_cauchy_inv_q(const mu::Array& q, const mu::Array& a);
+mu::Array rndfnc_rayleigh_rd(const mu::Array& sigma, const mu::Array& n); // OPT=1
+mu::Array rndfnc_rayleigh_pdf(const mu::Array& x, const mu::Array& sigma);
+mu::Array rndfnc_rayleigh_cdf_p(const mu::Array& x, const mu::Array& sigma);
+mu::Array rndfnc_rayleigh_cdf_q(const mu::Array& x, const mu::Array& sigma);
+mu::Array rndfnc_rayleigh_inv_p(const mu::Array& p, const mu::Array& sigma);
+mu::Array rndfnc_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma);
+mu::Array rndfnc_landau_rd(const mu::Array& n); // OPT=1
+mu::Array rndfnc_landau_pdf(const mu::Array& x);
+mu::Array rndfnc_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha, const mu::Array& n); // OPT=1
+mu::Array rndfnc_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2, const mu::Array& n); // OPT=1
+mu::Array rndfnc_fisher_f_pdf(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2);
+mu::Array rndfnc_fisher_f_cdf_p(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2);
+mu::Array rndfnc_fisher_f_cdf_q(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2);
+mu::Array rndfnc_fisher_f_inv_p(const mu::Array& p, const mu::Array& nu1, const mu::Array& nu2);
+mu::Array rndfnc_fisher_f_inv_q(const mu::Array& q, const mu::Array& nu1, const mu::Array& nu2);
+mu::Array rndfnc_weibull_rd(const mu::Array& a, const mu::Array& b, const mu::Array& n); // OPT=1
+mu::Array rndfnc_weibull_pdf(const mu::Array& x, const mu::Array& a, const mu::Array& b);
+mu::Array rndfnc_weibull_cdf_p(const mu::Array& x, const mu::Array& a, const mu::Array& b);
+mu::Array rndfnc_weibull_cdf_q(const mu::Array& x, const mu::Array& a, const mu::Array& b);
+mu::Array rndfnc_weibull_inv_p(const mu::Array& p, const mu::Array& a, const mu::Array& b);
+mu::Array rndfnc_weibull_inv_q(const mu::Array& q, const mu::Array& a, const mu::Array& b);
+mu::Array rndfnc_student_t_rd(const mu::Array& nu, const mu::Array& n); // OPT=1
+mu::Array rndfnc_student_t_pdf(const mu::Array& x, const mu::Array& nu);
+mu::Array rndfnc_student_t_cdf_p(const mu::Array& x, const mu::Array& nu);
+mu::Array rndfnc_student_t_cdf_q(const mu::Array& x, const mu::Array& nu);
+mu::Array rndfnc_student_t_inv_p(const mu::Array& p, const mu::Array& nu);
+mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu);
 
 // Operator functions
-value_type parser_Not(const value_type&);
-value_type parser_Ignore(const value_type&);
-value_type parser_Mod(const value_type&, const value_type&);
-value_type parser_XOR(const value_type&, const value_type&);
-value_type parser_BinOR(const value_type&, const value_type&);
-value_type parser_BinAND(const value_type&, const value_type&);
+mu::Array oprt_Mod(const mu::Array&, const mu::Array&);
+mu::Array oprt_XOR(const mu::Array&, const mu::Array&);
+mu::Array oprt_BinOR(const mu::Array&, const mu::Array&);
+mu::Array oprt_BinAND(const mu::Array&, const mu::Array&);
 
 // Numerical variable factory
-value_type* parser_AddVariable(const char_type*, void*);
-
 
 #endif
 

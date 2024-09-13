@@ -23,6 +23,7 @@
 
 
 #include <fstream>
+#include <regex>
 
 extern Language _lang;
 
@@ -91,7 +92,7 @@ namespace NumeRe
     /// \brief Appends the new documentation line to
     /// the already existing line.
     ///
-    /// \param _cTip CallTip&
+    /// \param sDocumentation std::string&
     /// \param sNewDocLine const std::string&
     /// \return void
     ///
@@ -100,58 +101,78 @@ namespace NumeRe
     /// converts some TeX-commands into plain text
     /// and applies a rudimentary styling.
     /////////////////////////////////////////////////
-    static void AppendToDocumentation(CallTip& _cTip, const std::string& sNewDocLine)
+    void AppendToDocumentation(std::string& sDocumentation, const std::string& sNewDocLine)
     {
         static bool bBeginEnd = false;
+        static size_t nLastIndent = 0;
 
         if (sNewDocLine.find_first_not_of(" \t") == std::string::npos)
         {
-            if (_cTip.sDocumentation.length())
-                _cTip.sDocumentation += "\n    ";
+            if (sDocumentation.length())
+                sDocumentation += "\n    ";
 
+            nLastIndent = 0;
             return;
         }
 
         // Handle some special TeX commands and rudimentary lists
         if (sNewDocLine.find("\\begin{") != std::string::npos && sNewDocLine.find("\\end{") == std::string::npos)
         {
-            if (_cTip.sDocumentation.length() && _cTip.sDocumentation[_cTip.sDocumentation.length()-1] != '\n')
-                _cTip.sDocumentation += "\n    ";
+            if (sDocumentation.length() && sDocumentation.back() != '\n')
+                sDocumentation += "\n    ";
 
+            nLastIndent = 0;
             bBeginEnd = true;
         }
         else if (sNewDocLine.find("\\begin{") == std::string::npos && sNewDocLine.find("\\end{") != std::string::npos)
         {
-            if (_cTip.sDocumentation.length() && _cTip.sDocumentation[_cTip.sDocumentation.length()-1] != '\n')
-                _cTip.sDocumentation += "\n    ";
+            if (sDocumentation.length() && sDocumentation.back() != '\n')
+                sDocumentation += "\n    ";
 
+            nLastIndent = 0;
             bBeginEnd = false;
         }
         else if ((sNewDocLine.length()
-                  && (sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 2) == "- "
-                      || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 7) == "\\param "
+                  && (sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 7) == "\\param "
                       || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 8) == "\\remark ")) || bBeginEnd)
         {
-            if (_cTip.sDocumentation.length() && _cTip.sDocumentation[_cTip.sDocumentation.length()-1] != '\n')
-                _cTip.sDocumentation += "\n    ";
+            nLastIndent = 0;
+
+            if (sDocumentation.length() && sDocumentation.back() != '\n')
+                sDocumentation += "\n    ";
+        }
+        else if (sNewDocLine.length()
+                 && std::regex_match(sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 10), std::regex("(\\d+\\.|-) +.+")))
+        {
+            nLastIndent = sNewDocLine.find_first_not_of(" \t", sNewDocLine.find_first_of(".-")+1);
+
+            if (sDocumentation.length() && sDocumentation.back() != '\n')
+                sDocumentation += "\n    ";
+        }
+        else if (nLastIndent && sNewDocLine.find_first_not_of(" \t") != nLastIndent)
+        {
+            nLastIndent = 0;
+
+            if (sDocumentation.length() && sDocumentation.back() != '\n')
+                sDocumentation += "\n    ";
         }
         else
         {
-            if (_cTip.sDocumentation.length() && _cTip.sDocumentation[_cTip.sDocumentation.length()-1] != ' ')
-                _cTip.sDocumentation += " ";
+            if (sDocumentation.length() && sDocumentation.back() != ' ')
+                sDocumentation += " ";
         }
 
-        _cTip.sDocumentation += sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"));
-        size_t nPos = _cTip.sDocumentation.find("\\procedure{");
+        sDocumentation += sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"));
+        size_t nPos = sDocumentation.find("\\procedure{");
 
         if (nPos != std::string::npos)
-            _cTip.sDocumentation.erase(nPos, _cTip.sDocumentation.find('}', nPos)+1 - nPos);
-        else if ((nPos = _cTip.sDocumentation.find("\\procedure ")) != std::string::npos)
+            sDocumentation.erase(nPos, sDocumentation.find('}', nPos)+1 - nPos);
+        else if ((nPos = sDocumentation.find("\\procedure ")) != std::string::npos)
         {
             size_t nPos2 = nPos + 10;
-            nPos2 = _cTip.sDocumentation.find_first_not_of(" \r\n", nPos2);
-            nPos2 = _cTip.sDocumentation.find_first_of(" \r\n", nPos2);
-            _cTip.sDocumentation.erase(nPos, nPos2-nPos);
+            nPos2 = sDocumentation.find_first_not_of(" \r\n", nPos2);
+            nPos2 = sDocumentation.find_first_of(" \r\n", nPos2);
+            sDocumentation.erase(nPos, nPos2-nPos);
         }
     }
 
@@ -321,7 +342,7 @@ namespace NumeRe
                 {
                     // Append each documentation string
                     if (sProcCommandLine.starts_with("##!"))
-                        AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
 
                     continue;
                 }
@@ -336,7 +357,7 @@ namespace NumeRe
                     if (sProcCommandLine.starts_with("#*!"))
                     {
                         bDocFound = true;
-                        AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
                     }
 
                     bBlockComment = true;
@@ -349,7 +370,7 @@ namespace NumeRe
                     bBlockComment = false;
 
                     if (bDocFound)
-                        AppendToDocumentation(_cTip, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
                     if (sProcCommandLine.find("*#") == sProcCommandLine.length() - 2)
                         continue;
                     else
@@ -359,7 +380,7 @@ namespace NumeRe
                 {
                     // if the documentation has a length, append the current block
                     if (bDocFound)
-                        AppendToDocumentation(_cTip, sProcCommandLine);
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine);
 
                     continue;
                 }
@@ -440,15 +461,15 @@ namespace NumeRe
                             StripSpaces(sProcCommandLine);
 
                             if (sProcCommandLine.starts_with("##!"))
-                                AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
+                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
                             else if (sProcCommandLine.starts_with("#*!"))
                             {
-                                AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
+                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
                                 bBlockComment = true;
                             }
                             else if (bBlockComment)
                             {
-                                AppendToDocumentation(_cTip, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
+                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
 
                                 if (sProcCommandLine.find("*#") != std::string::npos)
                                     break;
@@ -500,8 +521,10 @@ namespace NumeRe
 
         size_t nIndentPos = 4;
         size_t nLastLineBreak = 0;
-        bool isItemize = false;
+        size_t nAddIndent = 0;
         std::string& sReturn = _cTip.sDocumentation;
+        static const std::regex expr("    (\\d+\\.|-) +(?=\\S+)");
+        std::smatch match;
 
         nLastLineBreak = 0;
 
@@ -510,11 +533,12 @@ namespace NumeRe
             if (sReturn[i] == '\n')
             {
                 nLastLineBreak = i;
+                std::string sCandidate = sReturn.substr(i+1, 15);
 
-                if (sReturn.substr(i, 7) == "\n    - ")
-                    isItemize = true;
+                if (std::regex_search(sCandidate, match, expr) && match.position(0) == 0)
+                    nAddIndent = match.length(0)-4;
                 else
-                    isItemize = false;
+                    nAddIndent = 0;
             }
 
             if ((i == maxLineLength && !nLastLineBreak)
@@ -525,7 +549,7 @@ namespace NumeRe
                     if (sReturn[j] == ' ')
                     {
                         sReturn[j] = '\n';
-                        sReturn.insert(j + 1, nIndentPos + 2*isItemize, ' ');
+                        sReturn.insert(j + 1, nIndentPos + nAddIndent, ' ');
                         nLastLineBreak = j;
                         break;
                     }
@@ -544,14 +568,14 @@ namespace NumeRe
                             continue;
 
                         sReturn.insert(j + 1, "\n");
-                        sReturn.insert(j + 2, nIndentPos + 2*isItemize, ' ');
+                        sReturn.insert(j + 2, nIndentPos + nAddIndent, ' ');
                         nLastLineBreak = j + 1;
                         break;
                     }
                     else if (sReturn[j] == ',' && j != (int)i && sReturn[j + 1] != ' ')
                     {
                         sReturn.insert(j + 1, "\n");
-                        sReturn.insert(j + 2, nIndentPos + 2*isItemize, ' ');
+                        sReturn.insert(j + 2, nIndentPos + nAddIndent, ' ');
                         nLastLineBreak = j + 1;
                         break;
                     }
@@ -651,6 +675,8 @@ namespace NumeRe
             sToken = "acosh";
         else if (sToken == "artanh")
             sToken = "atanh";
+        else if (sToken == "ceil")
+            sToken = "roof";
 
         if (m_returnUnmatchedTokens
             || _lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*") != "PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")
@@ -755,14 +781,18 @@ namespace NumeRe
     /////////////////////////////////////////////////
     CallTip CallTipProvider::getMethod(std::string sToken) const
     {
+        static const char* pref = "PARSERFUNCS_LISTFUNC_METHOD_";
+
         if (!m_returnUnmatchedTokens
-            && _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_*") == "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_*")
+            && _lang.get(pref + toUpperCase(sToken) + "_*") == pref + toUpperCase(sToken) + "_*")
             return CallTip();
 
-        if (_lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]") != "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]")
-            sToken = "STRINGVAR." + _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]");
+        if (_lang.get(pref + toUpperCase(sToken) + "_[ANY]") != pref + toUpperCase(sToken) + "_[ANY]")
+            sToken = "VAR." + _lang.get(pref + toUpperCase(sToken) + "_[ANY]");
+        else if (_lang.get(pref + toUpperCase(sToken) + "_[STRING]") != pref + toUpperCase(sToken) + "_[STRING]")
+            sToken = "STRINGVAR." + _lang.get(pref + toUpperCase(sToken) + "_[STRING]");
         else
-            sToken = "TABLE()." + _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[DATA]");
+            sToken = "TABLE()." + _lang.get(pref + toUpperCase(sToken) + "_[DATA]");
 
         CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);
         _cTip.nStart = _cTip.sDefinition.find('.')+1;

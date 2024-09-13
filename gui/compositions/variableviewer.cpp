@@ -71,11 +71,11 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     // Create the default columns
     AddColumn(_guilang.get("GUI_VARVIEWER_NAME"), 150);
     AddColumn(_guilang.get("GUI_VARVIEWER_DIM"), 80, wxALIGN_RIGHT);
-    AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 55);
-    AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize - (!debugMode)*50);
+    AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 65);
+    AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize - (!debugMode)*90);
 
     if (!debugMode)
-        AddColumn(_guilang.get("GUI_VARVIEWER_SIZE"), 120);
+        AddColumn(_guilang.get("GUI_VARVIEWER_SIZE"), 90);
 
     // Create root node
     AddRoot("ROOT");
@@ -568,13 +568,9 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
         popUpmenu.Append(ID_VARVIEWER_RENAME, _guilang.get("GUI_VARVIEWER_MENU_RENAME"));
         popUpmenu.Append(ID_VARVIEWER_REMOVE, _guilang.get("GUI_VARVIEWER_MENU_REMOVE"));
 
-        // Add stuff, for non-string tables
-        if (itemLabel != "string()")
-        {
-            popUpmenu.AppendSeparator();
-            popUpmenu.Append(ID_VARVIEWER_SAVE, _guilang.get("GUI_VARVIEWER_MENU_SAVE"));
-            popUpmenu.Append(ID_VARVIEWER_SAVEAS, _guilang.get("GUI_VARVIEWER_MENU_SAVEAS"));
-        }
+        popUpmenu.AppendSeparator();
+        popUpmenu.Append(ID_VARVIEWER_SAVE, _guilang.get("GUI_VARVIEWER_MENU_SAVE"));
+        popUpmenu.Append(ID_VARVIEWER_SAVEAS, _guilang.get("GUI_VARVIEWER_MENU_SAVEAS"));
 
         // Disable menu items for tables, which
         // cannot be modified
@@ -644,7 +640,7 @@ void VariableViewer::setDebuggerMode(bool mode)
 
     if (mode)
     {
-        SetColumnWidth(CLASSCOLUMN, 75);
+        SetColumnWidth(CLASSCOLUMN, 85);
 
         // Create or remove the procedure argument
         // root item

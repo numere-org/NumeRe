@@ -36,14 +36,14 @@ struct TableColumn
     {
         TYPE_NONE,
         VALUELIKE,
-        TYPE_VALUE_I8,
         TYPE_VALUE_UI8,
-        TYPE_VALUE_I16,
         TYPE_VALUE_UI16,
-        TYPE_VALUE_I32,
         TYPE_VALUE_UI32,
-        TYPE_VALUE_I64,
         TYPE_VALUE_UI64,
+        TYPE_VALUE_I8,
+        TYPE_VALUE_I16,
+        TYPE_VALUE_I32,
+        TYPE_VALUE_I64,
         TYPE_VALUE_F32,
         TYPE_VALUE_F64,
         TYPE_VALUE_CF32,
@@ -59,6 +59,7 @@ struct TableColumn
     };
 
     std::string m_sHeadLine;
+    std::string m_sUnit;
     ColumnType m_type;
 
     TableColumn() : m_type(TYPE_NONE) {}
@@ -66,21 +67,24 @@ struct TableColumn
 
     std::vector<std::string> getValueAsString(const VectorIndex& idx) const;
     std::vector<std::string> getValueAsInternalString(const VectorIndex& idx) const;
-    std::vector<mu::value_type> getValue(const VectorIndex& idx) const;
+    std::vector<std::complex<double>> getValue(const VectorIndex& idx) const;
 
     virtual std::string getValueAsString(size_t elem) const = 0;
     virtual std::string getValueAsInternalString(size_t elem) const = 0;
     virtual std::string getValueAsParserString(size_t elem) const = 0;
     virtual std::string getValueAsStringLiteral(size_t elem) const = 0;
-    virtual mu::value_type getValue(size_t elem) const = 0;
+    virtual std::complex<double> getValue(size_t elem) const = 0;
+    virtual mu::Value get(size_t elem) const = 0;
 
     void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue);
-    void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue);
-    void setValue(const VectorIndex& idx, mu::value_type* _dData, size_t _nNum);
+    void setValue(const VectorIndex& idx, const std::vector<std::complex<double>>& vValue);
+    void setValue(const VectorIndex& idx, std::complex<double>* _dData, size_t _nNum);
 
     virtual void setValue(size_t elem, const std::string& sValue) = 0;
-    virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;
+    virtual void setValue(size_t elem, const std::complex<double>& vValue) = 0;
+    virtual void set(size_t elem, const mu::Value& val) = 0;
 
+    void assignMetaData(const TableColumn* column);
     TableColumn* copy() const;
     virtual TableColumn* copy(const VectorIndex& idx) const = 0;
     virtual void assign(const TableColumn* column) = 0;

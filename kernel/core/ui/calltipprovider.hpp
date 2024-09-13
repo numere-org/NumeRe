@@ -75,6 +75,7 @@ namespace NumeRe
 
     CallTip FindProcedureDefinition(const std::string& pathname, const std::string& procedurename);
     CallTip addLinebreaks(CallTip _cTip, size_t maxLineLength = 100u);
+    void AppendToDocumentation(std::string& sDocumentation, const std::string& sNewDocLine);
 }
 
 #endif // CALLTIPPROVIDER_HPP

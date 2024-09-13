@@ -249,19 +249,17 @@ class VectorIndex
         /// The third argument is used only to avoid
         /// misinterpretation from the compiler.
         ///
-        /// \param indices const mu::value_type*
-        /// \param nResults int
-        /// \param unused int
+        /// \param indices const mu::Array&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const mu::value_type* indices, int nResults, int unused)
+        VectorIndex(const mu::Array& indices)
         {
             // Store the indices and convert them to integers
             // using the intCast() function
-            for (int i = 0; i < nResults; i++)
+            for (size_t i = 0; i < indices.size(); i++)
             {
-                if (!std::isnan(indices[i].real()) && !std::isinf(indices[i].real()))
-                    vStorage.push_back(intCast(indices[i]) - 1);
+                if (!std::isnan(indices[i].getNum().asF64()) && !std::isinf(indices[i].getNum().asF64()))
+                    vStorage.push_back(indices[i].getNum().asI64() - 1);
                 else
                     vStorage.push_back(INVALID);
             }
@@ -695,6 +693,31 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Apply an additional offset to all
+        /// index values within this vector.
+        ///
+        /// \param offset int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void apply_offset(int offset)
+        {
+            if (expand)
+            {
+                vStorage.front() = vStorage.front() > INVALID ? vStorage.front()+offset : vStorage.front();
+                vStorage.back() = vStorage.back() > INVALID ? vStorage.back()+offset : vStorage.back();
+            }
+            else
+            {
+                for (size_t i = 0; i < vStorage.size(); i++)
+                {
+                    if (vStorage[i] > INVALID)
+                        vStorage[i] += offset;
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function returns a STL
         /// vector, which will resemble the indices
         /// stored internally. This includes that the
@@ -790,6 +813,20 @@ class VectorIndex
         inline bool isOpenEnd() const
         {
             return vStorage.back() == OPEN_END;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the managed range contains the full
+        /// range of the target data set.
+        ///
+        /// \param max_range int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool isFullRange(int max_range) const
+        {
+            return expand && vStorage.front() == 0 && (vStorage.back() == OPEN_END || vStorage.back() >= max_range);
         }
 
         /////////////////////////////////////////////////
@@ -3169,30 +3206,19 @@ struct Point
 /////////////////////////////////////////////////
 struct Returnvalue
 {
-    std::vector<mu::value_type> vNumVal;
-    std::vector<std::string> vStringVal;
+    std::vector<mu::Array> valArray;
     std::string sReturnedTable;
     bool delayDelete;
+    Indices sourceIdx;
 
     Returnvalue() : delayDelete(false) {}
 
     // clear method
     void clear()
     {
-        vNumVal.clear();
-        vStringVal.clear();
+        valArray.clear();
         sReturnedTable.clear();
         delayDelete = false;
-    }
-
-    // boolean checkers
-    bool isString() const
-    {
-        return vStringVal.size();
-    }
-    bool isNumeric() const
-    {
-        return vNumVal.size() && !vStringVal.size();
     }
 };
 
@@ -3204,7 +3230,7 @@ struct Returnvalue
 struct DefaultVariables
 {
     std::string sName[4] = {"x", "y", "z", "t"};
-    mu::value_type vValue[4][4];
+    mu::Variable vValue[4][4];
 };
 
 

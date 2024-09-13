@@ -1,30 +1,23 @@
-Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
-Added	Experimental feature: it is now possible to create new columns in tables if values are assigned to an unknown column using string indexing. The new column will be appended at the end of the table.
-Added	The new plotting option "stacked" enables the stacking of bars and hbars on each other.
-Added   More time-related constants and functions
-Applied	Experimental feature: "matop" functions now also accept matrix results as their scalar inputs. For consecutive scalar inputs, even a single vector can be passed, e.g. "matop zero({1,3})"
-Applied	Increased performance of STFA, audioread and some statistics functions.
-Applied	One can now pass custom axis ticks using a list of strings.
-Applied	There's experimental support for coloured window themes. If you want to test it, the setting can be found at the end of the syntax colour list.
-Cleaned	"write" now uses "noquotes" as default. The parameter was removed and has no effect any more.
-Cleaned	Bar charts now always include the value y=0. In some situations it is reasonable to enable "origin=sliding" as an additional plotting option.
-Cleaned	The command "start SCRIPT -fromline=line" does now also work in terminal.
-Cleaned	The plugin interface and its documentation was cleaned
-Cleaned	Usability of mouse-over tooltips was improved. It should now be possible to show the fulltips of arguments inside of function parentheses again.
-Fixed	"export" and "save" will now create their target folder automatically.
-Fixed	A single table column now also counts as valid input for "write".
-Fixed	All headlines in the PDF documentation are now in the correct language.
-Fixed	Error locations now be found in all locations even if the debugger is not active.
-Fixed	If one tries to save a cluster, then an error message appears instead of a crash.
-Fixed	If the values "nan" and "inf" are used within an index vector, then they are treated as invalid values and will always return an invalid value.
-Fixed	Resolved a crash originating from "large file not supported" debug message.
-Fixed	Resolved a rare bug occuring, if whitespace was missing after a comma.
-Fixed	Resolved a regression introduced with this version.
-Fixed	Restored "gradient" effect in plots using the "area" option.
-Fixed	Root paths changed via the settings dialog now have the correct effect and will be stored for future sessions.
-Fixed	The "cmp()" function does now return the indices with respect to the passed array and not with respect to the arrays origin (MAY BREAK CODE).
-Fixed	The "Start from current line" functionality can now handle "declare", "include" and "lclfunc" as expected.
-Fixed	The auto-indentation functionality does not interfere with CTRL-Z any more.
-Fixed	The num2string parser operator "#" may now handle floating point values correctly.
-Fixed	The two functions "pct()" and "cmp()" are now working correctly in all scenarios.
-Fixed	Titles in animations appear now on every frame again.
+Added	Function uuid(), returning a uuid as string
+Cleaned	Some file types do no longer require automatic conversion upon file load.
+Cleaned	If the debugger is in control and the user tries to close the application, a confirmation dialog appears.
+Added	The font size within "text()" can now adapted in 9 distinct steps.
+Added	Strings in tables shown in the table viewer can now be shown without the surrounding quotation marks, if the corresponding setting value is changed. This does not apply for clusters.
+Added	It's now also possible to copy only a part of a table to another table at a desired location using "TAB(i1:i2,j1:j2) = TAB2(i1:i2,j1:j1)" syntax.
+Applied	Plots of large data sets have been sped up by downsampling the used data to result image size before plotting it.
+Cleaned	Indentation of wrapped lines in created documentation now works as expected (not falling back to the beginning of the line any longer).
+Fixed	Resolved a rarely occuring off-by-one error within the possibility to start a script from a specific line.
+Applied	Improved some internals to speed up some calculations.
+Added	New string function "strjoin()" will allow for concatenation of a vector of strings into a single string with an optional separator.
+Applied	The function context tooltip will now align with the opening brace whereever possible.
+Added	More shortcuts have been added to the table viewer, especially the arrow-shift and arrow-ctrl key kombinations.
+New	The new table method modifier ".cells()" together with ".rows" or ".cols" allows for selection of table cells along the direction of application.
+Cleaned	If the line length indicator is active, then lines longer than twice the indicated length will be wrapped completely, i.e., wrapped multiple times.
+Fixed	If comment lines are wrapped automatically, orphan whitespaces at the beginning of the wrapped line resulting from leading punctuation characters are now removed (corresponding to known word wrapping behaviors).
+Fixed	If comment lines are wrapped automatically, they are not longer wrapped right after opening braces.
+Added	Documentation block comments now also support enumerations.
+Added	A new Table method to perform kmeans clustering on specified columns of numberical data. kmeansof({columns}, #clusters, maxIterations = 100, init-method="random", re-initializations=10)
+Fixed	Procedures with relative namespaces can also be used within control flow blocks.
+New	Table columns can now have (physical) units to represent data even better. The units will be detected automatically (if possible), or you can use the dedicated methods to modify the unit of each column.
+New	The table method "TAB().toSIunits()" can be used for symbolic unit calculations.
+Applied	The kernel was greatly rewritten and supports much more different types and functionalities. Strange typing problems shouldn't appear any more. Overall performance should be improved (although at the cost that some segments might run slower).

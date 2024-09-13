@@ -78,14 +78,14 @@ class Fitcontroller
         static int fitfunctionrestricted(const gsl_vector* params, void* data, gsl_vector* fvals);
         static int fitjacobianrestricted(const gsl_vector* params, void* data, gsl_matrix* Jac);
         static int fitfuncjacrestricted(const gsl_vector* params, void* data, gsl_vector* fvals, gsl_matrix* Jac);
-        static double evalRestrictions(const mu::value_type* v, int nVals);
+        static double evalRestrictions(const mu::Array* v, int nVals);
         int nIterations;
         double dChiSqr;
         std::string sExpr;
         FitMatrix vCovarianceMatrix;
-        static mu::value_type* xvar;
-        static mu::value_type* yvar;
-        static mu::value_type* zvar;
+        static mu::Variable* xvar;
+        static mu::Variable* yvar;
+        static mu::Variable* zvar;
 
         bool fitctrl(const std::string& __sExpr, const std::string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations);
         static void removeNANVals(gsl_vector* fvals, size_t nSize);

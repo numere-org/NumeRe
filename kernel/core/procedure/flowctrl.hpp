@@ -48,7 +48,7 @@ class FlowCtrl
     private:
         bool bLoopSupressAnswer;
 
-        Parser* _parserRef;
+        mu::Parser* _parserRef;
         MemoryManager* _dataRef;
         Output* _outRef;
         Settings* _optionRef;
@@ -116,7 +116,7 @@ class FlowCtrl
         };
 
         std::vector<FlowCtrlCommand> vCmdArray;
-        std::vector<value_type> vVarArray;
+        std::vector<mu::Variable> vVarArray;
         std::vector<std::string> sVarArray;
         varmap_type vVars;
         std::vector<std::vector<int>> nJumpTable;
@@ -158,7 +158,7 @@ class FlowCtrl
 
         int compile(std::string sLine, int nthCmd);
         int calc(StringView sLine, int nthCmd);
-        value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
+        mu::Array* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
         NumeRe::Cluster evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 
@@ -177,9 +177,9 @@ class FlowCtrl
 
 
         virtual int procedureCmdInterface(StringView sLine);
-        virtual ProcedureInterfaceRetVal procedureInterface(std::string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command);
+        virtual ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command);
         virtual int isInline(const std::string& sProc);
-        virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
+        virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();
         virtual std::vector<std::string> expandInlineProcedures(std::string& sLine);
         virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp = false);

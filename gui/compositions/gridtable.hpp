@@ -35,12 +35,13 @@ class GridNumeReTable : public wxGridTableBase
     private:
         NumeRe::Table _table;
         int getNumHeadlines() const;
-        mu::value_type value;
+        std::complex<double> value;
+        bool m_showQMarks;
 
     public:
         GridNumeReTable();
         GridNumeReTable(int numRows, int numCols);
-        GridNumeReTable(NumeRe::Table&& _extTable);
+        GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks);
         virtual ~GridNumeReTable() {}
 
         NumeRe::Table getTable()
@@ -60,6 +61,7 @@ class GridNumeReTable : public wxGridTableBase
         virtual void* GetValueAsCustom(int row, int col, const wxString& sTypeName);
 
         virtual wxString GetValue(int row, int col);
+        virtual wxString GetEditableValue(int row, int col);
         virtual void SetValue(int row, int col, const wxString& value);
 
         virtual void Clear();
@@ -75,8 +77,8 @@ class GridNumeReTable : public wxGridTableBase
 
         double min(const wxGridCellCoordsContainer& coords) const;
         double max(const wxGridCellCoordsContainer& coords) const;
-        mu::value_type avg(const wxGridCellCoordsContainer& coords) const;
-        mu::value_type sum(const wxGridCellCoordsContainer& coords) const;
+        std::complex<double> avg(const wxGridCellCoordsContainer& coords) const;
+        std::complex<double> sum(const wxGridCellCoordsContainer& coords) const;
         std::string serialize(const wxGridCellCoordsContainer& coords) const;
 
         std::vector<int> getColumnTypes() const;

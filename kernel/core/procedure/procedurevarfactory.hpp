@@ -60,7 +60,6 @@ class ProcedureVarFactory
         enum VarType
         {
             NUMTYPE,
-            STRINGTYPE,
             CLUSTERTYPE,
             TABLETYPE
         };
@@ -75,26 +74,22 @@ class ProcedureVarFactory
 
         std::string resolveArguments(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
         std::string resolveLocalVars(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
-        std::string resolveLocalStrings(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
         std::string resolveLocalTables(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
         std::string resolveLocalClusters(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
         size_t countVarListElements(const std::string& sVarList);
         void checkArgument(const std::string& sArgument, const std::string& sArgumentList, size_t nCurrentIndex);
         void checkArgumentValue(const std::string& sArgument, const std::string& sArgumentList, size_t nCurrentIndex);
         bool checkSymbolName(const std::string& sSymbolName) const;
-        void createLocalInlineVars(std::string sVarList);
-        void createLocalInlineStrings(std::string sVarList);
+        void createLocalInlineVars(std::string sVarList, const mu::Value& defVal);
         void evaluateProcedureArguments(std::string& currentArg, std::string& currentValue, const std::string& sArgumentList);
 
     public:
         std::map<std::string, std::string> mArguments;
-        std::map<std::string, std::pair<std::string, mu::value_type*>> mLocalVars;
-        std::map<std::string, std::pair<std::string, std::string>> mLocalStrings;
+        std::map<std::string, std::pair<std::string, mu::Variable*>> mLocalVars;
         std::map<std::string, std::string> mLocalTables;
         std::map<std::string, std::string> mLocalClusters;
 
         std::string sInlineVarDef;
-        std::string sInlineStringDef;
         std::vector<std::string> vInlineArgDef;
 
         ProcedureVarFactory();
@@ -105,15 +100,18 @@ class ProcedureVarFactory
         bool delayDeletionOfReturnedTable(const std::string& sTableName);
         bool isReference(const std::string& sArgName) const;
         std::map<std::string,std::string> createProcedureArguments(std::string sArgumentList, std::string sArgumentValues);
-        void createLocalVars(std::string sVarList);
-        void createLocalStrings(std::string sStringList);
+        void createLocalVars(std::string sVarList, const mu::Value& defVal = mu::Value(0.0));
+        void createLocalStrings(std::string sStringList)
+        {
+            return createLocalVars(sStringList, mu::Value(""));
+        }
         void createLocalTables(std::string sTableList);
         void createLocalClusters(std::string sClusterList);
         std::string createTestStatsCluster();
 
         std::string resolveVariables(const std::string& sProcedureCommandLine)
             {
-                return resolveLocalTables(resolveLocalClusters(resolveArguments(resolveLocalStrings(resolveLocalVars(sProcedureCommandLine)))));
+                return resolveLocalTables(resolveLocalClusters(resolveArguments(resolveLocalVars(sProcedureCommandLine))));
             }
 };
 

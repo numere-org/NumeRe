@@ -31,53 +31,11 @@
 #include "../settings.hpp"
 #include "stringtools.hpp"
 
+#ifndef PARSERSTANDALONE
+
 extern const std::string sVersion;
 
-/////////////////////////////////////////////////
-/// \brief Casts doubles to integers and avoids
-/// rounding errors.
-///
-/// \param number double
-/// \return INT
-///
-/////////////////////////////////////////////////
-template <class INT>
-INT genericIntCast(double number)
-{
-    // if quite close, use rint
-    if (std::abs(number - rint(number)) < 1e-7)
-        return std::rint(number);
 
-    // otherwise truncate
-    return static_cast<INT>(number);
-}
-
-/////////////////////////////////////////////////
-/// \brief Casts the real part of the complex
-/// number to an integer and avoids rounding
-/// errors.
-///
-/// \param number const std::complex<double>&
-/// \return INT
-///
-/////////////////////////////////////////////////
-template <class INT>
-INT genericIntCast(const std::complex<double>& number)
-{
-    return genericIntCast<INT>(number.real());
-}
-
-inline int64_t intCast(double number)
-{
-    return genericIntCast<int64_t>(number);
-}
-
-inline int64_t intCast(const std::complex<double>& number)
-{
-    return genericIntCast<int64_t>(number.real());
-}
-
-bool isInt(const std::complex<double>& number);
 
 std::mt19937& getRandGenInstance();
 const gsl_rng* getGslRandGenInstance();
@@ -106,7 +64,6 @@ enum ArgExtraction
 std::string getArgAtPos(const std::string& sCmd, size_t nPos, int extraction = ARGEXTRACT_STRIPPED);
 bool isInQuotes(StringView sExpr, size_t nPos, bool bIgnoreVarParser = false);
 bool isToStringArg(const std::string& sExpr, size_t nPos);
-bool isDelimiter(char cChar);
 bool addLegends(std::string&);
 bool checkDelimiter(StringView sToken, bool stringdelim = false);
 std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
@@ -115,8 +72,7 @@ std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowD
 double Linearize(double x_0, double y_0, double x_1, double y_1);
 void make_hline(int nLength = -1);
 void make_progressBar(int nStep, int nFirstStep = 1, int nFinalStep = 100, const std::string& sType = "std");
-bool containsStrings(const std::string& sLine);
-bool fileExists(const std::string& sFilename);
+bool containsStrings(StringView sLine);
 void reduceLogFilesize(const std::string& sFileName);
 std::string replaceToVectorname(const std::string& sExpression);
 void eraseToken(std::string& sExpr, const std::string& sToken, bool bTokenHasValue = false);
@@ -142,26 +98,6 @@ bool validateParenthesisNumber(StringView sCmd);
 
 void addArgumentQuotes(std::string& sToAdd, const std::string& sParam);
 void addArgumentQuotes(std::string& sToAdd, size_t pos);
-
-/** \brief Calculates the power of a number using an integer as exponent
- *
- * \param dNumber double
- * \param nExponent int
- * \return double
- *
- */
-double intPower(double dNumber, int nExponent);
-std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent);
-
-std::string getNextArgument(std::string& sArgList, bool bCut = true);
-std::string getNextIndex(std::string& sArgList, bool bCut = true);
-std::string getNextSemiColonSeparatedToken(std::string& sArgList, bool bCut = true);
-StringView getNextViewedArgument(StringView& sView);
-StringView getNextViewedIndex(StringView& sView);
-EndlessVector<StringView> getAllArguments(StringView sArgList);
-EndlessVector<std::string> getAllArguments(std::string sArgList);
-EndlessVector<std::string> getAllIndices(std::string sArgList);
-EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 
 
 /** \brief Checks, whether the "to_cmd()" function was used
@@ -228,6 +164,79 @@ inline bool isDimensionVar(const std::string& sVarName)
     return sVarName == "nrows" || sVarName == "ncols" || sVarName == "nlen" || sVarName == "nlines";
 }
 
+#endif // PARSERSTANDALONE
+
+std::mt19937& getRandGenInstance();
+const gsl_rng* getGslRandGenInstance();
+
+/////////////////////////////////////////////////
+/// \brief Casts doubles to integers and avoids
+/// rounding errors.
+///
+/// \param number double
+/// \return INT
+///
+/////////////////////////////////////////////////
+template <class INT>
+INT genericIntCast(double number)
+{
+    // if quite close, use rint
+    if (std::abs(number - rint(number)) < 1e-7)
+        return std::rint(number);
+
+    // otherwise truncate
+    return static_cast<INT>(number);
+}
+
+/////////////////////////////////////////////////
+/// \brief Casts the real part of the complex
+/// number to an integer and avoids rounding
+/// errors.
+///
+/// \param number const std::complex<double>&
+/// \return INT
+///
+/////////////////////////////////////////////////
+template <class INT>
+INT genericIntCast(const std::complex<double>& number)
+{
+    return genericIntCast<INT>(number.real());
+}
+
+inline int64_t intCast(double number)
+{
+    return genericIntCast<int64_t>(number);
+}
+
+inline int64_t intCast(const std::complex<double>& number)
+{
+    return genericIntCast<int64_t>(number.real());
+}
+
+
+
+/** \brief Calculates the power of a number using an integer as exponent
+ *
+ * \param dNumber double
+ * \param nExponent int64_t
+ * \return double
+ *
+ */
+double intPower(double dNumber, int64_t nExponent);
+std::complex<double> intPower(const std::complex<double>& dNumber, int64_t nExponent);
+
+std::string getNextArgument(std::string& sArgList, bool bCut = true);
+std::string getNextIndex(std::string& sArgList, bool bCut = true);
+std::string getNextSemiColonSeparatedToken(std::string& sArgList, bool bCut = true);
+StringView getNextViewedArgument(StringView& sView);
+StringView getNextViewedIndex(StringView& sView);
+EndlessVector<StringView> getAllArguments(StringView sArgList);
+EndlessVector<std::string> getAllArguments(std::string sArgList);
+EndlessVector<std::string> getAllIndices(std::string sArgList);
+EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
+bool isDelimiter(char cChar);
+bool fileExists(const std::string& sFilename);
+bool isInt(const std::complex<double>& number);
 
 #endif
 

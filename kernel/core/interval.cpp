@@ -47,7 +47,7 @@ void Interval::assign(const Interval& ivl)
 ///
 /// \param n size_t
 /// \param nSamples size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
 double Interval::getSample(size_t n, size_t nSamples) const
@@ -113,11 +113,11 @@ Interval::Interval(const std::string& sDef) : Interval()
 /// \brief Constructor from the two interval
 /// boundaries.
 ///
-/// \param dFront mu::value_type
-/// \param dBack mu::value_type
+/// \param dFront std::complex<double>
+/// \param dBack std::complex<double>
 ///
 /////////////////////////////////////////////////
-Interval::Interval(mu::value_type dFront, mu::value_type dBack) : Interval()
+Interval::Interval(std::complex<double> dFront, std::complex<double> dBack) : Interval()
 {
     reset(dFront, dBack);
 }
@@ -154,10 +154,10 @@ Interval& Interval::operator=(const Interval& ivl)
 ///
 /// \param n size_t
 /// \param nSamples size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::operator()(size_t n, size_t nSamples) const
+std::complex<double> Interval::operator()(size_t n, size_t nSamples) const
 {
     return getSample(n, nSamples);
 }
@@ -168,10 +168,10 @@ mu::value_type Interval::operator()(size_t n, size_t nSamples) const
 ///
 /// \param n size_t
 /// \param nSamples size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::log(size_t n, size_t nSamples) const
+std::complex<double> Interval::log(size_t n, size_t nSamples) const
 {
     return std::pow(10.0, std::log10(front()) + (double)n * (std::log10(back()) - std::log10(front())) / (double)(nSamples - 1));
 }
@@ -181,10 +181,10 @@ mu::value_type Interval::log(size_t n, size_t nSamples) const
 /// \brief Return the first element in the
 /// interval.
 ///
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::front() const
+std::complex<double> Interval::front() const
 {
     return m_vInterval.front();
 }
@@ -194,10 +194,10 @@ mu::value_type Interval::front() const
 /// \brief Return the last element in the
 /// interval.
 ///
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::back() const
+std::complex<double> Interval::back() const
 {
     return m_vInterval.back();
 }
@@ -207,10 +207,10 @@ mu::value_type Interval::back() const
 /// \brief Return the componentwise minimal
 /// element in the interval.
 ///
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::cmin() const
+std::complex<double> Interval::cmin() const
 {
     return *std::min_element(m_vInterval.begin(), m_vInterval.end());
 }
@@ -220,10 +220,10 @@ mu::value_type Interval::cmin() const
 /// \brief Return the componentwise maximal
 /// element in the interval.
 ///
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::cmax() const
+std::complex<double> Interval::cmax() const
 {
     return *std::max_element(m_vInterval.begin(), m_vInterval.end());
 }
@@ -285,12 +285,12 @@ double Interval::middle() const
 /// \brief Checks, whether the passed value is
 /// part of this interval.
 ///
-/// \param val mu::value_type
+/// \param val std::complex<double>
 /// \param bnds int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Interval::isInside(mu::value_type val, int bnds) const
+bool Interval::isInside(std::complex<double> val, int bnds) const
 {
     if (m_vInterval.size() == 2)
     {
@@ -361,22 +361,21 @@ void Interval::refresh()
 
         // Parse the index
         _parser.SetExpr(indices.front());
-        mu::value_type* v;
-        int nResults;
+        mu::Array v;
 
         // Get the return values
-        v = _parser.Eval(nResults);
+        v = _parser.Eval();
 
         // Assign the values depending on their
         // number
-        if (nResults == 1)
-            m_vInterval.assign(2, v[0].real());
+        if (v.size() == 1)
+            m_vInterval.assign(2, v.front().getNum().asF64());
         else
         {
             m_vInterval.clear();
 
-            for (int i = 0; i < nResults; i++)
-                m_vInterval.push_back(v[i].real());
+            for (size_t i = 0; i < v.size(); i++)
+                m_vInterval.push_back(v[i].getNum().asF64());
         }
     }
     else
@@ -391,7 +390,7 @@ void Interval::refresh()
                 getDataElements(indices[i], _parser, _data);
 
             _parser.SetExpr(indices[i]);
-            m_vInterval.push_back(_parser.Eval().real());
+            m_vInterval.push_back(_parser.Eval().front().getNum().asF64());
         }
     }
 }
@@ -415,12 +414,12 @@ void Interval::reset(const std::string& sDef)
 /////////////////////////////////////////////////
 /// \brief Reset the interval with new boundaries.
 ///
-/// \param dFront mu::value_type
-/// \param dBack mu::value_type
+/// \param dFront std::complex<double>
+/// \param dBack std::complex<double>
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Interval::reset(mu::value_type dFront, mu::value_type dBack)
+void Interval::reset(std::complex<double> dFront, std::complex<double> dBack)
 {
     m_vInterval.assign({dFront.real(), dBack.real()});
 }
@@ -654,14 +653,14 @@ size_t IntervalSet::size() const
 
 /////////////////////////////////////////////////
 /// \brief Convert the new interval data types to
-/// the old plain mu::value_type values.
+/// the old plain std::complex<double> values.
 ///
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> IntervalSet::convert()
+std::vector<std::complex<double>> IntervalSet::convert()
 {
-    std::vector<mu::value_type> vIntervals;
+    std::vector<std::complex<double>> vIntervals;
 
     for (const Interval& ivl : intervals)
     {

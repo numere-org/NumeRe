@@ -43,117 +43,47 @@ using namespace std;
     \brief Implementation of the standard floating point parser.
 */
 
-mu::value_type parser_Sum(const mu::value_type*, int);
-mu::value_type parser_Avg(const mu::value_type*, int);
-mu::value_type parser_Min(const mu::value_type*, int);
-mu::value_type parser_Max(const mu::value_type*, int);
+mu::Array numfnc_Sum(const mu::Array*, int);
+mu::Array numfnc_Avg(const mu::Array*, int);
+mu::Array numfnc_Min(const mu::Array*, int);
+mu::Array numfnc_Max(const mu::Array*, int);
+mu::Array numfnc_abs(const mu::Array& a);
 
 /** \brief Namespace for mathematical applications. */
 namespace mu
 {
-
-
-    //---------------------------------------------------------------------------
-    // Trigonometric function
-    value_type Parser::Sin(const value_type& v)
-    {
-        return MathImpl<value_type>::Sin(v);
-    }
-    value_type Parser::Cos(const value_type& v)
-    {
-        return MathImpl<value_type>::Cos(v);
-    }
-    value_type Parser::Tan(const value_type& v)
-    {
-        return MathImpl<value_type>::Tan(v);
-    }
-    value_type Parser::ASin(const value_type& v)
-    {
-        return MathImpl<value_type>::ASin(v);
-    }
-    value_type Parser::ACos(const value_type& v)
-    {
-        return MathImpl<value_type>::ACos(v);
-    }
-    value_type Parser::ATan(const value_type& v)
-    {
-        return MathImpl<value_type>::ATan(v);
-    }
-    value_type Parser::ATan2(const value_type& v1, const value_type& v2)
-    {
-        return MathImpl<double>::ATan2(v1.real(), v2.real());
-    }
-    value_type Parser::Sinh(const value_type& v)
-    {
-        return MathImpl<value_type>::Sinh(v);
-    }
-    value_type Parser::Cosh(const value_type& v)
-    {
-        return MathImpl<value_type>::Cosh(v);
-    }
-    value_type Parser::Tanh(const value_type& v)
-    {
-        return MathImpl<value_type>::Tanh(v);
-    }
-    value_type Parser::ASinh(const value_type& v)
-    {
-        return MathImpl<value_type>::ASinh(v);
-    }
-    value_type Parser::ACosh(const value_type& v)
-    {
-        return MathImpl<value_type>::ACosh(v);
-    }
-    value_type Parser::ATanh(const value_type& v)
-    {
-        return MathImpl<value_type>::ATanh(v);
-    }
-
-    //---------------------------------------------------------------------------
-    // Logarithm functions
-    value_type Parser::Log2(const value_type& v)
-    {
-        return MathImpl<value_type>::Log2(v);     // Logarithm base 2
-    }
-    value_type Parser::Log10(const value_type& v)
-    {
-        return MathImpl<value_type>::Log10(v);    // Logarithm base 10
-    }
-    value_type Parser::Ln(const value_type& v)
-    {
-        return MathImpl<value_type>::Log(v);      // Logarithm base e (natural logarithm)
-    }
-
-    //---------------------------------------------------------------------------
-    //  misc
-    value_type Parser::Exp(const value_type& v)
-    {
-        return MathImpl<value_type>::Exp(v);
-    }
-    value_type Parser::Abs(const value_type& v)
-    {
-        return (v.real() == 0.0 || v.imag() == 0.0) ? (std::abs(v.real()) + std::abs(v.imag())) : std::abs(v); //MathImpl<value_type>::Abs(v);
-    }
-    value_type Parser::Sqrt(const value_type& v)
-    {
-        return MathImpl<value_type>::Sqrt(v);
-    }
-    value_type Parser::Rint(const value_type& v)
-    {
-        return value_type(MathImpl<double>::Rint(v.real()), MathImpl<double>::Rint(v.imag()));
-    }
-    value_type Parser::Sign(const value_type& v)
-    {
-        return value_type(MathImpl<double>::Sign(v.real()), MathImpl<double>::Sign(v.imag()));
-    }
-
     //---------------------------------------------------------------------------
     /** \brief Callback for the unary minus operator.
         \param v The value to negate
         \return -v
     */
-    value_type Parser::UnaryMinus(const value_type& v)
+    Array Parser::UnaryMinus(const Array& v)
     {
         return -v;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Callback for the unary plus operator.
+    ///
+    /// \param v const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Parser::UnaryPlus(const Array& v)
+    {
+        return v;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Callback for the logical NOT operator.
+    ///
+    /// \param v const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Parser::LogicalNot(const Array& v)
+    {
+        return !v;
     }
 
     //---------------------------------------------------------------------------
@@ -161,11 +91,11 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Sum(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Sum(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function sum."));
-        return parser_Sum(a_afArg, a_iArgc);
+        return numfnc_Sum(a_afArg, a_iArgc);
     }
 
     //---------------------------------------------------------------------------
@@ -173,11 +103,11 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Avg(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Avg(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function avg."));
-        return parser_Avg(a_afArg, a_iArgc);
+        return numfnc_Avg(a_afArg, a_iArgc);
     }
 
 
@@ -186,11 +116,11 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Min(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Min(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function min."));
-        return parser_Min(a_afArg, a_iArgc);
+        return numfnc_Min(a_afArg, a_iArgc);
     }
 
 
@@ -199,11 +129,11 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Max(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Max(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function max."));
-        return parser_Max(a_afArg, a_iArgc);
+        return numfnc_Max(a_afArg, a_iArgc);
     }
 
 
@@ -214,21 +144,27 @@ namespace mu
         \param [out] a_fVal Pointer where the value should be stored in case one is found.
         \return 1 if a value was found 0 otherwise.
     */
-    int Parser::IsVal(const char_type* a_szExpr, int* a_iPos, value_type* a_fVal)
+    int Parser::IsVal(StringView a_szExpr, int* a_iPos, Value* a_fVal)
     {
-        value_type fVal(0);
+        std::complex<double> fVal(0);
 
-        stringstream_type stream(a_szExpr);
-        stream.seekg(0);        // todo:  check if this really is necessary
+        stringstream_type stream(a_szExpr.get_viewed_string());
+        stream.seekg(a_szExpr.get_offset());        // todo:  check if this really is necessary
         stream.imbue(Parser::s_locale);
         stream >> fVal;
         stringstream_type::pos_type iEnd = stream.tellg(); // Position after reading
 
-        if (iEnd == (stringstream_type::pos_type) - 1)
+        if (!stream.eof() && iEnd == (stringstream_type::pos_type)-1)
             return 0;
 
-        *a_iPos += (int)iEnd;
-        *a_fVal = fVal;
+        if (stream.eof())
+            *a_iPos = a_szExpr.get_viewed_string().length();
+        else
+            *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
+
+        std::cout << a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).to_string() << " " << (a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).find_first_of(".eE") != std::string::npos) << std::endl;
+
+        *a_fVal = Numerical::autoType(fVal, a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).find_first_of(".eE") != std::string::npos ? F64 : AUTO);
         return 1;
     }
 
@@ -258,65 +194,24 @@ namespace mu
     */
     void Parser::InitCharSets()
     {
-        DefineNameChars( _nrT("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]~\\") );
-        DefineOprtChars( _nrT("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*^/?<>=#!$%&|~'_{}") );
-        DefineInfixOprtChars( _nrT("/+-*^?<>=#!$%&|~'_") );
+        DefineNameChars("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]~\\");
+        DefineOprtChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*^/?<>=#!$%&|~'_{}");
+        DefineInfixOprtChars("/+-*^?<>=#!$%&|~'_");
     }
 
     //---------------------------------------------------------------------------
     /** \brief Initialize the default functions. */
     void Parser::InitFun()
     {
-        if (mu::TypeInfo<mu::value_type>::IsInteger())
-        {
-            // When setting MUP_BASETYPE to an integer type
-            // Place functions for dealing with integer values here
-            // ...
-            // ...
-            // ...
-        }
-        else
-        {
-            // trigonometric functions
-            DefineFun("sin", Sin);
-            DefineFun("cos", Cos);
-            DefineFun("tan", Tan);
-            // arcus functions
-            DefineFun("asin", ASin);
-            DefineFun("arcsin", ASin);
-            DefineFun("acos", ACos);
-            DefineFun("arccos", ACos);
-            DefineFun("atan", ATan);
-            DefineFun("arctan", ATan);
-            DefineFun("atan2", ATan2);
-            // hyperbolic functions
-            DefineFun("sinh", Sinh);
-            DefineFun("cosh", Cosh);
-            DefineFun("tanh", Tanh);
-            // arcus hyperbolic functions
-            DefineFun("asinh", ASinh);
-            DefineFun("arsinh", ASinh);
-            DefineFun("acosh", ACosh);
-            DefineFun("arcosh", ACosh);
-            DefineFun("atanh", ATanh);
-            DefineFun("artanh", ATanh);
-            // Logarithm functions
-            DefineFun("log2", Log2);
-            DefineFun("log10", Log10);
-            DefineFun("log", Log10);
-            DefineFun("ln", Ln);
-            // misc
-            DefineFun("exp", Exp);
-            DefineFun("sqrt", Sqrt);
-            DefineFun("sign", Sign);
-            DefineFun("rint", Rint);
-            DefineFun("abs", Abs);
-            // Functions with variable number of arguments
-            DefineFun("sum", Sum);
-            DefineFun("avg", Avg);
-            DefineFun("min", Min);
-            DefineFun("max", Max);
-        }
+        // Functions with variable number of arguments
+        DefineFun("sum", Sum);
+        DefineFun("avg", Avg);
+        DefineFun("min", Min);
+        DefineFun("max", Max);
+
+        DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
+        DefineFun(MU_VECTOR_EXP2, ParserBase::expandVector2);
+        DefineFun(MU_VECTOR_EXP3, ParserBase::expandVector3);
     }
 
     //---------------------------------------------------------------------------
@@ -327,7 +222,7 @@ namespace mu
     */
     void Parser::InitConst()
     {
-        DefineConst("_pi", (value_type)PARSER_CONST_PI);
+        DefineConst("_pi", Numerical(PARSER_CONST_PI));
     }
 
     //---------------------------------------------------------------------------
@@ -338,6 +233,8 @@ namespace mu
     void Parser::InitOprt()
     {
         DefineInfixOprt("-", UnaryMinus);
+        DefineInfixOprt("+", UnaryPlus);
+        DefineInfixOprt("!", LogicalNot);
     }
 
     //---------------------------------------------------------------------------
@@ -380,38 +277,39 @@ namespace mu
 
       http://sourceforge.net/forum/forum.php?thread_id=1994611&forum_id=462843
     */
-    value_type Parser::Diff(value_type* a_Var,
-                            value_type  a_fPos,
-                            value_type  a_fEpsilon,
-                            size_t order)
+    Array Parser::Diff(Variable* a_Var,
+                       const Array& a_fPos,
+                       Value fEpsilon,
+                       size_t order)
     {
-        value_type fBuf(*a_Var),
-                   fEpsilon(a_fEpsilon),
-                   fRes;
-        std::array<value_type, 5> f;
+        Variable fBuf(*a_Var);
+        Array fRes;
+        std::array<Array, 5> f;
         std::array<double, 5> factors = {-2, -1, 0, 1, 2};
 
         // Backwards compatible calculation of epsilon inc case the user doesnt provide
         // his own epsilon
-        if (fEpsilon == 0.0)
-            fEpsilon = (a_fPos == 0.0) ? (value_type)1e-10 : (value_type)(1e-7*std::abs(a_fPos)*intPower(10, 2*(order-1)));
-
+        if (fEpsilon == Value(0.0))
+        {
+            Array absVal = numfnc_abs(a_fPos);
+            fEpsilon = all(a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
+        }
 
         for (size_t i = 0; i < f.size(); i++)
         {
-            *a_Var = a_fPos + factors[i] * fEpsilon;
-            f[i] = Eval();
+            *a_Var = a_fPos + Value(factors[i]) * fEpsilon;
+            f[i] = Eval().front();
         }
 
         // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
         if (order == 1)
-            fRes = ( f[0]  - 8.0 * f[1]              + 8.0 * f[3] - f[4]) / (12.0 * fEpsilon);
+            fRes = (f[0] - Value(8.0) * f[1] + Value(8.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon);
         else if (order == 2)
-            fRes = (-f[0] + 16.0 * f[1] - 30.0*f[2] + 16.0 * f[3] - f[4]) / (12.0 * fEpsilon * fEpsilon);
+            fRes = (-f[0] + Value(16.0) * f[1] - Value(30.0)*f[2] + Value(16.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon * fEpsilon);
         else if (order == 3)
-            fRes = (-f[0]  + 2.0 * f[1]              - 2.0 * f[3] + f[4]) / (2.0 * fEpsilon * fEpsilon * fEpsilon);
+            fRes = (-f[0] + Value(2.0) * f[1] - Value(2.0) * f[3] + f[4]) / (Value(2.0) * fEpsilon * fEpsilon * fEpsilon);
         else
-            return NAN;
+            fRes = Value(NAN);
 
         *a_Var = fBuf; // restore variable
         return fRes;

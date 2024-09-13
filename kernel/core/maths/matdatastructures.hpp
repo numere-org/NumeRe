@@ -37,7 +37,7 @@
 class Matrix
 {
     private:
-        std::vector<mu::value_type> m_storage;       ///< The internal buffer
+        std::vector<std::complex<double>> m_storage; ///< The internal buffer
         size_t m_rows;                               ///< Number of rows
         size_t m_cols;                               ///< Number of columns
         bool m_transpose;                            ///< Is this Matrix transposed
@@ -48,10 +48,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return mu::value_type&
+        /// \return std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        mu::value_type& get(size_t i, size_t j)
+        std::complex<double>& get(size_t i, size_t j)
         {
             return m_transpose ? m_storage[i*m_cols + j] : m_storage[i + j*m_rows];
         }
@@ -62,10 +62,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return const mu::value_type&
+        /// \return const std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        const mu::value_type& get(size_t i, size_t j) const
+        const std::complex<double>& get(size_t i, size_t j) const
         {
             return m_transpose ? m_storage[i*m_cols + j] : m_storage[i + j*m_rows];
         }
@@ -82,7 +82,7 @@ class Matrix
         {
             if (m_transpose)
             {
-                std::vector<mu::value_type> buffer(m_cols*m_rows);
+                std::vector<std::complex<double>> buffer(m_cols*m_rows);
 
                 for (size_t i = 0; i < m_rows; i++)
                 {
@@ -108,10 +108,10 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param init const mu::value_type&
+        /// \param init const std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        Matrix(size_t r, size_t c = 1u, const mu::value_type& init = NAN) : m_rows(r), m_cols(c), m_transpose(false)
+        Matrix(size_t r, size_t c = 1u, const std::complex<double>& init = NAN) : m_rows(r), m_cols(c), m_transpose(false)
         {
             m_storage.resize(r*c, init);
         }
@@ -134,10 +134,10 @@ class Matrix
         /// \brief Construct a matrix from a vector
         /// matrix.
         ///
-        /// \param vectMatrix const std::vector<std::vector<mu::value_type>>&
+        /// \param vectMatrix const std::vector<std::vector<std::complex<double>>>&
         ///
         /////////////////////////////////////////////////
-        Matrix(const std::vector<std::vector<mu::value_type>>& vectMatrix) : Matrix()
+        Matrix(const std::vector<std::vector<std::complex<double>>>& vectMatrix) : Matrix()
         {
             m_rows = vectMatrix.size();
             m_cols = vectMatrix[0].size();
@@ -161,13 +161,12 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals mu::value_type*
-        /// \param nVals int
+        /// \param vVals const mu::Array&
         ///
         /////////////////////////////////////////////////
-        Matrix(size_t r, size_t c, mu::value_type* vVals, int nVals)
+        Matrix(size_t r, size_t c, const mu::Array& vVals)
         {
-            assign(r, c, vVals, nVals);
+            assign(r, c, vVals);
         }
 
         /////////////////////////////////////////////////
@@ -203,14 +202,13 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals mu::value_type*
-        /// \param nVals int
+        /// \param vVals const std::vector<std::complex<double>>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void assign(size_t r, size_t c, mu::value_type* vVals, int nVals)
+        void assign(size_t r, size_t c, const std::vector<std::complex<double>>& vVals)
         {
-            m_storage.assign(vVals, vVals+std::min(r*c, (size_t)nVals));
+            m_storage.assign(vVals.begin(), vVals.begin()+std::min(r*c, vVals.size()));
             m_rows = r;
             m_cols = c;
             m_storage.resize(m_rows*m_cols);
@@ -222,27 +220,23 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals const std::vector<mu::value_type>&
+        /// \param vVals const mu::Array&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void assign(size_t r, size_t c, const std::vector<mu::value_type>& vVals)
+        void assign(size_t r, size_t c, const mu::Array& vVals)
         {
-            m_storage.assign(vVals.begin(), vVals.begin()+std::min(r*c, vVals.size()));
-            m_rows = r;
-            m_cols = c;
-            m_storage.resize(m_rows*m_cols);
-            m_transpose = false;
+            assign(r, c, vVals.as_cmplx_vector());
         }
 
         /////////////////////////////////////////////////
         /// \brief Get a reference to the internal data
         /// structure.
         ///
-        /// \return std::vector<mu::value_type>&
+        /// \return std::vector<std::complex<double>>&
         ///
         /////////////////////////////////////////////////
-        std::vector<mu::value_type>& data()
+        std::vector<std::complex<double>>& data()
         {
             return m_storage;
         }
@@ -251,10 +245,10 @@ class Matrix
         /// \brief Get a const reference to the internal
         /// data structure.
         ///
-        /// \return const std::vector<mu::value_type>&
+        /// \return const std::vector<std::complex<double>>&
         ///
         /////////////////////////////////////////////////
-        const std::vector<mu::value_type>& data() const
+        const std::vector<std::complex<double>>& data() const
         {
             return m_storage;
         }
@@ -351,7 +345,7 @@ class Matrix
         {
             for (auto& v : m_storage)
             {
-                if (mu::isnan(v) || mu::isinf(v))
+                if (mu::isnan(v))
                     return true;
             }
 
@@ -376,10 +370,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return mu::value_type&
+        /// \return std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        mu::value_type& operator()(size_t i, size_t j = 0u)
+        std::complex<double>& operator()(size_t i, size_t j = 0u)
         {
             if (i >= m_rows || j >= m_cols)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
@@ -395,10 +389,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return const mu::value_type&
+        /// \return const std::complex<double>&
         ///
         /////////////////////////////////////////////////
-        const mu::value_type& operator()(size_t i, size_t j = 0u) const
+        const std::complex<double>& operator()(size_t i, size_t j = 0u) const
         {
             if (i >= m_rows || j >= m_cols)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
@@ -424,7 +418,7 @@ class Matrix
                 return;
 
             // Use a buffer
-            std::vector<mu::value_type> buffer(r*c);
+            std::vector<std::complex<double>> buffer(r*c);
 
             // Copy the remaining elements
             #pragma omp parallel for
@@ -524,7 +518,7 @@ class Matrix
                                   SyntaxError::invalid_position,
                                   printDims() + " vs. " + mat.printDims());
 
-            Matrix ret(m_rows, mat.m_cols, 0.0);
+            Matrix ret(m_rows, mat.m_cols, mu::Value(0.0));
 
             #pragma omp parallel for
             for (size_t i = 0; i < ret.m_rows; i++)
@@ -632,7 +626,7 @@ struct MatFuncData
     const Matrix& mat1;
     const Matrix& mat2;
     const Matrix& mat3;
-    mu::value_type fVal;
+    mu::Value fVal;
     int nVal;
     int mVal;
 
@@ -643,8 +637,8 @@ struct MatFuncData
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2, int n) : mat1(_mat1), mat2(_mat2), mat3(Matrix()), fVal(NAN), nVal(n), mVal(0) {}
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2) : mat1(_mat1), mat2(_mat2), mat3(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2, const Matrix& _mat3) : mat1(_mat1), mat2(_mat2), mat3(_mat3), fVal(NAN), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, mu::value_type f) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, mu::value_type f, int n) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(n), mVal(0) {}
+    MatFuncData(const Matrix& _mat, mu::Value f) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(0), mVal(0) {}
+    MatFuncData(const Matrix& _mat, mu::Value f, int n) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(n), mVal(0) {}
     MatFuncData(const Matrix& _mat, int n, int m) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(m) {}
     MatFuncData(int n, int m = 0) : mat1(Matrix()), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(m) {}
 };

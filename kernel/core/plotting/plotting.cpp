@@ -271,13 +271,13 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // Decode the lines and columns of the parameter
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "multiplot", '=') + 9));
             int nRes = 0;
-            value_type* v = _parser.Eval(nRes);
+            mu::Array* v = _parser.Eval(nRes);
 
             // Only use the option value, if it contains two values
             if (nRes == 2)
             {
-                nMultiplots[1] = (size_t)intCast(v[0]);
-                nMultiplots[0] = (size_t)intCast(v[1]);
+                nMultiplots[1] = (size_t)v[0].getAsScalarInt();
+                nMultiplots[0] = (size_t)v[1].getAsScalarInt();
             }
 
             // Remove everything up to the first command in the
@@ -788,11 +788,6 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // Prepare the legend strings
         if (!_pInfo.bDraw3D && !_pInfo.bDraw)
         {
-            // Obtain the values of string variables, which are probably used
-            // as part of the legend strings
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sFunc))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sFunc);
-
             // Add the legends to the function-and-data section
             if (!addLegends(sFunc))
                 return vPlotCompose.size(); // --> Bei Fehlern: Zurueck zur aufrufenden Funktion <--
@@ -867,7 +862,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 
         // Ensure that the functions do not contain any strings, because strings
         // cannot be plotted
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
+        if (containsStrings(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
             clearData();
             throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, SyntaxError::invalid_position);
@@ -976,58 +971,50 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 /////////////////////////////////////////////////
 void Plot::applyPlotSizeAndQualitySettings()
 {
+    double factor = NAN;
+
     // Apply the quality and image dimension settings to the overall result
     // image. This affects also a whole multiplot and is therefore done before
     // the first plot is rendered.
     // If the user requests a specific size, we'll preferably using this
     if (_pData.getSettings(PlotData::INT_SIZE_X) > 0 && _pData.getSettings(PlotData::INT_SIZE_Y) > 0)
-        _graph->SetSize(_pData.getSettings(PlotData::INT_SIZE_X), _pData.getSettings(PlotData::INT_SIZE_Y));
+    {
+        nHeight = _pData.getSettings(PlotData::INT_SIZE_Y);
+        nWidth = _pData.getSettings(PlotData::INT_SIZE_X);
+    }
     else if (_pData.getSettings(PlotData::LOG_SILENTMODE) || !_pData.getSettings(PlotData::LOG_OPENIMAGE))
     {
         // Switch between fullHD and the normal resolution
         if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2)
-        {
-            double dHeight = sqrt(1920.0 * 1440.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 1920.0 * 1440.0;
         else
-        {
-            double dHeight = sqrt(1280.0 * 960.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 1280.0 * 960.0;
     }
     else
     {
         // This section is for printing to the GraphViewer window
         // we use different resolutions here
         if (_pData.getAnimateSamples() && !_pData.getSettings(PlotData::STR_FILENAME).length())
-        {
-            // Animation size (faster for rendering)
-            double dHeight = sqrt(640.0 * 480.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 640.0 * 480.0; // Animation size (faster for rendering)
         else if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2)
-        {
-            // Hires output
-            double dHeight = sqrt(1280.0 * 960.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 1280.0 * 960.0; // Hires output
         else
-        {
-            // Standard output
-            double dHeight = sqrt(800.0 * 600.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 800.0 * 600.0; // Standard output
     }
+
+    if (!isnan(factor))
+    {
+        factor = sqrt(factor / _pData.getSettings(PlotData::FLOAT_ASPECT));
+        nHeight = rint(factor);
+        nWidth = rint(_pData.getSettings(PlotData::FLOAT_ASPECT)*factor);
+    }
+
+    _graph->SetSize(nWidth, nHeight);
 
     // Copy the font and select the font size
     _graph->CopyFont(&_fontData);
-    //_graph->SetFontSizePT(8 * ((double)(1 + _pData.getSettings(PlotData::FLOAT_TEXTSIZE)) / 6.0), 72);
     _graph->SetFontSizeCM(0.22 * (1.0 + _pData.getSettings(PlotData::FLOAT_TEXTSIZE)) / 6.0, 72);
     _graph->SetFlagAdv(1, MGL_FULL_CURV);
-    //_graph->SubPlot(1,1,0, "");
-    //_graph->SubPlot(1,1,0, "");
-
 }
 
 
@@ -1107,7 +1094,7 @@ bool Plot::createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, b
             }
         }
 
-        double dt_max = _defVars.vValue[TCOORD][0].real();
+        double dt_max = _defVars.vValue[TCOORD][0].front().getNum().asF64();
 
         // Apply the title line to the graph
         if (_pData.getSettings(PlotData::STR_PLOTTITLE).length())
@@ -1244,6 +1231,9 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
     if (_pData.getSettings(PlotData::INT_CONTLINES) % 2)
         _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = _pInfo.ranges[ZRANGE].middle();
 
+    // Resize the matrices to fit in the created image
+    m_manager.resize(nWidth, nHeight);
+
     // Apply curvilinear coordinates
     if (!_pData.getSettings(PlotData::LOG_PARAMETRIC))
         m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS),
@@ -1300,8 +1290,8 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
                              _pInfo.sContStyles[_pInfo.nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
 
-            sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+            _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+            sConvLegends = _parser.Eval().printVals();
 
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
                 sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
@@ -1678,12 +1668,12 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         // Create the legend
         if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1 && m_manager.assets.size() > n+nDataOffset+1)
             sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
-                            + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\" -nq";
+                            + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\"";
         else
-            sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
+            sConvLegends = m_manager.assets[n+nDataOffset].legend + "";
 
-        // Apply the string parser
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+        _parser.SetExpr(sConvLegends);
+        sConvLegends = _parser.Eval().printVals();
 
         // While the legend string is not empty
         while (sConvLegends.length())
@@ -2281,6 +2271,10 @@ void Plot::create2dVect()
     mglData* _mData_x = nullptr;
     mglData* _mData_y = nullptr;
 
+    // Reduce the samples if they are larger than
+    // half of the image pixel dimensions
+    m_manager.resize(nWidth/15, nHeight/15);
+
     for (size_t i = 0; i < m_manager.assets.size(); i++)
     {
         if (!m_manager.assets[i].isComplex(0) && m_manager.assets[i].type == PT_FUNCTION)
@@ -2393,40 +2387,6 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         sTextString = "";
         sCurrentDrawingFunction = vDrawVector[v];
 
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
-        {
-            for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
-            {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
-                {
-                    sStyle = sCurrentDrawingFunction.subview(n + 1).to_string();
-                    sCurrentDrawingFunction.remove_from(n);
-
-                    break;
-                }
-            }
-
-            sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
-        }
-
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
-        {
-            for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
-            {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
-                {
-                    sTextString = sCurrentDrawingFunction.subview(n + 1).to_string();
-                    sCurrentDrawingFunction.remove_from(n);
-
-                    break;
-                }
-            }
-
-            sTextString += " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
-        }
-
         if (sCurrentDrawingFunction.back() == ')')
             sDrawExpr = sCurrentDrawingFunction.subview(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
         else
@@ -2440,8 +2400,29 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         }
 
         _parser.SetExpr(sDrawExpr);
-        mu::value_type* vRes = _parser.Eval(nFunctions);
-        std::vector<double> vResults = real({vRes, vRes+nFunctions});
+        mu::Array* vRes = _parser.Eval(nFunctions);
+
+        if (nFunctions > 2
+            && vRes[nFunctions-2].getCommonType() == mu::TYPE_STRING
+            && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+        {
+            sTextString = vRes[nFunctions-2].printVals();
+            sStyle = vRes[nFunctions-1].printVals();
+            nFunctions -= 2;
+        }
+        else if (nFunctions > 1
+                 && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+        {
+            sStyle = vRes[nFunctions-1].printVals();
+            nFunctions -= 1;
+        }
+
+        std::vector<double> vResults;
+
+        for (int i = 0; i < nFunctions; i++)
+        {
+            vResults.push_back(vRes[i].front().getNum().asF64());
+        }
 
         if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
         {
@@ -2656,16 +2637,22 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         }
         else if (sCurrentDrawingFunction.starts_with("text("))
         {
+            double dTextSize = -1;
+
             if (!sTextString.length())
             {
                 sTextString = sStyle;
                 sStyle = "k";
             }
 
+            if (sStyle.find_first_of("0123456789") != std::string::npos)
+                dTextSize = StrToDb(sStyle.substr(sStyle.find_first_of("0123456789"), 1));
+
             if (nFunctions >= 4)
-                _graph->Puts(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1]),
+                             mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else if (nFunctions >= 2)
-                _graph->Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else
                 continue;
         }
@@ -2712,40 +2699,6 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         sTextString = "";
         sCurrentDrawingFunction = vDrawVector[v];
 
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
-        {
-            for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
-            {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
-                {
-                    sStyle = sCurrentDrawingFunction.subview(n + 1).to_string();
-                    sCurrentDrawingFunction.remove_from(n);
-
-                    break;
-                }
-            }
-
-            sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
-        }
-
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
-        {
-            for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
-            {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
-                {
-                    sTextString = sCurrentDrawingFunction.subview(n + 1).to_string();
-                    sCurrentDrawingFunction.remove_from(n);
-
-                    break;
-                }
-            }
-
-            sTextString += " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
-        }
-
         if (sCurrentDrawingFunction.back() == ')')
             sDrawExpr = sCurrentDrawingFunction.subview(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
         else
@@ -2759,8 +2712,29 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         }
 
         _parser.SetExpr(sDrawExpr);
-        mu::value_type* vRes = _parser.Eval(nFunctions);
-        std::vector<double> vResults = real({vRes, vRes+nFunctions});
+        mu::Array* vRes = _parser.Eval(nFunctions);
+
+        if (nFunctions > 2
+            && vRes[nFunctions-2].getCommonType() == mu::TYPE_STRING
+            && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+        {
+            sTextString = vRes[nFunctions-2].printVals();
+            sStyle = vRes[nFunctions-1].printVals();
+            nFunctions -= 2;
+        }
+        else if (nFunctions > 1
+                 && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+        {
+            sStyle = vRes[nFunctions-1].printVals();
+            nFunctions -= 1;
+        }
+
+        std::vector<double> vResults;
+
+        for (int i = 0; i < nFunctions; i++)
+        {
+            vResults.push_back(vRes[i].front().getNum().asF64());
+        }
 
         if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
         {
@@ -3088,16 +3062,22 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         }
         else if (sCurrentDrawingFunction.starts_with("text("))
         {
+            double dTextSize = -1;
+
             if (!sTextString.length())
             {
                 sTextString = sStyle;
                 sStyle = "k";
             }
 
+            if (sStyle.find_first_of("0123456789") != std::string::npos)
+                dTextSize = StrToDb(sStyle.substr(sStyle.find_first_of("0123456789"), 1));
+
             if (nFunctions >= 6)
-                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]),
+                             mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else if (nFunctions >= 3)
-                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else
                 continue;
         }
@@ -3214,8 +3194,8 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             {
                 for (int k = 0; k < 2; k++)
                 {
-                    sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+                    _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+                    sConvLegends = _parser.Eval().printVals();
                     sConvLegends = "\"" + sConvLegends + "\"";
 
                     for (size_t l = 0; l < sConvLegends.length(); l++)
@@ -3241,8 +3221,8 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             }
             else
             {
-                sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+                _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+                sConvLegends = _parser.Eval().printVals();
 
                 if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
                     sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
@@ -3260,8 +3240,8 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         }
         else
         {
-            sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+            _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+            sConvLegends = _parser.Eval().printVals();
 
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
                 sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
@@ -3534,11 +3514,10 @@ void Plot::filename(size_t nPlotComposeSize, size_t nPlotCompose)
     else if (_pData.getSettings(PlotData::STR_FILENAME).length() && !nPlotCompose)
         bOutputDesired = true;
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_pData.getSettings(PlotData::STR_FILENAME)) && !nPlotCompose)
+    if (containsStrings(_pData.getSettings(PlotData::STR_FILENAME)) && !nPlotCompose)
     {
-        string sTemp = _pData.getSettings(PlotData::STR_FILENAME);
-        string sTemp_2 = "";
-        string sExtension = sTemp.substr(sTemp.find('.'));
+        std::string sTemp = _pData.getSettings(PlotData::STR_FILENAME);
+        std::string sExtension = sTemp.substr(sTemp.find('.'));
         sTemp = sTemp.substr(0, sTemp.find('.'));
 
         if (sExtension[sExtension.length() - 1] == '"')
@@ -3547,8 +3526,9 @@ void Plot::filename(size_t nPlotComposeSize, size_t nPlotCompose)
             sExtension = sExtension.substr(0, sExtension.length() - 1);
         }
 
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTemp, sTemp_2, true);
-        _pData.setFileName(sTemp.substr(1, sTemp.length() - 2) + sExtension);
+        _parser.SetExpr(sTemp);
+        sTemp = _parser.Eval().printVals();
+        _pData.setFileName(sTemp + sExtension);
     }
 
     if (_pData.getAnimateSamples() && _pData.getSettings(PlotData::STR_FILENAME).substr(_pData.getSettings(PlotData::STR_FILENAME).rfind('.')) != ".gif" && !nPlotCompose)
@@ -3684,13 +3664,13 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
         if (findParameter(sCmd, "cols", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
-            nMultiCols = (size_t)intCast(_parser.Eval());
+            nMultiCols = (size_t)_parser.Eval().getAsScalarInt();
         }
 
         if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
-            nMultiLines = (size_t)intCast(_parser.Eval());
+            nMultiLines = (size_t)_parser.Eval().getAsScalarInt();
         }
 
         if (sSubPlotIDX.length())
@@ -3705,32 +3685,32 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
-            value_type* v = _parser.Eval(nRes);
+            mu::Array* v = _parser.Eval(nRes);
 
             if (nRes == 1)
             {
-                if (intCast(v[0]) < 1)
-                    v[0] = 1;
+                if (v[0].getAsScalarInt() < 1)
+                    v[0] = mu::Array(1);
 
-                if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)v[0].getAsScalarInt() - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(v[0].getAsScalarInt() - 1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, nMultiCols, nMultiLines,
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], v[0].getAsScalarInt() - 1, nMultiCols, nMultiLines,
                                   _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }   // cols, lines
             else
             {
-                if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(v[1].getAsScalarInt() - 1 + (v[0].getAsScalarInt() - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]),
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1)*nMultiplots[0]),
                                          nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]),
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1)*nMultiplots[0]),
                                   nMultiCols, nMultiLines, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
         }
@@ -3772,40 +3752,40 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
-            value_type* v = _parser.Eval(nRes);
+            mu::Array* v = _parser.Eval(nRes);
 
             if (nRes == 1)
             {
-                if (intCast(v[0]) < 1)
-                    v[0] = 1;
+                if (v[0].getAsScalarInt() < 1)
+                    v[0] = mu::Value(1);
 
-                if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)v[0].getAsScalarInt() - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                if ((size_t)intCast(v[0]) != 1)
-                    nRes <<= (size_t)(intCast(v[0]) - 1);
+                if ((size_t)v[0].getAsScalarInt() != 1)
+                    nRes <<= (size_t)(v[0].getAsScalarInt() - 1);
 
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], v[0].getAsScalarInt() - 1, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
             else
             {
-                if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(v[1].getAsScalarInt() - 1 + (v[0].getAsScalarInt() - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
                 nRes = 1;
 
-                if ((size_t)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
-                    nRes <<= (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
+                if ((size_t)(v[1].getAsScalarInt() + (v[0].getAsScalarInt() - 1)*nMultiplots[0]) != 1)
+                    nRes <<= (size_t)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1) * nMultiplots[0]);
 
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]),
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1)*nMultiplots[0]),
                                 _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
         }
@@ -4145,13 +4125,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             }
             else
             {
-                std::vector<mu::value_type> vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                                      _idx.row, _idx.col.front(),
-                                                                      _accessParser.isCluster());
+                mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
+                                                    _idx.row, _idx.col.front(),
+                                                    _accessParser.isCluster());
 
                 for (size_t n = 0; n < vAxis.size(); n++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[n].real(), n, XCOORD);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[n].getNum().asF64(), n, XCOORD);
                 }
             }
 
@@ -4159,13 +4139,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             // referenced data object
             if (datarows == 1 && _idx.col.numberOfNodes() == 2 && !openEnd)
             {
-                std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                                      _idx.row, _idx.col.last(),
-                                                                      _accessParser.isCluster());
+                mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                    _idx.row, _idx.col.last(),
+                                                    _accessParser.isCluster());
 
                 for (size_t n = 0; n < vVals.size(); n++)
                 {
-                    m_manager.assets[typeCounter].writeData(vVals[n], 0, n);
+                    m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), 0, n);
                 }
             }
             else
@@ -4185,13 +4165,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     }
                     else
                     {
-                        std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                                              _idx.row, _idx.col[q+1],
-                                                                              _accessParser.isCluster());
+                        mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                            _idx.row, _idx.col[q+1],
+                                                            _accessParser.isCluster());
 
                         for (size_t n = 0; n < vVals.size(); n++)
                         {
-                            m_manager.assets[typeCounter].writeData(vVals[n], q, n);
+                            m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), q, n);
                         }
                     }
                 }
@@ -4295,13 +4275,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 }
                 else
                 {
-                    std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                                          _idx.row, _idx.col[q],
-                                                                          _accessParser.isCluster());
+                    mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                        _idx.row, _idx.col[q],
+                                                        _accessParser.isCluster());
 
                     for (size_t t = 0; t < vVals.size(); t++)
                     {
-                        m_manager.assets[typeCounter].writeData(vVals[t], q, t);
+                        m_manager.assets[typeCounter].writeData(vVals[t].getNum().asCF64(), q, t);
                     }
                 }
             }
@@ -4338,13 +4318,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             // the bar-density mixture)
             for (size_t axis = 0; axis < samples.size(); axis++)
             {
-                std::vector<mu::value_type> vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                                      _idx.row, _idx.col[axis],
-                                                                      _accessParser.isCluster());
+                mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
+                                                    _idx.row, _idx.col[axis],
+                                                    _accessParser.isCluster());
 
                 for (size_t m = 0; m < std::min(samples[axis]-isBars, vAxis.size()); m++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[m].real(), m, (PlotCoords)axis);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
                 }
             }
 
@@ -4367,13 +4347,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             #pragma omp parallel for
             for (size_t y = 0; y < samples[1]-isBars; y++)
             {
-                std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                                      _idx.row, _idx.col[y+2],
-                                                                      _accessParser.isCluster());
+                mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                    _idx.row, _idx.col[y+2],
+                                                    _accessParser.isCluster());
 
                 for (size_t x = 0; x < std::min(samples[0]-isBars, vVals.size()); x++)
                 {
-                    m_manager.assets[typeCounter].writeData(vVals[x], 0, x, y);
+                    m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);;
                 }
             }
 
@@ -4405,13 +4385,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             // Write the axes
             for (size_t axis = 0; axis < samples.size(); axis++)
             {
-                std::vector<mu::value_type> vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                                      _idx.row, _idx.col[axis],
-                                                                      _accessParser.isCluster());
+                mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
+                                                    _idx.row, _idx.col[axis],
+                                                    _accessParser.isCluster());
 
                 for (size_t m = 0; m < std::min(samples[axis], vAxis.size()); m++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[m].real(), m, (PlotCoords)axis);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
                 }
             }
 
@@ -4419,13 +4399,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             #pragma omp parallel for
             for (size_t y = 0; y < samples[1]; y++)
             {
-                std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                                      _idx.row, _idx.col[y+2],
-                                                                      _accessParser.isCluster());
+                mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                    _idx.row, _idx.col[y+2],
+                                                    _accessParser.isCluster());
 
                 for (size_t x = 0; x < std::min(samples[0], vVals.size()); x++)
                 {
-                    m_manager.assets[typeCounter].writeData(vVals[x], 0, x, y);
+                    m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);
                 }
             }
 
@@ -4862,7 +4842,7 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
 /////////////////////////////////////////////////
 void Plot::fillData(double dt_max, int t_animate)
 {
-    mu::value_type* vResults = nullptr;
+    mu::Array* vResults = nullptr;
 
     if (!sFunc.length())
         return;
@@ -4879,6 +4859,9 @@ void Plot::fillData(double dt_max, int t_animate)
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
             convertVectorToExpression(sFunc);
+
+        // Necessary, because of evaluatio of the legend entries
+        _parser.SetExpr(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -4897,8 +4880,8 @@ void Plot::fillData(double dt_max, int t_animate)
 
             for (int i = 0; i < _pInfo.nFunctions; i++)
             {
-                m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
-                m_manager.assets[vFuncMap[i]].writeData(vResults[i], 0, x);
+                m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x);
             }
         }
     }
@@ -4908,9 +4891,9 @@ void Plot::fillData(double dt_max, int t_animate)
 
         for (size_t k = 0; k < vFuncMap.size(); k++)
         {
-            _defVars.vValue[XCOORD][0] = 0.0;
-            _defVars.vValue[YCOORD][0] = 0.0;
-            _defVars.vValue[ZCOORD][0] = 0.0;
+            _defVars.vValue[XCOORD][0] = mu::Value(0.0);
+            _defVars.vValue[YCOORD][0] = mu::Value(0.0);
+            _defVars.vValue[ZCOORD][0] = mu::Value(0.0);
 
             if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
                 convertVectorToExpression(expressions[k]);
@@ -4947,14 +4930,14 @@ void Plot::fillData(double dt_max, int t_animate)
                             dSamples = (double)(_pInfo.nSamples - 1);
 
                         nRenderSamples = (int)dSamples + 1;
-                        _defVars.vValue[TCOORD][0] += (dt_max - _pInfo.ranges[TRANGE].front()) / dSamples;
+                        _defVars.vValue[TCOORD][0] += (mu::Value(dt_max) - _pInfo.ranges[TRANGE].front()) / mu::Value(dSamples);
                     }
                     else
-                        _defVars.vValue[TCOORD][0] = _pInfo.ranges[TRANGE](t, _pInfo.nSamples);
+                        _defVars.vValue[TCOORD][0] = mu::Value(_pInfo.ranges[TRANGE](t, _pInfo.nSamples));
 
-                    _defVars.vValue[XCOORD][0] = m_manager.assets[vFuncMap[k]].data[XCOORD].first.a[t-1];
-                    _defVars.vValue[YCOORD][0] = m_manager.assets[vFuncMap[k]].data[YCOORD].first.a[t-1];
-                    _defVars.vValue[ZCOORD][0] = m_manager.assets[vFuncMap[k]].data[ZCOORD].first.a[t-1];
+                    _defVars.vValue[XCOORD][0] = mu::Value(m_manager.assets[vFuncMap[k]].data[XCOORD].first.a[t-1]);
+                    _defVars.vValue[YCOORD][0] = mu::Value(m_manager.assets[vFuncMap[k]].data[YCOORD].first.a[t-1]);
+                    _defVars.vValue[ZCOORD][0] = mu::Value(m_manager.assets[vFuncMap[k]].data[ZCOORD].first.a[t-1]);
                 }
 
                 // --> Wir werten alle Koordinatenfunktionen zugleich aus und verteilen sie auf die einzelnen Parameterkurven <--
@@ -4965,7 +4948,7 @@ void Plot::fillData(double dt_max, int t_animate)
                     if (i >= _pInfo.nFunctions)
                         m_manager.assets[vFuncMap[k]].writeData(0.0, i, t);
                     else
-                        m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, t);
+                        m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, t);
                 }
             }
 
@@ -4976,12 +4959,15 @@ void Plot::fillData(double dt_max, int t_animate)
             }
         }
 
-        _defVars.vValue[TCOORD][0] = dt_max;
+        _defVars.vValue[TCOORD][0] = mu::Value(dt_max);
     }
     else if (isMesh2D(_pInfo.sCommand))
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
             convertVectorToExpression(sFunc);
+
+        // Necessary, because of evaluatio of the legend entries
+        _parser.SetExpr(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -5007,9 +4993,9 @@ void Plot::fillData(double dt_max, int t_animate)
 
                 for (size_t i = 0; i < vFuncMap.size(); i++)
                 {
-                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
-                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
-                    m_manager.assets[vFuncMap[i]].writeData(vResults[i], 0, x, y);
+                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                    m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                    m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x, y);
                 }
             }
         }
@@ -5018,6 +5004,9 @@ void Plot::fillData(double dt_max, int t_animate)
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
             convertVectorToExpression(sFunc);
+
+        // Necessary, because of evaluatio of the legend entries
+        _parser.SetExpr(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -5050,10 +5039,10 @@ void Plot::fillData(double dt_max, int t_animate)
 
                     for (size_t i = 0; i < vFuncMap.size(); i++)
                     {
-                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
-                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
-                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[ZCOORD][0].real(), z, ZCOORD);
-                        m_manager.assets[vFuncMap[i]].writeData(vResults[i], 0, x, y, z);
+                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                        m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
+                        m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x, y, z);
                     }
                 }
             }
@@ -5081,13 +5070,13 @@ void Plot::fillData(double dt_max, int t_animate)
 
                     for (int i = 0; i < 2; i++)
                     {
-                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
-                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
 
                         if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
                             m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y);
                         else
-                            m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, x, y);
+                            m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, x, y);
                     }
                 }
             }
@@ -5119,14 +5108,14 @@ void Plot::fillData(double dt_max, int t_animate)
 
                         for (int i = 0; i < 3; i++)
                         {
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].real(), z, ZCOORD);
+                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
 
                             if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
                                 m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
                             else
-                                m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, x, y, z);
+                                m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, x, y, z);
                         }
                     }
                 }
