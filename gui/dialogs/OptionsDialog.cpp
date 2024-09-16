@@ -515,6 +515,7 @@ void OptionsDialog::CreateAnalyzerPage()
     m_analyzer[Options::SWITCH_FALLTHROUGH] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_SWITCH_FALLTHROUGH"));
     m_analyzer[Options::GLOBAL_VARIABLES] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_GLOBAL_VARIABLES"));
     m_analyzer[Options::MISLEADING_TYPE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_MISLEADING_TYPE"));
+    m_analyzer[Options::TYPE_MISUSE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_TYPE_MISUSE"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_STYLE"));

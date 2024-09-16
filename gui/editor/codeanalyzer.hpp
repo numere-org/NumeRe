@@ -81,6 +81,7 @@ class CodeAnalyzer
 
         bool m_hasProcedureDefinition;
         std::vector<std::pair<std::string,int>> m_vLocalVariables;
+        std::vector<std::pair<std::string,int>> m_vKnownVariables;
 
         const double MINCOMMENTDENSITY = 0.5;
         const double MAXCOMMENTDENSITY = 1.5;

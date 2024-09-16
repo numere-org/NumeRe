@@ -78,6 +78,7 @@ void CodeAnalyzer::run()
     // Clear all annotations
 	m_editor->AnnotationClearAll();
 	m_symdefs.clear();
+	m_vKnownVariables.clear();
 
 	// Clear the corresponding indicators
     m_editor->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
@@ -794,7 +795,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
                 // Store the for index variable in the list of known
                 // local variables
-                if (m_editor->m_fileType == FILE_NPRC && nOpPos != std::string::npos)
+                if (nOpPos != std::string::npos)
                 {
                     nOpPos += j+1;
 
@@ -805,7 +806,12 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                             || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                         {
                             // Store it and break directly
-                            m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
+                            if (m_editor->m_fileType == FILE_NPRC)
+                                m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
+                                                                                                    m_editor->WordEndPosition(i, true)).ToStdString(),
+                                                                             m_editor->GetStyleAt(i)));
+
+                            m_vKnownVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
                                                                                                 m_editor->WordEndPosition(i, true)).ToStdString(),
                                                                          m_editor->GetStyleAt(i)));
 
@@ -913,6 +919,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                                                                _guilang.get("GUI_ANALYZER_MISLEADING_TYPE", currentArg)), ANNOTATION_WARN);
 
                 m_vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
+                m_vKnownVariables.push_back(pair<string,int>(currentArg, nStyle));
 
                 // Try to find the variable in the remaining code
                 if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES)
@@ -1192,12 +1199,23 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
         // Clear the list of local variables
         if (sSyntaxElement == "endprocedure")
+        {
+            for (const auto& iter : m_vLocalVariables)
+            {
+                std::erase(m_vKnownVariables, iter);
+            }
+
             m_vLocalVariables.clear();
+        }
 
         // Remove the last declared local variable
         if (sSyntaxElement == "endfor" && m_editor->m_fileType == FILE_NPRC && m_vLocalVariables.size())
+        {
+            std::erase(m_vKnownVariables, m_vLocalVariables.back());
             m_vLocalVariables.pop_back();
+        }
     }
+
     m_nCurPos = wordend;
 
     // Return the counted annotations
@@ -1231,7 +1249,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement + "()")), ANNOTATION_ERROR);
 
         // ignore modifiers, i.e. method without parentheses
-        static string sMODIFIER = ",len,cols,lines,rows,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,description,first,last,shrink,";
+        static string sMODIFIER = ",len,cols,lines,rows,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,description,first,last,shrink,order,";
 
         if (sMODIFIER.find("," + sSyntaxElement + ",") == string::npos)
             sSyntaxElement += "()";
@@ -1284,6 +1302,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "getversioninfo()"
              && sSyntaxElement != "landau_rd()"
              && sSyntaxElement != "evt_close()"
+             && sSyntaxElement != "get_utc_offset()"
              && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments
@@ -1414,8 +1433,52 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
             wxString currentline = m_editor->GetLine(m_nCurrentLine);
 
             // Ignore y* variables from odesolve
-            if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve " || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
+            if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve "
+                || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
                 AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
+        }
+    }
+
+    // Warn about global variables
+    if (m_options->GetAnalyzerOption(Options::TYPE_MISUSE) && (m_editor->m_fileType == FILE_NPRC || m_editor->m_fileType == FILE_NSCR))
+    {
+        bool bOK = false;
+
+        // Try to find the current identifier in the list
+        // of known local variables
+        for (size_t i = 0; i < m_vKnownVariables.size(); i++)
+        {
+            if (m_vKnownVariables[i].first == sSyntaxElement)
+            {
+                bOK = m_vKnownVariables[i].second == m_editor->GetStyleAt(m_nCurPos);
+                break;
+            }
+
+            // Add the symbol to the list of known symbols
+            if (i+1 == m_vKnownVariables.size())
+            {
+                m_vKnownVariables.push_back(std::make_pair(sSyntaxElement, m_editor->GetStyleAt(m_nCurPos)));
+                bOK = true;
+                break;
+            }
+        }
+
+        // Add the symbol to the list of known variables, if nothing is in there
+        if (!bOK && !m_vKnownVariables.size())
+        {
+            m_vKnownVariables.push_back(std::make_pair(sSyntaxElement, m_editor->GetStyleAt(m_nCurPos)));
+            bOK = true;
+        }
+
+        // nothing found
+        if (!bOK)
+        {
+            wxString currentline = m_editor->GetLine(m_nCurrentLine);
+
+            // Ignore y* variables from odesolve
+            if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve "
+                || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_TYPE_MISUSE", sSyntaxElement)), ANNOTATION_WARN);
         }
     }
 

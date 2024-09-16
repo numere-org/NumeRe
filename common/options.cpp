@@ -380,6 +380,8 @@ std::string Options::analyzerOptsToString(AnalyzerOptions opt) const
             return SETTING_B_AN_FALLTHROUGH;
         case AnalyzerOptions::GLOBAL_VARIABLES:
             return SETTING_B_AN_GLOBALVARS;
+        case AnalyzerOptions::TYPE_MISUSE:
+            return SETTING_B_AN_TYPE_MISUSE;
         case AnalyzerOptions::ANALYZER_OPTIONS_END:
             break;
     }

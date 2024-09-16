@@ -130,6 +130,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_AN_RESULTASS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_TYPING] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_MISLEADINGTYPE] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_TYPE_MISUSE] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_VARLENGTH] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_UNUSEDVARS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_GLOBALVARS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);

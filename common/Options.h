@@ -340,6 +340,7 @@ class Options : public Settings
             PROGRESS_RUNTIME,
             SWITCH_FALLTHROUGH,
             GLOBAL_VARIABLES,
+            TYPE_MISUSE,
 		    ANALYZER_OPTIONS_END
 		};
 

@@ -126,6 +126,7 @@
 #define SETTING_B_AN_VARLENGTH        "editor.analyzer.variables.length"
 #define SETTING_B_AN_UNUSEDVARS       "editor.analyzer.variables.unused"
 #define SETTING_B_AN_GLOBALVARS       "editor.analyzer.variables.globals"
+#define SETTING_B_AN_TYPE_MISUSE      "editor.analyzer.variables.typemisuse"
 #define SETTING_B_AN_CONSTANTS        "editor.analyzer.runtime.constants"
 #define SETTING_B_AN_INLINEIF         "editor.analyzer.runtime.inlineif"
 #define SETTING_B_AN_PROCLENGTH       "editor.analyzer.runtime.procedurelength"

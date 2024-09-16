@@ -150,7 +150,7 @@ class OptionsDialog: public wxDialog
 
     ////@begin OptionsDialog member variables
         wxNotebook* m_optionsNotebook;
-        wxCheckListBox* m_checkList;;
+        wxCheckListBox* m_checkList;
 
         wxCheckBox* m_compactTables;
         wxCheckBox* m_AutoLoadDefines;
