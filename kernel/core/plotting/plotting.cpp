@@ -4470,7 +4470,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
     // Auto-apply time axes
     for (size_t i = 0; i <= CRANGE; i++)
     {
-        if (isTimeAxis[i] && !_pData.getTimeAxis(i).use)
+        if (isTimeAxis[i] && !_pData.getTimeAxis(i).use && dataRanges[i].max() > 0.0)
         {
             TimeAxis a;
 
@@ -4483,7 +4483,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 a.activate("mm:ss");
             else if (range < 24*3600)
                 a.activate("hh:mm");
-            else if (range < 7*24*3600)
+            else if (range < 5*30*24*3600)
                 a.activate("MM-DD");
             else if (range < 365*24*3600)
                 a.activate("YYYY-MM-DD");
