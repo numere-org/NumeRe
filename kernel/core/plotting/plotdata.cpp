@@ -1032,18 +1032,18 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             int nResults = 0;
             v = evaluate(nResults, sTemp);
 
-            if (v[0].getCommonType() == mu::TYPE_NUMERICAL)
+            if (nResults > 1 && v[0].getCommonType() == mu::TYPE_NUMERICAL && v[1].getCommonType() == mu::TYPE_NUMERICAL)
             {
                 _AddAxes[XCOORD].ivl.reset(v[0].get(0).getNum().asCF64(),
-                                           v[0].get(1).getNum().asCF64());
+                                           v[1].get(0).getNum().asCF64());
 
-                if (nResults > 1)
+                if (nResults > 2)
                 {
-                    _AddAxes[XCOORD].sLabel = v[1].printVals();
+                    _AddAxes[XCOORD].sLabel = v[2].printVals();
 
-                    if (nResults > 2)
+                    if (nResults > 3)
                     {
-                        _AddAxes[XCOORD].sStyle = v[2].printVals();
+                        _AddAxes[XCOORD].sStyle = v[3].printVals();
 
                         if (!checkColorChars(_AddAxes[XCOORD].sStyle))
                             _AddAxes[XCOORD].sStyle = SECAXIS_DEFAULT_COLOR;
@@ -1080,18 +1080,18 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             int nResults = 0;
             v = evaluate(nResults, sTemp);
 
-            if (v[0].getCommonType() == mu::TYPE_NUMERICAL)
+            if (nResults > 1 && v[0].getCommonType() == mu::TYPE_NUMERICAL && v[1].getCommonType() == mu::TYPE_NUMERICAL)
             {
                 _AddAxes[YCOORD].ivl.reset(v[0].get(0).getNum().asCF64(),
-                                           v[0].get(1).getNum().asCF64());
+                                           v[1].get(0).getNum().asCF64());
 
-                if (nResults > 1)
+                if (nResults > 2)
                 {
-                    _AddAxes[YCOORD].sLabel = v[1].printVals();
+                    _AddAxes[YCOORD].sLabel = v[2].printVals();
 
-                    if (nResults > 2)
+                    if (nResults > 3)
                     {
-                        _AddAxes[YCOORD].sStyle = v[2].printVals();
+                        _AddAxes[YCOORD].sStyle = v[3].printVals();
 
                         if (!checkColorChars(_AddAxes[YCOORD].sStyle))
                             _AddAxes[YCOORD].sStyle = SECAXIS_DEFAULT_COLOR;
