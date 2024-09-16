@@ -2016,35 +2016,45 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 void CategoricalColumn::setCategories(const std::vector<std::string>& vCategories)
 {
-    // If the number of new categories is higher
-    // than the previous one: extend the necessary space
-    if (vCategories.size() > m_categories.size())
-        m_categories.resize(vCategories.size());
+    // Vector for the old-to-new categories mapping
+    std::vector<size_t> vMap(m_categories.size(), 0);
 
-    // Now replace only the new ones. But consider the
-    // case that the user might only want to reorder the categories
+    // Create a mapping for the old categories in the set of
+    // new categories. Their order might be different and some
+    // might be missing. Move those to the end of the index
+    for (size_t i = 0; i < m_categories.size(); i++)
+    {
+        auto iter = std::find(vCategories.begin(), vCategories.end(), m_categories[i]);
+
+        if (iter != vCategories.end())
+            vMap[i] = std::distance(vCategories.begin(), iter);
+        else
+            vMap[i] = std::max({vCategories.size(), vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
+    }
+
+    // Resize the categories array correspondingly (might be equal in
+    // size but never smaller than before)
+    m_categories.resize(std::max(vCategories.size(), (*std::max_element(vMap.begin(), vMap.end()))+1));
+
+    // Create a buffer for reordering
+    std::vector<std::string> buffer(m_categories);
+
+    // Write the old categories in new order
+    for (size_t i = 0; i < vMap.size(); i++)
+    {
+        m_categories[vMap[i]] = buffer[i];
+    }
+
+    // Write the new categories at their intended positions
     for (size_t i = 0; i < vCategories.size(); i++)
     {
-        // Try to find the new category in the current list
-        auto iter = std::find(m_categories.begin(), m_categories.end(), vCategories[i]);
+        m_categories[i] = vCategories[i];
+    }
 
-        // If the category was found and is different to the current
-        // one: swap them. Otherwise simply overwrite
-        if (iter != m_categories.end() && iter-m_categories.begin() != (int)i)
-        {
-            std::swap(m_categories[i], *iter);
-
-            // We also have to swap the IDs
-            for (int& val : m_data)
-            {
-                if (val == i)
-                    val = iter - m_categories.begin();
-                else if (val == iter - m_categories.begin())
-                    val = i;
-            }
-        }
-        else
-            m_categories[i] = vCategories[i];
+    // Remap all existing ids to their new values
+    for (int& val : m_data)
+    {
+        val = vMap[val];
     }
 }
 
