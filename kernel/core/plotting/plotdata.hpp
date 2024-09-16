@@ -405,6 +405,12 @@ class PlotData : public FileSystem
             return axis;
         }
 
+        inline void setTimeAxis(unsigned int i, const TimeAxis& axis)
+        {
+            if (i < 4)
+                _timeAxes[i] = axis;
+        }
+
         inline const int* getTargetGUI() const
         {
             return nTargetGUI;

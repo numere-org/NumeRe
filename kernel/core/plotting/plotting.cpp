@@ -4039,6 +4039,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         datIvlID3D = PlotAssetManager::ABSREIM;
     }
 
+    bool isTimeAxis[CRANGE+1] = {false, false, false, false};
+
     // Now extract the index informations of each referred
     // data object and copy its contents to the prepared
     // mglData objects
@@ -4129,6 +4131,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                                                     _idx.row, _idx.col.front(),
                                                     _accessParser.isCluster());
 
+                if (vAxis.getCommonType() == mu::TYPE_NUMERICAL && vAxis.getCommonNumericalType() == mu::DATETIME)
+                    isTimeAxis[XRANGE] = true;
+
                 for (size_t n = 0; n < vAxis.size(); n++)
                 {
                     m_manager.assets[typeCounter].writeAxis(vAxis[n].getNum().asF64(), n, XCOORD);
@@ -4142,6 +4147,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
                                                     _idx.row, _idx.col.last(),
                                                     _accessParser.isCluster());
+
+                if (vVals.getCommonType() == mu::TYPE_NUMERICAL && vVals.getCommonNumericalType() == mu::DATETIME)
+                    isTimeAxis[YRANGE] = true;
 
                 for (size_t n = 0; n < vVals.size(); n++)
                 {
@@ -4168,6 +4176,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                         mu::Array vVals = getDataFromObject(_accessParser.getDataObject(),
                                                             _idx.row, _idx.col[q+1],
                                                             _accessParser.isCluster());
+
+                        if (vVals.getCommonType() == mu::TYPE_NUMERICAL && vVals.getCommonNumericalType() == mu::DATETIME)
+                            isTimeAxis[YRANGE] = true;
 
                         for (size_t n = 0; n < vVals.size(); n++)
                         {
@@ -4279,6 +4290,11 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                                                         _idx.row, _idx.col[q],
                                                         _accessParser.isCluster());
 
+                    if (vVals.getCommonType() == mu::TYPE_NUMERICAL
+                        && vVals.getCommonNumericalType() == mu::DATETIME
+                        && q <= ZRANGE)
+                        isTimeAxis[q] = true;
+
                     for (size_t t = 0; t < vVals.size(); t++)
                     {
                         m_manager.assets[typeCounter].writeData(vVals[t].getNum().asCF64(), q, t);
@@ -4322,6 +4338,11 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                                                     _idx.row, _idx.col[axis],
                                                     _accessParser.isCluster());
 
+                if (vAxis.getCommonType() == mu::TYPE_NUMERICAL
+                    && vAxis.getCommonNumericalType() == mu::DATETIME
+                    && axis <= YRANGE)
+                    isTimeAxis[axis] = true;
+
                 for (size_t m = 0; m < std::min(samples[axis]-isBars, vAxis.size()); m++)
                 {
                     m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
@@ -4351,9 +4372,20 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                                                     _idx.row, _idx.col[y+2],
                                                     _accessParser.isCluster());
 
+                if (vVals.getCommonType() == mu::TYPE_NUMERICAL
+                    && vVals.getCommonNumericalType() == mu::DATETIME
+                    && !isTimeAxis[ZRANGE])
+                {
+                    #pragma omp critical
+                    {
+                        isTimeAxis[ZRANGE] = true;
+                        isTimeAxis[CRANGE] = true;
+                    }
+                }
+
                 for (size_t x = 0; x < std::min(samples[0]-isBars, vVals.size()); x++)
                 {
-                    m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);;
+                    m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);
                 }
             }
 
@@ -4388,6 +4420,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
                                                     _idx.row, _idx.col[axis],
                                                     _accessParser.isCluster());
+
+                if (vAxis.getCommonType() == mu::TYPE_NUMERICAL && vAxis.getCommonNumericalType() == mu::DATETIME)
+                    isTimeAxis[axis] = true;
 
                 for (size_t m = 0; m < std::min(samples[axis], vAxis.size()); m++)
                 {
@@ -4431,6 +4466,35 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
     if (dataRanges[YRANGE].range() == 0.0 && vDataPlots.size() && !isPlot1D(_pInfo.sCommand))
         dataRanges[YRANGE].expand(0.1);
+
+    // Auto-apply time axes
+    for (size_t i = 0; i <= CRANGE; i++)
+    {
+        if (isTimeAxis[i] && !_pData.getTimeAxis(i).use)
+        {
+            TimeAxis a;
+
+            // Detect the optimal axis ticks based upon
+            // the corresponding axis range
+            double range = dataRanges[i].range();
+
+#warning TODO (numere#6#09/16/24): We might want to think about an improved axis stepping for a time axis
+            if (range < 3600)
+                a.activate("mm:ss");
+            else if (range < 24*3600)
+                a.activate("hh:mm");
+            else if (range < 7*24*3600)
+                a.activate("MM-DD");
+            else if (range < 365*24*3600)
+                a.activate("YYYY-MM-DD");
+            else if (range < 3*365*24*3600)
+                a.activate("YYYY-MM");
+            else
+                a.activate("YYYY");
+
+            _pData.setTimeAxis(i, a);
+        }
+    }
 }
 
 
