@@ -16,11 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <filesystem>
+
 #include "fileops.hpp"
 #include "../utils/tools.hpp"
 #include "../maths/parser_functions.hpp"
 #include "../../kernel.hpp"
 #include "../ui/language.hpp"
+#include "../utils/filecheck.hpp"
 
 extern Language _lang;
 
@@ -47,8 +50,13 @@ bool removeFile(CommandLineParser& cmdParser)
 
     //sCmd = fromSystemCodePage(sCmd);
 
-    // Get all relevant files
-    std::vector<std::string> vFiles = _fSys.getFileList(cmdParser.parseExprAsString(), FileSystem::FULLPATH);
+    // Get all relevant files or folders
+    std::vector<std::string> vFiles;
+
+    if (!is_file(cmdParser.parseExprAsString()))
+        vFiles = _fSys.getFolderList(cmdParser.parseExprAsString(), FileSystem::FULLPATH);
+    else
+        vFiles = _fSys.getFileList(cmdParser.parseExprAsString(), FileSystem::FULLPATH);
 
     // No files -> No deletion needed
     if (!vFiles.size())
@@ -57,6 +65,9 @@ bool removeFile(CommandLineParser& cmdParser)
     // Delete the first or every file
     for (const std::string& sFile : vFiles)
     {
+        if (sFile.ends_with("/.."))
+            continue;
+
         if (sFile.ends_with(".exe")
             || sFile.ends_with(".dll")
             || sFile.ends_with(".sys")
@@ -66,7 +77,7 @@ bool removeFile(CommandLineParser& cmdParser)
         if (!bIgnore)
         {
             std::string c = "";
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), NumeReKernel::getInstance()->getSettings()) );
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEFILE_CONFIRM", sFile), NumeReKernel::getInstance()->getSettings()));
             NumeReKernel::printPreFmt("|\n|<- ");
             NumeReKernel::getline(c);
 
@@ -75,7 +86,7 @@ bool removeFile(CommandLineParser& cmdParser)
         }
 
         // Delete it
-        remove(sFile.c_str());
+        std::filesystem::remove_all(sFile);
 
         // Delete only the first one
         if (!bAll)

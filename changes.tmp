@@ -25,3 +25,4 @@ New	Multiple functions and constants for dealing with time have been added.
 Applied	Data plots with time vals in one of their dimensions will now auto-activate the corresponding time axes.
 Added	The static code analyzer will now warn, if the table and cluster types are used without their parentheses.
 Fixed	TAB().categorize(...) is now working as intended.
+Added	"remove" can now also remove whole folders recursively.
