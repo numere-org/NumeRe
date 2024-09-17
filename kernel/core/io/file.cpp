@@ -4401,7 +4401,8 @@ namespace NumeRe
                             _stringelement = _stringelement->NextSiblingElement();
                         }
 
-                        if (_stringelement->FirstChildElement()->FirstChild())
+                        if (_stringelement->FirstChildElement()->FirstChild() 
+			    && _stringelement->FirstChildElement()->FirstChild()->ToText())
                             sEntry = utf8parser(_stringelement->FirstChildElement()->FirstChild()->ToText()->Value());
                         else
                             sEntry.clear();
