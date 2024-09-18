@@ -26,3 +26,4 @@ Applied	Data plots with time vals in one of their dimensions will now auto-activ
 Added	The static code analyzer will now warn, if the table and cluster types are used without their parentheses.
 Fixed	TAB().categorize(...) is now working as intended.
 Added	"remove" can now also remove whole folders recursively.
+Fixed	Tables can now be loaded completely using the "keepdim" option. Omitting this option will still strip away empty columns.

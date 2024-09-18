@@ -362,6 +362,7 @@ namespace NumeRe
             vTableData.resize(j+1);
 
         vTableData[j].reset(column);
+        vTableData[j]->shrink();
     }
 
 

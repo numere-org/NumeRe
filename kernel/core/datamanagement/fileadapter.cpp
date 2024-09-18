@@ -75,6 +75,9 @@ namespace NumeRe
             return;
         }
 
+        // Remove all obsolete cells and columns
+        _mem->shrink();
+
         // Get an iterator to the beginning
         auto iter = _mem->memArray.begin();
 
@@ -181,7 +184,6 @@ namespace NumeRe
                 g_logger.debug("Data converted.");
             }
 
-            _mem->shrink();
             condenseDataSet(_mem);
             _mem->createTableHeaders();
             _mem->setSaveStatus(false);

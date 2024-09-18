@@ -398,8 +398,6 @@ bool MemoryManager::loadFromNewCacheFile()
             vMemory.back()->resizeMemory(cacheFile.getRows(), cacheFile.getCols());
             cacheFile.getData(&vMemory.back()->memArray);
 
-            vMemory.back()->shrink();
-
             if (cacheFile.getComment() != "NO COMMENT")
                 vMemory.back()->m_meta.comment = cacheFile.getComment();
         }

@@ -719,7 +719,10 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
         for (size_t j = 0; j < _vCol.size(); j++)
         {
             if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
+            {
                 _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
+                _memCopy->memArray[j]->shrink();
+            }
         }
     }
     else
@@ -727,7 +730,10 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
         for (size_t j = 0; j < _vCol.size(); j++)
         {
             if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
+            {
                 _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
+                _memCopy->memArray[j]->shrink();
+            }
         }
     }
 
