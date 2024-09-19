@@ -27,3 +27,4 @@ Added	The static code analyzer will now warn, if the table and cluster types are
 Fixed	TAB().categorize(...) is now working as intended.
 Added	"remove" can now also remove whole folders recursively.
 Fixed	Tables can now be loaded completely using the "keepdim" option. Omitting this option will still strip away empty columns.
+Added	Local variables may now also be declared within control flow blocks. Note that they are only declared for the first time per execution the control reaches their command.

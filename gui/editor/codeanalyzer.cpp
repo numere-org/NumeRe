@@ -872,6 +872,21 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                                                        _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
         }
 
+        // Inform that this command is only executed once within
+        // control flow blocks
+        std::pair<wxString, int> blockStart = m_editor->getBlockStart(m_nCurrentLine);
+
+        while (blockStart.second != wxNOT_FOUND && blockStart.first != "for" && blockStart.first != "while")
+        {
+            blockStart = m_editor->getBlockStart(blockStart.second-1);
+        }
+
+        if (blockStart.second != wxNOT_FOUND)
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sWarn,
+                                                       _guilang.get("GUI_ANALYZER_ONLYEXECUTEDONCE")), ANNOTATION_WARN);
+
         // If there are variables available
         if (sArgs.length())
         {

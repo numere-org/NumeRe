@@ -118,6 +118,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString getBlockAutoCompletion(const wxString& sWord);
 		wxString getBlockEnd(const wxString& sWord);
 		wxString getBlockStart(const wxString& sWord);
+		std::pair<wxString, int> getBlockStart(int line);
 		void ClearDblClkIndicator();
 		void MakeBraceCheck();
 		void MakeBlockCheck();

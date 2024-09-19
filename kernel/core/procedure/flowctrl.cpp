@@ -1578,6 +1578,9 @@ mu::Array* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bI
         throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
     }
 
+    if (!nCurrentCalcType)
+        sHeadExpression = resolveVariables(sHeadExpression);
+
     // Update the parser index, if the loop parsing
     // mode was activated
     if (bUseLoopParsingMode && !bLockedPauseMode)
@@ -1750,6 +1753,9 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
 
         throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
     }
+
+    if (!nCurrentCalcType)
+        sHeadExpression = resolveVariables(sHeadExpression);
 
     // Update the parser index, if the loop parsing
     // mode was activated
@@ -2700,6 +2706,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     else
         bLoopSupressAnswer = false;
 
+    sLine = resolveVariables(sLine);
     sCommand = findCommand(sLine).sString;
 
     // Replace the custom defined functions, if it wasn't already done
@@ -2948,7 +2955,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     }
 
     // Handle the procedure commands like "namespace" here
-    int nProcedureCmd = procedureCmdInterface(sLine);
+    int nProcedureCmd = procedureCmdInterface(sLine, true);
 
     if (nProcedureCmd)
     {
@@ -3466,7 +3473,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // Handle the procedure commands like "namespace" here
     if (nCurrentCalcType & CALCTYPE_PROCEDURECMDINTERFACE)
     {
-        int nProcedureCmd = procedureCmdInterface(sLine);
+        int nProcedureCmd = procedureCmdInterface(sLine, false);
 
         if (nProcedureCmd)
         {
@@ -4468,6 +4475,11 @@ bool FlowCtrl::isAnyFlowCtrlStatement(StringView sCmd)
 
 
 // VIRTUAL FUNCTION IMPLEMENTATIONS
+std::string FlowCtrl::resolveVariables(const std::string& sCommandLine) const
+{
+    return sCommandLine;
+}
+
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.
 ///
@@ -4493,10 +4505,11 @@ FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(std::string& sLi
 /// \brief Dummy implementation.
 ///
 /// \param sLine StringView
+/// \param compiling bool
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureCmdInterface(StringView sLine)
+int FlowCtrl::procedureCmdInterface(StringView sLine, bool compiling)
 {
     return 1;
 }

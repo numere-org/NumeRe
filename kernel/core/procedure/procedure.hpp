@@ -85,7 +85,7 @@ class Procedure : public FlowCtrl, public PackageManager
         int handleIncludeSyntax(std::string& sProcCommandLine, std::ifstream& fInclude, bool bReadingFromInclude);
         void extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName);
 
-        virtual int procedureCmdInterface(StringView sLine) override;
+        virtual int procedureCmdInterface(StringView sLine, bool compiling) override;
         virtual std::vector<std::string> expandInlineProcedures(std::string& sLine) override;
         int isInlineable(const std::string& sProc, const std::string& sFileName, int* nInlineFlag = nullptr);
         int applyInliningRuleset(const std::string& sCommandLine, const std::string& sArgumentList);
@@ -109,7 +109,7 @@ class Procedure : public FlowCtrl, public PackageManager
         virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp) override;
         size_t GetCurrentLine() const;
         size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const std::string& sReplaceName);
-        std::string resolveVariables(const std::string& sCommandLine) const;
+        virtual std::string resolveVariables(const std::string& sCommandLine) const override;
 
         void setPredefinedFuncs(const std::string& sPredefined)
         {

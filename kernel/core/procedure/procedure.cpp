@@ -1434,12 +1434,14 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
 /// namespace command.
 ///
 /// \param sLine StringView
+/// \param compiling bool
 /// \return int
 ///
 /// The commands "var", "str", "tab" and "cst"
-/// are recognized but not evaluated.
+/// are recognized but only evaluated if
+/// compiling has been set to true.
 /////////////////////////////////////////////////
-int Procedure::procedureCmdInterface(StringView sLine)
+int Procedure::procedureCmdInterface(StringView sLine, bool compiling)
 {
     // Find the current command
     string sCommand = findCommand(sLine).sString;
@@ -1447,6 +1449,14 @@ int Procedure::procedureCmdInterface(StringView sLine)
     // Try to identify the command
     if (sCommand == "var" || sCommand == "str" || sCommand == "tab" || sCommand == "cst")
     {
+        if (compiling && NumeReKernel::getInstance()->getDebugger().getStackSize())
+        {
+            NumeReKernel::getInstance()->getParser().PauseLoopMode(true);
+            std::string sDefinition = sLine.to_string();
+            handleVariableDefinitions(sDefinition, sCommand);
+            NumeReKernel::getInstance()->getParser().PauseLoopMode(false);
+        }
+
         // Only recognized
         return 1;
     }

@@ -7777,6 +7777,39 @@ wxString NumeReEditor::getBlockStart(const wxString& sWord)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function finds the line
+/// and the command for the block start, where
+/// the current line is located within.
+///
+/// \param line int
+/// \return std::pair<wxString, int>
+///
+/////////////////////////////////////////////////
+std::pair<wxString, int> NumeReEditor::getBlockStart(int line)
+{
+    if ((GetFoldLevel(line) & wxSTC_FOLDLEVELNUMBERMASK) == wxSTC_FOLDLEVELBASE)
+        return std::make_pair(wxEmptyString, wxNOT_FOUND);
+
+    int foldstart = GetFoldParent(line);
+
+    for (int n = PositionFromLine(foldstart); n < GetLineEndPosition(foldstart); n++)
+    {
+        if (isStyleType(STYLE_COMMAND, n))
+        {
+            wxString command = GetTextRange(WordStartPosition(n, true), WordEndPosition(n, true));
+
+            if (getBlockID(command) != wxNOT_FOUND)
+                return std::make_pair(command, foldstart);
+
+            return std::make_pair(wxEmptyString, wxNOT_FOUND);
+        }
+    }
+
+    return std::make_pair(wxEmptyString, wxNOT_FOUND);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Removes the double-click occurence
 /// indicators from the document.
 ///
