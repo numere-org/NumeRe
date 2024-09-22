@@ -1496,6 +1496,8 @@ namespace NumeRe
             void addSeparator(const std::vector<size_t>& vColumnWidth);
 
             void decodeTableHeads(std::vector<std::string>& vFileContents, long long int nComment);
+
+        protected:
             std::vector<size_t> calculateColumnWidths(size_t& nNumberOfLines);
 
         public:
@@ -1506,6 +1508,65 @@ namespace NumeRe
             {
                 readFile();
                 return true;
+            }
+
+            virtual bool write() override
+            {
+                writeFile();
+                return true;
+            }
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class represents a Markdown file,
+    /// which is especially supported as exporting
+    /// target.
+    /////////////////////////////////////////////////
+    class MarkDownFile : public TextDataFile
+    {
+        private:
+            void writeFile();
+            void writeTableHeads(const std::vector<size_t>& vColumnWidth, size_t nNumberOfLines);
+            void writeTableContents(const std::vector<size_t>& vColumnWidth);
+            void addSeparator(const std::vector<size_t>& vColumnWidth);
+
+        public:
+            MarkDownFile(const std::string& filename);
+            virtual ~MarkDownFile();
+
+            virtual bool read() override
+            {
+                // not possible right now
+                return false;
+            }
+
+            virtual bool write() override
+            {
+                writeFile();
+                return true;
+            }
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class represents a HTML file,
+    /// which is especially supported as exporting
+    /// target.
+    /////////////////////////////////////////////////
+    class HtmlFile : public GenericFile
+    {
+        private:
+            void writeFile();
+
+        public:
+            HtmlFile(const std::string& filename);
+            virtual ~HtmlFile();
+
+            virtual bool read() override
+            {
+                // not possible right now
+                return false;
             }
 
             virtual bool write() override

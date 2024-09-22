@@ -2101,7 +2101,9 @@ void TableViewer::saveTable(bool saveAs)
                         + _guilang.get("COMMON_FILETYPE_TXT") + " (*.txt)|*.txt|"
                         + _guilang.get("COMMON_FILETYPE_CSV") + " (*.csv)|*.csv|"
                         + _guilang.get("COMMON_FILETYPE_XLS") + " (*.xls)|*.xls|"
-                        + _guilang.get("COMMON_FILETYPE_TEX") + " (*.tex)|*.tex",
+                        + _guilang.get("COMMON_FILETYPE_TEX") + " (*.tex)|*.tex|"
+                        + _guilang.get("COMMON_FILETYPE_MD") + " (*.md)|*.md|"
+                        + _guilang.get("COMMON_FILETYPE_HTML") + " (*.html,*.htm)|*.html;*.htm",
                         wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 
         if (fd.ShowModal() == wxID_CANCEL)

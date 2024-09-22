@@ -85,6 +85,12 @@ namespace NumeRe
         if (sExt == "xlsx")
             return new XLSXSpreadSheet(filename);
 
+        if (sExt == "md")
+            return new MarkDownFile(filename);
+
+        if (sExt == "htm" || sExt == "html" || sExt == "xml")
+            return new HtmlFile(filename);
+
         if (sExt == "jdx" || sExt == "dx" || sExt == "jcm")
             return new JcampDX(filename);
 
@@ -283,7 +289,7 @@ namespace NumeRe
         // Get the necessary column widths and the number
         // of lines, which are needed for the column heads
         size_t nNumberOfHeadlines = 1u;
-        std::vector<size_t> vColumns =  calculateColumnWidths(nNumberOfHeadlines);
+        std::vector<size_t> vColumns = calculateColumnWidths(nNumberOfHeadlines);
 
         // Write the column heads and append a separator
         writeTableHeads(vColumns, nNumberOfHeadlines);
@@ -378,12 +384,7 @@ namespace NumeRe
                 if (!fileData->at(j)->isValid(i))
                     fFileStream << "---";
                 else
-                {
-                    if (TableColumn::isValueType(fileData->at(j)->m_type))
-                        fFileStream << "  " + toString(fileData->at(j)->getValue(i), nPrecFields);
-                    else
-                        fFileStream << "  " + fileData->at(j)->getValueAsInternalString(i);
-                }
+                    fFileStream << fileData->at(j)->get(i).printVal(nPrecFields);
             }
 
             fFileStream.width(0);
@@ -839,6 +840,7 @@ namespace NumeRe
     {
         std::vector<size_t> vColumnWidths;
         const size_t NUMBERFIELDLENGTH = nPrecFields + 7;
+        const size_t DATEFIELDLENGTH = 24;
 
         // Go through the column heads in memory, determine
         // their cell extents and store the maximal value of
@@ -853,13 +855,287 @@ namespace NumeRe
             }
 
             std::pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine, fileData->at(j)->m_sUnit);
-            vColumnWidths.push_back(std::max(NUMBERFIELDLENGTH, pCellExtents.first));
+
+            if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+            {
+                size_t len = 4;
+
+                for (size_t i = 0; i < fileData->at(j)->size(); i++)
+                {
+                    len = std::max(len, fileData->at(j)->getValueAsInternalString(i).length());
+                }
+
+                vColumnWidths.push_back(std::max(len, pCellExtents.first));
+            }
+            else if (fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL)
+            {
+                const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(fileData->at(j).get())->getCategories();
+                size_t maxCat = std::max_element(vCategories.begin(), vCategories.end(),
+                                                 [](const std::string& cat1, const std::string& cat2)
+                                                 {return cat1.length() < cat2.length();})->length();
+                vColumnWidths.push_back(std::max({maxCat, pCellExtents.first, size_t(4)}));
+            }
+            else if (fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
+                vColumnWidths.push_back(std::max(DATEFIELDLENGTH, pCellExtents.first));
+            else
+                vColumnWidths.push_back(std::max(NUMBERFIELDLENGTH, pCellExtents.first));
 
             if (nNumberOfLines < pCellExtents.second)
                 nNumberOfLines = pCellExtents.second;
         }
 
         return vColumnWidths;
+    }
+
+
+    static std::string formatUnit(const std::string& sUnit)
+    {
+        if (sUnit.length())
+            return " " + sUnit;
+
+        return "";
+    }
+
+
+    //////////////////////////////////////////////
+    // class MarkDownFile
+    //////////////////////////////////////////////
+    //
+    MarkDownFile::MarkDownFile(const std::string& filename) : TextDataFile(filename)
+    {
+        // Empty constructor
+    }
+
+
+    MarkDownFile::~MarkDownFile()
+    {
+        // Empty destructor
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This method writes the data in memory
+    /// to the referenced markdown file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void MarkDownFile::writeFile()
+    {
+        // Open the file
+        open(std::ios::out | std::ios::trunc);
+
+        // Get the necessary column widths and the number
+        // of lines, which are needed for the column heads
+        size_t nNumberOfHeadlines = 1u;
+        std::vector<size_t> vColumns = calculateColumnWidths(nNumberOfHeadlines);
+
+        // Write the column heads and append a separator
+        writeTableHeads(vColumns, 1);
+        addSeparator(vColumns);
+
+        // Write the actual data
+        writeTableContents(vColumns);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the table heads into the target file.
+    ///
+    /// \param vColumnWidth const std::vector<size_t>&
+    /// \param nNumberOfLines size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void MarkDownFile::writeTableHeads(const std::vector<size_t>& vColumnWidth, size_t nNumberOfLines)
+    {
+        for (size_t i = 0; i < nNumberOfLines; i++)
+        {
+            fFileStream << "| ";
+
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fFileStream.width(vColumnWidth[j]+2);
+                fFileStream.fill(' ');
+                std::string sHead = fileData->at(j)->m_sHeadLine;
+                replaceAll(sHead, "\n", " ");
+                fFileStream << sHead;
+
+                if (j+1 < nCols)
+                {
+                    fFileStream.width(0);
+                    fFileStream << " | ";
+                }
+            }
+
+            fFileStream.width(0);
+            fFileStream << " |\n";
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the data in memory to the target text file.
+    ///
+    /// \param vColumnWidth const std::vector<size_t>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void MarkDownFile::writeTableContents(const std::vector<size_t>& vColumnWidth)
+    {
+        for (long long int i = 0; i < nRows; i++)
+        {
+            fFileStream << "| ";
+
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fFileStream.width(vColumnWidth[j]+2);
+                fFileStream.fill(' ');
+                fFileStream.precision(nPrecFields);
+
+                // Handle NaNs correctly
+                if (!fileData->at(j)->isValid(i))
+                    fFileStream << "---";
+                else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                {
+                    std::string cellValue = fileData->at(j)->get(i).printVal();
+                    replaceAll(cellValue, "\n", " ");
+                    fFileStream << cellValue;
+                }
+                else
+                    fFileStream << fileData->at(j)->get(i).printVal(nPrecFields) + formatUnit(fileData->at(j)->m_sUnit);
+
+                if (j+1 < nCols)
+                {
+                    fFileStream.width(0);
+                    fFileStream << " | ";
+                }
+            }
+
+            fFileStream.width(0);
+            fFileStream << " |\n";
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function draws a separator
+    /// based upon the overall width of the columns.
+    ///
+    /// \param vColumnWidth const std::vector<size_t>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void MarkDownFile::addSeparator(const std::vector<size_t>& vColumnWidth)
+    {
+        fFileStream << "|";
+
+        for (size_t j = 0; j < vColumnWidth.size(); j++)
+        {
+            if (fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL
+                || fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL
+                || fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                fFileStream << ":";
+            else
+                fFileStream << " ";
+
+            fFileStream.width(vColumnWidth[j]);
+            fFileStream.fill('-');
+            fFileStream << "-";
+
+            if (fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL
+                || fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL
+                || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME
+                || TableColumn::isValueType(fileData->at(j)->m_type))
+                fFileStream << ":";
+            else
+                fFileStream << " ";
+
+            if (j+1 < vColumnWidth.size())
+                fFileStream << "|";
+        }
+
+        fFileStream << "|\n";
+    }
+
+
+    //////////////////////////////////////////////
+    // class HtmlFile
+    //////////////////////////////////////////////
+    //
+    HtmlFile::HtmlFile(const std::string& filename) : GenericFile(filename)
+    {
+        // Empty constructor
+    }
+
+
+    HtmlFile::~HtmlFile()
+    {
+        // Empty destructor
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Write a table in HTML format.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void HtmlFile::writeFile()
+    {
+        // Open the file
+        open(std::ios::out | std::ios::trunc);
+        fFileStream << "<!DOCTYPE html>\n<html>\n<head>\n<title>Table: " << sTableName << "()</title>\n";
+        fFileStream << "<style>\n\t.NumeRe {\n\t\tfont-family: Arial, Helvetica, sans-serif;\n\t\tborder-collapse: collapse;\n\t\twidth: 100%;\n\t}\n\n\t.NumeRe td, .NumeRe th {\n\t\tborder: 1px solid #ddd;\n\t\tpadding: 8px;\n\t}\n\n\t.NumeRe tr:nth-child(even){background-color: #f2f2f2;}\n\n\t.NumeRe tr:hover {background-color: rgb(192, 227, 248);}\n\n\t.NumeRe th {\n\t\tpadding-top: 12px;\n\t\tpadding-bottom: 12px;\n\t\ttext-align: left;\n\t\tbackground-color: rgb(80, 176, 235);\n\t\tcolor: rgb(226, 242, 252);\n\t}\n</style>\n";
+        fFileStream << "</head>\n<body>\n<table class=\"NumeRe\">\n\t<tr>\n";
+
+        for (int n = 0; n < nCols; n++)
+        {
+            std::string sHead = fileData->at(n)->m_sHeadLine;
+            replaceAll(sHead, "\n", "<br/>");
+            fFileStream << "\t\t<th>" << sHead << "</th>\n";
+        }
+
+        fFileStream << "\t</tr>\n";
+
+        for (int n = 0; n < nRows; n++)
+        {
+            fFileStream << "\t<tr>\n";
+
+            for (int m = 0; m < nCols; m++)
+            {
+                if (fileData->at(m)->m_type == TableColumn::TYPE_LOGICAL
+                    || fileData->at(m)->m_type == TableColumn::TYPE_CATEGORICAL)
+                    fFileStream << "\t\t<td align=\"center\">";
+                else if (TableColumn::isValueType(fileData->at(m)->m_type)
+                         || fileData->at(m)->m_type == TableColumn::TYPE_DATETIME)
+                    fFileStream << "\t\t<td align=\"right\">";
+                else
+                    fFileStream << "\t\t<td>";
+
+                if (!fileData->at(m)->isValid(n))
+                    fFileStream << "&mdash;" << "</td>\n";
+                else
+                {
+                    if (fileData->at(m)->m_type == TableColumn::TYPE_LOGICAL)
+                        fFileStream << ((bool)fileData->at(m)->get(n) ? "&#9745;" : "&#9744;") << "</td>\n";
+                    else if (fileData->at(m)->m_type == TableColumn::TYPE_STRING)
+                    {
+                        std::string cellValue = fileData->at(m)->get(n).printVal();
+                        replaceAll(cellValue, "\n", "<br/>");
+                        fFileStream << cellValue << "</td>\n";
+                    }
+                    else
+                        fFileStream << fileData->at(m)->get(n).printVal() + formatUnit(fileData->at(m)->m_sUnit) << "</td>\n";
+                }
+            }
+
+            fFileStream << "\t</tr>\n";
+        }
+
+        fFileStream << "</table>";
     }
 
 
