@@ -885,7 +885,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
                 // Check, whether the number of functions correspond to special
                 // plotting styles
                 if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-                    && _pInfo.b2D
+                    && (_pInfo.b2D || (_pInfo.sCommand == "plot3d" && _pData.getSettings(PlotData::INT_MARKS)))
                     && m_types.size() % 2)
                     throw SyntaxError(SyntaxError::NUMBER_OF_FUNCTIONS_NOT_MATCHING, sCurrentExpr, sCurrentExpr.find(' '));
             }
@@ -3116,6 +3116,8 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
     string sDummy = "";
     string sConvLegends = "";
     bool useImag = false;
+    bool masked = (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
+        && _pData.getSettings(PlotData::INT_MARKS);
 
     mglData _mData[3];
     mglData _mData2[3];
@@ -3125,7 +3127,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                           CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
 
     // Apply curvilinear coordinates
-    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
+    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS), masked ? 2 : 1);
 
     for (size_t n = 0; n < m_manager.assets.size(); n++)
     {
@@ -3147,7 +3149,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
         StripSpaces(m_manager.assets[n+nDataOffset].legend);
 
-        if (_pData.getSettings(PlotData::LOG_REGION)
+        if ((_pData.getSettings(PlotData::LOG_REGION) || masked)
             && n+nDataOffset+1 < m_manager.assets.size())
         {
             _mData2[XCOORD].Link(useImag ? m_manager.assets[n+nDataOffset+1].data[XCOORD].second : m_manager.assets[n+nDataOffset+1].data[XCOORD].first);
@@ -3277,7 +3279,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
         _pInfo.nStyle = _pInfo.nextStyle();
 
-        if (_pData.getSettings(PlotData::LOG_REGION)
+        if ((_pData.getSettings(PlotData::LOG_REGION) || masked)
             && n+nDataOffset+1 < m_manager.assets.size()
             && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
@@ -3402,8 +3404,17 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
             else
             {
                 if (_pData.getSettings(PlotData::INT_MARKS))
-                    _graph->Dots(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 _pData.getColorScheme(toString(_pData.getSettings(PlotData::INT_MARKS))).c_str());
+                {
+                    if (_pData.getSettings(PlotData::LOG_ALPHAMASK))
+                        _graph->Dots(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], _mData2[ZCOORD],
+                                     _pData.getColorScheme(toString(_pData.getSettings(PlotData::INT_MARKS))).c_str());
+                    else if (_pData.getSettings(PlotData::LOG_COLORMASK))
+                        _graph->Dots(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], _mData2[ZCOORD], _mData2[ZCOORD]*0,
+                                     _pData.getColorScheme(toString(_pData.getSettings(PlotData::INT_MARKS))).c_str());
+                    else
+                        _graph->Dots(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
+                                     _pData.getColorScheme(toString(_pData.getSettings(PlotData::INT_MARKS))).c_str());
+                }
                 else if (_pData.getSettings(PlotData::LOG_CRUST))
                     _graph->Crust(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                   _pData.getColorScheme().c_str());
@@ -5971,12 +5982,13 @@ void Plot::applyLighting()
         || _pData.getSettings(PlotData::LOG_PIPE)
         || _pInfo.bDraw3D
         || _pInfo.bDraw
-        || (_pInfo.sCommand == "plot3d" && _pData.getSettings(PlotData::LOG_CRUST)))
+        || (_pInfo.sCommand == "plot3d" && (_pData.getSettings(PlotData::LOG_CRUST) || _pData.getSettings(PlotData::INT_MARKS))))
     {
         // --> Licht- und Transparenz-Effekte <--
         if (_pInfo.sCommand.substr(0, 4) == "surf"
-            || (_pInfo.sCommand.substr(0, 4) == "dens" && _pInfo.sCommand.find("3d") != string::npos && !_pData.getSettings(PlotData::LOG_CONTPROJ))
-            || (_pInfo.sCommand.substr(0, 4) == "cont" && _pInfo.sCommand.find("3d") && _pData.getSettings(PlotData::LOG_CONTFILLED) && !_pData.getSettings(PlotData::LOG_CONTPROJ))
+            || (_pInfo.sCommand.substr(0, 4) == "dens" && _pInfo.b3D && !_pData.getSettings(PlotData::LOG_CONTPROJ))
+            || (_pInfo.sCommand.substr(0, 4) == "cont" && _pInfo.b3D && _pData.getSettings(PlotData::LOG_CONTFILLED) && !_pData.getSettings(PlotData::LOG_CONTPROJ))
+            || _pInfo.sCommand == "plot3d"
             || _pInfo.bDraw3D
             || _pInfo.bDraw)
         {
@@ -5984,7 +5996,9 @@ void Plot::applyLighting()
             _graph->SetAlphaDef(_pData.getSettings(PlotData::FLOAT_ALPHAVAL));
         }
 
-        if (_pData.getSettings(PlotData::LOG_ALPHAMASK) && _pInfo.sCommand.substr(0, 4) == "surf" && !_pData.getSettings(PlotData::LOG_ALPHA))
+        if (_pData.getSettings(PlotData::LOG_ALPHAMASK)
+            && (_pInfo.sCommand.substr(0, 4) == "surf" || _pInfo.sCommand == "plot3d")
+            && !_pData.getSettings(PlotData::LOG_ALPHA))
         {
             _graph->Alpha(true);
             _graph->SetAlphaDef(_pData.getSettings(PlotData::FLOAT_ALPHAVAL));
