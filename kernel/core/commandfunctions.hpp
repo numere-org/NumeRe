@@ -4714,7 +4714,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        std::string sFileName = cmdParser.parseExprAsString();
+        std::string sFileName = cmdParser.getExprForFileOperation();
 
         if (sFileName.length())
         {

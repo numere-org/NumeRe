@@ -77,6 +77,7 @@
 
 #include "editor/editor.h"
 #include "editor/history.hpp"
+#include "editor/historysearchctrl.hpp"
 #include "editor/NumeRePrintout.h"
 
 #include "dialogs/OptionsDialog.h"
@@ -635,11 +636,14 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitEditorOutput->Show();
     m_splitCommandHistory->Show();
     m_book->Show();
-    m_history = new NumeReHistory(this, m_options, m_noteTerm, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
+    TreePanel* historyPanel = new TreePanel(m_noteTerm, wxID_ANY);
+    m_history = new NumeReHistory(this, m_options, historyPanel, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
+    HistorySearchCtrl* histSearchCtrl = new HistorySearchCtrl(historyPanel, wxID_ANY, _guilang.get("GUI_SEARCH_HISTORY"), _guilang.get("GUI_SEARCH_CALLTIP_HISTORY"), m_history);
+    historyPanel->AddWindows(histSearchCtrl, m_history);
     m_varViewer = new VariableViewer(m_noteTerm, this);
     m_procedureViewer = new ProcedureViewer(m_noteTerm);
 
-    m_noteTerm->AddPage(m_history, _guilang.get("GUI_HISTORY"));
+    m_noteTerm->AddPage(historyPanel, _guilang.get("GUI_HISTORY"));
     m_noteTerm->AddPage(m_varViewer, _guilang.get("GUI_VARVIEWER"));
     m_noteTerm->AddPage(m_procedureViewer, _guilang.get("GUI_PROCEDUREVIEWER"));
 

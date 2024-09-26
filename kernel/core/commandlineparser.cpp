@@ -273,35 +273,52 @@ bool CommandLineParser::exprContainsDataObjects() const
 /////////////////////////////////////////////////
 std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std::string& sBasePath) const
 {
+    std::string parsedForFileOperation = getExprForFileOperation();
+
+    // Parse the prepared file path
+    return parseFileName(parsedForFileOperation, sFileExt, sBasePath);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the expression to a string
+/// but does not resolve the path completely
+/// because the callee might require to know that
+/// wildcards have been used within the file path.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string CommandLineParser::getExprForFileOperation() const
+{
     // Make a copy
-    std::string sFileName = m_expr;
+    std::string sFilePath = m_expr;
 
     // Call functions first
-    if (!NumeReKernel::getInstance()->getDefinitions().call(sFileName))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sFileName, SyntaxError::invalid_position);
+    if (!NumeReKernel::getInstance()->getDefinitions().call(sFilePath))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sFilePath, SyntaxError::invalid_position);
 
-    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sFileName))
-        getDataElements(sFileName, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
+    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sFilePath))
+        getDataElements(sFilePath, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
 
     // Strip the spaces and ensure that there's something left
-    StripSpaces(sFileName);
+    StripSpaces(sFilePath);
 
-    if (!sFileName.length())
+    if (!sFilePath.length())
         return "";
 
     // It is mostly possible to supply a file path without being enclosed
     // in quotation marks. is_dir checks for that
-    if (!is_dir(sFileName))
+    if (!is_dir(sFilePath))
     {
         // String evaluation
         mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
-        _parser.SetExpr(sFileName);
+        _parser.SetExpr(sFilePath);
         mu::Array v = _parser.Eval();
-        sFileName = v.front().getStr();
+        sFilePath = v.front().getStr();
     }
 
-    // Parse the prepared file path
-    return parseFileName(sFileName, sFileExt, sBasePath);
+    return sFilePath;
 }
 
 

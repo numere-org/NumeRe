@@ -30,3 +30,4 @@ Fixed	Tables can now be loaded completely using the "keepdim" option. Omitting t
 Added	Local variables may now also be declared within control flow blocks. Note that they are only declared for the first time per execution the control reaches their command.
 Added	Tables may now be exported in MarkDown and HTML format.
 Applied	"alphamask" and "colormask" may now be used together with "marks" in "plot3d"
+Added	A search bar was added to the history to search for previous commands.

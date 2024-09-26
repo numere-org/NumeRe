@@ -360,7 +360,7 @@ void SearchCtrlPopup::OnDragStart(wxListEvent& event)
     dragSource.SetData(_dataObject);
     dragSource.DoDragDrop(wxDrag_AllowMove);
 
-    m_ListId = -1;
+    m_ListId = wxNOT_FOUND;
     Dismiss();
 }
 
@@ -400,6 +400,20 @@ void SearchCtrlPopup::Set(wxArrayString& stringArray)
                 SetItemTextColour(i, HIGHLIGHTCOLOR);
         }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the id of the selected element
+/// (if the user selected something). wxNOT_FOUND
+/// otherwise.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
+int SearchCtrlPopup::GetSelectedId() const
+{
+    return m_ListId;
 }
 
 
@@ -479,7 +493,7 @@ void SearchCtrl::OnItemSelect(wxCommandEvent& event)
 {
     wxString value = GetValue();
 
-    if (value.length())
+    if (value.length() && popUp->GetSelectedId() != wxNOT_FOUND)
     {
         if (selectItem(value))
             Clear();

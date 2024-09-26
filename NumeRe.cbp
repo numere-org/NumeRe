@@ -1685,6 +1685,28 @@
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
 		</Unit>
+		<Unit filename="gui/editor/historysearchctrl.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="gui/editor/historysearchctrl.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
 		<Unit filename="gui/editor/searchcontroller.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />

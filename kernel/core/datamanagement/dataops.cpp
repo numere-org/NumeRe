@@ -162,7 +162,7 @@ void append_data(CommandLineParser& cmdParser)
 
     // Copy the default path and the path tokens
     int nArgument = 0;
-    std::string sFileList = cmdParser.parseExprAsString();
+    std::string sFileList = cmdParser.getExprForFileOperation();
     std::string sFileFormat;
 
     if (cmdParser.hasParam("fileformat"))

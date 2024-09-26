@@ -48,7 +48,7 @@ class SearchCtrlPopup : public wxListView, public wxComboPopup
 
         virtual void Init() override
         {
-            m_ListId = -1;
+            m_ListId = wxNOT_FOUND;
             m_sizes.Add(200, 1);
             m_enableDragDrop = false;
             m_enableColors = false;
@@ -68,6 +68,7 @@ class SearchCtrlPopup : public wxListView, public wxComboPopup
         void OnDragStart(wxListEvent& event);
 
         void Set(wxArrayString& stringArray);
+        int GetSelectedId() const;
 
         /////////////////////////////////////////////////
         /// \brief Change the column sizes. Will create

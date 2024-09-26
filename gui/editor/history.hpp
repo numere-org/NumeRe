@@ -52,6 +52,7 @@ public:
     void OnMenuEvent(wxCommandEvent& event);
     void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
     void saveHistory();
+    void sendToTerminal(const wxString& line);
 
 private:
     void deleteLine();

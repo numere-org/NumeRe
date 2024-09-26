@@ -400,6 +400,22 @@ void NumeReHistory::saveHistory()
 
 
 /////////////////////////////////////////////////
+/// \brief Simple wrapper function for sending a
+/// text line to the terminal. Intended for usage
+/// from the referenced search control.
+///
+/// \param line const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReHistory::sendToTerminal(const wxString& line)
+{
+    if (line.length())
+        m_terminal->pass_command(line.ToStdString(), false);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Add the history header presenting the
 /// current date and time.
 ///
@@ -536,18 +552,19 @@ void NumeReHistory::OnMarginClick( wxStyledTextEvent &event )
 void NumeReHistory::OnMouseDblClk(wxMouseEvent& event)
 {
     int clickedLine = LineFromPosition(PositionFromPoint(event.GetPosition()));
-    wxString line = this->GetLine(clickedLine);
+    wxString line = this->GetLineText(clickedLine);
+
     if (line.substr(0,6) == "## ---")
     {
         int levelClick = this->GetFoldLevel(clickedLine);
+
         if ((levelClick & wxSTC_FOLDLEVELHEADERFLAG) > 0)
             this->ToggleFold(clickedLine);
+
         return;
     }
-    while (line[line.length()-1] == '\r' || line[line.length()-1] == '\n')
-        line.erase(line.length()-1);
-    if (line.length())
-        m_terminal->pass_command(line.ToStdString(), false);
+
+    sendToTerminal(line);
 }
 
 
