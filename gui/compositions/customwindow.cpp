@@ -2622,8 +2622,8 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            table->SetGridCursor(std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1),
-                                 std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1));
+            table->SetGridCursorSilent(std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1),
+                                       std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1));
             break;
         }
         case CustomWindow::TREELIST:
@@ -2839,6 +2839,13 @@ void CustomWindow::OnSpin(wxSpinEvent& event)
 void CustomWindow::OnCellSelect(wxGridEvent& event)
 {
     TableViewer* table = static_cast<TableViewer*>(m_windowItems[event.GetId()].second);
+
+    if (table->isSilentSelection())
+    {
+        event.Skip();
+        return;
+    }
+
     handleEvent(event,
                 "onclick",
                 EventPosition(table->GetInternalRows(event.GetRow()), event.GetCol()));

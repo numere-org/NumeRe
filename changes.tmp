@@ -31,3 +31,4 @@ Added	Local variables may now also be declared within control flow blocks. Note 
 Added	Tables may now be exported in MarkDown and HTML format.
 Applied	"alphamask" and "colormask" may now be used together with "marks" in "plot3d"
 Added	A search bar was added to the history to search for previous commands.
+Fixed	Setting a selection within "tablegrid" does not fire an "onclick" event any more.

@@ -640,6 +640,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_history = new NumeReHistory(this, m_options, historyPanel, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
     HistorySearchCtrl* histSearchCtrl = new HistorySearchCtrl(historyPanel, wxID_ANY, _guilang.get("GUI_SEARCH_HISTORY"), _guilang.get("GUI_SEARCH_CALLTIP_HISTORY"), m_history);
     historyPanel->AddWindows(histSearchCtrl, m_history);
+    historyPanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
     m_varViewer = new VariableViewer(m_noteTerm, this);
     m_procedureViewer = new ProcedureViewer(m_noteTerm);
 

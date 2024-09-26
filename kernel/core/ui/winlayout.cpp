@@ -42,11 +42,11 @@ static std::string parseOpt(const std::string& sCmd, size_t pos)
     NumeReKernel::getInstance()->getParser().SetExpr(getArgAtPos(sCmd, pos, ARGEXTRACT_NONE));
     mu::Array res = NumeReKernel::getInstance()->getParser().Eval();
 
-    if (res.size() > 1)
-    {
-        std::string val = res.print();
-        return val.substr(1, val.length()-2);
-    }
+    //if (res.size() > 1)
+    //{
+    //    std::string val = res.printVals();
+    //    return val.substr(1, val.length()-2);
+    //}
 
     return res.printVals();
 }

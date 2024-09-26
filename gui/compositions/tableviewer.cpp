@@ -87,6 +87,7 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     m_parentPanel = parentPanel;
 
     isGridNumeReTable = false;
+    isSilentCursorMove = false;
 
     if (m_statusBar)
     {
@@ -1803,6 +1804,23 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
 
 
 /////////////////////////////////////////////////
+/// \brief Set the grid cursor while storint the
+/// state that the cursor move was intended to be
+/// silent.
+///
+/// \param row int
+/// \param col int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::SetGridCursorSilent(int row, int col)
+{
+    isSilentCursorMove = true;
+    SetGridCursor(row, col);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function creates an empty
 /// table of some size.
 ///
@@ -2319,6 +2337,20 @@ void TableViewer::groupHeaders(int startCol, int endCol, int row)
             }
         }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Was the last cursor move a silent move?
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TableViewer::isSilentSelection()
+{
+    bool isSilent = isSilentCursorMove;
+    isSilentCursorMove = false;
+    return isSilent;
 }
 
 

@@ -46,6 +46,7 @@ class TableViewer : public wxGrid
         size_t nFirstNumRow;
         bool readOnly;
         bool isGridNumeReTable;
+        bool isSilentCursorMove;
         wxGridCellCoords lastCursorPosition;
         wxGridCellCoords selectionStart;
         wxGridCellCoordsArray selectedCells;
@@ -106,6 +107,7 @@ class TableViewer : public wxGrid
         NumeRe::Table GetDataCopy();
 
         void SetTableReadOnly(bool isReadOnly = true);
+        void SetGridCursorSilent(int row, int col);
         void SetDefaultSize(size_t rows = 1, size_t cols = 1) __attribute__ ((deprecated));
         void OnLabelRightClick(wxGridEvent& event);
         void OnCellRightClick(wxGridEvent& event);
@@ -117,6 +119,7 @@ class TableViewer : public wxGrid
         void changeColType();
         void finalize();
         void groupHeaders(int startCol, int endCol, int row);
+        bool isSilentSelection();
 
         wxString getSelectedValues();
         int GetInternalRows(int gridrow) const;
