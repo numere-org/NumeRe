@@ -127,7 +127,12 @@ static void evaluateExpression(std::string& sExpr)
         if (sExpr.length())
             sExpr += ",";
 
-        sExpr += v[i].print(7);
+        std::string sVal = v[i].print(7);
+
+        if (sVal.front() == '{' && sVal.back() == '}')
+            sExpr += sVal.substr(1, sVal.length()-2);
+        else
+            sExpr += sVal;
     }
 }
 
@@ -463,6 +468,10 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
         if (cmdParser.hasParam("prop"))
         {
             std::string varname = cmdParser.getParsedParameterValueAsString("prop", "");
+
+            if (winInfo.window->getProperties().find("\"" + varname + "\"") == std::string::npos)
+                throw SyntaxError(SyntaxError::INVALID_WINDOW_PROP, cmdParser.getCommandLine(), varname, varname);
+
             cmdParser.setReturnValue(winInfo.window->getPropValue(varname));
         }
         else

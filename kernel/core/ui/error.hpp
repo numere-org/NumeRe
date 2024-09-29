@@ -140,6 +140,7 @@ class SyntaxError
             INVALID_REGEX,
             INVALID_WINDOW_ID,
             INVALID_WINDOW_ITEM_ID,
+            INVALID_WINDOW_PROP,
             INVALID_SYM_NAME,
             INVALID_FLOWCTRL_STATEMENT,
             INVALID_STATS_WINDOW_SIZE,
