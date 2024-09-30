@@ -1062,6 +1062,167 @@ mu::Array numfnc_order(const mu::Array* v, int n)
 
 
 /////////////////////////////////////////////////
+/// \brief Function for determining, whether all
+/// elements are equal.
+///
+/// \param arr const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_is_equal(const mu::Array* arr, int n)
+{
+    if (n == 1)
+    {
+        for (size_t i = 1; i < arr[0].size(); i++)
+        {
+            if (arr[0][i] != arr[0][0])
+                return mu::Value(false);
+        }
+
+        return mu::Value(true);
+    }
+
+    for (int i = 1; i < n; i++)
+    {
+        if (arr[i].front() != arr[0].front())
+            return mu::Value(false);
+    }
+
+    return mu::Value(true);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function or determining, whether the
+/// elements are sorted ascending.
+///
+/// \param arr const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_is_ordered(const mu::Array* arr, int n)
+{
+    if (n == 1)
+    {
+        for (size_t i = 1; i < arr[0].size(); i++)
+        {
+            if (arr[0][i-1] > arr[0][i])
+                return mu::Value(false);
+        }
+
+        return mu::Value(true);
+    }
+
+    for (int i = 1; i < n; i++)
+    {
+        if (arr[i-1].front() > arr[i].front())
+            return mu::Value(false);
+    }
+
+    return mu::Value(true);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function for determining, whether only
+/// unique elements are in an array.
+///
+/// \param arr const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_is_unique(const mu::Array* arr, int n)
+{
+    mu::Array order = numfnc_order(arr, n);
+
+    if (n == 1)
+    {
+        for (size_t i = 1; i < order.size(); i++)
+        {
+            if (arr[0][order[i-1].getNum().asI64()-1] == arr[0][order[i].getNum().asI64()-1])
+                return mu::Value(false);
+        }
+
+        return mu::Value(true);
+    }
+
+    for (int i = 1; i < n; i++)
+    {
+        if (arr[order[i-1].getNum().asI64()-1].front() == arr[order[i].getNum().asI64()-1].front())
+            return mu::Value(false);
+    }
+
+    return mu::Value(true);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function for determining the
+/// corresponding percentile of a passed value
+/// for an array (the value does not have to be
+/// part of the array).
+///
+/// \param arr const mu::Array&
+/// \param pct const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct)
+{
+    mu::Array order = numfnc_order(&arr, 1);
+    mu::Array pctInv;
+
+    for (size_t i = 0; i < pct.size(); i++)
+    {
+        for (size_t j = 0; j < order.size(); j++)
+        {
+            if (arr[order[j].getNum().asI64()-1] > pct[i])
+            {
+                if (j)
+                    pctInv.push_back(mu::Value((j-0.5)/(order.size()-1.0)));
+                else
+                    pctInv.push_back(mu::Value(-INFINITY));
+
+                break;
+            }
+
+            if (arr[order[j].getNum().asI64()-1] == pct[i])
+            {
+                pctInv.push_back(mu::Value(j/(order.size()-1.0)));
+
+                // There might be more values to consider, if the following
+                // value also equals the comparison value
+                if (j+1 < order.size() && arr[order[j+1].getNum().asI64()-1] == pct[i])
+                {
+                    for (size_t k = j+1; k < order.size(); k++)
+                    {
+                        if (arr[order[k].getNum().asI64()-1] > pct[i])
+                        {
+                            pctInv.push_back(mu::Value((k-1)/(order.size()-1.0)));
+                            break;
+                        }
+
+                        if (k+1 == order.size())
+                            pctInv.push_back(mu::Value(1.0));
+                    }
+                }
+
+                break;
+            }
+
+            if (j+1 == order.size())
+                pctInv.push_back(mu::Value(INFINITY));
+        }
+    }
+
+    return pctInv;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function summarizes all elements
 /// in the passed array.
 ///
