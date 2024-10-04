@@ -603,7 +603,7 @@ static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, I
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-    vSortIndex = cluster.sortElements(_idx.row.front(), _idx.row.back(), cmdParser.getParameterList());
+    vSortIndex = cluster.sortElements(_idx.row, cmdParser.getParameterList());
 
     // If the sorting index contains elements, the user had requested them
     if (vSortIndex.size())
@@ -663,7 +663,7 @@ bool sortData(CommandLineParser& cmdParser)
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
     vSortIndex = _data.sortElements(_accessParser.getDataObject(),
-                                    _idx.row.front(), _idx.row.last(), _idx.col.front(), _idx.col.last(),
+                                    _idx.row, _idx.col,
                                     cmdParser.getParameterList());
 
     // If the sorting index contains elements, the user had requested them

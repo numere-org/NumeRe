@@ -1573,15 +1573,13 @@ long long int Memory::getLastSaved() const
 /// the control to the corresponding sorting
 /// function.
 ///
-/// \param i1 int
-/// \param i2 int
-/// \param j1 int
-/// \param j2 int
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
 /// \param sSortingExpression const std::string&
-/// \return vector<int>
+/// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::string& sSortingExpression)
+std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression)
 {
     if (!memArray.size())
         return vector<int>();
@@ -1591,24 +1589,17 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
     bSortCaseInsensitive = findParameter(sSortingExpression, "ignorecase");
     int nSign = 1;
 
-    i1 = std::max(0, i1);
-    j1 = std::max(0, j1);
+    _vLine.setOpenEndIndex(getLines()-1);
+    _vCol.setOpenEndIndex(getCols()-1);
 
-    vector<int> vIndex;
+    std::vector<int> vIndex;
 
     // Determine the sorting direction
     if (findParameter(sSortingExpression, "desc"))
         nSign = -1;
 
-    if (i2 == -1)
-        i2 = i1;
-
-    if (j2 == -1)
-        j2 = j1;
-
     // Prepare the sorting index
-    for (int i = i1; i <= i2; i++)
-        vIndex.push_back(i);
+    vIndex = _vLine.getVector();
 
     // Evaluate, whether an index shall be returned
     // (instead of actual reordering the columns)
@@ -1625,14 +1616,14 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
         // Sort everything independently (we use vIndex from
         // the outside, we therefore must declare it as firstprivate)
         #pragma omp parallel for firstprivate(vPrivateIndex)
-        for (int i = j1; i <= j2; i++)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
             // Change for OpenMP
-            if (i > j1 && bReturnIndex)
+            if (j && bReturnIndex)
                 continue;
 
             // Sort the current column
-            if (!qSort(&vPrivateIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
+            if (!qSort(&vPrivateIndex[0], vPrivateIndex.size(), _vCol[j], 0, vPrivateIndex.size()-1, nSign))
                 throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
 
             // Abort after the first column, if
@@ -1645,11 +1636,10 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
             }
 
             // Actually reorder the column
-            reorderColumn(vPrivateIndex, i1, i2, i);
+            reorderColumn(vPrivateIndex, _vLine, _vCol[j]);
 
             // Reset the sorting index
-            for (int j = i1; j <= i2; j++)
-                vPrivateIndex[j-i1] = j;
+            vPrivateIndex = _vLine.getVector();
         }
     }
     else
@@ -1666,25 +1656,28 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 
         // As long as the column group definition
         // has a length
-        while (sCols.length())
+        if (sCols.length())
         {
             // Get a new column keys instance
-            ColumnKeys* keys = evaluateKeyList(sCols, j2 - j1 + 1);
+            ColumnKeys* keys = evaluateKeyList(sCols, _vCol.size());
 
             // Ensure that we obtained an actual
             // instance
             if (!keys)
-                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE,  sSortingExpression, SyntaxError::invalid_position);
-
-            if (keys->nKey[1] == -1)
-                keys->nKey[1] = keys->nKey[0] + 1;
+                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
 
             // Go through the group definition
-            for (int j = keys->nKey[0]; j < keys->nKey[1]; j++)
+            for (size_t j = 0; j < keys->cols.size(); j++)
             {
+                if (keys->cols[j] >= _vCol.size() || keys->cols[j] < 0)
+                {
+                    delete keys;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sSortingExpression, SyntaxError::invalid_position);
+                }
+
                 // Sort the current key list level
                 // independently
-                if (!qSort(&vIndex[0], i2 - i1 + 1, j + j1, 0, i2 - i1, nSign))
+                if (!qSort(&vIndex[0], vIndex.size(), _vCol[keys->cols[j]], 0, vIndex.size()-1, nSign))
                 {
                     delete keys;
                     throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
@@ -1694,7 +1687,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
                 // depending on the higher-level key group
                 if (keys->subkeys && keys->subkeys->subkeys)
                 {
-                    if (!sortSubList(&vIndex[0], i2 - i1 + 1, keys, i1, i2, j1, nSign, getCols(false)))
+                    if (!sortSubList(&vIndex[0], vIndex.size(), keys, 0, vIndex.size()-1, _vCol, nSign, getCols(false)))
                     {
                         delete keys;
                         throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
@@ -1706,7 +1699,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
                     break;
 
                 // Actually reorder the current column
-                reorderColumn(vIndex, i1, i2, j + j1);
+                reorderColumn(vIndex, _vLine, _vCol[keys->cols[j]]);
 
                 // Obtain the subkey list
                 ColumnKeys* subKeyList = keys->subkeys;
@@ -1714,27 +1707,30 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
                 // As long as a subkey list is available
                 while (subKeyList)
                 {
-                    if (subKeyList->nKey[1] == -1)
-                        subKeyList->nKey[1] = subKeyList->nKey[0] + 1;
-
                     // Reorder the subordinate key list
-                    for (int _j = subKeyList->nKey[0]; _j < subKeyList->nKey[1]; _j++)
-                        reorderColumn(vIndex, i1, i2, _j + j1);
+                    for (size_t _j = 0; _j < subKeyList->cols.size(); _j++)
+                    {
+                        if (subKeyList->cols[_j] >= _vCol.size() || subKeyList->cols[_j] < 0)
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sSortingExpression, SyntaxError::invalid_position);
+
+                        reorderColumn(vIndex, _vLine, _vCol[subKeyList->cols[_j]]);
+                    }
 
                     // Find the next subordinate list
                     subKeyList = subKeyList->subkeys;
                 }
 
+                // Hierarchical sorting does not allow havin multiple columns in
+                // their parent hierarchy
+                if (keys->subkeys && keys->subkeys->subkeys)
+                    break;
+
                 // Reset the sorting index for the next column
-                for (int _j = i1; _j <= i2; _j++)
-                    vIndex[_j-i1] = _j;
+                vIndex = _vLine.getVector();
             }
 
             // Free the occupied memory
             delete keys;
-
-            if (bReturnIndex)
-                break;
         }
     }
 
@@ -1745,14 +1741,14 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
     // vector shall be returned
     if (bReturnIndex)
     {
-        for (int i = 0; i <= i2 - i1; i++)
+        for (size_t i = 0; i < vIndex.size(); i++)
             vIndex[i]++;
     }
 
     m_meta.modify();
 
     if (bError || !bReturnIndex)
-        return vector<int>();
+        return std::vector<int>();
 
     return vIndex;
 }
@@ -1764,19 +1760,18 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 /// passed index vector.
 ///
 /// \param vIndex const VectorIndex&
-/// \param i1 int
-/// \param i2 int
-/// \param j1 int
+/// \param original const VectorIndex&
+/// \param col int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1)
+void Memory::reorderColumn(const VectorIndex& vIndex, const VectorIndex& original, int col)
 {
-    if ((int)memArray.size() > j1 && memArray[j1])
+    if ((int)memArray.size() > col && memArray[col])
     {
-        TblColPtr col(memArray[j1]->copy(vIndex));
-        memArray[j1]->insert(VectorIndex(i1, i2), col.get());
-        memArray[j1]->shrink();
+        TblColPtr copied(memArray[col]->copy(vIndex));
+        memArray[col]->insert(original, copied.get());
+        memArray[col]->shrink();
     }
 }
 
@@ -4130,7 +4125,7 @@ std::vector<std::complex<double>> Memory::getRank(size_t col, const VectorIndex&
     Memory _mem(1);
     _mem.memArray.back().reset(memArray[col]->copy(_vIndex));
 
-    std::vector<int> vIndex = _mem.sortElements(0, _mem.getLines(false)-1, 0, -1, "-index");
+    std::vector<int> vIndex = _mem.sortElements(VectorIndex(0, _mem.getLines(false)-1), VectorIndex(0), "-index");
     std::vector<std::complex<double>> vRank(1, 1.0);
     size_t nEqualRanks = 0;
 

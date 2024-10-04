@@ -375,7 +375,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 
 		// TABLE INPLACE MODIFICATION METHODS
 		std::vector<int> sortElements(const std::string& sLine);
-		std::vector<int> sortElements(const std::string& sCache, int i1, int i2, int j1 = 0, int j2 = 0, const std::string& sSortingExpression = "");
+		std::vector<int> sortElements(const std::string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression = "");
 
 		inline bool smooth(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const NumeRe::FilterSettings& _settings, AppDir Direction = ALL)
 		{

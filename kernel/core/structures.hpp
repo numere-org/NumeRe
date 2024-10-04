@@ -3241,12 +3241,12 @@ struct DefaultVariables
 /////////////////////////////////////////////////
 struct ColumnKeys
 {
-    int nKey[2];
+    VectorIndex cols;
     // Contains a recursive pointer
     ColumnKeys* subkeys;
 
     // Default constructor
-    ColumnKeys() : nKey{-1,-1}, subkeys(nullptr) {}
+    ColumnKeys() : cols(), subkeys(nullptr) {}
     // Destructor recursively deletes the stored pointers
     ~ColumnKeys()
         {

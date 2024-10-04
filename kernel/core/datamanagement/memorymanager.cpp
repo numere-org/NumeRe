@@ -201,22 +201,20 @@ long long int MemoryManager::getLastSaved() const
 /// parameter string before delegating to the
 /// actual implementation.
 ///
-/// \param sLine const string&
-/// \return vector<int>
+/// \param sLine const std::string&
+/// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-vector<int> MemoryManager::sortElements(const string& sLine)
+std::vector<int> MemoryManager::sortElements(const std::string& sLine)
 {
     if (!isValid())
-        return vector<int>();
+        return std::vector<int>();
 
-    string sCache;
-    string sSortingExpression = "-set";
+    std::string sCache;
+    std::string sSortingExpression = "-set";
 
     if (findCommand(sLine).sString != "sort")
-    {
         sCache = findCommand(sLine).sString;
-    }
 
     if (findParameter(sLine, "sort", '='))
     {
@@ -251,7 +249,9 @@ vector<int> MemoryManager::sortElements(const string& sLine)
     if (findParameter(sLine, "index"))
         sSortingExpression += " index";
 
-    return vMemory[findTable(sCache)]->sortElements(0, getLines(sCache, false)-1, 0, getCols(sCache, false)-1, sSortingExpression);
+    return vMemory[findTable(sCache)]->sortElements(VectorIndex(0, getLines(sCache, false)-1),
+                                                    VectorIndex(0, getCols(sCache, false)-1),
+                                                    sSortingExpression);
 }
 
 
@@ -260,18 +260,16 @@ vector<int> MemoryManager::sortElements(const string& sLine)
 /// selected table to sort its contents according
 /// the passed parameter set.
 ///
-/// \param sCache const string&
-/// \param i1 int
-/// \param i2 int
-/// \param j1 int
-/// \param j2 int
-/// \param sSortingExpression const string&
-/// \return vector<int>
+/// \param sCache const std::string&
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \param sSortingExpression const std::string&
+/// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-vector<int> MemoryManager::sortElements(const string& sCache, int i1, int i2, int j1, int j2, const string& sSortingExpression)
+std::vector<int> MemoryManager::sortElements(const std::string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression)
 {
-    return vMemory[findTable(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
+    return vMemory[findTable(sCache)]->sortElements(_vLine, _vCol, sSortingExpression);
 }
 
 

@@ -334,7 +334,7 @@ namespace NumeRe
             void assignVectorResults(Indices _idx, const mu::Array& data);
             virtual int compare(int i, int j, int col) override;
             virtual bool isValue(int line, int col) override;
-            void reorderElements(std::vector<int> vIndex, int i1, int i2);
+            void reorderElements(std::vector<int> vIndex, const VectorIndex& original);
             void reduceSize(size_t z);
 
         public:
@@ -416,7 +416,7 @@ namespace NumeRe
             std::string getVectorRepresentation() const;
             std::string getShortVectorRepresentation(size_t maxStringLength) const;
 
-            std::vector<int> sortElements(long long int i1, long long int i2, const std::string& sSortingExpression);
+            std::vector<int> sortElements(const VectorIndex& row, const std::string& sSortingExpression);
             void deleteItems(long long int i1, long long int i2);
             void deleteItems(const VectorIndex& vLines);
 

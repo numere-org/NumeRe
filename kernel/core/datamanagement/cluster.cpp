@@ -236,20 +236,19 @@ namespace NumeRe
     /// passed index vector.
     ///
     /// \param vIndex std::vector<int>
-    /// \param i1 int
-    /// \param i2 int
+    /// \param original const VectorIndex&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::reorderElements(std::vector<int> vIndex, int i1, int i2)
+    void Cluster::reorderElements(std::vector<int> vIndex, const VectorIndex& original)
     {
         std::vector<ClusterItem*> vSortVector = vClusterArray;
 
         // Copy the contents directly from the
         // prepared in the new order
-        for (int i = 0; i <= i2-i1; i++)
+        for (size_t i = 0; i < original.size(); i++)
         {
-            vClusterArray[i+i1] = vSortVector[vIndex[i]];
+            vClusterArray[original[i]] = vSortVector[vIndex[i]];
         }
     }
 
@@ -1167,13 +1166,12 @@ namespace NumeRe
     /// access to the sorting algorithm for the
     /// cluster object.
     ///
-    /// \param i1 long longint
-    /// \param i2 long longint
+    /// \param row const VectorIndex&
     /// \param sSortingExpression const std::string&
     /// \return std::vector<int>
     ///
     /////////////////////////////////////////////////
-    std::vector<int> Cluster::sortElements(long long int i1, long long int i2, const std::string& sSortingExpression)
+    std::vector<int> Cluster::sortElements(const VectorIndex& row, const std::string& sSortingExpression)
     {
         if (!vClusterArray.size())
             return std::vector<int>();
@@ -1194,29 +1192,20 @@ namespace NumeRe
             bReturnIndex = true;
 
         // Prepare the indices
-        if (i2 == -1)
-            i2 = i1;
-
-        // Create the sorting index
-        for (int i = i1; i <= i2; i++)
-            vIndex.push_back(i);
+        vIndex = row.getVector();
 
         // Sort everything
-        if (!qSort(&vIndex[0], i2-i1+1, 0, 0, i2-i1, nSign))
-        {
+        if (!qSort(&vIndex[0], vIndex.size(), 0, 0, vIndex.size()-1, nSign))
             throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, "cluster{} " + sSortingExpression, SyntaxError::invalid_position);
-        }
 
         // If the sorting index is requested,
         // then only sort the first column and return
         if (!bReturnIndex)
-        {
-            reorderElements(vIndex, i1, i2);
-        }
+            reorderElements(vIndex, row);
         else
         {
             // If the index was requested, increment every index by one
-            for (int i = 0; i <= i2-i1; i++)
+            for (size_t i = 0; i < vIndex.size(); i++)
                 vIndex[i]++;
         }
 

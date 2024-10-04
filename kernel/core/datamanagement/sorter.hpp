@@ -45,10 +45,10 @@ class Sorter
         bool qSort(int* nIndex, int nElements, int nColumn, long long int nLeft, long long int nRight, int nSign);
 
         // Function for hierarchical sorting
-        bool sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign, long long int nColumns);
+        bool sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long long int i1, long long int i2, const VectorIndex& _vCol, int nSign, long long int nColumns);
 
         // Function for preparing the ColumnKeys object based upon the passed string
-        ColumnKeys* evaluateKeyList(std::string& sKeyList, long long int nColumnCount);
+        ColumnKeys* evaluateKeyList(std::string sKeyList, long long int nColumnCount);
 
 };
 

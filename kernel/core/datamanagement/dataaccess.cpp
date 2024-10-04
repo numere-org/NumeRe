@@ -2388,7 +2388,9 @@ Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, i
     _mem = _mem->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
 
     if (bSort)
-        _mem->sortElements(0, _mem->getLines() - 1, 0, _mem->getCols() - 1, "-c=1[2:]");
+        _mem->sortElements(VectorIndex(0, _mem->getLines() - 1),
+                           VectorIndex(0, _mem->getCols() - 1),
+                           "-c=1[2:]");
 
     return _mem;
 }

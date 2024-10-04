@@ -105,7 +105,7 @@ class Memory : public Sorter
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		void reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1 = 0);
+		void reorderColumn(const VectorIndex& vIndex, const VectorIndex& original, int col = 0);
 		virtual int compare(int i, int j, int col) override;
         virtual bool isValue(int line, int col) override;
 		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);
@@ -172,7 +172,7 @@ class Memory : public Sorter
         bool getSaveStatus() const;
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;
-        std::vector<int> sortElements(int i1, int i2, int j1 = 0, int j2 = 0, const std::string& sSortingExpression = "");
+        std::vector<int> sortElements(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression = "");
         void deleteEntry(int _nLine, int _nCol);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
         NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines, const VectorIndex& cols);
