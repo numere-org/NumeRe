@@ -30,6 +30,58 @@
 using namespace std;
 
 
+/////////////////////////////////////////////////
+/// \brief Simple structure for an one-
+/// dimensional moving window.
+/////////////////////////////////////////////////
+struct SingleWindow
+{
+    size_t width;
+    size_t step;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief Defines a set of two one-dimensional
+/// moving windows: one for rows, one for cols.
+/////////////////////////////////////////////////
+struct WindowSet
+{
+    SingleWindow rowWin;
+    SingleWindow colWin;
+
+    WindowSet(const std::string& sWinDef)
+    {
+        rowWin.width = 0;
+        rowWin.step = 1;
+        colWin.width = 0;
+        colWin.step = 1;
+
+        if (sWinDef.find("window=(") != std::string::npos)
+        {
+            mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+
+            // Isolate the parenthesis
+            StringView winDef(sWinDef, sWinDef.find("window=(") + 7);
+            winDef.remove_from(getMatchingParenthesis(winDef));
+
+            // Assign and evaluate
+            _parser.SetExpr(winDef.subview(1));
+            int nRes = 0;
+            mu::Array* a = _parser.Eval(nRes);
+
+            if (nRes == 2)
+            {
+                rowWin.width = a[0][0].getNum().asUI64();
+                colWin.width = a[0][1].getNum().asUI64();
+                rowWin.step = std::max((uint64_t)1, a[1][0].getNum().asUI64());
+                colWin.step = std::max((uint64_t)1, a[1][1].getNum().asUI64());
+            }
+        }
+    }
+};
+
+
 /*
  * Realisierung der Cache-Klasse
  */
@@ -782,9 +834,16 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
     }
 
     // Get the vector index corresponding to a possible
-    // every definition
+    // every or cell definition
     VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTableName);
     VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTableName);
+
+    // Get the moving window definition
+    WindowSet win(sDir);
+
+    // Validate the window set
+    win.colWin.width = std::min(win.colWin.width, (size_t)ncols);
+    win.rowWin.width = std::min(win.rowWin.width, (size_t)nlines);
 
     // Resolve the actual call to the MAF
     if (sDir.find("cols") != std::string::npos)
@@ -794,7 +853,22 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
             if (_everyIdx[i]+nGridOffset < 0 || _everyIdx[i]+nGridOffset >= ncols)
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, _cellsIdx, VectorIndex(_everyIdx[i]+nGridOffset)));
+            // Handle a possible moving window
+            if (win.rowWin.width)
+            {
+                size_t nCurStep = 0;
+
+                // As long as the window fits the indices
+                while (nCurStep+win.rowWin.width <= _cellsIdx.size())
+                {
+                    vResults.push_back((this->*MAF)(sTableName,
+                                                    _cellsIdx.subidx(nCurStep, win.rowWin.width),
+                                                    VectorIndex(_everyIdx[i]+nGridOffset)));
+                    nCurStep += win.rowWin.step;
+                }
+            }
+            else
+                vResults.push_back((this->*MAF)(sTableName, _cellsIdx, VectorIndex(_everyIdx[i]+nGridOffset)));
         }
     }
     else if (sDir.find("lines") != std::string::npos)
@@ -806,7 +880,22 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
             if (_everyIdx[i] < 0 || _everyIdx[i] >= nlines)
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, VectorIndex(_everyIdx[i]), _cellsIdx));
+            // Handle a possible moving window
+            if (win.colWin.width)
+            {
+                size_t nCurStep = 0;
+
+                // As long as the window fits the indices
+                while (nCurStep+win.colWin.width <= _cellsIdx.size())
+                {
+                    vResults.push_back((this->*MAF)(sTableName,
+                                                    VectorIndex(_everyIdx[i]),
+                                                    _cellsIdx.subidx(nCurStep, win.colWin.width)));
+                    nCurStep += win.colWin.step;
+                }
+            }
+            else
+                vResults.push_back((this->*MAF)(sTableName, VectorIndex(_everyIdx[i]), _cellsIdx));
         }
     }
     else

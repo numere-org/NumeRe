@@ -1028,6 +1028,24 @@ static std::string createMafDataAccessString(const std::string& sAccessString, m
 {
     std::string sDataMaf;
 
+    if (sAccessString.find(".scwin(") != std::string::npos)
+    {
+        StringView argList(sAccessString, sAccessString.find(".scwin(")+6);
+        argList.remove_from(getMatchingParenthesis(argList));
+        EndlessVector<StringView> args = getAllArguments(argList.subview(1));
+        sDataMaf += "cols window=({" + args[1].to_string() + ",0},{" + (args[2].length() ? args[2].to_string() : std::string("1")) + ",1}) "
+            + createEveryCellDefinition(".every({" + args[0].to_string() + "})", "every", _parser);
+    }
+
+    if (sAccessString.find(".srwin(") != std::string::npos)
+    {
+        StringView argList(sAccessString, sAccessString.find(".srwin(")+6);
+        argList.remove_from(getMatchingParenthesis(argList));
+        EndlessVector<StringView> args = getAllArguments(argList.subview(1));
+        sDataMaf += "lines window=({0," + args[1].to_string() + "},{1," + (args[2].length() ? args[2].to_string() : std::string("1")) + "}) "
+            + createEveryCellDefinition(".every({" + args[0].to_string() + "})", "every", _parser);
+    }
+
     if (sAccessString.find(".grid") != std::string::npos)
         sDataMaf += "grid";
 
