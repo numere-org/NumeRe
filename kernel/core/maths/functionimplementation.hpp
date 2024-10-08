@@ -158,7 +158,10 @@ mu::Array timfnc_is_daylightsavingtime(const mu::Array&);
 mu::Array timfnc_is_leap_year(const mu::Array&);
 
 // Distribution functions
-mu::Array rndfnc_perlin(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=6
+mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence); // OPT=6
+mu::Array rndfnc_rigedmultifractal(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave); // OPT=5
+mu::Array rndfnc_billow(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence); // OPT=6
+mu::Array rndfnc_voronoi(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& displacement, const mu::Array& usedistance); // OPT=6
 mu::Array rndfnc_Random(const mu::Array& xmin, const mu::Array& xmax, const mu::Array& n); // OPT=1
 mu::Array rndfnc_gRandom(const mu::Array& avg, const mu::Array& stdev, const mu::Array& n); // OPT=1
 mu::Array rndfnc_laplace_rd(const mu::Array& a, const mu::Array& n); // OPT=1

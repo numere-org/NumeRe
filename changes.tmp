@@ -35,3 +35,4 @@ Fixed	Setting a selection within "tablegrid" does not fire an "onclick" event an
 Added	Functions were added: "is_equal()", "is_ordered()", "is_unique()" and "inv_pct()"
 Fixed	The command "sort" has been improved and surprising behaviors have been removed.
 Added	Table method modifiers ".scwin()" and ".srwin()" have been added and can be used to define a moving window for multi argument functions.
+New	Additional coherent noise functions were added: "ridgedmulti()", "billownoise()", "voronoinoise()"

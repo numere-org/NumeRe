@@ -939,6 +939,158 @@ mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array&
 
 
 /////////////////////////////////////////////////
+/// \brief This function implements the riged-
+/// multifractal noise function.
+///
+/// \param x const mu::Array&
+/// \param y const mu::Array& OPTIONAL
+/// \param z const mu::Array& OPTIONAL
+/// \param seed const mu::Array& OPTIONAL
+/// \param freq const mu::Array& OPTIONAL
+/// \param octave const mu::Array& OPTIONAL
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array rndfnc_rigedmultifractal(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave)
+{
+    noise::module::RidgedMulti rigedMultiNoise;
+
+    mu::Array res;
+
+    for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size()}); i++)
+    {
+        if (!octave.isDefault())
+            rigedMultiNoise.SetOctaveCount(octave.get(i).getNum().asI64());
+
+        if (!freq.isDefault())
+            rigedMultiNoise.SetFrequency(freq.get(i).getNum().asF64());
+
+        if (!seed.isDefault())
+            rigedMultiNoise.SetSeed(seed.get(i).getNum().asI64());
+
+        if (z.isDefault() && y.isDefault())
+            res.push_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                   0,
+                                                   0));
+        else if (z.isDefault())
+            res.push_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                   y.get(i).getNum().asF64(),
+                                                   0));
+        else
+            res.push_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                   y.get(i).getNum().asF64(),
+                                                   z.get(i).getNum().asF64()));
+    }
+
+    return res;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the billow
+/// noise function.
+///
+/// \param x const mu::Array&
+/// \param y const mu::Array& OPTIONAL
+/// \param z const mu::Array& OPTIONAL
+/// \param seed const mu::Array& OPTIONAL
+/// \param freq const mu::Array& OPTIONAL
+/// \param octave const mu::Array& OPTIONAL
+/// \param persistence const mu::Array& OPTIONAL
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array rndfnc_billow(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence)
+{
+    noise::module::Billow billowNoise;
+
+    mu::Array res;
+
+    for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}); i++)
+    {
+        if (!persistence.isDefault())
+            billowNoise.SetPersistence(persistence.get(i).getNum().asF64());
+
+        if (!octave.isDefault())
+            billowNoise.SetOctaveCount(octave.get(i).getNum().asI64());
+
+        if (!freq.isDefault())
+            billowNoise.SetFrequency(freq.get(i).getNum().asF64());
+
+        if (!seed.isDefault())
+            billowNoise.SetSeed(seed.get(i).getNum().asI64());
+
+        if (z.isDefault() && y.isDefault())
+            res.push_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
+                                               0,
+                                               0));
+        else if (z.isDefault())
+            res.push_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
+                                               y.get(i).getNum().asF64(),
+                                               0));
+        else
+            res.push_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
+                                               y.get(i).getNum().asF64(),
+                                               z.get(i).getNum().asF64()));
+    }
+
+    return res;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the voronoi
+/// noise function.
+///
+/// \param x const mu::Array&
+/// \param y const mu::Array& OPTIONAL
+/// \param z const mu::Array& OPTIONAL
+/// \param seed const mu::Array& OPTIONAL
+/// \param freq const mu::Array& OPTIONAL
+/// \param displacement const mu::Array& OPTIONAL
+/// \param usedistance const mu::Array& OPTIONAL
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array rndfnc_voronoi(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& displacement, const mu::Array& usedistance)
+{
+    noise::module::Voronoi voronoiNoise;
+
+    mu::Array res;
+
+    for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), displacement.size(), usedistance.size()}); i++)
+    {
+        if (!usedistance.isDefault())
+            voronoiNoise.EnableDistance(usedistance.get(i).getNum().asI64() != 0);
+
+        if (!displacement.isDefault())
+            voronoiNoise.SetDisplacement(displacement.get(i).getNum().asF64());
+
+        if (!freq.isDefault())
+            voronoiNoise.SetFrequency(freq.get(i).getNum().asF64());
+
+        if (!seed.isDefault())
+            voronoiNoise.SetSeed(seed.get(i).getNum().asI64());
+
+        if (z.isDefault() && y.isDefault())
+            res.push_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                0,
+                                                0));
+        else if (z.isDefault())
+            res.push_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                y.get(i).getNum().asF64(),
+                                                0));
+        else
+            res.push_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                y.get(i).getNum().asF64(),
+                                                z.get(i).getNum().asF64()));
+    }
+
+    return res;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Adaption of the logtoidx() function
 /// for 1D data arrays.
 ///
