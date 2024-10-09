@@ -52,6 +52,7 @@ struct CellValueShaderCondition
         CT_NOT_EQUALS_VAL,
         CT_EQUALS_STR,
         CT_NOT_EQUALS_STR,
+        CT_EQUALS_ARRAY,
         CT_FIND_STR,
         CT_NOT_FIND_STR
     };
@@ -151,6 +152,16 @@ class CellValueShader
 
                     return m_colorArray.front();
                 }
+                case CellValueShaderCondition::CT_EQUALS_ARRAY:
+                {
+                    for (size_t i = 0; i < std::min(m_colorArray.size(), m_condition.m_vals.size()); i++)
+                    {
+                        if (m_condition.m_vals[i] == val)
+                            return m_colorArray[i];
+                    }
+
+                    break;
+                }
                 case CellValueShaderCondition::CT_LESS_THAN:
                 {
                     if (val.real() < m_condition.m_vals.front().real())
@@ -216,6 +227,7 @@ class CellValueShader
         {
             auto removeQuotes = [](const wxString& strVal) {return strVal[0] == '"' && strVal[strVal.length()-1] == '"'
                                                             ? strVal.substr(1, strVal.length()-2) : strVal;};
+
             if (m_condition.m_type == CellValueShaderCondition::CT_EQUALS_STR)
             {
                 if (std::find(m_condition.m_strs.begin(), m_condition.m_strs.end(), removeQuotes(strVal)) != m_condition.m_strs.end())
@@ -227,6 +239,14 @@ class CellValueShader
                     return *wxWHITE;
 
                 return m_colorArray.front();
+            }
+            else if (CellValueShaderCondition::CT_EQUALS_ARRAY)
+            {
+                for (size_t i = 0; i < std::min(m_colorArray.size(), m_condition.m_strs.size()); i++)
+                {
+                    if (m_condition.m_strs[i] == removeQuotes(strVal))
+                        return m_colorArray[i];
+                }
             }
             else if (m_condition.m_type == CellValueShaderCondition::CT_FIND_STR)
             {
@@ -268,6 +288,11 @@ class CellValueShaderDialog : public wxDialog
         TextField* m_lt_gt_value;
         wxColourPickerCtrl* m_lt_gt_colour;
 
+        // Category values page attributes
+        static const size_t m_field_count = 16;
+        TextField* m_category_value[m_field_count];
+        wxColourPickerCtrl* m_category_colour[m_field_count];
+
         // Intervall page attributes
         TextField* m_interval_start;
         TextField* m_interval_end;
@@ -281,6 +306,7 @@ class CellValueShaderDialog : public wxDialog
         // Statics to be updated everytime the
         // user clicks on "Apply"
         static wxColour LEVELCOLOUR;
+        static wxColour CATEGORYCOLOUR[m_field_count];
         static wxColour LOWERCOLOUR;
         static wxColour MINCOLOUR;
         static wxColour MEDCOLOUR;
@@ -298,6 +324,7 @@ class CellValueShaderDialog : public wxDialog
         enum
         {
             LT_GT_EQ,
+            CATEGORY,
             INTERVAL,
             INTERVAL_EXCL
         };
@@ -344,6 +371,36 @@ class CellValueShaderDialog : public wxDialog
             hsizer->Add(m_lt_gt_colour, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
             m_book->AddPage(_panel, _guilang.get("GUI_DLG_CVS_LT_GT_EQ"));
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This private member function creates
+        /// the category value comparison page.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void createCategoryPage()
+        {
+            GroupPanel* _panel = new GroupPanel(m_book);
+
+            wxStaticBoxSizer* vsizer = _panel->createGroup(_guilang.get("GUI_DLG_CVS_COLORS"), wxVERTICAL, _panel, _panel->getMainSizer(), 0);
+
+            // Create the array of colour-value pairs
+            for (size_t i = 0; i < m_field_count; i++)
+            {
+                wxBoxSizer* hsizer = _panel->createGroup(wxHORIZONTAL, vsizer, 0);
+                m_category_colour[i] = new wxColourPickerCtrl(vsizer->GetStaticBox(), wxID_ANY);
+                m_category_colour[i]->SetColour(CATEGORYCOLOUR[i]);
+                hsizer->Add(m_category_colour[i], 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+                m_category_value[i] = _panel->CreateTextInput(vsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_CATEGORY_VALUE"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
+            }
+
+            // Enable scrolling
+            _panel->SetScrollbars(0, 20, 0, 200);
+
+            m_book->AddPage(_panel, _guilang.get("GUI_DLG_CVS_CATEGORY_EQ"));
         }
 
         /////////////////////////////////////////////////
@@ -475,10 +532,11 @@ class CellValueShaderDialog : public wxDialog
         {
             wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
             SetSizer(vsizer);
-            m_book = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxSize(640*g_pixelScale, 220*g_pixelScale));
+            m_book = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxSize(640*g_pixelScale, 320*g_pixelScale));
 
             // Create the various pages containing different shader conditions
             createLtGtPage();
+            createCategoryPage();
             createIntervalPage(minVal, maxVal);
             createIntervalExclPage(minVal, maxVal);
 
@@ -579,6 +637,34 @@ class CellValueShaderDialog : public wxDialog
                                 cond.m_vals.push_back(StrToCmplx(s));
                             else
                                 cond.m_strs.push_back(s);
+                        }
+
+                        break;
+                    }
+                    case CATEGORY:
+                    {
+                        cond.m_type = CellValueShaderCondition::CT_EQUALS_ARRAY;
+
+                        // Extract the values and colours
+                        for (size_t i = 0; i < m_field_count; i++)
+                        {
+                            std::string val = m_category_value[i]->GetValue().ToStdString();
+
+                            if (!val.length())
+                                continue;
+
+                            // Get colour and update the statics
+                            colors.push_back(m_category_colour[i]->GetColour());
+                            CATEGORYCOLOUR[i] = m_category_colour[i]->GetColour();
+
+                            if (isConvertible(val, CONVTYPE_DATE_TIME))
+                                cond.m_vals.push_back(to_double(StrToTime(val)));
+                            else if (isConvertible(val, CONVTYPE_VALUE))
+                                cond.m_vals.push_back(StrToCmplx(val));
+                            else
+                                cond.m_vals.push_back(NAN);
+
+                            cond.m_strs.push_back(val);
                         }
 
                         break;
@@ -708,4 +794,44 @@ wxColour CellValueShaderDialog::MAXCOLOUR    = wxColour(255,255,128);
 wxColour CellValueShaderDialog::HIGHERCOLOUR = wxColour(255,255,255);
 bool CellValueShaderDialog::USEALLCOLOURS = false;
 
+wxColour fromHSL(unsigned hue, double saturation, double lightness)
+{
+    double C = (1.0 - std::abs(2*lightness-1)) * saturation;
+    double X = C * (1.0 - std::abs(std::fmod(hue / 60.0, 2.0) - 1.0));
+    double m = lightness - C/2.0;
+
+    if (hue < 60)
+        return wxColour((C+m)*255, (X+m)*255, m*255);
+
+    if (hue < 120)
+        return wxColour((X+m)*255, (C+m)*255, m*255);
+
+    if (hue < 180)
+        return wxColour(m*255, (C+m)*255, (X+m)*255);
+
+    if (hue < 240)
+        return wxColour(m*255, (X+m)*255, (C+m)*255);
+
+    if (hue < 300)
+        return wxColour((X+m)*255, m*255, (C+m)*255);
+
+    return wxColour((C+m)*255, m*255, (X+m)*255);
+}
+
+
+//static wxColour goodBase = fromHSL(132, 0.5625, 0.8583);
+//static wxColour neutralBase = fromHSL(48, 1, 0.8042);
+//static wxColour badBase = fromHSL(352, 1, 0.8917);
+//static wxColour infoBase = fromHSL(196, 0.725, 0.8583);
+
+wxColour CellValueShaderDialog::CATEGORYCOLOUR[16] = {
+    fromHSL(132, 0.5625, 0.8583), fromHSL(48, 1, 0.8042), fromHSL(352, 1, 0.8917), fromHSL(196, 0.725, 0.8583),
+    fromHSL(132, 0.5625, 0.8583*0.8), fromHSL(48, 1, 0.8042*0.8), fromHSL(352, 1, 0.8917*0.8), fromHSL(196, 0.725, 0.8583*0.8),
+    fromHSL(132, 0.5625, 0.8583*0.6), fromHSL(48, 1, 0.8042*0.6), fromHSL(352, 1, 0.8917*0.6), fromHSL(196, 0.725, 0.8583*0.6),
+    fromHSL(132, 0.5625, 0.8583*0.4), fromHSL(48, 1, 0.8042*0.4), fromHSL(352, 1, 0.8917*0.4), fromHSL(196, 0.725, 0.8583*0.4)};
+
 #endif // CELLVALUESHADER_HPP
+
+
+
+

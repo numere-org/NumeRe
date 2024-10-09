@@ -36,3 +36,4 @@ Added	Functions were added: "is_equal()", "is_ordered()", "is_unique()" and "inv
 Fixed	The command "sort" has been improved and surprising behaviors have been removed.
 Added	Table method modifiers ".scwin()" and ".srwin()" have been added and can be used to define a moving window for multi argument functions.
 New	Additional coherent noise functions were added: "ridgedmulti()", "billownoise()", "voronoinoise()"
+Added	A categorical conditional cell colouring scheme was added to the table viewer.
