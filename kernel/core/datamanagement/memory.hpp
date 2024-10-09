@@ -207,15 +207,15 @@ class Memory : public Sorter
         std::vector<std::complex<double>> size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<std::complex<double>> minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<std::complex<double>> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
-        std::vector<std::complex<double>> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
-        std::vector<std::complex<double>> countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const;
-        std::vector<std::complex<double>> getIndex(size_t col, const mu::Array& vValues) const;
-        std::complex<double> getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
-        std::complex<double> getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
-        std::complex<double> getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
-        std::vector<std::complex<double>> getRank(size_t col, const VectorIndex& _vIndex, RankingStrategy _strat) const;
+        std::vector<size_t> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
+        std::vector<size_t> countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const;
+        std::vector<double> getIndex(size_t col, const mu::Array& vValues) const;
+        double getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        double getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        double getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        std::vector<double> getRank(size_t col, const VectorIndex& _vIndex, RankingStrategy _strat) const;
         std::vector<std::complex<double>> getZScore(size_t col, const VectorIndex& _vIndex) const;
-        std::vector<std::complex<double>> getBins(size_t col, size_t nBins) const;
+        std::vector<int64_t> getBins(size_t col, size_t nBins) const;
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);

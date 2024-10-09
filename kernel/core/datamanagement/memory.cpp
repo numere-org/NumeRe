@@ -3574,12 +3574,12 @@ static bool closeEnough(const std::complex<double>& v1, const std::complex<doubl
 /// \param vColNames const std::vector<std::string>&
 /// \param enableRegEx bool
 /// \param autoCreate bool
-/// \return std::vector<std::complex<double>>
+/// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate)
+std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate)
 {
-    std::vector<std::complex<double>> vColIndices;
+    std::vector<size_t> vColIndices;
 
     for (const auto& sName : vColNames)
     {
@@ -3590,13 +3590,13 @@ std::vector<std::complex<double>> Memory::findCols(const std::vector<std::string
             if (enableRegEx)
             {
                 if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, std::regex(sName)))
-                    vColIndices.push_back(i+1.0);
+                    vColIndices.push_back(i+1);
             }
             else
             {
                 if (memArray[i] && memArray[i]->m_sHeadLine == sName)
                 {
-                    vColIndices.push_back(i+1.0);
+                    vColIndices.push_back(i+1);
                     found = true;
                 }
             }
@@ -3609,13 +3609,10 @@ std::vector<std::complex<double>> Memory::findCols(const std::vector<std::string
             memArray[pos].reset(new ValueColumn);
             memArray[pos]->m_sHeadLine = sName;
             g_logger.info("Created new column " + toString(pos+1) + " for '" + sName + "'");
-            vColIndices.push_back(pos+1.0);
+            vColIndices.push_back(pos+1);
             m_meta.modify();
         }
     }
-
-    if (!vColIndices.size())
-        vColIndices.push_back(NAN);
 
     return vColIndices;
 }
@@ -3629,12 +3626,12 @@ std::vector<std::complex<double>> Memory::findCols(const std::vector<std::string
 ///
 /// \param _vCols const VectorIndex&
 /// \param vValues const mu::Array&
-/// \return std::vector<std::complex<double>>
+/// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const
+std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const
 {
-    std::vector<std::complex<double>> vCounted;
+    std::vector<size_t> vCounted;
 
     for (size_t j = 0; j < _vCols.size(); j++)
     {
@@ -3657,9 +3654,6 @@ std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols
         }
     }
 
-    if (!vCounted.size())
-        vCounted.push_back(NAN);
-
     return vCounted;
 }
 
@@ -3672,15 +3666,15 @@ std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols
 ///
 /// \param col size_t
 /// \param vValues const mu::Array&
-/// \return std::vector<std::complex<double>>
+/// \return std::vector<double>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::getIndex(size_t col, const mu::Array& vValues) const
+std::vector<double> Memory::getIndex(size_t col, const mu::Array& vValues) const
 {
-    std::vector<std::complex<double>> vIndex;
+    std::vector<double> vIndex;
 
     if (col >= memArray.size() || !memArray[col])
-        return std::vector<std::complex<double>>(1, NAN);
+        return std::vector<double>(1, NAN);
 
     for (const auto& val : vValues)
     {
@@ -3994,10 +3988,10 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
-/// \return std::complex<double>
+/// \return double
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+double Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
 {
     _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
     _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
@@ -4007,11 +4001,11 @@ std::complex<double> Memory::getCovariance(size_t col1, const VectorIndex& _vInd
     std::complex<double> vAvg1 = avg(_vIndex1.subidx(0, minSize), VectorIndex(col1));
     std::complex<double> vAvg2 = avg(_vIndex2.subidx(0, minSize), VectorIndex(col2));
 
-    std::complex<double> vCov = 0.0;
+    double vCov = 0.0;
 
     for (size_t i = 0; i < minSize; i++)
     {
-        vCov += (readMem(_vIndex1[i], col1).getNum().asCF64() - vAvg1) * std::conj(readMem(_vIndex2[i], col2).getNum().asCF64() - vAvg2);
+        vCov += std::real((readMem(_vIndex1[i], col1).getNum().asCF64() - vAvg1) * std::conj(readMem(_vIndex2[i], col2).getNum().asCF64() - vAvg2));
     }
 
     return vCov / (minSize-1.0);
@@ -4027,10 +4021,10 @@ std::complex<double> Memory::getCovariance(size_t col1, const VectorIndex& _vInd
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
-/// \return std::complex<double>
+/// \return double
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+double Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
 {
     _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
     _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
@@ -4038,7 +4032,7 @@ std::complex<double> Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIn
     size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
 
     return getCovariance(col1, _vIndex1, col2, _vIndex2)
-        / (std(_vIndex1.subidx(0, minSize), VectorIndex(col1)) * std(_vIndex2.subidx(0, minSize), VectorIndex(col2)));
+        / (std(_vIndex1.subidx(0, minSize), VectorIndex(col1)).real() * std(_vIndex2.subidx(0, minSize), VectorIndex(col2)).real());
 }
 
 
@@ -4051,10 +4045,10 @@ std::complex<double> Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIn
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
-/// \return std::complex<double>
+/// \return double
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+double Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
 {
     _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
     _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
@@ -4063,9 +4057,9 @@ std::complex<double> Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vI
 
     Memory _mem(2);
 
-    _mem.memArray[0].reset(new ValueColumn(minSize));
+    _mem.memArray[0].reset(new F64ValueColumn(minSize));
     _mem.memArray[0]->setValue(VectorIndex(0, minSize), getRank(col1, _vIndex1.subidx(0, minSize), RANK_FRACTIONAL));
-    _mem.memArray[1].reset(new ValueColumn(minSize));
+    _mem.memArray[1].reset(new F64ValueColumn(minSize));
     _mem.memArray[1]->setValue(VectorIndex(0, minSize), getRank(col2, _vIndex2.subidx(0, minSize), RANK_FRACTIONAL));
 
     return _mem.getPearsonCorr(0, VectorIndex(0, VectorIndex::OPEN_END), 1, VectorIndex(0, VectorIndex::OPEN_END));
@@ -4076,13 +4070,13 @@ std::complex<double> Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vI
 /// \brief Evaluate the identical ranked values
 /// according the selected ranking strategy.
 ///
-/// \param vRank std::vector<std::complex<double>>&
+/// \param vRank std::vector<double>&
 /// \param nEqualRanks size_t&
 /// \param _strat Memory::RankingStrategy
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void evaluateRankingStrategy(std::vector<std::complex<double>>& vRank, size_t& nEqualRanks, Memory::RankingStrategy _strat)
+static void evaluateRankingStrategy(std::vector<double>& vRank, size_t& nEqualRanks, Memory::RankingStrategy _strat)
 {
     switch (_strat)
     {
@@ -4096,7 +4090,7 @@ static void evaluateRankingStrategy(std::vector<std::complex<double>>& vRank, si
             break;
         case Memory::RANK_FRACTIONAL:
         {
-            std::complex<double> val = vRank.back();
+            double val = vRank.back();
             vRank.pop_back();
             vRank.insert(vRank.end(), nEqualRanks+1, val+0.5*nEqualRanks);
             vRank.push_back(val+(nEqualRanks+1.0));
@@ -4115,10 +4109,10 @@ static void evaluateRankingStrategy(std::vector<std::complex<double>>& vRank, si
 /// \param col size_t
 /// \param _vIndex const VectorIndex&
 /// \param _strat Memory::RankingStrategy
-/// \return std::vector<std::complex<double>>
+/// \return std::vector<double>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
+std::vector<double> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
 {
     _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
 
@@ -4126,7 +4120,7 @@ std::vector<std::complex<double>> Memory::getRank(size_t col, const VectorIndex&
     _mem.memArray.back().reset(memArray[col]->copy(_vIndex));
 
     std::vector<int> vIndex = _mem.sortElements(VectorIndex(0, _mem.getLines(false)-1), VectorIndex(0), "-index");
-    std::vector<std::complex<double>> vRank(1, 1.0);
+    std::vector<double> vRank(1, 1.0);
     size_t nEqualRanks = 0;
 
     for (size_t i = 1; i < vIndex.size(); i++)
@@ -4151,11 +4145,11 @@ std::vector<std::complex<double>> Memory::getRank(size_t col, const VectorIndex&
         vRank.pop_back();
     }
 
-    std::vector<std::complex<double>> vRankReordered(vRank);
+    std::vector<double> vRankReordered(vRank.size());
 
     for (size_t i = 0; i < vIndex.size(); i++)
     {
-        vRankReordered[vIndex[i]-1] = vRank[i];
+        vRankReordered[vIndex[i]-1] = intCast(vRank[i]);
     }
 
     return vRankReordered;
@@ -4195,17 +4189,17 @@ std::vector<std::complex<double>> Memory::getZScore(size_t col, const VectorInde
 ///
 /// \param col size_t
 /// \param nBins size_t
-/// \return std::vector<std::complex<double>>
+/// \return std::vector<int64_t>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::getBins(size_t col, size_t nBins) const
+std::vector<int64_t> Memory::getBins(size_t col, size_t nBins) const
 {
-    std::vector<std::complex<double>> vBins;
+    std::vector<int64_t> vBins;
 
     // Ensure that we have data
     if (memArray.size() <= col || !memArray[col])
     {
-        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, NAN);
+        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, -1);
         return vBins;
     }
 
@@ -4218,30 +4212,30 @@ std::vector<std::complex<double>> Memory::getBins(size_t col, size_t nBins) cons
         // We use the categories as bins and ignore user settings
         std::vector<std::string> vCategories = static_cast<CategoricalColumn*>(memArray[col].get())->getCategories();
         nBins = vCategories.size();
-        vBins.resize(nBins, 0.0);
+        vBins.resize(nBins, 0);
 
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
             if (memArray[col]->getValue(i).real() > 0.0)
-                vBins[memArray[col]->getValue(i).real()-1] += 1.0;
+                vBins[memArray[col]->getValue(i).real()-1]++;
         }
     }
     else if (type == TableColumn::TYPE_LOGICAL)
     {
         // We use the logical values as bins and ignore user settings
         nBins = 2;
-        vBins.resize(nBins, 0.0);
+        vBins.resize(nBins, 0);
 
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
             if (memArray[col]->getValue(i) == 1.0)
-                vBins[0] += 1.0;
+                vBins[0]++;
             else if (memArray[col]->getValue(i) == 0.0)
-                vBins[1] += 1.0;
+                vBins[1]++;
         }
     }
     else if (type == TableColumn::TYPE_STRING)
-        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, NAN); // Strings are not binnable
+        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, -1); // Strings are not binnable
     else
     {
         // Calculate the bins following the (simple) Sturges rule
@@ -4249,7 +4243,7 @@ std::vector<std::complex<double>> Memory::getBins(size_t col, size_t nBins) cons
             nBins = (int)std::rint(1.0 + 3.3 * std::log10(num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real()));
 
         // Calculate min, max and range of the data. We'll only consider real values
-        vBins.resize(nBins, 0.0);
+        vBins.resize(nBins, 0);
         double dMin = min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real();
         double dMax = max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real();
         double dRange = dMax - dMin;
@@ -4257,7 +4251,7 @@ std::vector<std::complex<double>> Memory::getBins(size_t col, size_t nBins) cons
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
             if (!mu::isnan(memArray[col]->getValue(i)))
-                vBins[std::min(nBins-1.0, nBins * (memArray[col]->getValue(i).real()-dMin) / dRange)] += 1.0;
+                vBins[std::min(nBins-1.0, nBins * (memArray[col]->getValue(i).real()-dMin) / dRange)]++;
         }
     }
 

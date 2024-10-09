@@ -142,6 +142,9 @@ namespace mu
             Array(const Value& singleton);
             Array(const Variable& var);
             Array(const std::vector<std::complex<double>>& other);
+            Array(const std::vector<double>& other);
+            Array(const std::vector<size_t>& other);
+            Array(const std::vector<int64_t>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
 

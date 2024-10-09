@@ -34,25 +34,28 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
     for (size_t i = 0; i < factors[facIdx].size(); i++)
     {
         //positions of all elements, which correspond to the passed values
-        std::vector<std::complex<double>> catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factors[facIdx][i]));
+        std::vector<double> catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factors[facIdx][i]));
 
-        if (mu::isnan(catIndex1.front()))
+        if (std::isnan(catIndex1.front()))
             continue;
 
         if (parent == nullptr)
         {
             tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(catIndex1))));
             catIndex.push_back(catIndex1);
-        } else
+        }
+        else
         {
             // Intersect with parent groups
-            std::vector<std::vector<std::complex<double>>> catIndicesParent = parent->catIndex;
-            for(std::vector<std::complex<double>> catIndex2 : catIndicesParent)
+            std::vector<std::vector<double>> catIndicesParent = parent->catIndex;
+
+            for (std::vector<double> catIndex2 : catIndicesParent)
             {
-                std::vector<std::complex<double>> intersection;
-                for(auto a : catIndex1)
-                    for(auto b : catIndex2)
-                        if(a == b)
+                std::vector<double> intersection;
+
+                for (auto a : catIndex1)
+                    for (auto b : catIndex2)
+                        if (a == b)
                             intersection.push_back(a);
 
                 if (intersection.size() == 0)
@@ -63,6 +66,7 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
             }
         }
     }
+
     for (size_t i = 0; i < tmp_mem.memArray.size(); i++)
     {
         means.push_back(tmp_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));

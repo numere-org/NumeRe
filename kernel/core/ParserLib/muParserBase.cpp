@@ -3433,8 +3433,8 @@ namespace mu
     /////////////////////////////////////////////////
 	void ParserBase::SetInternalVar(const std::string& sVarName, const Array& vVar)
 	{
-		if (!vVar.size())
-			return;
+		//if (!vVar.size())
+		//	return;
 
         Variable* var = m_factory->Get(sVarName);
 

@@ -115,6 +115,27 @@ void TableColumn::setValue(const VectorIndex& idx, const std::vector<std::string
 /// specified indices.
 ///
 /// \param idx const VectorIndex&
+/// \param vValue const std::vector<double>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::setValue(const VectorIndex& idx, const std::vector<double>& vValue)
+{
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        if (i >= vValue.size())
+            break;
+
+        set(idx[i], vValue[i]);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets a numerical vector at the
+/// specified indices.
+///
+/// \param idx const VectorIndex&
 /// \param vValue const std::vector<std::complex<double>>&
 /// \return void
 ///

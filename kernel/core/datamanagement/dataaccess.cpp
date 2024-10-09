@@ -276,6 +276,9 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
 static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, mu::Parser& _parser, MemoryManager& _data);
 static StringView getLastToken(StringView sLine);
 
+static const int sMafListLength = 16;
+static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
+
 
 /////////////////////////////////////////////////
 /// \brief Static helper function to detect a
@@ -743,25 +746,6 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
 }
 
 
-
-/////////////////////////////////////////////////
-/// \brief Small helper function for
-/// replaceEntityOccurence to create a temporary
-/// name based upon a defined variable name.
-///
-/// \param sVectName const std::string&
-/// \param val const mu::Value&
-/// \param _parser mu::Parser&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string createTempVar(const std::string& sVectName, const mu::Value& val, mu::Parser& _parser)
-{
-    _parser.SetInternalVar(sVectName, {val});
-    return sVectName;
-}
-
-
 /////////////////////////////////////////////////
 /// \brief This function replaces every occurence
 /// of the entity with either the vector name for
@@ -795,168 +779,8 @@ static void replaceEntityOccurence(std::string& sLine, const std::string& sEntit
             continue;
         }
 
-        // Get the last token
-        StringView sLeft = getLastToken(StringView(sLine, 0, nPos));
-
-        // Find the next character, which is no whitespace
-        size_t nNextNonWhiteSpace = sLine.find_first_not_of(" ", nPos + sEntityOccurence.length());
-
-        if (sLeft.length() < 3 || sLeft.back() != '(' || (sLine[nNextNonWhiteSpace] != ')' && sLine[nNextNonWhiteSpace] != ','))
-        {
-            // Simply replace it with the vector name
-            sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
-            continue;
-        }
-        else
-        {
-            // Calculate the statistical value and replace it with the result
-            // Although it seems to be duplicated code, these are only one-liners for each case
-            // NOTE: Those lines cannot be removed at the moment due to bytecode issues. Will be fixed
-            // with the major parser rework
-            /*if (sLeft == "std(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~std", isCluster ? _data.getCluster(sEntityName).std(_idx.row) : _data.std(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "avg(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~avg", isCluster ? _data.getCluster(sEntityName).avg(_idx.row) : _data.avg(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "max(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~max", isCluster ? _data.getCluster(sEntityName).max(_idx.row) : _data.max(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "min(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~min", isCluster ? _data.getCluster(sEntityName).min(_idx.row) : _data.min(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "prd(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~prd", isCluster ? _data.getCluster(sEntityName).prd(_idx.row) : _data.prd(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "sum(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~sum", isCluster ? _data.getCluster(sEntityName).sum(_idx.row) : _data.sum(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "num(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~num", isCluster ? _data.getCluster(sEntityName).num(_idx.row) : _data.num(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "and(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~and", isCluster ? _data.getCluster(sEntityName).and_func(_idx.row) : _data.and_func(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "xor(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("xor(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~xor", isCluster ? _data.getCluster(sEntityName).xor_func(_idx.row) : _data.xor_func(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "or(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~or", isCluster ? _data.getCluster(sEntityName).or_func(_idx.row) : _data.or_func(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "cnt(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~cnt", isCluster ? _data.getCluster(sEntityName).cnt(_idx.row) : _data.cnt(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "med(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~med", isCluster ? _data.getCluster(sEntityName).med(_idx.row) : _data.med(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "norm(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                        + createTempVar(sEntityReplacement + "~norm", isCluster ? _data.getCluster(sEntityName).norm(_idx.row) : _data.norm(sEntityName, _idx.row, _idx.col), _parser)
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
-            }
-            else if (sLeft == "cmp(")
-            {
-                // cmp() is more difficult
-                _parser.DisableAccessCaching();
-                mu::Array dRef;
-                int nType = 0;
-                std::string sArg = "";
-                size_t start = sLine.find(sLeft.to_string());
-                sLeft = StringView(sLine, start + sLeft.length(),
-                                   getMatchingParenthesis(StringView(sLine, start + sLeft.length() - 1)) - 1);
-                getNextViewedArgument(sLeft);
-                sArg = getNextViewedArgument(sLeft).to_string();
-
-                if (_data.containsTablesOrClusters(sArg))
-                    getDataElements(sArg, _parser, _data);
-
-                _parser.SetExpr(sArg);
-                dRef = _parser.Eval();
-                sArg = getNextViewedArgument(sLeft).to_string();
-
-                if (_data.containsTablesOrClusters(sArg))
-                    getDataElements(sArg, _parser, _data);
-
-                _parser.SetExpr(sArg);
-                nType = _parser.Eval().getAsScalarInt();
-                sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-                                      getMatchingParenthesis(StringView(sLine, sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
-                                      createTempVar(sEntityReplacement + "~cmp", isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef.front().getNum().asCF64(), nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef.front().getNum().asCF64(), nType), _parser));
-            }
-            else if (sLeft == "pct(")
-            {
-                // pct() is more difficult
-                _parser.DisableAccessCaching();
-                mu::Array dPct;
-                std::string sArg = "";
-                size_t start = sLine.find(sLeft.to_string());
-                sLeft = StringView(sLine, start + sLeft.length(),
-                                   getMatchingParenthesis(StringView(sLine, start + sLeft.length() - 1)) - 1);
-                getNextViewedArgument(sLeft);
-                sArg = getNextViewedArgument(sLeft).to_string();
-
-                if (_data.containsTablesOrClusters(sArg))
-                    getDataElements(sArg, _parser, _data);
-
-                _parser.SetExpr(sArg);
-                dPct = _parser.Eval();
-                sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-                                      getMatchingParenthesis(StringView(sLine, sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
-                                      createTempVar(sEntityReplacement + "~pct", isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct.front().getNum().asCF64()) : _data.pct(sEntityName, _idx.row, _idx.col, dPct.front().getNum().asCF64()), _parser));
-            }
-            else */ //Fallback
-                sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
-        }
+        // Simply replace it with the vector name
+        sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
     }
 }
 
@@ -1078,9 +902,6 @@ static std::string createMafDataAccessString(const std::string& sAccessString, m
 /////////////////////////////////////////////////
 static std::string getMafFromAccessString(const std::string& sAccessString)
 {
-    // Store these values statically
-    static const int sMafListLength = 16;
-    static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
     size_t pos = 0;
 
     for (int i = 0; i < sMafListLength; i++)
@@ -1110,44 +931,6 @@ static std::string getMafFromAccessString(const std::string& sAccessString)
 
     }
 
-    return "";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function returns the first MAF
-/// access in the passed sLine string.
-///
-/// \param sLine const std::string&
-/// \param sEntity const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string getMafAccessString(const std::string& sLine, const std::string& sEntity)
-{
-    size_t nPos = 0;
-    static std::string sDelim = "+-*/^%&| ,=<>!()[]{}"; // delimiters (no "."!)
-
-    if ((nPos = sLine.find(sEntity + ").")) != std::string::npos)
-    {
-        // go through the string and try to find a MAF acces
-        for (size_t i = nPos; i < sLine.length(); i++)
-        {
-            if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
-                i += getMatchingParenthesis(StringView(sLine, i)) + 1;
-
-            if (i >= sLine.length())
-                return sLine.substr(nPos);
-
-            if (sDelim.find(sLine[i]) != std::string::npos)
-                return sLine.substr(nPos, i - nPos);
-
-            if (i + 1 == sLine.length())
-                return sLine.substr(nPos, i - nPos + 1);
-        }
-    }
-
-    // return nothing
     return "";
 }
 
@@ -1263,8 +1046,9 @@ static std::string tableMethod_aliasof(const std::string& sTableName, std::strin
     mu::Array a = _kernel->getParser().Eval();
 
     _kernel->getMemoryManager().addReference(sTableName, a.front().getStr());
+    _kernel->getParser().SetInternalVar(sResultVectorName, a);
 
-    return _kernel->getParser().CreateTempVar(a);
+    return sResultVectorName;
 }
 
 
@@ -1291,10 +1075,11 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     else
         sMethodArguments = v[1].front().getStr();
 
-    if (_kernel->getMemoryManager().convertColumns(sTableName, VectorIndex(v[0]), sMethodArguments))
-        return _kernel->getParser().CreateTempVar(mu::Value(sMethodArguments));
+    if (!_kernel->getMemoryManager().convertColumns(sTableName, VectorIndex(v[0]), sMethodArguments))
+        sMethodArguments.clear();
 
-    return _kernel->getParser().CreateTempVar(mu::Value(""));
+    _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(sMethodArguments));
+    return sResultVectorName;
 }
 
 
@@ -1324,9 +1109,11 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
     }
 
     if (vRet.size())
-        return _kernel->getParser().CreateTempVar(vRet);
+        _kernel->getParser().SetInternalVar(sResultVectorName, vRet);
+    else
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(""));
 
-    return _kernel->getParser().CreateTempVar(mu::Value(""));
+    return sResultVectorName;
 }
 
 
@@ -1351,9 +1138,11 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
     mu::Array vCategories = _kernel->getMemoryManager().getCategoryList(VectorIndex(v[0]), sTableName);
 
     if (!vCategories.size())
-        return _kernel->getParser().CreateTempVar(mu::Value(""));
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(""));
+    else
+        _kernel->getParser().SetInternalVar(sResultVectorName, vCategories);
 
-    return _kernel->getParser().CreateTempVar(vCategories);
+    return sResultVectorName;
 }
 
 
@@ -1381,7 +1170,8 @@ static std::string tableMethod_getunit(const std::string& sTableName, std::strin
         vUnits.push_back(_kernel->getMemoryManager().getUnit(i, sTableName));
     }
 
-    return _kernel->getParser().CreateTempVar(vUnits);
+    _kernel->getParser().SetInternalVar(sResultVectorName, vUnits);
+    return sResultVectorName;
 }
 
 
@@ -1404,14 +1194,18 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        return _kernel->getParser().CreateTempVar(mu::Value(""));
+    {
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(""));
+        return sResultVectorName;
+    }
 
     for (size_t i = 0; i < std::min(v[0].size(), v[1].size()); i++)
     {
         _kernel->getMemoryManager().setUnit(v[0].get(i).getNum().asI64() - 1, sTableName, v[1].get(i).getStr());
     }
 
-    return _kernel->getParser().CreateTempVar(v[1]);
+    _kernel->getParser().SetInternalVar(sResultVectorName, v[1]);
+    return sResultVectorName;
 }
 
 
@@ -1456,12 +1250,14 @@ static std::string tableMethod_toSiUnits(const std::string& sTableName, std::str
                     vUnits.push_back(_kernel->getMemoryManager().getTable(sTableName)->showUnitConversion(i, mode));
                 }
 
-                return _kernel->getParser().CreateTempVar(vUnits);
+                _kernel->getParser().SetInternalVar(sResultVectorName, vUnits);
+                return sResultVectorName;
             }
         }
     }
 
-    return _kernel->getParser().CreateTempVar(_kernel->getMemoryManager().getTable(sTableName)->toSiUnits(vCols, mode));
+    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getTable(sTableName)->toSiUnits(vCols, mode));
+    return sResultVectorName;
 }
 
 
@@ -1487,7 +1283,6 @@ static std::string tableMethod_asSiUnits(const std::string& sTableName, std::str
     size_t col = v[0].getAsScalarInt() - 1;
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getTable(sTableName)->asSiUnits(col));
-
     return sResultVectorName;
 }
 
@@ -1512,7 +1307,10 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        return _kernel->getParser().CreateTempVar(mu::Value(""));
+    {
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(""));
+        return sResultVectorName;
+    }
 
     vCategories = v[1].as_str_vector();
 
@@ -1521,12 +1319,15 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
         mu::Array cats = _kernel->getMemoryManager().getCategoryList(VectorIndex(v[0]), sTableName);
 
         if (!cats.size())
-            return _kernel->getParser().CreateTempVar(mu::Value(""));
+            _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(""));
+        else
+            _kernel->getParser().SetInternalVar(sResultVectorName, cats);
 
-        return _kernel->getParser().CreateTempVar(cats);
+        return sResultVectorName;
     }
 
-    return _kernel->getParser().CreateTempVar(mu::Value(""));
+    _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(""));
+    return sResultVectorName;
 }
 
 
@@ -1552,9 +1353,8 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
     if (nResults > 1)
         enableRegEx = mu::all(v[1]);
 
-    std::vector<std::complex<double>> vCols = _kernel->getMemoryManager().findCols(sTableName, v[0].as_str_vector(), enableRegEx);
-
-    _kernel->getParser().SetInternalVar(sResultVectorName, vCols);
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        _kernel->getMemoryManager().findCols(sTableName, v[0].as_str_vector(), enableRegEx));
     return sResultVectorName;
 }
 
@@ -1579,10 +1379,12 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
     VectorIndex vCols(v[0]);
 
     if (nResults < 2)
-        return "nan";
+    {
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(NAN));
+        return sResultVectorName;
+    }
 
 #warning TODO (numere#2#09/06/24): Enable method chaining
-#warning TODO (numere#2#09/04/24): Improve types and interface
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().countIfEqual(sTableName, vCols, v[1]));
     return sResultVectorName;
 }
@@ -1608,7 +1410,10 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
     size_t col = v[0].getAsScalarInt() - 1;
 
     if (nResults < 2)
-        return "nan";
+    {
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(NAN));
+        return sResultVectorName;
+    }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getIndex(sTableName, col, v[1]));
     return sResultVectorName;
@@ -1691,7 +1496,6 @@ static std::string tableMethod_pcorr(const std::string& sTableName, std::string 
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(_kernel->getMemoryManager().getPearsonCorr(sTableName, col1, vIndex1, col2, vIndex2)));
-
     return sResultVectorName;
 }
 
@@ -1732,7 +1536,6 @@ static std::string tableMethod_scorr(const std::string& sTableName, std::string 
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(_kernel->getMemoryManager().getSpearmanCorr(sTableName, col1, vIndex1, col2, vIndex2)));
-
     return sResultVectorName;
 }
 
@@ -1762,7 +1565,6 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
         vIndex = VectorIndex(v[1]);
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getZScore(sTableName, col, vIndex));
-
     return sResultVectorName;
 }
 
@@ -1916,7 +1718,6 @@ static std::string tableMethod_binsof(const std::string& sTableName, std::string
         nBins = v[1].getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getBins(sTableName, col, nBins));
-
     return sResultVectorName;
 }
 
@@ -1955,7 +1756,6 @@ static std::string tableMethod_rank(const std::string& sTableName, std::string s
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getRank(sTableName, col, vIndex, _strat));
-
     return sResultVectorName;
 }
 
@@ -1979,7 +1779,8 @@ static std::string tableMethod_annotate(const std::string& sTableName, std::stri
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
     _kernel->getMemoryManager().writeComment(sTableName, v[0].front().getStr());
-    return _kernel->getParser().CreateTempVar(mu::Value(v[0].front().getStr()));
+    _kernel->getParser().SetInternalVar(sResultVectorName, v[0].front());
+    return sResultVectorName;
 }
 
 
@@ -2004,7 +1805,10 @@ static std::string tableMethod_insertBlock(const std::string& sTableName, std::s
     size_t atRow = v[0].getAsScalarInt() - 1;
 
     if (nResults < 2)
-        return "false";
+    {
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(false));
+        return sResultVectorName;
+    }
 
     size_t atCol = v[1].getAsScalarInt() - 1;
     size_t rows = 1;
@@ -2016,7 +1820,9 @@ static std::string tableMethod_insertBlock(const std::string& sTableName, std::s
     if (nResults > 3)
         cols = v[3].getAsScalarInt();
 
-    return toString(_kernel->getMemoryManager().insertBlock(sTableName, atRow, atCol, rows, cols));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().insertBlock(sTableName, atRow, atCol, rows, cols)));
+    return sResultVectorName;
 }
 
 
@@ -2044,7 +1850,9 @@ static std::string tableMethod_insertCols(const std::string& sTableName, std::st
     if (nResults > 1)
         num = v[1].getAsScalarInt();
 
-    return toString(_kernel->getMemoryManager().insertCols(sTableName, col, num));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().insertCols(sTableName, col, num)));
+    return sResultVectorName;
 }
 
 
@@ -2072,7 +1880,9 @@ static std::string tableMethod_insertRows(const std::string& sTableName, std::st
     if (nResults > 1)
         num = v[1].getAsScalarInt();
 
-    return toString(_kernel->getMemoryManager().insertRows(sTableName, row, num));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().insertRows(sTableName, row, num)));
+    return sResultVectorName;
 }
 
 
@@ -2097,7 +1907,10 @@ static std::string tableMethod_removeBlock(const std::string& sTableName, std::s
     size_t atRow = v[0].getAsScalarInt() - 1;
 
     if (nResults < 2)
-        return "false";
+    {
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(false));
+        return sResultVectorName;
+    }
 
     size_t atCol = v[1].getAsScalarInt() - 1;
     size_t rows = 1;
@@ -2109,7 +1922,9 @@ static std::string tableMethod_removeBlock(const std::string& sTableName, std::s
     if (nResults > 3)
         cols = v[3].getAsScalarInt();
 
-    return toString(_kernel->getMemoryManager().removeBlock(sTableName, atRow, atCol, rows, cols));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().removeBlock(sTableName, atRow, atCol, rows, cols)));
+    return sResultVectorName;
 }
 
 
@@ -2131,7 +1946,9 @@ static std::string tableMethod_removeCols(const std::string& sTableName, std::st
     _kernel->getParser().SetExpr(sMethodArguments);
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
-    return toString(_kernel->getMemoryManager().removeCols(sTableName, VectorIndex(v[0])));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().removeCols(sTableName, VectorIndex(v[0]))));
+    return sResultVectorName;
 }
 
 
@@ -2153,7 +1970,9 @@ static std::string tableMethod_removeRows(const std::string& sTableName, std::st
     _kernel->getParser().SetExpr(sMethodArguments);
     mu::Array* v = _kernel->getParser().Eval(nResults);
 
-    return toString(_kernel->getMemoryManager().removeRows(sTableName, VectorIndex(v[0])));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().removeRows(sTableName, VectorIndex(v[0]))));
+    return sResultVectorName;
 }
 
 
@@ -2184,7 +2003,9 @@ static std::string tableMethod_reorderCols(const std::string& sTableName, std::s
 
     vNewOrder = VectorIndex(v[1]);
 
-    return toString(_kernel->getMemoryManager().reorderCols(sTableName, vIndex, vNewOrder));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().reorderCols(sTableName, vIndex, vNewOrder)));
+    return sResultVectorName;
 }
 
 
@@ -2215,7 +2036,9 @@ static std::string tableMethod_reorderRows(const std::string& sTableName, std::s
 
     vNewOrder = VectorIndex(v[1]);
 
-    return toString(_kernel->getMemoryManager().reorderRows(sTableName, vIndex, vNewOrder));
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().reorderRows(sTableName, vIndex, vNewOrder)));
+    return sResultVectorName;
 }
 
 
@@ -2267,6 +2090,112 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["inSIunits"] = tableMethod_asSiUnits;
 
     return mTableMethods;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the first MAF
+/// access in the passed sLine string.
+///
+/// \param sLine const std::string&
+/// \param sEntity const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getMafAccessString(const std::string& sLine, const std::string& sEntity)
+{
+    static std::string sDelim = "+-*/^%&| ,=<>!()[]{}."; // delimiters
+    static std::map<std::string, TableMethod> methods = getInplaceTableMethods();
+
+    size_t nPos = 0;
+    size_t nLastDelim = 0;
+    bool mainmethod = false;
+
+    if ((nPos = sLine.find(sEntity + ").")) != std::string::npos)
+    {
+        nLastDelim = nPos+sEntity.length()+1;
+
+        // go through the string and try to find a MAF access
+        for (size_t i = nPos + sEntity.length()+2; i < sLine.length(); i++)
+        {
+            if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
+                i += getMatchingParenthesis(StringView(sLine, i)) + 1;
+
+            if (i >= sLine.length())
+            {
+                // Extract the current method
+                std::string lastmethod(sLine, nLastDelim+1);
+
+                if (lastmethod.find_first_of(sDelim) != std::string::npos)
+                    lastmethod.erase(lastmethod.find_first_of(sDelim));
+
+                // Is it part of the known table methods?
+                if (methods.find(lastmethod) != methods.end())
+                    return sLine.substr(nPos);
+
+                // Is it a main MAF?
+                if (std::find(sMafList, sMafList+sMafListLength, lastmethod) != sMafList+sMafListLength)
+                {
+                    if (mainmethod)
+                        return sLine.substr(nPos, nLastDelim - nPos);
+                }
+                // Is it NOT a modifier?
+                else if (lastmethod != "every"
+                    && lastmethod != "cells"
+                    && lastmethod != "rows"
+                    && lastmethod != "cols"
+                    && lastmethod != "srwin"
+                    && lastmethod != "scwin")
+                    return sLine.substr(nPos, nLastDelim - nPos);
+
+                return sLine.substr(nPos);
+            }
+
+            // Where do we stop extracting methods and modifiers?
+            if (sDelim.find(sLine[i]) != std::string::npos
+                || i+1 == sLine.length())
+            {
+                // If its the last char, we need to get the full string
+                bool isLastChar = i+1 == sLine.length() && sDelim.find(sLine[i]) == std::string::npos;
+
+                // Extract the current method
+                std::string lastmethod(sLine, nLastDelim+1);
+
+                if (lastmethod.find_first_of(sDelim) != std::string::npos)
+                    lastmethod.erase(lastmethod.find_first_of(sDelim));
+
+                // Is it part of the known table methods?
+                if (methods.find(lastmethod) != methods.end())
+                    return sLine.substr(nPos, i - nPos + isLastChar);
+
+                // Is it a main MAF?
+                if (std::find(sMafList, sMafList+sMafListLength, lastmethod) != sMafList+sMafListLength)
+                {
+                    if (mainmethod)
+                        return sLine.substr(nPos, nLastDelim - nPos);
+
+                    mainmethod = true;
+                }
+                // Is it NOT a modifier?
+                else if (lastmethod != "every"
+                    && lastmethod != "cells"
+                    && lastmethod != "rows"
+                    && lastmethod != "cols"
+                    && lastmethod != "srwin"
+                    && lastmethod != "scwin")
+                    return sLine.substr(nPos, nLastDelim - nPos);
+
+                // Is this the last method or the end of the string?
+                if (sLine[i] != '.' || isLastChar)
+                    return sLine.substr(nPos, i - nPos + isLastChar);
+
+                nLastDelim = i;
+            }
+        }
+    }
+
+    // return nothing
+    return "";
 }
 
 

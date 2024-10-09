@@ -77,6 +77,7 @@ struct TableColumn
     virtual mu::Value get(size_t elem) const = 0;
 
     void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue);
+    void setValue(const VectorIndex& idx, const std::vector<double>& vValue);
     void setValue(const VectorIndex& idx, const std::vector<std::complex<double>>& vValue);
     void setValue(const VectorIndex& idx, std::complex<double>* _dData, size_t _nNum);
 

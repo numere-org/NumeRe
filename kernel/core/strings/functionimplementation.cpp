@@ -3233,8 +3233,8 @@ mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
             continue;
         }
 
-        std::vector<std::complex<double>> cols = _data.findCols(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('(')),
-                                                                {col.get(i).getStr()}, false, false);
+        std::vector<size_t> cols = _data.findCols(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('(')),
+                                                  {col.get(i).getStr()}, false, false);
 
         if (cols.size())
             ret.insert(ret.end(), cols.begin(), cols.end());

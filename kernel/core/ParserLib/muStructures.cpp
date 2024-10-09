@@ -1159,6 +1159,54 @@ namespace mu
 
     /////////////////////////////////////////////////
     /// \brief Construct an Array from a std::vector
+    /// of double values.
+    ///
+    /// \param other const std::vector<double>&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const std::vector<double>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    {
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = Numerical(other[i]);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
+    /// of size_t values.
+    ///
+    /// \param other const std::vector<size_t>&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const std::vector<size_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    {
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = Numerical(other[i]);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
+    /// of int64_t values.
+    ///
+    /// \param other const std::vector<int64_t>&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const std::vector<int64_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    {
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = Numerical(other[i]);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
     /// of Numericals.
     ///
     /// \param other const std::vector<Numerical>&
@@ -1971,7 +2019,7 @@ namespace mu
     std::string Array::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isDefault())
-            return "DEFVAL";
+            return "void";
 
         std::string ret;
 

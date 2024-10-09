@@ -38,7 +38,7 @@ public:
     // this is used for "navigation" in the tree, to access correct elements
     std::vector<size_t> subset;
 
-    std::vector<std::vector<std::complex<double>>> catIndex;
+    std::vector<std::vector<double>> catIndex;
     std::vector<std::complex<double>> means;
     std::vector<std::complex<double>> nums;
     std::complex<double> SS;

@@ -402,19 +402,19 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 		    return vMemory[findTable(_sTable)]->setCategories(_vCol, vCategories);
 		}
 
-        std::vector<std::complex<double>> findCols(const std::string& sTable, const std::vector<std::string>& vCols, bool enableRegEx, bool autoCreate = false) const
+        std::vector<size_t> findCols(const std::string& sTable, const std::vector<std::string>& vCols, bool enableRegEx, bool autoCreate = false) const
         {
             return vMemory[findTable(sTable)]->findCols(vCols, enableRegEx, autoCreate);
         }
 
-        std::vector<std::complex<double>> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
-                                                       const mu::Array& vValues) const
+        std::vector<size_t> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
+                                         const mu::Array& vValues) const
         {
             return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues);
         }
 
-        std::vector<std::complex<double>> getIndex(const std::string& sTable, size_t nCol,
-                                                   const mu::Array& vValues) const
+        std::vector<double> getIndex(const std::string& sTable, size_t nCol,
+                                     const mu::Array& vValues) const
         {
             return vMemory[findTable(sTable)]->getIndex(nCol, vValues);
         }
@@ -431,38 +431,38 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vMemory[findTable(sTable)]->getKMeans(cols, nClusters, maxIterations, init_method);
         }
 
-        std::complex<double> getCovariance(const std::string& sTable,
-                                     size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+        double getCovariance(const std::string& sTable,
+                             size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
         {
             return vMemory[findTable(sTable)]->getCovariance(col1, _vIndex1, col2, _vIndex2);
         }
 
-        std::complex<double> getPearsonCorr(const std::string& sTable,
-                                      size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+        double getPearsonCorr(const std::string& sTable,
+                              size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
         {
             return vMemory[findTable(sTable)]->getPearsonCorr(col1, _vIndex1, col2, _vIndex2);
         }
 
-        std::complex<double> getSpearmanCorr(const std::string& sTable,
-                                       size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+        double getSpearmanCorr(const std::string& sTable,
+                               size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
         {
             return vMemory[findTable(sTable)]->getSpearmanCorr(col1, _vIndex1, col2, _vIndex2);
         }
 
-        std::vector<std::complex<double>> getRank(const std::string& sTable,
-                                            size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
+        std::vector<double> getRank(const std::string& sTable,
+                                    size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
         {
             return vMemory[findTable(sTable)]->getRank(col, _vIndex, _strat);
         }
 
         std::vector<std::complex<double>> getZScore(const std::string& sTable,
-                                              size_t col, const VectorIndex& _vIndex) const
+                                                    size_t col, const VectorIndex& _vIndex) const
         {
             return vMemory[findTable(sTable)]->getZScore(col, _vIndex);
         }
 
-        std::vector<std::complex<double>> getBins(const std::string& sTable,
-                                            size_t col, size_t nBins) const
+        std::vector<int64_t> getBins(const std::string& sTable,
+                                     size_t col, size_t nBins) const
         {
             return vMemory[findTable(sTable)]->getBins(col, nBins);
         }
