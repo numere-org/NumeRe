@@ -2143,7 +2143,9 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
                 else if (lastmethod != "every"
                     && lastmethod != "cells"
                     && lastmethod != "rows"
+                    && lastmethod != "lines"
                     && lastmethod != "cols"
+                    && lastmethod != "grid"
                     && lastmethod != "srwin"
                     && lastmethod != "scwin")
                     return sLine.substr(nPos, nLastDelim - nPos);
@@ -2180,7 +2182,9 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
                 else if (lastmethod != "every"
                     && lastmethod != "cells"
                     && lastmethod != "rows"
+                    && lastmethod != "lines"
                     && lastmethod != "cols"
+                    && lastmethod != "grid"
                     && lastmethod != "srwin"
                     && lastmethod != "scwin")
                     return sLine.substr(nPos, nLastDelim - nPos);

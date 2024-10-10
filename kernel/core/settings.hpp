@@ -88,6 +88,8 @@
 #define SETTING_V_POS_SASH_T          "ui.position.terminalsash"
 #define SETTING_S_WINDOWSIZE          "ui.windowsize"
 #define SETTING_S_UITHEME             "ui.theme"
+#define SETTING_B_WINDOWSHOWN         "ui.windowshown"
+#define SETTING_B_APPAUTOCLOSE        "ui.appautoclose"
 #define SETTING_B_PRINTINCOLOR        "print.usecolor"
 #define SETTING_B_PRINTLINENUMBERS    "print.linenumbers"
 #define SETTING_B_SAVESESSION         "save.session"

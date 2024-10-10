@@ -38,3 +38,4 @@ Added	Table method modifiers ".scwin()" and ".srwin()" have been added and can b
 New	Additional coherent noise functions were added: "ridgedmulti()", "billownoise()", "voronoinoise()"
 Added	A categorical conditional cell colouring scheme was added to the table viewer.
 Applied	Table method handling has been improved and chaining with the new internal method system is now possible.
+Applied	It is now possible to hide the main window using "set windowshown=false" and unhide it again. Using "set appautoclose=true", the app will automatically close itself, once the last open window has been closed. Note that those settings are not saved and only affect NumeRe for the current running session.

@@ -3098,6 +3098,24 @@ int NumeReKernel::numberOfNumbersPerLine()
 void NumeReKernel::sendErrorNotification()
 {
     bErrorNotification = !bErrorNotification;
+    ensureMainWindowVisible();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Ensures that the main window is
+/// visible by deactivating possible hide flags.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::ensureMainWindowVisible()
+{
+    if (!_option.getSetting(SETTING_B_WINDOWSHOWN).active())
+    {
+        _option.getSetting(SETTING_B_WINDOWSHOWN).active() = true;
+        modifiedSettings = true;
+    }
 }
 
 
@@ -3283,6 +3301,7 @@ void NumeReKernel::gotoLine(const std::string& sFile, size_t nLine)
         return;
     else
     {
+        NumeReKernel::getInstance()->ensureMainWindowVisible();
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 
         // Create the task
@@ -3575,6 +3594,7 @@ void NumeReKernel::showDebugEvent(const std::string& sTitle, const std::vector<s
         return;
     else
     {
+        NumeReKernel::getInstance()->ensureMainWindowVisible();
         g_logger.debug("Debugger event.");
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 

@@ -362,6 +362,7 @@ class NumeReKernel
         void printVersionInfo(bool shortInfo = false);
         void updateLineLenght(int nLength);
         void sendErrorNotification();
+        void ensureMainWindowVisible();
 };
 
 

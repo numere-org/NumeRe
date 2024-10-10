@@ -47,6 +47,8 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_TABLEREFS] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_SYSTEMPRINTS] = SettingsValue(true, SettingsValue::HIDDEN);
     m_settings[SETTING_B_EXTENDEDFILEINFO] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
+    m_settings[SETTING_B_WINDOWSHOWN] = SettingsValue(true, SettingsValue::UIREFRESH);
+    m_settings[SETTING_B_APPAUTOCLOSE] = SettingsValue(false, SettingsValue::UIREFRESH);
     m_settings[SETTING_B_LOGFILE] = SettingsValue(true);
     m_settings[SETTING_B_LOADEMPTYCOLS] = SettingsValue(false);
     m_settings[SETTING_B_SHOWHINTS] = SettingsValue(true);

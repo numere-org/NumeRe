@@ -215,6 +215,10 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
         void removeBreakpoint(const std::string& _sFilename, size_t nLine);
         void clearBreakpoints(const std::string& _sFilename);
 
+        bool IsBusy()
+		{
+		    return m_isBusy;
+		}
 		void continueDebug()
 		{
 			wxCriticalSectionLocker lock(m_kernelCS);

@@ -5275,6 +5275,10 @@ void NumeReWindow::PassImageList(wxImageList* imagelist)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::EvaluateOptions()
 {
+    // Shall we show the main window?
+    if (!m_appStarting)
+        Show(m_options->getSetting(SETTING_B_WINDOWSHOWN).active());
+
     // Update the GUI elements by re-constructing them
     UpdateToolbar();
 
@@ -7073,6 +7077,18 @@ void NumeReWindow::unregisterWindow(wxWindow* window)
 {
     if (m_openedWindows.find(window) != m_openedWindows.end())
         m_openedWindows.erase(window);
+
+    if (!m_openedWindows.size() && !IsShown() && !m_terminal->IsBusy())
+    {
+        if (m_options->getSetting(SETTING_B_APPAUTOCLOSE).active())
+            Close(true);
+        else
+        {
+            m_options->getSetting(SETTING_B_WINDOWSHOWN).active() = true;
+            m_terminal->setKernelSettings(*m_options);
+            Show();
+        }
+    }
 }
 
 
