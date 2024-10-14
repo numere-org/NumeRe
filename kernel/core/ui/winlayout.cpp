@@ -127,6 +127,8 @@ static void evaluateExpression(std::string& sExpr)
         if (sExpr.length())
             sExpr += ",";
 
+        // Has to use print() instead of printvals() to correctly
+        // resolve cases like "RF", "RG", "RC,RD"
         std::string sVal = v[i].print(7);
 
         if (sVal.front() == '{' && sVal.back() == '}')

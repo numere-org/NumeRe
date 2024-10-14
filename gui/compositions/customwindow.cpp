@@ -876,15 +876,19 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 size.y = y;
             }
 
-            if (currentChild->Attribute("type"))
-                style = currentChild->Attribute("type", "multiline") ? wxTE_MULTILINE | wxTE_BESTWRAP : wxTE_PROCESS_ENTER;
+            if (currentChild->Attribute("type", "multiline"))
+                style = wxTE_MULTILINE | wxTE_BESTWRAP;
+
+            if (currentChild->Attribute("type", "markup"))
+                style = wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL;
 
             wxString label;
 
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
 
-            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id, size, alignment, proportion);
+            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, "", style, id, size, alignment, proportion);
+            textctrl->SetMarkupText(toInternalString(text.ToStdString())); // Also correctly convert linebreak characters
             textctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 
@@ -2217,7 +2221,7 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
             static_cast<wxStaticText*>(object.second)->SetLabel(removeQuotationMarks(_value.stringValue));
             break;
         case CustomWindow::TEXTCTRL:
-            static_cast<TextField*>(object.second)->ChangeValue(removeQuotationMarks(_value.stringValue));
+            static_cast<TextField*>(object.second)->SetMarkupText(removeQuotationMarks(_value.stringValue));
             break;
         case CustomWindow::LAMP:
         {

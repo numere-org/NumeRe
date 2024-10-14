@@ -180,6 +180,7 @@ class TextField : public wxTextCtrl
         }
 
         void SetMarkupText(const wxString& text);
+        void OnUrlClick(wxTextUrlEvent& event);
 
         /////////////////////////////////////////////////
         /// \brief Set the highlight colour for markup
@@ -193,6 +194,9 @@ class TextField : public wxTextCtrl
         {
             m_highlightColour = col;
         }
+
+
+        DECLARE_EVENT_TABLE();
 
     private:
         wxColour m_highlightColour;

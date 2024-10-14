@@ -19,6 +19,10 @@
 #include "grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 
+BEGIN_EVENT_TABLE(TextField, wxTextCtrl)
+    EVT_TEXT_URL(-1, TextField::OnUrlClick)
+END_EVENT_TABLE()
+
 /////////////////////////////////////////////////
 /// \brief Handle simple markup styled text in
 /// this control. Implemented as simple state
@@ -30,22 +34,101 @@
 /////////////////////////////////////////////////
 void TextField::SetMarkupText(const wxString& text)
 {
-    if (!HasFlag(wxTE_RICH) && HasFlag(wxTE_RICH2))
+    if (!HasFlag(wxTE_RICH) && !HasFlag(wxTE_RICH2))
     {
-        SetValue(text);
+        ChangeValue(text);
         return;
     }
+
+    // Clear first (Clear() will generate an obsolete event)
+    ChangeValue("");
 
     wxFont defaultFont = GetFont();
     wxTextAttr attr;
     attr.SetFont(defaultFont);
     attr.SetTextColour(*wxBLACK);
     SetDefaultStyle(attr);
-    size_t level = 0;
     size_t lastPos = 0;
+
+    size_t highlightLevel = 0;
+
+    bool lineMode = false;
+    bool codeMode = false;
+    bool startOfLine = true;
+    bool emph = false;
 
     for (size_t i = 0; i < text.size(); i++)
     {
+        if (i && text[i-1] == '\n')
+            startOfLine = true;
+
+        if (codeMode)
+        {
+            if (text[i] == '`')
+            {
+                AppendText(text.substr(lastPos, i - lastPos));
+                lastPos = i+1;
+                codeMode = false;
+                attr.SetFont(defaultFont);
+                attr.SetTextColour(*wxBLACK);
+                attr.SetBackgroundColour(*wxWHITE);
+                SetDefaultStyle(attr);
+            }
+
+            continue;
+        }
+
+        if (startOfLine)
+        {
+            if (text.substr(i, 3) == "###")
+            {
+                AppendText(text.substr(lastPos, i - lastPos));
+                lastPos = i+3;
+
+                lineMode = true;
+                attr.SetFont(defaultFont.Bold());
+                attr.SetFontSize(defaultFont.GetPointSize()+2);
+
+                SetDefaultStyle(attr);
+                i += 2;
+            }
+            else if (text.substr(i, 2) == "##")
+            {
+                AppendText(text.substr(lastPos, i - lastPos));
+                lastPos = i+2;
+
+                lineMode = true;
+                attr.SetFont(defaultFont.Bold().Italic());
+                attr.SetFontSize(defaultFont.GetPointSize()+4);
+
+                SetDefaultStyle(attr);
+                i++;
+            }
+            else if (text[i] == '#')
+            {
+                AppendText(text.substr(lastPos, i - lastPos));
+                lastPos = i+1;
+
+                lineMode = true;
+                attr.SetFont(defaultFont.Bold());
+                attr.SetFontUnderlined(true);
+                attr.SetFontSize(defaultFont.GetPointSize()+6);
+
+                SetDefaultStyle(attr);
+            }
+            else if (text.substr(i, 2) == "- ")
+            {
+                AppendText(text.substr(lastPos, i - lastPos));
+                lastPos = i+1;
+
+                lineMode = true;
+                attr.SetLeftIndent(30, 20);
+
+                SetDefaultStyle(attr);
+                AppendText(L"\u2022");
+            }
+        }
+
         if (text[i] == '[')
         {
             AppendText(text.substr(lastPos, i - lastPos));
@@ -60,19 +143,40 @@ void TextField::SetMarkupText(const wxString& text)
             attr.SetTextColour(*wxBLACK);
             SetDefaultStyle(attr);
         }
+        else if (text[i] == '\n' && lineMode)
+        {
+            AppendText(text.substr(lastPos, i + 1 - lastPos));
+            lastPos = i+1;
+            lineMode = false;
+            attr.SetFont(defaultFont);
+            attr.SetLeftIndent(0);
+            SetDefaultStyle(attr);
+        }
+        else if (text[i] == '`')
+        {
+            AppendText(text.substr(lastPos, i - lastPos));
+            lastPos = i+1;
+            codeMode = true;
+            wxFont font;
+            font.SetNativeFontInfoUserDesc("consolas");
+            attr.SetFont(font);
+            attr.SetTextColour(wxColour(0,0,100));
+            attr.SetBackgroundColour(wxColour(240,240,240));
+            SetDefaultStyle(attr);
+        }
         else if (text.substr(i, 3) == "***")
         {
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+3;
 
-            if (level == 0)
+            if (highlightLevel == 0)
             {
-                level = 3;
+                highlightLevel = 3;
                 attr.SetFont(defaultFont.Bold().Italic());
             }
-            else if (level == 3)
+            else if (highlightLevel == 3)
             {
-                level = 0;
+                highlightLevel = 0;
                 attr.SetFont(defaultFont);
             }
 
@@ -84,14 +188,14 @@ void TextField::SetMarkupText(const wxString& text)
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+2;
 
-            if (level == 0)
+            if (highlightLevel == 0)
             {
-                level = 2;
+                highlightLevel = 2;
                 attr.SetFont(defaultFont.Bold());
             }
-            else if (level == 2)
+            else if (highlightLevel == 2)
             {
-                level = 0;
+                highlightLevel = 0;
                 attr.SetFont(defaultFont);
             }
 
@@ -103,22 +207,63 @@ void TextField::SetMarkupText(const wxString& text)
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+1;
 
-            if (level == 0)
+            if (highlightLevel == 0)
             {
-                level = 1;
+                highlightLevel = 1;
                 attr.SetFont(defaultFont.Italic());
             }
-            else if (level == 1)
+            else if (highlightLevel == 1)
             {
-                level = 0;
+                highlightLevel = 0;
                 attr.SetFont(defaultFont);
             }
 
             SetDefaultStyle(attr);
         }
+        else if (text.substr(i, 2) == "==")
+        {
+            AppendText(text.substr(lastPos, i - lastPos));
+            lastPos = i+2;
+
+            if (!emph)
+            {
+                emph = true;
+                attr.SetBackgroundColour(wxColor(255,255,164));
+            }
+            else if (emph)
+            {
+                emph = false;
+                attr.SetBackgroundColour(*wxWHITE);
+            }
+
+            SetDefaultStyle(attr);
+            i++;
+        }
+
+        startOfLine = false;
     }
 
     AppendText(text.substr(lastPos));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Handle the event, if the user clicks
+/// on a selected URL within the control.
+///
+/// \param event wxTextUrlEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TextField::OnUrlClick(wxTextUrlEvent& event)
+{
+    wxMouseEvent mouseEvent = event.GetMouseEvent();
+
+    if (mouseEvent.IsButton())
+    {
+        wxString url = GetRange(event.GetURLStart(), event.GetURLEnd());
+        wxLaunchDefaultBrowser(url);
+    }
 }
 
 
