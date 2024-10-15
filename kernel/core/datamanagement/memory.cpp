@@ -4149,7 +4149,7 @@ std::vector<double> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memo
 
     for (size_t i = 0; i < vIndex.size(); i++)
     {
-        vRankReordered[vIndex[i]-1] = intCast(vRank[i]);
+        vRankReordered[vIndex[i]-1] = vRank[i];
     }
 
     return vRankReordered;

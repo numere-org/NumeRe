@@ -18,6 +18,7 @@
 
 
 #include "procedure.hpp"
+#include "mangler.hpp"
 #include "../../kernel.hpp"
 #include "procedurevarfactory.hpp"
 #include <memory>
@@ -2528,7 +2529,8 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
         {
             // Catch and convert parser errors
             NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): '" + e.GetExpr() + "'");
+            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): '"
+                                      + Mangler::demangleExpression(e.GetExpr()) + "'");
         }
         catch (SyntaxError& e)
         {
@@ -2550,13 +2552,15 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: '" + e.getExpr() + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: '"
+                                          + Mangler::demangleExpression(e.getExpr()) + "'");
             }
             else
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): '" + e.getExpr() + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): '"
+                                          + Mangler::demangleExpression(e.getExpr()) + "'");
             }
         }
         catch (...)

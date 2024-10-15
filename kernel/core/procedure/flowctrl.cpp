@@ -19,6 +19,7 @@
 
 // Implementation der FlowCtrl-Klasse
 #include "flowctrl.hpp"
+#include "mangler.hpp"
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 #include "../maths/parser_functions.hpp"
@@ -505,7 +506,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
         else
         {
             // Create a local variable
-            mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
+            mVarMap[sVarArray[nVarAdress]] = Mangler::mangleFlowCtrlLocals(sVarArray[nVarAdress], nthRecursion);
             replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
             sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
             _parserRef->DefineVar(sVarArray[nVarAdress], &vVarArray[nVarAdress]);
@@ -4352,7 +4353,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
             // Create a local variable otherwise
             if (!isRangeBased)
             {
-                mVarMap[sVarArray[i]] = "_~LOOP_" + sVarArray[i] + "_" + toString(nthRecursion);
+                mVarMap[sVarArray[i]] = Mangler::mangleFlowCtrlLocals(sVarArray[i], nthRecursion);
                 sVarArray[i] = mVarMap[sVarArray[i]];
             }
         }

@@ -22,6 +22,7 @@
 #include "../../kernel.hpp"
 #include "../utils/tools.hpp"
 #include "../procedure/procedurevarfactory.hpp"
+#include "../procedure/mangler.hpp"
 
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
@@ -219,6 +220,8 @@ void NumeReDebugger::formatMessage()
             i--;
         }
     }
+
+    sErrorMessage = Mangler::demangleExpression(sErrorMessage);
 }
 
 
@@ -757,7 +760,9 @@ vector<string> NumeReDebugger::getStackTrace()
     for (int i = vStackTrace.size()-1; i >= 0; i--)
     {
         Procedure* _curProc = vStackTrace[i].second;
-        vStack.push_back("$" + vStackTrace[i].first + "\t" + _curProc->sCurrentProcedureName + "\t" + toString(_curProc->GetCurrentLine()+1));
+        vStack.push_back("$" + Mangler::demangleExpression(vStackTrace[i].first)
+                         + "\t" + _curProc->sCurrentProcedureName
+                         + "\t" + toString(_curProc->GetCurrentLine()+1));
     }
 
     return vStack;

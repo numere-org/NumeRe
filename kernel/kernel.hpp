@@ -168,7 +168,7 @@ class NumeReKernel
         bool executePlugins(std::string& sLine);
         bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
         void createCalculationAnswer(int nNum, mu::Array* v);
-        void printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos);
+        void printErrorMessage(const std::string& errMsg, const std::string& errDesc, std::string expr, size_t pos);
         void resetAfterError();
         std::string getGreeting();
         void checkInternalStates();

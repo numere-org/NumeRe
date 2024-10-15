@@ -2130,7 +2130,10 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
                     lastmethod.erase(lastmethod.find_first_of(sDelim));
 
                 // Is it part of the known table methods?
-                if (methods.find(lastmethod) != methods.end())
+                if (methods.find(lastmethod) != methods.end()
+                    || lastmethod == "name"
+                    || lastmethod == "shrink"
+                    || lastmethod == "description")
                     return sLine.substr(nPos);
 
                 // Is it a main MAF?
@@ -2167,7 +2170,10 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
                     lastmethod.erase(lastmethod.find_first_of(sDelim));
 
                 // Is it part of the known table methods?
-                if (methods.find(lastmethod) != methods.end())
+                if (methods.find(lastmethod) != methods.end()
+                    || lastmethod == "name"
+                    || lastmethod == "shrink"
+                    || lastmethod == "description")
                     return sLine.substr(nPos, i - nPos + isLastChar);
 
                 // Is it a main MAF?

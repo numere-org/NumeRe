@@ -19,6 +19,7 @@
 
 #include "procedurevarfactory.hpp"
 #include "procedure.hpp"
+#include "mangler.hpp"
 #include "../../kernel.hpp"
 
 
@@ -274,7 +275,7 @@ std::string ProcedureVarFactory::replaceProcedureName(std::string sProcedureName
 /////////////////////////////////////////////////
 std::string ProcedureVarFactory::createMangledArgName(const std::string& sDefinedName) const
 {
-    return "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+sDefinedName;
+    return Mangler::mangleArgName(sDefinedName, sProcName, nth_procedure);
 }
 
 
@@ -287,7 +288,7 @@ std::string ProcedureVarFactory::createMangledArgName(const std::string& sDefine
 /////////////////////////////////////////////////
 std::string ProcedureVarFactory::createMangledVarName(const std::string& sDefinedName) const
 {
-    return "_~"+sProcName+"_"+toString(nth_procedure)+"_"+sDefinedName;
+    return Mangler::mangleVarName(sDefinedName, sProcName, nth_procedure);
 }
 
 

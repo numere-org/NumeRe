@@ -21,6 +21,7 @@
 #include "core/datamanagement/database.hpp"
 #include "core/io/logger.hpp"
 #include "core/plotting/plotting.hpp"
+#include "core/procedure/mangler.hpp"
 
 #include "core/maths/functionimplementation.hpp"
 #include "core/strings/functionimplementation.hpp"
@@ -1452,18 +1453,18 @@ static std::string pointToError(size_t nPos)
 ///
 /// \param errMsg const std::string&
 /// \param errDesc const std::string&
-/// \param expr const std::string&
+/// \param expr std::string
 /// \param pos size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos)
+void NumeReKernel::printErrorMessage(const std::string& errMsg, const std::string& errDesc, std::string expr, size_t pos)
 {
     // Get the file position if available
     auto errorLoc = getErrorLocation();
 
     // Print the message first
-    print(LineBreak(errMsg, _option, true, 4));
+    print(LineBreak(Mangler::demangleExpression(errMsg), _option, true, 4));
 
     // Apply the empty line if necessary
     if (errorLoc.second != SyntaxError::invalid_position || expr.length())
@@ -1479,7 +1480,13 @@ void NumeReKernel::printErrorMessage(const std::string& errMsg, const std::strin
 
     if (expr.length())
     {
-        printPreFmt("|       " + LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(expr)), _option, true, 8, 20) + "\n");
+        if (pos != SyntaxError::invalid_position)
+            expr = Mangler::demangleExpressionWithPosition(expr, pos);
+        else
+            expr = Mangler::demangleExpression(expr);
+
+        printPreFmt("|       " + LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(expr)),
+                                           _option, true, 8, 20) + "\n");
 
         if (pos != SyntaxError::invalid_position)
         {
