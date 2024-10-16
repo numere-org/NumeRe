@@ -27,13 +27,16 @@ typedef BOOL (WINAPI* LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 
 /////////////////////////////////////////////////
 /// \brief This function returns true, if we're
-/// currently running on Win x64.
+/// currently running x86 on Win x64.
 ///
 /// \return bool
 ///
 /////////////////////////////////////////////////
 bool IsWow64()
 {
+#ifdef __GNUWIN64__
+    return true; // always a 64 bit system in this situation
+#else
     BOOL bIsWow64 = false;
 
     //IsWow64Process is not available on all supported versions of Windows.
@@ -51,6 +54,7 @@ bool IsWow64()
         }
     }
     return (bool)bIsWow64;
+#endif // __GNUWIN64__
 }
 
 
@@ -102,7 +106,7 @@ bool Logger::open(const std::string& sLogFile)
     if (m_logFile.is_open())
         m_logFile.close();
 
-    m_logFile.open(sLogFile, std::ios_base::out | std::ios_base::app | std::ios_base::ate);
+    m_logFile.open(sLogFile, std::ios_base::out | std::ios_base::in | std::ios_base::app | std::ios_base::ate);
     m_sLogFile = sLogFile;
 
     return m_logFile.good();
@@ -194,7 +198,7 @@ void Logger::push_line(const std::string& sMessage)
 /// \param lvl Logger::LogLevel
 ///
 /////////////////////////////////////////////////
-DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl)
+DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl), m_startAfterCrash(false)
 {
     //
 }
@@ -208,7 +212,7 @@ DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl)
 DetachedLogger::~DetachedLogger()
 {
     // Write an information to the log file
-    push_info("SESSION WAS TERMINATED SUCCESSFULLY\n");
+    push_info(LOGGER_SHUTDOWN_LINE "\n");
 }
 
 
@@ -240,6 +244,21 @@ bool DetachedLogger::open(const std::string& sLogFile)
 
     if (!good)
         return false;
+
+    constexpr size_t terminatingStatement = sizeof(LOGGER_SHUTDOWN_LINE);
+
+    m_logFile.seekg(0, m_logFile.end);
+    size_t pos = m_logFile.tellg();
+    m_logFile.seekg(pos-terminatingStatement-3, m_logFile.beg);
+
+    if (m_logFile.good())
+    {
+        std::string sLine;
+        std::getline(m_logFile, sLine);
+        m_startAfterCrash = sLine != LOGGER_SHUTDOWN_LINE;
+    }
+
+    m_logFile.clear();
 
     for (size_t i = 0; i < m_buffer.size(); i++)
         Logger::push_line(m_buffer[i]);
@@ -283,6 +302,110 @@ void DetachedLogger::push_info(const std::string& sInfo)
 
 
 /////////////////////////////////////////////////
+/// \brief Return the n-th session log counted
+/// from the current backwards.
+///
+/// \param revId size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DetachedLogger::get_session_log(size_t revId) const
+{
+    if (is_buffering() && !revId)
+    {
+        std::string sLog;
+
+        for (const auto& sMessage : m_buffer)
+            sLog += sMessage + "\n";
+
+        return sLog;
+    }
+
+    if (!is_open())
+        return "";
+
+    // Read the whole log
+    std::ifstream currentLog(m_sLogFile);
+
+    if (!currentLog.good())
+        return "";
+
+    std::vector<std::string> logContents;
+
+    while (!currentLog.eof())
+    {
+        logContents.push_back("");
+        std::getline(currentLog, logContents.back());
+    }
+
+    // Now find the n-th log's beginning
+    for (int i = logContents.size()-1; i >= 0; i--)
+    {
+        if (logContents[i] == LOGGER_STARTUP_LINE)
+        {
+            if (!revId)
+            {
+                std::string sLog;
+
+                // Aggregate the requested lines
+                for (size_t j = i; j < logContents.size(); j++)
+                {
+                    if (j > (size_t)i && logContents[j] == LOGGER_STARTUP_LINE)
+                        break;
+
+                    sLog += logContents[j] + "\n";
+
+                    if (logContents[j] == LOGGER_SHUTDOWN_LINE)
+                        break;
+                }
+
+                return sLog;
+            }
+
+            revId--;
+        }
+    }
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief A helper function to obtain the
+/// current OS's information as a serialized
+/// string.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DetachedLogger::get_system_information() const
+{
+    std::string sysInfo;
+
+    // Get the version of the operating system
+    // Prepare the signature of the callback
+    NTSTATUS(WINAPI *RtlGetVersion)(LPOSVERSIONINFOEXW);
+
+    OSVERSIONINFOEXW _osversioninfo;
+
+    // Get the function address from the DLL
+    *(FARPROC*)&RtlGetVersion = GetProcAddress(GetModuleHandleA("ntdll"), "RtlGetVersion");
+
+    if (RtlGetVersion != nullptr)
+    {
+        // Read the version information
+        _osversioninfo.dwOSVersionInfoSize = sizeof(_osversioninfo);
+        RtlGetVersion(&_osversioninfo);
+    }
+
+    // Create system information to the log file
+    sysInfo = "OS: Windows v " + toString((int)_osversioninfo.dwMajorVersion) + "." + toString((int)_osversioninfo.dwMinorVersion) + "." + toString((int)_osversioninfo.dwBuildNumber) + (IsWow64() ? " (x64)" : " (x86)");
+
+    return sysInfo;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief A helper function to write the current
 /// OS's information to the log file.
 ///
@@ -291,16 +414,7 @@ void DetachedLogger::push_info(const std::string& sInfo)
 /////////////////////////////////////////////////
 void DetachedLogger::write_system_information()
 {
-    std::string sysInfo;
-    // Get the version of the operating system
-    OSVERSIONINFOA _osversioninfo;
-    _osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&_osversioninfo);
-
-    // Create system information to the log file
-    sysInfo = "OS: Windows v " + toString((int)_osversioninfo.dwMajorVersion) + "." + toString((int)_osversioninfo.dwMinorVersion) + "." + toString((int)_osversioninfo.dwBuildNumber) + (IsWow64() ? " (64 Bit)" : "");
-
-    push_info(sysInfo);
+    push_info(get_system_information());
 }
 
 

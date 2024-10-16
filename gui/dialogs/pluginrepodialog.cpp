@@ -23,7 +23,7 @@
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../common/datastructures.h"
-#include "../../kernel/core/utils/http.h"
+#include "../../network/http.h"
 #include "../controls/searchctrl.hpp"
 
 #include <fstream>

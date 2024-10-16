@@ -89,6 +89,7 @@
 #include "dialogs/pluginrepodialog.hpp"
 #include "dialogs/newfiledialog.hpp"
 #include "dialogs/listeditdialog.hpp"
+#include "dialogs/reportissuedialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -107,7 +108,7 @@
 #include "../common/filerevisions.hpp"
 #include "../common/ipc.hpp"
 
-#include "../kernel/core/utils/http.h"
+#include "../network/http.h"
 #include "../common/compareFiles.hpp"
 
 #include "controls/treesearchctrl.hpp"
@@ -258,7 +259,7 @@ bool MyApp::OnInit()
     g_logger.setLoggingLevel(Logger::LVL_DEBUG);
     #endif // DO_LOG
 
-    g_logger.push_info("NEW INSTANCE STARTUP");
+    g_logger.push_info(LOGGER_STARTUP_LINE);
     g_logger.push_info("NumeRe v " + sVersion + " (var. " + AutoVersion::UBUNTU_VERSION_STYLE + ")");
     g_logger.write_system_information();
     g_logger.info("Starting up.");
@@ -326,7 +327,10 @@ bool MyApp::OnInit()
     // caches and preparing the editor.
     NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
+    // The logger should now know, if we start from
+    // a crash
     g_logger.debug("Starting DDE server instance.");
+
     // Create the DDE server for the first (main)
     // instance of the application
     m_DDEServer = new DDE::Server(NumeReMainFrame);
@@ -373,6 +377,26 @@ bool MyApp::OnInit()
 
     NumeReMainFrame->ShowEditorCarets();
 
+    // Any files, which could not be loaded
+    if (NumeReMainFrame->m_UnrecoverableFiles.length())
+    {
+        g_logger.warning("The files '" + NumeReMainFrame->m_UnrecoverableFiles + "' could not be restored.");
+        NumeReMainFrame->Refresh();
+        NumeReMainFrame->Update();
+        wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles),
+                     _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR, NumeReMainFrame);
+    }
+
+    // Do we recover from a crash?
+    if (g_logger.startFromCrash())
+    {
+        NumeReMainFrame->Refresh();
+        NumeReMainFrame->Update();
+        if (wxMessageBox(_guilang.get("GUI_DLG_START_AFTER_CRASH_QUESTION"),
+                         _guilang.get("GUI_DLG_START_AFTER_CRASH"), wxICON_QUESTION | wxCENTER | wxYES | wxNO, NumeReMainFrame) == wxYES)
+            NumeReMainFrame->OnReportIssue(true);
+    }
+
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
     {
@@ -388,14 +412,6 @@ bool MyApp::OnInit()
 
     delete NumeReMainFrame->tipProvider;
     NumeReMainFrame->tipProvider = nullptr;
-
-    if (NumeReMainFrame->m_UnrecoverableFiles.length())
-    {
-        g_logger.warning("The files '" + NumeReMainFrame->m_UnrecoverableFiles + "' could not be restored.");
-        NumeReMainFrame->Refresh();
-        NumeReMainFrame->Update();
-        wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
-    }
 
     return true;
 }
@@ -1847,6 +1863,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_ABOUT:
         {
             OnAbout();
+            break;
+        }
+
+        case ID_MENU_REPORTISSUE:
+        {
+            OnReportIssue();
             break;
         }
 
@@ -5535,6 +5557,8 @@ void NumeReWindow::UpdateMenuBar()
     // Create help menu
     wxMenu *helpMenu = new wxMenu;
     helpMenu->Append(ID_MENU_HELP, _guilang.get("GUI_MENU_SHOWHELP"));
+    helpMenu->Append(ID_MENU_REPORTISSUE, _guilang.get("GUI_MENU_REPORTISSUE"));
+    helpMenu->AppendSeparator();
     helpMenu->Append(ID_MENU_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
 
     menuBar->Append(helpMenu, _guilang.get("GUI_MENU_HELP"));
@@ -7784,5 +7808,21 @@ void NumeReWindow::OnAbout()
 {
     AboutChameleonDialog acd(this, 10000, _guilang.get("GUI_ABOUT_TITLE"));
     acd.ShowModal();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// "Report an issue" dialog.
+///
+/// \param fromCrash bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnReportIssue(bool fromCrash)
+{
+    ReportIssueDialog dialog(this, wxID_ANY, fromCrash);
+    dialog.SetIcon(getStandardIcon());
+    dialog.ShowModal();
 }
 

@@ -42,3 +42,4 @@ Applied	It is now possible to hide the main window using "set windowshown=false"
 Added	The "textfield" can now be configured as "type=markup" to support simplified markdown styling.
 Cleaned	Expressions in error messages and assertion warnings do now show their variables in a demangled form, so that readability is greatly enhanced.
 Cleaned	Procedure arguments in the debugger stacktrace are now shown in demangled form, so that readability is enhanced.
+New	It is now possible to file an issue directly via the corresponding menu item in NumeRe without the need for a Github account. The same feature is also used as a crash reporter.

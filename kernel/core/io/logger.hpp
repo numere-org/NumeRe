@@ -23,6 +23,9 @@
 #include <string>
 #include <vector>
 
+#define LOGGER_STARTUP_LINE "NEW INSTANCE STARTUP"
+#define LOGGER_SHUTDOWN_LINE "SESSION WAS TERMINATED SUCCESSFULLY"
+
 /////////////////////////////////////////////////
 /// \brief This class represents a simple logging
 /// functionality, which might be extended in the
@@ -31,8 +34,8 @@
 /////////////////////////////////////////////////
 class Logger
 {
-    private:
-        std::ofstream m_logFile;
+    protected:
+        std::fstream m_logFile;
         std::string m_sLogFile;
 
         bool ensure_open();
@@ -71,6 +74,7 @@ class DetachedLogger : public Logger
     private:
         std::vector<std::string> m_buffer;
         Logger::LogLevel m_level;
+        bool m_startAfterCrash;
 
     public:
         DetachedLogger(Logger::LogLevel lvl = Logger::LVL_INFO);
@@ -81,6 +85,8 @@ class DetachedLogger : public Logger
         void setLoggingLevel(Logger::LogLevel lvl);
 
         void push_info(const std::string& sInfo);
+        std::string get_session_log(size_t revId = 0) const;
+        std::string get_system_information() const;
         void write_system_information();
         void push_line(Logger::LogLevel lvl, const std::string& sMessage);
 
@@ -142,6 +148,17 @@ class DetachedLogger : public Logger
         inline void error(const std::string& sMessage)
         {
             push_line(Logger::LVL_ERROR, sMessage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Did the last session crash?
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool startFromCrash() const
+        {
+            return m_startAfterCrash;
         }
 
 };

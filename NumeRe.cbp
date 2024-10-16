@@ -1487,6 +1487,28 @@
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
 		</Unit>
+		<Unit filename="gui/dialogs/reportissuedialog.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="gui/dialogs/reportissuedialog.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
 		<Unit filename="gui/dialogs/revisiondialog.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -3665,28 +3687,6 @@
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
 		</Unit>
-		<Unit filename="kernel/core/utils/http.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
-		</Unit>
-		<Unit filename="kernel/core/utils/http.h">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
-		</Unit>
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">
@@ -3767,6 +3767,50 @@
 			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/windowmanager.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="network/githubapi.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="network/githubapi.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="network/http.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="network/http.h">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />

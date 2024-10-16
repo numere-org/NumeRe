@@ -29,7 +29,7 @@
 #include "filtering.hpp"
 #include "../AudioLib/audiofile.hpp"
 #include "../../kernel.hpp"
-#include "../utils/http.h"
+#include "../../../network/http.h"
 
 #define TRAPEZOIDAL 1
 #define SIMPSON 2
