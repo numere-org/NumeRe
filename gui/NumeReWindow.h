@@ -131,40 +131,6 @@ class ProportionalSplitterWindow;
 class wxCHMHelpController;
 class DebugViewer;
 
-namespace DDE
-{
-    class Server;
-}
-
-
-
-
-//----------------------------------------------------------------------
-
-/////////////////////////////////////////////////
-/// \brief This class represents the application
-/// controller, which will create the main frame
-/// of the actual application. It will also
-/// include the single instance checking and the
-/// necessary DDE command interface handling.
-/////////////////////////////////////////////////
-class MyApp : public wxApp
-{
-    public:
-        ~MyApp();
-        virtual bool OnInit() override;
-        virtual int OnExit() override;
-        virtual bool OnExceptionInMainLoop() override;
-
-    private:
-        wxSingleInstanceChecker* m_singlinst;
-        DDE::Server* m_DDEServer;
-        //virtual int OnRun();
-        //virtual void OnUnhandledException();
-};
-
-//----------------------------------------------------------------------
-
 
 extern Language _guilang;
 

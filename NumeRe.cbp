@@ -970,6 +970,17 @@
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
 		</Unit>
+		<Unit filename="gui/compositions/tabartprovider.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
 		<Unit filename="gui/compositions/tabartprovider.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -1774,6 +1785,28 @@
 			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/graphviewer.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="gui/numere.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="gui/numere.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
