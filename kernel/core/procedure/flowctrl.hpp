@@ -158,8 +158,8 @@ class FlowCtrl
 
         int compile(std::string sLine, int nthCmd);
         int calc(StringView sLine, int nthCmd);
-        mu::Array* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
-        NumeRe::Cluster evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
+        mu::Array* evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
+        mu::Array evalRangeBasedHeader(std::string sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 
         void replaceLocalVars(MutableStringView sLine);
@@ -168,11 +168,11 @@ class FlowCtrl
         bool checkFlowControlArgument(StringView sFlowControlArgument, bool isForLoop = false);
         bool checkCaseValue(StringView sCaseDefinition);
 
-        std::string extractFlagsAndIndexVariables();
+        std::vector<std::string> extractFlagsAndIndexVariables();
         void fillJumpTableAndExpandRecursives();
         void prepareSwitchExpression(int nSwitchStart);
         void checkParsingModeAndExpandDefinitions();
-        void prepareLocalVarsAndReplace(std::string& sVars);
+        void prepareLocalVarsAndReplace(const std::vector<std::string>& sVars);
         void updateTestStats();
 
 

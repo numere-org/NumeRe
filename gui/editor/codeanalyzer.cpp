@@ -791,6 +791,32 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                                                                    m_sError,
                                                                    _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
                     }
+
+                    // Examine the optional condition
+                    EndlessVector<std::string> args = getAllArguments(sArgument);
+
+                    if (args.size() > 1)
+                    {
+                        if (args[1] == "true" || (args[1].find_first_not_of("1234567890.") == string::npos && args[1] != "0"))
+                        {
+                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                                       highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
+                                                                       m_sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
+                        }
+                        else if (args[1] == "false" || args[1] == "0")
+                        {
+                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                                       highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
+                                                                       m_sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
+                        }
+                        else if (containsAssignment(args[1]))
+                        {
+                            // Does it contain an assignment? Warn the user as m_editor is probably not intendet
+                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                                       highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
+                                                                       m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                        }
+                    }
                 }
 
                 // Store the for index variable in the list of known

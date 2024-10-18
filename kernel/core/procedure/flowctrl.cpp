@@ -214,19 +214,6 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
             vCmdArray[nth_Cmd].sFlowCtrlHeader.insert(0, "|>");
             sVar.trim_front(2);
         }
-
-        sVar.strip();
-
-        // Get the variable address of the loop
-        // index
-        for (size_t i = 0; i < sVarArray.size(); i++)
-        {
-            if (sVarArray[i] == sVar)
-            {
-                vCmdArray[nth_Cmd].nVarIndex = i;
-                break;
-            }
-        }
     }
 
     std::string sHead = vCmdArray[nth_Cmd].sFlowCtrlHeader;
@@ -258,6 +245,15 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     for (int64_t __i = nFirstVal; (nInc)*__i <= nInc * nLastVal; __i += nInc)
     {
         vVarArray[nVarAdress] = mu::Value(__i);
+
+        // Handle the optional third parameter containing a condition
+        if (nNum > 2)
+        {
+            v = evalHeader(nNum, sHead, true, nth_Cmd, "for");
+
+            if (!mu::all(v[2]))
+                return nJumpTable[nth_Cmd][BLOCK_END];
+        }
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -391,24 +387,14 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 bPrintedStatus = true;
             }
         }
+
+        // Update the information from the header
+        v = evalHeader(nNum, sHead, true, nth_Cmd, "for");
+        nLastVal = v[1].getAsScalarInt();
     }
 
     return nJumpTable[nth_Cmd][BLOCK_END];
 }
-
-
-/////////////////////////////////////////////////
-/// \brief Simple enum to make the variable types
-/// of the range based for loop more readable.
-/////////////////////////////////////////////////
-enum RangeForVarType
-{
-    DECLARE_NEW_VAR = -1,
-    DETECT_VAR_TYPE,
-    NUMVAR,
-    STRINGVAR,
-    CLUSTERVAR
-};
 
 
 /////////////////////////////////////////////////
@@ -428,37 +414,17 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     int nVarAdress = 0;
     int nLoopCount = 0;
     bPrintedStatus = false;
-    RangeForVarType varType = DETECT_VAR_TYPE;
 
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
         vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find("->") + 2);
         StringView sVar(vCmdArray[nth_Cmd].sCommand, vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
-        sVar.remove_from(sVar.find("->")+2);
-        sVar.strip();
+        sVar.remove_from(sVar.find("->"));
 
         if (sVar.starts_with("|>"))
         {
             vCmdArray[nth_Cmd].sFlowCtrlHeader.insert(0, "|>");
             sVar.trim_front(2);
-        }
-
-        sVar.strip();
-
-        // Get the variable address of the loop
-        // index
-        for (size_t i = 0; i < sVarArray.size(); i++)
-        {
-            if (sVarArray[i] == sVar)
-            {
-                vCmdArray[nth_Cmd].nVarIndex = i;
-                sVarArray[i].erase(sVarArray[i].find("->"));
-                StripSpaces(sVarArray[i]);
-
-                // The variable has not been declared yet
-                varType = DECLARE_NEW_VAR;
-                break;
-            }
         }
     }
 
@@ -470,57 +436,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 
     // Evaluate the header of the for loop and
     // assign the result to the iterator
-    NumeRe::Cluster range = evalRangeBasedHeader(sHead, nth_Cmd, "for");
-
-    // Shall we declare a new iterator variable? Otherwise try
-    // to detect the type of the already created iterator variable
-    if (varType == DECLARE_NEW_VAR)
-    {
-        if (sVarArray[nVarAdress].front() == '{')
-        {
-            EndlessVector<std::string> vIters = getAllArguments(sVarArray[nVarAdress].substr(1, sVarArray[nVarAdress].length()-2));
-
-            // Create a temporary cluster for all iterators and remove
-            // the trailing closing brace to change that to individual
-            // indices for every iterator
-            std::string sTempCluster = _dataRef->createTemporaryCluster(vIters.front());
-            sTempCluster.pop_back();
-
-            // Create single calls for every single iterator
-            for (size_t i = 0; i < vIters.size(); i++)
-            {
-                mVarMap[vIters[i]] = sTempCluster + toString(i+1) + "}";
-                replaceLocalVars(vIters[i], mVarMap[vIters[i]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
-
-                // Add or replace the iterators in the list of iterators
-                if (i)
-                    sVarArray.push_back(mVarMap[vIters[i]]);
-                else
-                    sVarArray[nVarAdress] = mVarMap[vIters[0]];
-            }
-
-            // Note the needed iterator stepping
-            vCmdArray[nth_Cmd].nRFStepping = vIters.size()-1;
-            varType = CLUSTERVAR;
-        }
-        else
-        {
-            // Create a local variable
-            mVarMap[sVarArray[nVarAdress]] = Mangler::mangleFlowCtrlLocals(sVarArray[nVarAdress], nthRecursion);
-            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
-            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
-            _parserRef->DefineVar(sVarArray[nVarAdress], &vVarArray[nVarAdress]);
-            varType = NUMVAR;
-        }
-    }
-    else
-    {
-        // Find the type of the current iterator variable
-        if (sVarArray[nVarAdress].find('{') != std::string::npos)
-            varType = CLUSTERVAR;
-        else
-            varType = NUMVAR;
-    }
+    mu::Array range = evalRangeBasedHeader(sHead, nth_Cmd, "for");
 
     // Print to the terminal, if needed
     if (bSilent && !nth_loop && !bMask)
@@ -535,23 +451,12 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     for (size_t i = 0; i < range.size(); i++)
     {
         // Set the value in the correct variable type
-        switch (varType)
+        for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
         {
-            case NUMVAR:
-                vVarArray[nVarAdress].overwrite(range.getValue(i));
-                break;
-            default:
-            {
-                NumeRe::Cluster& iterCluster = _dataRef->getCluster(sVarArray[nVarAdress]);
-
-                for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
-                {
-                    iterCluster.setValue(n, range.getValue(i+n));
-                }
-
-                i += vCmdArray[nth_Cmd].nRFStepping;
-            }
+            vVarArray[nVarAdress+n].overwrite(range.get(i+n));
         }
+
+        i += vCmdArray[nth_Cmd].nRFStepping;
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -724,7 +629,6 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         vCmdArray[nth_Cmd].sFlowCtrlHeader = extractHeaderExpression(vCmdArray[nth_Cmd].sCommand);
 
     std::string sWhile_Condition = vCmdArray[nth_Cmd].sFlowCtrlHeader;
-    std::string sWhile_Condition_Back = sWhile_Condition;
     bPrintedStatus = false;
     int nLoopCount = 0;
     mu::Array* v = 0;
@@ -858,12 +762,6 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
             }
         }
-
-        // If the while condition has changed during the evaluation
-        // re-use the original condition to ensure that the result of
-        // the condition is true
-        if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsTablesOrClusters(sWhile_Condition_Back))
-            sWhile_Condition = sWhile_Condition_Back;
     }
 
     return vCmdArray.size();
@@ -1518,14 +1416,14 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 /// used here.
 ///
 /// \param nNum int&
-/// \param sHeadExpression std::string&
+/// \param sHeadExpression std::string
 /// \param bIsForHead bool
 /// \param nth_Cmd int
 /// \param sHeadCommand const std::string&
 /// \return mu::Array*
 ///
 /////////////////////////////////////////////////
-mu::Array* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
+mu::Array* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
 {
     int nCurrentCalcType = nCalcType[nth_Cmd];
     std::string sCache;
@@ -1688,20 +1586,17 @@ mu::Array* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bI
 /////////////////////////////////////////////////
 /// \brief This member function handles the
 /// evaluation of the range-based flow control
-/// headers. It will return a cluster of the
+/// headers. It will return a mu::Array of the
 /// evaluated return values.
 ///
-/// \param sHeadExpression std::string&
+/// \param sHeadExpression std::string
 /// \param nth_Cmd int
 /// \param sHeadCommand const std::string&
-/// \return NumeRe::Cluster
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand)
+mu::Array FlowCtrl::evalRangeBasedHeader(std::string sHeadExpression, int nth_Cmd, const std::string& sHeadCommand)
 {
-    NumeRe::Cluster result;
-    mu::Array* v;
-    int nNum;
     int nCurrentCalcType = nCalcType[nth_Cmd];
     std::string sCache;
     nCurrentCommand = nth_Cmd;
@@ -1779,13 +1674,14 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
             && !_parserRef->IsAlreadyParsed(sHeadExpression))
             _parserRef->SetExpr(sHeadExpression);
 
+        mu::Array result;
+
         // Evaluate all remaining equations in the stack
         do
         {
-            v = _parserRef->Eval(nNum);
+            result = _parserRef->Eval();
         } while (_parserRef->IsNotLastStackItem());
 
-        result.setValueArray(v[0]);
         return result;
     }
 
@@ -1855,9 +1751,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
     if (!nCalcType[nth_Cmd] && !nJumpTable[nth_Cmd][PROCEDURE_INTERFACE])
         nCalcType[nth_Cmd] |= CALCTYPE_NUMERICAL;
 
-    v = _parserRef->Eval(nNum);
-    result.setValueArray(v[0]);
-    return result;
+    return _parserRef->Eval();
 }
 
 
@@ -2366,7 +2260,7 @@ void FlowCtrl::eval()
     // Read the flow control statements only and
     // extract the index variables and the flow
     // control flags
-    std::string sVars = extractFlagsAndIndexVariables();
+    std::vector<std::string> vars = extractFlagsAndIndexVariables();
 
     // If already suppressed from somewhere else
     if (!_optionRef->systemPrints())
@@ -2382,7 +2276,7 @@ void FlowCtrl::eval()
     // expanded form.
     try
     {
-        prepareLocalVarsAndReplace(sVars);
+        prepareLocalVarsAndReplace(vars);
         checkParsingModeAndExpandDefinitions();
     }
     catch (...)
@@ -3827,13 +3721,12 @@ bool FlowCtrl::checkCaseValue(StringView sCaseDefinition)
 /// and extract the index variables and the flow
 /// control flags.
 ///
-/// \return std::string
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-string FlowCtrl::extractFlagsAndIndexVariables()
+std::vector<std::string> FlowCtrl::extractFlagsAndIndexVariables()
 {
-    std::string sVars = ";";
-    int nVarArray = 0;
+    std::vector<std::string> vars;
 
     for (size_t i = 0; i < vCmdArray.size(); i++)
     {
@@ -3844,26 +3737,55 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         // Extract the index variables
         if (vCmdArray[i].sCommand.starts_with("for"))
         {
-            StringView sVar(vCmdArray[i].sCommand, vCmdArray[i].sCommand.find('(') + 1);
+            size_t nParensPos = vCmdArray[i].sCommand.find('(');
+            vCmdArray[i].sCommand.pop_back();
+            vCmdArray[i].sCommand[nParensPos] = ' ';
+
+            StringView sVar(vCmdArray[i].sCommand, nParensPos + 1);
 
             if (sVar.find("->") != std::string::npos)
-                sVar.remove_from(sVar.find("->")+2); // Has the arrow appended
+            {
+                sVar.remove_from(sVar.find("->"));
+
+                if (sVar.starts_with("|>"))
+                    sVar.trim_front(2);
+
+                sVar.strip();
+
+                if (sVar.front() == '{')
+                {
+                    // Decode the iterators right here
+                    EndlessVector<StringView> vIters = getAllArguments(sVar.subview(1, sVar.length()-2));
+
+                    // Note the needed iterator stepping
+                    vCmdArray[i].nRFStepping = vIters.size()-1;
+                    vCmdArray[i].nVarIndex = vars.size();
+
+                    for (size_t i = 0; i < vIters.size(); i++)
+                        vars.push_back(vIters[i].to_string());
+
+                    continue;
+                }
+            }
             else
+            {
                 sVar.remove_from(sVar.find('='));
 
-            if (sVar.starts_with("|>"))
-                sVar.trim_front(2);
+                if (sVar.starts_with("|>"))
+                    sVar.trim_front(2);
 
-            sVar.strip();
-
-            if (sVars.find(";" + sVar + ";") == std::string::npos)
-            {
-                sVars += sVar + ";";
-                nVarArray++;
+                sVar.strip();
             }
 
-            vCmdArray[i].sCommand[vCmdArray[i].sCommand.find('(')] = ' ';
-            vCmdArray[i].sCommand.pop_back();
+            auto iter = std::find(vars.begin(), vars.end(), sVar.to_string());
+
+            if (iter == vars.end())
+            {
+                vCmdArray[i].nVarIndex = vars.size();
+                vars.push_back(sVar.to_string());
+            }
+            else
+                vCmdArray[i].nVarIndex = std::distance(vars.begin(), iter);
         }
 
         // Extract the flow control flags
@@ -3889,10 +3811,7 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         }
     }
 
-    sVarArray.resize(nVarArray);
-    vVarArray.resize(nVarArray);
-
-    return sVars;
+    return vars;
 }
 
 
@@ -4323,43 +4242,36 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 /// them in the command lines in the current
 /// command block.
 ///
-/// \param sVars std::string&
+/// \param vars const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
+void FlowCtrl::prepareLocalVarsAndReplace(const std::vector<std::string>& vars)
 {
-    sVars = sVars.substr(1, sVars.length() - 1);
+    sVarArray.reserve(vars.size());
+    vVarArray.reserve(vars.size());
 
     // If a loop variable was defined before the
     // current loop, this one is used. All others
     // are create locally and therefore get
     // special names
-    for (size_t i = 0; i < sVarArray.size(); i++)
+    for (size_t i = 0; i < vars.size(); i++)
     {
-        sVarArray[i] = sVars.substr(0, sVars.find(';'));
-        bool isRangeBased = sVarArray[i].find("->") != std::string::npos;
-
-        if (sVars.find(';') != std::string::npos)
-            sVars = sVars.substr(sVars.find(';') + 1);
-
-        StripSpaces(sVarArray[i]);
+        sVarArray.push_back(vars[i]);
+        StripSpaces(sVarArray.back());
 
         // Is it already defined?
-        if (sVarArray[i].starts_with("_~") && getPointerToVariable(sVarArray[i], *_parserRef))
-            vVars[sVarArray[i]] = getPointerToVariable(sVarArray[i], *_parserRef);
+        if (sVarArray.back().starts_with("_~") && getPointerToVariable(sVarArray.back(), *_parserRef))
+            vVars[sVarArray.back()] = getPointerToVariable(sVarArray.back(), *_parserRef);
         else
         {
             // Create a local variable otherwise
-            if (!isRangeBased)
-            {
-                mVarMap[sVarArray[i]] = Mangler::mangleFlowCtrlLocals(sVarArray[i], nthRecursion);
-                sVarArray[i] = mVarMap[sVarArray[i]];
-            }
+            mVarMap[sVarArray.back()] = Mangler::mangleFlowCtrlLocals(sVarArray.back(), nthRecursion);
+            sVarArray.back() = mVarMap[sVarArray.back()];
         }
 
-        if (!isRangeBased)
-            _parserRef->DefineVar(sVarArray[i], &vVarArray[i]);
+        vVarArray.push_back(mu::Variable());
+        _parserRef->DefineVar(sVarArray.back(), &vVarArray.back());
     }
 
     _parserRef->SetVarAliases(&mVarMap);
