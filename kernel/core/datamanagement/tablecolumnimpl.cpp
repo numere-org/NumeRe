@@ -1711,7 +1711,10 @@ void CategoricalColumn::assign(const TableColumn* column)
 void CategoricalColumn::insert(const VectorIndex& idx, const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_CATEGORICAL)
+    {
+        mergeCategories(static_cast<const CategoricalColumn*>(column)->m_categories);
         TableColumn::setValue(idx, column->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END)));
+    }
     else
         throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
 }
@@ -2055,6 +2058,25 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
     for (int& val : m_data)
     {
         val = vMap[val];
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Merges the internal categories with
+/// new categories.
+///
+/// \param vCategories const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CategoricalColumn::mergeCategories(const std::vector<std::string>& vCategories)
+{
+    // Append a category, if it is missing
+    for (const auto& cat : vCategories)
+    {
+        if (std::find(m_categories.begin(), m_categories.end(), cat) == m_categories.end())
+            m_categories.push_back(cat);
     }
 }
 

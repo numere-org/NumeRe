@@ -45,3 +45,4 @@ Cleaned	Procedure arguments in the debugger stacktrace are now shown in demangle
 New	It is now possible to file an issue directly via the corresponding menu item in NumeRe without the need for a Github account. The same feature is also used as a crash reporter.
 Cleaned	The graphical glitch around the editor tabs should have been resolved. Further testing and observation is necessary.
 Added	Index-based "for" loops can now have an additional condition as their second argument (i.e. "for (i = 1:0, a !=b)"), which is checked before each loop iteration.
+Fixed	Categorial information of columns is now preserved upon table copy.
