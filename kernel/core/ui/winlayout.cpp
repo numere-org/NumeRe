@@ -344,6 +344,8 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
                 break;
             else if (_mMatch.sString == "group")
             {
+                replaceAll(line, "<this>", sThisFolder.c_str());
+
                 // Start a new group
                 tinyxml2::XMLElement* newgroup = layout->NewElement("group");
                 currentGroup.top()->InsertEndChild(newgroup);
@@ -360,6 +362,13 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
 
                 if (findParameter(line, "expand"))
                     newgroup->SetAttribute("expand", "true");
+
+                if (findParameter(line, "id"))
+                    newgroup->SetAttribute("id", parseOpt(line, findParameter(line, "id", '=')+2).c_str());
+
+                if (findParameter(line, "onchange", '='))
+                    newgroup->SetAttribute("onchange", parseEventOpt(line,
+                                                                     findParameter(line, "onchange", '=')+8, sThisFolder).c_str());
 
             }
             else if (_mMatch.sString == "endgroup")

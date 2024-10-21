@@ -438,6 +438,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_DATE_CHANGED(-1, CustomWindow::OnDateEvent)
     EVT_TIME_CHANGED(-1, CustomWindow::OnDateEvent)
     EVT_MENU(-1, CustomWindow::OnMenuEvent)
+    EVT_BOOKCTRL_PAGE_CHANGED(-1, CustomWindow::OnTabChanged)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
     cEVT_SET_SELECTION(-1, CustomWindow::OnSetSelectionEvent)
@@ -1232,8 +1233,12 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 {
                     if (!noteBook)
                     {
-                        noteBook = new wxNotebook(currParent, wxID_ANY);
+                        noteBook = new wxNotebook(currParent, id);
+                        m_windowItems[id] = std::make_pair(CustomWindow::NOTEBOOK, noteBook);
                         currSizer->Add(noteBook, 1, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+
+                        if (currentChild->Attribute("onchange"))
+                            m_eventTable[id].onchange = currentChild->Attribute("onchange");
                     }
 
                     GroupPanel* _newPanel = new GroupPanel(noteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, style == wxHORIZONTAL ? false : true);
@@ -1768,6 +1773,31 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
             break;
         }
+        case CustomWindow::NOTEBOOK:
+        {
+            wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
+            params.type = "tabs";
+
+            for (int page = 0; page < noteBook->GetPageCount(); page++)
+            {
+                if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
+                    params.label += ", ";
+                }
+
+                params.label += convertToCodeString(noteBook->GetPageText(page));
+            }
+
+            if (params.label[0] == '{')
+                params.label += '}';
+
+            params.value = convertToCodeString(noteBook->GetPageText(noteBook->GetSelection()));
+
+            break;
+        }
         case CustomWindow::MENUITEM:
         {
             wxMenuItem* item = static_cast<wxMenuItem*>(object.second);
@@ -2010,6 +2040,12 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
         {
             wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
             int selection = enumerateListItems(listCtrl, listCtrl->GetSelection());
+            return toString(selection+1);
+        }
+        case CustomWindow::NOTEBOOK:
+        {
+            wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
+            int selection = noteBook->GetSelection();
             return toString(selection+1);
         }
         case CustomWindow::GAUGE:
@@ -2317,6 +2353,13 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
             populateTreeListCtrl(listCtrl, getChoices(_value.stringValue));
             break;
         }
+        case CustomWindow::NOTEBOOK:
+        {
+            wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
+            noteBook->SetPageText(noteBook->GetSelection(), removeQuotationMarks(_value.stringValue));
+
+            break;
+        }
         case CustomWindow::MENUITEM:
         {
             wxMenuItem* item = static_cast<wxMenuItem*>(object.second);
@@ -2392,6 +2435,22 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
                     listCtrl->AppendColumn(labels[i]);
                 else
                     listCtrl->GetDataView()->GetColumn(i)->SetTitle(labels[i]);
+            }
+
+            break;
+        }
+        case CustomWindow::NOTEBOOK:
+        {
+            wxString lab = _label;
+            wxArrayString labels = getChoices(lab);
+            wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
+
+            for (size_t i = 0; i < labels.size(); i++)
+            {
+                if (i >= (size_t)noteBook->GetPageCount())
+                    break;
+
+                noteBook->SetPageText(i, labels[i]);
             }
 
             break;
@@ -2647,6 +2706,15 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
 
             break;
         }
+        case CustomWindow::NOTEBOOK:
+        {
+            wxNotebook* notebook = static_cast<wxNotebook*>(object.second);
+
+            if (selectionID > 0 && selectionID <= notebook->GetPageCount())
+                notebook->ChangeSelection(selectionID-1);
+
+            break;
+        }
         case CustomWindow::GAUGE:
         case CustomWindow::SPINCTRL:
         case CustomWindow::SLIDER:
@@ -2828,6 +2896,19 @@ void CustomWindow::OnChange(wxCommandEvent& event)
 ///
 /////////////////////////////////////////////////
 void CustomWindow::OnSpin(wxSpinEvent& event)
+{
+    handleEvent(event, "onchange");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief wxNoteBook event handler.
+///
+/// \param event wxBookCtrlEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnTabChanged(wxBookCtrlEvent& event)
 {
     handleEvent(event, "onchange");
 }

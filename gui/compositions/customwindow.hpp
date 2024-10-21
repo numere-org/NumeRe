@@ -20,6 +20,7 @@
 #define CUSTOMWINDOW_HPP
 
 #include <wx/wx.h>
+#include <wx/notebook.h>
 #include <map>
 #include <vector>
 #include <utility>
@@ -188,22 +189,23 @@ class CustomWindow : public wxFrame
     public:
         enum WindowItemType
         {
-            CHECKBOX,   // OK
-            TEXT,       // OK
-            TEXTCTRL,   // OK
-            TREELIST,   // OK
-            SPINCTRL,   // OK
-            BUTTON,     // OK
-            RADIOGROUP, // OK
-            DROPDOWN,   // OK
+            CHECKBOX,
+            TEXT,
+            TEXTCTRL,
+            TREELIST,
+            SPINCTRL,
+            BUTTON,
+            RADIOGROUP,
+            DROPDOWN,
             COMBOBOX,
-            GAUGE,      // OK
-            IMAGE,      // OK
-            TABLE,      // OK
-            GRAPHER,    // OK
+            GAUGE,
+            IMAGE,
+            TABLE,
+            GRAPHER,
             SLIDER,
             DATETIMEPICKER,
             LAMP,
+            NOTEBOOK,
             MENUITEM
         };
 
@@ -284,6 +286,7 @@ class CustomWindow : public wxFrame
         void OnClick(wxCommandEvent& event);
         void OnChange(wxCommandEvent& event);
         void OnSpin(wxSpinEvent& event);
+        void OnTabChanged(wxBookCtrlEvent& event);
         void OnCellSelect(wxGridEvent& event);
         void OnCellActivate(wxGridEvent& event);
         void OnClose(wxCloseEvent& event);

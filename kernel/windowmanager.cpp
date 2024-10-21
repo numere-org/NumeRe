@@ -271,6 +271,8 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::SLIDER);
             else if (_selection == "menuitem")
                 return m_customWindow->getWindowItems(CustomWindow::MENUITEM);
+            else if (_selection == "tabs")
+                return m_customWindow->getWindowItems(CustomWindow::NOTEBOOK);
         }
 
         return std::vector<int>();
