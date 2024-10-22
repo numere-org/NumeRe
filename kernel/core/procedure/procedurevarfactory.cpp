@@ -475,7 +475,7 @@ void ProcedureVarFactory::createLocalInlineVars(std::string sVarList, const mu::
 
                 _parserRef->SetExpr(sVarValue);
                 currentDef.erase(currentDef.find('='));
-                tempCluster.setValue(i, _parserRef->Eval().front());
+                tempCluster.set(i, _parserRef->Eval().front());
             }
             catch (...)
             {
@@ -486,7 +486,7 @@ void ProcedureVarFactory::createLocalInlineVars(std::string sVarList, const mu::
         }
         else
         {
-            tempCluster.setValue(i, defVal);
+            tempCluster.set(i, defVal);
             sInlineVarDef += defVal.print() + ",";
         }
 
@@ -1290,12 +1290,12 @@ std::string ProcedureVarFactory::createTestStatsCluster()
     std::string currentVar = createMangledVarName(currentDef);
     NumeRe::Cluster& testCluster = _dataRef->newCluster(currentVar);
 
-    testCluster.setString(0, "tests");
-    testCluster.setDouble(1, 0);
-    testCluster.setString(2, "successes");
-    testCluster.setDouble(3, 0);
-    testCluster.setString(4, "fails");
-    testCluster.setDouble(5, 0);
+    testCluster.set(0, "tests");
+    testCluster.set(1, 0);
+    testCluster.set(2, "successes");
+    testCluster.set(3, 0);
+    testCluster.set(4, "fails");
+    testCluster.set(5, 0);
 
     mLocalClusters[currentDef] = currentVar;
 

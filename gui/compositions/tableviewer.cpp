@@ -1129,8 +1129,19 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
     if (isGridNumeReTable)
         return *static_cast<std::complex<double>*>(GetTable()->GetValueAsCustom(row, col, "complex"));
 
-    if (GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
-        return StrToCmplx(GetCellValue(row, col).ToStdString());
+    std::string cellValue = GetCellValue(row, col).ToStdString();
+
+    if (cellValue.front() != '"')
+    {
+        if (isConvertible(cellValue, CONVTYPE_VALUE))
+            return StrToCmplx(cellValue);
+
+        if (isConvertible(cellValue, CONVTYPE_LOGICAL))
+            return StrToLogical(cellValue);
+
+        if (isConvertible(cellValue, CONVTYPE_DATE_TIME))
+            return to_double(StrToTime(cellValue));
+    }
 
     return NAN;
 }

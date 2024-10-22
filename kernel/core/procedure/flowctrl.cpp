@@ -4300,9 +4300,9 @@ void FlowCtrl::updateTestStats()
         NumeRe::Cluster& testcluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sTestClusterName);
         AssertionStats total = _assertionHandler.getStats();
 
-        testcluster.setDouble(1, double(total.nCheckedAssertions - baseline.nCheckedAssertions));
-        testcluster.setDouble(3, double(total.nCheckedAssertions - baseline.nCheckedAssertions - (total.nFailedAssertions - baseline.nFailedAssertions)));
-        testcluster.setDouble(5, double(total.nFailedAssertions - baseline.nFailedAssertions));
+        testcluster.set(1, double(total.nCheckedAssertions - baseline.nCheckedAssertions));
+        testcluster.set(3, double(total.nCheckedAssertions - baseline.nCheckedAssertions - (total.nFailedAssertions - baseline.nFailedAssertions)));
+        testcluster.set(5, double(total.nFailedAssertions - baseline.nFailedAssertions));
     }
 }
 

@@ -249,7 +249,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 
     _memoryManager.setPath(_option.getLoadPath(), true, sPath);
     _memoryManager.createRevisionsFolder();
-    _memoryManager.newCluster("ans").setDouble(0, NAN);
+    _memoryManager.newCluster("ans");
 
     _memoryManager.setSavePath(_option.getSavePath());
     _memoryManager.setbLoadEmptyCols(_option.loadEmptyCols());
@@ -3572,10 +3572,12 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
 
         for (size_t i = 0; i < clust.size(); i++)
         {
-            if (clust.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
-                stringTable.set(i, 0, clust.getString(i));
+            const mu::Value& val = clust.get(i);
+
+            if (val.getType() == mu::TYPE_STRING)
+                stringTable.set(i, 0, val.print());
             else
-                stringTable.set(i, 0, mu::isnan(clust.getDouble(i)) ? "---" : toString(clust.getDouble(i), 5));
+                stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
         }
 
         return stringTable;

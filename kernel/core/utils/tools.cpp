@@ -2192,7 +2192,7 @@ static bool containsStringClusters(StringView sLine)
 
     for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
     {
-        if (iter->second.isString())
+        if (iter->second.getCommonType() == mu::TYPE_STRING)
         {
             size_t pos = sLine.find(iter->first + "{");
 

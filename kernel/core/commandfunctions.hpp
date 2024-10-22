@@ -3046,7 +3046,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
         // Clear also the clusters
         _data.clearAllClusters();
         NumeRe::Cluster& ans = _data.newCluster("ans");
-        ans.setDouble(0, NAN);
         NumeReKernel::getInstance()->setAns(&ans);
     }
 
@@ -3787,10 +3786,12 @@ static CommandReturnValues cmd_show(string& sCmd)
             // Copy the data to the new container
             for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
             {
-                if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
-                    _stringTable.set(i, 0, cluster.getString(_accessParser.getIndices().row[i]));
+                const mu::Value& val = cluster.get(_accessParser.getIndices().row[i]);
+
+                if (val.getType() == mu::TYPE_STRING)
+                    _stringTable.set(i, 0, val.print());
                 else
-                    _stringTable.set(i, 0, mu::isnan(cluster.getDouble(_accessParser.getIndices().row[i])) ? "---" : toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
+                    _stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
             }
 
             // Redirect control

@@ -203,7 +203,7 @@ namespace mu
             void zerosToVoid();
             bool isCommutative() const;
 
-        private:
+        protected:
             mutable DataType m_commonType;
             static const Value m_default;
     };

@@ -47,3 +47,5 @@ Cleaned	The graphical glitch around the editor tabs should have been resolved. F
 Added	Index-based "for" loops can now have an additional condition as their second argument (i.e. "for (i = 1:0, a !=b)"), which is checked before each loop iteration.
 Fixed	Categorial information of columns is now preserved upon table copy.
 Added	The tabs created with "group -style=tabs ..." in window layouts can now have an ID and an "onchange" event handler firing when the user changes the tab. It is also possible to access the properties of the tab group using "window ... -get" and "window ... -set".
+Applied	Clusters have been migrated to the new kernel data structure. They now also support the same datatypes within their elements as the usual variables.
+Fixed	Defaulting a cluster to "{}" or initializing a cluster with this value should now create an actual empty cluster. Note that "cnt(clst{})" will still return 1 just like within "cnt({})".

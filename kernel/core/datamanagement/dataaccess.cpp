@@ -642,7 +642,7 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
         {
             // Create the vector using the indices
             for (size_t i = 0; i < _idx.row.size(); i++)
-                vEntityContents.push_back(cluster.getValue(_idx.row[i]));
+                vEntityContents.push_back(cluster.get(_idx.row[i]));
         }
     }
 
@@ -2548,7 +2548,7 @@ mu::Value getDataFromObject(const std::string& sObject, long long int i, long lo
 
     // return the data depending on the passed isCluster
     // boolean, the object name and its indices
-    return isCluster ? _data.getCluster(sObject).getValue(i) : _data.getElement(i, j, sObject);
+    return isCluster ? _data.getCluster(sObject).get(i) : _data.getElement(i, j, sObject);
 }
 
 
@@ -2582,7 +2582,7 @@ mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows
 
         for (size_t i = 0; i < vRows.size(); i++)
         {
-            vRes.push_back(clst.getValue(vRows[i]));
+            vRes.push_back(clst.get(vRows[i]));
         }
 
         return vRes;

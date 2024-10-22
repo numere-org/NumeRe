@@ -704,7 +704,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
                     if (nBracePos < sVarArray[i].length()-2)
                         nItem = StrToInt(sVarArray[i].substr(nBracePos+1, sVarArray[i].length()-1-nBracePos-1))-1;
 
-                    mLocalVars[iter->first + "@" + iter->second] = iterData.getValue(nItem);
+                    mLocalVars[iter->first + "@" + iter->second] = iterData.get(nItem);
                 }
                 else
                     mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];

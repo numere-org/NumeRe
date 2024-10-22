@@ -247,7 +247,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.setDouble(_idx.row[i], _mResult(0, i));
+                cluster.set(_idx.row[i], _mResult(0, i));
             }
         }
         else
@@ -258,7 +258,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.setDouble(_idx.row[i], _mResult(i));
+                cluster.set(_idx.row[i], _mResult(i));
             }
         }
     }
@@ -743,7 +743,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             // Write the contents to the matrix
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _mClusterMatrix(i) = iter->second.getDouble(_idx.row[i]);
+                _mClusterMatrix(i) = iter->second.get(_idx.row[i]).getNum().asCF64();
             }
 
             // Declare the cluster as a returned matrix (simplifies the
