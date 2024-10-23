@@ -225,7 +225,7 @@ class NumeReWindow : public wxFrame
         wxBitmap getToolbarIcon(const wxString& iconName);
 
         void notifyInstallationDone();
-        void OnReportIssue(bool fromCrash = false);
+        void OnReportIssue(ErrorLocation location = ERR_NONE);
 
 
     private:

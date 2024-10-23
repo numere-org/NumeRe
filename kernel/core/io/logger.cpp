@@ -198,7 +198,7 @@ void Logger::push_line(const std::string& sMessage)
 /// \param lvl Logger::LogLevel
 ///
 /////////////////////////////////////////////////
-DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl), m_startAfterCrash(false)
+DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl), m_startAfterCrash(false), m_hasErrorLogged(false)
 {
     //
 }

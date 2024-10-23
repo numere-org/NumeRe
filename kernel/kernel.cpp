@@ -197,7 +197,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 {
     if (_parent && m_parent == nullptr)
         m_parent = _parent;
-    //Do some start-up stuff here
 
     std::string sTime = getTimeStamp(false);
     std::string sLogFile = "numere.log";
@@ -210,8 +209,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _procedure.setPredefinedFuncs(sPredefinedFunctions);
 
     // Make the path UNIX style
-    while (sPath.find('\\') != std::string::npos)
-        sPath[sPath.find('\\')] = '/';
+    replaceAll(sPath, "\\", "/");
 
     // Set the path in the settings object and load the settings
     // from the config file
@@ -289,16 +287,32 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     if (fileExists(_procedure.getPluginInfoPath()))
     {
         g_logger.info("Loading plugins.");
-        _procedure.loadPlugins();
-        _memoryManager.setPluginCommands(_procedure.getPluginNames());
-        _lang.addToLanguage(getPluginLanguageStrings());
+
+        try
+        {
+            _procedure.loadPlugins();
+            _memoryManager.setPluginCommands(_procedure.getPluginNames());
+            _lang.addToLanguage(getPluginLanguageStrings());
+        }
+        catch (...)
+        {
+            g_logger.error("Could not find or load the plugin definition file.");
+        }
     }
 
     // Load the function definitions
     if (_option.controlDefinitions() && fileExists(_option.getExePath() + "\\functions.def"))
     {
         g_logger.info("Loading custom function definitions.");
-        _functions.load(_option, true);
+
+        try
+        {
+            _functions.load(_option, true);
+        }
+        catch (...)
+        {
+            g_logger.error("Could not find or load the function definition file.");
+        }
     }
 
     // Load the binary plot font

@@ -169,9 +169,13 @@ bool NumeReApp::OnInit()
     wxBitmap splashImage;
     wxSplashScreen* splash = nullptr;
     g_logger.debug("Loading splash image.");
+    wxString splashPath = f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)+"icons\\splash.png";
 
-    if (splashImage.LoadFile(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
-        splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 0, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+    if (splashImage.LoadFile(splashPath, wxBITMAP_TYPE_PNG))
+        splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 0, nullptr,
+                                    wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+    else
+        g_logger.error("The splash at '" + splashPath.ToStdString() + "' could not be found or loaded.");
 
     g_findReplace = nullptr;
 
@@ -247,9 +251,21 @@ bool NumeReApp::OnInit()
     {
         m_mainWindow->Refresh();
         m_mainWindow->Update();
+
         if (wxMessageBox(_guilang.get("GUI_DLG_START_AFTER_CRASH_QUESTION"),
                          _guilang.get("GUI_DLG_START_AFTER_CRASH"), wxICON_QUESTION | wxCENTER | wxYES | wxNO, m_mainWindow) == wxYES)
-            m_mainWindow->OnReportIssue(true);
+            m_mainWindow->OnReportIssue(ERR_CRASH);
+    }
+
+    // Did we already experience some errors during startup?
+    if (g_logger.hasLoggedError())
+    {
+        m_mainWindow->Refresh();
+        m_mainWindow->Update();
+
+        if (wxMessageBox("We are sorry, we found problems during application start-up indicating missing or corrupted language or definition files.\nWe recommend that you perform a new and clean install into the pre-selected directory 'C:/Software/NumeRe'.\n\nDo you want to send us an error report?",
+                         "NumeRe: Issue Reporter", wxICON_QUESTION | wxCENTER | wxYES | wxNO, m_mainWindow) == wxYES)
+            m_mainWindow->OnReportIssue(ERR_STARTUP);
     }
 
     // Tip of the day

@@ -21,3 +21,4 @@
 // reference to the global pointer to the find&replace dialog for suppressing the focus moving
 extern FindReplaceDialog* g_findReplace;
 extern double g_pixelScale;
+

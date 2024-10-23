@@ -570,4 +570,12 @@ enum ModifiedFileAction
 	MODIFIEDFILE_COMPILE,
 };
 
+enum ErrorLocation
+{
+    ERR_NONE,
+    ERR_STARTUP,
+    ERR_CRASH
+};
+
+
 #endif

@@ -266,10 +266,18 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     _guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
 
     g_logger.info("Loading GUI language files.");
-    if (m_options->useCustomLangFiles())
-        _guilang.loadStrings(true);
-    else
-        _guilang.loadStrings(false);
+
+    try
+    {
+        if (m_options->useCustomLangFiles())
+            _guilang.loadStrings(true);
+        else
+            _guilang.loadStrings(false);
+    }
+    catch (...)
+    {
+        g_logger.error("Error while loading language files.");
+    }
 
     UpdateWindowTitle("");
 
@@ -278,22 +286,27 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     // Create the contents of file and symbols tree
     m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
-    m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
+    m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize,
+                              wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
     m_filePanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
     m_fileTree->SetBackgroundColour(uiTheme.background.ChangeLightness(Options::TREE));
-    TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree, false, true);
+    TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"),
+                                                        _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree, false, true);
     m_filePanel->AddWindows(fileSearchCtrl, m_fileTree);
     m_treeBook->AddPage(m_filePanel, _guilang.get("GUI_FILETREE"));
 
     m_functionPanel = new TreePanel(m_treeBook, wxID_ANY);
-    m_functionTree = new FileTree(m_functionPanel, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
+    m_functionTree = new FileTree(m_functionPanel, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize,
+                                  wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
     m_functionPanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
     m_functionTree->SetBackgroundColour(uiTheme.background.ChangeLightness(Options::TREE));
 
-    TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_functionTree, true);
+    TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"),
+                                                            _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_functionTree, true);
     m_functionPanel->AddWindows(functionSearchCtrl, m_functionTree);
     m_treeBook->AddPage(m_functionPanel, _guilang.get("GUI_FUNCTIONTREE"));
     m_treeBook->Hide();
+
     wxImageList* fileIcons = m_iconManager->GetImageList();
 
     // Sets the list, but doesn't take control of it away
@@ -345,7 +358,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_book->Show();
     TreePanel* historyPanel = new TreePanel(m_noteTerm, wxID_ANY);
     m_history = new NumeReHistory(this, m_options, historyPanel, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
-    HistorySearchCtrl* histSearchCtrl = new HistorySearchCtrl(historyPanel, wxID_ANY, _guilang.get("GUI_SEARCH_HISTORY"), _guilang.get("GUI_SEARCH_CALLTIP_HISTORY"), m_history);
+    HistorySearchCtrl* histSearchCtrl = new HistorySearchCtrl(historyPanel, wxID_ANY, _guilang.get("GUI_SEARCH_HISTORY"),
+                                                              _guilang.get("GUI_SEARCH_CALLTIP_HISTORY"), m_history);
     historyPanel->AddWindows(histSearchCtrl, m_history);
     historyPanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
     m_varViewer = new VariableViewer(m_noteTerm, this);
@@ -411,10 +425,20 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     //Msgbox
     NumeRe::DataBase tipDataBase;
 
-    if (m_options->useCustomLangFiles() && fileExists(m_options->ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
-        tipDataBase.addData("<>/user/docs/hints.ndb");
-    else
-        tipDataBase.addData("<>/docs/hints.ndb");
+    try
+    {
+        if (m_options->useCustomLangFiles() && fileExists(m_options->ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
+            tipDataBase.addData("<>/user/docs/hints.ndb");
+        else
+            tipDataBase.addData("<>/docs/hints.ndb");
+    }
+    catch (...)
+    {
+        g_logger.error("Error while loading the tip data base.");
+    }
+
+    if (!tipDataBase.size())
+        g_logger.error("The database file containing the tips could not be found or loaded.");
 
     tipProvider = new MyTipProvider(tipDataBase.getColumn(0));
     showTipAtStartup = m_options->showHints();
@@ -2777,10 +2801,13 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         if (wxArgV[i].find('.') == std::string::npos)
             continue;
 
-        if (wxArgV[i].find(".exe") != std::string::npos)
-            continue;
-
         ext = toLowerCase(wxArgV[i].substr(wxArgV[i].rfind('.')).ToStdString());
+
+        if (ext == ".exe")
+        {
+            g_logger.info("Ignoring executable file '" + wxArgV[i].ToStdString() + "'");
+            continue;
+        }
 
         // Scripts: run or open?
         if (ext == ".nscr")
@@ -7506,13 +7533,13 @@ void NumeReWindow::OnAbout()
 /// \brief This member function displays the
 /// "Report an issue" dialog.
 ///
-/// \param fromCrash bool
+/// \param errLoc ErrorLocation
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OnReportIssue(bool fromCrash)
+void NumeReWindow::OnReportIssue(ErrorLocation errLoc)
 {
-    ReportIssueDialog dialog(this, wxID_ANY, fromCrash);
+    ReportIssueDialog dialog(this, wxID_ANY, errLoc);
     dialog.SetIcon(getStandardIcon());
     dialog.ShowModal();
 }

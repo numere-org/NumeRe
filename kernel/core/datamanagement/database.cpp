@@ -43,7 +43,8 @@ namespace NumeRe
         ifstream fDB;
 
         // open the ifstream
-        fDB.open(sFile.c_str());
+        fDB.open(sFile);
+
         if (fDB.fail())
             return vDBEntries;
 
@@ -59,6 +60,7 @@ namespace NumeRe
             {
                 if (sLine[0] == '#')
                     continue;
+
                 vDBEntries.push_back(utf8parser(sLine));
             }
         }

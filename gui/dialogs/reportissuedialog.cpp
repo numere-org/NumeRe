@@ -68,10 +68,10 @@ static std::string loadAuthToken()
 ///
 /// \param parent wxWindow*
 /// \param id wxWindowID
-/// \param fromCrash bool
+/// \param errLoc ErrorLocation
 ///
 /////////////////////////////////////////////////
-ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, bool fromCrash) : wxDialog(parent, id, "Report an issue", wxDefaultPosition, wxSize(600*g_pixelScale, 720*g_pixelScale), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, ErrorLocation errLoc) : wxDialog(parent, id, "Report an issue", wxDefaultPosition, wxSize(600*g_pixelScale, 720*g_pixelScale), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER), m_isCriticalIssue(false)
 {
     // Prepare the options for the dropdown and the radio group
     wxArrayString types;
@@ -147,8 +147,10 @@ ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, bool fromC
     m_okButton->Disable();
 
     // Is this an automatic crash report?
-    if (fromCrash)
+    if (errLoc == ERR_CRASH)
         fillCrashData();
+    else if (errLoc == ERR_STARTUP)
+        fillStartupData();
 }
 
 
@@ -209,9 +211,15 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
         if (isFeature)
             issue.labels.push_back("feature");
         else if (isBug)
+        {
             issue.labels.push_back("bug");
+
+            if (m_isCriticalIssue)
+                issue.labels.push_back("critical");
+        }
         else
             issue.labels.push_back("change");
+
 
         static std::string sAuthToken = loadAuthToken();
 
@@ -299,9 +307,37 @@ void ReportIssueDialog::fillCrashData()
     m_contact->Enable(true);
     m_okButton->Enable(true);
 
-    m_issueTitle->SetValue("Automated crash report");
+    m_issueTitle->SetValue("Automated: Crash report");
     m_issueDescription->SetValue("While interacting with the application, I experienced a crash-to-desktop. System data and logs are appended.");
     m_logSelection->SetSelection(1);
     m_expectedBehavior->SetValue("Resolve the problem for this crash.");
+    m_isCriticalIssue = true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief If we are opening this dialog after a
+/// startup, then we automatically fill in the
+/// relevant startup problem data.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void ReportIssueDialog::fillStartupData()
+{
+    m_issueType->SetSelection(1);
+    m_issueTitle->Enable(true);
+    m_issueDescription->Enable(true);
+    m_issueReproduction->Show(true);
+    m_logSelection->Show(true);
+    m_expectedBehavior->Enable(true);
+    m_contact->Enable(true);
+    m_okButton->Enable(true);
+
+    m_issueTitle->SetValue("Automated: Startup problem");
+    m_issueDescription->SetValue("While starting the application, some problems occured. System data and logs are appended.");
+    m_issueReproduction->SetValue("See attached logfile for relevant error locations.");
+    m_logSelection->SetSelection(2);
+    m_expectedBehavior->SetValue("Resolve the problem occured during this startup.");
 }
 

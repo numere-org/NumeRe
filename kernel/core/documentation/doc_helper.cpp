@@ -510,9 +510,16 @@ void Documentation::addFileToDocumentationIndex(const std::string& sFileName)
                 addEntry(article.m_docEntry, article.m_keywords);
         }
     }
+    catch (SyntaxError& e)
+    {
+        // Catch all to avoid issues during start-up
+        g_logger.error("Error while trying to import '" + sFileName + "'. Error code: "
+                       + toString((size_t)e.errorcode) + " " + e.getExpr());
+    }
     catch (...)
     {
         // Catch all to avoid issues during start-up
+        g_logger.error("Error while trying to import '" + sFileName + "'.");
     }
 }
 

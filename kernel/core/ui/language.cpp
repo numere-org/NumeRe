@@ -20,10 +20,11 @@
 
 #include "language.hpp"
 #include "../utils/stringtools.hpp"
+#include "../io/logger.hpp"
+#include "../structures.hpp"
 
-using namespace std;
 
-bool fileExists(const string&);
+bool fileExists(const std::string&);
 
 /////////////////////////////////////////////////
 /// \brief Contructor of the language class.
@@ -56,29 +57,40 @@ Language::Language(const Language& _lang) : FileSystem()
 /// single language file into a map and returns
 /// it.
 ///
-/// \param sFile const string&
-/// \return map<string,string>
+/// \param sFile std::string
+/// \return std::map<std::string,std::string>
 ///
 /////////////////////////////////////////////////
-map<string,string> Language::getLangFileContent(const string& sFile) const
+std::map<std::string,std::string> Language::getLangFileContent(std::string sFile) const
 {
-    map<string,string> mLangFileContent;
-    ifstream fFile_in;
-    string sLine;
+    std::map<std::string,std::string> mLangFileContent;
+    std::ifstream fFile_in;
+    std::string sLine;
 
-    fFile_in.open(FileSystem::ValidFileName(sFile, ".nlng").c_str());
+    try
+    {
+        sFile = FileSystem::ValidFileName(sFile, ".nlng");
+    }
+    catch (...)
+    {
+        g_logger.error("Language file path '" + sFile + "' is invalid.");
+        return mLangFileContent;
+    }
+
+    fFile_in.open(sFile);
 
     // Check, if file has been successfully opened
     if (fFile_in.fail())
     {
         fFile_in.close();
+        g_logger.error("Could not find or load language file '" + sFile + "'.");
         return mLangFileContent;
     }
 
     // Read the complete file
     while (!fFile_in.eof())
     {
-        getline(fFile_in, sLine);
+        std::getline(fFile_in, sLine);
         StripSpaces(sLine);
 
         // Ignore empty lines
@@ -89,16 +101,22 @@ map<string,string> Language::getLangFileContent(const string& sFile) const
         if (sLine.front() == '#')
             continue;
 
+        // Ensure that the language string corresponds to
+        // its syntax requirements
+        size_t eq_pos = sLine.find('=');
+
+        if (eq_pos == std::string::npos || eq_pos == 0 || eq_pos+1 == sLine.length())
+        {
+            g_logger.error("Erroneous language string '" + sLine + "' has been found in '" + sFile + "'.");
+            continue;
+        }
+
         // Convert UTF-8 encoded text to CP1252
         sLine = utf8ToAnsi(sLine);
 
         // Replace included tab characters with
         // whitespaces
-        for (size_t i = 0; i < sLine.length(); i++)
-        {
-            if (sLine[i] == '\t')
-                sLine[i] = ' ';
-        }
+        replaceAll(sLine, "\t", " ");
 
         // Remove whitespaces in front of the first
         // equal sign
@@ -111,24 +129,22 @@ map<string,string> Language::getLangFileContent(const string& sFile) const
             }
         }
 
+        eq_pos = sLine.find('=');
+
         // Replace tabs
-        while (sLine.find("%%TAB%%") != string::npos)
-            sLine.replace(sLine.find("%%TAB%%"), 7, "\t");
+        replaceAll(sLine, "%%TAB%%", "\t", eq_pos+1);
 
         // Replace linebreaks
-        while (sLine.find("%%LINEBREAK%%") != string::npos)
-            sLine.replace(sLine.find("%%LINEBREAK%%"), 13, "\n");
+        replaceAll(sLine, "%%LINEBREAK%%", "\n", eq_pos+1);
 
-        // Replace linebreaks
-        while (sLine.find("%%ITEMIZE%%") != string::npos)
-            sLine.replace(sLine.find("%%ITEMIZE%%"), 11, "\n    - ");
+        // Replace itemisations
+        replaceAll(sLine, "%%ITEMIZE%%", "\n    - ", eq_pos+1);
 
-        // Replace linebreaks
-        while (sLine.find("%%ITEMIZE_END%%") != string::npos)
-            sLine.replace(sLine.find("%%ITEMIZE_END%%"), 15, "\n    ");
+        // Replace end of itemisations
+        replaceAll(sLine, "%%ITEMIZE_END%%", "\n    ", eq_pos+1);
 
         // Store the token in the map
-        mLangFileContent[sLine.substr(0, sLine.find('='))] = sLine.substr(sLine.find_first_not_of(' ', sLine.find('=')+1));
+        mLangFileContent[sLine.substr(0, eq_pos)] = sLine.substr(sLine.find_first_not_of(' ', eq_pos+1));
     }
 
     return mLangFileContent;
@@ -139,14 +155,14 @@ map<string,string> Language::getLangFileContent(const string& sFile) const
 /// \brief This private member function is a
 /// simple helper for Language::loadStrings().
 ///
-/// \param sLanguageFileName const string&
+/// \param sLanguageFileName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Language::loadAndInsert(const string& sLanguageFileName)
+void Language::loadAndInsert(const std::string& sLanguageFileName)
 {
     // Load language file
-    map<string,string> mLangFileContent = getLangFileContent(sLanguageFileName);
+    std::map<std::string,std::string> mLangFileContent = getLangFileContent(sLanguageFileName);
 
     // Insert the strings
     for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
@@ -166,8 +182,8 @@ void Language::loadAndInsert(const string& sLanguageFileName)
 /////////////////////////////////////////////////
 void Language::loadStrings(bool bloadUserFiles)
 {
-    string sLine;
-    map<string,string> mLangFileContent;
+    std::string sLine;
+    std::map<std::string,std::string> mLangFileContent;
 
     // Clear already existing strings first
     if (mLangStrings.size())
@@ -212,7 +228,7 @@ void Language::loadStrings(bool bloadUserFiles)
         // strings
         for (size_t i = 0; i < (iter->second).length()-3; i++)
         {
-            if ((iter->second).substr(i, 2) == "%%" && isalpha((iter->second)[i+3]) && (iter->second).find("%%", i+3) != string::npos)
+            if ((iter->second).substr(i, 2) == "%%" && isalpha((iter->second)[i+3]) && (iter->second).find("%%", i+3) != std::string::npos)
             {
                 sLine = (iter->second).substr(i+2, (iter->second).find("%%", i+3)-i-2);
 
@@ -234,11 +250,11 @@ void Language::loadStrings(bool bloadUserFiles)
 /// of the passed language file into the internal
 /// map.
 ///
-/// \param _langstrings const map<string,string>&
+/// \param _langstrings const std::map<std::string,std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Language::addToLanguage(const map<string,string>& _langstrings)
+void Language::addToLanguage(const std::map<std::string,std::string>& _langstrings)
 {
     for (auto iter = _langstrings.begin(); iter != _langstrings.end(); ++iter)
         mLangStrings[iter->first] = iter->second;
@@ -251,18 +267,18 @@ void Language::addToLanguage(const map<string,string>& _langstrings)
 /// starts similar with the passed identifier and
 /// returns the found identifier.
 ///
-/// \param sMessage const string&
-/// \return string
+/// \param sMessage const std::string&
+/// \return std::string
 ///
 /// The passed language identifier has to contain
 /// an asteriks as a wildcard.
 /////////////////////////////////////////////////
-string Language::getKey(const string& sMessage) const
+std::string Language::getKey(const std::string& sMessage) const
 {
-    string sKey = sMessage;
+    std::string sKey = sMessage;
 
     // Do only something, when a wildcard is available
-    if (sKey.find('*') != string::npos)
+    if (sKey.find('*') != std::string::npos)
     {
         sKey.erase(sKey.find('*'));
 
@@ -287,20 +303,20 @@ string Language::getKey(const string& sMessage) const
 /// identifier and replaces all enumerated tokens
 /// with the passed token list.
 ///
-/// \param sMessage const string&
-/// \param vTokens const vector<string>&
+/// \param sMessage const std::string&
+/// \param vTokens const std::vector<std::string>&
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Language::get(const string& sMessage, const vector<string>& vTokens) const
+std::string Language::get(const std::string& sMessage, const std::vector<std::string>& vTokens) const
 {
     if (!mLangStrings.size())
         return sMessage;
 
-    string sLangString = sMessage;
+    std::string sLangString = sMessage;
 
     // Search for the language string
-    if (sLangString.find('*') != string::npos)
+    if (sLangString.find('*') != std::string::npos)
     {
         sLangString.erase(sLangString.find('*'));
 
@@ -320,7 +336,7 @@ string Language::get(const string& sMessage, const vector<string>& vTokens) cons
     else
         return sMessage;
 
-    string sToken;
+    std::string sToken;
 
     // Replace all enumerated tokens
     for (size_t i = 0; i < vTokens.size(); i++)
@@ -329,7 +345,7 @@ string Language::get(const string& sMessage, const vector<string>& vTokens) cons
         size_t pos = 0;
 
         // As long as further tokens can be found
-        while ((pos = sLangString.find(sToken, pos)) != string::npos)
+        while ((pos = sLangString.find(sToken, pos)) != std::string::npos)
         {
             sLangString.replace(pos, sToken.length(), vTokens[i]);
             pos += vTokens[i].length();
@@ -345,24 +361,24 @@ string Language::get(const string& sMessage, const vector<string>& vTokens) cons
 /// of language strings matching to the passed
 /// identifier containing wildcards.
 ///
-/// \param sMessageScheme const string&
-/// \return vector<string>
+/// \param sMessageScheme const std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> Language::getList(const string& sMessageScheme) const
+std::vector<std::string> Language::getList(const std::string& sMessageScheme) const
 {
-    vector<string> vListResults;
-    string sPrefix = sMessageScheme.substr(0, sMessageScheme.find('*'));
-    string sType = "";
+    std::vector<std::string> vListResults;
+    std::string sPrefix = sMessageScheme.substr(0, sMessageScheme.find('*'));
+    std::string sType = "";
 
     // Extract the type (available in command and function
     // documentations, for example)
-    if (sPrefix.find('[') != string::npos)
+    if (sPrefix.find('[') != std::string::npos)
     {
         sPrefix.erase(sPrefix.find('['));
         sType = sMessageScheme.substr(sMessageScheme.find('[')+1, sMessageScheme.find(']')-sMessageScheme.find('[')-1);
     }
-    else if (sMessageScheme.find('[') != string::npos)
+    else if (sMessageScheme.find('[') != std::string::npos)
         sType = sMessageScheme.substr(sMessageScheme.find('[')+1, sMessageScheme.find(']')-sMessageScheme.find('[')-1);
 
     for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
@@ -372,11 +388,11 @@ vector<string> Language::getList(const string& sMessageScheme) const
 
         // Ensure that the found identifier has the
         // the correct type if a type was selected
-        if (sType.length() && (iter->first).find('[') != string::npos)
+        if (sType.length() && (iter->first).find('[') != std::string::npos)
         {
-            string sCurrentType = (iter->first).substr((iter->first).find('['), (iter->first).find(']')+1-(iter->first).find('['));
+            std::string sCurrentType = (iter->first).substr((iter->first).find('['), (iter->first).find(']')+1-(iter->first).find('['));
 
-            if (sCurrentType.find(sType) == string::npos)
+            if (sCurrentType.find(sType) == std::string::npos)
                 continue;
         }
 

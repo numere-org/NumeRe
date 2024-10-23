@@ -41,7 +41,7 @@ class Language : public FileSystem
         std::string sYES;
         std::string sNO;
 
-        std::map<std::string,std::string> getLangFileContent(const std::string& sFile) const;
+        std::map<std::string,std::string> getLangFileContent(std::string sFile) const;
         void loadAndInsert(const std::string& sLanguageFileName);
 
     public:

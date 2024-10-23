@@ -457,6 +457,7 @@ bool MemoryManager::loadFromNewCacheFile()
             mCachesMap["table"] = std::make_pair(vMemory.size(), vMemory.size());
             vMemory.push_back(new Memory());
         }
+
         if (mCachesMap.find("string") == mCachesMap.end())
         {
             mCachesMap["string"] = std::make_pair(vMemory.size(), vMemory.size());
@@ -467,9 +468,15 @@ bool MemoryManager::loadFromNewCacheFile()
         return true;
 
     }
+    catch (SyntaxError& e)
+    {
+        cacheFile.close();
+        g_logger.error("Could not load tables from the cache file. Catched error code: " + toString((size_t)e.errorcode));
+    }
     catch (...)
     {
         cacheFile.close();
+        g_logger.error("Could not load tables from the cache file.");
     }
 
     return false;

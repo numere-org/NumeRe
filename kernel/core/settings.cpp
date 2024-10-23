@@ -280,9 +280,17 @@ void Settings::save(const std::string& _sWhere, bool bMkBackUp)
 /////////////////////////////////////////////////
 void Settings::import_v1x(const std::string& sSettings)
 {
+    size_t eq_pos = sSettings.find('=');
+
+    if (eq_pos == std::string::npos)
+    {
+        g_logger.error("The setting value '" + sSettings + "' is not readable and will be ignored.");
+        return;
+    }
+
     // Separate identifier and corresponding value
-    std::string id = sSettings.substr(0, sSettings.find('='));
-    std::string value = sSettings.substr(sSettings.find('=')+1);
+    std::string id = sSettings.substr(0, eq_pos);
+    std::string value = sSettings.substr(eq_pos+1);
 
     // Search for the identifier
     auto iter = m_settings.find(id);
@@ -306,6 +314,8 @@ void Settings::import_v1x(const std::string& sSettings)
                 break;
         }
     }
+    else
+        g_logger.warning("Unknown setting key '" + id + "'.");
 }
 
 
@@ -329,9 +339,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sSavePath.length())
         {
-            while (sSavePath.find('\\') != std::string::npos)
-                sSavePath[sSavePath.find('\\')] = '/';
-
+            replacePathSeparator(sSavePath);
             m_settings[SETTING_S_SAVEPATH].stringval() = sSavePath;
             return true;
         }
@@ -343,9 +351,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sLoadPath.length())
         {
-            while (sLoadPath.find('\\') != std::string::npos)
-                sLoadPath[sLoadPath.find('\\')] = '/';
-
+            replacePathSeparator(sLoadPath);
             m_settings[SETTING_S_LOADPATH].stringval() = sLoadPath;
             return true;
         }
@@ -357,9 +363,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sPlotOutputPath.length())
         {
-            while (sPlotOutputPath.find('\\') != std::string::npos)
-                sPlotOutputPath[sPlotOutputPath.find('\\')] = '/';
-
+            replacePathSeparator(sPlotOutputPath);
             m_settings[SETTING_S_PLOTPATH].stringval() = sPlotOutputPath;
             return true;
         }
@@ -371,9 +375,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sScriptpath.length())
         {
-            while (sScriptpath.find('\\') != std::string::npos)
-                sScriptpath[sScriptpath.find('\\')] = '/';
-
+            replacePathSeparator(sScriptpath);
             m_settings[SETTING_S_SCRIPTPATH].stringval() = sScriptpath;
             return true;
         }
@@ -385,9 +387,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sProcsPath.length())
         {
-            while (sProcsPath.find('\\') != std::string::npos)
-                sProcsPath[sProcsPath.find('\\')] = '/';
-
+            replacePathSeparator(sProcsPath);
             m_settings[SETTING_S_PROCPATH].stringval() = sProcsPath;
             return true;
         }
@@ -638,11 +638,8 @@ void Settings::load(const std::string& _sWhere)
 
         if (Settings_ini.fail())
         {
-            NumeReKernel::printPreFmt(" -> NOTE: Could not find the configuration file \"" + sSettings_ini + "\".\n");
-            NumeReKernel::printPreFmt("    Loading default settings.\n");
-            Sleep(500);
+            g_logger.warning("Could not find the configuration file \"" + sSettings_ini + "\" Loading default settings.");
             Settings_ini.close();
-
             prepareFilePaths(_sWhere);
 
             return;
@@ -691,8 +688,7 @@ void Settings::load(const std::string& _sWhere)
             if (!Settings::set(s))
             {
                 // --> FALSE wird nur dann zurueckgegeben, wenn ein Fehler auftaucht, oder ein Parameter unbekannt ist <--
-                NumeReKernel::printPreFmt("\n -> NOTE: The setting \"" + s + "\" is not known and will be ignored.\n");
-                Sleep(500);
+                g_logger.warning("The setting \"" + s + "\" is not known and will be ignored.");
                 continue;
             }
         }
@@ -739,7 +735,7 @@ void Settings::load(const std::string& _sWhere)
     prepareFilePaths(_sWhere);
 
     Settings::save(_sWhere, true);
-    //NumeReKernel::printPreFmt(" -> Configuration loaded successful.");
+    g_logger.info("Configuration loaded successfully.");
 }
 
 

@@ -75,6 +75,7 @@ class DetachedLogger : public Logger
         std::vector<std::string> m_buffer;
         Logger::LogLevel m_level;
         bool m_startAfterCrash;
+        bool m_hasErrorLogged;
 
     public:
         DetachedLogger(Logger::LogLevel lvl = Logger::LVL_INFO);
@@ -147,6 +148,7 @@ class DetachedLogger : public Logger
         /////////////////////////////////////////////////
         inline void error(const std::string& sMessage)
         {
+            m_hasErrorLogged = true;
             push_line(Logger::LVL_ERROR, sMessage);
         }
 
@@ -159,6 +161,18 @@ class DetachedLogger : public Logger
         bool startFromCrash() const
         {
             return m_startAfterCrash;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if we logged any error
+        /// during this session.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool hasLoggedError() const
+        {
+            return m_hasErrorLogged;
         }
 
 };

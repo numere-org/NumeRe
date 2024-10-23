@@ -20,6 +20,7 @@
 #define REPORTISSUEDIALOG_HPP
 
 #include <wx/wx.h>
+#include "../../common/datastructures.h"
 #include "../compositions/grouppanel.hpp"
 
 /////////////////////////////////////////////////
@@ -37,13 +38,15 @@ class ReportIssueDialog : public wxDialog
         TextField* m_expectedBehavior;
         TextField* m_contact;
         wxRadioBox* m_logSelection;
+        bool m_isCriticalIssue;
 
         void OnButtonClick(wxCommandEvent& event);
         void OnDropDown(wxCommandEvent& event);
         void fillCrashData();
+        void fillStartupData();
 
     public:
-        ReportIssueDialog(wxWindow* parent, wxWindowID id = wxID_ANY, bool fromCrash = false);
+        ReportIssueDialog(wxWindow* parent, wxWindowID id = wxID_ANY, ErrorLocation errLoc = ERR_NONE);
 
         DECLARE_EVENT_TABLE();
 };
