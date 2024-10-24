@@ -53,7 +53,7 @@ class FunctionDefinition
         FunctionDefinition& operator=(const FunctionDefinition&);
         std::string parse(const std::string& _sArgList);
         std::string exportFunction() const;
-        bool importFunction(const std::string& _sExportedString);
+        bool importFunction(std::string sImport);
         std::string getDefinition() const;
         bool appendComment(const std::string& _sComment);
 

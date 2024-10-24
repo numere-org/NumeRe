@@ -1384,7 +1384,6 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-#warning TODO (numere#2#09/06/24): Enable method chaining
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().countIfEqual(sTableName, vCols, v[1]));
     return sResultVectorName;
 }

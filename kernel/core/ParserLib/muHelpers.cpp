@@ -25,8 +25,6 @@
 
 #warning TODO (numere#2#08/14/24): Handle new method types within autocompletion -> NEW ISSUE
 #warning TODO (numere#3#08/13/24): Update user documentation
-#warning TODO (numere#3#09/06/24): Add functions for interacting with types and obtaining the message for an error code
-#warning TODO (numere#3#09/06/24): Add a function for creating a category as type
 
 
 

@@ -32,6 +32,7 @@ namespace mu
     Array apply(std::complex<double>(*func)(const std::complex<double>&), const Array& a)
     {
         Array ret;
+        ret.reserve(a.size());
 
         for (const auto& val : a)
         {
@@ -53,6 +54,7 @@ namespace mu
     Array apply(Value(*func)(const Value&), const Array& a)
     {
         Array ret;
+        ret.reserve(a.size());
 
         for (const auto& val : a)
         {
@@ -74,6 +76,7 @@ namespace mu
     Array apply(std::string(*func)(const std::string&), const Array& a)
     {
         Array ret;
+        ret.reserve(a.size());
 
         for (const auto& val : a)
         {
@@ -97,6 +100,7 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&), const Array& a1, const Array& a2)
     {
         Array ret;
+        ret.reserve(std::max(a1.size(), a2.size()));
 
         for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
         {
@@ -119,6 +123,7 @@ namespace mu
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2)
     {
         Array ret;
+        ret.reserve(std::max(a1.size(), a2.size()));
 
         for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
         {
@@ -144,6 +149,7 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
+        ret.reserve(std::max({a1.size(), a2.size(), a3.size()}));
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
         {
@@ -166,6 +172,7 @@ namespace mu
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
+        ret.reserve(std::max({a1.size(), a2.size(), a3.size()}));
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
         {
@@ -193,6 +200,7 @@ namespace mu
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
+        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size()}));
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
         {
@@ -220,6 +228,7 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
+        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size()}));
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
         {
@@ -246,6 +255,7 @@ namespace mu
     Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
+        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}));
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
         {
@@ -275,6 +285,7 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
+        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}));
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
         {
@@ -306,6 +317,7 @@ namespace mu
         }
 
         mu::Array res;
+        res.reserve(nCount);
 
         for (size_t i = 0; i < nCount; i++)
         {
@@ -342,6 +354,7 @@ namespace mu
         }
 
         mu::Array res;
+        res.reserve(nCount);
 
         for (size_t i = 0; i < nCount; i++)
         {

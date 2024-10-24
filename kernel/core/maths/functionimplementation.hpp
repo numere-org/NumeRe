@@ -25,6 +25,7 @@
 
 #include "../ParserLib/muParser.h"
 #include "units.hpp"
+#include "../utils/stringtools.hpp"
 
 
 // Index selectors
@@ -54,6 +55,10 @@ mu::Array numfnc_Cnt(const mu::Array*, int);
 mu::Array numfnc_Std(const mu::Array*, int);
 mu::Array numfnc_product(const mu::Array*, int);
 mu::Array numfnc_Norm(const mu::Array*, int);
+mu::Array numfnc_Rms(const mu::Array*, int);
+mu::Array numfnc_StdErr(const mu::Array*, int);
+mu::Array numfnc_Skew(const mu::Array*, int);
+mu::Array numfnc_Exc(const mu::Array*, int);
 mu::Array numfnc_Med(const mu::Array*, int);
 mu::Array numfnc_Pct(const mu::Array*, int);
 mu::Array numfnc_rint(const mu::Array&);
@@ -209,6 +214,76 @@ mu::Array oprt_Mod(const mu::Array&, const mu::Array&);
 mu::Array oprt_XOR(const mu::Array&, const mu::Array&);
 mu::Array oprt_BinOR(const mu::Array&, const mu::Array&);
 mu::Array oprt_BinAND(const mu::Array&, const mu::Array&);
+
+// Cast functions
+mu::Array cast_category(const mu::Array& cats, const mu::Array& ids); // OPT=1
+/////////////////////////////////////////////////
+/// \brief Implements all numerical cast
+/// functions as a template except for complex
+/// value casts.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+template <class T>
+mu::Array cast_numerical(const mu::Array& vals)
+{
+    mu::Array ret;
+    ret.reserve(vals.size());
+
+    for (size_t i = 0; i < vals.size(); i++)
+    {
+        const mu::Value& val = vals.get(i);
+
+        if (val.isNumerical())
+            ret.push_back(mu::Numerical( static_cast<T>(val.getNum().asF64()) ));
+        else if (isConvertible(val.getStr(), CONVTYPE_DATE_TIME))
+            ret.push_back(mu::Numerical( static_cast<T>(to_double(StrToTime(val.getStr()))) ));
+        else if (isConvertible(val.getStr(), CONVTYPE_LOGICAL))
+            ret.push_back(mu::Numerical( static_cast<T>(StrToLogical(val.getStr())) ));
+        else if (isConvertible(val.getStr(), CONVTYPE_VALUE))
+            ret.push_back(mu::Numerical( static_cast<T>(StrToCmplx(val.getStr()).real()) ));
+        else
+            ret.push_back(mu::Value(NAN));
+    }
+
+    return ret;
+}
+
+/////////////////////////////////////////////////
+/// \brief Implements the complex numerical cast
+/// functions as a template.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+template <class T>
+mu::Array cast_numerical_cmplx(const mu::Array& vals)
+{
+    mu::Array ret;
+    ret.reserve(vals.size());
+    mu::NumericalType castType = std::is_same_v<T, double> ? mu::CF64 : mu::CF32;
+
+    for (size_t i = 0; i < vals.size(); i++)
+    {
+        const mu::Value& val = vals.get(i);
+
+        if (val.isNumerical())
+            ret.push_back(mu::Numerical( static_cast<std::complex<T>>(val.getNum().asCF64()), castType ));
+        else if (isConvertible(val.getStr(), CONVTYPE_DATE_TIME))
+            ret.push_back(mu::Numerical( static_cast<std::complex<T>>(to_double(StrToTime(val.getStr()))), castType ));
+        else if (isConvertible(val.getStr(), CONVTYPE_LOGICAL))
+            ret.push_back(mu::Numerical( static_cast<std::complex<T>>(StrToLogical(val.getStr())), castType ));
+        else if (isConvertible(val.getStr(), CONVTYPE_VALUE))
+            ret.push_back(mu::Numerical( static_cast<std::complex<T>>(StrToCmplx(val.getStr())), castType ));
+        else
+            ret.push_back(mu::Value(NAN));
+    }
+
+    return ret;
+}
 
 #endif
 

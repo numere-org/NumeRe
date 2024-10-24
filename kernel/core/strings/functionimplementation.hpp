@@ -83,6 +83,7 @@ mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val);
 mu::Array strfnc_dectobase(const mu::Array& base, const mu::Array& val);
 mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align); // OPT=1
 mu::Array strfnc_getlasterror();
+mu::Array strfnc_geterrormessage(const mu::Array& errCode);
 mu::Array strfnc_getversioninfo();
 mu::Array strfnc_getuilang();
 mu::Array strfnc_getuuid();

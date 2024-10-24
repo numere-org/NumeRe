@@ -286,7 +286,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     // Load the plugin informations
     if (fileExists(_procedure.getPluginInfoPath()))
     {
-        g_logger.info("Loading plugins.");
+        g_logger.info("Loading package definitions.");
 
         try
         {
@@ -571,6 +571,10 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("phi", numfnc_phi);                                        // phi(x,y)
     _parser.DefineFun("theta", numfnc_theta);                                    // theta(x,y,z)
     _parser.DefineFun("norm", numfnc_Norm);                                      // norm(x,y,z,...)
+    _parser.DefineFun("rms", numfnc_Rms);                                        // rms(x,y,z,...)
+    _parser.DefineFun("stderr", numfnc_StdErr);                                  // stderr(x,y,z,...)
+    _parser.DefineFun("skw", numfnc_Skew);                                       // skw(x,y,z,...)
+    _parser.DefineFun("exc", numfnc_Exc);                                        // exc(x,y,z,...)
     _parser.DefineFun("med", numfnc_Med);                                        // med(x,y,z,...)
     _parser.DefineFun("pct", numfnc_Pct);                                        // pct(x,y,z,...)
     _parser.DefineFun("and", numfnc_and);                                        // and(x,y,z,...)
@@ -718,6 +722,21 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("student_t_inv_p", rndfnc_student_t_inv_p);                // student_t_inv_p(p, nu)
     _parser.DefineFun("student_t_inv_q", rndfnc_student_t_inv_q);                // student_t_inv_q(q, nu)
 
+    // Cast functions
+    _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
+    _parser.DefineFun("i8", cast_numerical<int8_t>);                             // i8(x)
+    _parser.DefineFun("ui8", cast_numerical<uint8_t>);                           // ui8(x)
+    _parser.DefineFun("i16", cast_numerical<int16_t>);                           // i16(x)
+    _parser.DefineFun("ui16", cast_numerical<uint16_t>);                         // ui16(x)
+    _parser.DefineFun("i32", cast_numerical<int32_t>);                           // i32(x)
+    _parser.DefineFun("ui32", cast_numerical<uint32_t>);                         // ui32(x)
+    _parser.DefineFun("i64", cast_numerical<int64_t>);                           // i64(x)
+    _parser.DefineFun("ui64", cast_numerical<uint64_t>);                         // ui64(x)
+    _parser.DefineFun("f32", cast_numerical<float>);                             // f32(x)
+    _parser.DefineFun("f64", cast_numerical<double>);                            // f64(x)
+    _parser.DefineFun("cf32", cast_numerical_cmplx<float>);                      // cf32(x)
+    _parser.DefineFun("cf64", cast_numerical_cmplx<double>);                     // cf64(x)
+
     /////////////////////////////////////////////////////////////////////
     // NOTE:
     // If multi-argument functions are declared, think of whether
@@ -801,6 +820,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("dectobase", strfnc_dectobase);                                // dectobase(str,val)
     _parser.DefineFun("justify", strfnc_justify, true, 1);                           // justify({str},n)
     _parser.DefineFun("getlasterror", strfnc_getlasterror, false);                   // getlasterror()
+    _parser.DefineFun("geterrormsg", strfnc_geterrormessage);                        // geterrormsg(str)
     _parser.DefineFun("getversioninfo", strfnc_getversioninfo);                      // getversioninfo()
     _parser.DefineFun("getuilang", strfnc_getuilang);                                // getuilang()
     _parser.DefineFun("uuid", strfnc_getuuid, false);                                // getuuid()

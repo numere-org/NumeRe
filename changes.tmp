@@ -50,3 +50,5 @@ Added	The tabs created with "group -style=tabs ..." in window layouts can now ha
 Applied	Clusters have been migrated to the new kernel data structure. They now also support the same datatypes within their elements as the usual variables.
 Fixed	Defaulting a cluster to "{}" or initializing a cluster with this value should now create an actual empty cluster. Note that "cnt(clst{})" will still return 1 just like within "cnt({})".
 Added	NumeRe will now perform more start-up checks, report errors via log file and propose the possibility to send an error report containing the current session's logfile.
+Added	Functions for converting between different numerical data types and for creating categories were added.
+Added	Missing statistical functions were added: RMS, skewness, excess, standard error

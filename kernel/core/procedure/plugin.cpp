@@ -149,6 +149,9 @@ void Package::importDefinition(std::string sDefinitionString)
     sType = getNextArgument(sDefinitionString, true);
     sName = getNextArgument(sDefinitionString, true);
 
+    if (!sType.length() || !sName.length())
+        g_logger.error("Error while loading packages: a package is lacking either its name or its type.");
+
     if (!sDefinitionString.length())
         return;
 

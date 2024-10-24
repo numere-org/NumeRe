@@ -58,6 +58,7 @@
 mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 {
     mu::Array res;
+    res.reserve(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -80,6 +81,7 @@ mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 mu::Array numfnc_real(const mu::Array& v)
 {
     mu::Array res;
+    res.reserve(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -101,6 +103,7 @@ mu::Array numfnc_real(const mu::Array& v)
 mu::Array numfnc_imag(const mu::Array& v)
 {
     mu::Array res;
+    res.reserve(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -123,6 +126,7 @@ mu::Array numfnc_imag(const mu::Array& v)
 mu::Array numfnc_rect2polar(const mu::Array& v)
 {
     mu::Array res;
+    res.reserve(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -146,6 +150,7 @@ mu::Array numfnc_rect2polar(const mu::Array& v)
 mu::Array numfnc_polar2rect(const mu::Array& v)
 {
     mu::Array res;
+    res.reserve(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -183,6 +188,7 @@ mu::Array numfnc_conj(const mu::Array& v)
 mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 {
     mu::Array res;
+    res.reserve(std::max(re.size(), im.size()));
 
     for (size_t i = 0; i < std::max(re.size(), im.size()); i++)
     {
@@ -536,14 +542,14 @@ mu::Array numfnc_product(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
 {
-    mu::Value vProd = 0.0;
+    mu::Value vNorm = 0.0;
 
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
             if (vElements[0][i].isValid())
-                vProd += vElements[0][i] * conj(vElements[0][i]);
+                vNorm += vElements[0][i] * conj(vElements[0][i]);
         }
     }
     else
@@ -551,11 +557,115 @@ mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
         for (int i = 0; i < nElements; i++)
         {
             if (vElements[i].front().isValid())
-                vProd += vElements[i].front() * conj(vElements[i].front());
+                vNorm += vElements[i].front() * conj(vElements[i].front());
         }
     }
 
-    return mu::Value(std::sqrt(vProd.getNum().asCF64()));
+    return mu::Value(std::sqrt(vNorm.getNum().asCF64()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the root mean
+/// square functionality.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_Rms(const mu::Array* vElements, int nElements)
+{
+    return numfnc_Norm(vElements, nElements) / mu::apply(std::sqrt, numfnc_Num(vElements, nElements));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the std error
+/// functionality.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_StdErr(const mu::Array* vElements, int nElements)
+{
+    return numfnc_Std(vElements, nElements) / mu::Value(std::sqrt(numfnc_Num(vElements, nElements).front().getNum().asF64()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the skewness
+/// functionality.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_Skew(const mu::Array* vElements, int nElements)
+{
+    mu::Value skew = 0.0;
+    mu::Value vMean = numfnc_Avg(vElements, nElements).front();
+    double vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
+
+    if (nElements == 1)
+    {
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid())
+                skew += (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean) * (vElements[0][i] - vMean);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid())
+                skew += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean) * (vElements[i].front() - vMean);
+        }
+    }
+
+    return skew / mu::Value(vNum * intPower(numfnc_Std(vElements, nElements).get(0).getNum().asF64(), 3));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the excess
+/// functionality.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
+{
+    mu::Value excess = 0.0;
+    mu::Value vMean = numfnc_Avg(vElements, nElements).front();
+    double vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
+
+    if (nElements == 1)
+    {
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid())
+                excess += (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean)
+                    * (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid())
+                excess += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean)
+                    * (vElements[i].front() - vMean) * conj(vElements[0][i] - vMean);
+        }
+    }
+
+    return excess / mu::Value(vNum * intPower(numfnc_Std(vElements, nElements).get(0).getNum().asF64(), 4)) - mu::Value(3.0);
 }
 
 
@@ -752,6 +862,7 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
 mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, const mu::Array& mode)
 {
     mu::Array res;
+    res.reserve(std::max(value.size(), mode.size()));
 
     for (size_t i = 0; i < std::max(value.size(), mode.size()); i++)
     {
@@ -905,6 +1016,7 @@ mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array&
     noise::module::Perlin perlinNoise;
 
     mu::Array res;
+    res.reserve(std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}));
 
     for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}); i++)
     {
@@ -956,6 +1068,7 @@ mu::Array rndfnc_rigedmultifractal(const mu::Array& x, const mu::Array& y, const
     noise::module::RidgedMulti rigedMultiNoise;
 
     mu::Array res;
+    res.reserve(std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size()}));
 
     for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size()}); i++)
     {
@@ -1005,6 +1118,7 @@ mu::Array rndfnc_billow(const mu::Array& x, const mu::Array& y, const mu::Array&
     noise::module::Billow billowNoise;
 
     mu::Array res;
+    res.reserve(std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}));
 
     for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}); i++)
     {
@@ -1057,6 +1171,7 @@ mu::Array rndfnc_voronoi(const mu::Array& x, const mu::Array& y, const mu::Array
     noise::module::Voronoi voronoiNoise;
 
     mu::Array res;
+    res.reserve(std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), displacement.size(), usedistance.size()}));
 
     for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), displacement.size(), usedistance.size()}); i++)
     {
@@ -1188,6 +1303,8 @@ mu::Array numfnc_order(const mu::Array* v, int n)
 
     if (n == 1)
     {
+        index.reserve(v[0].size());
+
         for (size_t i = 1; i <= v[0].size(); i++)
         {
             index.push_back(i);
@@ -1199,6 +1316,8 @@ mu::Array numfnc_order(const mu::Array* v, int n)
     }
     else
     {
+        index.reserve(n);
+
         for (int i = 1; i <= n; i++)
         {
             index.push_back(i);
@@ -3552,6 +3671,7 @@ mu::Array oprt_BinAND(const mu::Array& v1, const mu::Array& v2)
 mu::Array numfnc_is_string(const mu::Array& v)
 {
     mu::Array res;
+    res.reserve(v.size());
 
     for (const auto& val : v)
     {
@@ -5970,4 +6090,46 @@ mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
 
     return ret;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the category cast.
+///
+/// \param cats const mu::Array&
+/// \param ids const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
+{
+    mu::Array res;
+    res.reserve(std::max(cats.size(), ids.size()));
+
+    for (size_t i = 0; i < std::max(cats.size(), ids.size()); i++)
+    {
+        if (ids.isDefault() || ids.get(i).getNum().asI64() <= 0)
+        {
+            int64_t id = 1;
+            std::string name = cats.get(i).getStr();
+
+            for (size_t j = 0; j < i; j++)
+            {
+                if (res.get(j).getCategory().name == name)
+                {
+                    id = res.get(j).getCategory().val.asI64();
+                    break;
+                }
+                else
+                    id = std::max(id, res.get(j).getCategory().val.asI64()+1);
+            }
+
+            res.push_back(mu::Category{.val{id}, .name{name}});
+        }
+        else
+            res.push_back(mu::Category{.val{ids.get(i).getNum().asI64()}, .name{cats.get(i).getStr()}});
+    }
+
+    return res;
+}
+
 

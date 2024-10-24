@@ -19,9 +19,6 @@
 #include "define.hpp"
 #include "../../kernel.hpp"
 
-using namespace mu;
-using namespace std;
-
 //////////////////////////////////
 // CLASS FUNCTIONDEFINITION
 //////////////////////////////////
@@ -31,10 +28,10 @@ using namespace std;
 /// class. Creates a definition from the passed
 /// definition string.
 ///
-/// \param _sDefinitionString const string&
+/// \param _sDefinitionString const std::string&
 ///
 /////////////////////////////////////////////////
-FunctionDefinition::FunctionDefinition(const string& _sDefinitionString)
+FunctionDefinition::FunctionDefinition(const std::string& _sDefinitionString)
 {
     sDefinitionString = _sDefinitionString;
 
@@ -70,17 +67,17 @@ FunctionDefinition& FunctionDefinition::operator=(const FunctionDefinition& _def
 /// returns a function definition string
 /// containing the passed values.
 ///
-/// \param _sArgList const string&
-/// \return string
+/// \param _sArgList const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinition::parse(const string& _sArgList)
+std::string FunctionDefinition::parse(const std::string& _sArgList)
 {
-    string sParsedDefinition = sParsedDefinitionString;
-    static const string sOperators = "+-*/^&|!?:{";
-    string sArgs = _sArgList;
+    std::string sParsedDefinition = sParsedDefinitionString;
+    static const std::string sOperators = "+-*/^&|!?:{";
+    std::string sArgs = _sArgList;
 
-    vector<string> vArg;
+    std::vector<std::string> vArg;
 
     // Split the arguments
     while (sArgs.length())
@@ -111,7 +108,7 @@ string FunctionDefinition::parse(const string& _sArgList)
             continue;
 
         // Search for operators
-        if (vArg[j].find_first_of(sOperators) != string::npos)
+        if (vArg[j].find_first_of(sOperators) != std::string::npos)
         {
             vArg[j] = "(" + vArg[j] + ")";
         }
@@ -144,7 +141,7 @@ string FunctionDefinition::parse(const string& _sArgList)
         }
 
         // Replace each occurence
-        while (sParsedDefinition.find(vArguments[n]) != string::npos)
+        while (sParsedDefinition.find(vArguments[n]) != std::string::npos)
         {
             sParsedDefinition.replace(sParsedDefinition.find(vArguments[n]), vArguments[n].length(), vArg[n]);
         }
@@ -167,12 +164,12 @@ string FunctionDefinition::parse(const string& _sArgList)
 /// string used for writing to the definition
 /// file.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinition::exportFunction() const
+std::string FunctionDefinition::exportFunction() const
 {
-    string sExport = sName + "; " + sParsedDefinitionString + "; " + sDefinitionString + "; ";
+    std::string sExport = sName + "; " + sParsedDefinitionString + "; " + sDefinitionString + "; ";
 
     // Append the single arguments
     for (size_t i = 0; i < vArguments.size(); i++)
@@ -188,50 +185,48 @@ string FunctionDefinition::exportFunction() const
 /// distributes its contents along the member
 /// variables.
 ///
-/// \param _sExportedString const string&
+/// \param sImport std::string
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FunctionDefinition::importFunction(const string& _sExportedString)
+bool FunctionDefinition::importFunction(std::string sImport)
 {
-    string sImport = _sExportedString;
     vArguments.clear();
 
     // Decode function identifier
-    sName = sImport.substr(0, sImport.find(';'));
-    StripSpaces(sName);
-    sImport.erase(0, sImport.find(';')+1);
+    sName = getNextSemiColonSeparatedToken(sImport, true);
 
     // Decode parsed expression
-    sParsedDefinitionString = sImport.substr(0, sImport.find(';'));
-    StripSpaces(sParsedDefinitionString);
-    sImport.erase(0, sImport.find(';')+1);
+    sParsedDefinitionString = getNextSemiColonSeparatedToken(sImport, true);
 
     // Decode the original definition string
-    sDefinitionString = sImport.substr(0, sImport.find(';'));
-    StripSpaces(sDefinitionString);
-    sImport.erase(0, sImport.find(';')+1);
+    sDefinitionString = getNextSemiColonSeparatedToken(sImport, true);
+
+    if (!sName.length() || !sParsedDefinitionString.length() || !sDefinitionString.length())
+    {
+        g_logger.error("Mandatory fields in function definition are missing.");
+        return false;
+    }
 
     // Recreate the signature
-    sSignature = sDefinitionString.substr(0, getMatchingParenthesis(sDefinitionString)+1);
-    StripSpaces(sSignature);
+    if (getMatchingParenthesis(sDefinitionString) != std::string::npos)
+        sSignature = sDefinitionString.substr(0, getMatchingParenthesis(sDefinitionString)+1);
+    else
+    {
+        g_logger.error("Function definition is incomplete.");
+        return false;
+    }
 
+    StripSpaces(sSignature);
 
     // Separate the comment
     if (findParameter(sDefinitionString, "comment", '='))
-    {
         sComment = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "comment", '=')+7);
-    }
-
-    StripSpaces(sImport);
 
     // Decode the variable list
     while (sImport.length())
     {
-        vArguments.push_back(sImport.substr(0, sImport.find(';')));
-        StripSpaces(vArguments.back());
-        sImport.erase(0, sImport.find(';')+1);
-        StripSpaces(sImport);
+        vArguments.push_back(getNextSemiColonSeparatedToken(sImport, true));
     }
 
     return true;
@@ -243,11 +238,11 @@ bool FunctionDefinition::importFunction(const string& _sExportedString)
 /// comment, which might be set after the
 /// definition.
 ///
-/// \param _sComment const string&
+/// \param _sComment const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FunctionDefinition::appendComment(const string& _sComment)
+bool FunctionDefinition::appendComment(const std::string& _sComment)
 {
     sComment += _sComment;
 
@@ -255,7 +250,7 @@ bool FunctionDefinition::appendComment(const string& _sComment)
     if (findParameter(sDefinitionString, "comment", '='))
     {
         size_t pos = findParameter(sDefinitionString, "comment", '=')+7;
-        string sTemp = getArgAtPos(sDefinitionString, pos);
+        std::string sTemp = getArgAtPos(sDefinitionString, pos);
         pos = sDefinitionString.find(sTemp, pos);
 
         sDefinitionString.replace(pos, sTemp.length(), sComment);
@@ -272,17 +267,17 @@ bool FunctionDefinition::appendComment(const string& _sComment)
 /// definition of the function without the
 /// appended parameters.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinition::getDefinition() const
+std::string FunctionDefinition::getDefinition() const
 {
-    string sDefinition = sDefinitionString.substr(sDefinitionString.find(":=")+2);
+    std::string sDefinition = sDefinitionString.substr(sDefinitionString.find(":=")+2);
 
     // Remove trailing parameters
-    if (sDefinition.find("-set") != string::npos)
+    if (sDefinition.find("-set") != std::string::npos)
         sDefinition.erase(sDefinition.find("-set"));
-    else if (sDefinition.find("--") != string::npos)
+    else if (sDefinition.find("--") != std::string::npos)
         sDefinition.erase(sDefinition.find("--"));
 
     StripSpaces(sDefinition);
@@ -318,9 +313,10 @@ bool FunctionDefinition::decodeDefinition()
 
     static std::string sDelim = "+-*/^!=&| ><()?[]{}$%#:.,;";
 
-    if (sName.find_first_of(sDelim) != string::npos)
+    if (sName.find_first_of(sDelim) != std::string::npos)
     {
-        SyntaxError(SyntaxError::FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN, sDefinitionString, SyntaxError::invalid_position, sName.substr(sName.find_first_of(sDelim), 1));
+        SyntaxError(SyntaxError::FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN, sDefinitionString, SyntaxError::invalid_position,
+                    sName.substr(sName.find_first_of(sDelim), 1));
     }
 
     // Separate the comment
@@ -334,9 +330,9 @@ bool FunctionDefinition::decodeDefinition()
     // string
     sParsedDefinitionString = sDefinitionString.substr(sDefinitionString.find(":=")+2);
 
-    if (sParsedDefinitionString.find("-set") != string::npos)
+    if (sParsedDefinitionString.find("-set") != std::string::npos)
         sParsedDefinitionString.erase(sParsedDefinitionString.find("-set"));
-    else if (sParsedDefinitionString.find("--") != string::npos)
+    else if (sParsedDefinitionString.find("--") != std::string::npos)
         sParsedDefinitionString.erase(sParsedDefinitionString.find("--"));
 
     // Surround the definition string with whitespaces for
@@ -372,10 +368,10 @@ bool FunctionDefinition::decodeDefinition()
 /////////////////////////////////////////////////
 bool FunctionDefinition::splitAndValidateArguments()
 {
-    string sDelim = "+-*/^!=&| ><()?[]{}$%§#:.,;";
+    std::string sDelim = "+-*/^!=&| ><()?[]{}$%§#:.,;";
 
     // Get the argument list of the definition
-    string sArguments = sDefinitionString.substr(sDefinitionString.find('('));
+    std::string sArguments = sDefinitionString.substr(sDefinitionString.find('('));
     sArguments.erase(getMatchingParenthesis(sArguments));
     sArguments.erase(0, 1);
 
@@ -400,7 +396,7 @@ bool FunctionDefinition::splitAndValidateArguments()
         // delimiters
         if (vArguments[i] != "...")
         {
-            if (vArguments[i].find_first_of(sDelim) != string::npos)
+            if (vArguments[i].find_first_of(sDelim) != std::string::npos)
             {
                 throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sDefinitionString, SyntaxError::invalid_position, vArguments[i].substr(vArguments[i].find_first_of(sDelim), 1));
             }
@@ -423,7 +419,7 @@ bool FunctionDefinition::convertToValues()
 {
     if (findParameter(sDefinitionString, "asval", '='))
     {
-        string sAsVal = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "asval", '=')+5);
+        std::string sAsVal = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "asval", '=')+5);
 
         if (sAsVal.front() == '{')
             sAsVal.erase(0,1);
@@ -477,7 +473,7 @@ bool FunctionDefinition::replaceArgumentOccurences()
         size_t nPos = 0;
 
         // Search for the next occurence of the variable
-        while ((nPos = defString.find(vArguments[i], nPos)) != string::npos)
+        while ((nPos = defString.find(vArguments[i], nPos)) != std::string::npos)
         {
             // check, whether the found match is an actual variable
             if (defString.is_delimited_sequence(nPos, vArguments[i].length()))
@@ -543,16 +539,16 @@ FunctionDefinitionManager::FunctionDefinitionManager(const FunctionDefinitionMan
 /// replacing the occuring function calls with
 /// their previous definition.
 ///
-/// \param sDefinition string
+/// \param sDefinition std::string
 /// \return string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinitionManager::resolveRecursiveDefinitions(string sDefinition)
+std::string FunctionDefinitionManager::resolveRecursiveDefinitions(std::string sDefinition)
 {
     // Get the different parts of the definition
-    string sFunctionName = sDefinition.substr(0, sDefinition.find('(')+1);
-    string sFunction = sDefinition.substr(sDefinition.find(":=")+2);
-    string sFuncOccurence;
+    std::string sFunctionName = sDefinition.substr(0, sDefinition.find('(')+1);
+    std::string sFunction = sDefinition.substr(sDefinition.find(":=")+2);
+    std::string sFuncOccurence;
 
     // Remove obsolete surrounding whitespaces
     StripSpaces(sFunction);
@@ -589,15 +585,15 @@ string FunctionDefinitionManager::resolveRecursiveDefinitions(string sDefinition
 /// passed ID.
 ///
 /// \param id size_t
-/// \return map<string, FunctionDefinition>::const_iterator
+/// \return std::map<std::string, FunctionDefinition>::const_iterator
 ///
 /////////////////////////////////////////////////
-map<string, FunctionDefinition>::const_iterator FunctionDefinitionManager::findItemById(size_t id) const
+std::map<std::string, FunctionDefinition>::const_iterator FunctionDefinitionManager::findItemById(size_t id) const
 {
     if (id >= mFunctionsMap.size())
         return mFunctionsMap.end();
 
-    map<string, FunctionDefinition>::const_iterator iter = mFunctionsMap.begin();
+    std::map<std::string, FunctionDefinition>::const_iterator iter = mFunctionsMap.begin();
 
     // As long as the ID is not zero,
     // we increment the iterator and
@@ -623,14 +619,14 @@ map<string, FunctionDefinition>::const_iterator FunctionDefinitionManager::findI
 /// \brief This method checks, whether the passed
 /// function is already defined.
 ///
-/// \param sFunc const string&
+/// \param sFunc const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FunctionDefinitionManager::isDefined(const string& sFunc)
+bool FunctionDefinitionManager::isDefined(const std::string& sFunc)
 {
     // Only use the function name
-    string sToLocate = sFunc.substr(0,sFunc.find('('));
+    std::string sToLocate = sFunc.substr(0,sFunc.find('('));
     StripSpaces(sToLocate);
 
     if (mFunctionsMap.find(sToLocate) != mFunctionsMap.end())
@@ -639,7 +635,7 @@ bool FunctionDefinitionManager::isDefined(const string& sFunc)
     // If it is not already defined by the user, check additionally,
     // whether the passed function identifier corresponds either to
     // a built-in function or a protected command
-    if (sBuilt_In.find("," + sToLocate + "(") != string::npos || sCommands.find("," + sToLocate + ",") != string::npos)
+    if (sBuilt_In.find("," + sToLocate + "(") != std::string::npos || sCommands.find("," + sToLocate + ",") != std::string::npos)
         return true;
     else
         return false;
@@ -651,22 +647,22 @@ bool FunctionDefinitionManager::isDefined(const string& sFunc)
 /// function, by passing it to a new
 /// FunctionDefinition class instance.
 ///
-/// \param sExpr const string&
+/// \param sExpr const std::string&
 /// \param bRedefine bool
 /// \param bFallback bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
+bool FunctionDefinitionManager::defineFunc(const std::string& sExpr, bool bRedefine, bool bFallback)
 {
     if (!NumeReKernel::getInstance())
         return false;
 
     // Handle the case that the user simply wanted to append
     // a comment to the existing definition
-    if (bRedefine && sExpr.find("()") != string::npos && findParameter(sExpr, "comment", '=') && mFunctionsMap.size())
+    if (bRedefine && sExpr.find("()") != std::string::npos && findParameter(sExpr, "comment", '=') && mFunctionsMap.size())
     {
-        string sComment = getArgAtPos(sExpr, findParameter(sExpr, "comment", '=')+7);
+        std::string sComment = getArgAtPos(sExpr, findParameter(sExpr, "comment", '=')+7);
 
         if (mFunctionsMap.find(sExpr.substr(0, sExpr.find("()"))) != mFunctionsMap.end())
         {
@@ -679,23 +675,23 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
     }
 
     // Catch all possible syntax errors at this location
-    if (sExpr.find('(') == string::npos
+    if (sExpr.find('(') == std::string::npos
         || sExpr.find('(') > sExpr.find(":=")
-        || sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos
-        || (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
-        || sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos
-        || sExpr.find(":=") == string::npos)
+        || sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != std::string::npos
+        || (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != std::string::npos)
+        || sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != std::string::npos
+        || sExpr.find(":=") == std::string::npos)
     {
         // Throw the corresponding error messages
-        if (sExpr.find(":=") == string::npos)
+        if (sExpr.find(":=") == std::string::npos)
             throw SyntaxError(SyntaxError::CANNOT_FIND_DEFINE_OPRT, sExpr, SyntaxError::invalid_position);
-        else if (sExpr.find('(') == string::npos || sExpr.find('(') > sExpr.find(":="))
+        else if (sExpr.find('(') == std::string::npos || sExpr.find('(') > sExpr.find(":="))
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
-        else if (sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos)
+        else if (sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != std::string::npos)
             throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
-        else if (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
+        else if (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != std::string::npos)
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
-        else if (sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos)
+        else if (sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != std::string::npos)
             throw SyntaxError(SyntaxError::FUNCTION_STRING_IS_COMMAND, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         else
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
@@ -705,7 +701,7 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
     if (!bRedefine && isDefined(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0, sExpr.find('(')));
 
-    string sDefinition = sExpr;
+    std::string sDefinition = sExpr;
 
     // Handle recursive redefinitions
     if (bRedefine && findParameter(sExpr, "recursive"))
@@ -717,7 +713,7 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
     FunctionDefinition fallback;
 
     // Get the function string
-    string sFunctionString = definition.getDefinition().substr(definition.getDefinition().find(":=")+2);
+    std::string sFunctionString = definition.getDefinition().substr(definition.getDefinition().find(":=")+2);
 
     // check, whether the new function would result in an
     // endless recursion
@@ -770,11 +766,11 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
 /// \brief This function removes a previously
 /// defined function from the internal memory.
 ///
-/// \param sFunc const string&
+/// \param sFunc const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FunctionDefinitionManager::undefineFunc(const string& sFunc)
+bool FunctionDefinitionManager::undefineFunc(const std::string& sFunc)
 {
     if (mFunctionsMap.find(sFunc.substr(0, sFunc.find('('))) != mFunctionsMap.end())
         mFunctionsMap.erase(sFunc.substr(0, sFunc.find('(')));
@@ -798,18 +794,18 @@ bool FunctionDefinitionManager::undefineFunc(const string& sFunc)
 /// and replaces them with their parsed
 /// definition strings.
 ///
-/// \param sExpr string&
+/// \param sExpr std::string&
 /// \param nRecursion int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
+bool FunctionDefinitionManager::call(std::string& sExpr, int nRecursion)
 {
     if (!NumeReKernel::getInstance())
         return false;
 
     StringView sTemp;
-    string sImpFunc = "";
+    std::string sImpFunc = "";
     bool bDoRecursion = false;
 
     if (!sExpr.length())
@@ -843,7 +839,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
         // Check for each occurence, whether the candidate
         // is an actual match and replace it with the parsed
         // definition string
-        while ((nPos = sExpr.find(iter->second.sName + "(", nPos)) != string::npos)
+        while ((nPos = sExpr.find(iter->second.sName + "(", nPos)) != std::string::npos)
         {
             // Is it an actual match?
             if (!expr.is_delimited_sequence(nPos, iter->second.sName.length())
@@ -867,7 +863,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
 
             // Check, whether the sArgs are terminated
             // by a parenthesis
-            if (nPos_2 == string::npos)
+            if (nPos_2 == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, nPos);
 
             // Remove the surrounding parentheses
@@ -892,7 +888,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
             {
                 if (sExpr[nPos] == ')' && sTemp.back() == '(')
                 {
-                    static string sDelim = "+-*/^!?:,!&|# ";
+                    static std::string sDelim = "+-*/^!?:,!&|# ";
 
                     if (sDelim.find(sTemp[sTemp.length()-2]) != std::string::npos)
                     {
@@ -952,10 +948,10 @@ size_t FunctionDefinitionManager::getDefinedFunctions() const
 /// ith defined custom function.
 ///
 /// \param _i size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinitionManager::getDefinitionString(size_t _i) const
+std::string FunctionDefinitionManager::getDefinitionString(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -971,10 +967,10 @@ string FunctionDefinitionManager::getDefinitionString(size_t _i) const
 /// ith defined custom function.
 ///
 /// \param _i size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinitionManager::getFunctionSignature(size_t _i) const
+std::string FunctionDefinitionManager::getFunctionSignature(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -990,10 +986,10 @@ string FunctionDefinitionManager::getFunctionSignature(size_t _i) const
 /// defined custom function.
 ///
 /// \param _i size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinitionManager::getImplementation(size_t _i) const
+std::string FunctionDefinitionManager::getImplementation(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -1009,10 +1005,10 @@ string FunctionDefinitionManager::getImplementation(size_t _i) const
 /// function.
 ///
 /// \param _i size_t
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinitionManager::getComment(size_t _i) const
+std::string FunctionDefinitionManager::getComment(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -1050,7 +1046,7 @@ bool FunctionDefinitionManager::reset()
 bool FunctionDefinitionManager::save(const Settings& _option)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
-    ofstream ofDefineFile;
+    std::ofstream ofDefineFile;
 
     // Do not save anything, if the map is empty
     if (mFunctionsMap.size())
@@ -1059,18 +1055,18 @@ bool FunctionDefinitionManager::save(const Settings& _option)
             NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("DEFINE_SAVING_FUNCTIONS")) + " ... ");
 
         // Open the definition file
-        ofDefineFile.open(sFileName.c_str(), ios_base::trunc);
+        ofDefineFile.open(sFileName.c_str(), std::ios_base::trunc);
 
         // Ensure that the file stream is in a
         // valid state
         if (ofDefineFile.good())
         {
-            ofDefineFile << "# This file saves the function definitions. Do not edit unless you know, what you're doing!" << endl;
+            ofDefineFile << "# This file saves the function definitions. Do not edit unless you know, what you're doing!" << std::endl;
 
             // Save each definition
             for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
             {
-                ofDefineFile << iter->second.exportFunction() << endl;
+                ofDefineFile << iter->second.exportFunction() << std::endl;
             }
 
             if (_option.systemPrints())
@@ -1098,8 +1094,8 @@ bool FunctionDefinitionManager::save(const Settings& _option)
 bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
-    ifstream ifDefinedFile;
-    string sInputLine;
+    std::ifstream ifDefinedFile;
+    std::string sInputLine;
 
     // Open the definition file
     ifDefinedFile.open(sFileName.c_str());
@@ -1114,7 +1110,7 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
         // Read every line of the definition file
         while (!ifDefinedFile.eof())
         {
-            getline(ifDefinedFile, sInputLine);
+            std::getline(ifDefinedFile, sInputLine);
 
             // Ignore emoty lines and comments
             if (!sInputLine.length() || sInputLine.front() == '#')
@@ -1123,8 +1119,9 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
             // Create an empty definition object and import
             // the read definition
             FunctionDefinition definition;
-            definition.importFunction(sInputLine);
-            mFunctionsMap[definition.sName] = definition;
+
+            if (definition.importFunction(sInputLine))
+                mFunctionsMap[definition.sName] = definition;
         }
 
         if (!bAutoLoad && _option.systemPrints())
@@ -1145,15 +1142,16 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
 /// list is whitespace-separated, it will be
 /// converted into a comma-separated list.
 ///
-/// \param sPredefined const string&
+/// \param sPredefined const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FunctionDefinitionManager::setPredefinedFuncs(const string& sPredefined)
+void FunctionDefinitionManager::setPredefinedFuncs(const std::string& sPredefined)
 {
     sBuilt_In = sPredefined;
 
-    if ((sBuilt_In.find(',') == string::npos || sBuilt_In.find("()") == string::npos) && sBuilt_In.find(' ') != string::npos)
+    if ((sBuilt_In.find(',') == std::string::npos || sBuilt_In.find("()") == std::string::npos)
+        && sBuilt_In.find(' ') != std::string::npos)
     {
         sBuilt_In.insert(0, ",");
         sBuilt_In += "()";

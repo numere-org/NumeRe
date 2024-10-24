@@ -2780,6 +2780,49 @@ mu::Array strfnc_getlasterror()
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the geterrormsg()
+/// function.
+///
+/// \param errCode const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_geterrormessage(const mu::Array& errCode)
+{
+    mu::Array msg;
+    msg.reserve(errCode.size());
+
+    for (size_t i = 0; i < errCode.size(); i++)
+    {
+        const std::string& errC = errCode.get(i).getStr();
+
+        if (errC.starts_with("expression#"))
+        {
+            std::string errM = _lang.get("ERR_MUP_" + errC.substr(errC.find('#')+1) + "_*");
+
+            if (errM.starts_with("ERR_MUP_"))
+                msg.push_back(errC);
+            else
+                msg.push_back(errM);
+        }
+        else if (errC.starts_with("syntax#"))
+        {
+            std::string errM = _lang.get("ERR_NR_" + errC.substr(errC.find('#')+1) + "_0_*", "$TOK$", "$ID1$", "$ID2$", "$ID3$", "$ID4$");
+
+            if (errM.starts_with("ERR_NR_"))
+                msg.push_back(errC);
+            else
+                msg.push_back(errM);
+        }
+        else
+            msg.push_back(errC);
+    }
+
+    return msg;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simple helper to convert the build
 /// date into a time point.
 ///
