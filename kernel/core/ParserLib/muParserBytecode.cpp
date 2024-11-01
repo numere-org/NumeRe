@@ -270,13 +270,13 @@ namespace mu
 						// Optimization for ploynomials of low order
 						if (m_vRPN[sz - 2].Cmd == cmVAR && m_vRPN[sz - 1].Cmd == cmVAL)
 						{
-							if (all(m_vRPN[sz - 1].Val().data2 == Value(2.0)))
+							if (all(m_vRPN[sz - 1].Val().data2 == Array(Value(2.0))))
 								m_vRPN[sz - 2].Cmd = cmVARPOW2;
-							else if (all(m_vRPN[sz - 1].Val().data2 == Value(3.0)))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Array(Value(3.0))))
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
-							else if (all(m_vRPN[sz - 1].Val().data2 == Value(4.0)))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Array(Value(4.0))))
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (all(m_vRPN[sz - 1].Val().data2 == Value(m_vRPN[sz - 1].Val().data2.getAsScalarInt())))
+							else if (all(m_vRPN[sz - 1].Val().data2 == Array(Value(m_vRPN[sz - 1].Val().data2.getAsScalarInt()))))
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
 							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;

@@ -295,9 +295,9 @@ namespace NumeRe
         {
             WindowItemValue value = m_customWindow->getItemValue(windowItemID);
 
-            val.stringValue = value.stringValue.ToStdString();
+            val.val = value.val;
             val.tableValue = value.tableValue;
-            val.type = value.type.ToStdString();
+            val.type = value.type;
         }
 
         return val;
@@ -309,15 +309,15 @@ namespace NumeRe
     /// window item as a string.
     ///
     /// \param windowItemID int
-    /// \return std::string
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getItemLabel(int windowItemID) const
+    mu::Array Window::getItemLabel(int windowItemID) const
     {
         if (m_customWindow)
-            return m_customWindow->getItemLabel(windowItemID).ToStdString();
+            return m_customWindow->getItemLabel(windowItemID);
 
-        return "";
+        return mu::Array();
     }
 
 
@@ -343,15 +343,15 @@ namespace NumeRe
     /// window item as a string.
     ///
     /// \param windowItemID int
-    /// \return std::string
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getItemColor(int windowItemID) const
+    mu::Array Window::getItemColor(int windowItemID) const
     {
         if (m_customWindow)
-            return m_customWindow->getItemColor(windowItemID).ToStdString();
+            return m_customWindow->getItemColor(windowItemID);
 
-        return "";
+        return mu::Array();
     }
 
 
@@ -360,15 +360,15 @@ namespace NumeRe
     /// in the corresponding window item.
     ///
     /// \param windowItemID int
-    /// \return std::string
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getItemSelection(int windowItemID) const
+    mu::Array Window::getItemSelection(int windowItemID) const
     {
         if (m_customWindow)
-            return m_customWindow->getItemSelection(windowItemID).ToStdString();
+            return m_customWindow->getItemSelection(windowItemID);
 
-        return "";
+        return mu::Array();
     }
 
     /////////////////////////////////////////////////
@@ -376,15 +376,15 @@ namespace NumeRe
     /// property as a string.
     ///
     /// \param varName const std::string&
-    /// \return std::string
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getPropValue(const std::string& varName) const
+    mu::Array Window::getPropValue(const std::string& varName) const
     {
         if (m_customWindow)
-            return m_customWindow->getPropValue(varName).ToStdString();
+            return m_customWindow->getPropValue(varName);
 
-        return "nan";
+        return mu::Array();
     }
 
 
@@ -392,30 +392,30 @@ namespace NumeRe
     /// \brief Returns a list of all available window
     /// properties (comp. \c prop) in this window.
     ///
-    /// \return std::string
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getProperties() const
+    mu::Array Window::getProperties() const
     {
         if (m_customWindow)
-            return m_customWindow->getProperties().ToStdString();
+            return m_customWindow->getProperties();
 
-        return "\"\"";
+        return mu::Array();
     }
 
 
     /////////////////////////////////////////////////
     /// \brief Returns the status text in this window.
     ///
-    /// \return std::string
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getStatusText() const
+    mu::Array Window::getStatusText() const
     {
         if (m_customWindow)
-            return m_customWindow->getStatusText().ToStdString();
+            return m_customWindow->getStatusText();
 
-        return "\"\"";
+        return mu::Array();
     }
 
 
@@ -458,7 +458,7 @@ namespace NumeRe
         if (m_customWindow)
         {
             WindowItemValue val;
-            val.stringValue = _value.stringValue;
+            val.val = _value.val;
             val.tableValue = _value.tableValue;
             val.type = _value.type;
             return m_customWindow->pushItemValue(val, windowItemID);
@@ -472,12 +472,12 @@ namespace NumeRe
     /// \brief Enables changing the label of the
     /// selected window item to the passed label.
     ///
-    /// \param _label const std::string&
+    /// \param _label const mu::Array&
     /// \param windowItemID int
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemLabel(const std::string& _label, int windowItemID)
+    bool Window::setItemLabel(const mu::Array& _label, int windowItemID)
     {
         if (m_customWindow)
             return m_customWindow->pushItemLabel(_label, windowItemID);
@@ -508,12 +508,12 @@ namespace NumeRe
     /// \brief Enables changing the color of the
     /// selected window item to the passed color.
     ///
-    /// \param _color const std::string&
+    /// \param _color const mu::Array&
     /// \param windowItemID int
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemColor(const std::string& _color, int windowItemID)
+    bool Window::setItemColor(const mu::Array& _color, int windowItemID)
     {
         if (m_customWindow)
             return m_customWindow->setItemColor(_color, windowItemID);
@@ -580,12 +580,12 @@ namespace NumeRe
     /// \brief This function sets the value of the
     /// selected window property.
     ///
-    /// \param _value const std::string&
+    /// \param _value const mu::Array&
     /// \param varName const std::string&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setPropValue(const std::string& _value, const std::string& varName)
+    bool Window::setPropValue(const mu::Array& _value, const std::string& varName)
     {
         if (m_customWindow)
             return m_customWindow->setPropValue(_value, varName);
@@ -630,11 +630,11 @@ namespace NumeRe
     /// \brief This function changes the status text
     /// of the selected window.
     ///
-    /// \param _value const std::string&
+    /// \param _value const mu::Array&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setStatusText(const std::string& _value)
+    bool Window::setStatusText(const mu::Array& _value)
     {
         if (m_customWindow)
             return m_customWindow->setStatusText(_value);

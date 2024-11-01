@@ -36,6 +36,8 @@ namespace mu
         TYPE_NUMERICAL,
         TYPE_STRING,
         TYPE_CATEGORY,
+        TYPE_ARRAY,
+        TYPE_GENERATOR,
         TYPE_MIXED
     };
 

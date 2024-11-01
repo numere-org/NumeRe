@@ -1148,6 +1148,37 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
 
 
 /////////////////////////////////////////////////
+/// \brief Return the cell value as a mu::Value
+///
+/// \param row int
+/// \param col int
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value TableViewer::get(int row, int col)
+{
+    if (isGridNumeReTable)
+        return *static_cast<mu::Value*>(GetTable()->GetValueAsCustom(row, col, "mu::Value"));
+
+    std::string cellValue = GetCellValue(row, col).ToStdString();
+
+    if (cellValue.front() != '"')
+    {
+        if (isConvertible(cellValue, CONVTYPE_VALUE))
+            return mu::Value(StrToCmplx(cellValue));
+
+        if (isConvertible(cellValue, CONVTYPE_LOGICAL))
+            return mu::Value(StrToLogical(cellValue));
+
+        if (isConvertible(cellValue, CONVTYPE_DATE_TIME))
+            return mu::Value(StrToTime(cellValue));
+    }
+
+    return mu::Value(toInternalString(cellValue));;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function calculates the
 /// minimal value of the selected cells.
 ///
@@ -2369,10 +2400,10 @@ bool TableViewer::isSilentSelection()
 /// \brief Returns the values of all selected
 /// cells as a string list.
 ///
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString TableViewer::getSelectedValues()
+mu::Array TableViewer::getSelectedValues()
 {
     // Simple case: only one cell
     if (!(GetSelectedCells().size()
@@ -2380,9 +2411,9 @@ wxString TableViewer::getSelectedValues()
         || GetSelectedRows().size()
         || GetSelectionBlockTopLeft().size()
         || GetSelectionBlockBottomRight().size()))
-        return this->GetCellValue(this->GetCursorRow(), this->GetCursorColumn());
+        return get(GetCursorRow(), GetCursorColumn());
 
-    wxString values;
+    mu::Array values;
 
     // More difficult: multiple selections
     if (GetSelectedCells().size())
@@ -2392,7 +2423,7 @@ wxString TableViewer::getSelectedValues()
 
         for (size_t i = 0; i < cellarray.size(); i++)
         {
-            values += this->GetCellValue(cellarray[i]) + ",";
+            values.push_back(get(cellarray[i].GetRow(), cellarray[i].GetCol()));
         }
     }
     else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
@@ -2405,7 +2436,7 @@ wxString TableViewer::getSelectedValues()
         {
             for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
             {
-                values += GetCellValue(i, j) + ",";
+                values.push_back(get(i, j));
             }
         }
     }
@@ -2418,7 +2449,7 @@ wxString TableViewer::getSelectedValues()
         {
             for (size_t j = 0; j < colarray.size(); j++)
             {
-                values += this->GetCellValue(i, colarray[j]) + ",";
+                values.push_back(get(i, colarray[j]));
             }
         }
     }
@@ -2431,15 +2462,12 @@ wxString TableViewer::getSelectedValues()
         {
             for (int j = 0; j < GetCols(); j++)
             {
-                values += this->GetCellValue(rowarray[i], j) + ",";
+                values.push_back(get(rowarray[i], j));
             }
         }
     }
 
-    if (values.length())
-        return values.substr(0, values.length()-1);
-
-    return "";
+    return values;
 }
 
 

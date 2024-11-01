@@ -60,6 +60,10 @@ namespace mu
                 m_data = new std::string;
                 *static_cast<std::string*>(m_data) = data.getStr();
                 break;
+            case TYPE_ARRAY:
+                m_data = new Array;
+                *static_cast<Array*>(m_data) = data.getArray();
+                break;
             default:
                 m_data = nullptr;
         }
@@ -105,6 +109,20 @@ namespace mu
         m_type = TYPE_CATEGORY;
         m_data = new Category;
         *static_cast<Category*>(m_data) = data;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an Array.
+    ///
+    /// \param data const Array&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const Array& data)
+    {
+        m_type = TYPE_ARRAY;
+        m_data = new Array;
+        *static_cast<Array*>(m_data) = data;
     }
 
 
@@ -278,11 +296,6 @@ namespace mu
         if (m_data && m_type != other.m_type)
             clear();
 
-        //mu::print("sizeof(void*) = " + toString(sizeof(void*)));
-        //mu::print("sizeof(Value) = " + toString(sizeof(Value)));
-        //mu::print("sizeof(string) = " + toString(sizeof(std::string)));
-        //mu::print("sizeof(Numerical) = " + toString(sizeof(Numerical)));
-        //mu::print("sizeof(Category) = " + toString(sizeof(Category)));
         m_type = other.m_type;
 
         switch (m_type)
@@ -304,6 +317,12 @@ namespace mu
                     m_data = new std::string;
 
                 *static_cast<std::string*>(m_data) = *static_cast<std::string*>(other.m_data);
+                break;
+            case TYPE_ARRAY:
+                if (!m_data)
+                    m_data = new Array;
+
+                *static_cast<Array*>(m_data) = *static_cast<Array*>(other.m_data);
                 break;
             default:
                 clear();
@@ -342,6 +361,8 @@ namespace mu
                 return getNum().getTypeAsString();
             case TYPE_STRING:
                 return "string";
+            case TYPE_ARRAY:
+                return "cluster";
         }
 
         return "void";
@@ -370,7 +391,9 @@ namespace mu
     {
         return m_type != TYPE_VOID
             && m_data
-            && ((isString() && getStr().length()) || (isNumerical() && getNum().asCF64() == getNum().asCF64()));
+            && ((isString() && getStr().length())
+                || (isNumerical() && getNum().asCF64() == getNum().asCF64())
+                || (isArray() && getArray().size()));
     }
 
 
@@ -410,6 +433,19 @@ namespace mu
     bool Value::isCategory() const
     {
         return m_type == TYPE_CATEGORY && m_data;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is an
+    /// Array.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isArray() const
+    {
+        return m_type == TYPE_ARRAY && m_data;
     }
 
 
@@ -522,6 +558,36 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Get the contained Array.
+    ///
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
+    Array& Value::getArray()
+    {
+        if (!isArray())
+            throw ParserError(ecTYPE_NO_VAL);
+
+        return *(Array*)m_data;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Array.
+    ///
+    /// \return const Array&
+    ///
+    /////////////////////////////////////////////////
+    const Array& Value::getArray() const
+    {
+        if (!isArray())
+            throw ParserError(ecTYPE_NO_VAL);
+
+        return *(Array*)m_data;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Convert the contained type to a
     /// complex in a fail-safe mode (returning NAN if
     /// a conversion is not possible).
@@ -552,6 +618,17 @@ namespace mu
     {
         DataType common = detectCommonType(other);
 
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+                return getArray() + other.getArray();
+
+            if (isArray())
+                return getArray() + other;
+
+            return *this + other.getArray();
+        }
+
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH);
 
@@ -575,6 +652,9 @@ namespace mu
         if (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY)
             return -getNum();
 
+        if (m_type == TYPE_ARRAY)
+            return -getArray();
+
         throw ParserError(ecTYPE_MISMATCH);
     }
 
@@ -589,6 +669,17 @@ namespace mu
     Value Value::operator-(const Value& other) const
     {
         DataType common = detectCommonType(other);
+
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+                return getArray() - other.getArray();
+
+            if (isArray())
+                return getArray() - other;
+
+            return *this - other.getArray();
+        }
 
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH);
@@ -610,6 +701,17 @@ namespace mu
     Value Value::operator/(const Value& other) const
     {
         DataType common = detectCommonType(other);
+
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+                return getArray() / other.getArray();
+
+            if (isArray())
+                return getArray() / other;
+
+            return *this / other.getArray();
+        }
 
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH);
@@ -633,6 +735,17 @@ namespace mu
     Value Value::operator*(const Value& other) const
     {
         DataType common = detectCommonType(other);
+
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+                return getArray() * other.getArray();
+
+            if (isArray())
+                return getArray() * other;
+
+            return *this * other.getArray();
+        }
 
         if (common == TYPE_MIXED)
         {
@@ -665,6 +778,23 @@ namespace mu
             return operator=(other);
 
         DataType common = detectCommonType(other);
+
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+            {
+                getArray() += other.getArray();
+                return *this;
+            }
+
+            if (isArray())
+            {
+                getArray() += other;
+                return *this;
+            }
+
+            return operator=(*this + other.getArray());
+        }
 
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH_OOB);
@@ -702,6 +832,23 @@ namespace mu
 
         DataType common = detectCommonType(other);
 
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+            {
+                getArray() -= other.getArray();
+                return *this;
+            }
+
+            if (isArray())
+            {
+                getArray() -= other;
+                return *this;
+            }
+
+            return operator=(*this - other.getArray());
+        }
+
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH_OOB);
 
@@ -727,6 +874,23 @@ namespace mu
     Value& Value::operator/=(const Value& other)
     {
         DataType common = detectCommonType(other);
+
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+            {
+                getArray() /= other.getArray();
+                return *this;
+            }
+
+            if (isArray())
+            {
+                getArray() /= other;
+                return *this;
+            }
+
+            return operator=(*this / other.getArray());
+        }
 
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH_OOB);
@@ -756,6 +920,23 @@ namespace mu
             return operator=(other);
 
         DataType common = detectCommonType(other);
+
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && other.isArray())
+            {
+                getArray() *= other.getArray();
+                return *this;
+            }
+
+            if (isArray())
+            {
+                getArray() *= other;
+                return *this;
+            }
+
+            return operator=(*this * other.getArray());
+        }
 
         if (common == TYPE_MIXED)
         {
@@ -791,6 +972,17 @@ namespace mu
     {
         DataType common = detectCommonType(exponent);
 
+        if (common == TYPE_ARRAY)
+        {
+            if (isArray() && exponent.isArray())
+                return getArray().pow(exponent.getArray());
+
+            if (isArray())
+                return getArray().pow(exponent);
+
+            return mu::Array(*this).pow(exponent.getArray());
+        }
+
         if (common == TYPE_MIXED)
             throw ParserError(ecTYPE_MISMATCH);
 
@@ -810,7 +1002,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value::operator bool() const
     {
-        return isValid() && ((isString() && getStr().length()) || (isNumerical() && bool(getNum())));
+        return isValid() && ((isString() && getStr().length()) || (isNumerical() && bool(getNum())) || (isArray() && all(getArray())));
     }
 
 
@@ -822,7 +1014,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator!() const
     {
-        return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && !getNum()));
+        return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && !getNum()) || (isArray() && !all(getArray())));
     }
 
 
@@ -838,7 +1030,8 @@ namespace mu
         return m_type == other.m_type
             && ((isCategory() && getCategory() == other.getCategory())
                 || (isString() && getStr() == other.getStr())
-                || (isNumerical() && getNum() == other.getNum()));
+                || (isNumerical() && getNum() == other.getNum())
+                || (isArray() && all(getArray() == other.getArray())));
     }
 
 
@@ -854,7 +1047,8 @@ namespace mu
         return m_type != other.m_type
             || (isCategory() && getCategory() != other.getCategory())
             || (isString() && getStr() != other.getStr())
-            || (isNumerical() && getNum() != other.getNum());
+            || (isNumerical() && getNum() != other.getNum())
+            || (isArray() && all(getArray() != other.getArray()));
     }
 
 
@@ -870,7 +1064,8 @@ namespace mu
         return m_type == other.m_type
             && ((isCategory() && getCategory() < other.getCategory())
                 || (isString() && getStr() < other.getStr())
-                || (isNumerical() && getNum() < other.getNum()));
+                || (isNumerical() && getNum() < other.getNum())
+                || (isArray() && all(getArray() < other.getArray())));
     }
 
 
@@ -899,7 +1094,8 @@ namespace mu
        return m_type == other.m_type
             && ((isCategory() && getCategory() > other.getCategory())
                 || (isString() && getStr() > other.getStr())
-                || (isNumerical() && getNum() > other.getNum()));
+                || (isNumerical() && getNum() > other.getNum())
+                || (isArray() && all(getArray() > other.getArray())));
     }
 
 
@@ -976,6 +1172,10 @@ namespace mu
         if (isNumerical())
             return getNum().print(digits);
 
+        if (isArray())
+            return "{" + getArray().printDims() + " " + getArray().getCommonTypeAsString() + "}";
+            //return getArray().print(digits, chrs, trunc);
+
         return "void";
     }
 
@@ -1005,6 +1205,9 @@ namespace mu
         if (isNumerical())
             return getNum().printVal(digits);
 
+        if (isArray())
+            return "{" + getArray().printVals(digits, chrs) + "}";
+
         return "void";
     }
 
@@ -1029,6 +1232,9 @@ namespace mu
             case TYPE_STRING:
                 delete static_cast<std::string*>(m_data);
                 break;
+            case TYPE_ARRAY:
+                delete static_cast<mu::Array*>(m_data);
+                break;
         }
 
         m_type = TYPE_VOID;
@@ -1052,6 +1258,8 @@ namespace mu
             case TYPE_CATEGORY:
             case TYPE_NUMERICAL:
                 return getNum().getBytes();
+            case TYPE_ARRAY:
+                return getArray().getBytes();
         }
 
         return 0;
@@ -1069,6 +1277,9 @@ namespace mu
     /////////////////////////////////////////////////
     DataType Value::detectCommonType(const Value& other) const
     {
+        if (m_type == TYPE_ARRAY || other.m_type == TYPE_ARRAY)
+            return TYPE_ARRAY;
+
         if ((m_type == TYPE_CATEGORY || m_type == TYPE_NUMERICAL)
             && (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_CATEGORY))
             return TYPE_NUMERICAL;
@@ -1106,8 +1317,10 @@ namespace mu
     /// \param other const Array&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Array& other) : std::vector<Value>(other), m_commonType(other.m_commonType)
-    { }
+    Array::Array(const Array& other) : Array()
+    {
+        operator=(other);
+    }
 
 
     /////////////////////////////////////////////////
@@ -1127,8 +1340,16 @@ namespace mu
     /// \param singleton const Value&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Value& singleton) : std::vector<Value>({singleton}), m_commonType(singleton.getType())
-    { }
+    Array::Array(const Value& singleton) : Array()
+    {
+        if (singleton.isArray())
+            operator=(singleton.getArray());
+        else
+        {
+            push_back(singleton);
+            m_commonType = singleton.getType();
+        }
+    }
 
 
     /////////////////////////////////////////////////
@@ -1238,6 +1459,31 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Make this array a 2-val generator
+    /// array.
+    ///
+    /// \param fst const Array&
+    /// \param lst const Array&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const Array& fst, const Array& lst) : std::vector<Value>({fst,lst}), m_commonType(TYPE_GENERATOR)
+    { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Make this array a 3-val generator
+    /// array.
+    ///
+    /// \param fst const Array&
+    /// \param inc const Array&
+    /// \param lst const Array&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const Array& fst, const Array& inc, const Array& lst) : std::vector<Value>({fst,inc,lst}), m_commonType(TYPE_GENERATOR)
+    { }
+
+
+    /////////////////////////////////////////////////
     /// \brief Assign an Array.
     ///
     /// \param other const Array&
@@ -1247,8 +1493,14 @@ namespace mu
     Array& Array::operator=(const Array& other)
     {
         //Timer t("Array::operator=");
-        if (size() == 1 && other.size() == 1)
+        if (other.size() == 1)
+        {
+            if (other.front().isArray())
+                return operator=(other.front().getArray());
+
+            resize(1);
             front() = other.front();
+        }
         else
         {
             resize(other.size());
@@ -1336,7 +1588,7 @@ namespace mu
             case TYPE_STRING:
                 return "string";
             case TYPE_MIXED:
-                return "record";
+                return "cluster";
         }
 
         return "void";
@@ -1802,6 +2054,35 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Returns an unwrapped version of this
+    /// array, i.e. all sub-array are rolled out.
+    ///
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::unWrap() const
+    {
+        Array ret;
+        ret.reserve(size());
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            const Value& v = get(i);
+
+            if (v.isArray())
+            {
+                Array unWrapped = v.getArray().unWrap();
+                ret.insert(ret.end(), unWrapped.begin(), unWrapped.end());
+            }
+            else
+                ret.push_back(v);
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Call a method with zero arguments.
     ///
     /// \param sMethod const std::string&
@@ -1850,6 +2131,8 @@ namespace mu
             return numfnc_MinPos(*this);
         else if (sMethod == "order")
             return numfnc_order(this, 1);
+        else if (sMethod == "unwrap")
+            return unWrap();
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2803,7 +3086,14 @@ namespace mu
     /////////////////////////////////////////////////
     Array operator+(const Value& v, const Array& arr)
     {
-        return arr+v;
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(v+a);
+        }
+
+        return ret;
     }
 
 

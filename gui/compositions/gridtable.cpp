@@ -232,8 +232,14 @@ bool GridNumeReTable::GetValueAsBool(int row, int col)
 /////////////////////////////////////////////////
 void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeName)
 {
-    value = _table.getValue(row - getNumHeadlines(), col);
-    return static_cast<void*>(&value);
+    if (sTypeName == "mu::Value")
+    {
+        value = _table.get(row - getNumHeadlines(), col);
+        return static_cast<void*>(&value);
+    }
+
+    cmplx = _table.getValue(row - getNumHeadlines(), col);
+    return static_cast<void*>(&cmplx);
 }
 
 

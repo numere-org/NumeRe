@@ -106,6 +106,8 @@ class TableViewer : public wxGrid
         NumeRe::Table GetData();
         NumeRe::Table GetDataCopy();
 
+        mu::Value get(int row, int col);
+
         void SetTableReadOnly(bool isReadOnly = true);
         void SetGridCursorSilent(int row, int col);
         void SetDefaultSize(size_t rows = 1, size_t cols = 1) __attribute__ ((deprecated));
@@ -121,7 +123,7 @@ class TableViewer : public wxGrid
         void groupHeaders(int startCol, int endCol, int row);
         bool isSilentSelection();
 
-        wxString getSelectedValues();
+        mu::Array getSelectedValues();
         int GetInternalRows(int gridrow) const;
         int GetExternalRows(int gridrow) const;
 

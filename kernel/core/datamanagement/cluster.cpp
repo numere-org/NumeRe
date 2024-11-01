@@ -60,6 +60,17 @@ namespace NumeRe
         if (data.size() == 1)
             _idx.row.setOpenEndIndex(std::max((int64_t)_idx.row.front(), (int64_t)size() - 1));
 
+        // Do we want to create a hierarchy?
+        if (_idx.row.size() == 1 && data.size() > 1)
+        {
+            // Expand the current cluster on-the-fly
+            if (_idx.row.front() >= (int)size())
+                resize(_idx.row.front()+1, mu::Value(NAN));
+
+            get(_idx.row.front()) = mu::Value(data);
+            return;
+        }
+
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
@@ -190,6 +201,8 @@ namespace NumeRe
         // possible
         if (_vLine.size() > 1 && !size())
             vTarget->resize(1, mu::Value());
+        else if (_vLine.size() == 1 && get(_vLine.front()).isArray())
+            *vTarget = get(_vLine.front()).getArray();
         else
         {
             vTarget->resize(_vLine.size(), mu::Value());

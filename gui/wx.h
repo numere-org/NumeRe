@@ -138,7 +138,7 @@ public:
         DM_TEXT
 	};
 
-	wxString getClickedCoords();
+	mglPoint getClickedCoords();
 
 protected:
     void InitializeToolbar();

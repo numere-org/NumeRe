@@ -687,7 +687,21 @@ namespace mu
 
         for (int i = 0; i < n; i++)
         {
-            res.insert(res.end(), arrs[i].begin(), arrs[i].end());
+            if (arrs[i].isScalar())
+                res.push_back(arrs[i].front());
+            else if (arrs[i].getCommonType() == TYPE_GENERATOR)
+            {
+                Array ret;
+
+                if (arrs[i].size() == 2)
+                    ret = expandVector2(arrs[i].get(0), arrs[i].get(1));
+                else if (arrs[i].size() == 3)
+                    ret = expandVector3(arrs[i].get(0), arrs[i].get(1), arrs[i].get(2));
+
+                res.insert(res.end(), ret.begin(), ret.end());
+            }
+            else
+                res.push_back(arrs[i]);
         }
 
         return res;
@@ -715,6 +729,37 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief This function creates a vector
+    /// generator for two indices.
+    ///
+    /// \param firstVal const Array&
+    /// \param lastVal const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+	Array ParserBase::Vector2Generator(const Array& firstVal, const Array& lastVal)
+	{
+	    return Array(firstVal, lastVal);
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function creates a vector
+    /// generator for three indices.
+    ///
+    /// \param firstVal const Array&
+    /// \param incr const Array&
+    /// \param lastVal const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+	Array ParserBase::Vector3Generator(const Array& firstVal, const Array& incr, const Array& lastVal)
+	{
+	    return Array(firstVal, incr, lastVal);
+	}
+
+
+   /////////////////////////////////////////////////
     /// \brief This function expands the vector from
     /// two indices.
     ///
@@ -1419,7 +1464,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push(all(vExpr.GetVal() != Value(0.0)) ? vVal1 : vVal2);
+			a_stVal.push(all(vExpr.GetVal() != Array(Value(0.0))) ? vVal1 : vVal2);
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -2213,7 +2258,7 @@ namespace mu
 		token_type opta, opt;  // for storing operators
 		token_type val, tval;  // for storing value
 		string_type strBuf;    // buffer for string function arguments
-		bool vectorCreateMode = false;
+		int vectorCreateMode = 0;
 		bool varArrayCandidate = false;
 
 		//ReInit();
@@ -2314,7 +2359,7 @@ namespace mu
 					break;
 
 				case cmVC:
-				    vectorCreateMode = false;
+				    vectorCreateMode--;
 				    // fallthrough intended
 				case cmBC:
 					{
@@ -2485,8 +2530,8 @@ namespace mu
                     ParserToken tok;
                     tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 				    stOpt.push(tok);
-				    vectorCreateMode = true;
-				    varArrayCandidate = true;
+				    vectorCreateMode++;
+				    varArrayCandidate = vectorCreateMode == 1;
                 }
                 // fallthrough intended
 				case cmBO:

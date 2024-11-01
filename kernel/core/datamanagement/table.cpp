@@ -285,6 +285,26 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param _dValue const mu::Value&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Table::set(size_t i, size_t j, const mu::Value& _dValue)
+    {
+        this->setMinSize(i+1, j+1);
+
+        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
+        vTableData[j]->set(i, _dValue);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function sets the data to
+    /// the table. It will resize the table
+    /// automatically, if needed.
+    ///
+    /// \param i size_t
+    /// \param j size_t
     /// \param _dValue const std::complex<double>&
     /// \return void
     ///
@@ -549,6 +569,24 @@ namespace NumeRe
             return TableColumn::getDefaultColumnHead(i);
 
         return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the value of the
+    /// selected cell.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \return mu::Value
+    ///
+    /////////////////////////////////////////////////
+    mu::Value Table::get(size_t i, size_t j) const
+    {
+        if (vTableData.size() > j && vTableData[j])
+            return vTableData[j]->get(i);
+
+        return mu::Value();
     }
 
 

@@ -28,6 +28,7 @@ namespace mu
 {
     // Forward declaration of the Variable class
     class Variable;
+    class Array;
 
 
     /////////////////////////////////////////////////
@@ -46,6 +47,7 @@ namespace mu
 
             Value(const Numerical& data);
             Value(const Category& data);
+            Value(const Array& data);
             Value(bool logical);
             Value(int32_t value);
             Value(uint32_t value);
@@ -71,6 +73,7 @@ namespace mu
             bool isNumerical() const;
             bool isString() const;
             bool isCategory() const;
+            bool isArray() const;
 
             std::string& getStr();
             const std::string& getStr() const;
@@ -80,6 +83,9 @@ namespace mu
 
             Category& getCategory();
             const Category& getCategory() const;
+
+            Array& getArray();
+            const Array& getArray() const;
 
             std::complex<double> as_cmplx() const;
 
@@ -147,6 +153,8 @@ namespace mu
             Array(const std::vector<int64_t>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
+            Array(const Array& fst, const Array& lst);
+            Array(const Array& fst, const Array& inc, const Array& lst);
 
             Array& operator=(const Array& other);
             //Array& operator=(Array&& other) = default;
@@ -181,6 +189,8 @@ namespace mu
 
             Array operator&&(const Array& other) const;
             Array operator||(const Array& other) const;
+
+            Array unWrap() const;
 
             Array call(const std::string& sMethod) const;
             Array call(const std::string& sMethod, const Array& arg1) const;

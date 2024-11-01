@@ -35,7 +35,8 @@ class GridNumeReTable : public wxGridTableBase
     private:
         NumeRe::Table _table;
         int getNumHeadlines() const;
-        std::complex<double> value;
+        std::complex<double> cmplx;
+        mu::Value value;
         bool m_showQMarks;
 
     public:

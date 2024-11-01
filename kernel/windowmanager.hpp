@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "core/datamanagement/table.hpp"
+#include "core/ParserLib/muStructures.hpp"
 
 // Global forward declarations
 class CustomWindow;
@@ -114,7 +115,7 @@ namespace NumeRe
     struct WinItemValue
     {
         std::string type;
-        std::string stringValue;
+        mu::Array val;
         Table tableValue;
     };
 
@@ -193,26 +194,26 @@ namespace NumeRe
             std::vector<int> getWindowItems(const std::string& _selection) const;
             bool closeWindow();
             WinItemValue getItemValue(int windowItemID) const;
-            std::string getItemLabel(int windowItemID) const;
+            mu::Array getItemLabel(int windowItemID) const;
             std::string getItemState(int windowItemID) const;
-            std::string getItemColor(int windowItemID) const;
-            std::string getItemSelection(int windowItemID) const;
-            std::string getPropValue(const std::string& varName) const;
-            std::string getProperties() const;
-            std::string getStatusText() const;
+            mu::Array getItemColor(int windowItemID) const;
+            mu::Array getItemSelection(int windowItemID) const;
+            mu::Array getPropValue(const std::string& varName) const;
+            mu::Array getProperties() const;
+            mu::Array getStatusText() const;
 
             std::string dialog();
 
             bool setItemValue(const WinItemValue& _value, int windowItemID);
-            bool setItemLabel(const std::string& _label, int windowItemID);
+            bool setItemLabel(const mu::Array& _label, int windowItemID);
             bool setItemState(const std::string& _state, int windowItemID);
-            bool setItemColor(const std::string& _color, int windowItemID);
+            bool setItemColor(const mu::Array& _color, int windowItemID);
             bool setItemSelection(int selectionID, int selectionID2, int windowItemID);
             bool setItemFocus(int windowItemID);
             bool setItemGraph(GraphHelper* _helper, int windowItemID);
-            bool setPropValue(const std::string& _value, const std::string& varName);
+            bool setPropValue(const mu::Array& _value, const std::string& varName);
             bool setDisplay(const std::string& _display);
-            bool setStatusText(const std::string& _value);
+            bool setStatusText(const mu::Array& _value);
 
             void iconize();
             void maximize();

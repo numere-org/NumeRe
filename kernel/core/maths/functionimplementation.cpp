@@ -4449,8 +4449,8 @@ static mu::Value as_time_impl(const mu::Value& hours, const mu::Value& minutes, 
 mu::Array timfnc_as_date(const mu::Array& year, const mu::Array& month, const mu::Array& day)
 {
     return mu::apply(as_date_impl, year,
-                     month.isDefault() ? mu::Value(1.0) : month,
-                     day.isDefault() ? mu::Value(1.0) : day);
+                     month.isDefault() ? mu::Array(mu::Value(1.0)) : month,
+                     day.isDefault() ? mu::Array(mu::Value(1.0)) : day);
 }
 
 
@@ -4469,10 +4469,10 @@ mu::Array timfnc_as_date(const mu::Array& year, const mu::Array& month, const mu
 mu::Array timfnc_as_time(const mu::Array& h, const mu::Array& m, const mu::Array& s, const mu::Array& ms, const mu::Array& mus)
 {
     return mu::apply(as_time_impl, h,
-                     m.isDefault() ? mu::Value(0.0) : m,
-                     s.isDefault() ? mu::Value(0.0) : s,
-                     ms.isDefault() ? mu::Value(0.0) : ms,
-                     mus.isDefault() ? mu::Value(0.0) : mus);
+                     m.isDefault() ? mu::Array(mu::Value(0.0)) : m,
+                     s.isDefault() ? mu::Array(mu::Value(0.0)) : s,
+                     ms.isDefault() ? mu::Array(mu::Value(0.0)) : ms,
+                     mus.isDefault() ? mu::Array(mu::Value(0.0)) : mus);
 }
 
 

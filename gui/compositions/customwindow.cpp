@@ -18,7 +18,9 @@
 
 #include "customwindow.hpp"
 #include "../NumeReWindow.h" // Already includes NumeRe::Window
+#include "../terminal/terminal.hpp"
 #include "../../externals/tinyxml2/tinyxml2.h"
+#include "../../kernel/kernel.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/io/logger.hpp"
 #include "grouppanel.hpp"
@@ -33,15 +35,19 @@
 
 /////////////////////////////////////////////////
 /// \brief This static function converts colors
-/// to wxStrings.
+/// to mu::Array.
 ///
 /// \param c const wxColor&
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-static wxString toWxString(const wxColor& c)
+static mu::Array toArray(const wxColor& c)
 {
-    return wxString::Format("{%d,%d,%d}", c.Red(), c.Green(), c.Blue());
+    mu::Array ret;
+    ret.push_back(mu::Numerical(c.Red()));
+    ret.push_back(mu::Numerical(c.Green()));
+    ret.push_back(mu::Numerical(c.Blue()));
+    return ret;
 }
 
 
@@ -111,22 +117,6 @@ static wxString lampStatesFromColor(const wxColour& c)
 
 
 /////////////////////////////////////////////////
-/// \brief This static function conversts usual
-/// strings into "Kernel strings" (i.e. usual
-/// NumeRe code strings).
-///
-/// \param s wxString
-/// \return wxString
-///
-/////////////////////////////////////////////////
-static wxString convertToCodeString(wxString s)
-{
-    s.Replace("\"", "\\\"");
-    return "\"" + s + "\"";
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Static function to convert a
 /// kernel string into a usual string.
 ///
@@ -183,20 +173,31 @@ static wxArrayString getChoices(wxString& choices, bool keepQuotationMarks = fal
 {
     wxArrayString choicesArray;
     size_t nQuotes = 0;
+    size_t nChildBraces = 0;
 
     for (int i = 0; i < (int)choices.length(); i++)
     {
-        if (choices[i] == '"' && (!i || choices[i-1] != '\\'))
+        if (choices[i] == '"' && !nChildBraces && (!i || choices[i-1] != '\\'))
             nQuotes++;
 
-        if (!(nQuotes % 2) && choices[i] == ',')
+        if (!(nQuotes % 2))
         {
-            if (keepQuotationMarks)
-                choicesArray.Add(choices.substr(0, i));
-            else
-                choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
-            choices.erase(0, i+1);
-            i = -1;
+            if (choices[i] == '{' && i && choices[i-1] == '\n')
+                nChildBraces++;
+
+            if (nChildBraces && choices[i] == '}')
+                nChildBraces--;
+
+            if (!nChildBraces && choices[i] == ',')
+            {
+                if (keepQuotationMarks)
+                    choicesArray.Add(choices.substr(0, i));
+                else
+                    choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
+
+                choices.erase(0, i+1);
+                i = -1;
+            }
         }
     }
 
@@ -209,6 +210,27 @@ static wxArrayString getChoices(wxString& choices, bool keepQuotationMarks = fal
     }
 
     return choicesArray;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert a mu::Array into a
+/// wxArrayString.
+///
+/// \param choices const mu::Array&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+static wxArrayString getChoices(const mu::Array& choices)
+{
+    wxArrayString arr;
+
+    for (const auto& c : choices)
+    {
+        arr.Add(c.printVal());
+    }
+
+    return arr;
 }
 
 
@@ -314,6 +336,162 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
 
 
 /////////////////////////////////////////////////
+/// \brief Populate the children of the current
+/// wxTreeListItem.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param values const mu::Array&
+/// \param parentItem wxTreeListItem
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateChild(wxTreeListCtrl* listCtrl, const mu::Array& values, wxTreeListItem parentItem)
+{
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = listCtrl->GetColumnCount();
+    wxTreeListItem item = parentItem;
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        const mu::Value& elem = values.get(i);
+        wxString sItem;
+
+        if (elem.isArray())
+            sItem = elem.getArray().get(0).printVal();
+        else
+            sItem = elem.printVal();
+
+        size_t currCol = 1u;
+        bool check = false;
+
+        if (useCheckBoxes)
+            check = nextItemValue(sItem) != "0";
+
+        item = listCtrl->AppendItem(parentItem, nextItemValue(sItem));
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+
+        while (sItem.length() && currCol < nColumns && !sItem.StartsWith("\n{"))
+        {
+            listCtrl->SetItemText(item, currCol, nextItemValue(sItem));
+            currCol++;
+        }
+
+        if (sItem.StartsWith("\n{") && sItem.EndsWith("}"))
+        {
+            sItem.erase(0, 2);
+            sItem.RemoveLast();
+            wxArrayString childValues = getChoices(sItem);
+            populateChild(listCtrl, childValues, item, true);
+        }
+
+        if (elem.isArray() && elem.getArray().size() == 2)
+        {
+            const mu::Value& val = elem.getArray().get(1);
+
+            if (val.isArray())
+                populateChild(listCtrl, val.getArray(), item);
+            else
+                populateChild(listCtrl, val, item);
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function converts the list
+/// of values into items for the passed tree list
+/// control and populates it.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param values const mu::Array&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const mu::Array& values)
+{
+#warning TODO (numere#1#10/31/24): Method might need some improvements and a corresponding -get value behavior
+    if (!values.size())
+    {
+        listCtrl->DeleteAllItems();
+        return;
+    }
+
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = 1;
+
+    std::string elem = values.unWrap().get(0).printVal();
+
+    for (size_t pos = 0; pos < elem.length(); pos++)
+    {
+        if (elem[pos] == '\t')
+            nColumns++;
+    }
+
+    if (useCheckBoxes)
+        nColumns--;
+
+    listCtrl->DeleteAllItems();
+
+    while (listCtrl->GetColumnCount() < nColumns)
+        listCtrl->AppendColumn("");
+
+    populateChild(listCtrl, values, listCtrl->GetRootItem());
+
+    nColumns = listCtrl->GetColumnCount();
+    int colSize = std::max(listCtrl->GetClientSize().x / (int)nColumns - 2, MINCOLSIZE);
+
+    for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
+    {
+        listCtrl->SetColumnWidth(i, colSize);
+    }
+}
+
+
+static mu::Array getChildValues(wxTreeListCtrl* listCtrl, wxTreeListItem parent, bool useCheckBox)
+{
+    mu::Array currentLevel;
+
+    wxTreeListItem next = listCtrl->GetFirstChild(parent);
+
+    while (next.IsOk())
+    {
+        mu::Value item;
+
+        if (useCheckBox)
+            item = mu::Value(listCtrl->GetCheckedState(next) == wxCHK_CHECKED);
+        else
+        {
+            item = mu::Value("");
+
+            for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
+            {
+                item.getStr() += listCtrl->GetItemText(next, j).ToStdString();
+
+                if (j+1 < listCtrl->GetColumnCount())
+                    item.getStr() += "\t";
+            }
+        }
+
+
+        if (listCtrl->GetFirstChild(next).IsOk())
+        {
+            mu::Array parentChild(item);
+            parentChild.push_back(getChildValues(listCtrl, next, useCheckBox));
+            currentLevel.push_back(parentChild);
+        }
+        else
+            currentLevel.push_back(item);
+
+        next = listCtrl->GetNextSibling(next);
+    }
+
+    return currentLevel;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function returns the
 /// current value of the passed tree list
 /// control, whereas the value is either the
@@ -321,49 +499,33 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
 /// checkbox states.
 ///
 /// \param listCtrl wxTreeListCtrl*
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
+static mu::Array getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
 {
-    wxString values;
+    mu::Array values;
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
-    wxTreeListItems items;
+    return getChildValues(listCtrl, listCtrl->GetRootItem(), useCheckBoxes);
+    /*wxTreeListItems items;
 
     // Get selections if any and no checkboxes are used
     if (!useCheckBoxes)
     {
-        size_t itemCount = 0;
-        /*if (listCtrl->GetSelections(items))
+        for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
         {
-            for (size_t i = 0; i < items.size(); i++)*/
-            for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
+            wxString sItem;
+
+            for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
             {
-                if (values.length())
-                    values += ", ";
+                sItem += listCtrl->GetItemText(item, j);
 
-                wxString sItem;
-
-                for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
-                {
-                    sItem += listCtrl->GetItemText(item, j);
-
-                    if (j+1 < listCtrl->GetColumnCount())
-                        sItem += "\t";
-                }
-
-                values += convertToCodeString(sItem);
-                itemCount++;
+                if (j+1 < listCtrl->GetColumnCount())
+                    sItem += "\t";
             }
 
-            /*if (listCtrl->GetColumnCount() > 1 && itemCount > 1)
-                return convertToCodeString(values);*/
-
-            if (!values.length())
-                return "\"\"";
-        /*}
-        else
-            values = "\"\"";*/
+            values.push_back(sItem.ToStdString());
+        }
 
         return values;
     }
@@ -371,13 +533,10 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
     // Get the complete list or the states of the checkboxes
     for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
     {
-        if (values.length())
-            values += ",";
-
-        values += listCtrl->GetCheckedState(item) == wxCHK_CHECKED ? "1" : "0";
+        values.push_back(mu::Value(listCtrl->GetCheckedState(item) == wxCHK_CHECKED));
     }
 
-    return "\"{" + values + "}\"";
+    return values;*/
 }
 
 
@@ -529,7 +688,10 @@ void CustomWindow::layout()
     CreateStatusBar();
 
     if (layoutGroup->Attribute("statustext"))
-        setStatusText(layoutGroup->Attribute("statustext"));
+    {
+        wxString statusText = layoutGroup->Attribute("statustext");
+        setStatusText(getChoices(statusText));
+    }
 
     // Evaluate the size information
     if (layoutGroup->Attribute("size"))
@@ -996,13 +1158,33 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             {
                 if (varList[i].find('=') != std::string::npos)
                 {
-                    wxString name = varList[i].substr(0, varList[i].find('='));
-                    wxString value = varList[i].substr(varList[i].find('=')+1);
+                    std::string name = varList[i].substr(0, varList[i].find('=')).ToStdString();
+                    StripSpaces(name);
+                    std::string value = varList[i].substr(varList[i].find('=')+1).ToStdString();
 
-                    m_varTable[name.Trim()] = value.Trim(false);
+                    if (value.front() == '{' && value.back() == '}')
+                        value = value.substr(1, value.length()-2);
+
+                    mu::Array v;
+
+                    while (value.length())
+                    {
+                        std::string cur = getNextArgument(value, true);
+
+                        if (isConvertible(cur, CONVTYPE_VALUE))
+                            v.push_back(mu::Value(StrToCmplx(cur)));
+                        else if (isConvertible(cur, CONVTYPE_DATE_TIME))
+                            v.push_back(mu::Value(StrToTime(cur)));
+                        else if (isConvertible(cur, CONVTYPE_LOGICAL))
+                            v.push_back(mu::Value(StrToLogical(cur)));
+                        else
+                            v.push_back(mu::Value(toInternalString(cur)));
+                    }
+
+                    m_varTable[name] = v;
                 }
                 else
-                    m_varTable[varList[i]] = "0";
+                    m_varTable[varList[i].ToStdString()] = mu::Value();
             }
         }
         else if (sValue == "bitmap")
@@ -1468,9 +1650,7 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
 
             // Do not return the values of a tree list here
             if (params.type == "treelist")
-                params.value = "nan";
-
-            wxString kvl_event;
+                params.value = mu::Value();
 
             // Create the corresponding key-value-list
             // syntax
@@ -1478,25 +1658,47 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
                 || event.GetEventType() == wxEVT_GRID_CELL_LEFT_DCLICK)
             {
                 TableViewer* table = static_cast<TableViewer*>(m_windowItems[event.GetId()].second);
-                params.value = convertToCodeString(table->GetCellValue(static_cast<wxGridEvent&>(event).GetRow(),
-                                                                       static_cast<wxGridEvent&>(event).GetCol()));
+                params.value = table->get(static_cast<wxGridEvent&>(event).GetRow(),
+                                          static_cast<wxGridEvent&>(event).GetCol());
             }
 
-            kvl_event = "{\"event\",\"" + sEventType
-                        + "\",\"object\",\"" + params.type
-                        + "\",\"value\"," + params.value
-                        + ",\"state\",\"" + params.state + "\"";
+            static NumeReKernel& _kernel = mainWindow->getTerminal()->getKernel();
+            NumeRe::Cluster& kvl_event = _kernel.getMemoryManager().newCluster("_~event");
+            kvl_event.clear();
+            kvl_event.push_back("event");
+            kvl_event.push_back(sEventType.ToStdString());
+            kvl_event.push_back("object");
+            kvl_event.push_back(params.type);
+            kvl_event.push_back("value");
+
+            if (params.value.size() > 1)
+                kvl_event.push_back(params.value);
+            else
+                kvl_event.push_back(params.value.front());
+
+            kvl_event.push_back("state");
+            kvl_event.push_back(params.state);
 
             wxString p = pos.serialize();
 
             if (p.length())
-                kvl_event += ",\"position\", " + p;
+            {
+                kvl_event.push_back("position");
+
+                if (pos.y > -2)
+                {
+                    mu::Array posVal(mu::Value(pos.x+1));
+                    posVal.push_back(mu::Value(pos.y+1));
+                    kvl_event.push_back(posVal);
+                }
+                else
+                    kvl_event.push_back(mu::Value(pos.x+1));
+            }
 
             // Call the procedure with the following syntax:
             // $PROCEDURE(winid, objectid, event{})
             mainWindow->pass_command(sEventHandler + "(" + toString(m_windowRef.getId()) + ","
-                                                         + toString(event.GetId()) + ","
-                                                         + kvl_event + "})", true);
+                                                         + toString(event.GetId()) + ",_~event{})", true);
         }
         else if (sEventHandler.find('(') != std::string::npos)
         {
@@ -1511,7 +1713,7 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
 
                 getItemParameters(event.GetId(), params);
                 WindowItemValue val;
-                val.stringValue = params.value;
+                val.val = params.value;
                 val.tableValue = params.table;
                 val.type = params.type;
 
@@ -1529,7 +1731,7 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
                 getItemParameters(sourceID, params);
 
                 WindowItemValue val;
-                val.stringValue = params.value;
+                val.val = params.value;
                 val.tableValue = params.table;
                 val.type = params.type;
 
@@ -1567,10 +1769,11 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
 bool CustomWindow::getWindowParameters(WindowItemParams& params) const
 {
     params.type = "window";
-    params.value = wxString::Format("{%d,%d}", GetClientSize().x, GetClientSize().y);
+    params.value.push_back(GetClientSize().x);
+    params.value.push_back(GetClientSize().y);
     params.state = "running";
-    params.color = toWxString(GetBackgroundColour());
-    params.label = "\"" + GetTitle() + "\"";
+    params.color = toArray(GetBackgroundColour());
+    params.label = mu::Value(GetTitle().ToStdString());
 
     return true;
 }
@@ -1602,30 +1805,30 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
     {
         case CustomWindow::BUTTON:
             params.type = "button";
-            params.value = convertToCodeString(static_cast<wxButton*>(object.second)->GetLabel());
+            params.value = mu::Value(static_cast<wxButton*>(object.second)->GetLabel().ToStdString());
             params.label = params.value;
-            params.color = toWxString(static_cast<wxButton*>(object.second)->GetForegroundColour());
+            params.color = toArray(static_cast<wxButton*>(object.second)->GetForegroundColour());
 
             break;
         case CustomWindow::CHECKBOX:
             params.type = "checkbox";
-            params.value = static_cast<wxCheckBox*>(object.second)->IsChecked() ? "true" : "false";
-            params.label = convertToCodeString(static_cast<wxCheckBox*>(object.second)->GetLabel());
-            params.color = toWxString(static_cast<wxCheckBox*>(object.second)->GetBackgroundColour());
+            params.value = mu::Value(static_cast<wxCheckBox*>(object.second)->IsChecked());
+            params.label = mu::Value(static_cast<wxCheckBox*>(object.second)->GetLabel().ToStdString());
+            params.color = toArray(static_cast<wxCheckBox*>(object.second)->GetBackgroundColour());
 
             break;
         case CustomWindow::TEXT:
             params.type = "statictext";
-            params.value = convertToCodeString(static_cast<wxStaticText*>(object.second)->GetLabel());
+            params.value = mu::Value(static_cast<wxStaticText*>(object.second)->GetLabel().ToStdString());
             params.label = params.value;
-            params.color = toWxString(static_cast<wxStaticText*>(object.second)->GetForegroundColour());
+            params.color = toArray(static_cast<wxStaticText*>(object.second)->GetForegroundColour());
 
             break;
         case CustomWindow::TEXTCTRL:
             params.type = "textfield";
-            params.value = convertToCodeString(static_cast<TextField*>(object.second)->GetValue());
-            params.label = convertToCodeString(static_cast<TextField*>(object.second)->GetLabel());
-            params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
+            params.value = mu::Value(static_cast<TextField*>(object.second)->GetValue().ToStdString());
+            params.label = mu::Value(static_cast<TextField*>(object.second)->GetLabel().ToStdString());
+            params.color = toArray(static_cast<TextField*>(object.second)->GetBackgroundColour());
 
             if (!static_cast<wxTextCtrl*>(object.second)->IsEditable())
                 params.state = "readonly";
@@ -1633,23 +1836,23 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             break;
         case CustomWindow::LAMP:
             params.type = "lamp";
-            params.label = convertToCodeString(static_cast<TextField*>(object.second)->GetLabel());
-            params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
-            params.value = "\"" + lampStatesFromColor(static_cast<TextField*>(object.second)->GetBackgroundColour()) + "\"";
+            params.label = mu::Value(static_cast<TextField*>(object.second)->GetLabel().ToStdString());
+            params.color = toArray(static_cast<TextField*>(object.second)->GetBackgroundColour());
+            params.value = mu::Value(lampStatesFromColor(static_cast<TextField*>(object.second)->GetBackgroundColour()).ToStdString());
 
             break;
         case CustomWindow::DATETIMEPICKER:
             params.type = "datetimepicker";
-            params.value = convertToCodeString(static_cast<DateTimePicker*>(object.second)->GetValue());
+            params.value = mu::Value(StrToTime(static_cast<DateTimePicker*>(object.second)->GetValue().ToStdString()));
 
             break;
         case CustomWindow::RADIOGROUP:
         {
             params.type = "radio";
             wxRadioBox* box = static_cast<wxRadioBox*>(object.second);
-            params.value = convertToCodeString(box->GetString(box->GetSelection()));
-            params.label = convertToCodeString(box->GetLabel());
-            params.color = toWxString(static_cast<wxRadioBox*>(object.second)->GetBackgroundColour());
+            params.value = mu::Value(box->GetString(box->GetSelection()).ToStdString());
+            params.label = mu::Value(box->GetLabel().ToStdString());
+            params.color = toArray(static_cast<wxRadioBox*>(object.second)->GetBackgroundColour());
 
             break;
         }
@@ -1657,25 +1860,14 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         {
             params.type = "dropdown";
             wxChoice* choices = static_cast<wxChoice*>(object.second);
-            params.value = convertToCodeString(choices->GetString(choices->GetSelection()));
+            params.value = mu::Value(choices->GetString(choices->GetSelection()).ToStdString());
 
             for (size_t i = 0; i < choices->GetCount(); i++)
             {
-                if (params.label.length())
-                {
-                    if (params.label[0] != '{')
-                        params.label.insert(0, '{');
-
-                    params.label += ", ";
-                }
-
-                params.label += convertToCodeString(choices->GetString(i));
+                params.label.push_back(choices->GetString(i).ToStdString());
             }
 
-            if (params.label[0] == '{')
-                params.label += '}';
-
-            params.color = toWxString(static_cast<wxChoice*>(object.second)->GetBackgroundColour());
+            params.color = toArray(static_cast<wxChoice*>(object.second)->GetBackgroundColour());
 
             break;
         }
@@ -1685,54 +1877,43 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             wxComboBox* combo = static_cast<wxComboBox*>(object.second);
 
             if (combo->GetSelection() != wxNOT_FOUND)
-                params.value = convertToCodeString(combo->GetString(combo->GetSelection()));
+                params.value = mu::Value(combo->GetString(combo->GetSelection()).ToStdString());
             else
-                params.value = convertToCodeString(combo->GetValue());
+                params.value = mu::Value(combo->GetValue().ToStdString());
 
             for (size_t i = 0; i < combo->GetCount(); i++)
             {
-                if (params.label.length())
-                {
-                    if (params.label[0] != '{')
-                        params.label.insert(0, '{');
-
-                    params.label += ", ";
-                }
-
-                params.label += convertToCodeString(combo->GetString(i));
+                params.label.push_back(combo->GetString(i).ToStdString());
             }
 
-            if (params.label[0] == '{')
-                params.label += '}';
-
-            params.color = toWxString(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
+            params.color = toArray(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
 
             break;
         }
         case CustomWindow::GAUGE:
             params.type = "gauge";
-            params.value = wxString::Format("%d", static_cast<wxGauge*>(object.second)->GetValue());
+            params.value = mu::Value(static_cast<wxGauge*>(object.second)->GetValue());
             params.label = params.value;
-            params.color = toWxString(static_cast<wxGauge*>(object.second)->GetBackgroundColour());
+            params.color = toArray(static_cast<wxGauge*>(object.second)->GetBackgroundColour());
 
             break;
         case CustomWindow::SPINCTRL:
             params.type = "spinbut";
-            params.value = wxString::Format("%d", static_cast<SpinBut*>(object.second)->GetValue());
-            params.label = convertToCodeString(static_cast<SpinBut*>(object.second)->GetLabel());
-            params.color = toWxString(static_cast<SpinBut*>(object.second)->GetBackgroundColour());
+            params.value = mu::Value(static_cast<SpinBut*>(object.second)->GetValue());
+            params.label = mu::Value(static_cast<SpinBut*>(object.second)->GetLabel().ToStdString());
+            params.color = toArray(static_cast<SpinBut*>(object.second)->GetBackgroundColour());
 
             break;
         case CustomWindow::SLIDER:
             params.type = "slider";
-            params.value = wxString::Format("%d", static_cast<wxSlider*>(object.second)->GetValue());
+            params.value = mu::Value(static_cast<wxSlider*>(object.second)->GetValue());
 
             break;
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
             params.table = table->GetDataCopy();
-            params.value = convertToCodeString(table->getSelectedValues());
+            params.value = table->getSelectedValues();
             params.type = "tablegrid";
 
             if (!table->IsEditable())
@@ -1743,7 +1924,9 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         case CustomWindow::GRAPHER:
         {
             wxMGL* grapher = static_cast<wxMGL*>(object.second);
-            params.value = convertToCodeString(grapher->getClickedCoords());
+            mglPoint pos = grapher->getClickedCoords();
+            params.value.push_back(pos.x);
+            params.value.push_back(pos.y);
             params.type = "grapher";
 
             break;
@@ -1754,19 +1937,8 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
             for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
             {
-                if (params.label.length())
-                {
-                    if (params.label[0] != '{')
-                        params.label.insert(0, '{');
-
-                    params.label += ", ";
-                }
-
-                params.label += convertToCodeString(listCtrl->GetDataView()->GetColumn(i)->GetTitle());
+                params.label.push_back(listCtrl->GetDataView()->GetColumn(i)->GetTitle().ToStdString());
             }
-
-            if (params.label[0] == '{')
-                params.label += '}';
 
             params.value = getTreeListCtrlValue(listCtrl);
             params.type = "treelist";
@@ -1778,23 +1950,12 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
             params.type = "tabs";
 
-            for (int page = 0; page < noteBook->GetPageCount(); page++)
+            for (size_t page = 0; page < noteBook->GetPageCount(); page++)
             {
-                if (params.label.length())
-                {
-                    if (params.label[0] != '{')
-                        params.label.insert(0, '{');
-
-                    params.label += ", ";
-                }
-
-                params.label += convertToCodeString(noteBook->GetPageText(page));
+                params.label.push_back(noteBook->GetPageText(page).ToStdString());
             }
 
-            if (params.label[0] == '{')
-                params.label += '}';
-
-            params.value = convertToCodeString(noteBook->GetPageText(noteBook->GetSelection()));
+            params.value = mu::Value(noteBook->GetPageText(noteBook->GetSelection()).ToStdString());
 
             break;
         }
@@ -1802,14 +1963,14 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         {
             wxMenuItem* item = static_cast<wxMenuItem*>(object.second);
             params.type = "menuitem";
-            params.label = convertToCodeString(item->GetItemLabel());
+            params.label = mu::Value(item->GetItemLabel().ToStdString());
 
             if (item->IsCheckable())
-                params.value = item->IsChecked() ? "true" : "false";
+                params.value = mu::Value(item->IsChecked());
             else
-                params.value = convertToCodeString(item->GetLabelText(item->GetItemLabel()));
+                params.value = mu::Value(item->GetLabelText(item->GetItemLabel()).ToStdString());
 
-            params.color = toWxString(item->GetTextColour());
+            params.color = toArray(item->GetTextColour());
             params.state = item->IsEnabled() ? "enabled" : "disabled";
 
             break;
@@ -1916,10 +2077,7 @@ WindowItemValue CustomWindow::getItemValue(int windowItemID) const
 
     if (getItemParameters(windowItemID, params))
     {
-        if (params.value.substr(0, 2) == "\"{" && params.value.substr(params.value.length()-2) == "}\"")
-            params.value = params.value.substr(1, params.value.length()-2);
-
-        value.stringValue = params.value;
+        value.val = params.value;
         value.tableValue = params.table;
         value.type = params.type;
         return value;
@@ -1933,22 +2091,17 @@ WindowItemValue CustomWindow::getItemValue(int windowItemID) const
 /// \brief Get the label of the selected item.
 ///
 /// \param windowItemID int
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getItemLabel(int windowItemID) const
+mu::Array CustomWindow::getItemLabel(int windowItemID) const
 {
     WindowItemParams params;
 
     if (getItemParameters(windowItemID, params))
-    {
-        if (params.label.substr(0, 2) == "\"{" && params.label.substr(params.label.length()-2) == "}\"")
-            params.label = params.label.substr(1, params.label.length()-2);
-
         return params.label;
-    }
 
-    return "";
+    return mu::Array();
 }
 
 
@@ -1974,17 +2127,17 @@ wxString CustomWindow::getItemState(int windowItemID) const
 /// \brief Get the color of the selected item.
 ///
 /// \param windowItemID int
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getItemColor(int windowItemID) const
+mu::Array CustomWindow::getItemColor(int windowItemID) const
 {
     WindowItemParams params;
 
     if (getItemParameters(windowItemID, params))
         return params.color;
 
-    return "";
+    return mu::Array();
 }
 
 
@@ -1993,15 +2146,15 @@ wxString CustomWindow::getItemColor(int windowItemID) const
 /// selected item.
 ///
 /// \param windowItemID int
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getItemSelection(int windowItemID) const
+mu::Array CustomWindow::getItemSelection(int windowItemID) const
 {
     auto iter = m_windowItems.find(windowItemID);
 
     if (iter == m_windowItems.end())
-        return "";
+        return mu::Array();
 
     std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
 
@@ -2013,40 +2166,46 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
 
             if (field->HasSelection())
             {
+                mu::Array ret;
                 long int from;
                 long int to;
                 field->GetSelection(&from, &to);
-                return "{" + toString((long long)from+1) + "," + toString((long long)to-from) + "}";
+                ret.push_back(mu::Value((int32_t)(from+1)));
+                ret.push_back(mu::Value((int32_t)(to-from)));
+                return ret;
             }
 
-            return toString((long long)field->GetInsertionPoint()+1);
+            return mu::Value((uint64_t)field->GetInsertionPoint()+1);
         }
         case CustomWindow::DROPDOWN:
         {
             wxChoice* choices = static_cast<wxChoice*>(object.second);
-            return toString(choices->GetSelection()+1);
+            return mu::Value(choices->GetSelection()+1);
         }
         case CustomWindow::COMBOBOX:
         {
             wxComboBox* combo = static_cast<wxComboBox*>(object.second);
-            return toString(combo->GetSelection()+1);
+            return mu::Value(combo->GetSelection()+1);
         }
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            return "{" + toString(table->GetInternalRows(table->GetGridCursorRow())+1) + "," + toString(table->GetGridCursorCol()+1) + "}";
+            mu::Array ret;
+            ret.push_back(mu::Value(table->GetInternalRows(table->GetGridCursorRow())+1));
+            ret.push_back(mu::Value(table->GetGridCursorCol()+1));
+            return ret;
         }
         case CustomWindow::TREELIST:
         {
             wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
             int selection = enumerateListItems(listCtrl, listCtrl->GetSelection());
-            return toString(selection+1);
+            return mu::Value(selection+1);
         }
         case CustomWindow::NOTEBOOK:
         {
             wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
             int selection = noteBook->GetSelection();
-            return toString(selection+1);
+            return mu::Value(selection+1);
         }
         case CustomWindow::GAUGE:
         case CustomWindow::SPINCTRL:
@@ -2063,7 +2222,7 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
             break;
     }
 
-    return "";
+    return mu::Array();
 }
 
 
@@ -2071,18 +2230,18 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
 /// \brief Returns the value of the selected
 /// window property.
 ///
-/// \param varName const wxString&
-/// \return wxString
+/// \param varName const std::string&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getPropValue(const wxString& varName) const
+mu::Array CustomWindow::getPropValue(const std::string& varName) const
 {
     auto iter = m_varTable.find(varName);
 
     if (iter != m_varTable.end())
         return iter->second;
 
-    return "nan";
+    return mu::Array();
 }
 
 
@@ -2090,25 +2249,19 @@ wxString CustomWindow::getPropValue(const wxString& varName) const
 /// \brief Returns a list of all available window
 /// properties.
 ///
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getProperties() const
+mu::Array CustomWindow::getProperties() const
 {
-    wxString sProperties;
+    mu::Array props;
 
     for (auto iter : m_varTable)
     {
-        if (sProperties.length())
-            sProperties += ",";
-
-        sProperties += "\"" + iter.first + "\"";
+        props.push_back(iter.first);
     }
 
-    if (!sProperties.length())
-        return "\"\"";
-
-    return sProperties;
+    return props;
 }
 
 
@@ -2116,35 +2269,21 @@ wxString CustomWindow::getProperties() const
 /// \brief Returns the contents of the status bar
 /// if any available.
 ///
-/// \return wxString
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getStatusText() const
+mu::Array CustomWindow::getStatusText() const
 {
     const wxStatusBar* bar = GetStatusBar();
     int numFields = bar->GetFieldsCount();
-    wxString sStatusText;
+    mu::Array statusText;
 
     for (int i = 0; i < numFields; i++)
     {
-        if (sStatusText.length())
-        {
-            if (sStatusText[0] != '{')
-                sStatusText.insert(0, '{');
-
-            sStatusText += ",";
-        }
-
-        sStatusText += "\"" + bar->GetStatusText(i) + "\"";
+        statusText.push_back(bar->GetStatusText(i).ToStdString());
     }
 
-    if (!sStatusText.length())
-        return "\"\"";
-
-    if (sStatusText[0] == '{')
-        sStatusText += '}';
-
-    return sStatusText;
+    return statusText;
 }
 
 
@@ -2168,12 +2307,12 @@ bool CustomWindow::pushItemValue(WindowItemValue& _value, int windowItemID)
 /// \brief Push an item label change to the
 /// internal event handler.
 ///
-/// \param _label const wxString&
+/// \param _label const mu::Array&
 /// \param windowItemID int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::pushItemLabel(const wxString& _label, int windowItemID)
+bool CustomWindow::pushItemLabel(const mu::Array& _label, int windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetLabelEvent(SET_WINDOW_LABEL, GetId(), windowItemID, _label));
     return true;
@@ -2222,157 +2361,159 @@ bool CustomWindow::pushItemFocus(int windowItemID)
 /////////////////////////////////////////////////
 bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
 {
-    if (windowItemID == -1)
+    try
     {
-        long int x,y;
-        _value.stringValue.substr(0, _value.stringValue.find(',')).ToLong(&x);
-        _value.stringValue.substr(_value.stringValue.find(',')+1).ToLong(&y);
-
-        if (x == -1 && y == -1)
-            Maximize();
-        else
-            SetClientSize(wxSize(x,y));
-
-        Refresh();
-
-        return true;
-    }
-
-    auto iter = m_windowItems.find(windowItemID);
-
-    if (iter == m_windowItems.end())
-        return false;
-
-    std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
-
-    switch (object.first)
-    {
-        case CustomWindow::BUTTON:
-            static_cast<wxButton*>(object.second)->SetLabel(removeQuotationMarks(_value.stringValue));
-            break;
-        case CustomWindow::CHECKBOX:
-            static_cast<wxCheckBox*>(object.second)->SetValue(removeQuotationMarks(_value.stringValue) == "1");
-            break;
-        case CustomWindow::TEXT:
-            static_cast<wxStaticText*>(object.second)->SetLabel(removeQuotationMarks(_value.stringValue));
-            break;
-        case CustomWindow::TEXTCTRL:
-            static_cast<TextField*>(object.second)->SetMarkupText(removeQuotationMarks(_value.stringValue));
-            break;
-        case CustomWindow::LAMP:
+        if (windowItemID == -1)
         {
-            wxColour color = colorFromLampStates(_value.stringValue);
-            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+            long int x = -1, y = -1;
+
+            if (_value.val.size())
+                x = _value.val.get(0).getNum().asI64();
+
+            if (_value.val.size() > 1)
+                y = _value.val.get(1).getNum().asI64();
+
+            if (x == -1 && y == -1)
+                Maximize();
+            else
+                SetClientSize(wxSize(x,y));
+
             Refresh();
-            break;
-        }
-        case CustomWindow::DATETIMEPICKER:
-        {
-            //wxDateTime dt;
-            //wxString::const_iterator end;
-            //
-            //if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
-            //    dt.ParseDate(removeQuotationMarks(_value.stringValue), &end);
 
-            static_cast<DateTimePicker*>(object.second)->SetValue(removeQuotationMarks(_value.stringValue));
-            break;
+            return true;
         }
-        case CustomWindow::GAUGE:
-        {
-            long int nVal;
-            removeQuotationMarks(_value.stringValue).ToLong(&nVal);
 
-            if (nVal == -1)
-                static_cast<wxGauge*>(object.second)->Pulse();
-            else
-                static_cast<wxGauge*>(object.second)->SetValue(nVal);
+        auto iter = m_windowItems.find(windowItemID);
 
-            break;
-        }
-        case CustomWindow::SPINCTRL:
-        {
-            long int nVal;
-            removeQuotationMarks(_value.stringValue).ToLong(&nVal);
-            static_cast<SpinBut*>(object.second)->SetValue(nVal);
-            break;
-        }
-        case CustomWindow::SLIDER:
-        {
-            long int nVal;
-            removeQuotationMarks(_value.stringValue).ToLong(&nVal);
-            static_cast<wxSlider*>(object.second)->SetValue(nVal);
-            break;
-        }
-        case CustomWindow::RADIOGROUP:
-        {
-            wxRadioBox* box = static_cast<wxRadioBox*>(object.second);
-            int sel = box->FindString(removeQuotationMarks(_value.stringValue), true);
+        if (iter == m_windowItems.end())
+            return false;
 
-            if (sel != wxNOT_FOUND)
-                box->SetSelection(sel);
+        std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
 
-            break;
-        }
-        case CustomWindow::DROPDOWN:
+        switch (object.first)
         {
-            wxChoice* choices = static_cast<wxChoice*>(object.second);
-            int sel = choices->FindString(removeQuotationMarks(_value.stringValue), true);
+            case CustomWindow::BUTTON:
+                static_cast<wxButton*>(object.second)->SetLabel(_value.val.get(0).printVal());
+                break;
+            case CustomWindow::CHECKBOX:
+                static_cast<wxCheckBox*>(object.second)->SetValue((bool)_value.val.get(0));
+                break;
+            case CustomWindow::TEXT:
+                static_cast<wxStaticText*>(object.second)->SetLabel(_value.val.get(0).printVal());
+                break;
+            case CustomWindow::TEXTCTRL:
+                static_cast<TextField*>(object.second)->SetMarkupText(_value.val.get(0).printVal());
+                break;
+            case CustomWindow::LAMP:
+            {
+                wxColour color = colorFromLampStates(_value.val.get(0).printVal());
+                static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+                Refresh();
+                break;
+            }
+            case CustomWindow::DATETIMEPICKER:
+            {
+                static_cast<DateTimePicker*>(object.second)->ChangeValue(_value.val.get(0).printVal());
+                break;
+            }
+            case CustomWindow::GAUGE:
+            {
+                long int nVal = _value.val.get(0).getNum().asI64();
 
-            if (sel != wxNOT_FOUND)
-                choices->SetSelection(sel);
+                if (nVal == -1)
+                    static_cast<wxGauge*>(object.second)->Pulse();
+                else
+                    static_cast<wxGauge*>(object.second)->SetValue(nVal);
 
-            break;
-        }
-        case CustomWindow::COMBOBOX:
-        {
-            wxComboBox* combo = static_cast<wxComboBox*>(object.second);
-            int sel = combo->FindString(removeQuotationMarks(_value.stringValue), true);
+                break;
+            }
+            case CustomWindow::SPINCTRL:
+            {
+                long int nVal = _value.val.get(0).getNum().asI64();
+                static_cast<SpinBut*>(object.second)->SetValue(nVal);
+                break;
+            }
+            case CustomWindow::SLIDER:
+            {
+                long int nVal = _value.val.get(0).getNum().asI64();
+                static_cast<wxSlider*>(object.second)->SetValue(nVal);
+                break;
+            }
+            case CustomWindow::RADIOGROUP:
+            {
+                wxRadioBox* box = static_cast<wxRadioBox*>(object.second);
+                int sel = box->FindString(_value.val.get(0).printVal(), true);
 
-            if (sel != wxNOT_FOUND)
-                combo->SetSelection(sel);
-            else
-                combo->SetValue(removeQuotationMarks(_value.stringValue));
+                if (sel != wxNOT_FOUND)
+                    box->SetSelection(sel);
 
-            break;
-        }
-        case CustomWindow::IMAGE:
-        {
-            wxStaticBitmap* bitmap = static_cast<wxStaticBitmap*>(object.second);
-            bitmap->SetBitmap(wxBitmap(removeQuotationMarks(_value.stringValue), wxBITMAP_TYPE_ANY));
-            break;
-        }
-        case CustomWindow::TABLE:
-        {
-            TableViewer* table = static_cast<TableViewer*>(object.second);
-            table->SetData(_value.tableValue, "", "");
-            break;
-        }
-        case CustomWindow::TREELIST:
-        {
-            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
-            populateTreeListCtrl(listCtrl, getChoices(_value.stringValue));
-            break;
-        }
-        case CustomWindow::NOTEBOOK:
-        {
-            wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
-            noteBook->SetPageText(noteBook->GetSelection(), removeQuotationMarks(_value.stringValue));
+                break;
+            }
+            case CustomWindow::DROPDOWN:
+            {
+                wxChoice* choices = static_cast<wxChoice*>(object.second);
+                int sel = choices->FindString(_value.val.get(0).printVal(), true);
 
-            break;
-        }
-        case CustomWindow::MENUITEM:
-        {
-            wxMenuItem* item = static_cast<wxMenuItem*>(object.second);
+                if (sel != wxNOT_FOUND)
+                    choices->SetSelection(sel);
 
-            if (item->IsCheckable())
-                item->Check(removeQuotationMarks(_value.stringValue) != "0");
-            else
-                item->SetItemLabel(removeQuotationMarks(_value.stringValue));
+                break;
+            }
+            case CustomWindow::COMBOBOX:
+            {
+                wxComboBox* combo = static_cast<wxComboBox*>(object.second);
+                int sel = combo->FindString(_value.val.get(0).printVal(), true);
 
-            break;
+                if (sel != wxNOT_FOUND)
+                    combo->SetSelection(sel);
+                else
+                    combo->ChangeValue(_value.val.get(0).printVal());
+
+                break;
+            }
+            case CustomWindow::IMAGE:
+            {
+                wxStaticBitmap* bitmap = static_cast<wxStaticBitmap*>(object.second);
+                bitmap->SetBitmap(wxBitmap(_value.val.get(0).printVal(), wxBITMAP_TYPE_ANY));
+                break;
+            }
+            case CustomWindow::TABLE:
+            {
+                TableViewer* table = static_cast<TableViewer*>(object.second);
+                table->SetData(_value.tableValue, "", "");
+                break;
+            }
+            case CustomWindow::TREELIST:
+            {
+                wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
+                populateTreeListCtrl(listCtrl, _value.val);
+                break;
+            }
+            case CustomWindow::NOTEBOOK:
+            {
+                wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
+                noteBook->SetPageText(noteBook->GetSelection(), _value.val.get(0).printVal());
+
+                break;
+            }
+            case CustomWindow::MENUITEM:
+            {
+                wxMenuItem* item = static_cast<wxMenuItem*>(object.second);
+
+                if (item->IsCheckable())
+                    item->Check((bool)_value.val.get(0));
+                else
+                    item->SetItemLabel(_value.val.get(0).printVal());
+
+                break;
+            }
+            case CustomWindow::GRAPHER:
+                break;
         }
-        case CustomWindow::GRAPHER:
-            break;
+    }
+    catch (...)
+    {
+        return false;
     }
 
     return true;
@@ -2382,16 +2523,16 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
 /////////////////////////////////////////////////
 /// \brief Change the label of the selected item.
 ///
-/// \param _label const wxString&
+/// \param _label const mu::Array&
 /// \param windowItemID int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
+bool CustomWindow::setItemLabel(const mu::Array& _label, int windowItemID)
 {
     if (windowItemID == -1)
     {
-        SetTitle(removeQuotationMarks(_label));
+        SetTitle(_label.get(0).printVal());
         return true;
     }
 
@@ -2405,71 +2546,63 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
     switch (object.first)
     {
         case CustomWindow::BUTTON:
-            static_cast<wxButton*>(object.second)->SetLabel(removeQuotationMarks(_label));
+            static_cast<wxButton*>(object.second)->SetLabel(_label.get(0).printVal());
             break;
         case CustomWindow::CHECKBOX:
-            static_cast<wxCheckBox*>(object.second)->SetLabel(removeQuotationMarks(_label));
+            static_cast<wxCheckBox*>(object.second)->SetLabel(_label.get(0).printVal());
             break;
         case CustomWindow::TEXT:
-            static_cast<wxStaticText*>(object.second)->SetLabel(removeQuotationMarks(_label));
+            static_cast<wxStaticText*>(object.second)->SetLabel(_label.get(0).printVal());
             break;
         case CustomWindow::TEXTCTRL:
         case CustomWindow::LAMP:
-            static_cast<TextField*>(object.second)->SetLabel(removeQuotationMarks(_label));
+            static_cast<TextField*>(object.second)->SetLabel(_label.get(0).printVal());
             break;
         case CustomWindow::SPINCTRL:
-            static_cast<SpinBut*>(object.second)->SetLabel(removeQuotationMarks(_label));
+            static_cast<SpinBut*>(object.second)->SetLabel(_label.get(0).printVal());
             break;
         case CustomWindow::RADIOGROUP:
-            static_cast<wxRadioBox*>(object.second)->SetLabel(removeQuotationMarks(_label));
+            static_cast<wxRadioBox*>(object.second)->SetLabel(_label.get(0).printVal());
             break;
         case CustomWindow::TREELIST:
         {
-            wxString lab = _label;
-            wxArrayString labels = getChoices(lab);
             wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
 
-            for (size_t i = 0; i < labels.size(); i++)
+            for (size_t i = 0; i < _label.size(); i++)
             {
                 if (listCtrl->GetColumnCount() <= i)
-                    listCtrl->AppendColumn(labels[i]);
+                    listCtrl->AppendColumn(_label.get(i).printVal());
                 else
-                    listCtrl->GetDataView()->GetColumn(i)->SetTitle(labels[i]);
+                    listCtrl->GetDataView()->GetColumn(i)->SetTitle(_label.get(i).printVal());
             }
 
             break;
         }
         case CustomWindow::NOTEBOOK:
         {
-            wxString lab = _label;
-            wxArrayString labels = getChoices(lab);
             wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
 
-            for (size_t i = 0; i < labels.size(); i++)
+            for (size_t i = 0; i < _label.size(); i++)
             {
                 if (i >= (size_t)noteBook->GetPageCount())
                     break;
 
-                noteBook->SetPageText(i, labels[i]);
+                noteBook->SetPageText(i, _label.get(i).printVal());
             }
 
             break;
         }
         case CustomWindow::MENUITEM:
-            static_cast<wxMenuItem*>(object.second)->SetItemLabel(removeQuotationMarks(_label));
+            static_cast<wxMenuItem*>(object.second)->SetItemLabel(_label.get(0).printVal());
             break;
         case CustomWindow::DROPDOWN:
         {
-            wxString lab = _label;
-            wxArrayString labels = getChoices(lab);
-            static_cast<wxChoice*>(object.second)->Set(labels);
+            static_cast<wxChoice*>(object.second)->Set(getChoices(_label));
             break;
         }
         case CustomWindow::COMBOBOX:
         {
-            wxString lab = _label;
-            wxArrayString labels = getChoices(lab);
-            static_cast<wxComboBox*>(object.second)->Set(labels);
+            static_cast<wxComboBox*>(object.second)->Set(getChoices(_label));
             break;
         }
         case CustomWindow::GAUGE:
@@ -2559,70 +2692,80 @@ bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
 /////////////////////////////////////////////////
 /// \brief Change the color of the selected item.
 ///
-/// \param _color const wxString&
+/// \param _color const mu::Array&
 /// \param windowItemID int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
+bool CustomWindow::setItemColor(const mu::Array& _color, int windowItemID)
 {
-    wxColour color = toWxColour(_color);
-
-    if (windowItemID == -1)
+    try
     {
-        SetBackgroundColour(color);
-        Refresh();
+        wxColour color(_color.get(0).getNum().asUI64(),
+                       _color.get(1).getNum().asUI64(),
+                       _color.get(2).getNum().asUI64());
 
-        return true;
+        if (windowItemID == -1)
+        {
+            SetBackgroundColour(color);
+            Refresh();
+
+            return true;
+        }
+
+        auto iter = m_windowItems.find(windowItemID);
+
+        if (iter == m_windowItems.end())
+            return false;
+
+        std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
+
+        switch (object.first)
+        {
+            case CustomWindow::BUTTON:
+                static_cast<wxButton*>(object.second)->SetForegroundColour(color);
+                break;
+            case CustomWindow::CHECKBOX:
+                static_cast<wxCheckBox*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::TEXT:
+                static_cast<wxStaticText*>(object.second)->SetForegroundColour(color);
+                break;
+            case CustomWindow::TEXTCTRL:
+                static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::LAMP:
+                static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::SPINCTRL:
+                static_cast<wxSpinCtrl*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::RADIOGROUP:
+                static_cast<wxRadioBox*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::DROPDOWN:
+                static_cast<wxChoice*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::COMBOBOX:
+                static_cast<wxComboBox*>(object.second)->SetBackgroundColour(color);
+                break;
+            case CustomWindow::MENUITEM:
+                static_cast<wxMenuItem*>(object.second)->SetTextColour(color);
+                break;
+            case CustomWindow::TREELIST:
+            case CustomWindow::GAUGE:
+            case CustomWindow::IMAGE:
+            case CustomWindow::TABLE:
+            case CustomWindow::GRAPHER:
+            case CustomWindow::SLIDER:
+            case CustomWindow::DATETIMEPICKER:
+            case CustomWindow::NOTEBOOK:
+                break;
+        }
     }
-
-    auto iter = m_windowItems.find(windowItemID);
-
-    if (iter == m_windowItems.end())
-        return false;
-
-    std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
-
-    switch (object.first)
+    catch (...)
     {
-        case CustomWindow::BUTTON:
-            static_cast<wxButton*>(object.second)->SetForegroundColour(color);
-            break;
-        case CustomWindow::CHECKBOX:
-            static_cast<wxCheckBox*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::TEXT:
-            static_cast<wxStaticText*>(object.second)->SetForegroundColour(color);
-            break;
-        case CustomWindow::TEXTCTRL:
-            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::LAMP:
-            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::SPINCTRL:
-            static_cast<wxSpinCtrl*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::RADIOGROUP:
-            static_cast<wxRadioBox*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::DROPDOWN:
-            static_cast<wxChoice*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::COMBOBOX:
-            static_cast<wxComboBox*>(object.second)->SetBackgroundColour(color);
-            break;
-        case CustomWindow::MENUITEM:
-            static_cast<wxMenuItem*>(object.second)->SetTextColour(color);
-            break;
-        case CustomWindow::TREELIST:
-        case CustomWindow::GAUGE:
-        case CustomWindow::IMAGE:
-        case CustomWindow::TABLE:
-        case CustomWindow::GRAPHER:
-        case CustomWindow::SLIDER:
-        case CustomWindow::DATETIMEPICKER:
-            break;
+        return false;
     }
 
     Refresh();
@@ -2668,7 +2811,7 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         {
             wxChoice* choices = static_cast<wxChoice*>(object.second);
 
-            if (selectionID > 0 && selectionID <= choices->GetCount())
+            if (selectionID > 0 && selectionID <= (int)choices->GetCount())
                 choices->SetSelection(selectionID-1);
 
             break;
@@ -2677,7 +2820,7 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         {
             wxComboBox* combo = static_cast<wxComboBox*>(object.second);
 
-            if (selectionID > 0 && selectionID <= combo->GetCount())
+            if (selectionID > 0 && selectionID <= (int)combo->GetCount())
                 combo->SetSelection(selectionID-1);
 
             break;
@@ -2710,7 +2853,7 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         {
             wxNotebook* notebook = static_cast<wxNotebook*>(object.second);
 
-            if (selectionID > 0 && selectionID <= notebook->GetPageCount())
+            if (selectionID > 0 && selectionID <= (int)notebook->GetPageCount())
                 notebook->ChangeSelection(selectionID-1);
 
             break;
@@ -2802,12 +2945,12 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 /// \brief Sets the value of the selected window
 /// property.
 ///
-/// \param _value const wxString&
-/// \param varName const wxString&
+/// \param _value const mu::Array&
+/// \param varName const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::setPropValue(const wxString& _value, const wxString& varName)
+bool CustomWindow::setPropValue(const mu::Array& _value, const std::string& varName)
 {
     auto iter = m_varTable.find(varName);
 
@@ -2824,25 +2967,36 @@ bool CustomWindow::setPropValue(const wxString& _value, const wxString& varName)
 /////////////////////////////////////////////////
 /// \brief Sets the text into the status bar.
 ///
-/// \param _value wxString
+/// \param _values const wxArrayString&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::setStatusText(wxString _value)
+bool CustomWindow::setStatusText(const wxArrayString& _values)
 {
-    wxArrayString values = getChoices(_value);
-
     wxStatusBar* bar = GetStatusBar();
 
-    if (bar->GetFieldsCount() != values.size())
-        bar->SetFieldsCount(values.size());
+    if (bar->GetFieldsCount() != (int)_values.size())
+        bar->SetFieldsCount(_values.size());
 
-    for (size_t i = 0; i < values.size(); i++)
+    for (size_t i = 0; i < _values.size(); i++)
     {
-        bar->SetStatusText(values[i], i);
+        bar->SetStatusText(_values[i], i);
     }
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets the text into the status bar.
+///
+/// \param _value const mu::Array&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::setStatusText(const mu::Array& _value)
+{
+    return setStatusText(getChoices(_value));
 }
 
 

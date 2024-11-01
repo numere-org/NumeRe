@@ -640,9 +640,24 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
             vEntityContents.push_back(mu::Value());
         else
         {
-            // Create the vector using the indices
-            for (size_t i = 0; i < _idx.row.size(); i++)
-                vEntityContents.push_back(cluster.get(_idx.row[i]));
+            // Consider the special case, where the user only
+            // selects a single element, which contains an
+            // array
+            if (_idx.row.size() == 1)
+            {
+                const mu::Value& val = cluster.get(_idx.row.front());
+
+                if (val.isArray())
+                    vEntityContents = val.getArray();
+                else
+                    vEntityContents.push_back(val);
+            }
+            else
+            {
+                // Create the vector using the indices
+                for (size_t i = 0; i < _idx.row.size(); i++)
+                    vEntityContents.push_back(cluster.get(_idx.row[i]));
+            }
         }
     }
 

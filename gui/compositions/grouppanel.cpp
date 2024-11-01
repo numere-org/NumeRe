@@ -47,6 +47,7 @@ void TextField::SetMarkupText(const wxString& text)
     wxTextAttr attr;
     attr.SetFont(defaultFont);
     attr.SetTextColour(*wxBLACK);
+    attr.SetLeftIndent(0);
     SetDefaultStyle(attr);
     size_t lastPos = 0;
 

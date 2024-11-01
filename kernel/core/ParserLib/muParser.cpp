@@ -210,8 +210,8 @@ namespace mu
         DefineFun("max", Max);
 
         DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
-        DefineFun(MU_VECTOR_EXP2, ParserBase::expandVector2);
-        DefineFun(MU_VECTOR_EXP3, ParserBase::expandVector3);
+        DefineFun(MU_VECTOR_EXP2, ParserBase::Vector2Generator);
+        DefineFun(MU_VECTOR_EXP3, ParserBase::Vector3Generator);
     }
 
     //---------------------------------------------------------------------------
@@ -292,7 +292,7 @@ namespace mu
         if (fEpsilon == Value(0.0))
         {
             Array absVal = numfnc_abs(a_fPos);
-            fEpsilon = all(a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
+            fEpsilon = all(a_fPos == Array(Value(0.0))) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 
         for (size_t i = 0; i < f.size(); i++)

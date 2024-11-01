@@ -1605,21 +1605,18 @@ void wxMGL::Animation(bool st)
 
 /////////////////////////////////////////////////
 /// \brief Return the clicked coordinates as a
-/// parsable string. This is used by the custom
+/// mglPoint. This is used by the custom
 /// GUI event handler.
 ///
-/// \return wxString
+/// \return mglPoint
 ///
 /////////////////////////////////////////////////
-wxString wxMGL::getClickedCoords()
+mglPoint wxMGL::getClickedCoords()
 {
     if (gr)
-    {
-        mglPoint p = gr->CalcXYZ(mouse_x0, mouse_y0);
-        return wxString::Format("{%.12g,%.12g}", p.x, p.y);
-    }
+        return gr->CalcXYZ(mouse_x0, mouse_y0);
 
-    return "{nan,nan}";
+    return mglPoint(NAN, NAN, NAN);
 }
 
 

@@ -52,3 +52,5 @@ Fixed	Defaulting a cluster to "{}" or initializing a cluster with this value sho
 Added	NumeRe will now perform more start-up checks, report errors via log file and propose the possibility to send an error report containing the current session's logfile.
 Added	Functions for converting between different numerical data types and for creating categories were added.
 Added	Missing statistical functions were added: RMS, skewness, excess, standard error
+Applied	The interaction between custom windows and the "window" command has been cleaned and improved. Some interactions will now return more fitting data types. It might be possible that this change will break some existing solutions.
+New	Experimental: clusters can now be created as hierarchical data structures, i.e. clusters can now contain clusters in their fields. You can use the ".sel(ID)" method for navigating and ".unwrap" to unwrap the whole structure in a single-level cluster. Writing a set of values into a single cluster element will embed them as a sub-structure. Reading this single element, will return the embedded structure.

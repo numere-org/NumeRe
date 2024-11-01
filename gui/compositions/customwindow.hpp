@@ -47,7 +47,8 @@ namespace tinyxml2
 /////////////////////////////////////////////////
 struct WindowItemParams
 {
-    wxString type, value, state, label, color;
+    std::string type, state;
+    mu::Array value, label, color;
     NumeRe::Table table;
 };
 
@@ -58,8 +59,8 @@ struct WindowItemParams
 /////////////////////////////////////////////////
 struct WindowItemValue
 {
-    wxString type;
-    wxString stringValue;
+    std::string type;
+    mu::Array val;
     NumeRe::Table tableValue;
 };
 
@@ -77,7 +78,7 @@ struct EventPosition
     wxString serialize() const
     {
         if (x != -2 && y != -2)
-            return wxString::Format("\"{%d,%d}\"", x+1, y+1);
+            return wxString::Format("{%d,%d}", x+1, y+1);
         else if (x != -2)
             return wxString::Format("%d", x+1);
 
@@ -109,11 +110,11 @@ public:
 class SetLabelEvent : public wxEvent
 {
 public:
-    SetLabelEvent(wxEventType eventType, int winid, int winItem, const wxString& label)
+    SetLabelEvent(wxEventType eventType, int winid, int winItem, const mu::Array& label)
         : wxEvent(winid, eventType), m_label(label), m_item(winItem) {}
     virtual wxEvent* Clone() const {return new SetLabelEvent(*this); }
 
-    wxString m_label;
+    mu::Array m_label;
     int m_item;
 };
 
@@ -212,7 +213,7 @@ class CustomWindow : public wxFrame
     private:
         std::map<int, std::pair<WindowItemType,wxObject*>> m_windowItems;
         std::map<int, EventHandler> m_eventTable;
-        std::map<wxString, wxString> m_varTable;
+        std::map<std::string, mu::Array> m_varTable;
 
         NumeRe::Window m_windowRef;
         wxWindowDisabler* m_dialogLock;
@@ -233,28 +234,29 @@ class CustomWindow : public wxFrame
         std::vector<int> getWindowItems(WindowItemType _type) const;
         bool closeWindow();
         WindowItemValue getItemValue(int windowItemID) const;
-        wxString getItemLabel(int windowItemID) const;
+        mu::Array getItemLabel(int windowItemID) const;
         wxString getItemState(int windowItemID) const;
-        wxString getItemColor(int windowItemID) const;
-        wxString getItemSelection(int windowItemID) const;
-        wxString getPropValue(const wxString& varName) const;
-        wxString getProperties() const;
-        wxString getStatusText() const;
+        mu::Array getItemColor(int windowItemID) const;
+        mu::Array getItemSelection(int windowItemID) const;
+        mu::Array getPropValue(const std::string& varName) const;
+        mu::Array getProperties() const;
+        mu::Array getStatusText() const;
 
         bool pushItemValue(WindowItemValue& _value, int windowItemID);
-        bool pushItemLabel(const wxString& _label, int windowItemID);
+        bool pushItemLabel(const mu::Array& _label, int windowItemID);
         bool pushItemSelection(int selectionID, int selectionID2, int windowItemID);
         bool pushItemFocus(int windowItemID);
 
         bool setItemValue(WindowItemValue& _value, int windowItemID);
-        bool setItemLabel(const wxString& _label, int windowItemID);
+        bool setItemLabel(const mu::Array& _label, int windowItemID);
         bool setItemState(const wxString& _state, int windowItemID);
-        bool setItemColor(const wxString& _color, int windowItemID);
+        bool setItemColor(const mu::Array& _color, int windowItemID);
         bool setItemSelection(int selectionID, int selectionID2, int windowItemID);
         bool setItemFocus(int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
-        bool setPropValue(const wxString& _value, const wxString& varName);
-        bool setStatusText(wxString _value);
+        bool setPropValue(const mu::Array& _value, const std::string& varName);
+        bool setStatusText(const wxArrayString& _values);
+        bool setStatusText(const mu::Array& _value);
 
         void asDialog()
         {

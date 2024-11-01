@@ -261,6 +261,11 @@ namespace mu
 			};
 
             static Array VectorCreate(const Array*, int);  // vector creation
+            static Array Vector2Generator(const Array& firstVal,
+                                          const Array& lastVal);
+            static Array Vector3Generator(const Array& firstVal,
+                                          const Array& incr,
+                                          const Array& lastVal);
             static Array expandVector2(const Array& firstVal,
                                        const Array& lastVal);
             static Array expandVector3(const Array& firstVal,

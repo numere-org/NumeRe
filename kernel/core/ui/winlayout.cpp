@@ -479,8 +479,9 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
         if (cmdParser.hasParam("prop"))
         {
             std::string varname = cmdParser.getParsedParameterValueAsString("prop", "");
+            mu::Array props = winInfo.window->getProperties();
 
-            if (winInfo.window->getProperties().find("\"" + varname + "\"") == std::string::npos)
+            if (std::find(props.begin(), props.end(), varname) == props.end())
                 throw SyntaxError(SyntaxError::INVALID_WINDOW_PROP, cmdParser.getCommandLine(), varname, varname);
 
             cmdParser.setReturnValue(winInfo.window->getPropValue(varname));
@@ -490,7 +491,7 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
             NumeRe::WinItemValue val = winInfo.window->getItemValue(itemID);
 
             if (val.type != "tablegrid")
-                cmdParser.setReturnValue(val.stringValue);
+                cmdParser.setReturnValue(val.val);
             else
             {
                 MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
@@ -542,7 +543,12 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
         if (cmdParser.hasParam("prop"))
         {
             std::string varname = cmdParser.getParsedParameterValueAsString("prop", "");
-            cmdParser.setReturnValue(mu::Value(winInfo.window->setPropValue(cmdParser.getParsedParameterValue("value").printVals(), varname)));
+            mu::Array props = winInfo.window->getProperties();
+
+            if (std::find(props.begin(), props.end(), varname) == props.end())
+                throw SyntaxError(SyntaxError::INVALID_WINDOW_PROP, cmdParser.getCommandLine(), varname, varname);
+
+            cmdParser.setReturnValue(mu::Value(winInfo.window->setPropValue(cmdParser.getParsedParameterValue("value"), varname)));
         }
         else
         {
@@ -554,18 +560,18 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
             {
                 DataAccessParser _access(sValue, false);
                 value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
-                value.stringValue = _access.getDataObject() + "()";
+                value.val = mu::Value(_access.getDataObject() + "()");
             }
             else
-                value.stringValue = cmdParser.getParsedParameterValueAsString("value", "");
+                value.val = cmdParser.getParsedParameterValue("value");
 
             cmdParser.setReturnValue(mu::Value(winInfo.window->setItemValue(value, itemID)));
         }
     }
     else if (cmdParser.hasParam("label"))
     {
-        std::string sLabel = cmdParser.getParsedParameterValueAsString("label", "");
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemLabel(sLabel, itemID)));
+        mu::Array label = cmdParser.getParsedParameterValue("label");
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemLabel(label, itemID)));
     }
     else if (cmdParser.hasParam("state"))
     {
@@ -587,8 +593,7 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
             return;
         }
 
-        std::string sColor = color[0].getNum().printVal() + "," + color[1].getNum().printVal() + "," + color[2].getNum().printVal();
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemColor(sColor, itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemColor(color, itemID)));
     }
     else if (cmdParser.hasParam("selection"))
     {
@@ -609,8 +614,8 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
     }
     else if (cmdParser.hasParam("statustext"))
     {
-        std::string sStatusText = cmdParser.getParsedParameterValueAsString("statustext", "");
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setStatusText(sStatusText)));
+        mu::Array statusText = cmdParser.getParsedParameterValue("statustext");
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setStatusText(statusText)));
     }
 }
 
@@ -626,7 +631,6 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 void windowCommand(CommandLineParser& cmdParser)
 {
-#warning TODO (numere#3#09/06/24): Improve the interface towards custom windows with mu::Arrays
     NumeRe::WindowManager& winManager = NumeReKernel::getInstance()->getWindowManager();
 
     // Find the expression part
@@ -638,16 +642,13 @@ void windowCommand(CommandLineParser& cmdParser)
         // get IDs of all selected items
         std::string sItemType = getArgAtPos(sParList, findParameter(sParList, "getitems", '=')+8);
         NumeRe::WindowInformation winInfo = getWindow(cmdParser);
-        mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
         // If the window does not exist, the pointer
         // is a nullptr type
         if (winInfo.window && winInfo.nStatus == NumeRe::STATUS_RUNNING)
         {
             if (sItemType == "prop")
-            {
-                cmdParser.setReturnValue("{" + winInfo.window->getProperties() + "}");
-            }
+                cmdParser.setReturnValue(winInfo.window->getProperties());
             else
             {
                 std::vector<int> vItems = winInfo.window->getWindowItems(sItemType);
@@ -662,7 +663,7 @@ void windowCommand(CommandLineParser& cmdParser)
                     for (auto items : vItems)
                         vRes.push_back(mu::Value(items));
 
-                    cmdParser.setReturnValue(_parser.CreateTempVar(vRes));
+                    cmdParser.setReturnValue(vRes);
                 }
             }
         }

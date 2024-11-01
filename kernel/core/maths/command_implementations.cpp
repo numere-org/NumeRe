@@ -2360,9 +2360,9 @@ void taylor(CommandLineParser& cmdParser)
             // Create the string element, which is used
             // for the variable in the created funcction
             // string
-            if (mu::all(dVarValue == mu::Value(0.0)))
+            if (mu::all(dVarValue == mu::Array(mu::Value(0.0))))
                 sArg = "x";
-            else if (mu::all(dVarValue < mu::Value(0)))
+            else if (mu::all(dVarValue < mu::Array(mu::Value(0))))
                 sArg = "x+" + (-dVarValue).print(_option.getPrecision());
             else
                 sArg = "x-" + dVarValue.print(_option.getPrecision());
