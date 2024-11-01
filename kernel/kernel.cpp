@@ -668,6 +668,7 @@ void NumeReKernel::defineNumFunctions()
 
     _parser.DefineFun("time", timfnc_time, false);                               // time()
     _parser.DefineFun("clock", timfnc_clock, false);                             // clock()
+    _parser.DefineFun("today", timfnc_today, false);                             // today()
     _parser.DefineFun("date", timfnc_date);                                      // date(TIME,TYPE)
     _parser.DefineFun("weeknum", timfnc_weeknum);                                // weeknum(tDate)
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);                       // as_date(nYear, nMounth, nDay)

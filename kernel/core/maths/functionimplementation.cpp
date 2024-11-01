@@ -3719,6 +3719,18 @@ mu::Array timfnc_clock()
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the current date.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_today()
+{
+    return mu::Value(date::sys_days(dateFromTimePoint(sys_time_now())));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Sleeps for the passed amount of
 /// milliseconds and returns this number.
 ///
