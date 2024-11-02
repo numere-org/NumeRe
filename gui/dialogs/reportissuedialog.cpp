@@ -21,6 +21,7 @@
 #include "reportissuedialog.hpp"
 #include "../globals.hpp"
 #include "../../kernel/core/io/logger.hpp"
+#include "../../kernel/core/utils/stringtools.hpp"
 #include "../../network/githubapi.hpp"
 #include "../../kernel/core/version.h"
 
@@ -36,8 +37,9 @@ END_EVENT_TABLE()
 #define CHANGE "[Change] I want something to be changed"
 
 // Testing repository:
-// static const std::string sRepoUrl = "https://api.github.com/repos/numeredev/ghfeatures/issues";
-static const std::string sRepoUrl = "https://api.github.com/repos/numere-org/NumeRe/issues";
+//static const std::string sApiUrl = "https://api.github.com/repos/numeredev/ghfeatures/issues";
+static const std::string sApiUrl = "https://api.github.com/repos/numere-org/NumeRe/issues";
+static const std::string sRepoUrl = "https://github.com/numere-org/NumeRe/issues";
 
 /////////////////////////////////////////////////
 /// \brief Temporary helper function to load the
@@ -180,33 +182,33 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
 
         // Create the issue
         GitHub::Issue issue;
-        issue.title = m_issueTitle->GetValue().ToStdString();
+        issue.title = m_issueTitle->GetValue().mb_str(wxConvUTF8);
         issue.assignees.push_back("numeredev");
-        issue.body = "### DESCRIPTION\n**Describe, what you observe or want to be changed:**\n" + m_issueDescription->GetValue().ToStdString();
+        issue.body = "### DESCRIPTION\n**Describe, what you observe or want to be changed:**\n" + std::string(m_issueDescription->GetValue().mb_str(wxConvUTF8));
 
         if (isBug)
-            issue.body += "\n\n**How to reproduce the problem:**\n" + m_issueReproduction->GetValue().ToStdString();
+            issue.body += "\n\n**How to reproduce the problem:**\n" + std::string(m_issueReproduction->GetValue().mb_str(wxConvUTF8));
 
-        issue.body += "\n\n**Describe, what you expect to happen:**\n" + m_expectedBehavior->GetValue().ToStdString();
+        issue.body += "\n\n**Describe, what you expect to happen:**\n" + std::string(m_expectedBehavior->GetValue().mb_str(wxConvUTF8));
 
         if (isBug)
             issue.body += "\n\n**System information:**\n- " + g_logger.get_system_information() + "\n- Version: v" + sVersion + " (var. " + AutoVersion::UBUNTU_VERSION_STYLE + ")";
 
         if (m_contact->GetValue().length())
-            issue.body += "\n\n**How we can contact you:**\n" + m_contact->GetValue().ToStdString();
+            issue.body += "\n\n**How we can contact you:**\n" + std::string(m_contact->GetValue().mb_str(wxConvUTF8));
 
         if (isBug && m_logSelection->GetSelection() != 0)
         {
             issue.body += "\n\n**Excerpt from the log:**\n```\n";
 
             if (m_logSelection->GetSelection() == 1)
-                issue.body += g_logger.get_session_log(1) + "```";
+                issue.body += ansiToUtf8(g_logger.get_session_log(1)) + "```";
             else
-                issue.body += g_logger.get_session_log() + "```";
+                issue.body += ansiToUtf8(g_logger.get_session_log()) + "```";
         }
 
         // Add generic text to the body
-        issue.body += "\n\n-----------------------------------------------------\n## DEVS' SECTION\n### ANALYSIS\n\n(*Describe, what's the issue and which changes have to be made*)\n\n### IMPLEMENTATION STEPS\n(*see also our [Wiki for implementation guidelines](https://github.com/numeredev/NumeRe/wiki/HowTo:-Contribute-Code)*)\n- Implement the necessary changes in a new branch created here on GitHub\n- Test your implementation\n\n### DOCUMENTATION STEPS\n(*see also our [Wiki for further information](https://github.com/numeredev/NumeRe/wiki/HowTo:-Create-Language-Strings)*)\n- Update the changes log\n- Add comments to your implementation\n- Add Doxygen documentation comments- Create or update the documentation articles (`*.NHLP` and `*.NDB` files, if needed)\n- Update the language strings (`*.NLNG` files, if needed)\n\n### PULL REQUEST\n- Create a pull request for your changes\n- Fill out the template\n- Assign @numere-org/maintainers as reviewers";
+        issue.body += "\n\n-----------------------------------------------------\n## DEVS' SECTION\n### ANALYSIS\n(*Describe, what's the issue and which changes have to be made*)\n\n### IMPLEMENTATION STEPS\n(*see also our [Wiki for implementation guidelines](https://github.com/numeredev/NumeRe/wiki/HowTo:-Contribute-Code)*)\n- Implement the necessary changes in a new branch created here on GitHub\n- Test your implementation\n\n### DOCUMENTATION STEPS\n(*see also our [Wiki for further information](https://github.com/numeredev/NumeRe/wiki/HowTo:-Create-Language-Strings)*)\n- Update the changes log\n- Add comments to your implementation\n- Add Doxygen documentation comments- Create or update the documentation articles (`*.NHLP` and `*.NDB` files, if needed)\n- Update the language strings (`*.NLNG` files, if needed)\n\n### PULL REQUEST\n- Create a pull request for your changes\n- Fill out the template\n- Assign @numere-org/maintainers as reviewers";
 
         if (isFeature)
             issue.labels.push_back("feature");
@@ -225,7 +227,7 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
 
         // Transmit via CURL
         std::string sIssueUrl = GitHub::create(issue,
-                                               sRepoUrl,
+                                               sApiUrl,
                                                sAuthToken);
 
         if (sIssueUrl.length())
