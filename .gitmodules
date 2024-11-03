@@ -9,7 +9,7 @@
 	url = https://github.com/fastfloat/fast_float.git
 [submodule "externals/date"]
 	path = externals/date
-	url = https://github.com/HowardHinnant/date.git
+	url = https://github.com/numere-org/date.git
 [submodule "externals/QR-Code-generator"]
 	path = externals/QR-Code-generator
 	url = https://github.com/nayuki/QR-Code-generator.git
