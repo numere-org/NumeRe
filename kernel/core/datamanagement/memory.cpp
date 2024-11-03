@@ -1111,15 +1111,16 @@ std::string Memory::getUnit(int nCol) const
 /// conversion is known.
 ///
 /// \param nCol size_t
+/// \param mode UnitConversionMode
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol) const
+std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol, UnitConversionMode mode) const
 {
     if (nCol < memArray.size() && memArray[nCol] && TableColumn::isValueType(memArray[nCol]->m_type))
     {
         std::vector<std::complex<double>> vConverted = memArray[nCol]->getValue(VectorIndex(0, VectorIndex::OPEN_END));
-        UnitConversion convert = getUnitConversion(memArray[nCol]->m_sUnit);
+        UnitConversion convert = getUnitConversion(memArray[nCol]->m_sUnit, mode);
 
         for (size_t i = 0; i < vConverted.size(); i++)
         {
@@ -1227,8 +1228,8 @@ std::vector<std::string> Memory::toSiUnits(const VectorIndex& _vCols, UnitConver
     {
         if (_vCols[i] < memArray.size() && memArray[_vCols[i]] && TableColumn::isValueType(memArray[_vCols[i]]->m_type))
         {
-            memArray[_vCols[i]]->setValue(VectorIndex(0, VectorIndex::OPEN_END), asSiUnits(_vCols[i]));
-            std::string sUnit = getUnitConversion(memArray[_vCols[i]]->m_sUnit).formatUnit(mode);
+            memArray[_vCols[i]]->setValue(VectorIndex(0, VectorIndex::OPEN_END), asSiUnits(_vCols[i], mode));
+            std::string sUnit = getUnitConversion(memArray[_vCols[i]]->m_sUnit, mode).formatUnit(mode);
             memArray[_vCols[i]]->m_sUnit = sUnit;
             vUnits.push_back(sUnit);
         }

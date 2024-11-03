@@ -148,7 +148,7 @@ class Memory : public Sorter
 		std::string getHeadLineElement(size_t _i) const;
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
 		std::string getUnit(int nCol) const;
-		std::vector<std::complex<double>> asSiUnits(size_t nCol) const;
+		std::vector<std::complex<double>> asSiUnits(size_t nCol, UnitConversionMode mode) const;
 		std::string showUnitConversion(size_t nCol, UnitConversionMode mode) const;
 		size_t getAppendedZeroes(size_t _i) const;
 		size_t getHeadlineCount() const;

@@ -1289,6 +1289,7 @@ static std::string tableMethod_toSiUnits(const std::string& sTableName, std::str
 static std::string tableMethod_asSiUnits(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
+    UnitConversionMode mode = MODE_DIRECT;
 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
@@ -1297,7 +1298,15 @@ static std::string tableMethod_asSiUnits(const std::string& sTableName, std::str
 
     size_t col = v[0].getAsScalarInt() - 1;
 
-    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getTable(sTableName)->asSiUnits(col));
+    if (nResults > 1)
+    {
+        if (v[1].front() == mu::Value("base"))
+            mode = MODE_BASESI;
+        else if (v[1].front() == mu::Value("simplify"))
+            mode = MODE_SIMPLIFY;
+    }
+
+    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getTable(sTableName)->asSiUnits(col, mode));
     return sResultVectorName;
 }
 

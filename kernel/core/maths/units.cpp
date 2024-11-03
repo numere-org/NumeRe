@@ -1199,7 +1199,7 @@ mu::Array UnitConversion::operator()(mu::Array val)
         val = conv(val);
     }
 
-    return val;
+    return m_finalScale * val;
 }
 
 
@@ -1244,16 +1244,25 @@ std::string UnitConversion::formatUnit(UnitConversionMode mode)
             continue;
 
         if (sUnit.length())
+        {
             sUnit += " ";
+            sUnit += conv.m_unit;
+        }
+        else
+        {
+            if (m_metricPrefix.length() && conv.m_unit == "kg")
+                sUnit = "g";
+            else
+                sUnit = conv.m_unit;
+        }
 
-        sUnit += conv.m_unit;
 
         // Append a exponent, if necessary
         if (conv.m_exp != 1.0)
             sUnit += "^" + toString(conv.m_exp, 7);
     }
 
-    return sUnit;
+    return m_metricPrefix + sUnit;
 }
 
 
@@ -1459,6 +1468,9 @@ static double detectSiScaling(StringView& sUnit)
             case 'f':
                 sUnit.trim_front(1);
                 return 1e-15;
+            case 'a':
+                sUnit.trim_front(1);
+                return 1e-18;
         }
     }
 
@@ -1699,10 +1711,11 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
 /// found.
 ///
 /// \param sUnit StringView
+/// \param mode UnitConversionMode
 /// \return UnitConversion
 ///
 /////////////////////////////////////////////////
-UnitConversion getUnitConversion(StringView sUnit)
+UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
 {
     // Tokenize into single units
     std::vector<Unit> vUnits = tokenizeUnit(sUnit);
@@ -1721,6 +1734,131 @@ UnitConversion getUnitConversion(StringView sUnit)
         converter.m_convs.insert(converter.m_convs.end(), convs.begin(), convs.end());
     }
 
+    if (mode == MODE_SIMPLIFY)
+    {
+        for (const auto& conv : converter.m_convs)
+        {
+            if (conv.m_nonlinear)
+                return converter;
+        }
+
+        mu::Value res = converter(mu::Value(1.0)).front();
+        converter.m_finalScale = res.getNum().asF64();
+        double remainingScale = converter.m_finalScale;
+
+        for (auto& conv : converter.m_convs)
+        {
+            remainingScale /= intPower(conv.m_scale, conv.m_sourceExp);
+
+            conv.m_scale = 1.0;
+        }
+
+        std::vector<UnitFunction> convs = converter.m_convs;
+
+        // Evaluate the modes
+        expandToBaseSiUnits(convs);
+
+        // Reduce not necessary fractions or simplify
+        // the expression
+        simplifyUnits(convs);
+
+        // Sort to move negative exponents to end and have the
+        // individual units sorted alphabetically
+        // (purpose of the complicated-looking lambda)
+        std::sort(convs.begin(), convs.end(), [](const UnitFunction& uf1, const UnitFunction& uf2)
+                  {
+                      if (uf1.m_exp*uf2.m_exp <= 0)
+                          return uf1.m_exp > uf2.m_exp; // negative exponents to the end
+                      return uf1.m_unit < uf2.m_unit; // alphabetically, if same exponents
+                  });
+
+        double exp = 1.0;
+        double unitScale = 1.0;
+
+        for (const auto& c : convs)
+        {
+            if (c.m_exp)
+            {
+                exp = c.m_exp;
+
+                if (c.m_unit == "kg")
+                    unitScale = std::pow(1000.0, exp);
+
+                break;
+            }
+        }
+
+        auto fact = [](int p, double exp, double unitScale) {return std::pow(10.0, p*std::abs(exp))/unitScale;};
+
+        // Reduce the final scale factor
+        if (converter.m_finalScale >= fact(18, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "E" : "a";
+            converter.m_finalScale /= fact(18, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(15, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "P" : "f";
+            converter.m_finalScale /= fact(15, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(12, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "T" : "p";
+            converter.m_finalScale /= fact(12, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(9, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "G" : "n";
+            converter.m_finalScale /= fact(9, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(6, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "M" : "µ";
+            converter.m_finalScale /= fact(6, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(3, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "k" : "m";
+            converter.m_finalScale /= fact(3, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= 1/unitScale)
+        {
+            // Just do nothing
+        }
+        else if (converter.m_finalScale >= fact(-3, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "m" : "k";
+            converter.m_finalScale /= fact(-3, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(-6, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "µ" : "M";
+            converter.m_finalScale /= fact(-6, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(-9, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "n" : "G";
+            converter.m_finalScale /= fact(-9, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(-12, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "p" : "T";
+            converter.m_finalScale /= fact(-12, exp, unitScale);
+        }
+        else if (converter.m_finalScale >= fact(-15, exp, unitScale))
+        {
+            converter.m_metricPrefix = exp > 0 ? "f" : "P";
+            converter.m_finalScale /= fact(-15, exp, unitScale);
+        }
+        else
+        {
+            converter.m_metricPrefix = exp > 0 ? "a" : "E";
+            converter.m_finalScale /= fact(-18, exp, unitScale);
+        }
+
+        converter.m_finalScale /= remainingScale;
+    }
+
     return converter;
 }
 
@@ -1735,7 +1873,7 @@ UnitConversion getUnitConversion(StringView sUnit)
 /////////////////////////////////////////////////
 bool canConvert(StringView sUnit)
 {
-    UnitConversion converter = getUnitConversion(sUnit);
+    UnitConversion converter = getUnitConversion(sUnit, MODE_DIRECT);
 
     return converter.m_convs.size() > 1 || converter.m_convs.front().m_conv != numfnc_Identity;
 }
@@ -1755,7 +1893,7 @@ std::string printUnitConversion(StringView sUnit, UnitConversionMode mode)
     if (!sUnit.length())
         return "";
 
-    UnitConversion convert = getUnitConversion(sUnit);
+    UnitConversion convert = getUnitConversion(sUnit, mode);
 
     return "1 " + sUnit + " = " + convert(mu::Value(1.0)).front().print(7) + " " + convert.formatUnit(mode);
 }

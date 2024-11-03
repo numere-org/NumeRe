@@ -115,6 +115,8 @@ struct UnitFunction
 struct UnitConversion
 {
     std::vector<UnitFunction> m_convs;
+    double m_finalScale = 1.0;
+    std::string m_metricPrefix = "";
 
     // Conversion function
     mu::Array operator()(mu::Array val);
@@ -122,7 +124,7 @@ struct UnitConversion
     std::string formatUnit(UnitConversionMode mode);
 };
 
-UnitConversion getUnitConversion(StringView sUnit);
+UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode);
 bool canConvert(StringView sUnit);
 std::string printUnitConversion(StringView sUnit, UnitConversionMode mode);
 
