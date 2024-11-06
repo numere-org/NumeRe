@@ -3445,7 +3445,7 @@ void NumeReWindow::EvaluateTab()
     }
 
     std::string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
-    OnExecuteFile(command, 0);
+    OnExecuteFile(command, ID_MENU_EXECUTE);
 }
 
 

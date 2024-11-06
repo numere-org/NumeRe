@@ -28,6 +28,7 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 
 extern double g_pixelScale;
+extern Language _guilang;
 
 
 
@@ -240,7 +241,7 @@ class CellValueShader
 
                 return m_colorArray.front();
             }
-            else if (CellValueShaderCondition::CT_EQUALS_ARRAY)
+            else if (m_condition.m_type == CellValueShaderCondition::CT_EQUALS_ARRAY)
             {
                 for (size_t i = 0; i < std::min(m_colorArray.size(), m_condition.m_strs.size()); i++)
                 {
@@ -779,56 +780,6 @@ class CellValueShaderDialog : public wxDialog
         DECLARE_EVENT_TABLE();
 };
 
-
-BEGIN_EVENT_TABLE(CellValueShaderDialog, wxDialog)
-    EVT_BUTTON(-1, CellValueShaderDialog::OnButtonClick)
-    EVT_CHECKBOX(-1, CellValueShaderDialog::OnCheckBox)
-END_EVENT_TABLE()
-
-
-wxColour CellValueShaderDialog::LEVELCOLOUR  = wxColour(128,128,255);
-wxColour CellValueShaderDialog::LOWERCOLOUR  = wxColour(64,64,64);
-wxColour CellValueShaderDialog::MINCOLOUR    = wxColour(128,0,0);
-wxColour CellValueShaderDialog::MEDCOLOUR    = wxColour(255,128,0);
-wxColour CellValueShaderDialog::MAXCOLOUR    = wxColour(255,255,128);
-wxColour CellValueShaderDialog::HIGHERCOLOUR = wxColour(255,255,255);
-bool CellValueShaderDialog::USEALLCOLOURS = false;
-
-wxColour fromHSL(unsigned hue, double saturation, double lightness)
-{
-    double C = (1.0 - std::abs(2*lightness-1)) * saturation;
-    double X = C * (1.0 - std::abs(std::fmod(hue / 60.0, 2.0) - 1.0));
-    double m = lightness - C/2.0;
-
-    if (hue < 60)
-        return wxColour((C+m)*255, (X+m)*255, m*255);
-
-    if (hue < 120)
-        return wxColour((X+m)*255, (C+m)*255, m*255);
-
-    if (hue < 180)
-        return wxColour(m*255, (C+m)*255, (X+m)*255);
-
-    if (hue < 240)
-        return wxColour(m*255, (X+m)*255, (C+m)*255);
-
-    if (hue < 300)
-        return wxColour((X+m)*255, m*255, (C+m)*255);
-
-    return wxColour((C+m)*255, m*255, (X+m)*255);
-}
-
-
-//static wxColour goodBase = fromHSL(132, 0.5625, 0.8583);
-//static wxColour neutralBase = fromHSL(48, 1, 0.8042);
-//static wxColour badBase = fromHSL(352, 1, 0.8917);
-//static wxColour infoBase = fromHSL(196, 0.725, 0.8583);
-
-wxColour CellValueShaderDialog::CATEGORYCOLOUR[16] = {
-    fromHSL(132, 0.5625, 0.8583), fromHSL(48, 1, 0.8042), fromHSL(352, 1, 0.8917), fromHSL(196, 0.725, 0.8583),
-    fromHSL(132, 0.5625, 0.8583*0.8), fromHSL(48, 1, 0.8042*0.8), fromHSL(352, 1, 0.8917*0.8), fromHSL(196, 0.725, 0.8583*0.8),
-    fromHSL(132, 0.5625, 0.8583*0.6), fromHSL(48, 1, 0.8042*0.6), fromHSL(352, 1, 0.8917*0.6), fromHSL(196, 0.725, 0.8583*0.6),
-    fromHSL(132, 0.5625, 0.8583*0.4), fromHSL(48, 1, 0.8042*0.4), fromHSL(352, 1, 0.8917*0.4), fromHSL(196, 0.725, 0.8583*0.4)};
 
 #endif // CELLVALUESHADER_HPP
 

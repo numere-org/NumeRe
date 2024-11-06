@@ -595,6 +595,11 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
 
         cmdParser.setReturnValue(mu::Value(winInfo.window->setItemColor(color, itemID)));
     }
+    else if (cmdParser.hasParam("options"))
+    {
+        mu::Array options = cmdParser.getParsedParameterValue("options");
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemOptions(options, itemID)));
+    }
     else if (cmdParser.hasParam("selection"))
     {
         mu::Array sel = cmdParser.getParsedParameterValue("selection");

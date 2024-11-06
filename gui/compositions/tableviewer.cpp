@@ -899,54 +899,70 @@ void TableViewer::applyConditionalCellColourScheme()
     CellValueShaderDialog dialog(this, minVal, maxVal);
 
     if (dialog.ShowModal() == wxID_OK)
-    {
-        // Get the extent of the container
-        const wxGridCellsExtent& cellsExtent = coordsContainer.getExtent();
+        conditionalFormat(coordsContainer, dialog.getShader());
+}
 
-        // Whole columns are selected
-        if ((coordsContainer.isBlock() || coordsContainer.columnsSelected())
-            && cellsExtent.m_topleft.GetRow() <= (int)nFirstNumRow
-            && cellsExtent.m_bottomright.GetRow()+2 >= GetRows())
+
+/////////////////////////////////////////////////
+/// \brief Conditional format the respective
+/// cells.
+///
+/// \param cells const wxGridCellCoordsContainer&
+/// \param shader const CellValueShader&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::conditionalFormat(const wxGridCellCoordsContainer& cells, const CellValueShader& shader)
+{
+    // Get the extent of the container
+    const wxGridCellsExtent& cellsExtent = cells.getExtent();
+
+    // Whole columns are selected
+    if ((cells.isBlock() || cells.columnsSelected())
+        && cellsExtent.m_topleft.GetRow() <= (int)nFirstNumRow
+        && cellsExtent.m_bottomright.GetRow()+2 >= GetRows())
+    {
+        for (int j = cellsExtent.m_topleft.GetCol(); j <= cellsExtent.m_bottomright.GetCol(); j++)
+        {
+            if (!cells.contains(cellsExtent.m_topleft.GetRow(), j))
+                continue;
+
+            int h_align, v_align;
+            GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
+
+            wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                      h_align, wxALIGN_CENTER);
+
+            if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
+                attr->SetRenderer(new AdvBooleanCellRenderer(shader));
+            else
+                attr->SetRenderer(new AdvStringCellRenderer(shader));
+
+            SetColAttr(j, attr, true);
+        }
+    }
+    else
+    {
+        for (int i = cellsExtent.m_topleft.GetRow(); i <= cellsExtent.m_bottomright.GetRow(); i++)
         {
             for (int j = cellsExtent.m_topleft.GetCol(); j <= cellsExtent.m_bottomright.GetCol(); j++)
             {
-                if (!coordsContainer.contains(cellsExtent.m_topleft.GetRow(), j))
+                if (!cells.contains(i, j))
                     continue;
 
-                int h_align, v_align;
-                GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
-
-                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                          h_align, wxALIGN_CENTER);
-
                 if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
-                    attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
+                    SetCellRenderer(i, j, new AdvBooleanCellRenderer(shader));
                 else
-                    attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
-
-                SetColAttr(j, attr, true);
+                    SetCellRenderer(i, j, new AdvStringCellRenderer(shader));
             }
         }
-        else
-        {
-            for (int i = cellsExtent.m_topleft.GetRow(); i <= cellsExtent.m_bottomright.GetRow(); i++)
-            {
-                for (int j = cellsExtent.m_topleft.GetCol(); j <= cellsExtent.m_bottomright.GetCol(); j++)
-                {
-                    if (!coordsContainer.contains(i, j))
-                        continue;
-
-                    if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
-                        SetCellRenderer(i, j, new AdvBooleanCellRenderer(dialog.getShader()));
-                    else
-                        SetCellRenderer(i, j, new AdvStringCellRenderer(dialog.getShader()));
-                }
-            }
-        }
-
-        // Refresh the window to redraw all cells
-        Refresh();
     }
+
+    if (readOnly)
+        groupHeaders(0, GetNumberCols(), 0);
+
+    // Refresh the window to redraw all cells
+    Refresh();
 }
 
 

@@ -171,10 +171,7 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             double luminosity = calculateLuminosity(bgColour);
 
             if (luminosity < 128)
-            {
-                luminosity = 255;//std::min(255.0, 255 - luminosity + 10);
-                customAttr->SetTextColour(wxColour(luminosity, luminosity, luminosity));
-            }
+                customAttr->SetTextColour(*wxWHITE);
 
             return customAttr;
         }

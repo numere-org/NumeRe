@@ -24,6 +24,7 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/io/logger.hpp"
 #include "grouppanel.hpp"
+#include "cellvalueshader.hpp"
 #include <wx/tokenzr.h>
 #include <wx/dataview.h>
 #include <wx/statline.h>
@@ -2513,6 +2514,8 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
     }
     catch (...)
     {
+        wxMessageBox(_guilang.get("GUI_CUSTOMWINDOW_CATCH", "window ID -set value=VAL item=ID"),
+                     _guilang.get("GUI_CUSTOMWINDOW_CATCH_HEAD"), wxCENTER | wxICON_ERROR | wxOK, this);
         return false;
     }
 
@@ -2765,6 +2768,243 @@ bool CustomWindow::setItemColor(const mu::Array& _color, int windowItemID)
     }
     catch (...)
     {
+        wxMessageBox(_guilang.get("GUI_CUSTOMWINDOW_CATCH", "window ID -set color={R,G,B} item=ID"),
+                     _guilang.get("GUI_CUSTOMWINDOW_CATCH_HEAD"), wxCENTER | wxICON_ERROR | wxOK, this);
+        return false;
+    }
+
+    Refresh();
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set additional options for the
+/// selected item.
+///
+/// \param _options const mu::Array&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
+{
+    try
+    {
+        if (windowItemID == -1)
+            return false;
+
+        auto iter = m_windowItems.find(windowItemID);
+
+        if (iter == m_windowItems.end())
+            return false;
+
+        std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
+
+        switch (object.first)
+        {
+            case CustomWindow::TABLE:
+            {
+                TableViewer* table = static_cast<TableViewer*>(object.second);
+
+                for (size_t i = 0; i < _options.size(); i+=2)
+                {
+                    if (_options.get(i) == mu::Value("min-cols"))
+                    {
+                        int64_t c = table->GetNumberCols();
+
+                        if (c < _options.get(i+1).getNum().asI64()+1)
+                            table->AppendCols(_options.get(i+1).getNum().asI64()-c+1);
+                    }
+
+                    if (_options.get(i) == mu::Value("min-rows"))
+                    {
+                        int64_t r = table->GetInternalRows(table->GetNumberRows());
+
+                        if (r < _options.get(i+1).getNum().asI64()+1)
+                            table->AppendRows(_options.get(i+1).getNum().asI64()-r+1);
+                    }
+
+                    if (_options.get(i) == mu::Value("cond-format"))
+                    {
+                        const mu::Array& formatting = _options.get(i+1).getArray();
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        for (size_t j = 0; j < formatting.size(); j+=2)
+                        {
+                            wxArrayInt cols;
+
+                            if (formatting.get(j).isArray())
+                            {
+                                const mu::Array& selectedCols = formatting.get(j).getArray();
+
+                                for (size_t k = 0; k < selectedCols.size(); k++)
+                                {
+                                    int64_t selected = selectedCols.get(k).getNum().asI64();
+
+                                    if (currentCols < selected || selected < 1)
+                                        continue;
+
+                                    cols.Add(selected-1);
+                                }
+                            }
+                            else if (formatting.get(j).getNum().asI64() > 0 && formatting.get(j).getNum().asI64() <= currentCols)
+                                cols.Add(formatting.get(j).getNum().asI64()-1);
+
+                            if (!cols.size())
+                                return false;
+
+                            wxGridCellCoordsContainer cells(cols, table->GetRows()-1, false);
+                            std::vector<wxColour> colors;
+
+                            const mu::Array& definition = formatting.get(j+1).getArray();
+
+                            if (definition.get(0) == mu::Value("if-true"))
+                            {
+                                // {"if-true", "<", 42, "#FF0000"}
+                                std::string cond = definition.get(1).getStr();
+                                const mu::Array vals = definition.get(2);
+                                colors.push_back(wxColour(definition.get(3).getStr()));
+
+                                CellValueShaderCondition condition;
+
+                                for (size_t k = 0; k < vals.size(); k++)
+                                {
+                                    if (vals.get(k).isString())
+                                        condition.m_strs.push_back(vals.get(k).getStr());
+                                    else
+                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                }
+
+                                if (cond == "<")
+                                    condition.m_type = CellValueShaderCondition::CT_LESS_THAN;
+                                else if (cond == "<=")
+                                    condition.m_type = CellValueShaderCondition::CT_LESS_EQ_THAN;
+                                else if (cond == ">")
+                                    condition.m_type = CellValueShaderCondition::CT_GREATER_THAN;
+                                else if (cond == ">=")
+                                    condition.m_type = CellValueShaderCondition::CT_GREATER_EQ_THAN;
+                                else if (cond == "==")
+                                    condition.m_type = vals.front().isString() ?
+                                        CellValueShaderCondition::CT_EQUALS_STR : CellValueShaderCondition::CT_EQUALS_VAL;
+                                else if (cond == "!=")
+                                    condition.m_type = vals.front().isString() ?
+                                        CellValueShaderCondition::CT_NOT_EQUALS_STR : CellValueShaderCondition::CT_NOT_EQUALS_VAL;
+                                else if (cond == "strfnd" && vals.front().isString())
+                                    condition.m_type = CellValueShaderCondition::CT_FIND_STR;
+                                else if (cond == "!strfnd" && vals.front().isString())
+                                    condition.m_type = CellValueShaderCondition::CT_NOT_FIND_STR;
+
+                                table->conditionalFormat(cells, CellValueShader(colors, condition));
+                            }
+                            else if (definition.get(0) == mu::Value("map"))
+                            {
+                                // {"map", {1,2,3,4},{"#FF0000", "#00FF00", "#0000FF", "#FFFFFF"}}
+                                const mu::Array& vals = definition.get(1);
+                                const mu::Array& colorStrings = definition.get(2);
+
+                                if (colorStrings.getCommonType() != mu::TYPE_STRING)
+                                    return false;
+
+                                CellValueShaderCondition condition;
+                                condition.m_type = CellValueShaderCondition::CT_EQUALS_ARRAY;
+
+                                for (size_t k = 0; k < vals.size(); k++)
+                                {
+                                    if (vals.get(k).isNumerical())
+                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    else
+                                        condition.m_vals.push_back(NAN);
+
+                                    condition.m_strs.push_back(vals.get(k).printVal());
+                                }
+
+                                for (size_t k = 0; k < colorStrings.size(); k++)
+                                {
+                                    colors.push_back(wxColour(colorStrings.get(k).getStr()));
+                                }
+
+                                table->conditionalFormat(cells, CellValueShader(colors, condition));
+                            }
+                            else if (definition.get(0) == mu::Value("cscale"))
+                            {
+                                // {"cscale", {0,42},{"#FF0000", "#00FF00"}}
+                                const mu::Array& vals = definition.get(1);
+                                const mu::Array& colorStrings = definition.get(2);
+
+                                if (colorStrings.size() < 2 || colorStrings.getCommonType() != mu::TYPE_STRING)
+                                    return false;
+
+                                CellValueShaderCondition condition;
+                                condition.m_type = CellValueShaderCondition::CT_INTERVAL_RE;
+
+                                for (size_t k = 0; k < vals.size(); k++)
+                                {
+                                    condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                }
+
+                                for (size_t k = 0; k < colorStrings.size(); k++)
+                                {
+                                    colors.push_back(wxColour(colorStrings.get(k).getStr()));
+                                }
+
+                                table->conditionalFormat(cells, CellValueShader(colors, condition));
+                            }
+                            else if (definition.get(0) == mu::Value("cscale-limited"))
+                            {
+                                // {"cscale-limited", {0,42},{"#FF0000", "#00FF00"}}
+                                const mu::Array& vals = definition.get(1);
+                                const mu::Array& colorStrings = definition.get(2);
+
+                                if (colorStrings.size() < 4 || colorStrings.getCommonType() != mu::TYPE_STRING)
+                                    return false;
+
+                                CellValueShaderCondition condition;
+                                condition.m_type = CellValueShaderCondition::CT_INTERVAL_RE_EXCL;
+
+                                for (size_t k = 0; k < vals.size(); k++)
+                                {
+                                    condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                }
+
+                                for (size_t k = 0; k < colorStrings.size(); k++)
+                                {
+                                    colors.push_back(wxColour(colorStrings.get(k).getStr()));
+                                }
+
+                                table->conditionalFormat(cells, CellValueShader(colors, condition));
+                            }
+                        }
+                    }
+                }
+
+                break;
+            }
+            case CustomWindow::BUTTON:
+            case CustomWindow::CHECKBOX:
+            case CustomWindow::TEXT:
+            case CustomWindow::TEXTCTRL:
+            case CustomWindow::LAMP:
+            case CustomWindow::SPINCTRL:
+            case CustomWindow::RADIOGROUP:
+            case CustomWindow::DROPDOWN:
+            case CustomWindow::COMBOBOX:
+            case CustomWindow::MENUITEM:
+            case CustomWindow::TREELIST:
+            case CustomWindow::GAUGE:
+            case CustomWindow::IMAGE:
+            case CustomWindow::GRAPHER:
+            case CustomWindow::SLIDER:
+            case CustomWindow::DATETIMEPICKER:
+            case CustomWindow::NOTEBOOK:
+                break;
+        }
+    }
+    catch (...)
+    {
+        wxMessageBox(_guilang.get("GUI_CUSTOMWINDOW_CATCH", "window ID -set options={KEY-VAL-LIST} item=ID"),
+                     _guilang.get("GUI_CUSTOMWINDOW_CATCH_HEAD"), wxCENTER | wxICON_ERROR | wxOK, this);
         return false;
     }
 

@@ -2689,7 +2689,10 @@ mu::Array strfnc_dectobase(const mu::Array& base, const mu::Array& val)
         std::string conv;
         stream >> conv;
 
-        ret.push_back(conv);
+        if (conv == "0" && b == "hex")
+            ret.push_back("0x0");
+        else
+            ret.push_back(conv);
     }
 
     return ret;

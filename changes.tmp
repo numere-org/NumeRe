@@ -55,3 +55,6 @@ Added	Missing statistical functions were added: RMS, skewness, excess, standard 
 Applied	The interaction between custom windows and the "window" command has been cleaned and improved. Some interactions will now return more fitting data types. It might be possible that this change will break some existing solutions.
 New	Experimental: clusters can now be created as hierarchical data structures, i.e. clusters can now contain clusters in their fields. You can use the ".sel(ID)" method for navigating and ".unwrap" to unwrap the whole structure in a single-level cluster. Writing a set of values into a single cluster element will embed them as a sub-structure. Reading this single element, will return the embedded structure.
 Added	The function "today()" will return the current date in UTC.
+Fixed	Scripts can now be started with the tab's context menu functionality again.
+New	The window command option "options={KEY-VALUE-LIST}" can be used to modify additional window element properties. This option is currently only supported for "tablegrid" elements, where one can change the minimal number of rows and cols.
+Added	The window command option "options" can now be used to modify a "tablegrid"'s conditional formatting.

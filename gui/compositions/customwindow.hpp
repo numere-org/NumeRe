@@ -251,6 +251,7 @@ class CustomWindow : public wxFrame
         bool setItemLabel(const mu::Array& _label, int windowItemID);
         bool setItemState(const wxString& _state, int windowItemID);
         bool setItemColor(const mu::Array& _color, int windowItemID);
+        bool setItemOptions(const mu::Array& _options, int windowItemID);
         bool setItemSelection(int selectionID, int selectionID2, int windowItemID);
         bool setItemFocus(int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);

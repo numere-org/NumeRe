@@ -31,6 +31,7 @@
 #include "../../kernel/core/datamanagement/table.hpp"
 
 class TablePanel;
+class CellValueShader;
 
 /////////////////////////////////////////////////
 /// \brief This class is an adaption of the
@@ -121,6 +122,7 @@ class TableViewer : public wxGrid
         void changeColType();
         void finalize();
         void groupHeaders(int startCol, int endCol, int row);
+        void conditionalFormat(const wxGridCellCoordsContainer& cells, const CellValueShader& shader);
         bool isSilentSelection();
 
         mu::Array getSelectedValues();

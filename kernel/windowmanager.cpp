@@ -523,6 +523,24 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Enables passing additional options to
+    /// the selected window item.
+    ///
+    /// \param _options const mu::Array&
+    /// \param windowItemID int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setItemOptions(const mu::Array& _options, int windowItemID)
+    {
+        if (m_customWindow)
+            return m_customWindow->setItemOptions(_options, windowItemID);
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Set the selection to the corresponding
     /// element in the window item.
     ///

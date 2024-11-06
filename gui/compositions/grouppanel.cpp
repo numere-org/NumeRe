@@ -389,7 +389,7 @@ void GroupPanel::AddSpacer(int nSize, wxSizer* sizer)
 wxStaticText* GroupPanel::AddStaticText(wxWindow* parent, wxSizer* sizer, const wxString& text, int id, int alignment)
 {
     wxStaticText* staticText = new wxStaticText(parent, id, text, wxDefaultPosition, wxDefaultSize, 0);
-    sizer->Add(staticText, 0, alignment | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    sizer->Add(staticText, 0, alignment | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
 
     return staticText;
 }
