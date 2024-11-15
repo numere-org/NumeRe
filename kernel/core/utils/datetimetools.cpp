@@ -128,6 +128,67 @@ time_stamp getTimeStampFromTime_t(__time64_t t)
 
 
 /////////////////////////////////////////////////
+/// \brief Just a quick wrapper function to
+/// simplify the conversion from time_t.
+///
+/// \param t __time64_t
+/// \return sys_time_point
+///
+/////////////////////////////////////////////////
+sys_time_point getTimePointFromTime_t(__time64_t t)
+{
+    return getTimePointFromTimeStamp(getTimeStampFromTime_t(t));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a sys_time_point from a date.
+///
+/// \param year int
+/// \param month int
+/// \param day int
+/// \return sys_time_point
+///
+/////////////////////////////////////////////////
+sys_time_point getTimePointFromYMD(int year, int month, int day)
+{
+    time_stamp ts;
+    ts.m_ymd = date::year{year}/date::month{month}/date::day{day};
+    return getTimePointFromTimeStamp(ts);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a sys_time_poimt from a time
+/// value.
+///
+/// \param hour int
+/// \param minute int
+/// \param second int
+/// \param milliseconds int
+/// \param microseconds int
+/// \return sys_time_point
+///
+/////////////////////////////////////////////////
+sys_time_point getTimePointFromHMS(int hours, int minutes, int seconds, int milliseconds, int microseconds)
+{
+    time_stamp ts;
+    ts.m_hours = std::chrono::hours(hours);
+    ts.m_minutes = std::chrono::minutes(minutes);
+    ts.m_seconds = std::chrono::seconds(seconds);
+    ts.m_millisecs = std::chrono::milliseconds(milliseconds);
+    ts.m_microsecs = std::chrono::microseconds(microseconds);
+
+    date::year y{1970u};
+    date::month m{1u};
+    date::day d{1u};
+    ts.m_ymd = y/m/d;
+
+    return getTimePointFromTimeStamp(ts);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Convert a time_stamp to a
 /// sys_time_point.
 ///

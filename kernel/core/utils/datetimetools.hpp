@@ -68,6 +68,10 @@ date::year_month_day dateFromTime_t(__time64_t t);
 time_stamp getTimeStampFromTimePoint(sys_time_point tp);
 time_stamp getTimeStampFromTime_t(__time64_t t);
 
+sys_time_point getTimePointFromTime_t(__time64_t t);
+sys_time_point getTimePointFromYMD(int year, int month, int day);
+sys_time_point getTimePointFromHMS(int hours, int minutes, int seconds = 0, int milliseconds = 0, int microseconds = 0);
+
 sys_time_point getTimePointFromTimeStamp(const time_stamp& ts);
 __time64_t getTime_tFromTimeStamp(const time_stamp& ts);
 

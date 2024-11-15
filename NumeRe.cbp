@@ -189,6 +189,11 @@
 			<Add option="-lsha" />
 			<Add option="-lzygo" />
 			<Add option="-lgslcblas" />
+			<Add option="-lsqlite3" />
+			<Add option="-lmariadb" />
+			<Add option="-lpq" />
+			<Add option="-lws2_32" />
+			<Add option="-lodbc32" />
 			<Add option="-Wl,--stack,8388608" />
 			<Add option="-fopenmp" />
 			<Add library="wxmsw30u_stc" />
@@ -409,6 +414,50 @@
 			<Option target="Dr Memory_x64" />
 			<Option target="Debug_x64" />
 		</Unit>
+		<Unit filename="database/database.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="database/database.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="database/dbinternals.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="database/dbinternals.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
 		<Unit filename="externals/QR-Code-generator/cpp/qrcodegen.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -619,6 +668,149 @@
 			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="externals/dtl/dtl/variables.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/apply_tuple.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_asio.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_async.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_common.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_database_pool.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_mysql.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_mysql_pool.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_odbc.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_odbc_pool.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_postgres.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_postgres_pool.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_sqlite.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="externals/qtl/include/qtl_sqlite_pool.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />

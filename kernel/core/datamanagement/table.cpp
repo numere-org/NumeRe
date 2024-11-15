@@ -293,7 +293,7 @@ namespace NumeRe
     {
         this->setMinSize(i+1, j+1);
 
-        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
+        convert_if_empty(vTableData[j], j, to_column_type(_dValue));
         vTableData[j]->set(i, _dValue);
     }
 

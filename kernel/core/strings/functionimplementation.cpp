@@ -22,6 +22,7 @@
 #include "../../../common/compareFiles.hpp"
 #include "../../../externals/stduuid/include/uuid.h"
 #ifndef PARSERSTANDALONE
+#include "../../../database/dbinternals.hpp"
 #include "../../kernel.hpp"
 #endif
 #include <boost/tokenizer.hpp>
@@ -2915,6 +2916,23 @@ mu::Array strfnc_getuuid()
     const uuids::uuid id = gen();
 
     return mu::Value(uuids::to_string(id));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the getodbcdrivers()
+/// function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_getodbcdrivers()
+{
+#ifndef PARSERSTANDALONE
+    return mu::Array(getOdbcDrivers());
+#else
+    return mu::Array();
+#endif
 }
 
 

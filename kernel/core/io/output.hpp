@@ -48,6 +48,7 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 		bool bSumBar;
 		bool bPrintTeX;                         // Ausgabe in eine TeX-Datei
 		bool bPrintCSV;
+		int64_t nTotalNumRows;
 		std::ofstream file_out;						// Ein Objekt eines Dateistreams
 		std::string getDate(bool bForFile);			// Eine Methode, die das aktuelle Datum als String zurueckgibt.
 		std::string replaceTeXControls(const std::string& _sText);
@@ -78,6 +79,10 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 		void setCompact(bool _bCompact);        // setzt den Wert des Kompakte-Ausgabe-Booleans
 		inline bool isCompact() const
             {return bCompact;}
+        void setTotalNumRows(int64_t rows)
+        {
+            nTotalNumRows = rows;
+        }
 
 
 			/*

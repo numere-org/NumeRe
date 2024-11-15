@@ -77,6 +77,7 @@ void Output::reset()
     if(bFile && bFileOpen)
         end();
 
+    nTotalNumRows = 0;
     bFile = false;
     bFileOpen = false;
     bCompact = false;
@@ -409,6 +410,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     size_t nLen = 0;			// Int fuer die aktuelle Laenge: dito
     string sPrint = "";				// String fuer die endgueltige Ausgabe
     string sLabel = sFileName;
+    const size_t COLUMNSEPARATOR = 3;
 
     if (sLabel.find('/') != string::npos)
         sLabel.erase(0,sLabel.rfind('/')+1);
@@ -476,7 +478,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                     nLongest[j] = nLen;	// Weise neue Laenge an nLongest zu, falls nLen > nLongest
             }
 
-            nLongest[j] += 2;
+            nLongest[j] += COLUMNSEPARATOR;
         }
     }
     else if (!bPrintCSV)
@@ -496,7 +498,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                 }
             }
 
-            nLongest[j] += 2;
+            nLongest[j] += COLUMNSEPARATOR;
         }
     }
 
@@ -642,28 +644,22 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                     {
                         if (i < nHeadLineCount && j == nCol_0*nNotRepeatFirstCol) 	// Erstes Element, erste Zeile?
                         {
-
                             if (bFile && !bPrintTeX)
                                 sPrint = "#";		// Tabellenheader, Auskommentierung fuer GNUPlot
                             else if (!bFile)
-                                sPrint = "|  ";
-
-                            for (size_t n = 0; n < nLongest[j] - _sMatrix[i][j].length() - 1; n++)
-                            {
-                                sPrint += " ";	// Auf jeden Fall die Leerstellen zum Ausrichten ergaenzen
-                            }
+                                sPrint = "|   ";
                         }
                         else	    // In allen anderen Faellen: ergaenze die fehlenden Leerstellen vor dem String
                         {
                             if (!bFile && j == nCol_0*nNotRepeatFirstCol)
-                                sPrint = "| ";
+                                sPrint = "|";
                             else if (bPrintTeX && j)
                                 sPrint += " &";
 
-                            for (size_t n = 0; n < nLongest[j] - _sMatrix[i][j].length(); n++)
-                            {
-                                sPrint += " ";
-                            }
+                            if (i < nHeadLineCount)
+                                sPrint.append(COLUMNSEPARATOR, ' ');
+                            else
+                                sPrint.append(nLongest[j] - _sMatrix[i][j].length(), ' ');
                         }
 
                         if (bPrintTeX && i >= nHeadLineCount && _sMatrix[i][j] != "---" && !bSumBar)
@@ -680,6 +676,9 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                         }
                         else
                             sPrint += _sMatrix[i][j];	// Verknuepfe alle Elemente einer Zeile zu einem einzigen String
+
+                        if (i < nHeadLineCount)
+                            sPrint.append(nLongest[j] - _sMatrix[i][j].length() - COLUMNSEPARATOR, ' ');
 
                         if (!nCol_0 && nCol_1 != _nCol && nNotRepeatFirstCol && i >= nHeadLineCount)
                         {
@@ -837,10 +836,15 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
     if (!bFile)
     {
-        sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY", toString(_nCol), toString(_nLine-nHeadLineCount), toString(_nCol*(_nLine-nHeadLineCount)))) + " --";
+        sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY",
+                                                              toString(_nCol),
+                                                              toString(nTotalNumRows ? nTotalNumRows : _nLine-nHeadLineCount),
+                                                              toString(_nCol*(nTotalNumRows ? nTotalNumRows : _nLine-nHeadLineCount)))) + " --";
     }
     else
-        sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString(_nCol*(_nLine-nHeadLineCount)), sFileName));
+        sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
+                                                         toString(_nCol*(nTotalNumRows ? nTotalNumRows : _nLine-nHeadLineCount)),
+                                                         sFileName));
 
     if (_option.systemPrints())
         NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");

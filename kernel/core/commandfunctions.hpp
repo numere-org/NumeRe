@@ -33,6 +33,7 @@
 #include "utils/filecheck.hpp"
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
+#include "../../database/database.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -2808,6 +2809,31 @@ static CommandReturnValues cmd_window(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
+/// "database" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_database(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "database", CommandLineParser::CMD_DAT_PAR);
+
+    if (cmdParser.getExpr().length() || cmdParser.getParameterList().length())
+    {
+        databaseCommand(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
+        return COMMAND_HAS_RETURNVALUE;
+    }
+    else
+        doc_Help("database", NumeReKernel::getInstance()->getSettings());
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
 /// "new" command.
 ///
 /// \param sCmd string&
@@ -5246,6 +5272,7 @@ static std::map<std::string, CommandFunc> getCommandFunctionsWithReturnValues()
 
     mCommandFuncMap["append"] = cmd_append;
     mCommandFuncMap["audioread"] = cmd_audioread;
+    mCommandFuncMap["database"] = cmd_database;
     mCommandFuncMap["dialog"] = cmd_dialog;
     mCommandFuncMap["diff"] = cmd_diff;
     mCommandFuncMap["eval"] = cmd_eval;

@@ -16,3 +16,6 @@
 [submodule "externals/stduuid"]
 	path = externals/stduuid
 	url = https://github.com/mariusbancila/stduuid.git
+[submodule "externals/qtl"]
+	path = externals/qtl
+	url = https://github.com/numere-org/qtl.git

@@ -21,8 +21,12 @@
 
 #include <complex>
 #include <string>
+#include <chrono>
 
-#include "../utils/datetimetools.hpp"
+
+// We want to avoid including the whole datetime-tools here, because PostGreSQL defines date as long,
+// which results in problems
+using sys_time_point = std::chrono::time_point<std::chrono::system_clock, std::chrono::microseconds>;
 
 namespace mu
 {

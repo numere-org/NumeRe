@@ -4412,9 +4412,9 @@ mu::Array numfnc_acsch(const mu::Array& x)
 /////////////////////////////////////////////////
 static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, const mu::Value& day)
 {
-    time_stamp ts;
-    ts.m_ymd = date::year{year.getNum().asI64()}/date::month{month.getNum().asI64()}/date::day{day.getNum().asI64()};
-    return mu::Value(getTimePointFromTimeStamp(ts));
+    return mu::Value(getTimePointFromYMD(year.getNum().asI64(),
+                                         month.getNum().asI64(),
+                                         day.getNum().asI64()));
 }
 
 
@@ -4432,19 +4432,11 @@ static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, con
 /////////////////////////////////////////////////
 static mu::Value as_time_impl(const mu::Value& hours, const mu::Value& minutes, const mu::Value& seconds, const mu::Value& milliseconds, const mu::Value& microseconds)
 {
-    time_stamp ts;
-    ts.m_hours = std::chrono::hours(hours.getNum().asI64());
-    ts.m_minutes = std::chrono::minutes(minutes.getNum().asI64());
-    ts.m_seconds = std::chrono::seconds(seconds.getNum().asI64());
-    ts.m_millisecs = std::chrono::milliseconds(milliseconds.getNum().asI64());
-    ts.m_microsecs = std::chrono::microseconds(microseconds.getNum().asI64());
-
-    date::year y{1970u};
-    date::month m{1u};
-    date::day d{1u};
-    ts.m_ymd = y/m/d;
-
-    return mu::Value(getTimePointFromTimeStamp(ts));
+    return mu::Value(getTimePointFromHMS(hours.getNum().asI64(),
+                                         minutes.getNum().asI64(),
+                                         seconds.getNum().asI64(),
+                                         milliseconds.getNum().asI64(),
+                                         microseconds.getNum().asI64()));
 }
 
 

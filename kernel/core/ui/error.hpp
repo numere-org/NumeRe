@@ -90,6 +90,10 @@ class SyntaxError
             /// INSERT HERE
             COL_COUNTS_DOESNT_MATCH=200,
             CUTOFF_MODE_INVALID,
+            DATABASE_ERROR_SQLITE,
+            DATABASE_ERROR_MYSQL,
+            DATABASE_ERROR_POSTGRES,
+            DATABASE_ERROR_ODBC,
             /// INSERT HERE
             DATAFILE_NOT_EXIST=300,
             DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING=400,

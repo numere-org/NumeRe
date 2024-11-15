@@ -58,3 +58,4 @@ Added	The function "today()" will return the current date in UTC.
 Fixed	Scripts can now be started with the tab's context menu functionality again.
 New	The window command option "options={KEY-VALUE-LIST}" can be used to modify additional window element properties. This option is currently only supported for "tablegrid" elements, where one can change the minimal number of rows and cols.
 Added	The window command option "options" can now be used to modify a "tablegrid"'s conditional formatting.
+New	NumeRe can now interact with databases using the command "database". Available interfaces for now are: MySQL/MariaDB, SQLite, ODBC. PostGreSQL is NOT supported right now due to dependency issues.
