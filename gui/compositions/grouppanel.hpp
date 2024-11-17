@@ -117,8 +117,14 @@ class TextField : public wxTextCtrl
     public:
         wxStaticText* m_label;
 
-        TextField(wxWindow* parent, wxWindowID id, const wxString& sDefault, const wxSize& size, int nStyle) : wxTextCtrl(parent, id, sDefault, wxDefaultPosition, size, nStyle), m_label(nullptr), m_highlightColour(*wxBLUE)
-        {}
+        TextField(wxWindow* parent, wxWindowID id, const wxString& sDefault, const wxSize& size, int nStyle) : wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, size, nStyle), m_label(nullptr), m_highlightColour(*wxBLUE)
+        {
+            if (sDefault.length())
+            {
+                SetMarkupText(sDefault);
+                ShowPosition(0);
+            }
+        }
 
         /////////////////////////////////////////////////
         /// \brief Set a new label

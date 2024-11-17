@@ -19,6 +19,7 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 #include <wx/textctrl.h>
+#include <fstream>
 
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -28,32 +29,7 @@
 #include "AboutChameleonDialog.h"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/version.h"
-
-class AboutDialogTextCtrl : public wxTextCtrl
-{
-    public:
-        AboutDialogTextCtrl(wxWindow* parent, const wxString& contents) : wxTextCtrl(parent, wxID_ANY, contents, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY | wxTE_AUTO_URL)
-        {
-            SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, "Arial"));
-        }
-
-        void OnUrlClick(wxTextUrlEvent &event)
-        {
-            wxMouseEvent mouseEvent = event.GetMouseEvent();
-
-            if (mouseEvent.IsButton())
-            {
-                wxString url = GetRange(event.GetURLStart(), event.GetURLEnd());
-                wxLaunchDefaultBrowser(url);
-            }
-        }
-
-        DECLARE_EVENT_TABLE()
-};
-
-BEGIN_EVENT_TABLE(AboutDialogTextCtrl, wxTextCtrl)
-    EVT_TEXT_URL(-1, AboutDialogTextCtrl::OnUrlClick)
-END_EVENT_TABLE()
+#include "../compositions/grouppanel.hpp"
 
 
 /*!
@@ -180,7 +156,7 @@ void AboutChameleonDialog::CreateControls()
     teamStaticText->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     teamBoxSizer->Add(teamStaticText, 0, wxALIGN_CENTER_HORIZONTAL|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    AboutDialogTextCtrl* aboutTextCtrl = new AboutDialogTextCtrl(teamPanel, _guilang.get("GUI_ABOUT_TEAM"));
+    TextField* aboutTextCtrl = new TextField(teamPanel, wxID_ANY, _guilang.get("GUI_ABOUT_TEAM"), wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_RICH2);
     teamBoxSizer->Add(aboutTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(teamPanel, "Team");
@@ -192,7 +168,7 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* infoBoxSizer = new wxBoxSizer(wxVERTICAL);
     infoPanel->SetSizer(infoBoxSizer);
 
-    AboutDialogTextCtrl* infoTextCtrl = new AboutDialogTextCtrl(infoPanel, _guilang.get("GUI_ABOUT_INFO"));
+    TextField* infoTextCtrl = new TextField(infoPanel, wxID_ANY, _guilang.get("GUI_ABOUT_INFO"), wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_RICH2);
     infoBoxSizer->Add(infoTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(infoPanel, "Info");
@@ -204,7 +180,7 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* creditsBoxSizer = new wxBoxSizer(wxVERTICAL);
     creditsPanel->SetSizer(creditsBoxSizer);
 
-    AboutDialogTextCtrl* creditsTextCtrl = new AboutDialogTextCtrl(creditsPanel, _guilang.get("GUI_ABOUT_CREDITS"));
+    TextField* creditsTextCtrl = new TextField(creditsPanel, wxID_ANY, _guilang.get("GUI_ABOUT_CREDITS"), wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_RICH2);
     creditsBoxSizer->Add(creditsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(creditsPanel, "Credits");
@@ -216,7 +192,7 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* statsBoxSizer = new wxBoxSizer(wxVERTICAL);
     statsPanel->SetSizer(statsBoxSizer);
 
-    AboutDialogTextCtrl* statsTextCtrl = new AboutDialogTextCtrl(statsPanel, _guilang.get("GUI_ABOUT_STATS"));
+    TextField* statsTextCtrl = new TextField(statsPanel, wxID_ANY, _guilang.get("GUI_ABOUT_STATS"), wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_RICH2);
     statsBoxSizer->Add(statsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(statsPanel, "Stats");
@@ -228,7 +204,7 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* joinBoxSizer = new wxBoxSizer(wxVERTICAL);
     joinPanel->SetSizer(joinBoxSizer);
 
-    AboutDialogTextCtrl* joinTextCtrl = new AboutDialogTextCtrl(joinPanel, _guilang.get("GUI_ABOUT_JOIN"));
+    TextField* joinTextCtrl = new TextField(joinPanel, wxID_ANY, _guilang.get("GUI_ABOUT_JOIN"), wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_RICH2);
     joinBoxSizer->Add(joinTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(joinPanel, "Contribute");
@@ -240,7 +216,21 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* legalBoxSizer = new wxBoxSizer(wxVERTICAL);
     legalPanel->SetSizer(legalBoxSizer);
 
-    AboutDialogTextCtrl* legalTextCtrl = new AboutDialogTextCtrl(legalPanel, _guilang.get("GUI_ABOUT_LEGAL"));
+    std::string licenses;
+
+    if (wxFileName::Exists(_guilang.ValidFileName("<>/THIRD_PARTY.licenses", ".licenses", false, false)))
+    {
+        std::ifstream licenseFile(_guilang.ValidFileName("<>/THIRD_PARTY.licenses", ".licenses", false, false), std::ios::in | std::ios::ate);
+
+        size_t size = licenseFile.tellg();
+        licenseFile.seekg(0, std::ios::beg);
+        licenses.resize(size);
+        licenseFile.read(licenses.data(), size);
+    }
+    else
+        licenses = "LICENSES FILE MISSING";
+
+    TextField* legalTextCtrl = new TextField(legalPanel, wxID_ANY, _guilang.get("GUI_ABOUT_LEGAL", licenses), wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_RICH2);
     legalBoxSizer->Add(legalTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(legalPanel, "Legal");

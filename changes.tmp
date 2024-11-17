@@ -60,3 +60,4 @@ New	The window command option "options={KEY-VALUE-LIST}" can be used to modify a
 Added	The window command option "options" can now be used to modify a "tablegrid"'s conditional formatting.
 New	NumeRe can now interact with databases using the command "database". Available interfaces for now are: MySQL/MariaDB, SQLite, ODBC. PostGreSQL is NOT supported right now due to dependency issues.
 Cleaned	Passwords, which are passed to commands via the "pwd=PASSWORD" option (notably "url" and "database") are now redacted within the logfile to 'pwd="******"'
+Cleaned	3rd party licenses are now listed in a dedicated file and will be displayed within the about dialog / legal tab.
