@@ -1057,8 +1057,19 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                     nDebuggerCode = evalDebuggerBreakPoint(sLine);
             }
 
-            // Log the current line
-            g_logger.cmdline(sLine);
+            // Log the current line and ensure that possible passwords
+            // are hidden
+            size_t pos = findParameter(sLine, "pwd", '=');
+
+            if (pos)
+            {
+                std::string password = getArgAtPos(sLine, pos+3, ARGEXTRACT_NONE);
+                std::string sHashed = sLine;
+                replaceAll(sHashed, password.c_str(), "\"******\"", pos);
+                g_logger.cmdline(sHashed);
+            }
+            else
+                g_logger.cmdline(sLine);
 
             // Handle, whether the pressed the ESC key
             if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
