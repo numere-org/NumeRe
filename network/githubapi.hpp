@@ -37,7 +37,7 @@ namespace GitHub
         std::string jsonUrlEncode() const;
     };
 
-    std::string create(const Issue& issue, const std::string& sRepoUrl, const std::string& sUserAuth);
+    std::string create(const Issue& issue, const std::string& sApiUrl, const std::string& sUserAuth, const std::string& sLogPath);
 }
 
 #endif // GITHUBAPI_HPP

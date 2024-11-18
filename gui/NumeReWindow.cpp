@@ -279,6 +279,10 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
         g_logger.error("Error while loading language files.");
     }
 
+    // Try to find the third party license file (if missing, we can report that)
+    if (!wxFileName::Exists(getProgramFolder() + "/THIRD_PARTY.licenses"))
+        g_logger.error("3rd party licences file 'THIRD_PARTY.licenses' could not be found.");
+
     UpdateWindowTitle("");
 
     // Prepare the options dialog

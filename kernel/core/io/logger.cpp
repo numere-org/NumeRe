@@ -249,16 +249,21 @@ bool DetachedLogger::open(const std::string& sLogFile)
 
     m_logFile.seekg(0, m_logFile.end);
     size_t pos = m_logFile.tellg();
-    m_logFile.seekg(pos-terminatingStatement-3, m_logFile.beg);
 
-    if (m_logFile.good())
+    // If we have enough text in the logfile
+    if (pos > terminatingStatement)
     {
-        std::string sLine;
-        std::getline(m_logFile, sLine);
-        m_startAfterCrash = sLine != LOGGER_SHUTDOWN_LINE;
-    }
+        m_logFile.seekg(pos-terminatingStatement-3, m_logFile.beg);
 
-    m_logFile.clear();
+        if (m_logFile.good())
+        {
+            std::string sLine;
+            std::getline(m_logFile, sLine);
+            m_startAfterCrash = sLine != LOGGER_SHUTDOWN_LINE;
+        }
+
+        m_logFile.clear();
+    }
 
     for (size_t i = 0; i < m_buffer.size(); i++)
         Logger::push_line(m_buffer[i]);
@@ -338,6 +343,10 @@ std::string DetachedLogger::get_session_log(size_t revId) const
         std::getline(currentLog, logContents.back());
     }
 
+    // Log could be empty
+    if (!logContents.size())
+        return "";
+
     // Now find the n-th log's beginning
     for (int i = logContents.size()-1; i >= 0; i--)
     {
@@ -350,11 +359,15 @@ std::string DetachedLogger::get_session_log(size_t revId) const
                 // Aggregate the requested lines
                 for (size_t j = i; j < logContents.size(); j++)
                 {
+                    // Break, if this is the beginning of th next session
+                    // before appending it to the excerpt
                     if (j > (size_t)i && logContents[j] == LOGGER_STARTUP_LINE)
                         break;
 
                     sLog += logContents[j] + "\n";
 
+                    // Break, if this is the last line of the session
+                    // after appendig it to the excerpt
                     if (logContents[j] == LOGGER_SHUTDOWN_LINE)
                         break;
                 }

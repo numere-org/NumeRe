@@ -38,6 +38,123 @@ static std::string strToJson(std::string sPlain)
     return sPlain;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Helper class to wrap cURL into C++
+/// RAII.
+/////////////////////////////////////////////////
+class CurlCpp
+{
+    private:
+        CURL* m_curlInstance;
+        curl_slist* m_httpHeader;
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Construct an instance and initialize
+        /// it, if desired.
+        ///
+        /// \param autoInit bool
+        ///
+        /////////////////////////////////////////////////
+        CurlCpp(bool autoInit = false) : m_curlInstance(nullptr), m_httpHeader(nullptr)
+        {
+            if (autoInit)
+                init();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Destructor. Frees all associated
+        /// memory.
+        ///
+        ///
+        /////////////////////////////////////////////////
+        ~CurlCpp()
+        {
+            if (m_curlInstance)
+                curl_easy_cleanup(m_curlInstance);
+
+            if (m_httpHeader)
+                curl_slist_free_all(m_httpHeader);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Initialize this instance.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void init()
+        {
+            if (!m_curlInstance)
+                m_curlInstance = curl_easy_init();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Set a cURL option together with a
+        /// value.
+        ///
+        /// \param option CURLoption
+        /// \param val T
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        bool setOption(CURLoption option, T val)
+        {
+            if (!m_curlInstance)
+                return false;
+
+            return curl_easy_setopt(m_curlInstance, option, val) == CURLE_OK;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Set a HTTP header.
+        ///
+        /// \param httpHeader const std::vector<std::string>&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool setHeader(const std::vector<std::string>& httpHeader)
+        {
+            for (const auto& headerString : httpHeader)
+            {
+                m_httpHeader = curl_slist_append(m_httpHeader, headerString.c_str());
+            }
+
+            if (!m_curlInstance)
+                m_curlInstance = curl_easy_init();
+
+            return setOption(CURLOPT_HTTPHEADER, m_httpHeader);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Perform the transmission.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool perform()
+        {
+            if (!m_curlInstance)
+                return false;
+
+            return curl_easy_perform(m_curlInstance) == CURLE_OK;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if the instance is valid.
+        ///
+        /// \return operator
+        ///
+        /////////////////////////////////////////////////
+        operator bool() const
+        {
+            return m_curlInstance != nullptr;
+        }
+};
+
+
 namespace GitHub
 {
     /////////////////////////////////////////////////
@@ -65,8 +182,13 @@ namespace GitHub
         {
             json += ", \"labels\": [";
 
-            for (const auto& label : labels)
-                json += "\"" + strToJson(label) + "\"";
+            for (size_t i = 0; i < labels.size(); i++)
+            {
+                if (i)
+                    json += ", ";
+
+                json += "\"" + strToJson(labels[i]) + "\"";
+            }
 
             json += "]";
         }
@@ -101,46 +223,87 @@ namespace GitHub
     /// passed authorization.
     ///
     /// \param issue const Issue&
-    /// \param sRepoUrl const std::string&
+    /// \param sApiUrl const std::string&
     /// \param sUserAuth const std::string&
+    /// \param sLogPath const std::string&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string create(const Issue& issue, const std::string& sRepoUrl, const std::string& sUserAuth)
+    std::string create(const Issue& issue, const std::string& sApiUrl, const std::string& sUserAuth, const std::string& sLogPath)
     {
         // Set Up CURL
-        CURL *curl = curl_easy_init();
+        CurlCpp curl(true);
+        Logger logger(sLogPath+"/github.log");
 
         if (curl)
         {
             std::string responseBuffer;
             std::string jsonString = issue.jsonUrlEncode();
-            static std::string userAgent = std::string("libcurl/") + curl_version();
             std::string sAuthorization = "Authorization: Bearer " + sUserAuth;
-            curl_slist* httpHeader = nullptr;
 
-            httpHeader = curl_slist_append(httpHeader, "Accept: application/vnd.github+json");
-            httpHeader = curl_slist_append(httpHeader, sAuthorization.c_str());
-            httpHeader = curl_slist_append(httpHeader, "X-GitHub-Api-Version: 2022-11-28");
+            curl.setHeader({"Accept: application/vnd.github+json", sAuthorization, "X-GitHub-Api-Version: 2022-11-28"});
 
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, httpHeader);
-            curl_easy_setopt(curl, CURLOPT_USERAGENT, userAgent.c_str());
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-            curl_easy_setopt(curl, CURLOPT_URL, sRepoUrl.c_str());
-            curl_easy_setopt(curl, CURLOPT_POST, 1L);
-            curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, jsonString.c_str());
+            if (!curl.setOption(CURLOPT_USERAGENT, curl_version()))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_FOLLOWLOCATION, 1L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_URL, sApiUrl.c_str()))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_POST, 1L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_COPYPOSTFIELDS, jsonString.c_str()))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
 
             // Set up callback and buffer for response
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseBuffer);
+            if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
+
+            if (!curl.setOption(CURLOPT_WRITEDATA, &responseBuffer))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return "";
+            }
 
             // Perform Transmission
-            curl_easy_perform(curl);
-
-            curl_easy_cleanup(curl);
-            curl_slist_free_all(httpHeader);
+            if (!curl.perform())
+            {
+                logger.push_line("ERROR: Transmission error.");
+                return "";
+            }
 
             size_t urlPos = responseBuffer.find("\"html_url\": \"https://github.com/");
 
@@ -149,7 +312,15 @@ namespace GitHub
                 urlPos += 13;
                 return responseBuffer.substr(urlPos, responseBuffer.find('"', urlPos) - urlPos);
             }
+
+            logger.push_line("Error: GitHub API reported a problem.");
+            logger.push_line("Payload:");
+            logger.push_line(jsonString);
+            logger.push_line("API response:");
+            logger.push_line(responseBuffer);
         }
+        else
+            logger.push_line("ERROR: Internal cURL problem.");
 
         return "";
     }

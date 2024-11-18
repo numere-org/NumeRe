@@ -42,6 +42,22 @@ static const std::string sApiUrl = "https://api.github.com/repos/numere-org/Nume
 static const std::string sRepoUrl = "https://github.com/numere-org/NumeRe/issues";
 
 /////////////////////////////////////////////////
+/// \brief Simple helper function to obtain the
+/// app root path.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getAppFilePath()
+{
+    wxStandardPaths systemPaths = wxStandardPaths::Get();
+    wxString appPath = systemPaths.GetExecutablePath();
+    wxFileName fullProgramPath(appPath);
+    return fullProgramPath.GetPath().ToStdString();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Temporary helper function to load the
 /// auth token from a file and not to have it
 /// hardcoded in code.
@@ -51,10 +67,7 @@ static const std::string sRepoUrl = "https://github.com/numere-org/NumeRe/issues
 /////////////////////////////////////////////////
 static std::string loadAuthToken()
 {
-    wxStandardPaths systemPaths = wxStandardPaths::Get();
-    wxString appPath = systemPaths.GetExecutablePath();
-    wxFileName fullProgramPath(appPath);
-    std::string sAuthFile = fullProgramPath.GetPath().ToStdString() + "/github.auth";
+    std::string sAuthFile = getAppFilePath() + "/github.auth";
     std::ifstream auth(sAuthFile);
 
     if (!auth.good())
@@ -73,7 +86,7 @@ static std::string loadAuthToken()
 /// \param errLoc ErrorLocation
 ///
 /////////////////////////////////////////////////
-ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, ErrorLocation errLoc) : wxDialog(parent, id, "Report an issue", wxDefaultPosition, wxSize(600*g_pixelScale, 720*g_pixelScale), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER), m_isCriticalIssue(false)
+ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, ErrorLocation errLoc) : wxDialog(parent, id, "Report an issue", wxDefaultPosition, wxSize(600*g_pixelScale, 730*g_pixelScale), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER), m_isCriticalIssue(false)
 {
     // Prepare the options for the dropdown and the radio group
     wxArrayString types;
@@ -99,21 +112,21 @@ ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, ErrorLocat
     wxBoxSizer* bugSizer = panel->createGroup(wxHORIZONTAL);
     wxBoxSizer* reproSizer = panel->createGroup(wxVERTICAL, bugSizer, 2);
     m_issueReproduction = panel->CreateTextInput(panel, reproSizer,
-                                                 "How to reproduce the problem (Markdown enabled) *", wxEmptyString,
+                                                 "How to reproduce the problem? (Markdown enabled) *", wxEmptyString,
                                                  wxTE_MULTILINE | wxTE_RICH2 | wxTE_BESTWRAP, wxID_ANY,
                                                  wxSize(-1, 80*g_pixelScale), wxALIGN_CENTER_VERTICAL, 2);
 
     m_logSelection = panel->CreateRadioBox(panel, bugSizer, "Attach excerpt from the log",
                                            logExcerpt, wxVERTICAL);
     m_expectedBehavior = panel->CreateTextInput(panel, panel->getMainSizer(),
-                                                "What do you expect to happen (Markdown enabled) *", wxEmptyString,
+                                                "What do you expect to happen? (Markdown enabled) *", wxEmptyString,
                                                 wxTE_MULTILINE | wxTE_RICH2 | wxTE_BESTWRAP, wxID_ANY, wxSize(-1, 80*g_pixelScale));
 
 
     m_contact = panel->CreateTextInput(panel, panel->getMainSizer(), "Mailaddress or GitHub handle to get in touch with you (opt.)");
 
     wxStaticBoxSizer* disclaimerSizer = panel->createGroup("Privacy disclaimer", wxVERTICAL);
-    wxStaticText* legalDisclaimer = panel->AddStaticText(disclaimerSizer->GetStaticBox(), disclaimerSizer, "Any information you enter here will be added to a new publicly available issue on GitHub. Please review\nthe contents carefully for any personal or confidential information before continuing.");
+    wxStaticText* legalDisclaimer = panel->AddStaticText(disclaimerSizer->GetStaticBox(), disclaimerSizer, "Any information you enter here will be added to a new publicly available issue on GitHub. Please review\nthe contents carefully for any personal or confidential information before continuing.\nThis is especially important, if you attach an excerpt of your log file.");
     legalDisclaimer->SetForegroundColour(*wxRED);
 
     wxBoxSizer* buttonSizer = panel->createGroup(wxHORIZONTAL);
@@ -145,7 +158,7 @@ ReportIssueDialog::ReportIssueDialog(wxWindow* parent, wxWindowID id, ErrorLocat
     m_logSelection->Hide();
     m_logSelection->SetSelection(0);
     m_contact->Disable();
-    m_contact->SetToolTip("It is common that we have further questions about your request, so it is necessary that we can get in touch with you. Although optional, giving us this information is greatly appreciated.\n\nYou can also give us other contact possibilities. X handles, Mastodon handles or Discord handles are also fine if you add the contact type, e.g. \"Mastodon: @numeredevs@fosstodon.org\"");
+    m_contact->SetToolTip("It is common that we have further questions about your request, so it is necessary that we can get in touch with you. Although optional, giving us this information is greatly appreciated.\n\nYou can also give us other contact possibilities. Mastodon handles or Discord handles are also fine, if you add the contact type, e.g. \"Mastodon: @numeredevs@fosstodon.org\"");
     m_okButton->Disable();
 
     // Is this an automatic crash report?
@@ -228,7 +241,8 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
         // Transmit via CURL
         std::string sIssueUrl = GitHub::create(issue,
                                                sApiUrl,
-                                               sAuthToken);
+                                               sAuthToken,
+                                               getAppFilePath());
 
         if (sIssueUrl.length())
         {
@@ -242,7 +256,7 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
         }
         else
         {
-            int ret = wxMessageBox("We could not create the issue successfully.\n\nDo you want to create it manually via your browser? You will need a GitHub account, though.\n(We'll keep this dialog open for you.)",
+            int ret = wxMessageBox("We could not create the issue successfully.\n\nDo you want to create it manually via your browser? You will need a GitHub account, though.\n(We'll keep this dialog open for you. Diagnostic information can be found in 'github.log'.)",
                                    "Error in issue creation", wxCENTER | wxYES | wxNO | wxICON_ERROR, this);
 
             if (ret == wxYES)
