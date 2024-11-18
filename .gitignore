@@ -51,3 +51,4 @@ NumeRe.layout
 
 *.revisions
 *.cppcheck
+/secureauth.hpp

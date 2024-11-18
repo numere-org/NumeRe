@@ -25,6 +25,12 @@
 #include "../../network/githubapi.hpp"
 #include "../../kernel/core/version.h"
 
+#ifdef RELEASE
+// This file securely encodes the github api token. It cannot be found in the
+// repository for this reason and is only compiled within the release version.
+#include "../../secureauth.hpp"
+#endif // RELEASE
+
 extern const std::string sVersion;
 
 BEGIN_EVENT_TABLE(ReportIssueDialog, wxDialog)
@@ -68,6 +74,21 @@ static std::string getAppFilePath()
 static std::string loadAuthToken()
 {
     std::string sAuthFile = getAppFilePath() + "/github.auth";
+
+    if (!wxFileName::Exists(sAuthFile))
+    {
+#ifdef RELEASE
+        // This function decodes the encrypted github auth token and is
+        // not part of this repository for this reason. If you don't trust
+        // this code section: create a "github.auth" file within the
+        // NumeRe root directory and put your github auth token as single
+        // content into it. If the code finds this file, the following line
+        // is never executed.
+        return "ghp_" + getAuthToken();
+#endif // RELEASE
+        return "";
+    }
+
     std::ifstream auth(sAuthFile);
 
     if (!auth.good())
