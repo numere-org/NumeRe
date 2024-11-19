@@ -668,6 +668,30 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Implements the inline conditional
+    /// operator.
+    ///
+    /// \param cond const Array&
+    /// \param true_case const Array&
+    /// \param false_case const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array ParserBase::evalIfElse(const Array& cond, const Array& true_case, const Array& false_case)
+    {
+        size_t elems = std::max({cond.size(), true_case.size(), false_case.size()});
+        Array ret(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            ret.get(i) = cond.get(i) ? true_case.get(i) : false_case.get(i);
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Internal alias function to construct a
     /// vector from a list of elements.
     ///
@@ -1439,7 +1463,7 @@ namespace mu
 
 		// Push dummy value representing the function result to the stack
 		token_type token;
-		token.SetVal(Array(Value(1.0)));
+		token.SetVal(Array(Value("rv@" + funTok.GetAsString())));
 		a_stVal.push(token);
 	}
 
@@ -1725,17 +1749,16 @@ namespace mu
                     Stack[sidx] = pTok->Oprt().var -= Value(1);
                     continue;
 
-                case  cmIF:
-#warning TODO (numere#2#08/11/24): Solve this for vectorisation -> NEW ISSUE
+                case  cmIF: // Not needed right now, operator converted to a function
                     if (!all(Stack[sidx--]))
                         pTok += pTok->Oprt().offset;
                     continue;
 
-                case  cmELSE:
+                case  cmELSE: // Not needed right now, operator converted to a function
                     pTok += pTok->Oprt().offset;
                     continue;
 
-                case  cmENDIF:
+                case  cmENDIF: // Not needed right now, operator converted to a function
                     continue;
 
                 // value and variable tokens
@@ -2044,17 +2067,16 @@ namespace mu
                         Stack[sidx] = pTok->Oprt().var -= Value(1);
                         continue;
 
-                    case  cmIF:
-#warning TODO (numere#2#08/11/24): Solve this for vectorisation -> NEW ISSUE
+                    case  cmIF: // Not needed right now, operator converted to a function
                         if (!all(Stack[sidx--]))
                             pTok += pTok->Oprt().offset;
                         continue;
 
-                    case  cmELSE:
+                    case  cmELSE: // Not needed right now, operator converted to a function
                         pTok += pTok->Oprt().offset;
                         continue;
 
-                    case  cmENDIF:
+                    case  cmENDIF: // Not needed right now, operator converted to a function
                         continue;
 
                     // value and variable tokens
@@ -2310,7 +2332,6 @@ namespace mu
 
 						    break;
 						}
-
                     }
 
 					m_nIfElseCounter--;
@@ -2318,12 +2339,7 @@ namespace mu
 					if (m_nIfElseCounter < 0) // zweiter noetiger check
 						Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
 
-					ApplyRemainingOprt(stOpt, stVal);
-					m_compilingState.m_byteCode.AddIfElse(cmELSE);
-					stOpt.push(opt);
-					break;
-
-
+                // falltrough intended
 				case cmARG_SEP:
 					if (stArgCount.empty())
 						Error(ecUNEXPECTED_ARG_SEP, m_pTokenReader->GetPos());
@@ -2332,7 +2348,6 @@ namespace mu
 
 				// fallthrough intentional (no break!)
 				case cmEND:
-				    //varArrayCandidate = false;
 					ApplyRemainingOprt(stOpt, stVal);
 
 					if (stOpt.size())
@@ -2393,6 +2408,13 @@ namespace mu
                             }
                         }
 
+                        if (stOpt.size() && stOpt.top().GetCode() == cmIF)
+                        {
+                            stArgCount.pop();
+                            stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
+                            ApplyFunc(stOpt, stVal, 3);
+                        }
+
 						// Check if the bracket content has been evaluated completely
 						if (stOpt.size() && ((stOpt.top().GetCode() == cmBO && opt.GetCode() == cmBC)
                                              || (stOpt.top().GetCode() == cmVO && opt.GetCode() == cmVC)))
@@ -2443,6 +2465,7 @@ namespace mu
 							if (stOpt.size()
 								&& stOpt.top().GetCode() != cmOPRT_INFIX
 								&& stOpt.top().GetCode() != cmOPRT_BIN
+								&& stOpt.top().GetCode() != cmIF
 								&& (stOpt.top().GetFuncAddr() != nullptr || stOpt.top().GetCode() == cmMETHOD))
 							{
 								ApplyFunc(stOpt, stVal, iArgCount);
@@ -2486,7 +2509,6 @@ namespace mu
 					while ( stOpt.size() &&
 							stOpt.top().GetCode() != cmBO &&
 							stOpt.top().GetCode() != cmVO &&
-							stOpt.top().GetCode() != cmELSE &&
 							stOpt.top().GetCode() != cmIF)
 					{
 						int nPrec1 = GetOprtPrecedence(stOpt.top()),
@@ -2516,7 +2538,7 @@ namespace mu
 					} // while ( ... )
 
 					if (opt.GetCode() == cmIF)
-						m_compilingState.m_byteCode.AddIfElse(opt.GetCode());
+                        stArgCount.push(2); // This operator separates already two values
 
 					// The operator can't be evaluated right now, push back to the operator stack
 					stOpt.push(opt);
@@ -2589,6 +2611,13 @@ namespace mu
 
 			if (opt.GetCode() == cmEND)
 			{
+                if (stOpt.size() && stOpt.top().GetCode() == cmIF && stArgCount.top() == 3)
+                {
+                    stArgCount.pop();
+                    stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
+                    ApplyFunc(stOpt, stVal, 3);
+                }
+
 				m_compilingState.m_byteCode.Finalize();
 				break;
 			}
@@ -2600,6 +2629,7 @@ namespace mu
 //				m_compilingState.m_byteCode.AsciiDump();
 			//}
 		} // while (true)
+
 
 #ifndef PARSERSTANDALONE
 		if (ParserBase::g_DbgDumpCmdCode)

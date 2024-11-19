@@ -2825,7 +2825,7 @@ mu::Array strfnc_geterrormessage(const mu::Array& errCode)
     return msg;
 }
 
-
+#ifndef PARSERSTANDALONE
 /////////////////////////////////////////////////
 /// \brief Simple helper to convert the build
 /// date into a time point.
@@ -2839,7 +2839,7 @@ static sys_time_point getBuildDate()
     ts.m_ymd = date::year(std::atoi(AutoVersion::YEAR)) / date::month(std::atoi(AutoVersion::MONTH)) / date::day(std::atoi(AutoVersion::DATE));
     return getTimePointFromTimeStamp(ts);
 }
-
+#endif
 
 /////////////////////////////////////////////////
 /// \brief Implementation of the getversioninfo()

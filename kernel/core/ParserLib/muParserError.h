@@ -33,10 +33,8 @@
 #include <vector>
 #include <memory>
 
-#include "../ui/language.hpp"
 #include "muParserDef.h"
 
-extern Language _lang;
 
 /** \file
     \brief This file defines the error class used by the parser.
