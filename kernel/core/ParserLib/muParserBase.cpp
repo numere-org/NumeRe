@@ -1711,42 +1711,42 @@ namespace mu
 
                 case  cmASSIGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
+                    Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmADDASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1];
+                    Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmSUBASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1];
+                    Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmMULASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1];
+                    Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmDIVASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1];
+                    Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmPOWASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]);
+                    Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]); // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmINCR:
                     //--sidx;
-                    Stack[sidx] = pTok->Oprt().var += Value(1);
+                    Stack[sidx] = pTok->Oprt().var += Value(1); // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmDECR:
                     //--sidx;
-                    Stack[sidx] = pTok->Oprt().var -= Value(1);
+                    Stack[sidx] = pTok->Oprt().var -= Value(1); // Potential: copy is avoidable, if vars are stored as refs
                     continue;
 
                 case  cmIF: // Not needed right now, operator converted to a function
@@ -1763,11 +1763,11 @@ namespace mu
 
                 // value and variable tokens
                 case  cmVAL:
-                    Stack[++sidx] =  pTok->Val().data2;
+                    Stack[++sidx] =  pTok->Val().data2; // Potential: this copy could be a ref
                     continue;
 
                 case  cmVAR:
-                    Stack[++sidx] = *pTok->Val().var;
+                    Stack[++sidx] = *pTok->Val().var; // Potential: this copy could be a ref
                     continue;
 
                 case  cmVARARRAY:
@@ -3046,10 +3046,11 @@ namespace mu
 
         // assign the results of the calculation to a possible
         // temporary vector
+        /*
         ExpressionTarget& target = getTarget();
 
         if (target.isValid() && m_state->m_usedVar.find("_~TRGTVCT[~]") != m_state->m_usedVar.end())
-            target.assign(m_buffer, nStackSize);
+            target.assign(m_buffer, nStackSize);*/
 
         if (g_DbgDumpStack)
             print("ParserBase::Eval() @ ["

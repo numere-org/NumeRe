@@ -58,12 +58,12 @@
 mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 {
     mu::Array res;
-    res.reserve(v.size());
+    res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res.push_back(mu::Numerical(std::complex<double>(v[i].getNum().asCF64().imag() != 0.0 ? -v[i].getNum().asCF64().imag() : 0.0,
-                                                         v[i].getNum().asCF64().real())));
+        res[i] = mu::Numerical(std::complex<double>(v[i].getNum().asCF64().imag() != 0.0 ? -v[i].getNum().asCF64().imag() : 0.0,
+                                                    v[i].getNum().asCF64().real()));
     }
 
     return res;
@@ -81,11 +81,11 @@ mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 mu::Array numfnc_real(const mu::Array& v)
 {
     mu::Array res;
-    res.reserve(v.size());
+    res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res.push_back(mu::Numerical(v[i].getNum().asF64()));
+        res[i] = mu::Numerical(v[i].getNum().asF64());
     }
 
     return res;
@@ -103,11 +103,11 @@ mu::Array numfnc_real(const mu::Array& v)
 mu::Array numfnc_imag(const mu::Array& v)
 {
     mu::Array res;
-    res.reserve(v.size());
+    res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res.push_back(mu::Numerical(v[i].getNum().asCF64().imag()));
+        res[i] = mu::Numerical(v[i].getNum().asCF64().imag());
     }
 
     return res;
@@ -126,12 +126,12 @@ mu::Array numfnc_imag(const mu::Array& v)
 mu::Array numfnc_rect2polar(const mu::Array& v)
 {
     mu::Array res;
-    res.reserve(v.size());
+    res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res.push_back(mu::Numerical(std::complex<double>(std::abs(v[i].getNum().asCF64()),
-                                                         std::arg(v[i].getNum().asCF64()))));
+        res[i] = mu::Numerical(std::complex<double>(std::abs(v[i].getNum().asCF64()),
+                                                    std::arg(v[i].getNum().asCF64())));
     }
 
     return res;
@@ -150,12 +150,12 @@ mu::Array numfnc_rect2polar(const mu::Array& v)
 mu::Array numfnc_polar2rect(const mu::Array& v)
 {
     mu::Array res;
-    res.reserve(v.size());
+    res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res.push_back(mu::Numerical(std::polar(v[i].getNum().asCF64().real(),
-                                               v[i].getNum().asCF64().imag())));
+        res[i] = mu::Numerical(std::polar(v[i].getNum().asCF64().real(),
+                                          v[i].getNum().asCF64().imag()));
     }
 
     return res;
@@ -188,12 +188,12 @@ mu::Array numfnc_conj(const mu::Array& v)
 mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 {
     mu::Array res;
-    res.reserve(std::max(re.size(), im.size()));
+    res.resize(std::max(re.size(), im.size()));
 
-    for (size_t i = 0; i < std::max(re.size(), im.size()); i++)
+    for (size_t i = 0; i < res.size(); i++)
     {
-        res.push_back(mu::Numerical(std::complex<double>(re[i].getNum().asF64(),
-                                                         im[i].getNum().asF64())));
+        res[i] = mu::Numerical(std::complex<double>(re[i].getNum().asF64(),
+                                                    im[i].getNum().asF64()));
     }
 
     return res;
@@ -211,13 +211,14 @@ mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
 {
     mu::Array res;
+    res.reserve(idx.size());
 
     for (size_t i = 0; i < idx.size(); i++)
     {
         int64_t n = idx.get(i).getNum().asI64();
 
         if (n > 0 && (size_t)n <= a.size())
-            res.push_back(a.get(n-1));
+            res.emplace_back(a.get(n-1));
     }
 
     return res;
@@ -866,7 +867,7 @@ mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, con
 
     for (size_t i = 0; i < std::max(value.size(), mode.size()); i++)
     {
-        res.push_back(compare_impl(vElements, value.get(i), mode.get(i)));
+        res.emplace_back(compare_impl(vElements, value.get(i), mode.get(i)));
     }
 
     return res;
@@ -1033,17 +1034,17 @@ mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array&
             perlinNoise.SetSeed(seed.get(i).getNum().asI64());
 
         if (z.isDefault() && y.isDefault())
-            res.push_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
-                                               0,
-                                               0));
+            res.emplace_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
+                                                  0,
+                                                  0));
         else if (z.isDefault())
-            res.push_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
-                                               y.get(i).getNum().asF64(),
-                                               0));
+            res.emplace_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
+                                                  y.get(i).getNum().asF64(),
+                                                  0));
         else
-            res.push_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
-                                               y.get(i).getNum().asF64(),
-                                               z.get(i).getNum().asF64()));
+            res.emplace_back(perlinNoise.GetValue(x.get(i).getNum().asF64(),
+                                                  y.get(i).getNum().asF64(),
+                                                  z.get(i).getNum().asF64()));
     }
 
     return res;
@@ -1082,17 +1083,17 @@ mu::Array rndfnc_rigedmultifractal(const mu::Array& x, const mu::Array& y, const
             rigedMultiNoise.SetSeed(seed.get(i).getNum().asI64());
 
         if (z.isDefault() && y.isDefault())
-            res.push_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
-                                                   0,
-                                                   0));
+            res.emplace_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                      0,
+                                                      0));
         else if (z.isDefault())
-            res.push_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
-                                                   y.get(i).getNum().asF64(),
-                                                   0));
+            res.emplace_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                      y.get(i).getNum().asF64(),
+                                                      0));
         else
-            res.push_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
-                                                   y.get(i).getNum().asF64(),
-                                                   z.get(i).getNum().asF64()));
+            res.emplace_back(rigedMultiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                      y.get(i).getNum().asF64(),
+                                                      z.get(i).getNum().asF64()));
     }
 
     return res;
@@ -1135,17 +1136,17 @@ mu::Array rndfnc_billow(const mu::Array& x, const mu::Array& y, const mu::Array&
             billowNoise.SetSeed(seed.get(i).getNum().asI64());
 
         if (z.isDefault() && y.isDefault())
-            res.push_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
-                                               0,
-                                               0));
+            res.emplace_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
+                                                  0,
+                                                  0));
         else if (z.isDefault())
-            res.push_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
-                                               y.get(i).getNum().asF64(),
-                                               0));
+            res.emplace_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
+                                                  y.get(i).getNum().asF64(),
+                                                  0));
         else
-            res.push_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
-                                               y.get(i).getNum().asF64(),
-                                               z.get(i).getNum().asF64()));
+            res.emplace_back(billowNoise.GetValue(x.get(i).getNum().asF64(),
+                                                  y.get(i).getNum().asF64(),
+                                                  z.get(i).getNum().asF64()));
     }
 
     return res;
@@ -1188,17 +1189,17 @@ mu::Array rndfnc_voronoi(const mu::Array& x, const mu::Array& y, const mu::Array
             voronoiNoise.SetSeed(seed.get(i).getNum().asI64());
 
         if (z.isDefault() && y.isDefault())
-            res.push_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
-                                                0,
-                                                0));
+            res.emplace_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                   0,
+                                                   0));
         else if (z.isDefault())
-            res.push_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
-                                                y.get(i).getNum().asF64(),
-                                                0));
+            res.emplace_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                   y.get(i).getNum().asF64(),
+                                                   0));
         else
-            res.push_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
-                                                y.get(i).getNum().asF64(),
-                                                z.get(i).getNum().asF64()));
+            res.emplace_back(voronoiNoise.GetValue(x.get(i).getNum().asF64(),
+                                                   y.get(i).getNum().asF64(),
+                                                   z.get(i).getNum().asF64()));
     }
 
     return res;
@@ -1223,7 +1224,7 @@ mu::Array numfnc_logtoidx(const mu::Array* v, int n)
         for (size_t i = 0; i < v[0].size(); i++)
         {
             if (v[0][i].isValid() && v[0][i])
-                vIdx.push_back(mu::Value(i+1));
+                vIdx.emplace_back(uint64_t(i+1));
         }
     }
     else
@@ -1231,12 +1232,12 @@ mu::Array numfnc_logtoidx(const mu::Array* v, int n)
         for (int i = 0; i < n; i++)
         {
             if (v[i].front().isValid() && v[i].front())
-                vIdx.push_back(mu::Value(i+1));
+                vIdx.emplace_back(uint64_t(i+1));
         }
     }
 
     if (!vIdx.size())
-        vIdx.push_back(mu::Value(0));
+        vIdx.emplace_back(uint64_t(0));
 
     return vIdx;
 }
@@ -6049,12 +6050,13 @@ mu::Array timfnc_get_utc_offset()
 mu::Array timfnc_is_leap_year(const mu::Array& nDate)
 {
     mu::Array ret;
+    ret.reserve(nDate.size());
 
     for (size_t i = 0; i < nDate.size(); i++)
     {
         time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.get(i).getNum().asF64()));
         int nYear = int(ts.m_ymd.year());
-        ret.push_back(nYear % 4 == 0 && (nYear % 100 != 0 || nYear % 400 == 0));
+        ret.emplace_back(nYear % 4 == 0 && (nYear % 100 != 0 || nYear % 400 == 0));
     }
 
     return ret;
@@ -6072,6 +6074,7 @@ mu::Array timfnc_is_leap_year(const mu::Array& nDate)
 mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
 {
     mu::Array ret;
+    ret.reserve(nDate.size());
 
     for (size_t i = 0; i < nDate.size(); i++)
     {
@@ -6089,7 +6092,7 @@ mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
         __time64_t timestamp = _mktime64(&time_info);
         std::tm* local_time = _localtime64(&timestamp);
 
-        ret.push_back(local_time != nullptr && local_time->tm_isdst > 0);
+        ret.emplace_back(local_time != nullptr && local_time->tm_isdst > 0);
     }
 
     return ret;
@@ -6127,10 +6130,10 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
                     id = std::max(id, res.get(j).getCategory().val.asI64()+1);
             }
 
-            res.push_back(mu::Category{.val{id}, .name{name}});
+            res.emplace_back(mu::Category{.val{id}, .name{name}});
         }
         else
-            res.push_back(mu::Category{.val{ids.get(i).getNum().asI64()}, .name{cats.get(i).getStr()}});
+            res.emplace_back(mu::Category{.val{ids.get(i).getNum().asI64()}, .name{cats.get(i).getStr()}});
     }
 
     return res;

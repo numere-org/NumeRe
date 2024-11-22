@@ -34,9 +34,9 @@ namespace mu
         Array ret;
         ret.reserve(a.size());
 
-        for (const auto& val : a)
+        for (size_t i = 0; i < a.size(); i++)
         {
-            ret.push_back(Numerical(func(val.getNum().asCF64())));
+            ret.emplace_back(func(a[i].getNum().asCF64()));
         }
 
         return ret;
@@ -54,11 +54,11 @@ namespace mu
     Array apply(Value(*func)(const Value&), const Array& a)
     {
         Array ret;
-        ret.reserve(a.size());
+        ret.resize(a.size());
 
-        for (const auto& val : a)
+        for (size_t i = 0; i < a.size(); i++)
         {
-            ret.push_back(func(val));
+            ret[i] = func(a[i]);
         }
 
         return ret;
@@ -78,9 +78,9 @@ namespace mu
         Array ret;
         ret.reserve(a.size());
 
-        for (const auto& val : a)
+        for (size_t i = 0; i < a.size(); i++)
         {
-            ret.push_back(func(val.getStr()));
+            ret.emplace_back(func(a[i].getStr()));
         }
 
         return ret;
@@ -100,11 +100,11 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&), const Array& a1, const Array& a2)
     {
         Array ret;
-        ret.reserve(std::max(a1.size(), a2.size()));
+        ret.resize(std::max(a1.size(), a2.size()));
 
-        for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+        for (size_t i = 0; i < ret.size(); i++)
         {
-            ret.push_back(func(a1.get(i), a2.get(i)));
+            ret[i] = func(a1.get(i), a2.get(i));
         }
 
         return ret;
@@ -125,10 +125,10 @@ namespace mu
         Array ret;
         ret.reserve(std::max(a1.size(), a2.size()));
 
-        for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+        for (size_t i = 0; i < ret.capacity(); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
-                                         a2.get(i).getNum().asCF64())));
+            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
+                                  a2.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -149,11 +149,11 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
-        ret.reserve(std::max({a1.size(), a2.size(), a3.size()}));
+        ret.resize(std::max({a1.size(), a2.size(), a3.size()}));
 
-        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
+        for (size_t i = 0; i < ret.size(); i++)
         {
-            ret.push_back(func(a1.get(i), a2.get(i), a3.get(i)));
+            ret[i] = func(a1.get(i), a2.get(i), a3.get(i));
         }
 
         return ret;
@@ -176,9 +176,9 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
-                                         a2.get(i).getNum().asCF64(),
-                                         a3.get(i).getNum().asCF64())));
+            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
+                                  a2.get(i).getNum().asCF64(),
+                                  a3.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -204,10 +204,10 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
-                                         a2.get(i).getNum().asCF64(),
-                                         a3.get(i).getNum().asCF64(),
-                                         a4.get(i).getNum().asCF64())));
+            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
+                                  a2.get(i).getNum().asCF64(),
+                                  a3.get(i).getNum().asCF64(),
+                                  a4.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -228,11 +228,11 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
-        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size()}));
+        ret.resize(std::max({a1.size(), a2.size(), a3.size(), a4.size()}));
 
-        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
+        for (size_t i = 0; i < ret.size(); i++)
         {
-            ret.push_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i)));
+            ret[i] = func(a1.get(i), a2.get(i), a3.get(i), a4.get(i));
         }
 
         return ret;
@@ -259,11 +259,11 @@ namespace mu
 
         for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
         {
-            ret.push_back(Numerical(func(a1.get(i).getNum().asCF64(),
-                                         a2.get(i).getNum().asCF64(),
-                                         a3.get(i).getNum().asCF64(),
-                                         a4.get(i).getNum().asCF64(),
-                                         a5.get(i).getNum().asCF64())));
+            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
+                                  a2.get(i).getNum().asCF64(),
+                                  a3.get(i).getNum().asCF64(),
+                                  a4.get(i).getNum().asCF64(),
+                                  a5.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -285,11 +285,11 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
-        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}));
+        ret.resize(std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}));
 
-        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
+        for (size_t i = 0; i < ret.size(); i++)
         {
-            ret.push_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i)));
+            ret[i] = func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i));
         }
 
         return ret;
@@ -328,7 +328,7 @@ namespace mu
                 vVals.push_back(arrs[e].get(i).getNum().asCF64());
             }
 
-            res.push_back(Numerical(func(&vVals[0], elems)));
+            res.emplace_back(func(&vVals[0], elems));
         }
 
         return res;
@@ -365,7 +365,7 @@ namespace mu
                 vVals.push_back(arrs[e].get(i));
             }
 
-            res.push_back(func(&vVals[0], elems));
+            res.emplace_back(func(&vVals[0], elems));
         }
 
         return res;
