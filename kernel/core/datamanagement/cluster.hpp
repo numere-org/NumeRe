@@ -64,6 +64,7 @@ namespace NumeRe
             }
 
             void set(size_t i, const mu::Value& v);
+            mu::Value get(size_t i) const;
             void insertDataInArray(mu::Variable* vTarget, const VectorIndex& _vLine);
             void setValueArray(const mu::Array& a);
             void assignResults(Indices _idx, const mu::Array& data);

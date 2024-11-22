@@ -2019,8 +2019,16 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 void CategoricalColumn::setCategories(const std::vector<std::string>& vCategories)
 {
+    // Simply use the complete category set, if no categories have been set right now
+    if (!m_categories.size())
+    {
+        m_categories = vCategories;
+        return;
+    }
+
     // Vector for the old-to-new categories mapping
-    std::vector<size_t> vMap(m_categories.size(), 0);
+    std::vector<int> vMap(m_categories.size(), -1);
+    std::vector<int> vFreeList;
 
     // Create a mapping for the old categories in the set of
     // new categories. Their order might be different and some
@@ -2031,13 +2039,54 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
 
         if (iter != vCategories.end())
             vMap[i] = std::distance(vCategories.begin(), iter);
+        else if (vCategories.size() < vMap.size())
+        {
+            bool assigned = false;
+            // Find a free spot right after the new categories
+            for (size_t j = vCategories.size(); j <= i; j++)
+            {
+                if (vMap[j] >= 0 && vMap[j] < j && std::find(vMap.begin(), vMap.end(), j) == vMap.end())
+                {
+                    vMap[i] = j;
+                    assigned = true;
+                    break;
+                }
+                else if (i == j && vMap[j] == -1)
+                {
+                    vMap[j] = j;
+                    assigned = true;
+                }
+            }
+
+            if (!assigned)
+                vFreeList.push_back(i);
+        }
         else
-            vMap[i] = std::max({vCategories.size(), vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
+            vMap[i] = std::max({(int)vCategories.size(), (int)vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
+    }
+
+    // Attach all elements of the free list
+    for (size_t i = 0; i < vFreeList.size(); i++)
+    {
+        bool assigned = false;
+        // Find a free spot right after the new categories
+        for (size_t j = vCategories.size(); j < vMap.size(); j++)
+        {
+            if (vMap[j] >= 0 && vMap[j] < j && std::find(vMap.begin(), vMap.end(), j) == vMap.end())
+            {
+                vMap[vFreeList[i]] = j;
+                assigned = true;
+                break;
+            }
+        }
+
+        if (!assigned)
+            vMap[vFreeList[i]] = std::max({(int)vCategories.size(), (int)vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
     }
 
     // Resize the categories array correspondingly (might be equal in
     // size but never smaller than before)
-    m_categories.resize(std::max(vCategories.size(), (*std::max_element(vMap.begin(), vMap.end()))+1));
+    m_categories.resize(std::max((int)vCategories.size(), (*std::max_element(vMap.begin(), vMap.end()))+1));
 
     // Create a buffer for reordering
     std::vector<std::string> buffer(m_categories);

@@ -2826,6 +2826,46 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             table->AppendRows(_options.get(i+1).getNum().asI64()-r+1);
                     }
 
+                    if (_options.get(i) == mu::Value("autosize"))
+                    {
+                        if (!_options.get(i+1))
+                            continue;
+
+                        table->AutoSize();
+                        table->GetParent()->Layout();
+                    }
+
+                    if (_options.get(i) == mu::Value("autosize-cols"))
+                    {
+                        wxArrayInt cols;
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        if (_options.get(i+1).isArray())
+                        {
+                            const mu::Array& selectedCols = _options.get(i+1).getArray();
+
+                            for (size_t k = 0; k < selectedCols.size(); k++)
+                            {
+                                int64_t selected = selectedCols.get(k).getNum().asI64();
+
+                                if (currentCols < selected || selected < 1)
+                                    continue;
+
+                                cols.Add(selected-1);
+                            }
+                        }
+                        else if (_options.get(i+1).getNum().asI64() > 0 && _options.get(i+1).getNum().asI64() <= currentCols)
+                            cols.Add(_options.get(i+1).getNum().asI64()-1);
+
+                        if (!cols.size())
+                            return false;
+
+                        for (size_t i = 0; i < cols.size(); i++)
+                        {
+                            table->AutoSizeColumn(i);
+                        }
+                    }
+
                     if (_options.get(i) == mu::Value("cond-format"))
                     {
                         const mu::Array& formatting = _options.get(i+1).getArray();
