@@ -601,6 +601,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_BOOKCTRL_PAGE_CHANGED(-1, CustomWindow::OnTabChanged)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
+    cEVT_SET_OPTIONS(-1, CustomWindow::OnSetOptionsEvent)
     cEVT_SET_SELECTION(-1, CustomWindow::OnSetSelectionEvent)
     cEVT_SET_FOCUS(-1, CustomWindow::OnSetFocusEvent)
 END_EVENT_TABLE()
@@ -2316,6 +2317,22 @@ bool CustomWindow::pushItemValue(WindowItemValue& _value, int windowItemID)
 bool CustomWindow::pushItemLabel(const mu::Array& _label, int windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetLabelEvent(SET_WINDOW_LABEL, GetId(), windowItemID, _label));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push an item options change to the
+/// internal event handler.
+///
+/// \param _opts const mu::Array&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemOptions(const mu::Array& _opts, int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetOptionsEvent(SET_WINDOW_OPTIONS, GetId(), windowItemID, _opts));
     return true;
 }
 

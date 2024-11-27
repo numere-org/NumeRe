@@ -24,6 +24,8 @@
 #include "../ParserLib/muParserTemplateMagic.h"
 #define _USE_MATH_DEFINES
 
+extern double g_pixelScale;
+
 #include <cmath>
 #include <string>
 #include <boost/math/common_factor.hpp>
@@ -3933,6 +3935,19 @@ mu::Array numfnc_omp_threads()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the someswhat measured
+/// pixelscale applied by MS Windows.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_pixelscale()
+{
+    return mu::Value(g_pixelScale);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Internal implementation of the date()
 /// function.
 ///
@@ -4057,6 +4072,20 @@ mu::Array timfnc_weeknum(const mu::Array& vTime)
 mu::Array numfnc_isnan(const mu::Array& v)
 {
     return v != v;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Detect, whether a value is a void
+/// value.
+///
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_isvoid(const mu::Array& v)
+{
+    return mu::Value(v.getCommonType() == mu::TYPE_VOID);
 }
 
 

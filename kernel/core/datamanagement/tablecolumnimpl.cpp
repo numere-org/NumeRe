@@ -2130,6 +2130,20 @@ void CategoricalColumn::mergeCategories(const std::vector<std::string>& vCategor
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Check, whether a string is actually a
+/// category value.
+///
+/// \param candidate const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CategoricalColumn::isCategory(const std::string& candidate) const
+{
+    return std::find(m_categories.begin(), m_categories.end(), candidate) != m_categories.end();
+}
+
+
 
 /////////////////////////////////////////////////
 /// \brief Promote the datatype of the passed

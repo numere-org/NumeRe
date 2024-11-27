@@ -534,7 +534,7 @@ namespace NumeRe
     bool Window::setItemOptions(const mu::Array& _options, int windowItemID)
     {
         if (m_customWindow)
-            return m_customWindow->setItemOptions(_options, windowItemID);
+            return m_customWindow->pushItemOptions(_options, windowItemID);
 
         return false;
     }

@@ -783,6 +783,14 @@ namespace mu
             throw ParserError(ecTYPE_MISMATCH);
         }
 
+        if (isCategory())
+        {
+            if (other.getNum().isInt() && other.getNum().asI64() == 1)
+                return *this;
+
+            return getNum() * other.getNum();
+        }
+
         if (common == TYPE_NUMERICAL)
             return getNum() * other.getNum();
 
@@ -974,8 +982,13 @@ namespace mu
             throw ParserError(ecTYPE_MISMATCH_OOB);
         }
 
-        if (isCategory())
+        /*if (isCategory())
+        {
+            if (other.getNum().isInt() && other.getNum().asI64() == 1)
+                return *this;
+
             return operator=(getNum() * other.getNum());
+        }*/
 
         if (isNumerical())
             getNum() *= other.getNum();

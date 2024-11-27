@@ -335,33 +335,51 @@ namespace NumeRe
         // Resize the table if needed
         this->setMinSize(i+1, j+1);
 
-        if (vTableData[j])
-            vTableData[j]->deleteElements(VectorIndex(i));
-
         // Empty value means only deletion
         if (!_sValue.length())
-            return;
-
-        // Is it a numerical value?
-        if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
         {
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_DATETIME);
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
+
+            return;
+        }
+        else if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
+        {
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
+
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_DATETIME, false);
             vTableData[j]->setValue(i, to_double(StrToTime(_sValue)));
         }
         else if (isConvertible(_sValue, CONVTYPE_VALUE))
         {
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
+
             std::complex<double> val = StrToCmplx(_sValue);
             convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE, val.imag() != 0.0);
             vTableData[j]->setValue(i, val);
         }
         else if (isConvertible(_sValue, CONVTYPE_LOGICAL))
         {
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_LOGICAL);
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
+
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_LOGICAL, false);
             vTableData[j]->setValue(i, StrToLogical(_sValue));
         }
         else
         {
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING);
+            if (!vTableData[j]
+                || vTableData[j]->m_type != TableColumn::TYPE_CATEGORICAL
+                || !static_cast<CategoricalColumn*>(vTableData[j].get())->isCategory(_sValue))
+            {
+                if (vTableData[j])
+                    vTableData[j]->deleteElements(VectorIndex(i));
+
+                convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING, false);
+            }
+
             vTableData[j]->setValue(i, _sValue);
         }
     }
