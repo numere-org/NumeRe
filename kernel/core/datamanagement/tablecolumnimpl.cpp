@@ -1061,7 +1061,7 @@ mu::Value StringColumn::get(size_t elem) const
     if (elem < m_data.size())
         return m_data[elem];
 
-    return NAN;
+    return "";
 }
 
 
@@ -1118,7 +1118,10 @@ void StringColumn::setValue(size_t elem, const std::complex<double>& vValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1);
 
-    m_data[elem] = toString(vValue, NumeReKernel::getInstance()->getSettings().getPrecision());
+    if (mu::isnan(vValue))
+        m_data[elem] = "";
+    else
+        m_data[elem] = toString(vValue, NumeReKernel::getInstance()->getSettings().getPrecision());
 }
 
 

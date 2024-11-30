@@ -28,12 +28,14 @@
 #define DATESTRINGLEN 24
 
 // Define the standard colors
-static wxColour HeadlineColor = wxColour(192, 192, 192);
+//static wxColour HeadlineColor = wxColour(192, 192, 192);
+static wxColour HeadlineColor = wxColour(140, 204, 242);
 static wxColour FrameColor = wxColour(230, 230, 230);
 static wxColour HighlightColor = wxColour(192, 227, 248);
 static wxColour HighlightTextColor = wxColour(226, 242, 252);
 //static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
 static wxColour HighlightHeadlineColor = wxColour(80, 176, 235);
+static wxColour rowColor = wxColour(226, 242, 252);
 
 /////////////////////////////////////////////////
 /// \brief Calculates the luminosity of the
@@ -112,9 +114,7 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             else if (hasCustomColor())
             {
                 highlightAttr = createCustomColorAttr(attr, grid, row, col);
-                //static double highlightLuminosity = calculateLuminosity(HighlightColor);
                 double bgLuminosity = calculateLuminosity(highlightAttr->GetBackgroundColour());
-//                double factor = (bgLuminosity/highlightLuminosity-1.0)*0.8 + 1.0;
                 double factor = ((bgLuminosity / 255.0 * 0.8) + 0.2);
 
                 highlightAttr->SetBackgroundColour(wxColour(std::min(255.0, HighlightColor.Red() * factor),
@@ -124,7 +124,18 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             else
             {
                 highlightAttr = attr.Clone();
-                highlightAttr->SetBackgroundColour(HighlightColor);
+                double bgLuminosity = 255.0;
+
+                if (highlightAttr->GetBackgroundColour() != *wxWHITE)
+                    bgLuminosity = calculateLuminosity(highlightAttr->GetBackgroundColour());
+                else if (!(row % 2))
+                    bgLuminosity = calculateLuminosity(rowColor);
+
+                double factor = ((bgLuminosity / 255.0 * 0.8) + 0.2);
+
+                highlightAttr->SetBackgroundColour(wxColour(std::min(255.0, HighlightColor.Red() * factor),
+                                                            std::min(255.0, HighlightColor.Green() * factor),
+                                                            std::min(255.0, HighlightColor.Blue() * factor)));
             }
 
             return highlightAttr;
@@ -227,10 +238,17 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             }
             else
             {
+                wxGridCellAttr* newAttr = attr.Clone();
+
+                if (!(row % 2) && newAttr->GetBackgroundColour() == *wxWHITE)
+                    newAttr->SetBackgroundColour(rowColor);
+
                 if (grid.GetCellValue(row, col).length() > DATESTRINGLEN)
-                    wxGridCellAutoWrapStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+                    wxGridCellAutoWrapStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                 else
-                    wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+                    wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
+                newAttr->DecRef();
             }
         }
 
@@ -287,7 +305,16 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
                     newAttr->DecRef();
                 }
                 else
-                    wxGridCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+                {
+                    wxGridCellAttr* newAttr = attr.Clone();
+
+                    if (!(row % 2) && newAttr->GetBackgroundColour() == *wxWHITE)
+                        newAttr->SetBackgroundColour(rowColor);
+
+                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
+                    newAttr->DecRef();
+                }
 
                 // draw a check mark in the centre (ignoring alignment - TODO)
                 wxSize size = GetBestSize(grid, attr, dc, row, col);

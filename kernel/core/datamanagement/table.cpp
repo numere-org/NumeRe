@@ -343,6 +343,12 @@ namespace NumeRe
 
             return;
         }
+        else if (vTableData[j]
+                 && vTableData[j]->m_type == TableColumn::TYPE_CATEGORICAL
+                 && static_cast<CategoricalColumn*>(vTableData[j].get())->isCategory(_sValue))
+        {
+            vTableData[j]->setValue(i, _sValue);
+        }
         else if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
         {
             if (vTableData[j])
@@ -370,16 +376,10 @@ namespace NumeRe
         }
         else
         {
-            if (!vTableData[j]
-                || vTableData[j]->m_type != TableColumn::TYPE_CATEGORICAL
-                || !static_cast<CategoricalColumn*>(vTableData[j].get())->isCategory(_sValue))
-            {
-                if (vTableData[j])
-                    vTableData[j]->deleteElements(VectorIndex(i));
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
 
-                convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING, false);
-            }
-
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING, false);
             vTableData[j]->setValue(i, _sValue);
         }
     }

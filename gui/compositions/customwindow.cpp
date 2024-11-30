@@ -2825,6 +2825,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
             {
                 TableViewer* table = static_cast<TableViewer*>(object.second);
 
+                bool fitSize = false;
+
                 for (size_t i = 0; i < _options.size(); i+=2)
                 {
                     if (_options.get(i) == mu::Value("min-cols"))
@@ -2843,16 +2845,13 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             table->AppendRows(_options.get(i+1).getNum().asI64()-r+1);
                     }
 
-                    if (_options.get(i) == mu::Value("autosize"))
-                    {
-                        if (!_options.get(i+1))
-                            continue;
+                    if (_options.get(i) == mu::Value("use-qmarks"))
+                        table->enableQuotationMarks((bool)_options.get(i+1));
 
-                        table->AutoSize();
-                        table->GetParent()->Layout();
-                    }
+                    if (_options.get(i) == mu::Value("fitsize"))
+                        fitSize = (bool)_options.get(i+1);
 
-                    if (_options.get(i) == mu::Value("autosize-cols"))
+                    if (_options.get(i) == mu::Value("fitsize-cols"))
                     {
                         wxArrayInt cols;
                         int64_t currentCols = table->GetNumberCols()-1;
@@ -3034,6 +3033,151 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             }
                         }
                     }
+
+                    if (_options.get(i) == mu::Value("cell-format"))
+                    { // "cell-format", {CELLS, FORMATTING, CELLS, FORMATTING, ...}
+                        const mu::Array& formatting = _options.get(i+1).getArray();
+                        int64_t currentRows = table->GetNumberRows()-1;
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        for (size_t j = 0; j < formatting.size(); j+=2)
+                        {
+                            wxGridCellCoordsArray cells;
+
+                            // CELLS = {r, c} or {{r}, {c}}
+                            if (!formatting.get(j).isArray())
+                                return false;
+
+                            mu::Array rows = formatting.get(j).getArray().get(0);
+                            mu::Array cols = formatting.get(j).getArray().get(1);
+
+                            for (size_t k = 0; k < std::max(rows.size(), cols.size()); k++)
+                            {
+                                int64_t row = rows.get(k).getNum().asI64();
+                                int64_t col = cols.get(k).getNum().asI64();
+
+                                if (row > 0 && row <= currentRows && col > 0 && col <= currentCols)
+                                    cells.Add(wxGridCellCoords(row-1, col-1));
+                            }
+
+                            if (!cells.size())
+                                return false;
+
+                            wxGridCellAttr* attr = new wxGridCellAttr();
+
+                            const mu::Array& definition = formatting.get(j+1).getArray();
+
+                            for (size_t n = 0; n < definition.size(); n+=2)
+                            {
+                                if (definition.get(n) == mu::Value("font"))
+                                {
+                                    wxFont font = table->GetDefaultCellFont();
+                                    std::string sFormattingString = definition.get(n+1).getStr();
+
+                                    for (const char c : sFormattingString)
+                                    {
+                                        switch (c)
+                                        {
+                                        case 'i':
+                                            font.MakeItalic();
+                                            break;
+                                        case 'b':
+                                            font.MakeBold();
+                                            break;
+                                        case 'u':
+                                            font.MakeUnderlined();
+                                            break;
+                                        case 'x':
+                                            font.MakeStrikethrough();
+                                            break;
+                                        case 's':
+                                            font.MakeSmaller();
+                                            break;
+                                        case 'l':
+                                            font.MakeLarger();
+                                            break;
+                                        }
+                                    }
+
+                                    attr->SetFont(font);
+                                }
+
+                                if (definition.get(n) == mu::Value("color"))
+                                    attr->SetTextColour(wxColour(definition.get(n+1).getStr()));
+
+                                if (definition.get(n) == mu::Value("bgcolor"))
+                                    attr->SetBackgroundColour(wxColour(definition.get(n+1).getStr()));
+                            }
+
+                            for (size_t n = 0; n < cells.size(); n++)
+                            {
+                                table->SetAttr(table->GetExternalRows(cells[n].GetRow()),
+                                               cells[n].GetCol(),
+                                               attr->Clone());
+                            }
+
+                            attr->DecRef();
+                            table->Refresh();
+                        }
+                    }
+
+                    if (_options.get(i) == mu::Value("col-labels"))
+                    {// "col-labels", {{COLS},{LABELS}}, ...
+                        const mu::Array& labelDef = _options.get(i+1).getArray();
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        mu::Array cols = labelDef.get(0);
+                        mu::Array labels = labelDef.get(1);
+
+                        for (size_t j = 0; j < std::max(cols.size(), labels.size()); j++)
+                        {
+                            int64_t col = cols.get(j).getNum().asI64();
+
+                            if (col <= 0 || col > currentCols)
+                                continue;
+
+                            table->SetColLabelValue(col-1, labels.get(j).getStr());
+                        }
+                    }
+
+                    if (_options.get(i) == mu::Value("hide-rows"))
+                    {// "hide-rows", {COLS}, ...
+                        mu::Array rows = _options.get(i+1);
+                        int64_t currentRows = table->GetNumberRows()-1;
+
+                        for (size_t j = 0; j < rows.size(); j++)
+                        {
+                            int64_t row = table->GetExternalRows(rows.get(j).getNum().asI64()-1);
+
+                            if (row < 0 || row >= currentRows)
+                                continue;
+
+                            table->HideRow(row);
+                        }
+                    }
+
+                    if (_options.get(i) == mu::Value("hide-cols"))
+                    {// "hide-cols", {COLS}, ...
+                        mu::Array cols = _options.get(i+1);
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        for (size_t j = 0; j < cols.size(); j++)
+                        {
+                            int64_t col = cols.get(j).getNum().asI64();
+
+                            if (col <= 0 || col > currentCols)
+                                continue;
+
+                            table->HideCol(col-1);
+                        }
+                    }
+                }
+
+                // Resizing at the end
+                if (fitSize)
+                {
+                    table->AutoSize();
+                    table->GetParent()->Layout();
                 }
 
                 break;
