@@ -63,7 +63,7 @@ namespace mu
             virtual ~Value();
 
             Value& operator=(const Value& other);
-            //Value& operator=(Value&& other) = default;
+            Value& operator=(Value&& other);
 
             DataType getType() const;
             std::string getTypeAsString() const;
@@ -137,7 +137,7 @@ namespace mu
     /// template parameter and a bunch of customized
     /// operators.
     /////////////////////////////////////////////////
-    class Array : public std::vector<Value>
+    class Array : public std::vector<Value> // Potential: have dedicated NumArray and StrArray variants or convert Value in an abstract class
     {
         public:
             Array();
@@ -157,7 +157,7 @@ namespace mu
             Array(const Array& fst, const Array& inc, const Array& lst);
 
             Array& operator=(const Array& other);
-            //Array& operator=(Array&& other) = default;
+            Array& operator=(Array&& other);
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
@@ -258,7 +258,7 @@ namespace mu
             VarArray(const VarArray& other) = default;
             VarArray(VarArray&& other) = default;
             VarArray& operator=(const VarArray& other) = default;
-            Array operator=(const Array& values);
+            const Array& operator=(const Array& values);
             Array operator+=(const Array& values);
             Array operator-=(const Array& values);
             Array operator*=(const Array& values);

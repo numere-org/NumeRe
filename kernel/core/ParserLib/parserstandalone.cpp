@@ -26,9 +26,30 @@
 
 Language _lang;
 
+struct Base
+{
+    virtual void hello() {std::cout << "Base" << std::endl;}
+};
+struct Child : public Base
+{
+    virtual void hello() {std::cout << "Child" << std::endl;}
+};
+
 
 int main()
 {
+    /*Base b;
+    Child c;
+
+    b.hello();
+    c.hello();
+
+    Base& rb = c;
+    rb.hello(); // "child"
+    Base b2 = c;
+    b2.hello(); // "base"
+    */
+
     mu::Parser _parser;
     _parser.EnableDebugDump(true, false);
 

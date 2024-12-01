@@ -524,7 +524,27 @@ wxString GridNumeReTable::GetRowLabelValue(int row)
 /////////////////////////////////////////////////
 wxString GridNumeReTable::GetColLabelValue(int col)
 {
+    auto iter = m_customColLabels.find(col);
+
+    if (iter != m_customColLabels.end())
+        return iter->second;
+
     return toString(col+1);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets a custom column label.
+///
+/// \param col int
+/// \param label const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void GridNumeReTable::SetColLabelValue(int col, const wxString& label)
+{
+    if (col >= 0 && col < _table.getCols())
+        m_customColLabels[col] = label;
 }
 
 
@@ -744,5 +764,19 @@ std::vector<std::string> GridNumeReTable::getCategories(int col) const
         return static_cast<CategoricalColumn*>(_table.getColumn(col))->getCategories();
 
     return std::vector<std::string>();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Enable or disable the quoation marks
+/// around strings.
+///
+/// \param enable bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void GridNumeReTable::enableQuotationMarks(bool enable)
+{
+    m_showQMarks = enable;
 }
 
