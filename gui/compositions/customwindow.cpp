@@ -1615,6 +1615,13 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
 /////////////////////////////////////////////////
 void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const EventPosition& pos)
 {
+    // Ensure that any table editor is closed
+    for (auto& item : m_windowItems)
+    {
+        if (item.second.first == CustomWindow::TABLE)
+            static_cast<TableViewer*>(item.second.second)->finalize();
+    }
+
 #warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
     {
@@ -3239,12 +3246,15 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::TEXTCTRL:
         {
             TextField* field = static_cast<TextField*>(object.second);
+            int pos = std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L);
 
             if (selectionID2)
-                field->SetSelection(std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L),
+                field->SetSelection(pos,
                                     std::max(std::min((long)selectionID-1+selectionID2, (long)field->GetLastPosition()), 0L));
             else
-                field->SetInsertionPoint(std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L));
+                field->SetInsertionPoint(pos);
+
+            field->ShowPosition(pos);
 
             break;
         }
@@ -3269,8 +3279,10 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            table->SetGridCursorSilent(std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1),
-                                       std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1));
+            int row = std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1);
+            int col = std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1);
+            table->SetGridCursorSilent(row, col);
+            table->MakeCellVisible(row, col);
             break;
         }
         case CustomWindow::TREELIST:

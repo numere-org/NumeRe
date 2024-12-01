@@ -2424,10 +2424,7 @@ bool TableViewer::isSilentSelection()
 void TableViewer::enableQuotationMarks(bool enable)
 {
     if (isGridNumeReTable)
-    {
         static_cast<GridNumeReTable*>(GetTable())->enableQuotationMarks(enable);
-        Refresh();
-    }
 }
 
 
