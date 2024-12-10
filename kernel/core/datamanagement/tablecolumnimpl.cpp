@@ -196,7 +196,7 @@ std::complex<double> DateTimeColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 mu::Value DateTimeColumn::get(size_t elem) const
 {
-    if (elem < m_data.size())
+    if (elem < m_data.size() && !std::isnan(m_data[elem]))
         return to_timePoint(m_data[elem]);
 
     return NAN;

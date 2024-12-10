@@ -20,8 +20,6 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
 
-std::string removeQuotationMarks(const std::string& sString);
-
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
@@ -259,7 +257,11 @@ wxString GridNumeReTable::GetValue(int row, int col)
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
-        return removeQuotationMarks(_table.getValueAsString(row - getNumHeadlines(), col));
+    {
+        std::string sValue = toInternalString(_table.getValueAsString(row - getNumHeadlines(), col));
+        replaceAll(sValue, "\t", "    ");
+        return sValue;
+    }
     else
         return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
 }

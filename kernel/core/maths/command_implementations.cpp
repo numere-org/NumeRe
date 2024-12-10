@@ -3752,16 +3752,16 @@ bool readAudioFile(CommandLineParser& cmdParser)
 
         // Write the first row for conversion and afterwards
         // last row for preallocation
-        _table->writeData(rowmin, _targetIdx.col.front(), 0.0F);
+        _table->writeData(rowmin, _targetIdx.col.front(), mu::Numerical(0.0F));
         _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
-        _table->writeData(rowmax, _targetIdx.col.front(), 0.0F);
+        _table->writeData(rowmax, _targetIdx.col.front(), mu::Numerical(0.0F));
 
         // Same for second channel, if any
         if (nChannels > 1 && _targetIdx.col.size() > 1)
         {
-            _table->writeData(rowmin, _targetIdx.col[1], 0.0F);
+            _table->writeData(rowmin, _targetIdx.col[1], mu::Numerical(0.0F));
             _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
-            _table->writeData(rowmax, _targetIdx.col[1], 0.0F);
+            _table->writeData(rowmax, _targetIdx.col[1], mu::Numerical(0.0F));
         }
 
         for (size_t i = 0; i < nLen; i++)
@@ -3866,16 +3866,16 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
 
     // Write the first row for conversion and afterwards
     // last row for preallocation
-    _table->writeData(rowmin, _targetIdx.col.front(), 0.0F);
+    _table->writeData(rowmin, _targetIdx.col.front(), mu::Numerical(0.0F));
     _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
-    _table->writeData(rowmax, _targetIdx.col.front(), 0.0F);
+    _table->writeData(rowmax, _targetIdx.col.front(), mu::Numerical(0.0F));
 
     // Same for second channel, if any
     if (nChannels > 1 && _targetIdx.col.size() > 1)
     {
-        _table->writeData(rowmin, _targetIdx.col[1], 0.0F);
+        _table->writeData(rowmin, _targetIdx.col[1], mu::Numerical(0.0F));
         _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
-        _table->writeData(rowmax, _targetIdx.col[1], 0.0F);
+        _table->writeData(rowmax, _targetIdx.col[1], mu::Numerical(0.0F));
     }
 
     for (size_t i = 0; i < nLen; i++)
@@ -4840,7 +4840,7 @@ void urlExecute(CommandLineParser& cmdParser)
 
                 // Upload the file
                 size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword);
-                cmdParser.setReturnValue(toString(bytes));
+                cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
             }
             else
             {
@@ -4857,7 +4857,7 @@ void urlExecute(CommandLineParser& cmdParser)
                 if (file.good())
                 {
                     file << sUrlResponse;
-                    cmdParser.setReturnValue(toString(sUrlResponse.length()));
+                    cmdParser.setReturnValue(mu::Value(mu::Numerical(sUrlResponse.length())));
                 }
                 else
                     throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, cmdParser.getCommandLine(), sFileName, sFileName);
@@ -4870,9 +4870,7 @@ void urlExecute(CommandLineParser& cmdParser)
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
-//            replaceAll(sUrlResponse, "\\", "\\ ");
-//            replaceAll(sUrlResponse, "\"", "\\\"");
-            cmdParser.setReturnValue(std::vector<std::string>({"\"" + sUrlResponse + "\""}));
+            cmdParser.setReturnValue(mu::Value(sUrlResponse));
         }
     }
     catch (url::Error& e)

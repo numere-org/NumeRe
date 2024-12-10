@@ -831,17 +831,25 @@ bool Memory::isValid() const
 /// memory to the smallest possible dimensions
 /// reachable in powers of two.
 ///
+/// \param _vCol const VectorIndex&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::shrink()
+bool Memory::shrink(const VectorIndex& _vCol)
 {
     if (!memArray.size())
         return true;
 
+    _vCol.setOpenEndIndex(getCols()-1);
+
     // Shrink each column
-    for (TblColPtr& col : memArray)
+    for (size_t i = 0; i < _vCol.size(); i++)
     {
+        if (_vCol[i] < 0 || _vCol[i] >= memArray.size())
+            continue;
+
+        TblColPtr& col = memArray[_vCol[i]];
+
         if (col)
             col->shrink();
 
@@ -2390,7 +2398,7 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     // Remove all invalid elements and columns
     if (bHasFirstLine)
-        shrink();
+        shrink(_vCol);
 
     nCalcLines = -1;
 }

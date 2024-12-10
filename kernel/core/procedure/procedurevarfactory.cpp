@@ -665,6 +665,9 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             currentValue = "false";
     }
 
+    if (containsCastingFunctions(currentValue))
+        evaluateCastingFunctions(currentValue);
+
     bool isRef = currentArg.front() == '&' || currentArg.back() == '&';
 
     // Determine, if this is a reference (and
@@ -1042,6 +1045,9 @@ void ProcedureVarFactory::createLocalVars(std::string sVarList, const mu::Value&
             {
                 sVarValue = resolveLocalVars(sVarValue+" ", i); // Needs a terminating separator
 
+                if (containsCastingFunctions(sVarValue))
+                    evaluateCastingFunctions(sVarValue);
+
                 if (_dataRef->containsTablesOrClusters(sVarValue))
                     getDataElements(sVarValue, *_parserRef, *_dataRef);
 
@@ -1247,6 +1253,9 @@ void ProcedureVarFactory::createLocalClusters(std::string sClusterList)
                     else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
                         sCurrentValue = "false";
                 }
+
+                if (containsCastingFunctions(sCurrentValue))
+                    evaluateCastingFunctions(sCurrentValue);
 
                 if (isCompleteCluster(sCurrentValue, _dataRef))
                     cluster = _dataRef->getCluster(sCurrentValue.substr(0, sCurrentValue.find('{')));

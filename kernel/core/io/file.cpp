@@ -2778,6 +2778,8 @@ namespace NumeRe
         if (sLabel.find(".tex") != std::string::npos)
             sLabel.erase(sLabel.rfind(".tex"));
 
+        std::string sCaption = sLabel;
+
         while (sLabel.find(' ') != std::string::npos)
             sLabel[sLabel.find(' ')] = '_';
 
@@ -2814,19 +2816,16 @@ namespace NumeRe
 
             sPrint += "}";
             fFileStream << sPrint + "\n";
-            fFileStream << "\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", "NumeRe")+"}\n";
+            fFileStream << "\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", sCaption)+"}\n";
             fFileStream << "\\label{tab:" + sLabel + "}\\\\\n";
             fFileStream << "\\toprule\n";
 
             writeTableHeads();
 
-            fFileStream << sPrint + "\n";
             fFileStream << "\\midrule\n";
             fFileStream << "\\endfirsthead\n";
             fFileStream << "\\caption{"+_lang.get("OUTPUT_FORMAT_TEXLONG_CAPTION")+"}\\\\\n";
             fFileStream << "\\toprule\n";
-            fFileStream << sPrint;
-            fFileStream << "\\midrule\n";
             fFileStream << "\\endhead\n";
             fFileStream << "\\midrule\n";
             fFileStream << "\\multicolumn{" + toString(nCols) + "}{c}{--- \\emph{"+_lang.get("OUTPUT_FORMAT_TEXLONG_FOOT")+"} ---}\\\\\n";
@@ -2927,7 +2926,7 @@ namespace NumeRe
         for (size_t i = 0; i < countHeadLines(); i++)
         {
             for (long long int j = 0; j < nCols; j++)
-                sPrint += getLineFromHead(j, i) + " & ";
+                sPrint += "{" + getLineFromHead(j, i) + "} & ";
 
             sPrint = sPrint.substr(0, sPrint.length()-2) + "\\\\\n";
         }

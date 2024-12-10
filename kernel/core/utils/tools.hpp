@@ -99,15 +99,9 @@ bool validateParenthesisNumber(StringView sCmd);
 void addArgumentQuotes(std::string& sToAdd, const std::string& sParam);
 void addArgumentQuotes(std::string& sToAdd, size_t pos);
 
-
-/** \brief Checks, whether the "to_cmd()" function was used
- *
- * \param sCmd StringView
- * \param nPos size_t
- * \return bool
- *
- */
 bool isToCmd(StringView sCmd, size_t nPos);
+bool containsCastingFunctions(StringView sCmd);
+void evaluateCastingFunctions(std::string& sCmd);
 
 size_t countEscapeSymbols(const std::string& sLine);
 std::vector<std::string> getFileList(const std::string& sDirectory, int nFlags = 0);

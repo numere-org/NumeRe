@@ -2611,11 +2611,16 @@ namespace mu
 
 			if (opt.GetCode() == cmEND)
 			{
-                if (stOpt.size() && stOpt.top().GetCode() == cmIF && stArgCount.top() == 3)
+                while (stOpt.size())
                 {
-                    stArgCount.pop();
-                    stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
-                    ApplyFunc(stOpt, stVal, 3);
+                    if (stOpt.top().GetCode() == cmIF && stArgCount.top() == 3)
+                    {
+                        stArgCount.pop();
+                        stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
+                        ApplyFunc(stOpt, stVal, 3);
+                    }
+                    else
+                        ApplyRemainingOprt(stOpt, stVal);
                 }
 
 				m_compilingState.m_byteCode.Finalize();
@@ -3562,15 +3567,15 @@ namespace mu
 		{
 			string siter = iter->first;
 
-			if ((iter->first).find('[') != string::npos && (iter->first).find(']') != string::npos)
+			if (siter.find('[') != string::npos && siter.find(']') != string::npos)
 			{
-				if (bIgnoreProcedureVects && (iter->first).starts_with("_~PROC~["))
+				if (bIgnoreProcedureVects && siter.starts_with("_~PROC~["))
 				{
 					iter++;
 					continue;
 				}
 
-				RemoveVar(iter->first);
+				RemoveVar(siter);
 				iter = mInternalVars.erase(iter);
 			}
 			else

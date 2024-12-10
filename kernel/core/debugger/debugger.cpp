@@ -675,7 +675,8 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
     // Store command line and line number
     sErraticCommand = _sErraticCommand;
 
-    if (sErraticCommand.substr(sErraticCommand.find_first_not_of(' '), 2) == "|>")
+    if (sErraticCommand.find_first_not_of(' ') != std::string::npos
+        && sErraticCommand.substr(sErraticCommand.find_first_not_of(' '), 2) == "|>")
         sErraticCommand.erase(sErraticCommand.find_first_not_of(' '), 2);
 
     nLineNumber = _nLineNumber;

@@ -24,6 +24,9 @@
 #include "../strings/functionimplementation.hpp" // for string method callees
 #include "../maths/functionimplementation.hpp" // for numerical method callees
 
+#warning FIXME (numere#1#12/09/24): Removed all move operations due to memory leaks
+
+
 namespace mu
 {
     /////////////////////////////////////////////////
@@ -76,13 +79,13 @@ namespace mu
     /// \param data Value&&
     ///
     /////////////////////////////////////////////////
-    Value::Value(Value&& data)
+    /*Value::Value(Value&& data)
     {
         m_type = data.m_type;
         m_data = data.m_data;
         data.m_data = nullptr;
         data.m_type = TYPE_VOID;
-    }
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -343,7 +346,7 @@ namespace mu
     /// \return Value&
     ///
     /////////////////////////////////////////////////
-    Value& Value::operator=(Value&& other)
+    /*Value& Value::operator=(Value&& other)
     {
         //Timer t("Value::operator=(&&)");
         clear();
@@ -354,7 +357,7 @@ namespace mu
         other.m_type = TYPE_VOID;
 
         return *this;
-    }
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -1563,7 +1566,7 @@ namespace mu
     /// \return Array&
     ///
     /////////////////////////////////////////////////
-    Array& Array::operator=(Array&& other)
+    /*Array& Array::operator=(Array&& other)
     {
        // Timer t("Array::operator=(&&)");
 
@@ -1575,7 +1578,7 @@ namespace mu
         other._M_impl._M_start = other._M_impl._M_finish = other._M_impl._M_end_of_storage = pointer();
 
         return *this;
-    }
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -2591,8 +2594,8 @@ namespace mu
     /// \param data Array&&
     ///
     /////////////////////////////////////////////////
-    Variable::Variable(Array&& data) : Array(data)
-    { }
+    /*Variable::Variable(Array&& data) : Array(data)
+    { }*/
 
 
     /////////////////////////////////////////////////
@@ -3020,6 +3023,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool all(const Array& arr)
     {
+        if (!arr.size())
+            return false;
+
         for (size_t i = 0; i < arr.size(); i++)
         {
             if (!arr[i])

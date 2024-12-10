@@ -158,6 +158,7 @@ mu::Array timfnc_time();
 mu::Array timfnc_clock();
 mu::Array timfnc_today();
 mu::Array timfnc_date(const mu::Array&, const mu::Array&);
+mu::Array timfnc_datetime(const mu::Array&);
 mu::Array timfnc_weeknum(const mu::Array&);
 mu::Array timfnc_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
 mu::Array timfnc_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4

@@ -428,6 +428,9 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const mu::Array& valu
     {
         if (elem[pos] == '\t')
             nColumns++;
+
+        if (elem.substr(pos, 2) == "\n{")
+            break;
     }
 
     if (useCheckBoxes)

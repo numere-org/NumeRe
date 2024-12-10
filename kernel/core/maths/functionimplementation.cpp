@@ -24,7 +24,6 @@
 #include "../ParserLib/muParserTemplateMagic.h"
 #define _USE_MATH_DEFINES
 
-extern double g_pixelScale;
 
 #include <cmath>
 #include <string>
@@ -39,6 +38,7 @@ extern double g_pixelScale;
 
 #include "student_t.hpp"
 #ifndef PARSERSTANDALONE
+extern double g_pixelScale;
 #include "../datamanagement/memorymanager.hpp"
 #endif
 #include "../utils/tools.hpp"
@@ -404,22 +404,21 @@ mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
     }
 
     return mu::Array(mu::Value(elems));
-    /*mu::Array ret;
+}
 
-    for (int i = 0; i < nElements; i++)
-    {
-        size_t elems = vElements[i].size();
 
-        for (size_t j = 0; j < vElements[i].size(); j++)
-        {
-            if (!vElements[i][j].isValid())
-                elems--;
-        }
-
-        ret.push_back(Numerical(elems));
-    }
-
-    return ret;*/
+/////////////////////////////////////////////////
+/// \brief Helper function for quickly detecting
+/// arrays containing only invalid elements.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool containsValidElements(const mu::Array* vElements, int nElements)
+{
+    return (bool)numfnc_Num(vElements, nElements).front();
 }
 
 
@@ -439,14 +438,6 @@ mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
         return mu::Array(mu::Value(vElements[0].size()));
 
     return mu::Array(mu::Value(nElements));
-    /*mu::Array ret;
-
-    for (int i = 0; i < nElements; i++)
-    {
-        ret.push_back(vElements[i].size());
-    }
-
-    return ret;*/
 }
 
 
@@ -478,6 +469,9 @@ mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
     mu::Value vStd = 0.0;
     mu::Value vMean = numfnc_Avg(vElements, nElements).front();
     mu::Value vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
+
+    if (!vNum)
+        return mu::Value(NAN);
 
     if (nElements == 1)
     {
@@ -513,6 +507,9 @@ mu::Array numfnc_product(const mu::Array* vElements, int nElements)
 {
     mu::Value vProd = 1.0;
 
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(NAN);
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
@@ -546,6 +543,9 @@ mu::Array numfnc_product(const mu::Array* vElements, int nElements)
 mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
 {
     mu::Value vNorm = 0.0;
+
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(NAN);
 
     if (nElements == 1)
     {
@@ -613,6 +613,9 @@ mu::Array numfnc_Skew(const mu::Array* vElements, int nElements)
     mu::Value vMean = numfnc_Avg(vElements, nElements).front();
     double vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
 
+    if (!vNum)
+        return mu::Value(NAN);
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
@@ -649,6 +652,9 @@ mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
     mu::Value vMean = numfnc_Avg(vElements, nElements).front();
     double vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
 
+    if (!vNum)
+        return mu::Value(NAN);
+
     if (nElements == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
@@ -684,6 +690,9 @@ mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
 mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
 {
 #ifndef PARSERSTANDALONE
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(NAN);
+
     Memory _mem;
 
     if (nElements == 1)
@@ -720,6 +729,9 @@ mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
 mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
 {
 #ifndef PARSERSTANDALONE
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(NAN);
+
     Memory _mem;
 
     if (nElements == 2)
@@ -888,6 +900,9 @@ mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, con
 /////////////////////////////////////////////////
 mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 {
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(false);
+
     if (nElements == 1)
         return mu::Value(mu::all(vElements[0]));
     else
@@ -915,6 +930,9 @@ mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 {
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(false);
+
     if (nElements == 1)
         return mu::Value(mu::any(vElements[0]));
     else
@@ -942,6 +960,9 @@ mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
 {
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(false);
+
     bool isTrue = false;
 
     if (nElements == 1)
@@ -1507,7 +1528,10 @@ mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct)
 /////////////////////////////////////////////////
 mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
 {
-    mu::Value fRes;
+    mu::Value fRes; // Uninitialized bc works for strings and numericals
+
+    if (!containsValidElements(vElements, nElements))
+        return mu::Value(NAN);
 
     if (nElements == 1)
     {
@@ -1556,10 +1580,10 @@ mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
 {
-    if (!nElements)
+    if (!containsValidElements(vElements, nElements))
         return mu::Value(NAN);
 
-    mu::Value res = vElements[0][0];
+    mu::Value res = vElements[0].get(0);
 
     if (nElements == 1)
     {
@@ -1593,10 +1617,10 @@ mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
 {
-    if (!nElements)
+    if (!containsValidElements(vElements, nElements))
         return mu::Value(NAN);
 
-    mu::Value res = vElements[0][0];
+    mu::Value res = vElements[0].get(0);
 
     if (nElements == 1)
     {
@@ -3943,7 +3967,9 @@ mu::Array numfnc_omp_threads()
 /////////////////////////////////////////////////
 mu::Array numfnc_pixelscale()
 {
+#ifndef PARSERSTANDALONE
     return mu::Value(g_pixelScale);
+#endif
 }
 
 
@@ -4044,6 +4070,36 @@ static std::complex<double> weeknum_impl(const std::complex<double>& vTime)
 mu::Array timfnc_date(const mu::Array& vTime, const mu::Array& vType)
 {
     return mu::apply(date_impl, vTime, vType);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function converts values into the
+/// internal date-time representation.
+///
+/// \param val const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_datetime(const mu::Array& val)
+{
+    mu::Array ret;
+    ret.reserve(val.size());
+
+    for (size_t i = 0; i < val.size(); i++)
+    {
+        if (val.get(i).isString())
+        {
+            if (isConvertible(val.get(i).getStr(), CONVTYPE_DATE_TIME))
+                ret.push_back(mu::Value(StrToTime(val.get(i).getStr())));
+            else
+                ret.push_back(mu::Value(NAN));
+        }
+        else
+            ret.push_back(mu::Value(to_timePoint(val.get(i).getNum().asF64())));
+    }
+
+    return ret;
 }
 
 

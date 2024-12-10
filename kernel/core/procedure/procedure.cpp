@@ -177,6 +177,17 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_TOCOMMAND
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
+        if (containsCastingFunctions(sLine))
+        {
+            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
+                nByteCode |= ProcedureCommandLine::BYTECODE_TOCOMMAND;
+
+            evaluateCastingFunctions(sLine);
+
+            replaceLocalVars(sLine);
+            sCurrentCommand = findCommand(sLine).sString;
+        }
+
         if (sLine.find("to_cmd(") != string::npos)
         {
             size_t nPos = 0;

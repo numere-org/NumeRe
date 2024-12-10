@@ -1040,6 +1040,7 @@ static std::string createEveryCellDefinition(const std::string& sLine, const std
 
     // Resolve possible remaining calls to data tables or clusters
     getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getMemoryManager());
+    StripSpaces(sExpr);
 
     return sType + "=" + sExpr + " ";
 }
@@ -1214,7 +1215,7 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-    for (size_t i = 0; i < std::min(v[0].size(), v[1].size()); i++)
+    for (size_t i = 0; i < std::max(v[0].size(), v[1].size()); i++)
     {
         _kernel->getMemoryManager().setUnit(v[0].get(i).getNum().asI64() - 1, sTableName, v[1].get(i).getStr());
     }
@@ -1377,8 +1378,13 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
     if (nResults > 1)
         enableRegEx = mu::all(v[1]);
 
-    _kernel->getParser().SetInternalVar(sResultVectorName,
-                                        _kernel->getMemoryManager().findCols(sTableName, v[0].as_str_vector(), enableRegEx));
+    std::vector<size_t> cols = _kernel->getMemoryManager().findCols(sTableName, v[0].as_str_vector(), enableRegEx);
+
+    if (cols.size())
+        _kernel->getParser().SetInternalVar(sResultVectorName, cols);
+    else
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(NAN));
+
     return sResultVectorName;
 }
 
@@ -1408,7 +1414,13 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().countIfEqual(sTableName, vCols, v[1]));
+    std::vector<size_t> count = _kernel->getMemoryManager().countIfEqual(sTableName, vCols, v[1]);
+
+    if (count.size())
+        _kernel->getParser().SetInternalVar(sResultVectorName, count);
+    else
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(NAN));
+
     return sResultVectorName;
 }
 

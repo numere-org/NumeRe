@@ -43,7 +43,7 @@ namespace mu
         public:
             Value();
             Value(const Value& data);
-            Value(Value&& data);
+            //Value(Value&& data);
 
             Value(const Numerical& data);
             Value(const Category& data);
@@ -63,7 +63,7 @@ namespace mu
             virtual ~Value();
 
             Value& operator=(const Value& other);
-            Value& operator=(Value&& other);
+            //Value& operator=(Value&& other);
 
             DataType getType() const;
             std::string getTypeAsString() const;
@@ -142,7 +142,7 @@ namespace mu
         public:
             Array();
             Array(const Array& other);
-            Array(Array&& other) = default;
+            //Array(Array&& other) = default;
 
             Array(size_t n, const Value& fillVal = Value());
             Array(const Value& singleton);
@@ -157,7 +157,7 @@ namespace mu
             Array(const Array& fst, const Array& inc, const Array& lst);
 
             Array& operator=(const Array& other);
-            Array& operator=(Array&& other);
+            //Array& operator=(Array&& other);
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
@@ -232,8 +232,8 @@ namespace mu
             Variable(const Value& data);
             Variable(const Array& data);
             Variable(const Variable& data);
-            Variable(Array&& data);
-            Variable(Variable&& data) = default;
+            //Variable(Array&& data);
+            //Variable(Variable&& data) = default;
 
             Variable& operator=(const Value& other);
             Variable& operator=(const Array& other);
@@ -256,7 +256,7 @@ namespace mu
             VarArray() = default;
             VarArray(Variable* var);
             VarArray(const VarArray& other) = default;
-            VarArray(VarArray&& other) = default;
+            //VarArray(VarArray&& other) = default;
             VarArray& operator=(const VarArray& other) = default;
             const Array& operator=(const Array& values);
             Array operator+=(const Array& values);
