@@ -122,7 +122,7 @@ class Memory : public Sorter
 		bool resizeMemory(size_t _nLines, size_t _nCols);
 		bool isValid() const;
 		bool isValidElement(size_t _nLine, size_t _nCol) const;
-		bool shrink();
+		bool shrink(const VectorIndex& _vCol = VectorIndex(0, VectorIndex::OPEN_END));
 		void convert();
 		bool convertColumns(const VectorIndex& _vCol, const std::string& _sType);
 		bool convertEmptyColumns(const VectorIndex& _vCol, const std::string& _sType);

@@ -177,6 +177,17 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_TOCOMMAND
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
+        if (containsCastingFunctions(sLine))
+        {
+            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
+                nByteCode |= ProcedureCommandLine::BYTECODE_TOCOMMAND;
+
+            evaluateCastingFunctions(sLine);
+
+            replaceLocalVars(sLine);
+            sCurrentCommand = findCommand(sLine).sString;
+        }
+
         if (sLine.find("to_cmd(") != string::npos)
         {
             size_t nPos = 0;
@@ -2681,10 +2692,24 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
                     _data.deleteTable(_return.sReturnedTable);
             }
 
-            std::string sTempVar = _parser.CreateTempVar(std::vector<std::complex<double>>({_return.sourceIdx.row.size(),
-                                                                                            _return.sourceIdx.col.size()}));
-            sLine = sTempVar + sLine.substr(nPos2);
-            return sTempVar.length();
+            _parser.SetInternalVar(sReplaceName, std::vector<std::complex<double>>({_return.sourceIdx.row.size(),
+                                                                                    _return.sourceIdx.col.size()}));
+            sLine = sReplaceName + sLine.substr(nPos2);
+            return sReplaceName.length();
+        }
+        else if (_return.sourceIdx.row.size() == 1u || _return.sourceIdx.col.size() == 1u)
+        {
+            // If we only return a single row or column, then we can convert
+            // it in a simple vector instead
+            _parser.SetInternalVar(sReplaceName, _data.getElement(_return.sourceIdx.row,
+                                                                  _return.sourceIdx.col,
+                                                                  _return.sReturnedTable));
+            sLine.replace(nPos, nPos2-nPos, sReplaceName);
+
+            if (_return.delayDelete)
+                _data.deleteTable(_return.sReturnedTable);
+
+            return sReplaceName.length();
         }
 
         sLine.replace(nPos, nPos2-nPos, _data.isEmpty(_return.sReturnedTable) ? "false" : "true");

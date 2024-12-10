@@ -24,6 +24,9 @@
 #include "../strings/functionimplementation.hpp" // for string method callees
 #include "../maths/functionimplementation.hpp" // for numerical method callees
 
+#warning FIXME (numere#1#12/09/24): Removed all move operations due to memory leaks
+
+
 namespace mu
 {
     /////////////////////////////////////////////////
@@ -76,12 +79,13 @@ namespace mu
     /// \param data Value&&
     ///
     /////////////////////////////////////////////////
-    Value::Value(Value&& data)
+    /*Value::Value(Value&& data)
     {
         m_type = data.m_type;
         m_data = data.m_data;
         data.m_data = nullptr;
-    }
+        data.m_type = TYPE_VOID;
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -292,11 +296,14 @@ namespace mu
     /////////////////////////////////////////////////
     Value& Value::operator=(const Value& other)
     {
-        //Timer t("Value::operator=");
-        if (m_data && m_type != other.m_type)
-            clear();
+        //Timer t("Value::operator=(&)");
+        if (m_type != other.m_type)
+        {
+            if (m_data)
+                clear();
 
-        m_type = other.m_type;
+            m_type = other.m_type;
+        }
 
         switch (m_type)
         {
@@ -330,6 +337,27 @@ namespace mu
 
         return *this;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Move-Assign a Value.
+    ///
+    /// \param other Value&&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
+    /*Value& Value::operator=(Value&& other)
+    {
+        //Timer t("Value::operator=(&&)");
+        clear();
+
+        m_type = other.m_type;
+        m_data = other.m_data;
+        other.m_data = nullptr;
+        other.m_type = TYPE_VOID;
+
+        return *this;
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -758,6 +786,14 @@ namespace mu
             throw ParserError(ecTYPE_MISMATCH);
         }
 
+        if (isCategory())
+        {
+            if (other.getNum().isInt() && other.getNum().asI64() == 1)
+                return *this;
+
+            return getNum() * other.getNum();
+        }
+
         if (common == TYPE_NUMERICAL)
             return getNum() * other.getNum();
 
@@ -949,8 +985,13 @@ namespace mu
             throw ParserError(ecTYPE_MISMATCH_OOB);
         }
 
-        if (isCategory())
+        /*if (isCategory())
+        {
+            if (other.getNum().isInt() && other.getNum().asI64() == 1)
+                return *this;
+
             return operator=(getNum() * other.getNum());
+        }*/
 
         if (isNumerical())
             getNum() *= other.getNum();
@@ -1492,7 +1533,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Array::operator=(const Array& other)
     {
-        //Timer t("Array::operator=");
+        //Timer t("Array::operator=(&)");
         if (other.size() == 1)
         {
             if (other.front().isArray())
@@ -1516,6 +1557,28 @@ namespace mu
 
         return *this;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Move an Array.
+    ///
+    /// \param other Array&&
+    /// \return Array&
+    ///
+    /////////////////////////////////////////////////
+    /*Array& Array::operator=(Array&& other)
+    {
+       // Timer t("Array::operator=(&&)");
+
+        _M_impl._M_start = other._M_impl._M_start;
+        _M_impl._M_finish = other._M_impl._M_finish;
+        _M_impl._M_end_of_storage = other._M_impl._M_end_of_storage;
+        m_commonType = other.m_commonType;
+
+        other._M_impl._M_start = other._M_impl._M_finish = other._M_impl._M_end_of_storage = pointer();
+
+        return *this;
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -2531,8 +2594,8 @@ namespace mu
     /// \param data Array&&
     ///
     /////////////////////////////////////////////////
-    Variable::Variable(Array&& data) : Array(data)
-    { }
+    /*Variable::Variable(Array&& data) : Array(data)
+    { }*/
 
 
     /////////////////////////////////////////////////
@@ -2631,10 +2694,10 @@ namespace mu
     /// \brief Assign the values of an Array.
     ///
     /// \param values const Array&
-    /// \return Array
+    /// \return const Array&
     ///
     /////////////////////////////////////////////////
-    Array VarArray::operator=(const Array& values)
+    const Array& VarArray::operator=(const Array& values)
     {
         //Timer t("VarArray::operator=");
         if (size() == 1)
@@ -2960,6 +3023,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool all(const Array& arr)
     {
+        if (!arr.size())
+            return false;
+
         for (size_t i = 0; i < arr.size(); i++)
         {
             if (!arr[i])

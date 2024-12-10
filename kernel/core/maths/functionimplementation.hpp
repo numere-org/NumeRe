@@ -117,9 +117,11 @@ mu::Array numfnc_gcd(const mu::Array&, const mu::Array&);
 mu::Array numfnc_lcm(const mu::Array&, const mu::Array&);
 mu::Array numfnc_is_string(const mu::Array&);
 mu::Array numfnc_isnan(const mu::Array&);
+mu::Array numfnc_isvoid(const mu::Array&);
 mu::Array numfnc_interval(const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array numfnc_numereversion();
 mu::Array numfnc_omp_threads();
+mu::Array numfnc_pixelscale();
 mu::Array numfnc_sleep(const mu::Array&);
 mu::Array numfnc_exp(const mu::Array&);
 mu::Array numfnc_abs(const mu::Array&);
@@ -156,6 +158,7 @@ mu::Array timfnc_time();
 mu::Array timfnc_clock();
 mu::Array timfnc_today();
 mu::Array timfnc_date(const mu::Array&, const mu::Array&);
+mu::Array timfnc_datetime(const mu::Array&);
 mu::Array timfnc_weeknum(const mu::Array&);
 mu::Array timfnc_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
 mu::Array timfnc_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4

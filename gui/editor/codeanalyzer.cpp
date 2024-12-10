@@ -1344,6 +1344,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "landau_rd()"
              && sSyntaxElement != "evt_close()"
              && sSyntaxElement != "get_utc_offset()"
+             && sSyntaxElement != "today()"
              && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments

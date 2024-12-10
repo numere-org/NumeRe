@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <wx/grid.h>
+#include <map>
 
 #include "../../kernel/core/datamanagement/table.hpp"
 #include "gridcellcoordscontainer.hpp"
@@ -38,6 +39,7 @@ class GridNumeReTable : public wxGridTableBase
         std::complex<double> cmplx;
         mu::Value value;
         bool m_showQMarks;
+        std::map<int,wxString> m_customColLabels;
 
     public:
         GridNumeReTable();
@@ -53,28 +55,29 @@ class GridNumeReTable : public wxGridTableBase
         NumeRe::Table getTableCopy();
         NumeRe::Table& getTableRef();
 
-        virtual int GetNumberRows();
-        virtual int GetNumberCols();
+        virtual int GetNumberRows() override;
+        virtual int GetNumberCols() override;
 
-        virtual bool CanGetValueAs(int row, int col, const wxString& sTypeName);
-        virtual double GetValueAsDouble(int row, int col);
-        virtual bool GetValueAsBool(int row, int col);
-        virtual void* GetValueAsCustom(int row, int col, const wxString& sTypeName);
+        virtual bool CanGetValueAs(int row, int col, const wxString& sTypeName) override;
+        virtual double GetValueAsDouble(int row, int col) override;
+        virtual bool GetValueAsBool(int row, int col) override;
+        virtual void* GetValueAsCustom(int row, int col, const wxString& sTypeName) override;
 
-        virtual wxString GetValue(int row, int col);
-        virtual wxString GetEditableValue(int row, int col);
-        virtual void SetValue(int row, int col, const wxString& value);
+        virtual wxString GetValue(int row, int col) override;
+        wxString GetEditableValue(int row, int col);
+        virtual void SetValue(int row, int col, const wxString& value) override;
 
-        virtual void Clear();
-        virtual bool InsertRows(size_t pos = 0, size_t numRows = 1);
-        virtual bool AppendRows(size_t numRows = 1);
-        virtual bool DeleteRows(size_t pos = 0, size_t numRows = 1);
-        virtual bool InsertCols(size_t pos = 0, size_t numRows = 1);
-        virtual bool AppendCols(size_t numRows = 1);
-        virtual bool DeleteCols(size_t pos = 0, size_t numRows = 1);
+        virtual void Clear() override;
+        virtual bool InsertRows(size_t pos = 0, size_t numRows = 1) override;
+        virtual bool AppendRows(size_t numRows = 1) override;
+        virtual bool DeleteRows(size_t pos = 0, size_t numRows = 1) override;
+        virtual bool InsertCols(size_t pos = 0, size_t numRows = 1) override;
+        virtual bool AppendCols(size_t numRows = 1) override;
+        virtual bool DeleteCols(size_t pos = 0, size_t numRows = 1) override;
 
-        virtual wxString GetRowLabelValue(int row);
-        virtual wxString GetColLabelValue(int col);
+        virtual wxString GetRowLabelValue(int row) override;
+        virtual wxString GetColLabelValue(int col) override;
+        virtual void SetColLabelValue(int col, const wxString& label) override;
 
         double min(const wxGridCellCoordsContainer& coords) const;
         double max(const wxGridCellCoordsContainer& coords) const;
@@ -84,6 +87,8 @@ class GridNumeReTable : public wxGridTableBase
 
         std::vector<int> getColumnTypes() const;
         std::vector<std::string> getCategories(int col) const;
+
+        void enableQuotationMarks(bool enable = true);
 };
 
 

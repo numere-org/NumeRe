@@ -2413,6 +2413,22 @@ bool TableViewer::isSilentSelection()
 
 
 /////////////////////////////////////////////////
+/// \brief Enable or disable the quoation marks
+/// around strings. Only works, if the grid is
+/// using a GridNumeReTable as base.
+///
+/// \param enable bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::enableQuotationMarks(bool enable)
+{
+    if (isGridNumeReTable)
+        static_cast<GridNumeReTable*>(GetTable())->enableQuotationMarks(enable);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the values of all selected
 /// cells as a string list.
 ///

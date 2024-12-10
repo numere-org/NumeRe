@@ -1133,6 +1133,7 @@ class CategoricalColumn : public TableColumn
 
         void setCategories(const std::vector<std::string>& vCategories);
         void mergeCategories(const std::vector<std::string>& vCategories);
+        bool isCategory(const std::string& candidate) const;
 };
 
 void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType other);

@@ -1741,7 +1741,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 /// possibility to call the Windows shell directly
 /// from the code.
 ///
-/// \param sCmd string&
+/// \param sCmd std::string&
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _functions Define&
@@ -1754,7 +1754,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 /// chekbox. There's no command available to enable
 /// this command.
 /////////////////////////////////////////////////
-static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static bool executeCommand(std::string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     if (!_option.executeEnabled())
         throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
@@ -1765,17 +1765,17 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(_option.getExePath(), false, _option.getExePath());
     _fSys.declareFileType(".exe");
-    string sParams = cmdParser.getParsedParameterValueAsString("params", "", true);
-    string sWorkpath = cmdParser.getParsedParameterValueAsString("wp", "");
-    string sObject = cmdParser.parseExprAsString();
+    std::string sParams = cmdParser.getParsedParameterValueAsString("params", "", true);
+    std::string sWorkpath = cmdParser.getParsedParameterValueAsString("wp", "");
+    std::string sObject = cmdParser.parseExprAsString();
     int nRetVal = 0;
     bool bWaitForTermination = cmdParser.hasParam("wait");
 
     // Resolve path placeholders
-    if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<') + 1) != string::npos)
+    if (sObject.find('<') != std::string::npos && sObject.find('>', sObject.find('<') + 1) != std::string::npos)
         sObject = _fSys.ValidFileName(sObject, ".exe");
 
-    if (sParams.find('<') != string::npos && sParams.find('>', sParams.find('<') + 1) != string::npos)
+    if (sParams.find('<') != std::string::npos && sParams.find('>', sParams.find('<') + 1) != std::string::npos)
     {
         if (sParams.front() == '"')
             sParams = "\"" + _fSys.ValidFileName(sParams.substr(1));
@@ -1783,14 +1783,14 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
             sParams = _fSys.ValidFileName(sParams);
     }
 
-    if (sWorkpath.find('<') != string::npos && sWorkpath.find('>', sWorkpath.find('<') + 1) != string::npos)
+    if (sWorkpath.find('<') != std::string::npos && sWorkpath.find('>', sWorkpath.find('<') + 1) != std::string::npos)
     {
         if (sWorkpath.front() == '"')
             sWorkpath = "\"" + _fSys.ValidFileName(sWorkpath.substr(1));
         else
             sWorkpath = _fSys.ValidFileName(sWorkpath);
 
-        if (sWorkpath.rfind(".dat") != string::npos)
+        if (sWorkpath.rfind(".dat") != std::string::npos)
             sWorkpath.erase(sWorkpath.rfind(".dat"), 4);
     }
 
@@ -5010,6 +5010,7 @@ static CommandReturnValues cmd_print(string& sCmd)
     }
 
     NumeReKernel::toggleTableStatus();
+    NumeReKernel::flush();
     return COMMAND_PROCESSED;
 }
 

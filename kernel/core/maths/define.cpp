@@ -226,7 +226,10 @@ bool FunctionDefinition::importFunction(std::string sImport)
     // Decode the variable list
     while (sImport.length())
     {
-        vArguments.push_back(getNextSemiColonSeparatedToken(sImport, true));
+        std::string sArgument = getNextSemiColonSeparatedToken(sImport, true);
+
+        if (sArgument.length())
+            vArguments.push_back(sArgument);
     }
 
     return true;

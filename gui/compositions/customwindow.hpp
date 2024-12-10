@@ -121,6 +121,22 @@ public:
 
 /////////////////////////////////////////////////
 /// \brief This event is used to asynchronously
+/// change the element options in the window.
+/////////////////////////////////////////////////
+class SetOptionsEvent : public wxEvent
+{
+public:
+    SetOptionsEvent(wxEventType eventType, int winid, int winItem, const mu::Array& opts)
+        : wxEvent(winid, eventType), m_options(opts), m_item(winItem) {}
+    virtual wxEvent* Clone() const {return new SetOptionsEvent(*this); }
+
+    mu::Array m_options;
+    int m_item;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
 /// change the element selection in the window.
 /////////////////////////////////////////////////
 class SetSelectionEvent : public wxEvent
@@ -152,6 +168,7 @@ public:
 
 wxDEFINE_EVENT(SET_WINDOW_VALUE, SetValueEvent);
 wxDEFINE_EVENT(SET_WINDOW_LABEL, SetLabelEvent);
+wxDEFINE_EVENT(SET_WINDOW_OPTIONS, SetOptionsEvent);
 wxDEFINE_EVENT(SET_WINDOW_SELECTION, SetSelectionEvent);
 wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
 
@@ -159,6 +176,8 @@ wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
     wx__DECLARE_EVT1(SET_WINDOW_VALUE, id, &func)
 #define cEVT_SET_LABEL(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_LABEL, id, &func)
+#define cEVT_SET_OPTIONS(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_OPTIONS, id, &func)
 #define cEVT_SET_SELECTION(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_SELECTION, id, &func)
 #define cEVT_SET_FOCUS(id, func) \
@@ -244,6 +263,7 @@ class CustomWindow : public wxFrame
 
         bool pushItemValue(WindowItemValue& _value, int windowItemID);
         bool pushItemLabel(const mu::Array& _label, int windowItemID);
+        bool pushItemOptions(const mu::Array& _opts, int windowItemID);
         bool pushItemSelection(int selectionID, int selectionID2, int windowItemID);
         bool pushItemFocus(int windowItemID);
 
@@ -307,6 +327,11 @@ class CustomWindow : public wxFrame
         void OnSetLabelEvent(SetLabelEvent& event)
         {
             setItemLabel(event.m_label, event.m_item);
+        }
+
+        void OnSetOptionsEvent(SetOptionsEvent& event)
+        {
+            setItemOptions(event.m_options, event.m_item);
         }
 
         void OnSetSelectionEvent(SetSelectionEvent& event)
