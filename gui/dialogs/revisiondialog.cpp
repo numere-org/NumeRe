@@ -20,6 +20,8 @@
 #include "../../kernel/core/ui/language.hpp"
 #include "../NumeReWindow.h"
 
+extern double g_pixelScale;
+
 BEGIN_EVENT_TABLE(RevisionDialog, wxDialog)
     EVT_TREE_ITEM_RIGHT_CLICK(-1, RevisionDialog::OnRightClick)
     EVT_TREE_ITEM_ACTIVATED(-1, RevisionDialog::OnItemActivated)
@@ -38,7 +40,7 @@ extern Language _guilang;
 ///
 /////////////////////////////////////////////////
 RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& fileNameAndPath)
-    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750, 500), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev)
+    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750*g_pixelScale, 500*g_pixelScale), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev)
 {
     mainWindow = static_cast<NumeReWindow*>(parent);
     currentFileName = fileNameAndPath.substr(fileNameAndPath.find_last_of("/\\")+1);
@@ -46,9 +48,9 @@ RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxStr
 
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
     revisionList = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED | wxTR_MULTIPLE);
-    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_REV"), 150);
-    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 150);
-    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 450);
+    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_REV"), 150*g_pixelScale);
+    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 150*g_pixelScale);
+    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 450*g_pixelScale);
     revisionList->AddRoot(currentFileName);
 
     populateRevisionList();

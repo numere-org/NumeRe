@@ -777,7 +777,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             int nResults;
             mu::Array* v = _parser.Eval(nResults);
 
-            if (nResults == 1)
+            if (nResults == 1 && v[0].size() == 1)
             {
                 // Single result: usual every=a,a representation
                 std::vector<int> idx;

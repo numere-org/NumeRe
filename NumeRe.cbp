@@ -2945,28 +2945,8 @@
 		</Unit>
 		<Unit filename="kernel/core/io/filesystem.cpp" />
 		<Unit filename="kernel/core/io/filesystem.hpp" />
-		<Unit filename="kernel/core/io/logger.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
-		</Unit>
-		<Unit filename="kernel/core/io/logger.hpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
-		</Unit>
+		<Unit filename="kernel/core/io/logger.cpp" />
+		<Unit filename="kernel/core/io/logger.hpp" />
 		<Unit filename="kernel/core/io/output.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />

@@ -269,7 +269,12 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         if (findParameter(sCmd, "multiplot", '='))
         {
             // Decode the lines and columns of the parameter
-            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "multiplot", '=') + 9));
+            std::string sArg = getArgAtPos(sCmd, findParameter(sCmd, "multiplot", '=') + 9);
+
+            if (sArg.find("<<COMPOSE>>") != std::string::npos)
+                sArg.erase(sArg.find("<<COMPOSE>>"));
+
+            _parser.SetExpr(sArg);
             int nRes = 0;
             mu::Array* v = _parser.Eval(nRes);
 

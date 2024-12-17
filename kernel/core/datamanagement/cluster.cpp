@@ -67,7 +67,7 @@ namespace NumeRe
             if (_idx.row.front() >= (int)size())
                 resize(_idx.row.front()+1, mu::Value(NAN));
 
-            get(_idx.row.front()) = mu::Value(data);
+            mu::Array::get(_idx.row.front()) = mu::Value(data);
             return;
         }
 
@@ -81,7 +81,7 @@ namespace NumeRe
             if (_idx.row[i] >= (int)size())
                 resize(_idx.row[i]+1, mu::Value(NAN));
 
-            get(_idx.row[i]) = data.get(i);
+            mu::Array::get(_idx.row[i]) = data.mu::Array::get(i);
         }
     }
 
@@ -99,21 +99,21 @@ namespace NumeRe
     int Cluster::compare(int i, int j, int col)
     {
         // Handle case insensitive
-        if (bSortCaseInsensitive && get(i).isString() && get(j).isString())
+        if (bSortCaseInsensitive && mu::Array::get(i).isString() && mu::Array::get(j).isString())
         {
-            if (toLowerCase(get(i).getStr()) < toLowerCase(get(j).getStr()))
+            if (toLowerCase(mu::Array::get(i).getStr()) < toLowerCase(mu::Array::get(j).getStr()))
                 return -1;
 
-            if (toLowerCase(get(i).getStr()) == toLowerCase(get(j).getStr()))
+            if (toLowerCase(mu::Array::get(i).getStr()) == toLowerCase(mu::Array::get(j).getStr()))
                 return 0;
 
             return 1;
         }
 
-        if (get(i) < get(j))
+        if (mu::Array::get(i) < mu::Array::get(j))
             return -1;
 
-        if (get(i) == get(j))
+        if (mu::Array::get(i) == mu::Array::get(j))
             return 0;
 
         return 1; // Sort NAN to the end
@@ -131,7 +131,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Cluster::isValue(int line, int col)
     {
-        return get(line).isValid();
+        return mu::Array::get(line).isValid();
     }
 
 
@@ -153,7 +153,7 @@ namespace NumeRe
         // prepared in the new order
         for (size_t i = 0; i < original.size(); i++)
         {
-            get(original[i]) = vSortVector[vIndex[i]];
+            mu::Array::get(original[i]) = vSortVector[vIndex[i]];
         }
     }
 
@@ -172,10 +172,27 @@ namespace NumeRe
         if (i >= size())
             resize(i+1, mu::Value(NAN));
 
-        get(i) = v;
+        mu::Array::get(i) = v;
 
         if (getCommonType() != v.getType())
             m_commonType = mu::TYPE_VOID;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Local function override to obtain void
+    /// instead of errors.
+    ///
+    /// \param i size_t
+    /// \return mu::Value
+    ///
+    /////////////////////////////////////////////////
+    mu::Value Cluster::get(size_t i) const
+    {
+        if (i < size())
+            return mu::Array::get(i);
+
+        return mu::Value();
     }
 
 
@@ -201,8 +218,8 @@ namespace NumeRe
         // possible
         if (_vLine.size() > 1 && !size())
             vTarget->resize(1, mu::Value());
-        else if (_vLine.size() == 1 && get(_vLine.front()).isArray())
-            *vTarget = get(_vLine.front()).getArray();
+        else if (_vLine.size() == 1 && _vLine.front() < size() && mu::Array::get(_vLine.front()).isArray())
+            *vTarget = mu::Array::get(_vLine.front()).getArray();
         else
         {
             vTarget->resize(_vLine.size(), mu::Value());
@@ -213,7 +230,7 @@ namespace NumeRe
             {
                 if (_vLine[i] < (int)size() && _vLine[i] >= 0)
                 {
-                    (*vTarget)[i] = get(_vLine[i]);
+                    (*vTarget)[i] = mu::Array::get(_vLine[i]);
                 }
             }
         }
@@ -306,7 +323,7 @@ namespace NumeRe
             if (sVector.size())
                 sVector += ", ";
 
-            sVector += get(i).print(5, maxStringLength < std::string::npos ? maxStringLength/4 : std::string::npos, false);
+            sVector += mu::Array::get(i).print(5, maxStringLength < std::string::npos ? maxStringLength/4 : std::string::npos, false);
 
             // Insert the ellipsis in the middle
             if (i == 1 && size() > 5)
@@ -392,7 +409,7 @@ namespace NumeRe
             if (vLines[i] < 0 || vLines[i] >= (int)size())
                 continue;
 
-            get(vLines[i]) = mu::Value();
+            mu::Array::get(vLines[i]) = mu::Value();
         }
 
         auto iter = begin();

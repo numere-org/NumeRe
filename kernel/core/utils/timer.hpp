@@ -21,7 +21,7 @@
 
 #include <chrono>
 #include <string>
-#include "../../kernel.hpp"
+#include "../ParserLib/muHelpers.hpp"
 #include "tools.hpp"
 
 class Timer
@@ -47,7 +47,7 @@ class Timer
             auto endTimePoint = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now());
             std::chrono::nanoseconds time_span = endTimePoint - m_StartPoint;
 
-            NumeReKernel::print("[" + m_ScopeName + "] Measured run time: " + toString(time_span.count() / 1000.0, 14) + " mus.");
+            mu::print("[" + m_ScopeName + "] Measured run time: " + toString(time_span.count() / 1000.0, 14) + " mus.");
         }
 };
 

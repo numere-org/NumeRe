@@ -2452,12 +2452,6 @@ void FlowCtrl::reset()
         for (; item != vVars.end(); ++item)
         {
             _parserRef->DefineVar(item->first, item->second);
-
-            for (size_t i = 0; i < sVarArray.size(); i++)
-            {
-                if (item->first == sVarArray[i])
-                    *item->second = vVarArray[i];
-            }
         }
 
         vVars.clear();
@@ -2797,6 +2791,17 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode(false);
 
+        sCommand = findCommand(sLine).sString;
+    }
+
+    // Handle the casting functions here
+    if (containsCastingFunctions(sLine))
+    {
+        nCalcType[nthCmd] |= CALCTYPE_TOCOMMAND | CALCTYPE_COMMAND | CALCTYPE_DATAACCESS | CALCTYPE_EXPLICIT | CALCTYPE_PROGRESS | CALCTYPE_RECURSIVEEXPRESSION;
+
+        evaluateCastingFunctions(sLine);
+
+        replaceLocalVars(sLine);
         sCommand = findCommand(sLine).sString;
     }
 
@@ -3305,6 +3310,9 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             sBuffer = sBuffer.substr(0, nPos - 6) + sCmdString + sBuffer.substr(nPos + nParPos + 1);
             nPos -= 5;
         }
+
+        if (containsCastingFunctions(sBuffer))
+            evaluateCastingFunctions(sBuffer);
 
         replaceLocalVars(sBuffer);
         sLine = StringView(sBuffer);

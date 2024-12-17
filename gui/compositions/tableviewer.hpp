@@ -124,6 +124,7 @@ class TableViewer : public wxGrid
         void groupHeaders(int startCol, int endCol, int row);
         void conditionalFormat(const wxGridCellCoordsContainer& cells, const CellValueShader& shader);
         bool isSilentSelection();
+        void enableQuotationMarks(bool enable = true);
 
         mu::Array getSelectedValues();
         int GetInternalRows(int gridrow) const;

@@ -1524,24 +1524,34 @@ void writeTeXMain(const string& sTeXFile)
 
 /////////////////////////////////////////////////
 /// \brief This static function detects, whether
-/// the current string expression is continued.
+/// the current parameter expression is continued
+/// after a whitespace. This is done by checking
+/// for operators and following chars, with
+/// special focus on minus characters.
 ///
 /// \param sCmd const std::string&
 /// \param pos size_t
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-static size_t isStringContinuation(const std::string& sCmd, size_t pos)
+static size_t isContinued(const std::string& sCmd, size_t pos)
 {
     if (sCmd.substr(pos, 2) == "  ")
         return std::string::npos;
 
     size_t nextChar = sCmd.find_first_not_of(' ', pos+1);
+    const static std::string sBinaryOperators = "+-*/^&|?:!=<>";
 
-    if (nextChar == std::string::npos || sCmd[nextChar] != '+')
+    if (nextChar == std::string::npos || sBinaryOperators.find(sCmd[nextChar]) == std::string::npos || sCmd.length() <= nextChar+2)
         return std::string::npos;
 
-    nextChar++;
+    // This is a combination like par=VAL -par2=VAL2
+    if (sCmd[nextChar] == '-' && std::isalpha(sCmd[nextChar+1]))
+        return std::string::npos;
+
+    // Advance over multiple combinations of operators
+    while (sBinaryOperators.find(sCmd[nextChar]) != std::string::npos)
+        nextChar++;
 
     if (sCmd.length() > nextChar && sCmd[nextChar] != ' ')
         return nextChar;
@@ -1648,9 +1658,9 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
 
         if (sCmd[i] == ' ')
         {
-            size_t cont = isStringContinuation(sCmd, i);
+            size_t cont = isContinued(sCmd, i);
 
-            if (cont < sCmd.length() && containsStrings(StringView(sCmd, nPos, i-nPos)))
+            if (cont < sCmd.length())
                 i = cont-1;
             else
             {
@@ -1833,6 +1843,7 @@ bool addLegends(string& sExpr)
     EndlessVector<std::string> args = getAllArguments(sExpr);
 
     std::string sTemp;
+    static const std::string sOPERATORS = "+-*/^?:!|&<>=";
 
     for (std::string arg : args)
     {
@@ -1879,6 +1890,42 @@ bool addLegends(string& sExpr)
                 }
 
                 break;
+            }
+            else if (arg[i] == ' ')
+            {
+                // The last character could be a delimiter
+                if (i && sOPERATORS.find(arg[i-1]) != std::string::npos)
+                {
+                    size_t following = arg.find_first_not_of(" " + sOPERATORS, i);
+
+                    if (following != std::string::npos)
+                    {
+                        i = following - 1;
+                        continue;
+                    }
+                }
+
+                size_t following = arg.find_first_not_of(" ", i);
+
+                // The found character could be a delimiter
+                if (sOPERATORS.find(arg[following]) != std::string::npos)
+                {
+                    following = arg.find_first_not_of(" " + sOPERATORS, following);
+
+                    if (following != std::string::npos)
+                    {
+                        i = following - 1;
+                        continue;
+                    }
+                }
+
+                if (std::isalpha(arg[following]) || arg[following] == '_')
+                {
+                    sTemp += arg.substr(0, i) + " \"\"+" + arg.substr(following);
+                    break;
+                }
+                else
+                    i = following-1;
             }
             else if (i+1 == arg.length())
             {
@@ -2454,7 +2501,7 @@ string replaceToVectorname(const string& sExpression)
         OprtRplc_setup(mOprtRplc);
 
     if (sVectorName.find_first_of("\"#") != std::string::npos)
-        return "_~" + sha256(sVectorName);
+        return "_~" + sha256(sVectorName) + "[]";
 
     // Remove whitespaces
     while (sVectorName.find(' ') != string::npos)
@@ -2974,6 +3021,48 @@ bool isToCmd(StringView sCmd, size_t nPos)
 
     // End was reached -> return false
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Check, whether one of the casting
+/// functions can be found in the expression.
+///
+/// \param sCmd StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool containsCastingFunctions(StringView sCmd)
+{
+    return sCmd.find("to_string(") != std::string::npos || sCmd.find("string_cast(") != std::string::npos;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Evaluate the casting functions in the
+/// passed expression.
+///
+/// \param sCmd std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void evaluateCastingFunctions(std::string& sCmd)
+{
+    size_t p;
+
+    while ((p = sCmd.find("string_cast(")) != std::string::npos)
+    {
+        size_t len = getMatchingParenthesis(StringView(sCmd, p+11));
+        std::string sArg = sCmd.substr(p+12, len-1);
+        sCmd.replace(p, len+12, toExternalString(sArg));
+    }
+
+    while ((p = sCmd.find("to_string(")) != std::string::npos)
+    {
+        size_t len = getMatchingParenthesis(StringView(sCmd, p+9));
+        std::string sArg = sCmd.substr(p+10, len-1);
+        sCmd.replace(p, len+10, (sArg.front() == '"' && sArg.back() == '"') ? sArg : toExternalString(sArg));
+    }
 }
 
 

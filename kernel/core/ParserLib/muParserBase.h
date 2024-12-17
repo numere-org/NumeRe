@@ -260,6 +260,9 @@ namespace mu
 					char_type m_cThousandsSep;
 			};
 
+			static Array evalIfElse(const Array& cond,
+                                    const Array& true_case,
+                                    const Array& false_case);
             static Array VectorCreate(const Array*, int);  // vector creation
             static Array Vector2Generator(const Array& firstVal,
                                           const Array& lastVal);

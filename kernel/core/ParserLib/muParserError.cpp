@@ -23,7 +23,8 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "muParserError.h"
-
+#include "../ui/language.hpp"
+extern Language _lang;
 
 namespace mu
 {

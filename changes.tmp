@@ -57,7 +57,10 @@ New	Experimental: clusters can now be created as hierarchical data structures, i
 Added	The function "today()" will return the current date in UTC.
 Fixed	Scripts can now be started with the tab's context menu functionality again.
 New	The window command option "options={KEY-VALUE-LIST}" can be used to modify additional window element properties. This option is currently only supported for "tablegrid" elements, where one can change the minimal number of rows and cols.
-Added	The window command option "options" can now be used to modify a "tablegrid"'s conditional formatting.
+Added	The window command option "options" can now be used to modify a "tablegrid"'s conditional formatting and further display parameters.
 New	NumeRe can now interact with databases using the command "database". Available interfaces for now are: MySQL/MariaDB, SQLite, ODBC. PostGreSQL is NOT supported right now due to dependency issues.
 Cleaned	Passwords, which are passed to commands via the "pwd=PASSWORD" option (notably "url" and "database") are now redacted within the logfile to 'pwd="******"'
 Cleaned	3rd party licenses are now listed in a dedicated file and will be displayed within the about dialog / legal tab.
+Applied	The inline conditional operator is now working correctly again.
+Added	The function "getdisplayscale()" returns the pixel scaling factor applied by MS Windows on some screens.
+Added	The function "is_void(x)" can be used to detect, whether x has the value void.

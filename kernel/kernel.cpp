@@ -592,7 +592,9 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("sleep", numfnc_sleep, false);                             // sleep(millisecnds)
     _parser.DefineFun("version", numfnc_numereversion);                          // version()
     _parser.DefineFun("getompthreads", numfnc_omp_threads);                      // getompthreads()
+    _parser.DefineFun("getdpiscale", numfnc_pixelscale);                         // getdpiscale()
     _parser.DefineFun("is_nan", numfnc_isnan);                                   // is_nan(x)
+    _parser.DefineFun("is_void", numfnc_isvoid);                                 // is_void(x)
     _parser.DefineFun("range", numfnc_interval);                                 // range(x,left,right)
     _parser.DefineFun("Ai", numfnc_AiryA);                                       // Ai(x)
     _parser.DefineFun("Bi", numfnc_AiryB);                                       // Bi(x)
@@ -670,6 +672,7 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("clock", timfnc_clock, false);                             // clock()
     _parser.DefineFun("today", timfnc_today, false);                             // today()
     _parser.DefineFun("date", timfnc_date);                                      // date(TIME,TYPE)
+    _parser.DefineFun("datetime", timfnc_datetime);                              // datetime(x)
     _parser.DefineFun("weeknum", timfnc_weeknum);                                // weeknum(tDate)
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);                       // as_date(nYear, nMounth, nDay)
     _parser.DefineFun("as_time", timfnc_as_time, true, 4);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
@@ -1114,6 +1117,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle the "to_cmd()" function
             handleToCmd(sLine, sCache, sCurrentCommand);
+
+            if (containsCastingFunctions(sLine))
+            {
+                evaluateCastingFunctions(sLine);
+                sCurrentCommand = findCommand(sLine).sString;
+            }
 
             // Handle procedure calls at this location
             // Will return false, if the command line was cleared completely

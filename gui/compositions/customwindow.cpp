@@ -428,6 +428,9 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const mu::Array& valu
     {
         if (elem[pos] == '\t')
             nColumns++;
+
+        if (elem.substr(pos, 2) == "\n{")
+            break;
     }
 
     if (useCheckBoxes)
@@ -601,6 +604,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_BOOKCTRL_PAGE_CHANGED(-1, CustomWindow::OnTabChanged)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
+    cEVT_SET_OPTIONS(-1, CustomWindow::OnSetOptionsEvent)
     cEVT_SET_SELECTION(-1, CustomWindow::OnSetSelectionEvent)
     cEVT_SET_FOCUS(-1, CustomWindow::OnSetFocusEvent)
 END_EVENT_TABLE()
@@ -1614,6 +1618,13 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
 /////////////////////////////////////////////////
 void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const EventPosition& pos)
 {
+    // Ensure that any table editor is closed
+    for (auto& item : m_windowItems)
+    {
+        if (item.second.first == CustomWindow::TABLE)
+            static_cast<TableViewer*>(item.second.second)->finalize();
+    }
+
 #warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
     {
@@ -2321,6 +2332,22 @@ bool CustomWindow::pushItemLabel(const mu::Array& _label, int windowItemID)
 
 
 /////////////////////////////////////////////////
+/// \brief Push an item options change to the
+/// internal event handler.
+///
+/// \param _opts const mu::Array&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemOptions(const mu::Array& _opts, int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetOptionsEvent(SET_WINDOW_OPTIONS, GetId(), windowItemID, _opts));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Push an item selection change to the
 /// internal event handler.
 ///
@@ -2808,6 +2835,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
             {
                 TableViewer* table = static_cast<TableViewer*>(object.second);
 
+                bool fitSize = false;
+
                 for (size_t i = 0; i < _options.size(); i+=2)
                 {
                     if (_options.get(i) == mu::Value("min-cols"))
@@ -2824,6 +2853,43 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                         if (r < _options.get(i+1).getNum().asI64()+1)
                             table->AppendRows(_options.get(i+1).getNum().asI64()-r+1);
+                    }
+
+                    if (_options.get(i) == mu::Value("use-qmarks"))
+                        table->enableQuotationMarks((bool)_options.get(i+1));
+
+                    if (_options.get(i) == mu::Value("fitsize"))
+                        fitSize = (bool)_options.get(i+1);
+
+                    if (_options.get(i) == mu::Value("fitsize-cols"))
+                    {
+                        wxArrayInt cols;
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        if (_options.get(i+1).isArray())
+                        {
+                            const mu::Array& selectedCols = _options.get(i+1).getArray();
+
+                            for (size_t k = 0; k < selectedCols.size(); k++)
+                            {
+                                int64_t selected = selectedCols.get(k).getNum().asI64();
+
+                                if (currentCols < selected || selected < 1)
+                                    continue;
+
+                                cols.Add(selected-1);
+                            }
+                        }
+                        else if (_options.get(i+1).getNum().asI64() > 0 && _options.get(i+1).getNum().asI64() <= currentCols)
+                            cols.Add(_options.get(i+1).getNum().asI64()-1);
+
+                        if (!cols.size())
+                            return false;
+
+                        for (size_t i = 0; i < cols.size(); i++)
+                        {
+                            table->AutoSizeColumn(i);
+                        }
                     }
 
                     if (_options.get(i) == mu::Value("cond-format"))
@@ -2977,6 +3043,151 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             }
                         }
                     }
+
+                    if (_options.get(i) == mu::Value("cell-format"))
+                    { // "cell-format", {CELLS, FORMATTING, CELLS, FORMATTING, ...}
+                        const mu::Array& formatting = _options.get(i+1).getArray();
+                        int64_t currentRows = table->GetNumberRows()-1;
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        for (size_t j = 0; j < formatting.size(); j+=2)
+                        {
+                            wxGridCellCoordsArray cells;
+
+                            // CELLS = {r, c} or {{r}, {c}}
+                            if (!formatting.get(j).isArray())
+                                return false;
+
+                            mu::Array rows = formatting.get(j).getArray().get(0);
+                            mu::Array cols = formatting.get(j).getArray().get(1);
+
+                            for (size_t k = 0; k < std::max(rows.size(), cols.size()); k++)
+                            {
+                                int64_t row = rows.get(k).getNum().asI64();
+                                int64_t col = cols.get(k).getNum().asI64();
+
+                                if (row > 0 && row <= currentRows && col > 0 && col <= currentCols)
+                                    cells.Add(wxGridCellCoords(row-1, col-1));
+                            }
+
+                            if (!cells.size())
+                                return false;
+
+                            wxGridCellAttr* attr = new wxGridCellAttr();
+
+                            const mu::Array& definition = formatting.get(j+1).getArray();
+
+                            for (size_t n = 0; n < definition.size(); n+=2)
+                            {
+                                if (definition.get(n) == mu::Value("font"))
+                                {
+                                    wxFont font = table->GetDefaultCellFont();
+                                    std::string sFormattingString = definition.get(n+1).getStr();
+
+                                    for (const char c : sFormattingString)
+                                    {
+                                        switch (c)
+                                        {
+                                        case 'i':
+                                            font.MakeItalic();
+                                            break;
+                                        case 'b':
+                                            font.MakeBold();
+                                            break;
+                                        case 'u':
+                                            font.MakeUnderlined();
+                                            break;
+                                        case 'x':
+                                            font.MakeStrikethrough();
+                                            break;
+                                        case 's':
+                                            font.MakeSmaller();
+                                            break;
+                                        case 'l':
+                                            font.MakeLarger();
+                                            break;
+                                        }
+                                    }
+
+                                    attr->SetFont(font);
+                                }
+
+                                if (definition.get(n) == mu::Value("color"))
+                                    attr->SetTextColour(wxColour(definition.get(n+1).getStr()));
+
+                                if (definition.get(n) == mu::Value("bgcolor"))
+                                    attr->SetBackgroundColour(wxColour(definition.get(n+1).getStr()));
+                            }
+
+                            for (size_t n = 0; n < cells.size(); n++)
+                            {
+                                table->SetAttr(table->GetExternalRows(cells[n].GetRow()),
+                                               cells[n].GetCol(),
+                                               attr->Clone());
+                            }
+
+                            attr->DecRef();
+                            table->Refresh();
+                        }
+                    }
+
+                    if (_options.get(i) == mu::Value("col-labels"))
+                    {// "col-labels", {{COLS},{LABELS}}, ...
+                        const mu::Array& labelDef = _options.get(i+1).getArray();
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        mu::Array cols = labelDef.get(0);
+                        mu::Array labels = labelDef.get(1);
+
+                        for (size_t j = 0; j < std::max(cols.size(), labels.size()); j++)
+                        {
+                            int64_t col = cols.get(j).getNum().asI64();
+
+                            if (col <= 0 || col > currentCols)
+                                continue;
+
+                            table->SetColLabelValue(col-1, labels.get(j).getStr());
+                        }
+                    }
+
+                    if (_options.get(i) == mu::Value("hide-rows"))
+                    {// "hide-rows", {COLS}, ...
+                        mu::Array rows = _options.get(i+1);
+                        int64_t currentRows = table->GetNumberRows()-1;
+
+                        for (size_t j = 0; j < rows.size(); j++)
+                        {
+                            int64_t row = table->GetExternalRows(rows.get(j).getNum().asI64()-1);
+
+                            if (row < 0 || row >= currentRows)
+                                continue;
+
+                            table->HideRow(row);
+                        }
+                    }
+
+                    if (_options.get(i) == mu::Value("hide-cols"))
+                    {// "hide-cols", {COLS}, ...
+                        mu::Array cols = _options.get(i+1);
+                        int64_t currentCols = table->GetNumberCols()-1;
+
+                        for (size_t j = 0; j < cols.size(); j++)
+                        {
+                            int64_t col = cols.get(j).getNum().asI64();
+
+                            if (col <= 0 || col > currentCols)
+                                continue;
+
+                            table->HideCol(col-1);
+                        }
+                    }
+                }
+
+                // Resizing at the end
+                if (fitSize)
+                {
+                    table->AutoSize();
+                    table->GetParent()->Layout();
                 }
 
                 break;
@@ -3038,12 +3249,15 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::TEXTCTRL:
         {
             TextField* field = static_cast<TextField*>(object.second);
+            int pos = std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L);
 
             if (selectionID2)
-                field->SetSelection(std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L),
+                field->SetSelection(pos,
                                     std::max(std::min((long)selectionID-1+selectionID2, (long)field->GetLastPosition()), 0L));
             else
-                field->SetInsertionPoint(std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L));
+                field->SetInsertionPoint(pos);
+
+            field->ShowPosition(pos);
 
             break;
         }
@@ -3068,8 +3282,10 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            table->SetGridCursorSilent(std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1),
-                                       std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1));
+            int row = std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1);
+            int col = std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1);
+            table->SetGridCursorSilent(row, col);
+            table->MakeCellVisible(row, col);
             break;
         }
         case CustomWindow::TREELIST:

@@ -235,6 +235,7 @@ bool NumeReApp::OnInit()
         splash->Destroy();
 
     m_mainWindow->ShowEditorCarets();
+    m_mainWindow->ensureEditorTabVisible();
 
     // Any files, which could not be loaded
     if (m_mainWindow->m_UnrecoverableFiles.length())

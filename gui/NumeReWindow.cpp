@@ -7548,3 +7548,22 @@ void NumeReWindow::OnReportIssue(ErrorLocation errLoc)
     dialog.ShowModal();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Helper member function to ensure that
+/// the current active tab after reload is
+/// visible.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::ensureEditorTabVisible()
+{
+    if (m_book->GetPageCount() > 5)
+    {
+        int sel = m_book->GetSelection();
+        m_book->SetSelection(0);
+        m_book->SetSelection(sel);
+    }
+}
+

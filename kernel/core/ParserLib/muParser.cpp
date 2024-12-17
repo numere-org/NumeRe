@@ -162,8 +162,6 @@ namespace mu
         else
             *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
 
-        std::cout << a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).to_string() << " " << (a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).find_first_of(".eE") != std::string::npos) << std::endl;
-
         *a_fVal = Numerical::autoType(fVal, a_szExpr.subview(0, *a_iPos-a_szExpr.get_offset()).find_first_of(".eE") != std::string::npos ? F64 : AUTO);
         return 1;
     }
@@ -212,6 +210,7 @@ namespace mu
         DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
         DefineFun(MU_VECTOR_EXP2, ParserBase::Vector2Generator);
         DefineFun(MU_VECTOR_EXP3, ParserBase::Vector3Generator);
+        DefineFun(MU_IF_ELSE, ParserBase::evalIfElse);
     }
 
     //---------------------------------------------------------------------------

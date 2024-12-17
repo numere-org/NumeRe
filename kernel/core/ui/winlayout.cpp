@@ -124,17 +124,24 @@ static void evaluateExpression(std::string& sExpr)
 
     for (int i = 0; i < results; i++)
     {
-        if (sExpr.length())
-            sExpr += ",";
+        for (size_t j = 0; j < v[i].size(); j++)
+        {
+            if (sExpr.length())
+                sExpr += ",";
+
+            sExpr += toExternalString(v[i][j].printVal());
+        }
+
+
 
         // Has to use print() instead of printvals() to correctly
         // resolve cases like "RF", "RG", "RC,RD"
-        std::string sVal = v[i].print(7);
+        /*std::string sVal = v[i].print(7);
 
         if (sVal.front() == '{' && sVal.back() == '}')
             sExpr += sVal.substr(1, sVal.length()-2);
         else
-            sExpr += sVal;
+            sExpr += sVal;*/
     }
 }
 
@@ -890,25 +897,24 @@ void dialogCommand(CommandLineParser& cmdParser)
             nControls |= NumeRe::CTRL_ICONQUESTION;
     }
 
-    // Strip spaces and assign the value
-    sExpression = cmdParser.getExpr();
+    // Parse the expression
+    std::vector<mu::Array> arr = cmdParser.parseExpr();
 
-    // Resolve table accesses
-    if (kernel->getMemoryManager().containsTablesOrClusters(sExpression))
-        getDataElements(sExpression, kernel->getParser(), kernel->getMemoryManager());
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        for (size_t j = 0; j < arr[i].size(); j++)
+        {
+            if (sExpression.size())
+                sExpression += ",";
 
-    // Handle strings in the default value
-    // expression. This will include also possible path
-    // tokens
-    kernel->getParser().SetExpr(sExpression);
-    sExpression = kernel->getParser().Eval().print();
+            sExpression += arr[i][j].print();
+        }
+    }
 
     // Ensure that default values are available, if the user
     // selected either a list or a selection dialog
     if ((nControls & NumeRe::CTRL_LISTDIALOG || nControls & NumeRe::CTRL_SELECTIONDIALOG) && (!sExpression.length() || sExpression == "\"\""))
-    {
         throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, cmdParser.getCommandLine(), "dialog");
-    }
 
     // Use the default expression as message for the message
     // box as a fallback solution
@@ -918,9 +924,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     // Ensure that the message box has at least a message,
     // because the message box is the default value
     if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
-    {
         throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, cmdParser.getCommandLine(), "dialog");
-    }
 
     // Ensure that the path for the file and the directory
     // dialog is a valid path and replace all placeholders

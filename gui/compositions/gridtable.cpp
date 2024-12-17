@@ -20,8 +20,6 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
 
-std::string removeQuotationMarks(const std::string& sString);
-
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
@@ -259,7 +257,11 @@ wxString GridNumeReTable::GetValue(int row, int col)
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
-        return removeQuotationMarks(_table.getValueAsString(row - getNumHeadlines(), col));
+    {
+        std::string sValue = toInternalString(_table.getValueAsString(row - getNumHeadlines(), col));
+        replaceAll(sValue, "\t", "    ");
+        return sValue;
+    }
     else
         return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
 }
@@ -524,7 +526,27 @@ wxString GridNumeReTable::GetRowLabelValue(int row)
 /////////////////////////////////////////////////
 wxString GridNumeReTable::GetColLabelValue(int col)
 {
+    auto iter = m_customColLabels.find(col);
+
+    if (iter != m_customColLabels.end())
+        return iter->second;
+
     return toString(col+1);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets a custom column label.
+///
+/// \param col int
+/// \param label const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void GridNumeReTable::SetColLabelValue(int col, const wxString& label)
+{
+    if (col >= 0 && col < _table.getCols())
+        m_customColLabels[col] = label;
 }
 
 
@@ -744,5 +766,19 @@ std::vector<std::string> GridNumeReTable::getCategories(int col) const
         return static_cast<CategoricalColumn*>(_table.getColumn(col))->getCategories();
 
     return std::vector<std::string>();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Enable or disable the quoation marks
+/// around strings.
+///
+/// \param enable bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void GridNumeReTable::enableQuotationMarks(bool enable)
+{
+    m_showQMarks = enable;
 }
 
