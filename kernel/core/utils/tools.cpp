@@ -1843,6 +1843,7 @@ bool addLegends(string& sExpr)
     EndlessVector<std::string> args = getAllArguments(sExpr);
 
     std::string sTemp;
+    static const std::string sOPERATORS = "+-*/^?:!|&<>=";
 
     for (std::string arg : args)
     {
@@ -1892,7 +1893,31 @@ bool addLegends(string& sExpr)
             }
             else if (arg[i] == ' ')
             {
+                // The last character could be a delimiter
+                if (i && sOPERATORS.find(arg[i-1]) != std::string::npos)
+                {
+                    size_t following = arg.find_first_not_of(" " + sOPERATORS, i);
+
+                    if (following != std::string::npos)
+                    {
+                        i = following - 1;
+                        continue;
+                    }
+                }
+
                 size_t following = arg.find_first_not_of(" ", i);
+
+                // The found character could be a delimiter
+                if (sOPERATORS.find(arg[following]) != std::string::npos)
+                {
+                    following = arg.find_first_not_of(" " + sOPERATORS, following);
+
+                    if (following != std::string::npos)
+                    {
+                        i = following - 1;
+                        continue;
+                    }
+                }
 
                 if (std::isalpha(arg[following]) || arg[following] == '_')
                 {

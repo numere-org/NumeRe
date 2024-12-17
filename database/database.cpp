@@ -40,8 +40,17 @@ void databaseCommand(CommandLineParser& cmdParser)
         else if (sType == "odbc")
             type = DB_ODBC;
 
-        if (type == DB_SQLITE) // TODO parse file name
-            cmdParser.setReturnValue(mu::Value(openDbConnection(expression.front().front().printVal(), type)));
+        if (type == DB_SQLITE)
+        {
+            std::string sFileName = expression.front().front().getStr();
+
+            if (sFileName.find('.') != std::string::npos)
+                sFileName = sFileName.substr(sFileName.rfind('.')+1);
+            else
+                sFileName = "sqlite";
+
+            cmdParser.setReturnValue(mu::Value(openDbConnection(cmdParser.getExprAsFileName(sFileName), type)));
+        }
         else if (type == DB_MYSQL || type == DB_POSTGRES)
         {
             std::string sUser = cmdParser.getParsedParameterValueAsString("usr", "", true);

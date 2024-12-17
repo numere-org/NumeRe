@@ -312,7 +312,7 @@ namespace NumeRe
         {
             CallTip _cTip;
             std::ifstream procedure_in;
-            std::string sProcCommandLine;
+            std::string sBuffer;
             bool bBlockComment = false;
             std::string sDocumentation;
             bool bDocFound = false;
@@ -326,8 +326,9 @@ namespace NumeRe
             while (!procedure_in.eof())
             {
                 // Read one line and strip all spaces
-                std::getline(procedure_in, sProcCommandLine);
-                StripSpaces(sProcCommandLine);
+                std::getline(procedure_in, sBuffer);
+                StringView sProcCommandLine(sBuffer);
+                sProcCommandLine.strip();
 
                 // Ignore empty lines
                 if (!sProcCommandLine.length())
@@ -342,14 +343,14 @@ namespace NumeRe
                 {
                     // Append each documentation string
                     if (sProcCommandLine.starts_with("##!"))
-                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.subview(3).to_string());
 
                     continue;
                 }
 
                 // Erase line comment parts
                 if (sProcCommandLine.find("##") != std::string::npos)
-                    sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
+                    sProcCommandLine.trim_back(sProcCommandLine.find("##"));
 
                 // Remove block comments and continue
                 if (sProcCommandLine.starts_with("#*") && sProcCommandLine.find("*#", 2) == std::string::npos)
@@ -357,7 +358,7 @@ namespace NumeRe
                     if (sProcCommandLine.starts_with("#*!"))
                     {
                         bDocFound = true;
-                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.subview(3).to_string());
                     }
 
                     bBlockComment = true;
@@ -370,17 +371,17 @@ namespace NumeRe
                     bBlockComment = false;
 
                     if (bDocFound)
-                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.get_viewed_string().substr(0, sBuffer.find("*#")));
                     if (sProcCommandLine.find("*#") == sProcCommandLine.length() - 2)
                         continue;
                     else
-                        sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#") + 2);
+                        sProcCommandLine = sProcCommandLine.subview(sProcCommandLine.find("*#") + 2);
                 }
                 else if (bBlockComment && sProcCommandLine.find("*#") == std::string::npos)
                 {
                     // if the documentation has a length, append the current block
                     if (bDocFound)
-                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine);
+                        AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.get_viewed_string());
 
                     continue;
                 }
@@ -418,10 +419,11 @@ namespace NumeRe
                 else
                 {
                     // Found the procedure name, now extract the definition
-                    if (getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find(procedurename))) == std::string::npos)
+                    if (getMatchingParenthesis(sProcCommandLine.subview(sProcCommandLine.find(procedurename))) == std::string::npos)
                         return CallTip();
 
-                    _cTip.sDefinition = sProcCommandLine.substr(sProcCommandLine.find(procedurename), getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find(procedurename))) + 1);
+                    _cTip.sDefinition = sProcCommandLine.subview(sProcCommandLine.find(procedurename),
+                                                                 getMatchingParenthesis(sProcCommandLine.subview(sProcCommandLine.find(procedurename))) + 1).to_string();
                     size_t nFirstParens = _cTip.sDefinition.find('(');
                     std::string sArgList = _cTip.sDefinition.substr(nFirstParens + 1, getMatchingParenthesis(StringView(_cTip.sDefinition, nFirstParens)) - 1);
                     _cTip.sDefinition.erase(nFirstParens + 1);
@@ -443,7 +445,7 @@ namespace NumeRe
 
                     if (sProcCommandLine.find("::") != std::string::npos)
                     {
-                        std::string sFlags = sProcCommandLine.substr(sProcCommandLine.find("::") + 2).c_str();
+                        std::string sFlags = sProcCommandLine.subview(sProcCommandLine.find("::") + 2).to_string();
 
                         if (sFlags.find("##") != std::string::npos)
                             sFlags.erase(sFlags.find("##"));
@@ -457,19 +459,20 @@ namespace NumeRe
                     {
                         while (!procedure_in.eof())
                         {
-                            std::getline(procedure_in, sProcCommandLine);
-                            StripSpaces(sProcCommandLine);
+                            std::getline(procedure_in, sBuffer);
+                            sProcCommandLine = sBuffer;
+                            sProcCommandLine.strip();
 
                             if (sProcCommandLine.starts_with("##!"))
-                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
+                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.subview(3).to_string());
                             else if (sProcCommandLine.starts_with("#*!"))
                             {
-                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(3));
+                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.subview(3).to_string());
                                 bBlockComment = true;
                             }
                             else if (bBlockComment)
                             {
-                                AppendToDocumentation(_cTip.sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
+                                AppendToDocumentation(_cTip.sDocumentation, sBuffer.substr(0, sBuffer.find("*#")));
 
                                 if (sProcCommandLine.find("*#") != std::string::npos)
                                     break;

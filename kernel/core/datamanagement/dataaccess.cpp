@@ -1688,7 +1688,6 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     VectorIndex cols(v[0]);
     size_t nClusters = v[1].getAsScalarInt();
 
-    VectorIndex vIndex(0, VectorIndex::OPEN_END);
     size_t maxIterations = 100;
     Memory::KmeansInit init_method = Memory::KmeansInit::INIT_RANDOM;
     size_t n_init = 10;
