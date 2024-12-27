@@ -1,4 +1,4 @@
-###muParser
+###muParser v2.2.2
 https://beltoforion.de/en/muparser/
 Copyright (C) 2011 Ingo Berg
 
@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                   --------------------------
 
-###MathGL
+###MathGL v8.0.1
 https://mathgl.sourceforge.net/
 MathGL - Math Graphics Library
 Copyright (C) 2007-2023 Alexey Balakin <mathgl.abalakin@gmail.ru>
@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
                   --------------------------
 
-###GSL
+###GSL v2.7.0
 https://www.gnu.org/software/gsl/
 GSL - GNU Scientific Library
 Copyright (C) 2023  M. Galassi et al.
@@ -36,7 +36,7 @@ You should have received a copy of the GNU General Public License along with thi
 
                   --------------------------
 
-###Boost
+###Boost v1.82.0
 https://www.boost.org/
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -48,14 +48,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                   --------------------------
 
-###Eigen
+###Eigen v3.3.0
 https://eigen.tuxfamily.org/
 Eigen (c) Gael Guennebaud, Benoit Jacob
 This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
                   --------------------------
 
-###cURL
+###cURL v8.1.2
 https://curl.se/libcurl/
 Copyright (c) 1996 - 2023, Daniel Stenberg, <daniel@haxx.se>, and many contributors, see the THANKS file.
 
@@ -69,7 +69,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
                   --------------------------
 
-###libNoise
+###libNoise v1.0.0
 https://libnoise.sourceforge.net/
 Copyright (C) 2003, 2004 Jason Bevins
 
@@ -81,7 +81,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
                   --------------------------
 
-###fast_float
+###fast_float v4.0.0
 https://github.com/fastfloat/fast_float
 MIT License
 
@@ -95,7 +95,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                   --------------------------
 
-###chrono::date
+###chrono::date v2.4.1 @8ee611
 https://github.com/HowardHinnant/date
 chrono::date (c) Howard Hinnant et al.
 The MIT License (MIT)
@@ -108,7 +108,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                   --------------------------
 
-###Info-ZIP
+###Info-ZIP v3.0 and v6.0
 https://infozip.sourceforge.net/
 Copyright (c) 1990-2009 Info-ZIP. All rights reserved.
 
@@ -130,7 +130,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
                   --------------------------
 
-###dtl
+###dtl v1.20
 https://github.com/cubicdaiya/dtl
 In short, Diff Template Library is distributed under so called "BSD license",
 
@@ -161,7 +161,7 @@ You should have received a copy of the GNU General Public License along with thi
 
                   --------------------------
 
-###TinyXML-2
+###TinyXML-2 v9.0.0
 https://github.com/leethomason/tinyxml2
 TinyXML-2 (c) Lee Thomason
 This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
@@ -182,7 +182,7 @@ https://www.codeproject.com/Articles/13852/BasicExcel-A-Class-to-Read-and-Write-
 
                   --------------------------
 
-###wxWidgets
+###wxWidgets v3.0.2
 https://www.wxwidgets.org/
              wxWindows Library Licence, Version 3.1
              --------------------------------------
@@ -212,7 +212,7 @@ EXCEPTION NOTICE
 
                   --------------------------
 
-###Feather-Icons
+###Feather-Icons v4.29.0
 https://feathericons.com/
 The MIT License (MIT)
 
@@ -226,7 +226,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                   --------------------------
 
-###QR Code Generator Library
+###QR Code Generator Library v1.7.0
 https://www.nayuki.io/page/qr-code-generator-library
 Copyright (c) 2022 Project Nayuki. (MIT License)  
 
@@ -238,7 +238,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
                   --------------------------
 
-###qtl
+###qtl @0af627
 https://github.com/znone/qtl
 Copyright (c) 2017 znone
 
@@ -250,13 +250,13 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
                   --------------------------
 
-###SQLite
+###SQLite v3.47.0
 SQLite [Public domain]
 https://www.sqlite.org/copyright.html
 
                   --------------------------
 
-###MariaDB
+###MariaDB v3.4.1
 https://mariadb.com/
 Copyright (C) 2000, 2012 MySQL AB & MySQL Finland AB & TCX DataKonsult AB, Monty Program AB 2013, 2022 MariaDB Corporation AB
 
@@ -270,7 +270,7 @@ Part of this code includes code from the PHP project which is freely available f
 
                   --------------------------
 
-###std::uuid
+###std::uuid v1.2.3
 https://github.com/mariusbancila/stduuid
 MIT License
 
