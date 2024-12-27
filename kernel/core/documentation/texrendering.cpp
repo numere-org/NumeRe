@@ -255,7 +255,7 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
             replaceAll(sCode, "&amp;", "&");
 
             sDocParagraph.replace(k, sDocParagraph.find("</code>", k+6)+7-k, "\\lstinline[keepspaces=true]`" + sCode + "`");
-            k += sCode.length() + 12;
+            k += sCode.length() + 29;
         }
 
         if (sDocParagraph.substr(k,5) == "<img " && sDocParagraph.find("/>", k+5) != std::string::npos)
