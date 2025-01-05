@@ -84,6 +84,13 @@ void Script::openScript(std::string& _sScriptFileName, int nFromLine)
             throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, "", SyntaxError::invalid_position, _sScriptFileName);
         }
 
+        // Ensure that the starting line is within the valid regime
+        if (nFromLine < 0 || nFromLine >= m_script->getLinesCount())
+        {
+            close();
+            return;
+        }
+
         // Set the defaults
         sScriptFileName = _sScriptFileName;
         bValidScript = true;
@@ -98,7 +105,7 @@ void Script::openScript(std::string& _sScriptFileName, int nFromLine)
 
         // Advance to the requested start line and parse file specific
         // constants, includes and function definitions
-        while (nLine < nFromLine)
+        while (nLine < nFromLine && isOpen())
         {
             std::string sCmdline = getNextScriptCommand();
 
@@ -116,6 +123,9 @@ void Script::openScript(std::string& _sScriptFileName, int nFromLine)
                     nBlockStartLine = nLine-1;
             }
         }
+
+        if (!isOpen())
+            return;
 
         // If we're still inside a block, go back to its start position
         if (nLine >= nFromLine && flowCtrlSyntaxHelper.getCurrentBlockDepth() > 0)

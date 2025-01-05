@@ -1,2 +1,3 @@
 Cleaned	NDAT files do no longer show "NOTHING", if the extended file information setting has been turned off.
 Fixed	edit can now handle paths supplied via string variables again.
+Fixed	The "start from line" functionality of scripts now doesn't create endless loops, if the starting line lays beyond the valid regime.
