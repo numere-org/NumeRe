@@ -6451,8 +6451,8 @@ wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 {
     if (m_options->showExtendedFileInfo())
         return "\n" + getFileInfo(filename.GetFullPath().ToStdString());
-    else
-        return "NOTHING";
+
+    return "";
 }
 
 
