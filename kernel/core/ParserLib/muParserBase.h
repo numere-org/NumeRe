@@ -206,6 +206,7 @@ namespace mu
 			Variable* GetInternalVar(const std::string& sVarName);
 			void ClearInternalVars(bool bIgnoreProcedureVects = false);
 			bool ContainsInternalVars(StringView sExpr, bool ignoreSingletons);
+			bool ContainsStringVars(StringView sExpr);
 
 		protected:
 

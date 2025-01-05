@@ -478,10 +478,7 @@ static bool editObject(CommandLineParser& cmdParser)
         return true;
     }
 
-    if (!is_dir(cmdParser.getExpr()))
-        sObject = cmdParser.parseExprAsString();
-    else
-        sObject = cmdParser.getExpr();
+    sObject = cmdParser.getExprForFileOperation();
 
     std::string sDefaultExtension = ".dat";
     FileSystem _fSys;

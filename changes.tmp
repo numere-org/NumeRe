@@ -1,1 +1,2 @@
 Cleaned	NDAT files do no longer show "NOTHING", if the extended file information setting has been turned off.
+Fixed	edit can now handle paths supplied via string variables again.

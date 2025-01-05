@@ -3626,5 +3626,33 @@ namespace mu
 
         return false;
 	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function checks, whether
+    /// the passed expression contains string
+    /// variables.
+    ///
+    /// \param sExpr StringView
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+	bool ParserBase::ContainsStringVars(StringView sExpr)
+	{
+	    const varmap_type& vmap = GetVar();
+
+	    for (const auto& iter : vmap)
+        {
+            if (iter.second->getCommonType() != TYPE_STRING)
+                continue;
+
+            size_t nPos = sExpr.find(iter.first);
+
+            if (nPos != string::npos && sExpr.is_delimited_sequence(nPos, iter.first.length(), StringViewBase::PARSER_DELIMITER))
+                return true;
+        }
+
+        return false;
+	}
 } // namespace mu
 

@@ -307,12 +307,13 @@ std::string CommandLineParser::getExprForFileOperation() const
     if (!sFilePath.length())
         return "";
 
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+
     // It is mostly possible to supply a file path without being enclosed
     // in quotation marks. is_dir checks for that
-    if (!is_dir(sFilePath))
+    if (!is_dir(sFilePath) || _parser.ContainsStringVars(sFilePath))
     {
         // String evaluation
-        mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
         _parser.SetExpr(sFilePath);
         mu::Array v = _parser.Eval();
         sFilePath = v.front().getStr();
