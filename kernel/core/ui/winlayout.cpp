@@ -292,9 +292,18 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
             if (_includer)
                 _includer.reset();
 
-            // Get the current line without comments
-            line = layoutScript.getStrippedLine(i);
-            i++;
+            do
+            {
+                // Remove trailing backslashes
+                if (line.length())
+                    line.erase(line.length()-2);
+
+                // Get the current line without comments
+                line += layoutScript.getStrippedLine(i);
+                StripSpaces(line);
+                i++;
+
+            } while (line.ends_with("\\\\") && i < layoutScript.getLinesCount());
 
             // If this line contains an including syntax, create
             // a new includer to resolve that
@@ -304,6 +313,10 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
                 continue;
             }
         }
+
+        // Check, if all parentheses are matching
+        if (!validateParenthesisNumber(line))
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, line, line.find_first_of("({[]})"));
 
         // Resolve symbol declarations
         _symDefs.resolveSymbols(line);
