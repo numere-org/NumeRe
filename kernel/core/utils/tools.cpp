@@ -3061,7 +3061,8 @@ void evaluateCastingFunctions(std::string& sCmd)
     {
         size_t len = getMatchingParenthesis(StringView(sCmd, p+9));
         std::string sArg = sCmd.substr(p+10, len-1);
-        sCmd.replace(p, len+10, (sArg.front() == '"' && sArg.back() == '"') ? sArg : toExternalString(sArg));
+        sCmd.replace(p, len+10, ((sArg.front() == '"' && sArg.back() == '"')
+                                 || NumeReKernel::getInstance()->getParser().ContainsStringVars(sArg)) ? sArg : toExternalString(sArg));
     }
 }
 
