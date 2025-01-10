@@ -435,7 +435,12 @@ static bool containsValidElements(const mu::Array* vElements, int nElements)
 mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
 {
     if (nElements == 1)
+    {
+        if (vElements[0].getCommonType() == mu::TYPE_VOID)
+            return mu::Value(0u);
+
         return mu::Array(mu::Value(vElements[0].size()));
+    }
 
     return mu::Array(mu::Value(nElements));
 }

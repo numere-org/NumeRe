@@ -357,7 +357,7 @@ mu::Value Memory::readMem(size_t _nLine, size_t _nCol) const
     if (memArray.size() > _nCol && memArray[_nCol])
         return memArray[_nCol]->get(_nLine);
 
-    return NAN;
+    return mu::Value();
 }
 
 
@@ -455,38 +455,38 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 {
     mu::Array vReturn;
 
-    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vReturn.push_back(NAN);
-    else
+    if ((_vLine.size() > 1 && _vCol.size() > 1)
+        || !memArray.size()
+        || _vCol.size() == 1 && !getElemsInColumn(_vCol.front()))
+        return vReturn;
+
+    vReturn.resize(_vLine.size()*_vCol.size(), NAN);
+
+    //#pragma omp parallel for
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
-        vReturn.resize(_vLine.size()*_vCol.size(), NAN);
+        if (_vCol[j] < 0)
+            continue;
 
-        //#pragma omp parallel for
-        for (size_t j = 0; j < _vCol.size(); j++)
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
-            if (_vCol[j] < 0)
+            if (_vLine[i] < 0)
                 continue;
 
-            int elems = getElemsInColumn(_vCol[j]);
-
-            if (!elems)
-                continue;
-
-            for (size_t i = 0; i < _vLine.size(); i++)
+            if (_vLine[i] >= elems)
             {
-                if (_vLine[i] < 0)
-                    continue;
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
 
-                if (_vLine[i] >= elems)
-                {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
-                        break;
-
-                    continue;
-                }
-
-                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
+                continue;
             }
+
+            vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
         }
     }
 
