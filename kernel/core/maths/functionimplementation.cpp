@@ -3938,6 +3938,124 @@ mu::Array numfnc_log_b(const mu::Array& b, const mu::Array& x)
 
 
 /////////////////////////////////////////////////
+/// \brief Calculates the complementary set of
+/// the refSet with respect to the universe set.
+///
+/// \param universe const mu::Array&
+/// \param refSet const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_complement(const mu::Array& universe, const mu::Array& refSet)
+{
+    mu::Array complementary;
+
+    for (size_t i = 0; i < universe.size(); i++)
+    {
+        bool found = false;
+
+        for (size_t j = 0; j < refSet.size(); j++)
+        {
+            if (universe[i] == refSet[j])
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+            complementary.push_back(universe[i]);
+    }
+
+    return complementary;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the union of the two sets.
+///
+/// \param setA const mu::Array&
+/// \param setB const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
+{
+    mu::Array unified;
+
+    for (size_t i = 0; i < setA.size(); i++)
+    {
+        bool found = false;
+
+        for (size_t j = 0; j < unified.size(); j++)
+        {
+            if (unified[j] == setA[i])
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+            unified.push_back(setA[i]);
+    }
+
+    for (size_t i = 0; i < setB.size(); i++)
+    {
+        bool found = false;
+
+        for (size_t j = 0; j < unified.size(); j++)
+        {
+            if (unified[j] == setB[i])
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+            unified.push_back(setB[i]);
+    }
+
+    return unified;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the intersection of the two
+/// sets.
+///
+/// \param setA const mu::Array&
+/// \param setB const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_intersection(const mu::Array& setA, const mu::Array& setB)
+{
+    mu::Array intersected;
+
+    for (size_t i = 0; i < setA.size(); i++)
+    {
+        bool found = false;
+
+        for (size_t j = 0; j < setB.size(); j++)
+        {
+            if (setA[i] == setB[j])
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+            intersected.push_back(setA[i]);
+    }
+
+    return intersected;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the version number of NumeRe
 /// as a natural number.
 ///

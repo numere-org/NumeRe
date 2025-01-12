@@ -3,3 +3,4 @@ Fixed	edit can now handle paths supplied via string variables again.
 Fixed	The "start from line" functionality of scripts now doesn't create endless loops, if the starting line lays beyond the valid regime.
 Fixed	Layout scripts are now better checked against syntax and typing errors (notably unmatched parentheses).
 Cleaned	The function "cnt()" will now return 0 if "void" values are inserted as its argument (note that this is not true for an array of "void" values. Empty columns and empty tables will now also return "void" instead of "nan".
+Added	The functions "complement()", "intersection()" and "union()" provide means to apply set theory operations.
