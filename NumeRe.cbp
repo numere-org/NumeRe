@@ -192,6 +192,7 @@
 			<Add option="-lsqlite3" />
 			<Add option="-lmariadb" />
 			<Add option="-lpq" />
+			<Add option="-ljsoncpp" />
 			<Add option="-lws2_32" />
 			<Add option="-lodbc32" />
 			<Add option="-Wl,--stack,8388608" />

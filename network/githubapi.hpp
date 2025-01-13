@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include <json/json.h>
 
 namespace GitHub
 {
@@ -38,6 +39,7 @@ namespace GitHub
     };
 
     std::string create(const Issue& issue, const std::string& sApiUrl, const std::string& sUserAuth, const std::string& sLogPath);
+    Json::Value getReleases(const std::string& sRepoApiUrl, const std::string& sLogPath);
 }
 
 #endif // GITHUBAPI_HPP

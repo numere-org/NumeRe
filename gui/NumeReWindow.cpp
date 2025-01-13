@@ -106,6 +106,7 @@
 #include "../common/filerevisions.hpp"
 
 #include "../network/http.h"
+#include "../network/githubapi.hpp"
 #include "../common/compareFiles.hpp"
 
 #include "controls/treesearchctrl.hpp"
@@ -1588,6 +1589,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_REPORTISSUE:
         {
             OnReportIssue();
+            break;
+        }
+
+        case ID_MENU_FINDUPDATE:
+        {
+            OnFindUpdate();
             break;
         }
 
@@ -5280,6 +5287,7 @@ void NumeReWindow::UpdateMenuBar()
     wxMenu *helpMenu = new wxMenu;
     helpMenu->Append(ID_MENU_HELP, _guilang.get("GUI_MENU_SHOWHELP"));
     helpMenu->Append(ID_MENU_REPORTISSUE, _guilang.get("GUI_MENU_REPORTISSUE"));
+    helpMenu->Append(ID_MENU_FINDUPDATE, _guilang.get("GUI_MENU_FINDUPDATE"));
     helpMenu->AppendSeparator();
     helpMenu->Append(ID_MENU_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
 
@@ -7546,6 +7554,43 @@ void NumeReWindow::OnReportIssue(ErrorLocation errLoc)
     ReportIssueDialog dialog(this, wxID_ANY, errLoc);
     dialog.SetIcon(getStandardIcon());
     dialog.ShowModal();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function searches for any
+/// update and lets the user download it.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnFindUpdate()
+{
+    Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe", getProgramFolder().ToStdString());
+    static std::string sINTVERSION = "v" + toString((int)AutoVersion::MAJOR) + "."
+        + toString((int)AutoVersion::MINOR) + "."
+        + toString((int)AutoVersion::BUILD) + "."
+        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
+
+    if (!releases.empty())
+    {
+        Json::ArrayIndex latest = 0;
+
+        if (releases[latest]["tag_name"].asString() > sINTVERSION)
+        {
+            if (wxMessageBox(_guilang.get(releases[latest]["prerelease"].asBool() ? "GUI_UPDATECHECK_FND_RC" : "GUI_UPDATECHECK_FND",
+                                          releases[latest]["name"].asString(),
+                                          sINTVERSION,
+                                          releases[latest]["tag_name"].asString()),
+                             _guilang.get("GUI_UPDATECHECK_FND_HL"), wxCENTER | wxYES | wxNO | wxICON_QUESTION, this) == wxYES)
+                wxLaunchDefaultBrowser(releases[latest]["html_url"].asString());
+        }
+        else
+            wxMessageBox(_guilang.get("GUI_UPDATECHECK_NONE"), _guilang.get("GUI_UPDATECHECK_NONE_HL"),
+                         wxCENTER | wxOK | wxICON_INFORMATION, this);
+    }
+    else
+        wxMessageBox(_guilang.get("GUI_UPDATECHECK_ERROR"), _guilang.get("GUI_UPDATECHECK_ERROR_HL"), wxCENTER | wxOK | wxICON_ERROR, this);
 }
 
 

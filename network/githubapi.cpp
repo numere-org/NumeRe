@@ -324,6 +324,96 @@ namespace GitHub
 
         return "";
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get all releases available on GitHub.
+    ///
+    /// \param sRepoApiUrl const std::string&
+    /// \param sLogPath const std::string&
+    /// \return Json::Value
+    ///
+    /////////////////////////////////////////////////
+    Json::Value getReleases(const std::string& sRepoApiUrl, const std::string& sLogPath)
+    {
+        // Set Up CURL
+        CurlCpp curl(true);
+        Logger logger(sLogPath+"/github.log");
+
+        if (curl)
+        {
+            std::string responseBuffer;
+
+            curl.setHeader({"Accept: application/vnd.github+json", "X-GitHub-Api-Version: 2022-11-28"});
+
+            if (!curl.setOption(CURLOPT_USERAGENT, curl_version()))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            if (!curl.setOption(CURLOPT_FOLLOWLOCATION, 1L))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            if (!curl.setOption(CURLOPT_URL, (sRepoApiUrl + "/releases?per_page=10").c_str()))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            // Set up callback and buffer for response
+            if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            if (!curl.setOption(CURLOPT_WRITEDATA, &responseBuffer))
+            {
+                logger.push_line("ERROR: Internal cURL problem.");
+                return Json::Value();
+            }
+
+            // Perform Transmission
+            if (!curl.perform())
+            {
+                logger.push_line("ERROR: Transmission error.");
+                return Json::Value();
+            }
+
+            if (responseBuffer.find("\"html_url\": \"https://github.com/") != std::string::npos)
+            {
+                Json::Value root;
+                std::istringstream istr(responseBuffer);
+                istr >> root;
+
+                return root;
+            }
+
+            logger.push_line("Error: GitHub API reported a problem.");
+            logger.push_line("API response:");
+            logger.push_line(responseBuffer);
+        }
+        else
+            logger.push_line("ERROR: Internal cURL problem.");
+
+        return Json::Value();
+    }
 }
 
 
