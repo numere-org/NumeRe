@@ -134,7 +134,7 @@ void OptionsDialog::CreateControls()
     this->SetSizer(optionVSizer);
 
     // Create the notebook
-    m_optionsNotebook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxSize(450*g_pixelScale, 520*g_pixelScale), wxNB_DEFAULT | wxNB_TOP | wxNB_MULTILINE);
+    m_optionsNotebook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxSize(450*g_pixelScale, 640*g_pixelScale), wxNB_DEFAULT | wxNB_TOP | wxNB_MULTILINE);
 
     // Create the single pages in the following
     // private member functions. This approach
@@ -261,15 +261,35 @@ void OptionsDialog::CreatePathPage()
     wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_DEFAULTPATHS"));
 
     m_LoadPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOADPATH"), ID_BTN_LOADPATH);
+    wxBoxSizer* s = panel->createGroup(wxHORIZONTAL, group);
+    m_loadFileMask = panel->CreateTextInput(group->GetStaticBox(), s, _guilang.get("GUI_OPTIONS_FILEMASK"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
     m_SavePath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVEPATH"), ID_BTN_SAVEPATH);
+    s = panel->createGroup(wxHORIZONTAL, group);
+    m_saveFileMask = panel->CreateTextInput(group->GetStaticBox(), s, _guilang.get("GUI_OPTIONS_FILEMASK"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
     m_ScriptPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SCRIPTPATH"), ID_BTN_SCRIPTPATH);
+    s = panel->createGroup(wxHORIZONTAL, group);
+    m_scriptFileMask = panel->CreateTextInput(group->GetStaticBox(), s, _guilang.get("GUI_OPTIONS_FILEMASK"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
     m_ProcPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PROCPATH"), ID_BTN_PROCPATH);
+    s = panel->createGroup(wxHORIZONTAL, group);
+    m_procFileMask = panel->CreateTextInput(group->GetStaticBox(), s, _guilang.get("GUI_OPTIONS_FILEMASK"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
     m_PlotPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PLOTPATH"), ID_BTN_PLOTPATH);
+    s = panel->createGroup(wxHORIZONTAL, group);
+    m_plotFileMask = panel->CreateTextInput(group->GetStaticBox(), s, _guilang.get("GUI_OPTIONS_FILEMASK"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
 
+    wxTextValidator validFileMask(wxFILTER_INCLUDE_CHAR_LIST);
+    validFileMask.SetCharIncludes("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789*.;");
+    m_loadFileMask->SetValidator(validFileMask);
+    m_saveFileMask->SetValidator(validFileMask);
+    m_scriptFileMask->SetValidator(validFileMask);
+    m_procFileMask->SetValidator(validFileMask);
+    m_plotFileMask->SetValidator(validFileMask);
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_MISCPATHS"));
 
     m_LaTeXRoot = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LATEXPATH"), ID_BTN_LATEXPATH);
+
+    // Enable scrolling for this page, because it might be very large
+    panel->SetScrollbars(0, 20, 0, 200);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_PATHS"));
@@ -838,6 +858,11 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_S_SCRIPTPATH].stringval() = m_ScriptPath->GetValue().ToStdString();
     mSettings[SETTING_S_PROCPATH].stringval() = m_ProcPath->GetValue().ToStdString();
     mSettings[SETTING_S_PLOTPATH].stringval() = m_PlotPath->GetValue().ToStdString();
+    mSettings[SETTING_S_LOADPATHMASK].stringval() = m_loadFileMask->GetValue().ToStdString();
+    mSettings[SETTING_S_SAVEPATHMASK].stringval() = m_saveFileMask->GetValue().ToStdString();
+    mSettings[SETTING_S_SCRIPTPATHMASK].stringval() = m_scriptFileMask->GetValue().ToStdString();
+    mSettings[SETTING_S_PROCPATHMASK].stringval() = m_procFileMask->GetValue().ToStdString();
+    mSettings[SETTING_S_PLOTPATHMASK].stringval() = m_plotFileMask->GetValue().ToStdString();
     mSettings[SETTING_S_PLOTFONT].stringval() = m_defaultFont->GetValue().ToStdString();
     mSettings[SETTING_V_PRECISION].value() = m_precision->GetValue();
     mSettings[SETTING_V_BUFFERSIZE].value() = m_termHistory->GetValue();
@@ -954,6 +979,11 @@ void OptionsDialog::InitializeDialog()
     m_ScriptPath->SetValue(mSettings[SETTING_S_SCRIPTPATH].stringval());
     m_ProcPath->SetValue(mSettings[SETTING_S_PROCPATH].stringval());
     m_PlotPath->SetValue(mSettings[SETTING_S_PLOTPATH].stringval());
+    m_loadFileMask->SetValue(mSettings[SETTING_S_LOADPATHMASK].stringval());
+    m_saveFileMask->SetValue(mSettings[SETTING_S_SAVEPATHMASK].stringval());
+    m_scriptFileMask->SetValue(mSettings[SETTING_S_SCRIPTPATHMASK].stringval());
+    m_procFileMask->SetValue(mSettings[SETTING_S_PROCPATHMASK].stringval());
+    m_plotFileMask->SetValue(mSettings[SETTING_S_PLOTPATHMASK].stringval());
     m_defaultFont->SetValue(mSettings[SETTING_S_PLOTFONT].stringval());
 
     m_precision->SetValue(mSettings[SETTING_V_PRECISION].value());

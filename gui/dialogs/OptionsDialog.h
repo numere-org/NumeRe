@@ -40,6 +40,7 @@ class wxSpinCtrl;
 ////@end forward declarations
 
 class NumeReWindow;
+class TextField;
 
 /*!
  * Control identifiers
@@ -186,6 +187,11 @@ class OptionsDialog: public wxDialog
         wxTextCtrl* m_ScriptPath;
         wxTextCtrl* m_ProcPath;
         wxTextCtrl* m_PlotPath;
+        TextField* m_loadFileMask;
+        TextField* m_saveFileMask;
+        TextField* m_scriptFileMask;
+        TextField* m_procFileMask;
+        TextField* m_plotFileMask;
         wxTextCtrl* m_LaTeXRoot;
 
         wxComboBox* m_defaultFont;

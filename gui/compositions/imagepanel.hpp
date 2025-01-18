@@ -67,6 +67,8 @@ public:
     void OnNextImage(wxCommandEvent& event);
     void OnPreviousImage(wxCommandEvent& event);
 
+    static bool canOpen(const wxFileName& filename);
+
 
     DECLARE_EVENT_TABLE()
 };

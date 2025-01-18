@@ -1308,6 +1308,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     GenericFile* getFileByType(const std::string& filename, std::string sExt = "");
 
+    bool canLoadFile(const std::string& filename);
+
 
     /////////////////////////////////////////////////
     /// \brief This class is a facet for an arbitrary

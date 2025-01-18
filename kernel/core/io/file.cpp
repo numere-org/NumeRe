@@ -100,6 +100,58 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Determine, whether we can load a
+    /// defined file (determined by its extension).
+    ///
+    /// \param filename const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool canLoadFile(const std::string& filename)
+    {
+        FileSystem _fSys;
+        _fSys.initializeFromKernel();
+
+        // Get the extension of the filename
+        std::string sExt = toLowerCase(_fSys.getFileParts(filename).back());
+
+        // Determine, if the file is loadable
+        if (sExt == "ndat")
+            return true;
+
+        if ((sExt == "dat" || sExt == "zygo") && ZygoLib::DatFile::isDatFile(filename))
+            return true;
+
+        if (sExt == "txt" || sExt == "dat")
+            return true;
+
+        if (sExt == "csv")
+            return true;
+
+        if (sExt == "labx")
+            return true;
+
+        if (sExt == "ibw")
+            return true;
+
+        if (sExt == "ods")
+            return true;
+
+        if (sExt == "xls")
+            return true;
+
+        if (sExt == "xlsx")
+            return true;
+
+        if (sExt == "jdx" || sExt == "dx" || sExt == "jcm")
+            return true;
+
+        // If no filetype matches, return a null pointer
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Static helper function to detect and
     /// extract the possible unit in a column table
     /// headline.

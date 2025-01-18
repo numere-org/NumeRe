@@ -99,6 +99,7 @@
 #include "../kernel/core/documentation/docgen.hpp"
 #include "../kernel/core/ui/error.hpp"
 #include "../kernel/core/ui/calltipprovider.hpp"
+#include "../kernel/core/io/file.hpp"
 
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
@@ -1894,15 +1895,15 @@ void NumeReWindow::openImage(wxFileName filename)
     m_currentView = frame;
 
     // Create the image panel
-    if (filename.GetExt() == "png")
+    if (filename.GetExt().Lower() == "png")
         _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_PNG);
-    else if (filename.GetExt() == "bmp")
+    else if (filename.GetExt().Lower() == "bmp")
         _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_BMP);
-    else if (filename.GetExt() == "gif")
+    else if (filename.GetExt().Lower() == "gif")
         _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_GIF);
-    else if (filename.GetExt() == "jpg" || filename.GetExt() == "jpeg")
+    else if (filename.GetExt().Lower() == "jpg" || filename.GetExt().Lower() == "jpeg")
         _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_JPEG);
-    else if (filename.GetExt() == "tif" || filename.GetExt() == "tiff")
+    else if (filename.GetExt().Lower() == "tif" || filename.GetExt().Lower() == "tiff")
         _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_TIF);
     else
     {
@@ -1918,14 +1919,15 @@ void NumeReWindow::openImage(wxFileName filename)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function opens a PDF
-/// document using the windows shell.
+/// \brief This member function opens a file in
+/// an external program using the Windows shell
+/// (usable for PDFs as an example).
 ///
 /// \param filename wxFileName
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openPDF(wxFileName filename)
+void NumeReWindow::openExternally(wxFileName filename)
 {
     ShellExecuteA(NULL, "open", filename.GetFullPath().ToStdString().c_str(), "", "", SW_SHOW);
 }
@@ -3807,51 +3809,28 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 /////////////////////////////////////////////////
 void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
-    if (filename.GetExt() == "nscr"
-        || filename.GetExt() == "nprc"
-        || filename.GetExt() == "nhlp"
-        || filename.GetExt() == "nlng"
-        || filename.GetExt() == "nlyt"
-        || filename.GetExt() == "txt"
-        || filename.GetExt() == "dat"
-        || filename.GetExt() == "log"
-        || filename.GetExt() == "m"
-        || filename.GetExt() == "cpp"
-        || filename.GetExt() == "cxx"
-        || filename.GetExt() == "c"
-        || filename.GetExt() == "hpp"
-        || filename.GetExt() == "hxx"
-        || filename.GetExt() == "h"
-        || filename.GetExt() == "xml"
-        || filename.GetExt() == "tex"
-        || filename.GetExt() == "diff")
+    if (filename.GetExt() != "txt"&& NumeRe::canLoadFile(filename.GetFullPath().ToStdString()))
+    {
+        wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
+        showConsole();
+        m_terminal->pass_command(path.ToStdString(), false);
+    }
+    else if (filename.GetExt() == "npkp")
+        OnCreatePackage(filename.GetFullPath());
+    else if (NumeReEditor::canOpen(filename))
     {
         wxArrayString filesToOpen;
         filesToOpen.Add(filename.GetFullPath());
         OpenSourceFile(filesToOpen);
         CallAfter(&NumeReWindow::setEditorFocus);
     }
-    else if (filename.GetExt() == "png"
-        || filename.GetExt() == "jpeg"
-        || filename.GetExt() == "jpg"
-        || filename.GetExt() == "bmp"
-        || filename.GetExt() == "gif"
-        || filename.GetExt() == "tif"
-        || filename.GetExt() == "tiff")
+    else if (ImagePanel::canOpen(filename))
     {
         openImage(filename);
         CallAfter(&NumeReWindow::setViewerFocus);
     }
-    else if (filename.GetExt() == "pdf")
-        openPDF(filename);
-    else if (filename.GetExt() == "npkp")
-        OnCreatePackage(filename.GetFullPath());
     else
-    {
-        wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
-        showConsole();
-        m_terminal->pass_command(path.ToStdString(), false);
-    }
+        openExternally(filename);
 }
 
 
@@ -4088,6 +4067,7 @@ wxString NumeReWindow::getTreePath(const wxTreeItemId& itemId)
 
     return pathName;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This member function returns the paths
@@ -4593,7 +4573,11 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     m_modifiedFiles.clear();
 
     // Create the relevant objects
-    const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
+    const wxString fileType[] = {m_options->getSetting(SETTING_S_LOADPATHMASK).stringval(),
+                                 m_options->getSetting(SETTING_S_SAVEPATHMASK).stringval(),
+                                 m_options->getSetting(SETTING_S_SCRIPTPATHMASK).stringval(),
+                                 m_options->getSetting(SETTING_S_PROCPATHMASK).stringval(),
+                                 m_options->getSetting(SETTING_S_PLOTPATHMASK).stringval()};
     VersionControlSystemManager manager(this);
     bool refreshProcedureLibrary = false;
     std::vector<std::string> vPaths = m_terminal->getPathSettings();
@@ -5059,11 +5043,11 @@ void NumeReWindow::EvaluateOptions()
 
         // Fill the contents to the tree
         std::vector<std::string> vPaths = m_terminal->getPathSettings();
-        LoadFilesToTree(vPaths[LOADPATH], FILE_DATAFILES, m_projectFileFolders[0]);
-        LoadFilesToTree(vPaths[SAVEPATH], FILE_DATAFILES, m_projectFileFolders[1]);
-        LoadFilesToTree(vPaths[SCRIPTPATH], FILE_NSCR, m_projectFileFolders[2]);
-        LoadFilesToTree(vPaths[PROCPATH], FILE_NPRC, m_projectFileFolders[3]);
-        LoadFilesToTree(vPaths[PLOTPATH], FILE_IMAGEFILES, m_projectFileFolders[4]);
+        LoadFilesToTree(vPaths[LOADPATH], m_options->getSetting(SETTING_S_LOADPATHMASK).stringval(), m_projectFileFolders[0]);
+        LoadFilesToTree(vPaths[SAVEPATH], m_options->getSetting(SETTING_S_SAVEPATHMASK).stringval(), m_projectFileFolders[1]);
+        LoadFilesToTree(vPaths[SCRIPTPATH], m_options->getSetting(SETTING_S_SCRIPTPATHMASK).stringval(), m_projectFileFolders[2]);
+        LoadFilesToTree(vPaths[PROCPATH], m_options->getSetting(SETTING_S_PROCPATHMASK).stringval(), m_projectFileFolders[3]);
+        LoadFilesToTree(vPaths[PLOTPATH], m_options->getSetting(SETTING_S_PLOTPATHMASK).stringval(), m_projectFileFolders[4]);
 
         // Construct the internal procedure tree
         // for the autocompletion feature
@@ -6046,9 +6030,6 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
         wxMenu popupMenu;
-        wxString editableExt = ".dat;.txt;.nscr;.nprc;.dx;.jcm;.jdx;.csv;.log;.tex;.xml;.nhlp;.npkp;.cpp;.cxx;.c;.hpp;.hxx;.h;.m;.nlyt;";
-        wxString loadableExt = ".dat;.txt;.dx;.jcm;.jdx;.xls;.xlsx;.ods;.ndat;.labx;.ibw;.csv;";
-        wxString showableImgExt = ".png;.jpeg;.jpg;.gif;.bmp;";
 
         wxString fname_ext = m_fileTree->GetItemText(m_clickedTreeItem);
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
@@ -6072,9 +6053,10 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
             return;
         }
 
-        fname_ext = fname_ext.substr(fname_ext.rfind('.')).Lower() + ";";
+        if (fname_ext.find('.') != std::string::npos)
+            fname_ext = fname_ext.substr(fname_ext.rfind('.')).Lower() + ";";
 
-        if (loadableExt.find(fname_ext) != std::string::npos)
+        if (NumeRe::canLoadFile(data->filename.ToStdString()))
         {
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_LOAD"));
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE, _guilang.get("GUI_TREE_PUP_LOADTOTABLE"));
@@ -6084,10 +6066,10 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         else if (fname_ext == ".nprc;")
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_RUN"));
 
-        if (editableExt.find(fname_ext) != std::string::npos)
+        if (NumeReEditor::canOpen(wxFileName(data->filename)))
             popupMenu.Append(ID_MENU_EDIT_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_EDIT"));
 
-        if (showableImgExt.find(fname_ext) != std::string::npos)
+        if (ImagePanel::canOpen(wxFileName(data->filename)))
             popupMenu.Append(ID_MENU_OPEN_IMAGE_FROM_TREE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
 
         if (manager.hasRevisions(data->filename))
@@ -6175,7 +6157,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
                 m_fileTree->Toggle(item);
                 return;
             }
-            else if (data->filename.find('.') == std::string::npos || data->isDir)
+            else if (data->isDir)
                 return;
 
             OpenFileByType(pathname);
@@ -6281,7 +6263,15 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         }
         else
         {
-            tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
+            if (!pathname.HasExt())
+                tooltip = _guilang.get("COMMON_FILETYPE_NOEXT");
+            else
+            {
+                tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
+
+                if (tooltip == "COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()))
+                    tooltip = _guilang.get("COMMON_FILETYPE_UNKNOWN", toUpperCase(pathname.GetExt().ToStdString()));
+            }
 
             if (pathname.GetExt() == "ndat")
                 tooltip += getFileDetails(pathname);
@@ -6469,16 +6459,16 @@ wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 /// details to the file tree.
 ///
 /// \param fromPath wxString
-/// \param fileType FileFilterType
+/// \param fileMask wxString
 /// \param treeid wxTreeItemId
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid)
+void NumeReWindow::LoadFilesToTree(wxString fromPath, wxString fileMask, wxTreeItemId treeid)
 {
     g_logger.info("Loading files from '" + fromPath.ToStdString() + "' into file tree.");
     wxDir currentDir(fromPath);
-    DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileType);
+    DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileMask);
     currentDir.Traverse(_traverser);
 }
 

@@ -598,8 +598,10 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
         m_bLoadingFile = true;
         defaultPage = false;
         SetReadOnly(false);
+
         if (getEditorSetting(SETTING_USETXTADV))
             ToggleSettings(SETTING_USETXTADV);
+
         ClearAll();
         StyleClearAll();
         InsertText(0, fileContents);
@@ -3987,7 +3989,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     StyleSetBackground(wxSTC_STYLE_LINENUMBER,  m_options->GetSyntaxStyle(Options::UI_THEME).foreground.ChangeLightness(Options::EDITORMARGIN));
     SetFoldMarginColour(true, m_options->GetSyntaxStyle(Options::UI_THEME).foreground.ChangeLightness(Options::EDITORMARGIN));
 
-    FileFilterType filetype = GetFileType(filename);
+    FileFilterType filetype = GetFileType(wxFileName(filename));
 
     if (m_fileType != filetype)
         m_fileType = filetype;
@@ -4708,15 +4710,13 @@ void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 /// \brief Returns the FileFilterType which
 /// corresponds to the passed file name.
 ///
-/// \param filename const wxString&
+/// \param filename const wxFileName&
 /// \return FileFilterType
 ///
 /////////////////////////////////////////////////
-FileFilterType NumeReEditor::GetFileType(const wxString& filename)
+FileFilterType NumeReEditor::GetFileType(const wxFileName& filename)
 {
-	wxFileName file(filename);
-
-	wxString extension = file.GetExt().Lower();
+	wxString extension = filename.GetExt().Lower();
 
 	FileFilterType fileType = FILE_NONSOURCE;
 
@@ -4734,7 +4734,7 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
         fileType = FILE_CPP;
 	else if (extension == "diff" || extension == "patch")
         fileType = FILE_DIFF;
-	else if (extension == "nhlp" || extension == "xml" || extension == "npkp")
+	else if (extension == "nhlp" || extension == "xml" || extension == "npkp" || extension == "html" || extension == "htm" || extension == "labx" || extension == "svg")
         fileType = FILE_XML;
 	else if (extension == "ini" || extension == "cfg" || extension == "conf")
         fileType = FILE_INI;
@@ -4742,6 +4742,39 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
 	return fileType;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Determine, whether the editor can open
+/// a selected file.
+///
+/// \param filename const wxFileName&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::canOpen(const wxFileName& filename)
+{
+    // Check for text-only std::isspace || std::isgraph
+    std::ifstream file(filename.GetFullPath().ToStdString());
+    size_t readChars = 0;
+    static Umlauts uml;
+
+    if (!file.good())
+        return false;
+
+    while (file.good() && readChars < 200)
+    {
+        std::ios::int_type c = file.get();
+        readChars++;
+
+        if (c == EOF)
+            return true;
+
+        if (!std::isspace(c) && !std::isgraph(c) && !uml.isUmlaut(c))
+            return false;
+    }
+
+    return true;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////

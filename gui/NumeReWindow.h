@@ -157,7 +157,7 @@ class NumeReWindow : public wxFrame
         void OpenFilesFromList(const wxArrayString& filenameslist);
         void OpenSourceFile(wxArrayString fnames, size_t nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
-        void openPDF(wxFileName filename);
+        void openExternally(wxFileName filename);
         bool ShowHelp(const wxString& sDocId);
         void openHTML(wxString HTMLcontent);
         void openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName);
@@ -311,7 +311,7 @@ class NumeReWindow : public wxFrame
         int GetPageNum(wxFileName fn, bool compareWholePath = true, int startingTab = 0);
         int HandleModifiedFile(int pageNr, ModifiedFileAction fileAction);
 
-        void LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid);
+        void LoadFilesToTree(wxString fromPath, wxString fileMask, wxTreeItemId treeid);
 
         std::vector<std::string> getFileForInstaller(const std::string& sLayoutFileName);
         wxString ConstructFilterString(FileFilterType filterType);

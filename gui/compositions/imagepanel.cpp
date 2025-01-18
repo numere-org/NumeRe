@@ -134,25 +134,19 @@ void ImagePanel::showImage(const wxString& filename, wxBitmapType format, bool d
 /////////////////////////////////////////////////
 bool ImagePanel::LoadNextImage(const wxFileName& filename)
 {
-    if (filename.GetExt() == "png"
-        || filename.GetExt() == "bmp"
-        || filename.GetExt() == "jpg"
-        || filename.GetExt() == "jpeg"
-        || filename.GetExt() == "gif"
-        || filename.GetExt() == "tif"
-        || filename.GetExt() == "tiff")
+    if (canOpen(filename))
     {
         wxBitmapType format;
 
-        if (filename.GetExt() == "png")
+        if (filename.GetExt().Lower() == "png")
             format = wxBITMAP_TYPE_PNG;
-        if (filename.GetExt() == "bmp")
+        if (filename.GetExt().Lower() == "bmp")
             format = wxBITMAP_TYPE_BMP;
-        if (filename.GetExt() == "jpg" || filename.GetExt() == "jpeg")
+        if (filename.GetExt().Lower() == "jpg" || filename.GetExt().Lower() == "jpeg")
             format = wxBITMAP_TYPE_JPEG;
-        if (filename.GetExt() == "gif")
+        if (filename.GetExt().Lower() == "gif")
             format = wxBITMAP_TYPE_GIF;
-        if (filename.GetExt() == "tif" || filename.GetExt() == "tiff")
+        if (filename.GetExt().Lower() == "tif" || filename.GetExt().Lower() == "tiff")
             format = wxBITMAP_TYPE_TIF;
 
         //wxFileName current(currentFile);
@@ -461,6 +455,26 @@ void ImagePanel::OnPreviousImage(wxCommandEvent& event)
         if (LoadNextImage(filelist[i+nIndex]))
             return;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function, if an image
+/// file can be read with this UI element.
+///
+/// \param filename const wxFileName&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool ImagePanel::canOpen(const wxFileName& filename)
+{
+    return filename.GetExt().Lower() == "png"
+        || filename.GetExt().Lower() == "bmp"
+        || filename.GetExt().Lower() == "jpg"
+        || filename.GetExt().Lower() == "jpeg"
+        || filename.GetExt().Lower() == "gif"
+        || filename.GetExt().Lower() == "tif"
+        || filename.GetExt().Lower() == "tiff";
 }
 
 

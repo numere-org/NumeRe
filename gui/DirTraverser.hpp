@@ -25,18 +25,23 @@
 #include "../common/datastructures.h"
 
 
+/////////////////////////////////////////////////
+/// \brief This class is used while creating the
+/// file tree to determine, whether a file shall
+/// be added to the tree or not.
+/////////////////////////////////////////////////
 class DirTraverser : public wxDirTraverser
 {
     private:
         wxTreeCtrl* rootNode;
         IconManager* iconManager;
         wxTreeItemId id;
-        FileFilterType fileSpec;
+        wxRegEx fileSpec;
         wxString path;
         std::vector<wxTreeItemId> vcurrentnodes;
         size_t ncurrentdepth;
     public:
-        DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec);
+        DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, wxString thefilespec);
 
         virtual wxDirTraverseResult OnFile(const wxString& filename);
         virtual wxDirTraverseResult OnDir(const wxString& dirname);

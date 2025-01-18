@@ -70,6 +70,11 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_S_SCRIPTPATH] = SettingsValue("<>/scripts", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
     m_settings[SETTING_S_PROCPATH] = SettingsValue("<>/procedures", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
     m_settings[SETTING_S_WORKPATH] = SettingsValue("<>", SettingsValue::PATH);
+    m_settings[SETTING_S_LOADPATHMASK] = SettingsValue("*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.c;*.hpp;*.h;*.xml;*.wav;*.diff", SettingsValue::SAVE | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_SAVEPATHMASK] = SettingsValue("*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.c;*.hpp;*.h;*.xml;*.wav;*.diff", SettingsValue::SAVE | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_PLOTPATHMASK] = SettingsValue("*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;*.tif;*.tiff", SettingsValue::SAVE | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_SCRIPTPATHMASK] = SettingsValue("*.nscr;*.nlyt;*.npkp;*.nhlp", SettingsValue::SAVE | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_PROCPATHMASK] = SettingsValue("*.nprc;*.nlyt;*.nhlp", SettingsValue::SAVE | SettingsValue::UIREFRESH);
     m_settings[SETTING_S_PLOTFONT] = SettingsValue("pagella");
 
     m_settings[SETTING_S_LATEXROOT] = SettingsValue("C:/Program Files", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);

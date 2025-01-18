@@ -62,6 +62,11 @@
 #define SETTING_S_SCRIPTPATH          "path.scriptpath"
 #define SETTING_S_PROCPATH            "path.procpath"
 #define SETTING_S_WORKPATH            "path.workpath"
+#define SETTING_S_LOADPATHMASK        "path.loadpath.filemask"
+#define SETTING_S_SAVEPATHMASK        "path.savepath.filemask"
+#define SETTING_S_PLOTPATHMASK        "path.plotpath.filemask"
+#define SETTING_S_SCRIPTPATHMASK      "path.scriptpath.filemask"
+#define SETTING_S_PROCPATHMASK        "path.procpath.filemask"
 #define SETTING_S_PLOTFONT            "plotting.plotfont"
 
 // Setting value definitions for the GUI

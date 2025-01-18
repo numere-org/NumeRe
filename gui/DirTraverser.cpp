@@ -28,16 +28,15 @@
 /// \param theiconmanager IconManager*
 /// \param theid wxTreeItemId
 /// \param thepath const wxString&
-/// \param thefilespec FileFilterType
+/// \param thefilespec wxString
 ///
 /////////////////////////////////////////////////
-DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec)
+DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, wxString thefilespec)
 {
     rootNode = therootNode;
     iconManager = theiconmanager;
     id = theid;
     path = thepath;
-    fileSpec = thefilespec;
     vcurrentnodes.push_back(id);
     ncurrentdepth = 0;
 
@@ -47,6 +46,24 @@ DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager,
         if (path[i] == '\\' || path[i] == '/')
             ncurrentdepth++;
     }
+
+    // Prepare the file spec to be used with regex
+    thefilespec.Replace(".", "\\.");
+    thefilespec.Replace("*", ".+");
+    thefilespec.Replace(";", "|");
+
+    // Check the first and last chars
+    while (thefilespec.length() && thefilespec[0] == '|')
+        thefilespec.erase(0, 1);
+
+    while (thefilespec.length() && thefilespec[thefilespec.length()-1] == '|')
+        thefilespec.erase(thefilespec.length()-1);
+
+    // Just a fallback, if the file spec cannot be compiled
+    if (!thefilespec.length())
+        fileSpec.Compile(".+");
+    else if (!fileSpec.Compile(thefilespec))
+        fileSpec.Compile(".+\\..+");
 }
 
 
@@ -62,59 +79,19 @@ DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager,
 /////////////////////////////////////////////////
 wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 {
-    if (filename.find('.') == std::string::npos || filename.find(".revisions") != std::string::npos)
+    if (filename.find(".revisions") != std::string::npos)
         return wxDIR_CONTINUE;
 
-    wxString filespec;
-    wxString extension = filename.substr(filename.rfind('.')+1).Lower();
+    wxString fileWExtension = filename.substr(filename.rfind('\\')+1).Lower();
+    wxString extension = "";
+
+    if (fileWExtension.find('.') != std::string::npos)
+        extension = fileWExtension.substr(fileWExtension.rfind('.')+1);
 
     // Determine, whether the current file matches to the
-    // selected file filter types
-    switch (fileSpec)
-    {
-        case FILE_NSCR:
-            if (filename.length() < 6 || (extension != "nscr" && extension != "nlyt" && extension != "npkp" && extension != "nhlp"))
-                return wxDIR_CONTINUE;
-
-            break;
-        case FILE_NPRC:
-            if (filename.length() < 6 || (extension != "nprc" && extension != "nlyt" && extension != "npkp" && extension != "nhlp"))
-                return wxDIR_CONTINUE;
-
-            break;
-        case FILE_NUMERE:
-            if (filename.length() < 6)
-                return wxDIR_CONTINUE;
-
-            filespec = "*.nscr;*.nprc;*.nlyt;*.ndat;*.npkp;*.nhlp;";
-
-            if (filespec.find("*."+extension+";") == std::string::npos)
-                return wxDIR_CONTINUE;
-
-            break;
-        case FILE_DATAFILES:
-            if (filename.length() < 4)
-                return wxDIR_CONTINUE;
-
-            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;*.xml;*.wav;*.diff;";
-
-            if (filespec.find("*."+extension + ";") == std::string::npos)
-                return wxDIR_CONTINUE;
-
-            break;
-        case FILE_IMAGEFILES:
-            if (filename.length() < 5)
-                return wxDIR_CONTINUE;
-
-            filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;*.tif;*.tiff;";
-
-            if (filespec.find("*."+extension+";") == std::string::npos)
-                return wxDIR_CONTINUE;
-
-            break;
-        default:
-            filespec  = "*.*";
-    }
+    // selected file masks
+    if (!fileSpec.Matches(fileWExtension))
+        return wxDIR_CONTINUE;
 
     size_t ndepth = 0;
 

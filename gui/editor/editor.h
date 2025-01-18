@@ -145,7 +145,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void FocusOnLine(int linenumber, bool showMarker = true);
 		void EnsureLineVisibility(int line);
 
-		FileFilterType GetFileType(const wxString& filename);
+		FileFilterType GetFileType(const wxFileName& filename);
+		static bool canOpen(const wxFileName& filename);
 
 		wxString GetFileNameAndPath();
 		wxString GetFilenameString();

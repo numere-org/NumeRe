@@ -5,3 +5,5 @@ Fixed	Layout scripts are now better checked against syntax and typing errors (no
 Cleaned	The function "cnt()" will now return 0 if "void" values are inserted as its argument (note that this is not true for an array of "void" values. Empty columns and empty tables will now also return "void" instead of "nan".
 Added	The functions "complement()", "intersection()" and "union()" provide means to apply set theory operations.
 Added	A menu option is now available to check for NumeRe updates.
+Added	You can now change the file filters for each of the default folders in the left tree. The option can be found beneath the path settings in the settings dialog.
+Applied	Detection of readable and loadable files has been improved, so that you can now also read files without known extension.

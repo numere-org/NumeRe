@@ -509,7 +509,7 @@ wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, wxSizer* sizer, const 
     wxButton* button = new wxButton(parent, buttonID, _guilang.get("GUI_OPTIONS_CHOOSE"));
 
     // Add both to the horizontal sizer
-    hSizer->Add(textCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
+    hSizer->Add(textCtrl, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
     hSizer->Add(button, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
 
     return textCtrl;
