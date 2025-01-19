@@ -3429,7 +3429,7 @@ std::string incrementVersion(std::string _sVer)
 {
     // Increment the version by one (corresponds to
     // the build count)
-    return intToVersion(versionToInt(_sVer)+1);
+    return floatToVersion(versionToFloat(_sVer)+1.0);
 }
 
 #endif

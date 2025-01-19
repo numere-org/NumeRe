@@ -27,6 +27,8 @@
 
 #include <algorithm>
 
+extern double fFloatingPointVersion;
+
 using namespace std;
 
 
@@ -288,8 +290,7 @@ bool Script::startInstallation(string& sScriptCommand)
 /////////////////////////////////////////////////
 bool Script::handleInstallInformation(string& sScriptCommand)
 {
-    size_t nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
-    size_t nRequiredVersion = nNumereVersion;
+    double fRequiredVersion = fFloatingPointVersion;
 
     // If the current install information string is incomplete
     // (i.e. no "<endinfo>" tag), then search for the corresponding
@@ -329,7 +330,7 @@ bool Script::handleInstallInformation(string& sScriptCommand)
     // Check whether it is necessary to install this package
     if (sInstallInfoString.find("-version=") != std::string::npos)
     {
-        size_t nPackageVersion = versionToInt(getArgAtPos(sInstallInfoString, sInstallInfoString.find("-version=")+9));
+        size_t nPackageVersion = versionToFloat(getArgAtPos(sInstallInfoString, sInstallInfoString.find("-version=")+9));
 
         // Get all installed packages
         const std::vector<Package>& vInstalledPackages = NumeReKernel::getInstance()->getInstalledPackages();
@@ -339,7 +340,7 @@ bool Script::handleInstallInformation(string& sScriptCommand)
         {
             if (package.getName() == sInstallID)
             {
-                if (versionToInt(package.sVersion) >= nPackageVersion)
+                if (versionToFloat(package.sVersion) >= nPackageVersion)
                 {
                     isInInstallSection = false;
                     return false;
@@ -385,11 +386,12 @@ bool Script::handleInstallInformation(string& sScriptCommand)
 
     // Determine, whether a version of NumeRe is required
     if (sInstallInfoString.find("requireversion=") != string::npos)
-        nRequiredVersion = versionToInt(getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
+        fRequiredVersion = versionToFloat(getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
 
     // Throw an error, if the current version if NumeRe is too old
-    if (nRequiredVersion > nNumereVersion)
-        throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position, toString(nRequiredVersion));
+    if (fRequiredVersion > fFloatingPointVersion)
+        throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position,
+                          getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
 
     // Examine the license information
     if (sInstallInfoString.find("license=") != std::string::npos)

@@ -30,6 +30,7 @@
 #include <vector>
 #include <algorithm>
 
+extern const double fFloatingPointVersion;
 
 #define WINDOWWIDTH 1000*g_pixelScale
 #define CTRLWIDTH WINDOWWIDTH-50*g_pixelScale
@@ -364,22 +365,21 @@ void PackageRepoBrowser::DetectInstalledPackages()
 
     wxTreeItemIdValue cookie;
     wxTreeItemId item = m_listCtrl->GetFirstChild(m_listCtrl->GetRootItem(), cookie);
-    size_t nNumeReVersion = versionToInt(sVersion);
 
     while (item.IsOk())
     {
         m_listCtrl->SetItemBackgroundColour(item, *wxWHITE);
         m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "");
 
-        size_t nRequiredVersion = 0u;
+        double fRequiredVersion = 0.0;
         std::string sReqVersion = getEntry(item, "Required NumeRe version");
 
         if (sReqVersion.length())
-            nRequiredVersion = versionToInt(sReqVersion);
+            fRequiredVersion = versionToFloat(sReqVersion);
 
         // Ensure that the current NumeRe version is sufficient to handle
         // this package
-        if (nRequiredVersion > nNumeReVersion)
+        if (fRequiredVersion > fFloatingPointVersion)
         {
             m_listCtrl->SetItemBackgroundColour(item, OUTDATEDVERSIONCOLOUR);
 
@@ -407,8 +407,8 @@ void PackageRepoBrowser::DetectInstalledPackages()
                     continue;
                 }
 
-                size_t nRepoVersion = versionToInt(m_listCtrl->GetItemText(item, REPOCOLUMN).ToStdString());
-                size_t nInstalledVersion = versionToInt(vInstalled[i].sVersion);
+                size_t nRepoVersion = versionToFloat(m_listCtrl->GetItemText(item, REPOCOLUMN).ToStdString());
+                size_t nInstalledVersion = versionToFloat(vInstalled[i].sVersion);
 
                 // Colourize the line backgrounds correspondingly,
                 // if a match had been found

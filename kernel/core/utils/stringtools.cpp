@@ -28,6 +28,7 @@
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
 double intPower(double, int64_t);
+bool isInt(const std::complex<double>& number);
 
 // toString function implementations
 // There's an overwrite for mostly every variable type
@@ -891,35 +892,52 @@ sys_time_point StrToTime(const std::string& sString)
 
 /////////////////////////////////////////////////
 /// \brief Converts a version string into a
-/// multi-digit integer
+/// multi-digit double
 ///
 /// \param sVersion std::string
-/// \return size_t
+/// \return double
 ///
 /////////////////////////////////////////////////
-size_t versionToInt(std::string sVersion)
+double versionToFloat(std::string sVersion)
 {
     size_t nVOffset = 0;
 
     if (sVersion.front() == 'v')
         nVOffset = 1;
 
-    replaceAll(sVersion, ".", "");
-    return StrToInt(sVersion.substr(nVOffset));
+    size_t dots = 0;
+
+    // Determine, whether we have a trailing variant
+    for (char c : sVersion)
+    {
+        if (c == '.')
+            dots++;
+
+        if (dots > 2)
+            break;
+    }
+
+    if (dots > 2)
+        replaceAll(sVersion, ".", "", 0, sVersion.rfind('.'));
+    else
+        replaceAll(sVersion, ".", "");
+
+    return StrToDb(sVersion.substr(nVOffset));
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Converts a multi-digit integer into a
-/// verison string.
+/// \brief Converts a multi-digit double into a
+/// version string.
 ///
-/// \param nVersionDigits size_t
+/// \param fVersionDigits double
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string intToVersion(size_t nVersionDigits)
+std::string floatToVersion(double fVersionDigits)
 {
-    std::string _sVer = toString(nVersionDigits);
+    // Just use the int part first
+    std::string _sVer = toString(int(fVersionDigits));
 
     // Prepend zeroes, if the length is shorter than
     // three
@@ -931,6 +949,12 @@ std::string intToVersion(size_t nVersionDigits)
     {
         if (n % 2)
             _sVer.insert(n, 1, '.');
+    }
+
+    // if we have a variant, append it
+    if (!isInt(fVersionDigits))
+    {
+        _sVer += "." + toString(int((fVersionDigits - int(fVersionDigits))*1000));
     }
 
     return _sVer;

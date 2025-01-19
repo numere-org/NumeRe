@@ -126,6 +126,13 @@ const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString(
 const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86)";
 #  endif
 #endif
+
+const double fFloatingPointVersion = 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0;
+const std::string sInternalVersion = toString((int)AutoVersion::MAJOR) + "."
+        + toString((int)AutoVersion::MINOR) + "."
+        + toString((int)AutoVersion::BUILD) + "."
+        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
+
 // Forward declaration
 std::string removeMaskedStrings(const std::string& sString);
 std::string removeQuotationMarks(const std::string&);

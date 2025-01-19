@@ -37,6 +37,7 @@
 #define DOCFILE "_docfile"
 
 extern Language _guilang;
+extern const std::string sInternalVersion;
 
 
 BEGIN_EVENT_TABLE(PackageDialog, wxDialog)
@@ -856,7 +857,7 @@ wxString PackageDialog::getInstallInfo()
 
     // Add the require version property to the current install
     // information
-    installInfo += "\t\t-requireversion=\"" + sVersion.substr(0, sVersion.find(' ')) + "\"\r\n";
+    installInfo += "\t\t-requireversion=\"" + sInternalVersion + "\"\r\n";
     installInfo += "\t<endinfo>\r\n";
 
     return installInfo;

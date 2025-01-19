@@ -24,6 +24,7 @@
 #ifndef PARSERSTANDALONE
 #include "../../../database/dbinternals.hpp"
 #include "../../kernel.hpp"
+extern const std::string sInternalVersion;
 #endif
 #include <boost/tokenizer.hpp>
 #include <regex>
@@ -2909,10 +2910,7 @@ mu::Array strfnc_getversioninfo()
 {
 #ifndef PARSERSTANDALONE
     static sys_time_point BUILDDATE = getBuildDate();
-    static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
-        + toString((int)AutoVersion::MINOR) + "."
-        + toString((int)AutoVersion::BUILD) + "."
-        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100))
+    static std::string sINTVERSION = sInternalVersion
 #ifdef __GNUWIN64__
         + "-x64"
 #endif

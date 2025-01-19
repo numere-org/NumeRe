@@ -39,6 +39,7 @@
 #include "student_t.hpp"
 #ifndef PARSERSTANDALONE
 extern double g_pixelScale;
+extern double fFloatingPointVersion;
 #include "../datamanagement/memorymanager.hpp"
 #endif
 #include "../utils/tools.hpp"
@@ -4064,7 +4065,7 @@ mu::Array numfnc_intersection(const mu::Array& setA, const mu::Array& setB)
 /////////////////////////////////////////////////
 mu::Array numfnc_numereversion()
 {
-    return mu::Value(100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0);
+    return mu::Value(fFloatingPointVersion);
 }
 
 
