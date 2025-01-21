@@ -20,12 +20,12 @@
 #define WINLAYOUT_HPP
 
 #include <string>
-#include <vector>
+#include <set>
 
 #include "../commandlineparser.hpp"
 
 void windowCommand(CommandLineParser& cmdParser);
-std::vector<std::string> getEventProcedures(const std::string& sLayoutFile);
+std::set<std::string> getEventProcedures(const std::string& sLayoutFile);
 void dialogCommand(CommandLineParser& cmdParser);
 
 

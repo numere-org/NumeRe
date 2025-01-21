@@ -789,14 +789,14 @@ static std::string getProcedureFileName(std::string sProc)
 /// vector. Might contain duplicates.
 ///
 /// \param sLayoutFile const std::string&
-/// \return std::vector<std::string>
+/// \return std::set<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
+std::set<std::string> getEventProcedures(const std::string& sLayoutFile)
 {
     StyledTextFile layoutFile(sLayoutFile);
     std::string sFolderName = sLayoutFile.substr(0, sLayoutFile.rfind('/'));
-    std::vector<std::string> vProcedures;
+    std::set<std::string> procedures;
 
     for (size_t i = 0; i < (size_t)layoutFile.getLinesCount(); i++)
     {
@@ -807,7 +807,7 @@ std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
             std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onopen", '=')+6, sFolderName);
 
             if (sEvent.front() == '$')
-                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+                procedures.insert(getProcedureFileName(sEvent.substr(1)));
         }
 
         if (findParameter(sLine, "onclick", '='))
@@ -815,7 +815,7 @@ std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
             std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onclick", '=')+7, sFolderName);
 
             if (sEvent.front() == '$')
-                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+                procedures.insert(getProcedureFileName(sEvent.substr(1)));
         }
 
         if (findParameter(sLine, "onchange", '='))
@@ -823,11 +823,11 @@ std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
             std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onchange", '=')+8, sFolderName);
 
             if (sEvent.front() == '$')
-                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+                procedures.insert(getProcedureFileName(sEvent.substr(1)));
         }
     }
 
-    return vProcedures;
+    return procedures;
 }
 
 

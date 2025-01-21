@@ -31,14 +31,29 @@
 /////////////////////////////////////////////////
 class Dependency
 {
+    public:
+        enum DependencyType
+        {
+            NPRC,
+            NSCR,
+            NLYT,
+            FILE
+        };
+
     private:
         std::string sProcedureName;
         std::string sFileName;
+        DependencyType m_type;
 
     public:
-        Dependency(const std::string& sProcName, const std::string& sFile) : sProcedureName(sProcName), sFileName(sFile) {}
+        Dependency(const std::string& sProcName, const std::string& sFile, DependencyType type) : sProcedureName(sProcName), sFileName(sFile), m_type(type) {}
 
         std::string& getFileName()
+        {
+            return sFileName;
+        }
+
+        const std::string& getFileName() const
         {
             return sFileName;
         }
@@ -51,6 +66,11 @@ class Dependency
         const std::string& getProcedureName() const
         {
             return sProcedureName;
+        }
+
+        DependencyType getType() const
+        {
+            return m_type;
         }
 };
 
@@ -69,7 +89,6 @@ class DependencyList : public std::list<Dependency>
 
 // Forward declaration of the procedure element class
 class ProcedureElement;
-
 
 /////////////////////////////////////////////////
 /// \brief This class handles the dependencies of

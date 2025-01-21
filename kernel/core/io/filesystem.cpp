@@ -550,7 +550,10 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
     if (nPos == std::string::npos)
     {
         if (!_sFileName.starts_with("//"))
+        {
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
+            replaceAll(_sFileName, "//", "/");
+        }
     }
 
     // Resolve wildcards in the passed file name
@@ -604,11 +607,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
     resolveWildCards(sValid, true, checkExtension);
 
     // Ensure that the file path separators are unix-like
-    for (size_t i = 0; i < sValid.length(); i++)
-    {
-        if (sValid[i] == '\\')
-            sValid[i] = '/';
-    }
+    sValid = relativeToAbsolute(replacePathSeparator(sValid));
 
     return sValid;
 }
@@ -638,7 +637,10 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
     if (nPos == std::string::npos)
     {
         if (!_sFileName.starts_with("//"))
+        {
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
+            replaceAll(_sFileName, "//", "/");
+        }
     }
 
     // Resolve wildcards in the passed file name
@@ -650,11 +652,7 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
         resolveWildCards(_sFileName, true, false);
 
     // Ensure that the file path separators are unix-like
-    for (size_t i = 0; i < _sFileName.length(); i++)
-    {
-        if (_sFileName[i] == '\\')
-            _sFileName[i] = '/';
-    }
+    _sFileName = relativeToAbsolute(replacePathSeparator(_sFileName));
 
     // Catch the case, where the file detection may have failed
     if (fileExists(_sFileName))
@@ -762,6 +760,33 @@ std::string FileSystem::resolveLink(const std::string& sLink)
     NumeReKernel::issueWarning("Feature not supported in x86 build.");
     return sLink;
 #endif
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Clean file paths from any relative
+/// parts to get an absolute path.
+///
+/// \param relPath std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string FileSystem::relativeToAbsolute(std::string relPath)
+{
+    size_t relPos;
+
+    // Clean relative file paths
+    while ((relPos = relPath.find("/../")) != std::string::npos)
+    {
+        size_t prevFolder = relPath.rfind('/', relPos-1);
+
+        if (prevFolder != std::string::npos)
+            relPath.erase(prevFolder, relPos+3-prevFolder);
+        else
+            break;
+    }
+
+    return relPath;
 }
 
 

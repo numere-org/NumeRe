@@ -18,8 +18,10 @@
 
 #include "dependencydialog.hpp"
 #include "../NumeReWindow.h"
+#include "../../kernel/kernel.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/ui/winlayout.hpp"
 
 extern Language _guilang;
 
@@ -39,6 +41,33 @@ END_EVENT_TABLE()
 
 #define WINDOWHEIGHT 550
 #define WINDOWWIDTH 500
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to convert
+/// procedure file names to procedure names.
+///
+/// \param fileName std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string fileNameToProcedureName(std::string fileName)
+{
+    static Procedure& _interpreter = NumeReKernel::getInstance()->getProcedureInterpreter();
+    std::string procPath = _interpreter.getPath();
+
+    if (procPath.back() != '/')
+        procPath += '/';
+
+    if (fileName.starts_with(procPath))
+    {
+        fileName.erase(0, procPath.length());
+        replaceAll(fileName, "/", "~");
+        return "$" + fileName.substr(0, fileName.rfind('.'));
+    }
+
+    return "$'" + fileName.substr(0, fileName.rfind('.')) + "'";
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Constructor. Creates the UI elements
@@ -88,11 +117,29 @@ DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxStri
 void DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string& mainfile)
 {
     // Get the dependencies
-    Dependencies* dep = lib.getProcedureContents(replacePathSeparator(mainfile))->getDependencies();
-    m_mainProcedure = dep->getMainProcedure();
+    Dependencies* dep;
 
-    // Insert the dependencies into the main map
-    m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+    if (mainfile.ends_with(".nlyt"))
+    {
+        m_mainProcedure = replacePathSeparator(mainfile);
+        std::set<std::string> procs = getEventProcedures(m_mainProcedure);
+
+        for (const std::string& proc : procs)
+        {
+            dep = lib.getProcedureContents(proc)->getDependencies();
+
+            if (dep->getDependencyMap().size())
+                m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+        }
+    }
+    else
+    {
+        dep = lib.getProcedureContents(replacePathSeparator(mainfile))->getDependencies();
+        m_mainProcedure = dep->getMainProcedure();
+
+        // Insert the dependencies into the main map
+        m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+    }
 
     // Get the iterator to the begin of the map
     auto iter = m_deps.begin();
@@ -107,14 +154,43 @@ void DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string
         {
             if (m_deps.find(listiter->getProcedureName()) == m_deps.end() && listiter->getProcedureName().find("thisfile~") == string::npos)
             {
-                dep = lib.getProcedureContents(listiter->getFileName())->getDependencies();
-
-                if (dep->getDependencyMap().size())
+                if (listiter->getType() == Dependency::NPRC)
                 {
-                    m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
-                    iter = m_deps.begin();
-                    restart = true;
-                    break;
+                    dep = lib.getProcedureContents(listiter->getFileName())->getDependencies();
+
+                    if (dep->getDependencyMap().size())
+                    {
+                        m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+                        iter = m_deps.begin();
+                        restart = true;
+                        break;
+                    }
+                }
+                else if (listiter->getType() == Dependency::NLYT)
+                {
+                    std::set<std::string> procs = getEventProcedures(listiter->getFileName());
+
+                    for (std::string proc : procs)
+                    {
+                        std::string procName = fileNameToProcedureName(proc);
+
+                        if (m_deps.find(procName) != m_deps.end())
+                            continue;
+
+                        dep = lib.getProcedureContents(proc)->getDependencies();
+
+                        if (dep->getDependencyMap().size())
+                        {
+                            m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+                            restart = true;
+                        }
+                    }
+
+                    if (restart)
+                    {
+                        iter = m_deps.begin();
+                        break;
+                    }
                 }
             }
         }
@@ -139,6 +215,26 @@ void DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string
 /////////////////////////////////////////////////
 void DependencyDialog::fillDependencyTree()
 {
+    if (m_mainProcedure.ends_with(".nlyt"))
+    {
+        wxTreeItemId root = m_dependencyTree->AddRoot("window " + m_mainProcedure);
+        m_dependencyTree->SetItemTextColour(root, wxColour(0, 0, 128));
+        m_dependencyTree->SetItemFont(root, GetFont().MakeItalic());
+
+        std::set<std::string> procs = getEventProcedures(m_mainProcedure);
+
+        for (std::string proc : procs)
+        {
+            proc = fileNameToProcedureName(proc);
+            wxTreeItemId item = m_dependencyTree->AppendItem(root, proc + "()");
+
+            // Insert the child calls to the current procedure call
+            insertChilds(item, proc);
+        }
+
+        return;
+    }
+
     // Find the current main procedure
     auto iter = m_deps.find(m_mainProcedure);
 
@@ -155,17 +251,39 @@ void DependencyDialog::fillDependencyTree()
     // Go through the list of calls
     for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)
     {
-        wxTreeItemId item = m_dependencyTree->AppendItem(root, listiter->getProcedureName() + "()");
-
-        // Colour thisfile namespace calls in grey
-        if (listiter->getProcedureName().find("thisfile~") != string::npos)
+        if (listiter->getType() == Dependency::NPRC)
         {
-            m_dependencyTree->SetItemTextColour(item, wxColour(128, 128, 128));
-            m_dependencyTree->SetItemFont(item, GetFont().MakeItalic());
-        }
+            wxTreeItemId item = m_dependencyTree->AppendItem(root, listiter->getProcedureName() + "()");
 
-        // Insert the child calls to the current procedure call
-        insertChilds(item, listiter->getProcedureName());
+            // Colour thisfile namespace calls in grey
+            if (listiter->getProcedureName().find("thisfile~") != string::npos)
+            {
+                m_dependencyTree->SetItemTextColour(item, wxColour(128, 128, 128));
+                m_dependencyTree->SetItemFont(item, GetFont().MakeItalic());
+            }
+
+            // Insert the child calls to the current procedure call
+            insertChilds(item, listiter->getProcedureName());
+        }
+        else if (listiter->getType() == Dependency::NLYT)
+        {
+            wxTreeItemId nlytRoot = m_dependencyTree->AppendItem(root, listiter->getProcedureName());
+            m_dependencyTree->SetItemTextColour(nlytRoot, wxColour(0, 0, 128));
+            m_dependencyTree->SetItemFont(nlytRoot, GetFont().MakeItalic());
+
+            std::set<std::string> procs = getEventProcedures(listiter->getFileName());
+
+            for (std::string proc : procs)
+            {
+                proc = fileNameToProcedureName(proc);
+                wxTreeItemId item = m_dependencyTree->AppendItem(nlytRoot, proc + "()");
+
+                // Insert the child calls to the current procedure call
+                insertChilds(item, proc);
+            }
+        }
+        else
+            m_dependencyTree->AppendItem(root, listiter->getProcedureName());
     }
 
     // Expand the root node
@@ -198,23 +316,44 @@ void DependencyDialog::insertChilds(wxTreeItemId item, const string& sParentProc
     {
         wxTreeItemId currItem;
 
-        // If the current procedure is already part of the branch, then
-        // simply add this call. Otherwise recurse to append its childs
-        if (findInParents(item, listiter->getProcedureName() + "()"))
-            currItem = m_dependencyTree->AppendItem(item, listiter->getProcedureName() + "()");
+        if (listiter->getType() == Dependency::NPRC)
+        {
+            // If the current procedure is already part of the branch, then
+            // simply add this call. Otherwise recurse to append its childs
+            if (findInParents(item, listiter->getProcedureName() + "()"))
+                currItem = m_dependencyTree->AppendItem(item, listiter->getProcedureName() + "()");
+            else
+            {
+                currItem = m_dependencyTree->AppendItem(item, listiter->getProcedureName() + "()");
+                insertChilds(currItem, listiter->getProcedureName());
+            }
+
+            // Colour thisfile namespace calls in grey
+            if (listiter->getProcedureName().find("thisfile~") != string::npos)
+            {
+                m_dependencyTree->SetItemTextColour(currItem, wxColour(128, 128, 128));
+                m_dependencyTree->SetItemFont(currItem, GetFont().MakeItalic());
+            }
+        }
+        else if (listiter->getType() == Dependency::NLYT)
+        {
+            wxTreeItemId nlytRoot = m_dependencyTree->AppendItem(item, listiter->getProcedureName());
+            m_dependencyTree->SetItemTextColour(nlytRoot, wxColour(00, 00, 128));
+            m_dependencyTree->SetItemFont(nlytRoot, GetFont().MakeItalic());
+
+            std::set<std::string> procs = getEventProcedures(listiter->getFileName());
+
+            for (std::string proc : procs)
+            {
+                proc = fileNameToProcedureName(proc);
+                currItem = m_dependencyTree->AppendItem(nlytRoot, proc + "()");
+
+                // Insert the child calls to the current procedure call
+                insertChilds(currItem, proc);
+            }
+        }
         else
-        {
-            currItem = m_dependencyTree->AppendItem(item, listiter->getProcedureName() + "()");
-            insertChilds(currItem, listiter->getProcedureName());
-        }
-
-        // Colour thisfile namespace calls in grey
-        if (listiter->getProcedureName().find("thisfile~") != string::npos)
-        {
-            m_dependencyTree->SetItemTextColour(currItem, wxColour(128, 128, 128));
-            m_dependencyTree->SetItemFont(currItem, GetFont().MakeItalic());
-        }
-
+            m_dependencyTree->AppendItem(item, listiter->getProcedureName());
     }
 }
 
@@ -349,6 +488,33 @@ void DependencyDialog::CreateDotFile()
     std::string sDotFileContent;
     std::map<std::string, std::list<std::string> > mProcedures;
 
+    // NLYT as a main file needs some pre-processing
+    if (m_mainProcedure.ends_with(".nlyt"))
+    {
+        std::string window = "window " + m_mainProcedure;
+        std::string sProcPath = NumeReKernel::getInstance()->getSettings().getProcPath();
+
+        replaceAll(window, sProcPath.c_str(), "<procpath>");
+        replaceAll(window, "\"", "'");
+
+        if (window.find("<procpath>") != std::string::npos)
+        {
+            std::string sNamespace = window.substr(window.find("<procpath>")+11, window.length() - window.find("<procpath>") - 11 - 1);
+            replaceAll(sNamespace, "/", "~");
+            mProcedures["$" + sNamespace.substr(0, sNamespace.rfind('~')+1)].push_back(window);
+        }
+
+        std::set<std::string> procs = getEventProcedures(m_mainProcedure);
+
+        for (std::string proc : procs)
+        {
+            proc = fileNameToProcedureName(proc);
+            mProcedures[proc.substr(0, proc.find_last_of("~/")+1)].push_back(proc);
+
+            sDotFileContent += "\t\"" + window + "\" -> \"" + proc + "()\" [label=\"<<event>>\" fontname=\"Consolas\"]\n";
+        }
+    }
+
     // Fill the cluster map with the procedures and prepare the graph
     // list for DOT
     for (auto caller = m_deps.begin(); caller != m_deps.end(); ++caller)
@@ -360,9 +526,42 @@ void DependencyDialog::CreateDotFile()
             else
                 mProcedures[caller->first].push_back(caller->first);
 
-            mProcedures[called->getProcedureName().substr(0, called->getProcedureName().find_last_of("~/")+1)].push_back(called->getProcedureName());
+            if (called->getType() == Dependency::NPRC)
+            {
+                const std::string& proc = called->getProcedureName();
+                mProcedures[proc.substr(0, proc.find_last_of("~/")+1)].push_back(proc);
 
-            sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + called->getProcedureName() + "()\"\n";
+                if (proc.find("::thisfile~") != std::string::npos)
+                    sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + proc + "()\" [color=darkgoldenrod]\n";
+                else if (caller->first.substr(0, caller->first.rfind('~')) == proc.substr(0, proc.rfind('~')))
+                    sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + proc + "()\" [color=lightslategray]\n";
+                else
+                    sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + proc + "()\"\n";
+            }
+            else if (called->getType() == Dependency::NLYT)
+            {
+                std::string window = called->getProcedureName();
+                replaceAll(window, "\"", "'");
+
+                if (window.find("<procpath>") != std::string::npos)
+                {
+                    std::string sNamespace = window.substr(window.find("<procpath>")+11, window.length() - window.find("<procpath>") - 11 - 1);
+                    replaceAll(sNamespace, "/", "~");
+                    mProcedures["$" + sNamespace.substr(0, sNamespace.rfind('~')+1)].push_back(window);
+                }
+
+                sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + window + "\" [color=midnightblue label=\"<<create>>\" fontname=\"Consolas\" style=dashed fontcolor=midnightblue]\n";
+
+                std::set<std::string> procs = getEventProcedures(called->getFileName());
+
+                for (std::string proc : procs)
+                {
+                    proc = fileNameToProcedureName(proc);
+                    mProcedures[proc.substr(0, proc.find_last_of("~/")+1)].push_back(proc);
+
+                    sDotFileContent += "\t\"" + window + "\" -> \"" + proc + "()\" [label=\"<<event>>\" fontname=\"Consolas\"]\n";
+                }
+            }
         }
     }
 
@@ -441,7 +640,12 @@ void DependencyDialog::CreateDotFile()
 
         // Add the procedures to the current namespace
         for (auto procedure = iter->second.begin(); procedure != iter->second.end(); ++procedure)
-            sClusterDefinition += "\"" + *procedure + "()\" ";
+        {
+            if (procedure->starts_with("window "))
+                sClusterDefinition += "\"" + *procedure + "\" [fillcolor=lightblue fontcolor=midnightblue] ";
+            else
+                sClusterDefinition += "\"" + *procedure + "()\" ";
+        }
 
     }
 

@@ -48,13 +48,13 @@ void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std
     if (sFile.find(".nlyt") != std::string::npos)
     {
         // Get all event procedures
-        std::vector<std::string> vEventProcs = getEventProcedures(sFile);
+        std::set<std::string> eventProcs = getEventProcedures(sFile);
 
         // Get the dependencies for each event procedure
-        for (size_t i = 0; i < vEventProcs.size(); i++)
+        for (const auto& eventProc : eventProcs)
         {
-            if (fileSet.find(vEventProcs[i]) == fileSet.end())
-                followBranch(vEventProcs[i], fileSet, vFiles);
+            if (fileSet.find(eventProc) == fileSet.end())
+                followBranch(eventProc, fileSet, vFiles);
         }
 
         // Return. Nothing more to be done
@@ -378,10 +378,15 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
                     if (sDependencies.length())
                         sDependencies += ", ";
 
-                    if (listiter->getProcedureName().find("::thisfile~") != std::string::npos)
-                        sDependencies += "!!$" + listiter->getProcedureName().substr(listiter->getProcedureName().find("::")+2) + "()!!";
+                    if (listiter->getType() == Dependency::NPRC)
+                    {
+                        if (listiter->getProcedureName().find("::thisfile~") != std::string::npos)
+                            sDependencies += "!!$" + listiter->getProcedureName().substr(listiter->getProcedureName().find("::")+2) + "()!!";
+                        else
+                            sDependencies += "!!" + listiter->getProcedureName() + "()!!";
+                    }
                     else
-                        sDependencies += "!!" + listiter->getProcedureName() + "()!!";
+                        sDependencies += "!!" + listiter->getProcedureName() + "!!";
                 }
 
                 if (sDependencies.length())

@@ -515,7 +515,17 @@ void PackageDialog::followBranch(const std::string& sFile, std::set<std::string>
         for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)
         {
             if (fileSet.find(listiter->getFileName()) == fileSet.end())
-                followBranch(listiter->getFileName(), fileSet);
+            {
+                if (listiter->getType() == Dependency::NPRC)
+                    followBranch(listiter->getFileName(), fileSet);
+                else if (listiter->getType() == Dependency::NLYT)
+                {
+                    fileSet.insert(listiter->getFileName());
+                    findLayoutDependencies(listiter->getFileName(), fileSet);
+                }
+                else
+                    fileSet.insert(listiter->getFileName());
+            }
         }
     }
 }
@@ -534,14 +544,14 @@ void PackageDialog::followBranch(const std::string& sFile, std::set<std::string>
 void PackageDialog::findLayoutDependencies(const std::string& sFile, std::set<std::string>& fileSet)
 {
     // Get a list of all event procedures
-    std::vector<std::string> vProcs = getEventProcedures(sFile);
+    std::set<std::string> procs = getEventProcedures(sFile);
 
     // Get the tree for every not already examined
     // procedure
-    for (size_t i = 0; i < vProcs.size(); i++)
+    for (const auto& proc : procs)
     {
-        if (fileSet.find(vProcs[i]) == fileSet.end())
-            followBranch(vProcs[i], fileSet);
+        if (fileSet.find(proc) == fileSet.end())
+            followBranch(proc, fileSet);
     }
 }
 

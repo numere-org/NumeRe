@@ -121,6 +121,7 @@ class FileSystem
 		std::string ValidFolderName(std::string _sFileName, bool doCleanPath = true, bool appendTrailingSeparator = true) const;
 		std::string ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension = ".dat") const;
 		static std::string resolveLink(const std::string& sLink);
+		static std::string relativeToAbsolute(std::string relPath);
 		int setPath(std::string _sPath, bool bMkDir, std::string _sExePath);
 		void createRevisionsFolder();
 		std::string getPath() const;

@@ -8,3 +8,4 @@ Added	A menu option is now available to check for NumeRe updates.
 Added	You can now change the file filters for each of the default folders in the left tree. The option can be found beneath the path settings in the settings dialog.
 Applied	Detection of readable and loadable files has been improved, so that you can now also read files without known extension.
 Applied	The "required version" of packages now uses the correct variant of the current version for checking, e.g. "v.1.1.7.2412".
+Cleaned	Window layouts are now also part of the dependency analysis and will correctly return their event procedures.

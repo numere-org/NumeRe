@@ -7091,7 +7091,8 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
 /////////////////////////////////////////////////
 void NumeReWindow::OnCalculateDependencies()
 {
-    if (m_book->getCurrentEditor()->getFileType() != FILE_NPRC)
+    if (m_book->getCurrentEditor()->getFileType() != FILE_NPRC
+        && !m_book->getCurrentEditor()->GetFilenameString().ToStdString().ends_with(".nlyt"))
         return;
 
     ProcedureLibrary& procLib = m_terminal->getKernel().getProcedureLibrary();

@@ -19,6 +19,7 @@
 
 #include "dependency.hpp"
 #include "procedureelement.hpp"
+#include "../utils/filecheck.hpp"
 #include "../../kernel.hpp"
 
 // CLASS DEPENDENCYLIST FUNCTIONS
@@ -51,7 +52,7 @@ static bool compare(const Dependency& first, const Dependency& second)
 /////////////////////////////////////////////////
 static bool isequal(const Dependency& first, const Dependency& second)
 {
-    return first.getProcedureName() == second.getProcedureName();
+    return first.getProcedureName() == second.getProcedureName() && first.getType() == second.getType();
 }
 
 
@@ -91,7 +92,6 @@ Dependencies::Dependencies(ProcedureElement* procedureFile)
 
     // Get the current default procedure path
     std::string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcPath();
-    g_logger.info("sFileName = " + sFileName);
 
     // If the default procedure path is part of the
     // thisfile namespace, remove this part and translate
@@ -165,6 +165,7 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
     std::pair<int, ProcedureCommandLine> commandline = procedureFile->getCurrentLine(nCurrentLine);
     std::string sProcedureName;
     std::string sCurrentNameSpace = "main~";
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Search for the head of the current procedure
     while (commandline.second.getType() != ProcedureCommandLine::TYPE_PROCEDURE_HEAD)
@@ -207,9 +208,40 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
                 sCurrentNameSpace += "~";
             else
                 sCurrentNameSpace = "main~";
+
+            continue;
         }
-        else
-            resolveProcedureCalls(commandline.second.getCommandLine(), sProcedureName, sCurrentNameSpace);
+        else if (findCommand(commandline.second.getCommandLine(), "window").sString == "window") // "window" is not at the start of the line
+        {
+            // Resolve <this> and get the filename
+            std::string sThisFolder = sFileName.substr(0, sFileName.rfind('/'));
+            std::string sCommand = commandline.second.getCommandLine();
+            sCommand.erase(0, sCommand.find("window ")+7);
+            replaceAll(sCommand, "<this>", sThisFolder.c_str());
+
+            StripSpaces(sCommand);
+
+            if (sCommand.back() == ';')
+            {
+                sCommand.pop_back();
+                StripSpaces(sCommand);
+            }
+
+            if (sCommand.front() == '"' && sCommand.back() == '"' && is_dir(sCommand.substr(1, sCommand.length()-2)))
+            {
+                sCommand = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sCommand.substr(1, sCommand.length()-2), ".nlyt");
+                std::string sDisplay = sCommand;
+
+                if (sDisplay.starts_with(_option.getProcPath() + (_option.getProcPath().back() != '/' ? "/" : "")))
+                    replaceAll(sDisplay, _option.getProcPath().c_str(), "<procpath>");
+                else if (sDisplay.starts_with(_option.getScriptPath() + (_option.getScriptPath().back() != '/' ? "/" : "")))
+                    replaceAll(sDisplay, _option.getScriptPath().c_str(), "<scriptpath>");
+
+                mDependencies[sProcedureName].push_back(Dependency("window \"" + sDisplay + "\"", sCommand, Dependency::NLYT));
+            }
+        }
+
+        resolveProcedureCalls(commandline.second.getCommandLine(), sProcedureName, sCurrentNameSpace);
     }
 
     // Return the foot line of the procedure
@@ -287,8 +319,7 @@ void Dependencies::resolveProcedureCalls(std::string sLine, const std::string& s
 
                 // Add procedure name and called procedure file name to the
                 // dependency list
-
-                mDependencies[sProcedureName].push_back(Dependency("$" + __sName, getProcedureFileName(__sName)));
+                mDependencies[sProcedureName].push_back(Dependency("$" + __sName, getProcedureFileName(__sName), Dependency::NPRC));
 			}
 
             nPos += __sName.length() + 1;
