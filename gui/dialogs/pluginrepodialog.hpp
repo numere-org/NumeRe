@@ -26,8 +26,10 @@
 #include "../controls/treelistctrl.h"
 #include "../compositions/viewerframe.hpp"
 #include "../terminal/terminal.hpp"
+#include "../../network/packagerepo.hpp"
 #include <string>
 #include <vector>
+
 
 /////////////////////////////////////////////////
 /// \brief This class represents a simple
@@ -41,6 +43,7 @@ class PackageRepoBrowser : public ViewerFrame, public wxThreadHelper
         IconManager* m_icons;
         std::string m_scriptPath;
         std::string m_fileNameToInstall;
+        PackageRepo m_repo;
 
         wxcode::wxTreeListCtrl* m_listCtrl;
         wxButton* m_installButton;
@@ -67,14 +70,11 @@ class PackageRepoBrowser : public ViewerFrame, public wxThreadHelper
         void OnClose(wxCloseEvent& event);
         // End threading part
 
-        std::vector<std::string> getRepoList(const std::string& sRepoUrl);
         void populatePackageList(const std::string& sUrl);
 
         void OnInstall(wxCommandEvent& event);
         void OnUninstall(wxCommandEvent& event);
         void OnItemSelect(wxTreeEvent& event);
-
-        std::string createSalt();
 
         bool isInstallable(const wxTreeItemId& item);
         bool isUpdateable(const wxTreeItemId& item);

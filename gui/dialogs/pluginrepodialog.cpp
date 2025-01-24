@@ -256,9 +256,6 @@ wxArrayString PackageListSearchCtrl::getChildCandidates(const wxString& enteredT
 
 
 
-
-
-#define REPO_LOCATION "http://svn.code.sf.net/p/numere/plugins/repository/"
 #define REPO_URL "Repository URL"
 #define DEPENDENCIES "Dependencies"
 
@@ -285,25 +282,6 @@ BEGIN_EVENT_TABLE(PackageRepoBrowser, ViewerFrame)
 END_EVENT_TABLE()
 
 
-/////////////////////////////////////////////////
-/// \brief Static helper function to extract the
-/// value of an install info tag.
-///
-/// \param sTaggedString const std::string&
-/// \param sTag const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string getTagValue(const std::string& sTaggedString, const std::string& sTag)
-{
-    int nTag = findParameter(sTaggedString, sTag, '=');
-
-    if (nTag)
-        return getArgAtPos(sTaggedString, nTag+sTag.length());
-
-    return "";
-}
-
 
 /////////////////////////////////////////////////
 /// \brief PackageRepositoryBrowser constructor.
@@ -320,6 +298,7 @@ PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* termina
     m_terminal = terminal;
     m_icons = icons;
     m_scriptPath = m_terminal->getPathSettings()[SCRIPTPATH];
+    m_repo.connect(REPO_LOCATION);
 
     GroupPanel* panel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_STATIC);
 
@@ -567,7 +546,7 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
             m_statusText->SetLabel("Status: Fetching Package list ...");
             m_progress->Pulse();
             m_listCtrl->AddRoot("ROOT");
-            std::vector<std::string> vRepoContents = getRepoList(REPO_LOCATION);
+            std::vector<std::string> vRepoContents = m_repo.fetchList();
 
             m_statusText->SetLabel("Status: Reading Package information ...");
             m_progress->SetRange(vRepoContents.size());
@@ -689,44 +668,6 @@ void PackageRepoBrowser::OnClose(wxCloseEvent& event)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function fetches the
-/// repository main page as HTML and extracts the
-/// list of item links in it. These may be files
-/// and folders.
-///
-/// \param sRepoUrl const std::string&
-/// \return std::vector<std::string>
-///
-/////////////////////////////////////////////////
-std::vector<std::string> PackageRepoBrowser::getRepoList(const std::string& sRepoUrl)
-{
-    std::vector<std::string> vRepoContents;
-    std::string sRepoContents = url::get(sRepoUrl + createSalt());
-    sRepoContents = sRepoContents.substr(sRepoContents.find("<ul>")+4);
-    sRepoContents.erase(sRepoContents.find("</ul>"));
-
-    // Extract each <li></li> pairs content
-    while (sRepoContents.length() && sRepoContents.find("</li>") != std::string::npos)
-    {
-        std::string sCurrentPackage = sRepoContents.substr(0, sRepoContents.find("</li>"));
-        sRepoContents.erase(0, sRepoContents.find("</li>")+5);
-
-        if (sCurrentPackage.find("href=\"") == std::string::npos)
-            break;
-
-        // Get the address
-        sCurrentPackage = sCurrentPackage.substr(sCurrentPackage.find("href=\"") + 6);
-        sCurrentPackage.erase(sCurrentPackage.find('"'));
-
-        // Get the resolved content
-        vRepoContents.push_back(sRepoUrl + sCurrentPackage);
-    }
-
-    return vRepoContents;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Gets an URL and retrieve its
 /// counterpart from the repository. If the link
 /// does not reference a file but a folder, a
@@ -739,74 +680,36 @@ std::vector<std::string> PackageRepoBrowser::getRepoList(const std::string& sRep
 /////////////////////////////////////////////////
 void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
 {
-    // We do not want to follow parent directory
-    // references
-    if (sUrl.find("/../") != std::string::npos)
-        return;
-
-    // If the current URL is not a file, it might be a folder,
-    // therefore we trigger a recursion here
-    if (sUrl.back() == '/')
-    {
-        std::vector<std::string> vRepoContents = getRepoList(sUrl);
-
-        for (const std::string& _url : vRepoContents)
-        {
-            populatePackageList(_url);
-        }
-
-        return;
-    }
-
-    // We only accept NSCR files at the moment
-    if (sUrl.find(".nscr") == std::string::npos)
-        return;
-
-    std::string sCurrentPackage = url::get(sUrl + createSalt());
-
     // Get the information
-    std::string sInfo = sCurrentPackage.substr(sCurrentPackage.find("<info>"), sCurrentPackage.find("<endinfo>") - sCurrentPackage.find("<info>"));
-    replaceAll(sInfo, "\t", " ");
-    replaceAll(sInfo, "\n", " ");
-    replaceAll(sInfo, "\r", " ");
+    PackageInfo pkgInfo = m_repo.fetchInfo(sUrl);
 
     // Fill the package list
-    std::string sPackageName = getTagValue(sInfo, "name");
-    wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), sPackageName);
-    m_listCtrl->SetItemText(currPackage, REPOCOLUMN, "v" + getTagValue(sInfo, "version"));
+    wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), pkgInfo.name);
+    m_listCtrl->SetItemText(currPackage, REPOCOLUMN, pkgInfo.version);
     m_listCtrl->SetItemBold(currPackage, true);
     m_listCtrl->SetItemImage(currPackage, PACKAGCOLUMN, m_icons->GetIconIndex("nscr"));
 
     wxTreeItemId currPackageInfo = m_listCtrl->AppendItem(currPackage, "Author");
-    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, getTagValue(sInfo, "author"));
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.author);
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "Type");
-    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, getTagValue(sInfo, "type").find("PLUGIN") != std::string::npos ? "Plugin" : "Package");
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.type);
 
-    std::string sReqVersion = getTagValue(sInfo, "requireversion");
-
-    if (sReqVersion.length())
+    if (pkgInfo.requiredVersion.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, "Required NumeRe version");
-        m_listCtrl->SetItemText(currPackageInfo, 1, "v" + sReqVersion);
+        m_listCtrl->SetItemText(currPackageInfo, 1, pkgInfo.requiredVersion);
     }
 
-    std::string sDeps = getTagValue(sInfo, "requirepackages");
-
-    if (sDeps.length())
+    if (pkgInfo.requiredPackages.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, DEPENDENCIES);
-        m_listCtrl->SetItemText(currPackageInfo, 1, sDeps);
+        m_listCtrl->SetItemText(currPackageInfo, 1, pkgInfo.requiredPackages);
     }
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "Description");
-    std::string sDesc = getTagValue(sInfo, "desc");
 
-    if (!sDesc.length())
-        sDesc = getTagValue(sInfo, "plugindesc");
-
-    replaceAll(sDesc, "\\\"", "\"");
-    replaceAll(sDesc, "\\n", "\n");
+    std::string sDesc = pkgInfo.description;
 
     if (!sDesc.length())
         sDesc = "[No description. Please provide a description using the \"desc=DESC\" install info field.]";
@@ -818,22 +721,17 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     if (sDesc.front() == '[')
         m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
 
-    std::string sKeyWords = getTagValue(sInfo, "keywords");
-
-    if (sKeyWords.length())
+    if (pkgInfo.keyWords.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, "Keywords");
-        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sKeyWords);
-        m_listCtrl->SetItemToolTip(currPackageInfo, sKeyWords);
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.keyWords);
+        m_listCtrl->SetItemToolTip(currPackageInfo, pkgInfo.keyWords);
     }
 
-    std::string sChangesLog = getTagValue(sInfo, "changelog");
+    std::string sChangesLog = pkgInfo.changeLog;
 
     if (sChangesLog.length())
     {
-        replaceAll(sChangesLog, "\\\"", "\"");
-        replaceAll(sChangesLog, "\\n", "\n");
-
         currPackageInfo = m_listCtrl->AppendItem(currPackage, "Changelog");
         m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sChangesLog);
 
@@ -843,20 +741,19 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
         m_listCtrl->SetItemToolTip(currPackageInfo, sChangesLog);
     }
 
-    std::string sLicense = getTagValue(sInfo, "license");
-
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "License");
 
-    if (sLicense.length())
-        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sLicense);
+    if (pkgInfo.license.length())
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.license);
     else
     {
-        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, "[License unknown. Please provide a license using the \"license=LICENSE\" install info field.]");
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN,
+                                "[License unknown. Please provide a license using the \"license=LICENSE\" install info field.]");
         m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
     }
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, REPO_URL);
-    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sUrl);
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.repoUrl);
 }
 
 
@@ -957,23 +854,6 @@ void PackageRepoBrowser::OnItemSelect(wxTreeEvent& event)
         if (!isInstallable(item) || isUpdateable(item))
             m_uninstallButton->Enable();
     }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Simple function to make the URL more
-/// unique to avoid server caching (which might
-/// resolve in a very delated update of the
-/// package list as the server will respond with
-/// the already cached contents rather than the
-/// current file versions).
-///
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string PackageRepoBrowser::createSalt()
-{
-    return "?" + std::to_string(clock());
 }
 
 
@@ -1131,21 +1011,10 @@ void PackageRepoBrowser::resolveDependencies(std::string sDepList, std::vector<s
 /////////////////////////////////////////////////
 bool PackageRepoBrowser::getFileFromRepo(const std::string& sUrl)
 {
-    std::string contents = url::get(sUrl);
     std::string filename = sUrl;
     filename.erase(0, filename.rfind('/')+1);
 
-    std::ofstream file((m_scriptPath + "/packages/" + filename).c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
-
-    if (file.good())
-    {
-        file.write(contents.c_str(), contents.length());
-        file.close();
-
-        return true;
-    }
-
-    return false;
+    return m_repo.download(sUrl, m_scriptPath + "/packages/" + filename);
 }
 
 

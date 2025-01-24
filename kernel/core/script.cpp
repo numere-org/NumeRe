@@ -43,6 +43,7 @@ Script::Script() : FileSystem(), _localDef(true)
     nInstallModeFlags = ENABLE_DEFAULTS;
     nCurrentPackage = 0;
     nLine = 0;
+    m_repo.connect(REPO_LOCATION);
 }
 
 
@@ -82,6 +83,12 @@ void Script::openScript(std::string& _sScriptFileName, int nFromLine)
         // Ensure that the script exists and is a valid file
         if (m_script->getLastPosition() == -1)
         {
+            // If the user tried to install something, we're
+            // looking it up before sending out the non-existent
+            // file error
+            if (isInstallMode && handleRepositoryInstall(getFileParts(_sScriptFileName)[2]))
+                return;
+
             close();
             throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, "", SyntaxError::invalid_position, _sScriptFileName);
         }
@@ -343,6 +350,7 @@ bool Script::handleInstallInformation(string& sScriptCommand)
                 if (versionToFloat(package.sVersion) >= nPackageVersion)
                 {
                     isInInstallSection = false;
+                    NumeReKernel::print(_lang.get("SCRIPT_ALREADY_IMSTALLED", package.getName()));
                     return false;
                 }
 
@@ -397,7 +405,8 @@ bool Script::handleInstallInformation(string& sScriptCommand)
     if (sInstallInfoString.find("license=") != std::string::npos)
     {
         std::string sLicense = getArgAtPos(sInstallInfoString, sInstallInfoString.find("license=")+8);
-        NumeReKernel::print(LineBreak(_lang.get("SCRIPT_INSTALL_LICENSE_AGREEMENT", sInstallID, sLicense), NumeReKernel::getInstance()->getSettings()));
+        NumeReKernel::print(LineBreak("EULA: " + _lang.get("SCRIPT_INSTALL_LICENSE_AGREEMENT", sInstallID, sLicense),
+                                      NumeReKernel::getInstance()->getSettings()));
         NumeReKernel::printPreFmt("|<- ");
 
         std::string sAnswer;
@@ -1101,6 +1110,51 @@ bool Script::handleLocalDefinitions(string& sScriptCommand)
     }
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Handle the installation of a package,
+/// if the corresponding file cannot be found
+/// locally.
+///
+/// \param sPkgId const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Script::handleRepositoryInstall(const std::string& sPkgId)
+{
+    std::string sPackageFileName = ValidFileName("packages/" + sPkgId, ".nscr");
+    close();
+    isInstallMode = true;
+
+    // Search in the local storage first
+    if (fileExists(sPackageFileName))
+    {
+        openScript(sPackageFileName, 0);
+        return true;
+    }
+
+    NumeReKernel::printPreFmt("|-> PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_SEARCHING", sPkgId));
+    PackageInfo pkgInfo = m_repo.find(sPkgId);
+
+    if (pkgInfo.repoUrl.length())
+    {
+        NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_FOUND", pkgInfo.name, pkgInfo.version));
+
+        if (m_repo.download(pkgInfo.repoUrl, sPackageFileName))
+        {
+            NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_DOWNLOADED") + "\n");
+            openScript(sPackageFileName, 0);
+            return true;
+        }
+        else
+            NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_ERROR") + "\n");
+    }
+    else
+        NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_NOTFOUND") + "\n");
+
+    return false;
 }
 
 

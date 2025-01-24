@@ -9,3 +9,4 @@ Added	You can now change the file filters for each of the default folders in the
 Applied	Detection of readable and loadable files has been improved, so that you can now also read files without known extension.
 Applied	The "required version" of packages now uses the correct variant of the current version for checking, e.g. "v.1.1.7.2412".
 Cleaned	Window layouts are now also part of the dependency analysis and will correctly return their event procedures.
+New	The command "install" will now automatically search through the package repository for a package with matching filename.
