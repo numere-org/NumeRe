@@ -1341,7 +1341,13 @@ mu::Array numfnc_order(const mu::Array* v, int n)
         }
 
         auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
-            {return v[0][v1.getNum().asI64()-1] < v[0][v2.getNum().asI64()-1];};
+            {
+                if (!v[0][v1.getNum().asI64()-1].isValid())
+                    return false;
+
+                return bool(v[0][v1.getNum().asI64()-1] < v[0][v2.getNum().asI64()-1])
+                    || !v[0][v2.getNum().asI64()-1].isValid();
+            };
         std::sort(index.begin(), index.end(), sorter);
     }
     else
@@ -1354,7 +1360,13 @@ mu::Array numfnc_order(const mu::Array* v, int n)
         }
 
         auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
-            {return v[v1.getNum().asI64()-1].front() < v[v2.getNum().asI64()-1].front();};
+            {
+                if (!v[v1.getNum().asI64()-1].front().isValid())
+                    return false;
+
+                return bool(v[v1.getNum().asI64()-1].front() < v[v2.getNum().asI64()-1].front())
+                    || !v[v2.getNum().asI64()-1].front().isValid();
+            };
         std::sort(index.begin(), index.end(), sorter);
     }
 

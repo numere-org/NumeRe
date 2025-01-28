@@ -26,42 +26,10 @@
 #include "grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
+#include "cellfilter.hpp"
 
 extern double g_pixelScale;
 extern Language _guilang;
-
-
-
-/////////////////////////////////////////////////
-/// \brief Represents the basic settings needed
-/// by the CellValueShader class to actually
-/// calculate the cell shading.
-/////////////////////////////////////////////////
-struct CellValueShaderCondition
-{
-    enum ConditionType
-    {
-        CT_LESS_THAN,
-        CT_LESS_EQ_THAN,
-        CT_GREATER_THAN,
-        CT_GREATER_EQ_THAN,
-        CT_INTERVAL_RE,
-        CT_INTERVAL_RE_EXCL,
-        CT_INTERVAL_IM,
-        CT_INTERVAL_IM_EXCL,
-        CT_EQUALS_VAL,
-        CT_NOT_EQUALS_VAL,
-        CT_EQUALS_STR,
-        CT_NOT_EQUALS_STR,
-        CT_EQUALS_ARRAY,
-        CT_FIND_STR,
-        CT_NOT_FIND_STR
-    };
-
-    ConditionType m_type;
-    std::vector<std::complex<double>> m_vals;
-    std::vector<wxString> m_strs;
-};
 
 
 /////////////////////////////////////////////////
@@ -73,7 +41,7 @@ class CellValueShader
 {
     private:
         std::vector<wxColour> m_colorArray;
-        CellValueShaderCondition m_condition;
+        CellFilterCondition m_condition;
 
         /////////////////////////////////////////////////
         /// \brief Calculate the cell background colour
@@ -112,7 +80,7 @@ class CellValueShader
 
     public:
         CellValueShader() {}
-        CellValueShader(const std::vector<wxColour>& colors, const CellValueShaderCondition& cond) : m_colorArray(colors), m_condition(cond) {}
+        CellValueShader(const std::vector<wxColour>& colors, const CellFilterCondition& cond) : m_colorArray(colors), m_condition(cond) {}
         CellValueShader(const CellValueShader& shader) : m_colorArray(shader.m_colorArray), m_condition(shader.m_condition) {}
 
         /////////////////////////////////////////////////
@@ -139,77 +107,35 @@ class CellValueShader
         {
             switch (m_condition.m_type)
             {
-                case CellValueShaderCondition::CT_EQUALS_VAL:
-                {
-                    if (std::find(m_condition.m_vals.begin(), m_condition.m_vals.end(), val) != m_condition.m_vals.end())
-                        return m_colorArray.front();
-
-                    break;
-                }
-                case CellValueShaderCondition::CT_NOT_EQUALS_VAL:
-                {
-                    if (std::find(m_condition.m_vals.begin(), m_condition.m_vals.end(), val) != m_condition.m_vals.end())
-                        return *wxWHITE;
-
-                    return m_colorArray.front();
-                }
-                case CellValueShaderCondition::CT_EQUALS_ARRAY:
-                {
-                    for (size_t i = 0; i < std::min(m_colorArray.size(), m_condition.m_vals.size()); i++)
-                    {
-                        if (m_condition.m_vals[i] == val)
-                            return m_colorArray[i];
-                    }
-
-                    break;
-                }
-                case CellValueShaderCondition::CT_LESS_THAN:
-                {
-                    if (val.real() < m_condition.m_vals.front().real())
-                        return m_colorArray.front();
-
-                    break;
-                }
-                case CellValueShaderCondition::CT_GREATER_THAN:
-                {
-                    if (val.real() > m_condition.m_vals.front().real())
-                        return m_colorArray.front();
-
-                    break;
-                }
-                case CellValueShaderCondition::CT_LESS_EQ_THAN:
-                {
-                    if (val.real() <= m_condition.m_vals.front().real())
-                        return m_colorArray.front();
-
-                    break;
-                }
-                case CellValueShaderCondition::CT_GREATER_EQ_THAN:
-                {
-                    if (val.real() >= m_condition.m_vals.front().real())
-                        return m_colorArray.front();
-
-                    break;
-                }
-                case CellValueShaderCondition::CT_INTERVAL_RE:
+                // Only some special cases cannot be handled directly
+                // within the CellFilterCondition instance and have
+                // to be done here.
+                case CellFilterCondition::CT_INTERVAL_RE:
                 {
                     return interpolateColor((val.real() - m_condition.m_vals.front().real())
                                             / (m_condition.m_vals.back().real()-m_condition.m_vals.front().real()), false);
                 }
-                case CellValueShaderCondition::CT_INTERVAL_RE_EXCL:
+                case CellFilterCondition::CT_INTERVAL_RE_EXCL:
                 {
                     return interpolateColor((val.real() - m_condition.m_vals.front().real())
                                             / (m_condition.m_vals.back().real()-m_condition.m_vals.front().real()), true);
                 }
-                case CellValueShaderCondition::CT_INTERVAL_IM:
+                case CellFilterCondition::CT_INTERVAL_IM:
                 {
                     return interpolateColor((val.imag() - m_condition.m_vals.front().imag())
                                             / (m_condition.m_vals.back().imag()-m_condition.m_vals.front().imag()), false);
                 }
-                case CellValueShaderCondition::CT_INTERVAL_IM_EXCL:
+                case CellFilterCondition::CT_INTERVAL_IM_EXCL:
                 {
                     return interpolateColor((val.imag() - m_condition.m_vals.front().imag())
                                             / (m_condition.m_vals.back().imag()-m_condition.m_vals.front().imag()), true);
+                }
+                default:
+                {
+                    auto result = m_condition.eval(val);
+
+                    if (result.first && result.second < m_colorArray.size())
+                        return m_colorArray[result.second];
                 }
             }
 
@@ -226,47 +152,10 @@ class CellValueShader
         /////////////////////////////////////////////////
         wxColour getColour(const wxString& strVal) const
         {
-            auto removeQuotes = [](const wxString& strVal) {return strVal[0] == '"' && strVal[strVal.length()-1] == '"'
-                                                            ? strVal.substr(1, strVal.length()-2) : strVal;};
+            auto result = m_condition.eval(strVal);
 
-            if (m_condition.m_type == CellValueShaderCondition::CT_EQUALS_STR)
-            {
-                if (std::find(m_condition.m_strs.begin(), m_condition.m_strs.end(), removeQuotes(strVal)) != m_condition.m_strs.end())
-                    return m_colorArray.front();
-            }
-            else if (m_condition.m_type == CellValueShaderCondition::CT_NOT_EQUALS_STR)
-            {
-                if (std::find(m_condition.m_strs.begin(), m_condition.m_strs.end(), removeQuotes(strVal)) != m_condition.m_strs.end())
-                    return *wxWHITE;
-
-                return m_colorArray.front();
-            }
-            else if (m_condition.m_type == CellValueShaderCondition::CT_EQUALS_ARRAY)
-            {
-                for (size_t i = 0; i < std::min(m_colorArray.size(), m_condition.m_strs.size()); i++)
-                {
-                    if (m_condition.m_strs[i] == removeQuotes(strVal))
-                        return m_colorArray[i];
-                }
-            }
-            else if (m_condition.m_type == CellValueShaderCondition::CT_FIND_STR)
-            {
-                for (const auto& sStr : m_condition.m_strs)
-                {
-                    if (strVal.find(sStr) != std::string::npos)
-                        return m_colorArray.front();
-                }
-            }
-            else if (m_condition.m_type == CellValueShaderCondition::CT_NOT_FIND_STR)
-            {
-                for (const auto& sStr : m_condition.m_strs)
-                {
-                    if (strVal.find(sStr) != std::string::npos)
-                        return *wxWHITE;
-                }
-
-                return m_colorArray.front();
-            }
+            if (result.first && result.second < m_colorArray.size())
+                return m_colorArray[result.second];
 
             return *wxWHITE;
         }
@@ -356,6 +245,8 @@ class CellValueShaderDialog : public wxDialog
             lt_gt.Add("!=");
             lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_EQ_CONTAINS"));
             lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_EQ_NOT_CONTAINS"));
+            lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_EMPTY"));
+            lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_NOT_EMPTY"));
 
             // Create the dropdown containing the possible comparisons
             m_lt_gt_choice = _panel->CreateChoices(hsizer->GetStaticBox(), condSizer, lt_gt);
@@ -571,7 +462,7 @@ class CellValueShaderDialog : public wxDialog
             {
                 // Prepare the needed internals for the
                 // shader
-                CellValueShaderCondition cond;
+                CellFilterCondition cond;
                 std::vector<wxColour> colors;
 
                 int sel = m_book->GetSelection();
@@ -607,27 +498,31 @@ class CellValueShaderDialog : public wxDialog
                         // Determine the correct condition depending on the
                         // dropdown and the type of the comparison value
                         if (condType == "<")
-                            cond.m_type = CellValueShaderCondition::CT_LESS_THAN;
+                            cond.m_type = CellFilterCondition::CT_LESS_THAN;
                         else if (condType == ">")
-                            cond.m_type = CellValueShaderCondition::CT_GREATER_THAN;
+                            cond.m_type = CellFilterCondition::CT_GREATER_THAN;
                         else if (condType == "<=")
-                            cond.m_type = CellValueShaderCondition::CT_LESS_EQ_THAN;
+                            cond.m_type = CellFilterCondition::CT_LESS_EQ_THAN;
                         else if (condType == ">=")
-                            cond.m_type = CellValueShaderCondition::CT_GREATER_EQ_THAN;
+                            cond.m_type = CellFilterCondition::CT_GREATER_EQ_THAN;
                         else if (condType == "==" && (isConvertible(vecVal.front(), CONVTYPE_VALUE)
                                                       || isConvertible(vecVal.front(), CONVTYPE_DATE_TIME)))
-                            cond.m_type = CellValueShaderCondition::CT_EQUALS_VAL;
+                            cond.m_type = CellFilterCondition::CT_EQUALS_VAL;
                         else if (condType == "==")
-                            cond.m_type = CellValueShaderCondition::CT_EQUALS_STR;
+                            cond.m_type = CellFilterCondition::CT_EQUALS_STR;
                         else if (condType == "!=" && (isConvertible(vecVal.front(), CONVTYPE_VALUE)
                                                       || isConvertible(vecVal.front(), CONVTYPE_DATE_TIME)))
-                            cond.m_type = CellValueShaderCondition::CT_NOT_EQUALS_VAL;
+                            cond.m_type = CellFilterCondition::CT_NOT_EQUALS_VAL;
                         else if (condType == "!=")
-                            cond.m_type = CellValueShaderCondition::CT_NOT_EQUALS_STR;
+                            cond.m_type = CellFilterCondition::CT_NOT_EQUALS_STR;
                         else if (condType == _guilang.get("GUI_DLG_CVS_LT_GT_EQ_CONTAINS"))
-                            cond.m_type = CellValueShaderCondition::CT_FIND_STR;
+                            cond.m_type = CellFilterCondition::CT_FIND_STR;
                         else if (condType == _guilang.get("GUI_DLG_CVS_LT_GT_EQ_NOT_CONTAINS"))
-                            cond.m_type = CellValueShaderCondition::CT_NOT_FIND_STR;
+                            cond.m_type = CellFilterCondition::CT_NOT_FIND_STR;
+                        else if (condType == _guilang.get("GUI_DLG_CVS_LT_GT_EMPTY"))
+                            cond.m_type = CellFilterCondition::CT_EMPTY;
+                        else if (condType == _guilang.get("GUI_DLG_CVS_LT_GT_NOT_EMPTY"))
+                            cond.m_type = CellFilterCondition::CT_NOT_EMPTY;
 
                         // Insert the comparison values into the internal vectors
                         for (const auto& s : vecVal)
@@ -644,7 +539,7 @@ class CellValueShaderDialog : public wxDialog
                     }
                     case CATEGORY:
                     {
-                        cond.m_type = CellValueShaderCondition::CT_EQUALS_ARRAY;
+                        cond.m_type = CellFilterCondition::CT_EQUALS_ARRAY;
 
                         // Extract the values and colours
                         for (size_t i = 0; i < m_field_count; i++)
@@ -693,7 +588,7 @@ class CellValueShaderDialog : public wxDialog
                         std::string val_end = m_interval_end->GetValue().ToStdString();
 
                         // Set the correct condition
-                        cond.m_type = CellValueShaderCondition::CT_INTERVAL_RE;
+                        cond.m_type = CellFilterCondition::CT_INTERVAL_RE;
 
                         // Convert the values into internal types
                         if (isConvertible(val_start, CONVTYPE_DATE_TIME))
@@ -737,7 +632,7 @@ class CellValueShaderDialog : public wxDialog
                         std::string val_end = m_interval_end_excl->GetValue().ToStdString();
 
                         // Set the correct condition
-                        cond.m_type = CellValueShaderCondition::CT_INTERVAL_RE_EXCL;
+                        cond.m_type = CellFilterCondition::CT_INTERVAL_RE_EXCL;
 
                         // Convert the values into internal types
                         if (isConvertible(val_start, CONVTYPE_DATE_TIME))

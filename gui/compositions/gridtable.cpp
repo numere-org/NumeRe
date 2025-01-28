@@ -20,11 +20,28 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Private helper member to calculate the
+/// correct row position depending on the sorting
+/// state.
+///
+/// \param row int
+/// \return int
+///
+/////////////////////////////////////////////////
+int GridNumeReTable::getRow(int row) const
+{
+    if ((size_t)(row-getNumHeadlines()) < m_sortIndex.size())
+        return m_sortIndex[(row-getNumHeadlines())];
+
+    return (row-getNumHeadlines());
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable() : m_showQMarks(true)
+GridNumeReTable::GridNumeReTable() : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END)
 {
     _table = NumeRe::Table();
 }
@@ -38,7 +55,7 @@ GridNumeReTable::GridNumeReTable() : m_showQMarks(true)
 /// \param numCols int
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true)
+GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END)
 {
     _table = NumeRe::Table(numRows-2, numCols-1);
 }
@@ -52,7 +69,7 @@ GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true)
 /// \param showQMarks bool
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m_showQMarks(showQMarks)
+GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m_showQMarks(showQMarks), m_sortIndex(0, VectorIndex::OPEN_END)
 {
     _table = std::move(_extTable);
 }
@@ -155,12 +172,12 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
 
     if (sTypeName == wxGRID_VALUE_FLOAT
         && TableColumn::isValueType(_table.getColumnType(col))
-        && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
+        && (_table.getValue(getRow(row), col).imag() == 0 || mu::isnan(_table.getValue(getRow(row), col))))
         return true;
 
     if (sTypeName == wxGRID_VALUE_BOOL
         && _table.getColumnType(col) == TableColumn::TYPE_LOGICAL
-        && _table.getColumn(col)->isValid(row-getNumHeadlines()))
+        && _table.getColumn(col)->isValid(getRow(row)))
         return true;
 
     if (sTypeName == "plain" && _table.getColumnType(col) == TableColumn::TYPE_STRING)
@@ -191,7 +208,7 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
     if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return NAN;
 
-    return _table.getValue(row - getNumHeadlines(), col).real();
+    return _table.getValue(getRow(row), col).real();
 }
 
 
@@ -213,7 +230,7 @@ bool GridNumeReTable::GetValueAsBool(int row, int col)
     if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return false;
 
-    return _table.getValue(row - getNumHeadlines(), col).real() != 0.0;
+    return _table.getValue(getRow(row), col).real() != 0.0;
 }
 
 
@@ -232,11 +249,11 @@ void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeN
 {
     if (sTypeName == "mu::Value")
     {
-        value = _table.get(row - getNumHeadlines(), col);
+        value = _table.get(getRow(row), col);
         return static_cast<void*>(&value);
     }
 
-    cmplx = _table.getValue(row - getNumHeadlines(), col);
+    cmplx = _table.getValue(getRow(row), col);
     return static_cast<void*>(&cmplx);
 }
 
@@ -258,12 +275,12 @@ wxString GridNumeReTable::GetValue(int row, int col)
         return "";
     else if (!m_showQMarks)
     {
-        std::string sValue = toInternalString(_table.getValueAsString(row - getNumHeadlines(), col));
+        std::string sValue = toInternalString(_table.getValueAsString(getRow(row), col));
         replaceAll(sValue, "\t", "    ");
         return sValue;
     }
     else
-        return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
+        return replaceControlCharacters(_table.getValueAsString(getRow(row), col));
 }
 
 
@@ -284,7 +301,7 @@ wxString GridNumeReTable::GetEditableValue(int row, int col)
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else
-        return replaceControlCharacters(_table.getValueAsInternalString(row - getNumHeadlines(), col));
+        return replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col));
 }
 
 
@@ -309,7 +326,7 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
     if (row < nHeadRows)
         _table.setHeadPart(col, row, value.ToStdString());
     else
-        _table.setValueAsString(row - nHeadRows, col, value.ToStdString());
+        _table.setValueAsString(getRow(row), col, value.ToStdString());
 
     // If the number of headlines changed, notify the
     // grid to draw the newly added cells
@@ -340,6 +357,7 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 void GridNumeReTable::Clear()
 {
     _table.Clear();
+    m_sortIndex = VectorIndex(0, VectorIndex::OPEN_END);
 }
 
 
@@ -511,7 +529,7 @@ wxString GridNumeReTable::GetRowLabelValue(int row)
     if (row < getNumHeadlines())
         return "#";
     else
-        return toString(row - (getNumHeadlines()-1));
+        return toString(getRow(row)+1);
 }
 
 
@@ -561,7 +579,6 @@ void GridNumeReTable::SetColLabelValue(int col, const wxString& label)
 double GridNumeReTable::min(const wxGridCellCoordsContainer& coords) const
 {
     double dMin = NAN;
-    const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
     for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
@@ -571,7 +588,7 @@ double GridNumeReTable::min(const wxGridCellCoordsContainer& coords) const
             if (!coords.contains(i, j))
                 continue;
 
-            double val = _table.getValue(i - nHeadLines, j).real();
+            double val = _table.getValue(getRow(i), j).real();
 
             if (isnan(dMin) || val < dMin)
                 dMin = val;
@@ -593,7 +610,6 @@ double GridNumeReTable::min(const wxGridCellCoordsContainer& coords) const
 double GridNumeReTable::max(const wxGridCellCoordsContainer& coords) const
 {
     double dMax = NAN;
-    const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
     for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
@@ -603,7 +619,7 @@ double GridNumeReTable::max(const wxGridCellCoordsContainer& coords) const
             if (!coords.contains(i, j))
                 continue;
 
-            double val = _table.getValue(i - nHeadLines, j).real();
+            double val = _table.getValue(getRow(i), j).real();
 
             if (isnan(dMax) || val > dMax)
                 dMax = val;
@@ -626,7 +642,6 @@ std::complex<double> GridNumeReTable::avg(const wxGridCellCoordsContainer& coord
 {
     std::complex<double> dSum = 0;
     size_t nCount = 0;
-    const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
     for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
@@ -636,7 +651,7 @@ std::complex<double> GridNumeReTable::avg(const wxGridCellCoordsContainer& coord
             if (!coords.contains(i, j))
                 continue;
 
-            std::complex<double> val = _table.getValue(i - nHeadLines, j);
+            std::complex<double> val = _table.getValue(getRow(i), j);
 
             if (!mu::isnan(val))
             {
@@ -664,7 +679,6 @@ std::complex<double> GridNumeReTable::avg(const wxGridCellCoordsContainer& coord
 std::complex<double> GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) const
 {
     std::complex<double> dSum = 0;
-    const int nHeadLines = getNumHeadlines();
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
     for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
@@ -674,7 +688,7 @@ std::complex<double> GridNumeReTable::sum(const wxGridCellCoordsContainer& coord
             if (!coords.contains(i, j))
                 continue;
 
-            std::complex<double> val = _table.getValue(i - nHeadLines, j);
+            std::complex<double> val = _table.getValue(getRow(i), j);
 
             if (!mu::isnan(val))
                 dSum += val;
@@ -722,7 +736,7 @@ std::string GridNumeReTable::serialize(const wxGridCellCoordsContainer& coords) 
             for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
             {
                 if (coords.contains(i, j))
-                    sSerialized += _table.getValueAsInternalString(i - nHeadLines, j);
+                    sSerialized += _table.getValueAsInternalString(getRow(i), j);
 
                 sSerialized += "\t";
             }
@@ -781,4 +795,55 @@ void GridNumeReTable::enableQuotationMarks(bool enable)
 {
     m_showQMarks = enable;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Set the selected column as sorting
+/// column.
+///
+/// \param col int
+/// \param ascending bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void GridNumeReTable::sortCol(int col, bool ascending)
+{
+    if (col >= _table.getCols())
+        return;
+
+    m_sortIndex = VectorIndex(_table.getColumn(col)->get(VectorIndex(0, VectorIndex::OPEN_END)).call("order"));
+
+    // Just reverse it
+    if (!ascending)
+        m_sortIndex = m_sortIndex.get(VectorIndex(m_sortIndex.size()-1, 0));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return, if the table somehow sorted.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool GridNumeReTable::isSorted() const
+{
+    return !m_sortIndex.isOpenEnd();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Remove the sorting column.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void GridNumeReTable::removeSort()
+{
+    m_sortIndex = VectorIndex(0, VectorIndex::OPEN_END);
+}
+
+
+
+
+
 

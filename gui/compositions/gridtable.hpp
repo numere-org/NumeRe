@@ -40,6 +40,9 @@ class GridNumeReTable : public wxGridTableBase
         mu::Value value;
         bool m_showQMarks;
         std::map<int,wxString> m_customColLabels;
+        VectorIndex m_sortIndex;
+
+        int getRow(int row) const;
 
     public:
         GridNumeReTable();
@@ -89,6 +92,10 @@ class GridNumeReTable : public wxGridTableBase
         std::vector<std::string> getCategories(int col) const;
 
         void enableQuotationMarks(bool enable = true);
+
+        void sortCol(int col, bool ascending);
+        bool isSorted() const;
+        void removeSort();
 };
 
 

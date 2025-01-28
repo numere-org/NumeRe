@@ -68,6 +68,7 @@ struct TableColumn
     std::vector<std::string> getValueAsString(const VectorIndex& idx) const;
     std::vector<std::string> getValueAsInternalString(const VectorIndex& idx) const;
     std::vector<std::complex<double>> getValue(const VectorIndex& idx) const;
+    mu::Array get(const VectorIndex& idx) const;
 
     virtual std::string getValueAsString(size_t elem) const = 0;
     virtual std::string getValueAsInternalString(size_t elem) const = 0;
