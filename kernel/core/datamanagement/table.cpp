@@ -760,8 +760,6 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::insertLines(size_t nPos, size_t nNum)
     {
-        nPos -= getHeadCount();
-
         for (TblColPtr& col : vTableData)
         {
             if (col)
@@ -802,8 +800,6 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::deleteLines(size_t nPos, size_t nNum)
     {
-        nPos -= getHeadCount();
-
         for (TblColPtr& col : vTableData)
         {
             if (col)

@@ -2297,7 +2297,7 @@ void TableViewer::insertElement(int id)
     {
         // New row
         if (m_lastRightClick.GetRow() < (int)nFirstNumRow)
-            nFirstNumRow++;
+            return; // disabled for now //nFirstNumRow++;
 
         InsertRows(m_lastRightClick.GetRow());
     }
@@ -2342,7 +2342,7 @@ void TableViewer::removeElement(int id)
     {
         // Remove row
         if (m_lastRightClick.GetRow() < (int)nFirstNumRow)
-            nFirstNumRow--;
+            return; // disabled for now //nFirstNumRow--;
 
         DeleteRows(m_lastRightClick.GetRow());
     }

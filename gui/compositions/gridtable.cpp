@@ -373,7 +373,39 @@ void GridNumeReTable::Clear()
 /////////////////////////////////////////////////
 bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
 {
-    _table.insertLines(pos, numRows);
+    if ((isSorted() && numRows > 1)
+        || pos < getNumHeadlines())
+        return false;
+
+    _table.insertLines(getRow(pos), numRows);
+
+    // Update the index, if necessary
+    if (isSorted())
+    {
+        // This is the new index value
+        int partition = getRow(pos);
+
+        // All same or higher index values must be incremented
+        for (size_t i = 0; i < m_sortIndex.size(); i++)
+        {
+            if (m_sortIndex[i] >= partition)
+                m_sortIndex.setIndex(i, m_sortIndex[i]+1);
+        }
+
+        // Insert the new index value at the correct position. First
+        // and last position are quite simple
+        if (pos-getNumHeadlines() == 0)
+            m_sortIndex.prepend(partition);
+        else if (pos-getNumHeadlines()+1 == m_sortIndex.size())
+            m_sortIndex.append(partition);
+        else
+        {
+            VectorIndex inserted = m_sortIndex.subidx(0, pos-getNumHeadlines());
+            inserted.append(partition);
+            inserted.append(m_sortIndex.subidx(pos-getNumHeadlines()));
+            m_sortIndex = inserted;
+        }
+    }
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
@@ -424,7 +456,38 @@ bool GridNumeReTable::AppendRows(size_t numRows)
 /////////////////////////////////////////////////
 bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
 {
-    _table.deleteLines(pos, numRows);
+    if ((isSorted() && numRows > 1)
+        || pos < getNumHeadlines())
+        return false;
+
+    _table.deleteLines(getRow(pos), numRows);
+
+    // Update the index, if necessary
+    if (isSorted())
+    {
+        // This is the removed index value
+        int partition = getRow(pos);
+
+        // All same or higher index values must be decremented
+        for (size_t i = 0; i < m_sortIndex.size(); i++)
+        {
+            if (m_sortIndex[i] >= partition)
+                m_sortIndex.setIndex(i, m_sortIndex[i]-1);
+        }
+
+        // Remove the index value from the correct position. First
+        // and last position are quite simple
+        if (pos-getNumHeadlines() == 0)
+            m_sortIndex = m_sortIndex.subidx(1);
+        else if (pos-getNumHeadlines()+1 == m_sortIndex.size())
+            m_sortIndex = m_sortIndex.subidx(0, m_sortIndex.size()-1);
+        else
+        {
+            VectorIndex removed = m_sortIndex.subidx(0, pos-getNumHeadlines());
+            removed.append(m_sortIndex.subidx(pos-getNumHeadlines()+1));
+            m_sortIndex = removed;
+        }
+    }
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
