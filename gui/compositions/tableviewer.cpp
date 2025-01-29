@@ -47,7 +47,7 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_CELL_RIGHT_CLICK   (TableViewer::OnCellRightClick)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
     EVT_GRID_LABEL_LEFT_DCLICK  (TableViewer::OnLabelDoubleClick)
-    EVT_MENU_RANGE              (ID_MENU_SAVE, ID_MENU_CVS, TableViewer::OnMenu)
+    EVT_MENU_RANGE              (ID_MENU_SAVE, ID_MENU_TABLE_END, TableViewer::OnMenu)
     EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
     EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
 END_EVENT_TABLE()
@@ -77,8 +77,19 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     SetDefaultColSize(95);
 
     // Prepare the context menu
+    wxMenu* columnMenu = new wxMenu();
+
+    columnMenu->Append(ID_MENU_SORT_COL_ASC, _guilang.get("GUI_TABLE_SORT_ASC"));
+    columnMenu->Append(ID_MENU_SORT_COL_DESC, _guilang.get("GUI_TABLE_SORT_DESC"));
+    columnMenu->Append(ID_MENU_SORT_COL_CLEAR, _guilang.get("GUI_TABLE_SORT_CLEAR"));
+    columnMenu->AppendSeparator();
+    columnMenu->Append(ID_MENU_FILTER, _guilang.get("GUI_TABLE_FILTER"));
+    columnMenu->Append(ID_MENU_DELETE_FILTER, _guilang.get("GUI_TABLE_DELETE_FILTER"));
+    columnMenu->AppendSeparator();
+    columnMenu->Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE"));
+
+    m_popUpMenu.Append(ID_MENU_COLUMNS, _guilang.get("GUI_TABLE_COLUMN"), columnMenu);
     m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
-    m_popUpMenu.Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE"));
     m_popUpMenu.AppendSeparator();
     m_popUpMenu.Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
 
@@ -410,7 +421,7 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
         if (event.GetTopLeftCoords() == wxGridCellCoords(0, 0)
             && event.GetBottomRightCoords() == wxGridCellCoords(GetRows()-1, GetCols()-1))
         {
-            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords()));
+            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords(), this));
             selectedCells.Clear();
         }
         else if (!selectedCells.size())
@@ -423,7 +434,7 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
                 }
             }
 
-            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords()));
+            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords(), this));
         }
         else
         {
@@ -435,7 +446,7 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
                 }
             }
 
-            updateStatusBar(wxGridCellCoordsContainer(selectedCells));
+            updateStatusBar(wxGridCellCoordsContainer(selectedCells, this));
         }
     }
     else
@@ -557,13 +568,13 @@ void TableViewer::deleteSelection()
 
     // Handle all possible selection types
     if (GetSelectedCells().size()) // not a block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells(), this);
     else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0], this);
     else if (GetSelectedCols().size()) // multiple selected columns
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false, this);
     else if (GetSelectedRows().size()) // multiple selected rows
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true, this);
     else
     {
         // single cell: overwrite and return
@@ -669,7 +680,7 @@ void TableViewer::copyContents()
     {
         // Non-block selection
         if (isGridNumeReTable)
-            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCells()));
+            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCells(), this));
         else
         {
             wxGridCellCoordsArray cellarray = GetSelectedCells();
@@ -691,7 +702,8 @@ void TableViewer::copyContents()
 
         if (isGridNumeReTable)
             sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(topleftarray[0],
-                                                                                                        bottomrightarray[0]));
+                                                                                                        bottomrightarray[0],
+                                                                                                        this));
         else
         {
             for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
@@ -714,7 +726,7 @@ void TableViewer::copyContents()
         // Multiple selected columns
         if (isGridNumeReTable)
             sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCols(),
-                                                                                                        GetRows()-1, false));
+                                                                                                        GetRows()-1, false, this));
         else
         {
             wxArrayInt colarray = GetSelectedCols();
@@ -739,7 +751,7 @@ void TableViewer::copyContents()
         // Multiple selected rows
         if (isGridNumeReTable)
             sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedRows(),
-                                                                                                        GetCols()-1, true));
+                                                                                                        GetCols()-1, true, this));
         else
         {
             wxArrayInt rowarray = GetSelectedRows();
@@ -883,15 +895,15 @@ void TableViewer::applyConditionalCellColourScheme()
 
     // Handle all possible selection types
     if (GetSelectedCells().size()) // not a block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells(), this);
     else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0], this);
     else if (GetSelectedCols().size()) // multiple selected columns
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false, this);
     else if (GetSelectedRows().size()) // multiple selected rows
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true, this);
     else
-        coordsContainer = wxGridCellCoordsContainer(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
+        coordsContainer = wxGridCellCoordsContainer(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1), this);
 
     double minVal = calculateMin(coordsContainer);
     double maxVal = calculateMax(coordsContainer);
@@ -900,6 +912,165 @@ void TableViewer::applyConditionalCellColourScheme()
 
     if (dialog.ShowModal() == wxID_OK)
         conditionalFormat(coordsContainer, dialog.getShader());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a filter for a column and apply
+/// all filters automatically.
+///
+/// \param col int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::createFilter(int col)
+{
+    if (col >= GetNumberCols()-1)
+        return;
+
+    // Ensure that we have enough filters available
+    if (m_filter.size() <= col)
+        m_filter.resize(col+1);
+
+    // Open up the corresponding dialog
+    CellFilterDialog dialog(this, m_filter[col]);
+
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    m_filter[col] = dialog.getCondition();
+
+    applyFilter();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Delete the filter for a column and
+/// re-apply the remaining ones.
+///
+/// \param col int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::deleteFilter(int col)
+{
+    if (col >= GetNumberCols()-1 || col >= m_filter.size())
+        return;
+
+    // Delete the filter by resetting it
+    m_filter[col].reset();
+
+    applyFilter();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply all filters to the table data.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::applyFilter()
+{
+    BeginBatch();
+
+    // Mark the filtered columns
+    for (int j = 0; j < GetNumberCols(); j++)
+    {
+        wxString label = GetColLabelValue(j);
+
+        if (j < m_filter.size() && m_filter[j].m_type != CellFilterCondition::CT_NONE)
+            SetColLabelValue(j, label[label.length()-1] != L'\uE16E' ? label + L" \uE16E" : label);
+        else
+            SetColLabelValue(j, label[label.length()-1] != L'\uE16E' ? label : label.substr(0, label.length()-2));
+    }
+
+    // Apply the filter to all rows
+    for (int i = nFirstNumRow; i < GetNumberRows()-1; i++)
+    {
+        bool show = true;
+
+        for (size_t j = 0; j < std::min(m_filter.size(), (size_t)GetNumberCols()-1); j++)
+        {
+            if (m_filter[j].m_type != CellFilterCondition::CT_NONE)
+            {
+                mu::Value v = get(i, j);
+
+                if ((v.isString() && !m_filter[j].eval(v.getStr()).first)
+                    || (!v.isString() && !m_filter[j].eval(v.getNum().asCF64()).first))
+                {
+                    show = false;
+                    break;
+                }
+            }
+        }
+
+        if (show)
+            ShowRow(i);
+        else
+            HideRow(i);
+    }
+
+    EndBatch();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sort according a specified column.
+///
+/// \param col int
+/// \param ascending bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::sortCol(int col, bool ascending)
+{
+    // A \u2BC5
+    // V \u2BC6
+    if (isGridNumeReTable && col < GetNumberCols()-1)
+    {
+        static_cast<GridNumeReTable*>(GetTable())->sortCol(col, ascending);
+        Refresh();
+
+        for (int j = 0; j < GetNumberCols(); j++)
+        {
+            wxString label = GetColLabelValue(j);
+
+            if (label[0] == L'\u2BC5' || label[0] == L'\u2BC6')
+                SetColLabelValue(j, label.substr(2));
+        }
+
+        SetColLabelValue(col, (ascending ? L"\u2BC5 " : L"\u2BC6 ") + GetColLabelValue(col));
+
+        applyFilter();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Clear any sorting applied to any
+/// column.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::clearSort()
+{
+    if (isGridNumeReTable)
+    {
+        static_cast<GridNumeReTable*>(GetTable())->removeSort();
+        Refresh();
+
+        for (int j = 0; j < GetNumberCols(); j++)
+        {
+            wxString label = GetColLabelValue(j);
+
+            if (label[0] == L'\u2BC5' || label[0] == L'\u2BC6')
+                SetColLabelValue(j, label.substr(2));
+        }
+
+        applyFilter();
+    }
 }
 
 
@@ -919,6 +1090,7 @@ void TableViewer::conditionalFormat(const wxGridCellCoordsContainer& cells, cons
 
     // Whole columns are selected
     if ((cells.isBlock() || cells.columnsSelected())
+        && allRowsShown()
         && cellsExtent.m_topleft.GetRow() <= (int)nFirstNumRow
         && cellsExtent.m_bottomright.GetRow()+2 >= GetRows())
     {
@@ -1346,7 +1518,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     // Get the dimensions
     wxString dim = "Dim: ";
-    dim << this->GetRowLabelValue(GetRows()-2) << "x" << GetCols()-1;
+    dim << GetRows()-nFirstNumRow-1 << "x" << GetCols()-1;
 
     // Get the current cursor position
     wxString sel = "Cur: ";
@@ -1456,11 +1628,23 @@ void TableViewer::createMenuBar()
 
     menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
+    // Create the columns submenu
+    wxMenu* columnMenu = new wxMenu();
+
+    columnMenu->Append(ID_MENU_SORT_COL_ASC, _guilang.get("GUI_TABLE_SORT_ASC"));
+    columnMenu->Append(ID_MENU_SORT_COL_DESC, _guilang.get("GUI_TABLE_SORT_DESC"));
+    columnMenu->Append(ID_MENU_SORT_COL_CLEAR, _guilang.get("GUI_TABLE_SORT_CLEAR"));
+    columnMenu->AppendSeparator();
+    columnMenu->Append(ID_MENU_FILTER, _guilang.get("GUI_TABLE_FILTER"));
+    columnMenu->Append(ID_MENU_DELETE_FILTER, _guilang.get("GUI_TABLE_DELETE_FILTER"));
+    columnMenu->AppendSeparator();
+    columnMenu->Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE") + "\tCtrl-T");
+
     // Create the tools menu
     wxMenu* menuTools = new wxMenu();
 
     menuTools->Append(ID_MENU_RELOAD, _guilang.get("GUI_TABLE_RELOAD") + "\tCtrl-R");
-    menuTools->Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE") + "\tCtrl-T");
+    menuTools->Append(wxID_ANY, _guilang.get("GUI_TABLE_COLUMN"), columnMenu);
     menuTools->Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS") + "\tCtrl-Shift-F");
 
     menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
@@ -1940,6 +2124,14 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
         m_popUpMenu.Enable(ID_MENU_PASTE_HERE, true);
     }
 
+    m_popUpMenu.Enable(ID_MENU_COLUMNS, true);
+    m_popUpMenu.Enable(ID_MENU_DELETE_FILTER,
+                       event.GetCol() < m_filter.size() && m_filter[event.GetCol()].m_type != CellFilterCondition::CT_NONE);
+
+    m_popUpMenu.Enable(ID_MENU_SORT_COL_ASC, isGridNumeReTable);
+    m_popUpMenu.Enable(ID_MENU_SORT_COL_DESC, isGridNumeReTable);
+    m_popUpMenu.Enable(ID_MENU_SORT_COL_CLEAR, isGridNumeReTable && static_cast<GridNumeReTable*>(GetTable())->isSorted());
+
     int id = GetPopupMenuSelectionFromUser(m_popUpMenu, event.GetPosition());
 
     if (id == wxID_NONE)
@@ -1987,6 +2179,19 @@ void TableViewer::OnLabelRightClick(wxGridEvent& event)
         m_popUpMenu.Enable(ID_MENU_REMOVE_CELL, false);
         m_popUpMenu.Enable(ID_MENU_PASTE_HERE, false);
     }
+
+    if (event.GetCol() != -1)
+    {
+        m_popUpMenu.Enable(ID_MENU_COLUMNS, true);
+        m_popUpMenu.Enable(ID_MENU_DELETE_FILTER,
+                           event.GetCol() < m_filter.size() && m_filter[event.GetCol()].m_type != CellFilterCondition::CT_NONE);
+
+        m_popUpMenu.Enable(ID_MENU_SORT_COL_ASC, isGridNumeReTable);
+        m_popUpMenu.Enable(ID_MENU_SORT_COL_DESC, isGridNumeReTable);
+        m_popUpMenu.Enable(ID_MENU_SORT_COL_CLEAR, isGridNumeReTable && static_cast<GridNumeReTable*>(GetTable())->isSorted());
+    }
+    else
+        m_popUpMenu.Enable(ID_MENU_COLUMNS, false);
 
     int id = GetPopupMenuSelectionFromUser(m_popUpMenu, event.GetPosition());
 
@@ -2059,6 +2264,21 @@ void TableViewer::OnMenu(wxCommandEvent& event)
         case ID_MENU_CVS:
             applyConditionalCellColourScheme();
             break;
+        case ID_MENU_FILTER:
+            createFilter(m_lastRightClick.GetCol());
+            break;
+        case ID_MENU_DELETE_FILTER:
+            deleteFilter(m_lastRightClick.GetCol());
+            break;
+        case ID_MENU_SORT_COL_ASC:
+            sortCol(m_lastRightClick.GetCol(), true);
+            break;
+        case ID_MENU_SORT_COL_DESC:
+            sortCol(m_lastRightClick.GetCol(), false);
+            break;
+        case ID_MENU_SORT_COL_CLEAR:
+            clearSort();
+            break;
     }
 
     m_lastRightClick.Set(-1, -1);
@@ -2079,7 +2299,7 @@ void TableViewer::insertElement(int id)
     {
         // New row
         if (m_lastRightClick.GetRow() < (int)nFirstNumRow)
-            nFirstNumRow++;
+            return; // disabled for now //nFirstNumRow++;
 
         InsertRows(m_lastRightClick.GetRow());
     }
@@ -2124,7 +2344,7 @@ void TableViewer::removeElement(int id)
     {
         // Remove row
         if (m_lastRightClick.GetRow() < (int)nFirstNumRow)
-            nFirstNumRow--;
+            return; // disabled for now //nFirstNumRow--;
 
         DeleteRows(m_lastRightClick.GetRow());
     }
@@ -2266,13 +2486,13 @@ void TableViewer::changeColType()
 
     // Handle all possible selection types
     if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0], this);
     else if (GetSelectedCols().size()) // multiple selected columns
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false, this);
     else if (GetSelectedCells().size())
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells(), this);
     else
-        coordsContainer = wxGridCellCoordsContainer(wxArrayInt(1, GetCursorColumn()), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(wxArrayInt(1, GetCursorColumn()), GetRows()-1, false, this);
 
     // Get the target column type
     std::vector<std::string> vTypes = TableColumn::getTypesAsString();
@@ -2544,6 +2764,44 @@ int TableViewer::GetExternalRows(int gridrow) const
         return GetNumberRows()-1;
 
     return gridrow;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return, whether all data rows are
+/// currently shown and no rows are hidden.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TableViewer::allRowsShown() const
+{
+    for (int i = nFirstNumRow; i < GetRows()-1; i++)
+    {
+        if (!IsRowShown(i))
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return, whether all data columns are
+/// currently shown and no columns are hidden.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TableViewer::allColsShown() const
+{
+    for (int j = 0; j < GetCols()-1; j++)
+    {
+        if (!IsColShown(j))
+            return false;
+    }
+
+    return true;
 }
 
 

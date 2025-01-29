@@ -29,6 +29,7 @@
 #include "gridcellcoordscontainer.hpp"
 #include "../../kernel/core/datamanagement/container.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
+#include "cellfilter.hpp"
 
 class TablePanel;
 class CellValueShader;
@@ -52,6 +53,7 @@ class TableViewer : public wxGrid
         wxGridCellCoords selectionStart;
         wxGridCellCoordsArray selectedCells;
         std::vector<int> m_currentColTypes;
+        std::vector<CellFilterCondition> m_filter;
         std::string m_displayName;
         std::string m_intName;
 
@@ -78,6 +80,11 @@ class TableViewer : public wxGrid
         void copyContents();
         void pasteContents(bool useCursor = false);
         void applyConditionalCellColourScheme();
+        void createFilter(int col);
+        void deleteFilter(int col);
+        void applyFilter();
+        void sortCol(int col, bool ascending);
+        void clearSort();
         void UpdateColumnAlignment(int col);
         std::vector<wxString> getLinesFromPaste(const wxString& data);
         void replaceDecimalSign(wxString& text);
@@ -130,6 +137,8 @@ class TableViewer : public wxGrid
         int GetInternalRows(int gridrow) const;
         int GetExternalRows(int gridrow) const;
 
+        bool allRowsShown() const;
+        bool allColsShown() const;
 
         size_t GetHeight() {return nHeight;}
         size_t GetWidth() {return nWidth;}
@@ -150,8 +159,15 @@ class TableViewer : public wxGrid
             ID_MENU_PASTE,
             ID_MENU_PASTE_HERE,
             ID_MENU_RELOAD,
+            ID_MENU_CVS,
+            ID_MENU_COLUMNS,
             ID_MENU_CHANGE_COL_TYPE,
-            ID_MENU_CVS
+            ID_MENU_FILTER,
+            ID_MENU_DELETE_FILTER,
+            ID_MENU_SORT_COL_ASC,
+            ID_MENU_SORT_COL_DESC,
+            ID_MENU_SORT_COL_CLEAR,
+            ID_MENU_TABLE_END
         };
 
         DECLARE_EVENT_TABLE();

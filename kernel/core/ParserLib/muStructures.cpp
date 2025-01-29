@@ -1102,11 +1102,22 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator<(const Value& other) const
     {
-        return m_type == other.m_type
-            && ((isCategory() && getCategory() < other.getCategory())
-                || (isString() && getStr() < other.getStr())
-                || (isNumerical() && getNum() < other.getNum())
-                || (isArray() && all(getArray() < other.getArray())));
+        if (m_type != other.m_type)
+            return false;
+
+        if (isCategory())
+            return getCategory() < other.getCategory();
+
+        if (isString())
+            return getStr() < other.getStr();
+
+        if (isNumerical())
+            return getNum() < other.getNum();
+
+        if (isArray())
+            return all(getArray() < other.getArray());
+
+        return false;
     }
 
 
@@ -1132,11 +1143,22 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator>(const Value& other) const
     {
-       return m_type == other.m_type
-            && ((isCategory() && getCategory() > other.getCategory())
-                || (isString() && getStr() > other.getStr())
-                || (isNumerical() && getNum() > other.getNum())
-                || (isArray() && all(getArray() > other.getArray())));
+        if (m_type != other.m_type)
+            return false;
+
+        if (isCategory())
+            return getCategory() > other.getCategory();
+
+        if (isString())
+            return getStr() > other.getStr();
+
+        if (isNumerical())
+            return getNum() > other.getNum();
+
+        if (isArray())
+            return all(getArray() > other.getArray());
+
+        return false;
     }
 
 

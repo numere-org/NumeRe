@@ -19,6 +19,8 @@
 #ifndef GRIDCELLCOORDSCONTAINER_HPP
 #define GRIDCELLCOORDSCONTAINER_HPP
 
+#include <wx/grid.h>
+
 /////////////////////////////////////////////////
 /// \brief A simple structure to define the
 /// needed grid space to enclose all cells
@@ -44,6 +46,45 @@ class wxGridCellCoordsContainer
         wxGridCellCoordsArray m_array;
         wxArrayInt m_rowsOrCols;
         bool m_rowsSelected;
+        wxGrid* m_grid;
+
+        /////////////////////////////////////////////////
+        /// \brief The extent's boundary might be hidden
+        /// cells. Shrink it to the largest boundary,
+        /// which is visble.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void fitExtentToShownCells()
+        {
+            if (m_grid)
+            {
+                while (!m_grid->IsColShown(m_extent.m_topleft.GetCol())
+                       && m_extent.m_topleft.GetCol() < m_extent.m_bottomright.GetCol())
+                    m_extent.m_topleft.SetCol(m_extent.m_topleft.GetCol()+1);
+
+                while (!m_grid->IsRowShown(m_extent.m_topleft.GetRow())
+                       && m_extent.m_topleft.GetRow() < m_extent.m_bottomright.GetRow())
+                    m_extent.m_topleft.SetRow(m_extent.m_topleft.GetRow()+1);
+
+                // Do not include the right frame
+                if (m_grid->GetNumberCols() == m_extent.m_bottomright.GetCol()+1)
+                    m_extent.m_bottomright.SetCol(m_extent.m_bottomright.GetCol()-1);
+
+                while (!m_grid->IsColShown(m_extent.m_bottomright.GetCol())
+                       && m_extent.m_bottomright.GetCol() > m_extent.m_topleft.GetCol())
+                    m_extent.m_bottomright.SetCol(m_extent.m_bottomright.GetCol()-1);
+
+                // Do not include the bottom frame
+                if (m_grid->GetNumberRows() == m_extent.m_bottomright.GetRow()+1)
+                    m_extent.m_bottomright.SetRow(m_extent.m_bottomright.GetRow()-1);
+
+                while (!m_grid->IsRowShown(m_extent.m_bottomright.GetRow())
+                       && m_extent.m_bottomright.GetRow() > m_extent.m_topleft.GetRow())
+                    m_extent.m_bottomright.SetRow(m_extent.m_bottomright.GetRow()-1);
+            }
+        }
 
     public:
 
@@ -60,12 +101,15 @@ class wxGridCellCoordsContainer
         ///
         /// \param topleft const wxGridCellCoords&
         /// \param bottomright const wxGridCellCoords&
+        /// \param grid wxGrid*
         ///
         /////////////////////////////////////////////////
-        wxGridCellCoordsContainer(const wxGridCellCoords& topleft, const wxGridCellCoords& bottomright) : m_rowsSelected(false)
+        wxGridCellCoordsContainer(const wxGridCellCoords& topleft, const wxGridCellCoords& bottomright, wxGrid* grid = nullptr) : m_rowsSelected(false), m_grid(grid)
         {
             m_extent.m_topleft = topleft;
             m_extent.m_bottomright = bottomright;
+
+            fitExtentToShownCells();
         }
 
         /////////////////////////////////////////////////
@@ -73,9 +117,10 @@ class wxGridCellCoordsContainer
         /// from a list of selected grid coordinates.
         ///
         /// \param selected const wxGridCellCoordsArray&
+        /// \param grid wxGrid*
         ///
         /////////////////////////////////////////////////
-        wxGridCellCoordsContainer(const wxGridCellCoordsArray& selected) : m_rowsSelected(false)
+        wxGridCellCoordsContainer(const wxGridCellCoordsArray& selected, wxGrid* grid = nullptr) : m_rowsSelected(false), m_grid(grid)
         {
             m_array = selected;
             m_extent.m_topleft = m_array[0];
@@ -88,6 +133,8 @@ class wxGridCellCoordsContainer
                 m_extent.m_bottomright.SetRow(std::max(m_extent.m_bottomright.GetRow(), m_array[n].GetRow()));
                 m_extent.m_bottomright.SetCol(std::max(m_extent.m_bottomright.GetCol(), m_array[n].GetCol()));
             }
+
+            fitExtentToShownCells();
         }
 
         /////////////////////////////////////////////////
@@ -97,10 +144,11 @@ class wxGridCellCoordsContainer
         ///
         /// \param selectedRowsOrCols const wxArrayInt&
         /// \param otherDim int
-        /// \param true bool rowsSelected=
+        /// \param rowsSelected bool
+        /// \param grid wxGrid*
         ///
         /////////////////////////////////////////////////
-        wxGridCellCoordsContainer(const wxArrayInt& selectedRowsOrCols, int otherDim, bool rowsSelected = true) : m_rowsSelected(rowsSelected)
+        wxGridCellCoordsContainer(const wxArrayInt& selectedRowsOrCols, int otherDim, bool rowsSelected = true, wxGrid* grid = nullptr) : m_rowsSelected(rowsSelected), m_grid(grid)
         {
             m_rowsOrCols = selectedRowsOrCols;
             m_extent.m_topleft = m_rowsSelected ? wxGridCellCoords(m_rowsOrCols[0], 0) : wxGridCellCoords(0, m_rowsOrCols[0]);
@@ -119,6 +167,8 @@ class wxGridCellCoordsContainer
                     m_extent.m_bottomright.SetCol(std::max(m_extent.m_bottomright.GetCol(), m_rowsOrCols[n]));
                 }
             }
+
+            fitExtentToShownCells();
         }
 
         /////////////////////////////////////////////////
@@ -165,6 +215,10 @@ class wxGridCellCoordsContainer
         /////////////////////////////////////////////////
         bool contains(const wxGridCellCoords& cell) const
         {
+            if (m_grid
+                && (!m_grid->IsRowShown(cell.GetRow()) || !m_grid->IsColShown(cell.GetCol())))
+                return false;
+
             if (isSparse())
             {
                 for (size_t n = 0; n < m_array.size(); n++)

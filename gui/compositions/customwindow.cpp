@@ -2933,7 +2933,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 const mu::Array vals = definition.get(2);
                                 colors.push_back(wxColour(definition.get(3).getStr()));
 
-                                CellValueShaderCondition condition;
+                                CellFilterCondition condition;
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
@@ -2944,23 +2944,23 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 }
 
                                 if (cond == "<")
-                                    condition.m_type = CellValueShaderCondition::CT_LESS_THAN;
+                                    condition.m_type = CellFilterCondition::CT_LESS_THAN;
                                 else if (cond == "<=")
-                                    condition.m_type = CellValueShaderCondition::CT_LESS_EQ_THAN;
+                                    condition.m_type = CellFilterCondition::CT_LESS_EQ_THAN;
                                 else if (cond == ">")
-                                    condition.m_type = CellValueShaderCondition::CT_GREATER_THAN;
+                                    condition.m_type = CellFilterCondition::CT_GREATER_THAN;
                                 else if (cond == ">=")
-                                    condition.m_type = CellValueShaderCondition::CT_GREATER_EQ_THAN;
+                                    condition.m_type = CellFilterCondition::CT_GREATER_EQ_THAN;
                                 else if (cond == "==")
                                     condition.m_type = vals.front().isString() ?
-                                        CellValueShaderCondition::CT_EQUALS_STR : CellValueShaderCondition::CT_EQUALS_VAL;
+                                        CellFilterCondition::CT_EQUALS_STR : CellFilterCondition::CT_EQUALS_VAL;
                                 else if (cond == "!=")
                                     condition.m_type = vals.front().isString() ?
-                                        CellValueShaderCondition::CT_NOT_EQUALS_STR : CellValueShaderCondition::CT_NOT_EQUALS_VAL;
+                                        CellFilterCondition::CT_NOT_EQUALS_STR : CellFilterCondition::CT_NOT_EQUALS_VAL;
                                 else if (cond == "strfnd" && vals.front().isString())
-                                    condition.m_type = CellValueShaderCondition::CT_FIND_STR;
+                                    condition.m_type = CellFilterCondition::CT_FIND_STR;
                                 else if (cond == "!strfnd" && vals.front().isString())
-                                    condition.m_type = CellValueShaderCondition::CT_NOT_FIND_STR;
+                                    condition.m_type = CellFilterCondition::CT_NOT_FIND_STR;
 
                                 table->conditionalFormat(cells, CellValueShader(colors, condition));
                             }
@@ -2973,8 +2973,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 if (colorStrings.getCommonType() != mu::TYPE_STRING)
                                     return false;
 
-                                CellValueShaderCondition condition;
-                                condition.m_type = CellValueShaderCondition::CT_EQUALS_ARRAY;
+                                CellFilterCondition condition;
+                                condition.m_type = CellFilterCondition::CT_EQUALS_ARRAY;
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
@@ -3002,8 +3002,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 if (colorStrings.size() < 2 || colorStrings.getCommonType() != mu::TYPE_STRING)
                                     return false;
 
-                                CellValueShaderCondition condition;
-                                condition.m_type = CellValueShaderCondition::CT_INTERVAL_RE;
+                                CellFilterCondition condition;
+                                condition.m_type = CellFilterCondition::CT_INTERVAL_RE;
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
@@ -3026,8 +3026,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 if (colorStrings.size() < 4 || colorStrings.getCommonType() != mu::TYPE_STRING)
                                     return false;
 
-                                CellValueShaderCondition condition;
-                                condition.m_type = CellValueShaderCondition::CT_INTERVAL_RE_EXCL;
+                                CellFilterCondition condition;
+                                condition.m_type = CellFilterCondition::CT_INTERVAL_RE_EXCL;
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {

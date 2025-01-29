@@ -90,6 +90,28 @@ std::vector<std::complex<double>> TableColumn::getValue(const VectorIndex& idx) 
 
 
 /////////////////////////////////////////////////
+/// \brief Return the table column's contents as
+/// an array of arbitrary types.
+///
+/// \param idx const VectorIndex&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array TableColumn::get(const VectorIndex& idx) const
+{
+    idx.setOpenEndIndex(size()-1);
+    mu::Array arr(idx.size());
+
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        arr[i] = get(idx[i]);
+    }
+
+    return arr;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Sets a string vector at the specified
 /// indices.
 ///

@@ -1075,7 +1075,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Category::operator==(const Category& other) const
     {
-        return val == other.val && name == other.name;
+        return val == other.val;
     }
 
 
@@ -1101,7 +1101,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Category::operator<(const Category& other) const
     {
-        return val < other.val || name < other.name;
+        return val < other.val;
     }
 
 
