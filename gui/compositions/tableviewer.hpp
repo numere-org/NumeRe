@@ -137,6 +137,8 @@ class TableViewer : public wxGrid
         int GetInternalRows(int gridrow) const;
         int GetExternalRows(int gridrow) const;
 
+        bool allRowsShown() const;
+        bool allColsShown() const;
 
         size_t GetHeight() {return nHeight;}
         size_t GetWidth() {return nWidth;}

@@ -421,7 +421,7 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
         if (event.GetTopLeftCoords() == wxGridCellCoords(0, 0)
             && event.GetBottomRightCoords() == wxGridCellCoords(GetRows()-1, GetCols()-1))
         {
-            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords()));
+            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords(), this));
             selectedCells.Clear();
         }
         else if (!selectedCells.size())
@@ -434,7 +434,7 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
                 }
             }
 
-            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords()));
+            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords(), this));
         }
         else
         {
@@ -446,7 +446,7 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
                 }
             }
 
-            updateStatusBar(wxGridCellCoordsContainer(selectedCells));
+            updateStatusBar(wxGridCellCoordsContainer(selectedCells, this));
         }
     }
     else
@@ -568,13 +568,13 @@ void TableViewer::deleteSelection()
 
     // Handle all possible selection types
     if (GetSelectedCells().size()) // not a block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells(), this);
     else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0], this);
     else if (GetSelectedCols().size()) // multiple selected columns
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false, this);
     else if (GetSelectedRows().size()) // multiple selected rows
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true, this);
     else
     {
         // single cell: overwrite and return
@@ -680,7 +680,7 @@ void TableViewer::copyContents()
     {
         // Non-block selection
         if (isGridNumeReTable)
-            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCells()));
+            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCells(), this));
         else
         {
             wxGridCellCoordsArray cellarray = GetSelectedCells();
@@ -702,7 +702,8 @@ void TableViewer::copyContents()
 
         if (isGridNumeReTable)
             sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(topleftarray[0],
-                                                                                                        bottomrightarray[0]));
+                                                                                                        bottomrightarray[0],
+                                                                                                        this));
         else
         {
             for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
@@ -725,7 +726,7 @@ void TableViewer::copyContents()
         // Multiple selected columns
         if (isGridNumeReTable)
             sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCols(),
-                                                                                                        GetRows()-1, false));
+                                                                                                        GetRows()-1, false, this));
         else
         {
             wxArrayInt colarray = GetSelectedCols();
@@ -750,7 +751,7 @@ void TableViewer::copyContents()
         // Multiple selected rows
         if (isGridNumeReTable)
             sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedRows(),
-                                                                                                        GetCols()-1, true));
+                                                                                                        GetCols()-1, true, this));
         else
         {
             wxArrayInt rowarray = GetSelectedRows();
@@ -894,15 +895,15 @@ void TableViewer::applyConditionalCellColourScheme()
 
     // Handle all possible selection types
     if (GetSelectedCells().size()) // not a block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells(), this);
     else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0], this);
     else if (GetSelectedCols().size()) // multiple selected columns
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false, this);
     else if (GetSelectedRows().size()) // multiple selected rows
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true, this);
     else
-        coordsContainer = wxGridCellCoordsContainer(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
+        coordsContainer = wxGridCellCoordsContainer(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1), this);
 
     double minVal = calculateMin(coordsContainer);
     double maxVal = calculateMax(coordsContainer);
@@ -1089,6 +1090,7 @@ void TableViewer::conditionalFormat(const wxGridCellCoordsContainer& cells, cons
 
     // Whole columns are selected
     if ((cells.isBlock() || cells.columnsSelected())
+        && allRowsShown()
         && cellsExtent.m_topleft.GetRow() <= (int)nFirstNumRow
         && cellsExtent.m_bottomright.GetRow()+2 >= GetRows())
     {
@@ -1516,7 +1518,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     // Get the dimensions
     wxString dim = "Dim: ";
-    dim << this->GetRowLabelValue(GetRows()-2) << "x" << GetCols()-1;
+    dim << GetRows()-nFirstNumRow-1 << "x" << GetCols()-1;
 
     // Get the current cursor position
     wxString sel = "Cur: ";
@@ -2484,13 +2486,13 @@ void TableViewer::changeColType()
 
     // Handle all possible selection types
     if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
-        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0], this);
     else if (GetSelectedCols().size()) // multiple selected columns
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false, this);
     else if (GetSelectedCells().size())
-        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells(), this);
     else
-        coordsContainer = wxGridCellCoordsContainer(wxArrayInt(1, GetCursorColumn()), GetRows()-1, false);
+        coordsContainer = wxGridCellCoordsContainer(wxArrayInt(1, GetCursorColumn()), GetRows()-1, false, this);
 
     // Get the target column type
     std::vector<std::string> vTypes = TableColumn::getTypesAsString();
@@ -2762,6 +2764,44 @@ int TableViewer::GetExternalRows(int gridrow) const
         return GetNumberRows()-1;
 
     return gridrow;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return, whether all data rows are
+/// currently shown and no rows are hidden.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TableViewer::allRowsShown() const
+{
+    for (int i = nFirstNumRow; i < GetRows()-1; i++)
+    {
+        if (!IsRowShown(i))
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return, whether all data columns are
+/// currently shown and no columns are hidden.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TableViewer::allColsShown() const
+{
+    for (int j = 0; j < GetCols()-1; j++)
+    {
+        if (!IsColShown(j))
+            return false;
+    }
+
+    return true;
 }
 
 
