@@ -11,3 +11,4 @@ Applied	The "required version" of packages now uses the correct variant of the c
 Cleaned	Window layouts are now also part of the dependency analysis and will correctly return their event procedures.
 New	The command "install" will now automatically search through the package repository for a package with matching filename.
 Added	The table viewer can now sort and filter the displayed table according a selected column.
+Fixed	Undoing pastes of long strings into the terminal with ESC are not resulting in an endless loop anymore.

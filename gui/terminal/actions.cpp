@@ -800,26 +800,27 @@ void GenericTerminal::erase_usercontent_line()
     if (!tm.IsEditable(termCursor.y, termCursor.x))
         return;
 
-    // Convert the current view cursor into a logical cursor
-    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
-    cursor.pos--;
+    LogicalCursor curStart = tm.toLogicalCursor(termCursor);
+    LogicalCursor curEnd = tm.toLogicalCursor(termCursor);
 
-    // While the current character is editable, erase it
-    while (tm.IsEditableLogical(cursor))
-    {
-        cursor.pos++;
-        tm.backspace(cursor);
-        cursor.pos -= 2;
-    }
+    // Reverse the starting point
+    while (tm.IsEditableLogical(curStart) && curStart.pos)
+        curStart--;
 
-    // Get the new view cursor
-    termCursor = tm.toViewCursor(cursor);
-    termCursor.x++;
+    curStart++;
+
+    // Advance the ending point (if something is still to the right)
+    while (tm.IsEditableLogical(curEnd) && curEnd < tm.getCurrentLogicalPos())
+        curEnd++;
+
+    tm.clearRange(tm.toViewCursor(curStart), tm.toViewCursor(curEnd));
+    termCursor = tm.toViewCursor(curStart);
 
     // If the view cursor is not valid, use the current input location
     if (!termCursor)
         termCursor = tm.getCurrentViewPos();
 
+    update_changes();
     handle_calltip(termCursor.x, termCursor.y);
 }
 
