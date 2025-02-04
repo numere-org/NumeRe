@@ -23,7 +23,7 @@
 
 #include "http.h"
 #include "../kernel/core/utils/tools.hpp"
-#include <curl/curl.h>
+#include "curlcpp.hpp"
 #include <fstream>
 
 // Further possible features enabled in cURL:
@@ -126,136 +126,98 @@ namespace url
     /// \param sUrl const std::string&
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
-    /// \return CURL*
+    /// \param httpHeader const std::vector<std::string>&
+    /// \return CurlCpp
     ///
     /////////////////////////////////////////////////
-    static CURL* common_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord)
+    static CurlCpp common_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
     {
-        CURLcode code;
+        CurlCpp curl(true);
 
-        CURL* conn = curl_easy_init();
-
-        if (conn == nullptr)
+        if (!curl)
             throw Error("Failed to create CURL connection.");
 
-        try
+        if (!curl.setOption(CURLOPT_ERRORBUFFER, errorBuffer))
+            throw Error("Failed to set error buffer.");
+
+        if (!curl.setOption(CURLOPT_URL, sUrl.c_str()))
+            throw Error("Failed to set URL [" + std::string(errorBuffer) + "].");
+
+        if (httpHeader.size())
         {
-            code = curl_easy_setopt(conn, CURLOPT_ERRORBUFFER, errorBuffer);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set error buffer [" + std::to_string(code) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_URL, sUrl.c_str());
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set URL [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0");
-
-            if (code != CURLE_OK)
+            if (!curl.setOption(CURLOPT_USERAGENT, curl_version()))
                 throw Error("Failed to set user agent [" + std::string(errorBuffer) + "].");
 
-            if (sUserName.length() && sPassWord.length())
-            {
-                code = curl_easy_setopt(conn, CURLOPT_USERPWD, (sUserName + ":" + sPassWord).c_str());
-
-                if (code != CURLE_OK)
-                    throw Error("Failed to set username and password [" + std::string(errorBuffer) + "].");
-            }
-
-            code = curl_easy_setopt(conn, CURLOPT_SSL_VERIFYPEER, 0L);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set SSL peer verify option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_SSL_VERIFYHOST, 0L);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set SSL host verify option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_FOLLOWLOCATION, 1L);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set redirect option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_CONNECTTIMEOUT, 10L);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set connection time-out option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_LOW_SPEED_LIMIT, 1024);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set low-speed option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_LOW_SPEED_TIME, 30L);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set low-speed time option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_NOPROGRESS, 0L);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set progress option [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_XFERINFOFUNCTION, progress_callback);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set progress function [" + std::string(errorBuffer) + "].");
-
-            ProgressData data;
-
-            code = curl_easy_setopt(conn, CURLOPT_XFERINFODATA, &data);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set progress data [" + std::string(errorBuffer) + "].");
+            if (!curl.setHeader(httpHeader))
+                throw Error("Failed to set http header [" + std::string(errorBuffer) + "].");
         }
-        catch (...)
+        else
         {
-            curl_easy_cleanup(conn);
-            throw;
+            if (!curl.setOption(CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"))
+                throw Error("Failed to set user agent [" + std::string(errorBuffer) + "].");
         }
 
-        return conn;
+        if (sUserName.length() && sPassWord.length())
+        {
+            if (!curl.setOption(CURLOPT_USERPWD, (sUserName + ":" + sPassWord).c_str()))
+                throw Error("Failed to set username and password [" + std::string(errorBuffer) + "].");
+        }
+
+        if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
+            throw Error("Failed to set SSL peer verify option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
+            throw Error("Failed to set SSL host verify option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_FOLLOWLOCATION, 1L))
+            throw Error("Failed to set redirect option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_CONNECTTIMEOUT, 10L))
+            throw Error("Failed to set connection time-out option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_LOW_SPEED_LIMIT, 1024))
+            throw Error("Failed to set low-speed option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_LOW_SPEED_TIME, 30L))
+            throw Error("Failed to set low-speed time option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_NOPROGRESS, 0L))
+            throw Error("Failed to set progress option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_XFERINFOFUNCTION, progress_callback))
+            throw Error("Failed to set progress function [" + std::string(errorBuffer) + "].");
+
+        ProgressData data;
+
+        if (!curl.setOption(CURLOPT_XFERINFODATA, &data))
+            throw Error("Failed to set progress data [" + std::string(errorBuffer) + "].");
+
+        return curl;
     }
 
 
     /////////////////////////////////////////////////
     /// \brief libcurl get connection initialization.
     ///
-    /// \param conn CURL*&
     /// \param sUrl const std::string&
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
+    /// \param httpHeader const std::vector<std::string>&
     /// \param buffer std::string*
-    /// \return CURL*
+    /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CURL* get_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, std::string* buffer)
+    static CurlCpp get_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::string* buffer)
     {
-        CURLcode code;
+        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
 
-        CURL* conn = common_init(sUrl, sUserName, sPassWord);
+        if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
+            throw Error("Failed to set writer [" + std::string(errorBuffer) + "].");
 
-        try
-        {
-            code = curl_easy_setopt(conn, CURLOPT_WRITEFUNCTION, writer);
+        if (!curl.setOption(CURLOPT_WRITEDATA, buffer))
+            throw Error("Failed to set write data [" + std::string(errorBuffer) + "].");
 
-            if (code != CURLE_OK)
-                throw Error("Failed to set writer [" + std::string(errorBuffer) + "].");
-
-            code = curl_easy_setopt(conn, CURLOPT_WRITEDATA, buffer);
-
-            if (code != CURLE_OK)
-                throw Error("Failed to set write data [" + std::string(errorBuffer) + "].");
-        }
-        catch (...)
-        {
-            curl_easy_cleanup(conn);
-            throw;
-        }
-
-        return conn;
+        return curl;
     }
 
 
@@ -265,43 +227,60 @@ namespace url
     /// \param sUrl const std::string&
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
+    /// \param httpHeader const std::vector<std::string>&
     /// \param filestream std::ifstream*
     /// \param filesize size_t
-    /// \return CURL*
+    /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CURL* put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, std::ifstream* filestream, size_t filesize)
+    static CurlCpp put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::ifstream* filestream, size_t filesize)
     {
-        CURLcode code;
+        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
 
-        CURL* conn = common_init(sUrl, sUserName, sPassWord);
+        if (!curl.setOption(CURLOPT_UPLOAD, 1L))
+            throw Error("Failed to set upload option [" + std::string(errorBuffer) + "].");
 
-        try
-        {
-            code = curl_easy_setopt(conn, CURLOPT_UPLOAD, 1L);
+        if (!curl.setOption(CURLOPT_READFUNCTION, reader))
+            throw Error("Failed to set reader [" + std::string(errorBuffer) + "].");
 
-            if (code != CURLE_OK)
-                throw Error("Failed to set upload option [" + std::string(errorBuffer) + "].");
+        if (!curl.setOption(CURLOPT_READDATA, filestream))
+            throw Error("Failed to set filestream [" + std::string(errorBuffer) + "].");
 
-            code = curl_easy_setopt(conn, CURLOPT_READFUNCTION, reader);
+        curl.setOption(CURLOPT_INFILESIZE, filesize);
 
-            if (code != CURLE_OK)
-                throw Error("Failed to set reader [" + std::string(errorBuffer) + "].");
+        return curl;
+    }
 
-            code = curl_easy_setopt(conn, CURLOPT_READDATA, filestream);
 
-            if (code != CURLE_OK)
-                throw Error("Failed to set filestream [" + std::string(errorBuffer) + "].");
+    /////////////////////////////////////////////////
+    /// \brief libcurl get connection initialization.
+    ///
+    /// \param sUrl const std::string&
+    /// \param sUserName const std::string&
+    /// \param sPassWord const std::string&
+    /// \param httpHeader const std::vector<std::string>&
+    /// \param sPayLoad const std::string&
+    /// \param buffer std::string*
+    /// \return CurlCpp
+    /// \throw http::Error
+    /////////////////////////////////////////////////
+    static CurlCpp post_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, const std::string& sPayLoad, std::string* buffer)
+    {
+        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
 
-                curl_easy_setopt(conn, CURLOPT_INFILESIZE, filesize);
-        }
-        catch (...)
-        {
-            curl_easy_cleanup(conn);
-            throw;
-        }
+        if (!curl.setOption(CURLOPT_POST, 1L))
+            throw Error("Failed to set POST option [" + std::string(errorBuffer) + "].");
 
-        return conn;
+        if (!curl.setOption(CURLOPT_COPYPOSTFIELDS, sPayLoad.c_str()))
+            throw Error("Failed to set POST option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
+            throw Error("Failed to set writer [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_WRITEDATA, buffer))
+            throw Error("Failed to set write data [" + std::string(errorBuffer) + "].");
+
+        return curl;
     }
 
 
@@ -311,26 +290,20 @@ namespace url
     /// \param sUrl const std::string&
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
+    /// \param httpHeader const std::vector<std::string>&
     /// \return std::string
     /// \throw http::Error
     /////////////////////////////////////////////////
-    std::string get(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord)
+    std::string get(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
     {
-        CURL* conn = nullptr;
-        CURLcode code;
         std::string buffer;
         buffer.clear();
 
-        curl_global_init(CURL_GLOBAL_DEFAULT);
-
         // Initialize CURL connection
-        conn = get_init(sUrl, sUserName, sPassWord, &buffer);
+        CurlCpp curl = get_init(sUrl, sUserName, sPassWord, httpHeader, &buffer);
 
         // Retrieve content for the URL
-        code = curl_easy_perform(conn);
-        curl_easy_cleanup(conn);
-
-        if (code != CURLE_OK)
+        if (!curl.perform())
             throw Error("Failed to get '" + sUrl + "': " + std::string(errorBuffer) + ".");
 
         // Return the buffer contents
@@ -346,13 +319,12 @@ namespace url
     /// \param sFileName const std::string&
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
+    /// \param httpHeader const std::vector<std::string>&
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName, const std::string& sPassWord)
+    size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
     {
-        CURL* conn = nullptr;
-        CURLcode code;
         std::ifstream filestream(sFileName.c_str(), std::ios_base::binary);
 
         if (!filestream.good())
@@ -365,20 +337,44 @@ namespace url
         if (!s)
             throw Error("File size of '" + sFileName + "' is zero.");
 
-        curl_global_init(CURL_GLOBAL_DEFAULT);
-
         // Initialize CURL connection
-        conn = put_init(sUrl, sUserName, sPassWord, &filestream, s);
+        CurlCpp curl = put_init(sUrl, sUserName, sPassWord, httpHeader, &filestream, s);
 
         // Retrieve content for the URL
-        code = curl_easy_perform(conn);
-        curl_easy_cleanup(conn);
-
-        if (code != CURLE_OK)
+        if (!curl.perform())
             throw Error("Failed to upload to '" + sUrl + "': " + std::string(errorBuffer) + ".");
 
         // Return the file size
         return s;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Upload a file to a destination and
+    /// return the transmitted bytes.
+    ///
+    /// \param sUrl const std::string&
+    /// \param sUserName const std::string&
+    /// \param sPassWord const std::string&
+    /// \param httpHeader const std::vector<std::string>&
+    /// \param sPayLoad const std::string&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string post(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, const std::string& sPayLoad)
+    {
+        std::string buffer;
+        buffer.clear();
+
+        // Initialize CURL connection
+        CurlCpp curl = post_init(sUrl, sUserName, sPassWord, httpHeader, sPayLoad, &buffer);
+
+        // Retrieve content for the URL
+        if (!curl.perform())
+            throw Error("Failed to post to '" + sUrl + "': " + std::string(errorBuffer) + ".");
+
+        // Return the file size
+        return buffer;
     }
 }
 

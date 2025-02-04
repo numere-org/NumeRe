@@ -4824,6 +4824,11 @@ void urlExecute(CommandLineParser& cmdParser)
         std::string sUrl = cmdParser.parseExprAsString();
         std::string sUserName = cmdParser.getParsedParameterValueAsString("usr", "", true);
         std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
+        std::string sPayLoad = cmdParser.getParsedParameterValueAsString("payload", "", true);
+        std::vector<std::string> httpHeader;
+
+        if (cmdParser.hasParam("header"))
+            httpHeader = cmdParser.getParsedParameterValue("header").as_str_vector();
 
         // Push the response into a file, if necessary
         if (cmdParser.hasParam("file"))
@@ -4839,13 +4844,13 @@ void urlExecute(CommandLineParser& cmdParser)
                 sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
 
                 // Upload the file
-                size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword);
+                size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword, httpHeader);
                 cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
             }
             else
             {
                 // Get the response from the server
-                std::string sUrlResponse = url::get(sUrl, sUserName, sPassword);
+                std::string sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
 
                 // Get the file parameter value
                 sFileName = cmdParser.getFileParameterValueForSaving(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
@@ -4863,10 +4868,19 @@ void urlExecute(CommandLineParser& cmdParser)
                     throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, cmdParser.getCommandLine(), sFileName, sFileName);
             }
         }
+        else if (sPayLoad.length())
+        {
+            // Get the response from the server
+            std::string sUrlResponse = url::post(sUrl, sUserName, sPassword, httpHeader, sPayLoad);
+
+            // Replace all masked characters in the return value
+            replaceAll(sUrlResponse, "\r\n", "\n");
+            cmdParser.setReturnValue(mu::Value(sUrlResponse));
+        }
         else
         {
             // Get the response from the server
-            std::string sUrlResponse = url::get(sUrl, sUserName, sPassword);
+            std::string sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");

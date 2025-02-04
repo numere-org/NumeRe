@@ -22,6 +22,7 @@
 
 #include <string>
 #include <exception>
+#include <vector>
 
 namespace url
 {
@@ -41,8 +42,14 @@ namespace url
             }
     };
 
-    std::string get(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "");
-    size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName = "", const std::string& sPassWord = "");
+    std::string get(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "",
+                    const std::vector<std::string>& httpHeader = std::vector<std::string>());
+
+    size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName = "", const std::string& sPassWord = "",
+               const std::vector<std::string>& httpHeader = std::vector<std::string>());
+
+    std::string post(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "",
+                     const std::vector<std::string>& httpHeader = std::vector<std::string>(), const std::string& sPayLoad = "");
 }
 
 #endif // HTTP_H

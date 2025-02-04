@@ -19,7 +19,7 @@
 #include "githubapi.hpp"
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/io/logger.hpp"
-#include <curl/curl.h>
+#include "curlcpp.hpp"
 
 /////////////////////////////////////////////////
 /// \brief Tiny helper to replace the characters
@@ -37,122 +37,6 @@ static std::string strToJson(std::string sPlain)
 
     return sPlain;
 }
-
-
-/////////////////////////////////////////////////
-/// \brief Helper class to wrap cURL into C++
-/// RAII.
-/////////////////////////////////////////////////
-class CurlCpp
-{
-    private:
-        CURL* m_curlInstance;
-        curl_slist* m_httpHeader;
-
-    public:
-        /////////////////////////////////////////////////
-        /// \brief Construct an instance and initialize
-        /// it, if desired.
-        ///
-        /// \param autoInit bool
-        ///
-        /////////////////////////////////////////////////
-        CurlCpp(bool autoInit = false) : m_curlInstance(nullptr), m_httpHeader(nullptr)
-        {
-            if (autoInit)
-                init();
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Destructor. Frees all associated
-        /// memory.
-        ///
-        ///
-        /////////////////////////////////////////////////
-        ~CurlCpp()
-        {
-            if (m_curlInstance)
-                curl_easy_cleanup(m_curlInstance);
-
-            if (m_httpHeader)
-                curl_slist_free_all(m_httpHeader);
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Initialize this instance.
-        ///
-        /// \return void
-        ///
-        /////////////////////////////////////////////////
-        void init()
-        {
-            if (!m_curlInstance)
-                m_curlInstance = curl_easy_init();
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Set a cURL option together with a
-        /// value.
-        ///
-        /// \param option CURLoption
-        /// \param val T
-        /// \return bool
-        ///
-        /////////////////////////////////////////////////
-        template <typename T>
-        bool setOption(CURLoption option, T val)
-        {
-            if (!m_curlInstance)
-                return false;
-
-            return curl_easy_setopt(m_curlInstance, option, val) == CURLE_OK;
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Set a HTTP header.
-        ///
-        /// \param httpHeader const std::vector<std::string>&
-        /// \return bool
-        ///
-        /////////////////////////////////////////////////
-        bool setHeader(const std::vector<std::string>& httpHeader)
-        {
-            for (const auto& headerString : httpHeader)
-            {
-                m_httpHeader = curl_slist_append(m_httpHeader, headerString.c_str());
-            }
-
-            if (!m_curlInstance)
-                m_curlInstance = curl_easy_init();
-
-            return setOption(CURLOPT_HTTPHEADER, m_httpHeader);
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Perform the transmission.
-        ///
-        /// \return bool
-        ///
-        /////////////////////////////////////////////////
-        bool perform()
-        {
-            if (!m_curlInstance)
-                return false;
-
-            return curl_easy_perform(m_curlInstance) == CURLE_OK;
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Returns true, if the instance is valid.
-        ///
-        /// \return operator
-        ///
-        /////////////////////////////////////////////////
-        operator bool() const
-        {
-            return m_curlInstance != nullptr;
-        }
-};
 
 
 namespace GitHub

@@ -1939,7 +1939,7 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
             pos2 = std::min(pos2, std::max(1LL, p2.get(i).getNum().asI64()));
 
         // Exclude border cases
-        if (!sSearchString.length() || pos1 > (int64_t)sSearchString.length())
+        if (!sSearchString.length() || pos1 > (int64_t)sSearchString.length() || pos2-pos1 <= 0)
         {
             ret.emplace_back("");
             continue;
@@ -1950,12 +1950,14 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
             continue;
         }
 
+        sSearchString = sSearchString.subview(pos1-1, pos2-pos1);
+
         // Examples for text, which shall be parsed
         // 2018-09-21: Message VAL=12452
         // %s: %s VAL=%f
         // {sDate, sMessage, fValue} = textparse("2018-09-21: Message VAL=12452", "%s: %s VAL=%f");
 
-        size_t lastPosition = pos1 - 1;
+        size_t lastPosition = 0;
         static const std::string sIDENTIFIERCHARS = "sfaLlthbo";
 
         std::vector<StringView> vPatterns;
