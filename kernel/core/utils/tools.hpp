@@ -35,10 +35,7 @@
 
 extern const std::string sVersion;
 
-
-
-std::mt19937& getRandGenInstance();
-const gsl_rng* getGslRandGenInstance();
+std::string getUserDisplayName(bool informal);
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const std::string& sCmd, std::string& sArgument);
 std::string extractStringToken(const std::string& sCmd, size_t nPos);

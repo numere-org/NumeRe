@@ -11,6 +11,7 @@
 
 #include "../common/datastructures.h"
 #include "compositions/tabartprovider.hpp"
+#include "compositions/defaultpage.hpp"
 
 
 BEGIN_EVENT_TABLE(EditorNotebook, wxAuiNotebook)
@@ -45,6 +46,7 @@ EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, IconManager* ico
     m_showPathsOnTabs = false;
     m_showIconsOnTabs = false;
     m_manager = icons;
+    m_defaultPage = nullptr;
     SetImageList(icons->GetImageList());
     SyntaxStyles uiTheme = toplevelParent->getOptions()->GetSyntaxStyle(Options::UI_THEME);
     SetArtProvider(new TabArtProvider(uiTheme.foreground, true));
@@ -78,6 +80,9 @@ void EditorNotebook::SetShowPathsOrIconsOnTabs(bool showText, bool showIcons)
 
     for (size_t i = 0; i < GetPageCount(); i++)
     {
+        if (isDefaultPage(i))
+            continue;
+
         NumeReEditor* edit = getEditor(i);
         SetTabText(i, edit->GetFileNameAndPath());
     }
@@ -98,6 +103,9 @@ void EditorNotebook::SetShowPathsOrIconsOnTabs(bool showText, bool showIcons)
 /////////////////////////////////////////////////
 void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
 {
+    if (isDefaultPage(nTab))
+        return;
+
     size_t pos = 0;
     std::string path = replacePathSeparator(text.ToStdString());
     std::string ext = path.substr(path.find_last_of("/.")+1);
@@ -119,6 +127,45 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
         pos = path.rfind('/')+1;
 
     SetPageText(nTab, path.substr(pos));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create the default page and add it to
+/// a new tab automatically. The passed text is
+/// used for the tab name.
+///
+/// \param text const wxString&
+/// \param searchPaths const wxArrayString&
+/// \param showReleaseNotes bool
+/// \return DefaultPage*
+///
+/////////////////////////////////////////////////
+DefaultPage* EditorNotebook::createDefaultPage(const wxString& text, const wxArrayString& searchPaths, bool showReleaseNotes)
+{
+    if (m_defaultPage)
+        return static_cast<DefaultPage*>(m_defaultPage);
+
+    m_defaultPage = new DefaultPage(this, searchPaths, showReleaseNotes);
+    AddPage(m_defaultPage, text, false);
+    return static_cast<DefaultPage*>(m_defaultPage);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Closes the default page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::closeDefaultPage()
+{
+    if (m_defaultPage)
+    {
+        int p = FindPagePosition(m_defaultPage);
+        m_defaultPage = nullptr;
+        DeletePage(p);
+    }
 }
 
 
@@ -156,7 +203,7 @@ NumeReEditor* EditorNotebook::createEditor(const wxString& text)
 /////////////////////////////////////////////////
 NumeReEditor* EditorNotebook::getEditor(size_t pageNum, bool secondary)
 {
-    if (pageNum >= GetPageCount())
+    if (pageNum >= GetPageCount() || isDefaultPage(pageNum))
         return nullptr;
 
     wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
@@ -223,7 +270,7 @@ NumeReEditor* EditorNotebook::getFocusedEditor()
 /////////////////////////////////////////////////
 void EditorNotebook::split(size_t pageNum, bool horizontal)
 {
-    if (pageNum >= GetPageCount())
+    if (pageNum >= GetPageCount() || isDefaultPage(pageNum))
         return;
 
     wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
@@ -268,7 +315,7 @@ void EditorNotebook::split(size_t pageNum, bool horizontal)
 /////////////////////////////////////////////////
 void EditorNotebook::unsplit(size_t pageNum)
 {
-    if (pageNum >= GetPageCount())
+    if (pageNum >= GetPageCount() || isDefaultPage(pageNum))
         return;
 
     wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
@@ -293,12 +340,26 @@ void EditorNotebook::unsplit(size_t pageNum)
 /////////////////////////////////////////////////
 bool EditorNotebook::isSplit(size_t pageNum) const
 {
-    if (pageNum >= GetPageCount())
+    if (pageNum >= GetPageCount() || isDefaultPage(pageNum))
         return false;
 
     wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
 
     return splitter->IsSplit();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns, wether the tab with the
+/// selected id contains the default page.
+///
+/// \param nTab size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool EditorNotebook::isDefaultPage(size_t nTab) const
+{
+    return nTab < GetPageCount() && GetPage(nTab) == m_defaultPage;
 }
 
 
@@ -330,7 +391,7 @@ void EditorNotebook::OnTabRightClicked(wxAuiNotebookEvent& event)
 	int pageNum = GetTabFromPoint(pt);
 	pt -= GetScreenRect().GetTopLeft();
 
-    if (pageNum < 0)
+    if (pageNum < 0 || isDefaultPage(pageNum))
 		return;
 
     g_logger.debug("Clicked on page " + toString(pageNum) + " with title " + GetPageText(pageNum).ToStdString());
@@ -385,6 +446,23 @@ void EditorNotebook::OnTabMove(wxAuiNotebookEvent& event)
 
     if (tab != wxNOT_FOUND)
         ChangeSelection(tab);
+
+    event.Skip();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler to ensure that the
+/// default page id is reset correctly.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnTabClosed(wxAuiNotebookEvent& event)
+{
+    if (GetPage(event.GetId()) == m_defaultPage)
+        m_defaultPage = nullptr;
 
     event.Skip();
 }
@@ -522,7 +600,7 @@ int EditorNotebook::FindPagePosition(wxNotebookPage* page)
 	int nPageCount = GetPageCount();
 	int nPage;
 	for ( nPage = 0; nPage < nPageCount; nPage++ )
-		if (getEditor(nPage) == page)
+		if (GetPage(nPage) == page)
 			return nPage;
 	return -1;
 }

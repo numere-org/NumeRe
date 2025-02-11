@@ -23,6 +23,7 @@
 #include "NumeReStatusbar.hpp"
 #include "globals.hpp"
 #include "wx/dnd.h"
+#include "../common/recentfilemanager.hpp"
 #include "../common/datastructures.h"
 #include "../common/filewatcher.hpp"
 #include "../kernel/windowmanager.hpp"
@@ -130,6 +131,7 @@ class ThemedSplitterWindow;
 class ProportionalSplitterWindow;
 class wxCHMHelpController;
 class DebugViewer;
+class DefaultPage;
 
 
 extern Language _guilang;
@@ -154,7 +156,7 @@ class NumeReWindow : public wxFrame
 
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
         void ShowRevision(const wxString& revisionName, const wxString& revisionContent);
-        void DefaultPage();
+        void OpenDefaultPage();
         void OpenFileByType(const wxFileName& filename);
         void OpenFilesFromList(const wxArrayString& filenameslist);
         void OpenSourceFile(wxArrayString fnames, size_t nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
@@ -442,6 +444,8 @@ class NumeReWindow : public wxFrame
         std::vector<std::pair<int, wxString> > m_modifiedFiles;
         std::map<wxWindow*, WindowType> m_openedWindows;
         std::map<size_t, std::string> m_pluginMenuMap;
+        RecentFilesManager m_recentOpenedFiles;
+        DefaultPage* m_defaultPage;
 
 
         wxString m_filterNSCRFiles;
@@ -468,6 +472,5 @@ class NumeReWindow : public wxFrame
 
 };
 
-
-
 #endif
+

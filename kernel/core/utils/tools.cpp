@@ -25,6 +25,10 @@
 #include <libsha.hpp>
 #include <cstdlib>
 #include <omp.h>
+#include <windows.h>
+#define SECURITY_WIN32
+#include <secext.h>
+#include <lmcons.h>
 
 
 
@@ -187,6 +191,30 @@ const gsl_rng* getGslRandGenInstance()
 }
 
 #ifndef PARSERSTANDALONE
+
+/////////////////////////////////////////////////
+/// \brief Get the user display name for Windows.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string getUserDisplayName(bool informal)
+{
+    unsigned long len = UNLEN+1;
+    std::string sUserName(len, '\0');
+
+    if (!GetUserNameExA(NameDisplay, sUserName.data(), &len))
+        return "";
+
+    sUserName.resize(len);
+
+    if (informal && sUserName.find(' ') != std::string::npos)
+        sUserName.erase(sUserName.find(' '));
+
+    return sUserName;
+}
+
+
 using namespace std;
 
 /////////////////////////////////////////////////

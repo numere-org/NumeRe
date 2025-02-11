@@ -152,7 +152,6 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
                            NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
                                wxStyledTextCtrl(parent, id, pos, size, style, name)
 {
-    defaultPage = false;
     m_mainFrame = mframe;
     m_options = options;
     m_analyzer = new CodeAnalyzer(this, options);
@@ -596,7 +595,6 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
     if (fileContents.length() > 0)
     {
         m_bLoadingFile = true;
-        defaultPage = false;
         SetReadOnly(false);
 
         if (getEditorSetting(SETTING_USETXTADV))

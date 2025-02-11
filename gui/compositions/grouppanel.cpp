@@ -84,10 +84,10 @@ void TextField::SetMarkupText(const wxString& text)
             if (text.substr(i, 3) == "###")
             {
                 AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = i+3;
+                lastPos = text.find_first_not_of("# ", i);
 
                 lineMode = true;
-                attr.SetFont(defaultFont.Bold());
+                attr.SetFont(defaultFont.Italic());
                 attr.SetFontSize(defaultFont.GetPointSize()+2);
 
                 SetDefaultStyle(attr);
@@ -96,22 +96,20 @@ void TextField::SetMarkupText(const wxString& text)
             else if (text.substr(i, 2) == "##")
             {
                 AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = i+2;
+                lastPos = text.find_first_not_of("# ", i);
 
                 lineMode = true;
-                attr.SetFont(defaultFont.Bold().Italic());
                 attr.SetFontSize(defaultFont.GetPointSize()+4);
-
                 SetDefaultStyle(attr);
                 i++;
             }
             else if (text[i] == '#')
             {
                 AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = i+1;
+                lastPos = text.find_first_not_of("# ", i);
 
                 lineMode = true;
-                attr.SetFont(defaultFont.Bold());
+                //attr.SetFont(defaultFont.Bold());
                 attr.SetFontUnderlined(true);
                 attr.SetFontSize(defaultFont.GetPointSize()+6);
 

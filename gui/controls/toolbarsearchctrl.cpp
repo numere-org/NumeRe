@@ -51,8 +51,12 @@ bool ToolBarSearchCtrl::selectItem(const wxString& value)
     else
     {
         NumeReEditor* edit = m_mainframe->GetCurrentEditor();
-        edit->InsertText(edit->GetCurrentPos(), sTermInput);
-        edit->GotoPos(edit->GetCurrentPos()+sTermInput.length());
+
+        if (edit)
+        {
+            edit->InsertText(edit->GetCurrentPos(), sTermInput);
+            edit->GotoPos(edit->GetCurrentPos()+sTermInput.length());
+        }
     }
 
     return true;

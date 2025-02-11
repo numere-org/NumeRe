@@ -225,6 +225,7 @@
 			<Add library="uuid" />
 			<Add library="winspool" />
 			<Add library="oleaut32" />
+			<Add library="secur32" />
 			<Add directory="$(wx)/lib/gcc_lib" />
 		</Linker>
 		<Unit filename="NumeRe.rc">
@@ -361,6 +362,28 @@
 			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="common/options.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="common/recentfilemanager.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="common/recentfilemanager.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
@@ -1043,6 +1066,28 @@
 			<Option target="Debug_x64" />
 		</Unit>
 		<Unit filename="gui/compositions/debugviewer.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="gui/compositions/defaultpage.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+		</Unit>
+		<Unit filename="gui/compositions/defaultpage.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />

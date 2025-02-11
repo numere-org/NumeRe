@@ -326,6 +326,10 @@ void OptionsDialog::CreateEditorPage()
     m_smartSense = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SMARTSENSE_AUTOCOMP"));
     m_homeEndCancels = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HOME_END_CANCELS"));
 
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_DEFAULTPAGE"));
+    m_defPageWithRelNotes = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEFPAGE_RELNOTES"));
+    m_alwaysShowDefPage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ALWAYS_DEFPAGE"));
+
     // Enable scrolling for this page, because it might be very large
     panel->SetScrollbars(0, 20, 0, 200);
 
@@ -895,6 +899,8 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_SMARTSENSE].active() = m_smartSense->IsChecked();
     mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
     mSettings[SETTING_B_LINELENGTH].active() = m_lineLengthIndicator->IsChecked();
+    mSettings[SETTING_B_DEFPAGERELNOTES].active() = m_defPageWithRelNotes->IsChecked();
+    mSettings[SETTING_B_ALWAYSDEFPAGE].active() = m_alwaysShowDefPage->IsChecked();
     mSettings[SETTING_B_POINTTOERROR].active() = m_alwaysPointToError->IsChecked();
     mSettings[SETTING_B_CALLTIP_ARGS].active() = m_calltipDetectArgs->IsChecked();
     mSettings[SETTING_B_SAVESASHS].active() = m_saveSashPositions->IsChecked();
@@ -1021,6 +1027,8 @@ void OptionsDialog::InitializeDialog()
     m_calltipDetectArgs->SetValue(mSettings[SETTING_B_CALLTIP_ARGS].active());
     m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
     m_lineLengthIndicator->SetValue(mSettings[SETTING_B_LINELENGTH].active());
+    m_defPageWithRelNotes->SetValue(mSettings[SETTING_B_DEFPAGERELNOTES].active());
+    m_alwaysShowDefPage->SetValue(mSettings[SETTING_B_ALWAYSDEFPAGE].active());
     m_alwaysPointToError->SetValue(mSettings[SETTING_B_POINTTOERROR].active());
     m_saveSashPositions->SetValue(mSettings[SETTING_B_SAVESASHS].active());
     m_saveWindowPosition->SetValue(mSettings[SETTING_B_SAVEWINDOWSIZE].active());

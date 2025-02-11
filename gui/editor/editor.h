@@ -73,8 +73,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			SETTING_INDENTONTYPE = 16,
 			SETTING_USESECTIONS = 32
 		};
-		bool defaultPage;
-
 
 		bool LoadLocalFile (const wxString& filename);
 		bool LoadFileText(wxString fileContents);

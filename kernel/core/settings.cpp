@@ -82,6 +82,8 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_V_CARETBLINKTIME] = SettingsValue(500u, 100u, 2000u, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_V_FOCUSEDLINE] = SettingsValue(10u, 1u, 30u, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_LINELENGTH] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_DEFPAGERELNOTES] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_ALWAYSDEFPAGE] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_POINTTOERROR] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_LINESINSTACK] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_MODULESINSTACK] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);

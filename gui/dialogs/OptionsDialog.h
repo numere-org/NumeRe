@@ -224,6 +224,8 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_quoteAutoComp;
         wxCheckBox* m_smartSense;
         wxCheckBox* m_lineLengthIndicator;
+        wxCheckBox* m_defPageWithRelNotes;
+        wxCheckBox* m_alwaysShowDefPage;
         wxCheckBox* m_alwaysPointToError;
         wxCheckBox* m_calltipDetectArgs;
 

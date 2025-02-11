@@ -11,6 +11,7 @@
 class NumeReWindow;
 class NumeReEditor;
 class IconManager;
+class DefaultPage;
 
 /////////////////////////////////////////////////
 /// \brief This class represents the notebook
@@ -28,6 +29,8 @@ class EditorNotebook : public wxAuiNotebook
 
         void SetShowPathsOrIconsOnTabs(bool showText, bool showIcons);
         void SetTabText(size_t nTab, const wxString& text);
+        DefaultPage* createDefaultPage(const wxString& text, const wxArrayString& searchPaths, bool showReleaseNotes);
+        void closeDefaultPage();
         NumeReEditor* createEditor(const wxString& text);
         NumeReEditor* getEditor(size_t pageNum, bool secondary = false);
         NumeReEditor* getCurrentEditor(bool secondary = false);
@@ -35,6 +38,7 @@ class EditorNotebook : public wxAuiNotebook
         void split(size_t pageNum, bool horizontal);
         void unsplit(size_t pageNum);
         bool isSplit(size_t pageNum) const;
+        bool isDefaultPage(size_t nTab) const;
 
         void OnUnsplit(wxSplitterEvent& event);
 
@@ -44,6 +48,7 @@ class EditorNotebook : public wxAuiNotebook
         void OnTabRightClicked (wxAuiNotebookEvent& event);
         void OnTabMove(wxAuiNotebookEvent& event);
         void OnTabMiddleClicked(wxAuiNotebookEvent& event);
+        void OnTabClosed(wxAuiNotebookEvent& event);
         void OnTabScroll(wxMouseEvent& event);
         void OnEnter(wxMouseEvent& event);
         void OnLeave(wxMouseEvent& event);
@@ -59,6 +64,7 @@ class EditorNotebook : public wxAuiNotebook
         bool m_mouseFocus;
         bool m_showPathsOnTabs;
         bool m_showIconsOnTabs;
+        wxWindow* m_defaultPage;
 
 
         DECLARE_EVENT_TABLE()

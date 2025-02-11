@@ -893,7 +893,7 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
         if (_option.showGreeting())
             printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
 
-        print(LineBreak(_lang.get("PARSER_INTRO", wxGetUserName().ToStdString()), _option));
+        print(LineBreak(_lang.get("PARSER_INTRO", getUserDisplayName(true)), _option));
     }
 
     flush();
