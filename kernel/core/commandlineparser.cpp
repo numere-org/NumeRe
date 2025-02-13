@@ -652,6 +652,15 @@ mu::Array CommandLineParser::getParsedParameterValue(const std::string& sParamet
     if (instance->getMemoryManager().containsTablesOrClusters(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
+    StripSpaces(sArg);
+
+    // Handler for old syntax
+    if (sArg.front() == '[' && sArg.back() == ']')
+    {
+        sArg.front() = '{';
+        sArg.back() = '}';
+    }
+
     // Numerical evaluation
     instance->getParser().SetExpr(sArg);
 

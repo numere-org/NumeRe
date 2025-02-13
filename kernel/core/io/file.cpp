@@ -4729,7 +4729,7 @@ namespace NumeRe
                         }
 
                         if (_stringelement->FirstChildElement()->FirstChild()
-			    && _stringelement->FirstChildElement()->FirstChild()->ToText())
+                            && _stringelement->FirstChildElement()->FirstChild()->ToText())
                             sEntry = utf8parser(_stringelement->FirstChildElement()->FirstChild()->ToText()->Value());
                         else
                             sEntry.clear();

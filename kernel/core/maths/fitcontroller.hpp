@@ -60,7 +60,8 @@ struct FitData
     FitVector vy_w;
     FitMatrix vz;
     FitMatrix vz_w;
-    double dPrecision;
+    double eps_abs;
+    double eps_rel;
 };
 
 
@@ -87,7 +88,7 @@ class Fitcontroller
         static mu::Variable* yvar;
         static mu::Variable* zvar;
 
-        bool fitctrl(const std::string& __sExpr, const std::string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations);
+        bool fitctrl(const std::string& __sExpr, const std::string& __sRestrictions, FitData& _fData, int nMaxIterations);
         static void removeNANVals(gsl_vector* fvals, size_t nSize);
         static void removeNANVals(gsl_matrix* Jac, size_t nLines, size_t nCols);
 
@@ -108,14 +109,14 @@ class Fitcontroller
         ///
         /////////////////////////////////////////////////
         inline void setParser(mu::Parser* _parser)
-            {
-                _fitParser = _parser;
-                mu::varmap_type mVars = _parser->GetVar();
-                xvar = mVars["x"];
-                yvar = mVars["y"];
-                zvar = mVars["z"];
-                return;
-            }
+        {
+            _fitParser = _parser;
+            mu::varmap_type mVars = _parser->GetVar();
+            xvar = mVars["x"];
+            yvar = mVars["y"];
+            zvar = mVars["z"];
+            return;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Calculate an unweighted 1D-fit.
@@ -125,18 +126,19 @@ class Fitcontroller
         /// \param __sExpr const std::string&
         /// \param __sRestrictions const std::string&
         /// \param mParamsMap mu::varmap_type&
-        /// \param __dPrecision double
+        /// \param eps_rel double
+        /// \param eps_abs double
         /// \param nMaxIterations int
         /// \return bool
         ///
         /////////////////////////////////////////////////
-        inline bool fit(FitVector& vx, FitVector& vy, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
-            {
-                FitVector vy_w(vy.size(), 0.0);
-                return fit(vx,vy, vy_w, __sExpr, __sRestrictions, mParamsMap, __dPrecision, nMaxIterations);
-            }
+        inline bool fit(FitVector& vx, FitVector& vy, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double eps_rel, double eps_abs, int nMaxIterations = 500)
+        {
+            FitVector vy_w(vy.size(), 0.0);
+            return fit(vx,vy, vy_w, __sExpr, __sRestrictions, mParamsMap, eps_rel, eps_abs, nMaxIterations);
+        }
 
-        bool fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
+        bool fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double eps_rel, double eps_abs, int nMaxIterations = 500);
 
         /////////////////////////////////////////////////
         /// \brief Calculate an unweighted 2D-fit.
@@ -147,18 +149,19 @@ class Fitcontroller
         /// \param __sExpr const std::string&
         /// \param __sRestrictions const std::string&
         /// \param mParamsMap mu::varmap_type&
-        /// \param __dPrecision double
+        /// \param eps_rel double
+        /// \param eps_abs double
         /// \param nMaxIterations int
         /// \return bool
         ///
         /////////////////////////////////////////////////
-        inline bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
-            {
-                FitMatrix vz_w(vz.size(), std::vector<double>(vz[0].size(), 0.0));
-                return fit(vx, vy, vz, vz_w, __sExpr, __sRestrictions, mParamsMap, __dPrecision, nMaxIterations);
-            }
+        inline bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double eps_rel, double eps_abs, int nMaxIterations = 500)
+        {
+            FitMatrix vz_w(vz.size(), std::vector<double>(vz[0].size(), 0.0));
+            return fit(vx, vy, vz, vz_w, __sExpr, __sRestrictions, mParamsMap, eps_rel, eps_abs, nMaxIterations);
+        }
 
-        bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
+        bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double eps_rel, double eps_abs, int nMaxIterations = 500);
 
         /////////////////////////////////////////////////
         /// \brief Return the weighted sum of the

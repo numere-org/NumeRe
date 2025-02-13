@@ -211,6 +211,21 @@ namespace mu
 		s_locale = std::locale(std::locale("C"), new change_dec_sep<char_type>(cDecSep, cThousandsSep));
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief Change the default variable
+    /// initializing value.
+    ///
+    /// \param init const Value&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::SetInitValue(const Value& init)
+	{
+	    m_factory->SetInitValue(init);
+	}
+
+
 	//---------------------------------------------------------------------------
 	/** \brief Sets the thousands operator.
 	    \param cThousandsSep The thousands separator as a character

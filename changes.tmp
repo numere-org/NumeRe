@@ -14,3 +14,6 @@ Added	The table viewer can now sort and filter the displayed table according a s
 Fixed	Undoing pastes of long strings into the terminal with ESC are not resulting in an endless loop anymore.
 Added	It is now possible to set a custom HTTP header and a payload if you want to interact with REST APIs using "url".
 Updated	The starting page was greatly reworked and provides more options.
+Fixed	The initializing of fitting parameters is now set to zero and not to "void" any more.
+Cleaned	The interface for "odesolve" and "fit" have been adapted to follow the current syntax approach more.
+Fixed	The correct column title is now used as plotting legend, if used in scenarios like "plot TABLE()"

@@ -153,7 +153,8 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 {
     FitData* _fData = static_cast<FitData*>(data);
     size_t i = 0;
-    const double dEps = _fData->dPrecision*1.0e-1;
+    const double eps_abs = _fData->eps_abs*1.0e-1;
+    const double eps_rel = _fData->eps_rel*1.0e-1;
     FitMatrix vFuncRes;
     FitMatrix vDiffRes;
 
@@ -196,7 +197,7 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = mu::Value(gsl_vector_get(params, i) + dEps);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i) + eps_abs);
 
         if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
         {
@@ -214,7 +215,7 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
                     continue;
                 }
 
-                gsl_matrix_set(Jac, n, i, (vDiffRes[n][0]-vFuncRes[n][0])/(dEps*_fData->vy_w[n]));
+                gsl_matrix_set(Jac, n, i, (vDiffRes[n][0]-vFuncRes[n][0])/(eps_rel*_fData->vy_w[n]));
             }
         }
         else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
@@ -240,7 +241,7 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
                         continue;
                     }
 
-                    gsl_matrix_set(Jac, m+n*(_fData->vy.size()), i, (vDiffRes[n][m]-vFuncRes[n][m])/(dEps*_fData->vz_w[n][m]));
+                    gsl_matrix_set(Jac, m+n*(_fData->vy.size()), i, (vDiffRes[n][m]-vFuncRes[n][m])/(eps_rel*_fData->vz_w[n][m]));
                 }
             }
         }
@@ -360,7 +361,8 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
 {
     FitData* _fData = static_cast<FitData*>(data);
     size_t i = 0;
-    const double dEps = _fData->dPrecision*1.0e-1;
+    const double eps_abs = _fData->eps_abs*1.0e-1;
+    const double eps_rel = _fData->eps_rel*1.0e-1;
     FitMatrix vFuncRes;
     FitMatrix vDiffRes;
     mu::Array* v = nullptr;
@@ -407,7 +409,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = mu::Value(gsl_vector_get(params, i) + dEps);
+        *(iter->second) = mu::Value(gsl_vector_get(params, i) + eps_abs);
 
         if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
         {
@@ -426,7 +428,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
                     continue;
                 }
 
-                gsl_matrix_set(Jac, n, i, (vDiffRes[n][0]-vFuncRes[n][0])/(dEps*_fData->vy_w[n]));
+                gsl_matrix_set(Jac, n, i, (vDiffRes[n][0]-vFuncRes[n][0])/(eps_rel*_fData->vy_w[n]));
             }
         }
         else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
@@ -453,7 +455,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
                         continue;
                     }
 
-                    gsl_matrix_set(Jac, m+n*(_fData->vy.size()), i, (vDiffRes[n][m]-vFuncRes[n][m])/(dEps*_fData->vz_w[n][m]));
+                    gsl_matrix_set(Jac, m+n*(_fData->vy.size()), i, (vDiffRes[n][m]-vFuncRes[n][m])/(eps_rel*_fData->vz_w[n][m]));
                 }
             }
         }
@@ -607,12 +609,11 @@ void Fitcontroller::removeNANVals(gsl_matrix* Jac, size_t nLines, size_t nCols)
 /// \param __sExpr const string&
 /// \param __sRestrictions const string&
 /// \param _fData FitData&
-/// \param __dPrecision double
 /// \param nMaxIterations int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations)
+bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions, FitData& _fData, int nMaxIterations)
 {
     dChiSqr = 0.0;
     nIterations = 0;
@@ -638,12 +639,6 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     }
     else
         return false;
-
-    // Validate the algorithm parameters
-    if (!isnan(__dPrecision) && !isinf(__dPrecision))
-        _fData.dPrecision = fabs(__dPrecision);
-    else
-        _fData.dPrecision = 1e-4;
 
     if (nMaxIterations <= 1)
         nMaxIterations = 500;
@@ -745,7 +740,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
 
         // Test, whether the required precision is already
         // in the desired range
-        nStatus = gsl_multifit_test_delta(solver->dx, solver->x, _fData.dPrecision, _fData.dPrecision);
+        nStatus = gsl_multifit_test_delta(solver->dx, solver->x, _fData.eps_abs, _fData.eps_rel);
         nIterations++;
 
         // Cancel the algorithm if required by the user
@@ -818,20 +813,23 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
 /// \param __sExpr const string&
 /// \param __sRestrictions const string&
 /// \param mParamsMap mu::varmap_type&
-/// \param __dPrecision double
+/// \param eps_rel double
+/// \param eps_abs double
 /// \param nMaxIterations int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Fitcontroller::fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision, int nMaxIterations)
+bool Fitcontroller::fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double eps_rel, double eps_abs, int nMaxIterations)
 {
     mParams = mParamsMap;
     FitData _fData;
     _fData.vx = vx;
     _fData.vy = vy;
     _fData.vy_w = vy_w;
+    _fData.eps_abs = eps_abs;
+    _fData.eps_rel = eps_rel;
 
-    return fitctrl(__sExpr, __sRestrictions, _fData, __dPrecision, nMaxIterations);
+    return fitctrl(__sExpr, __sRestrictions, _fData, nMaxIterations);
 }
 
 
@@ -845,12 +843,13 @@ bool Fitcontroller::fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const str
 /// \param __sExpr const string&
 /// \param __sRestrictions const string&
 /// \param mParamsMap mu::varmap_type&
-/// \param __dPrecision double
+/// \param eps_rel double
+/// \param eps_abs double
 /// \param nMaxIterations int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Fitcontroller::fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision, int nMaxIterations)
+bool Fitcontroller::fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double eps_rel, double eps_abs, int nMaxIterations)
 {
     mParams = mParamsMap;
     FitData _fData;
@@ -858,8 +857,10 @@ bool Fitcontroller::fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& 
     _fData.vy = vy;
     _fData.vz = vz;
     _fData.vz_w = vz_w;
+    _fData.eps_abs = eps_abs;
+    _fData.eps_rel = eps_rel;
 
-    return fitctrl(__sExpr, __sRestrictions, _fData, __dPrecision, nMaxIterations);
+    return fitctrl(__sExpr, __sRestrictions, _fData, nMaxIterations);
 }
 
 

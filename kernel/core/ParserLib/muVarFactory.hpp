@@ -42,6 +42,8 @@ namespace mu
 
             Variable* Get(const std::string& sVarSymbol);
 
+            void SetInitValue(const Value& init);
+
             void Clear();
             bool Empty() const;
             size_t Size() const;
@@ -52,6 +54,7 @@ namespace mu
 
         private:
             std::list<Variable*> m_varStorage;
+            Value m_initValue;
     };
 }
 

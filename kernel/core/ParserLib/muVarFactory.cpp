@@ -46,7 +46,7 @@ namespace mu
             return m_VarDef[sVarSymbol];
 
         // Create the storage for a new variable initialized to void
-        m_varStorage.push_back(new Variable(Value()));
+        m_varStorage.push_back(new Variable(m_initValue));
 
         m_VarDef[sVarSymbol] = m_varStorage.back();
 
@@ -140,6 +140,20 @@ namespace mu
             return iter->second;
 
         return nullptr;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Change the default init value for the
+    /// variable factory.
+    ///
+    /// \param init const Value&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void VarFactory::SetInitValue(const Value& init)
+    {
+        m_initValue = init;
     }
 
 

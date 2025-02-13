@@ -18,71 +18,159 @@
 
 #include "odesolver.hpp"
 #include "../../kernel.hpp"
-
-using namespace std;
+#include "../utils/tools.hpp"
+#include "parser_functions.hpp"
+#include "../ui/error.hpp"
+#include <vector>
 
 extern DefaultVariables _defVars;
 
-mu::Parser* Odesolver::_odeParser = 0;
-int Odesolver::nDimensions = 0;
-mu::varmap_type Odesolver::mVars;
+typedef int (*GslFunc)(double, const double [], double [], void*);
+typedef int (*GslJacobian) (double, const double [], double*, double [], void*);
 
-Odesolver::Odesolver()
+/////////////////////////////////////////////////
+/// \brief A structure for calculation
+/// parameters.
+/////////////////////////////////////////////////
+struct OdeParams
 {
-    _odeParser = 0;
-    _odeData = 0;
-    _odeFunctions = 0;
-    _odeSettings = 0;
+    int dims = 0;
+    mu::varmap_type vars;
+    double eps_abs = 1e-6;
+    double eps_rel = 1e-6;
+    std::string func;
+    std::string method;
+};
 
-    odeStepType = 0;
-    odeStep = 0;
-    odeControl = 0;
-    odeEvolve = 0;
 
-    nDimensions = 0;
-}
 
-Odesolver::Odesolver(Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option) : Odesolver()
+/////////////////////////////////////////////////
+/// \brief This struct wraps the GSL part and
+/// provides the solving functionalities.
+/////////////////////////////////////////////////
+struct OdeSystem
 {
-    _odeParser = _parser;
-    _odeData = _data;
-    _odeFunctions = _functions;
-    _odeSettings = _option;
-}
+    const gsl_odeiv_step_type* steptype;
+    gsl_odeiv_step* step;
+    gsl_odeiv_control* control;
+    gsl_odeiv_evolve* evolve;
+    gsl_odeiv_system system;
 
-Odesolver::~Odesolver()
-{
-    _odeParser = 0;
-    _odeData = 0;
-    _odeFunctions = 0;
-    _odeSettings = 0;
+    /////////////////////////////////////////////////
+    /// \brief Create an OdeSystem instance.
+    /////////////////////////////////////////////////
+    OdeSystem()
+    {
+        steptype = nullptr;
+        step = nullptr;
+        control = nullptr;
+        evolve = nullptr;
+    }
 
-    //cerr << odeEvolve << endl;
-    //cerr << odeControl << endl;
-    //cerr << odeStep << endl;
+    /////////////////////////////////////////////////
+    /// \brief Initialize the OdeSystem.
+    ///
+    /// \param func GslFunc
+    /// \param jac GslJacobian
+    /// \param par OdeParams&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void init(GslFunc func, GslJacobian jac, OdeParams& par)
+    {
+        if (par.method == "rkf45")
+            steptype = gsl_odeiv_step_rkf45;
+        else if (par.method == "rk2")
+            steptype = gsl_odeiv_step_rk2;
+        else if (par.method == "rkck")
+            steptype = gsl_odeiv_step_rkck;
+        else if (par.method == "rk8pd")
+            steptype = gsl_odeiv_step_rk8pd;
+        else
+            steptype = gsl_odeiv_step_rk4;
 
-    if (odeEvolve)
-        gsl_odeiv_evolve_free(odeEvolve);
-    if (odeControl)
-        gsl_odeiv_control_free(odeControl);
-    if (odeStep)
-        gsl_odeiv_step_free(odeStep);
-}
+        step = gsl_odeiv_step_alloc(steptype, par.dims);
+        control = gsl_odeiv_control_y_new(par.eps_abs, par.eps_rel);
+        evolve = gsl_odeiv_evolve_alloc(par.dims);
+
+        system.function = func;
+        system.jacobian = jac;
+        system.dimension = par.dims;
+        system.params = static_cast<void*>(&par);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Iterate the OdeSystem.
+    ///
+    /// \param t double*
+    /// \param t1 double
+    /// \param h double*
+    /// \param y std::vector<double>&
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
+    int iterate(double* t, double t1, double* h, std::vector<double>& y)
+    {
+        return gsl_odeiv_evolve_apply(evolve, control, step, &system, t, t1, h, &y[0]);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Reset the OdeSystem.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void reset()
+    {
+        gsl_odeiv_evolve_reset(evolve);
+        gsl_odeiv_step_reset(step);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Destruct an OdeSystem instance and
+    /// free up acquired memory.
+    /////////////////////////////////////////////////
+    ~OdeSystem()
+    {
+        if (evolve)
+            gsl_odeiv_evolve_free(evolve);
+
+        if (control)
+            gsl_odeiv_control_free(control);
+
+        if (step)
+            gsl_odeiv_step_free(step);
+    }
+};
 
 
-int Odesolver::odeFunction(double x, const double y[], double dydx[], void* params)
+
+/////////////////////////////////////////////////
+/// \brief The function used by the OdeSystem
+/// instance to integrate the ODE.
+///
+/// \param x double
+/// \param y const double[]
+/// \param dydx double[]
+/// \param params void*
+/// \return int
+///
+/////////////////////////////////////////////////
+static int odeFunction(double x, const double y[], double dydx[], void* params)
 {
     mu::Array v;
+    static mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+    OdeParams* par = static_cast<OdeParams*>(params);
 
     // Variablen zuweisen
     _defVars.vValue[0][0] = mu::Value(x);
 
-    for (int i = 0; i < nDimensions; i++)
+    for (int i = 0; i < par->dims; i++)
     {
-        *(mVars.find("y"+toString(i+1))->second) = mu::Value(y[i]);
+        *(par->vars.find("y"+toString(i+1))->second) = mu::Value(y[i]);
     }
 
-    v = _odeParser->Eval();
+    v = _parser.Eval();
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -92,173 +180,260 @@ int Odesolver::odeFunction(double x, const double y[], double dydx[], void* para
     return GSL_SUCCESS;
 }
 
-bool Odesolver::solve(const string& sCmd)
+
+
+/////////////////////////////////////////////////
+/// \brief The ODE jacobian. Does nothing.
+///
+/// \param x double
+/// \param y const double[]
+/// \param dydx double[]
+/// \param dfdt double[]
+/// \param params void*
+/// \return int
+///
+/////////////////////////////////////////////////
+static int jacobian(double x, const double y[], double dydx[], double dfdt[], void* params)
 {
-    if (!_odeParser || !_odeData || !_odeFunctions || !_odeSettings)
-        return false;
-
-    // Warum auch immer diese Pointer an dieser Stelle bereits eine Adresse hatten...???
-    //odeEvolve = 0;
-    //odeControl = 0;
-    //odeStep = 0;
-
-    const gsl_odeiv_step_type* odeStepType_ly = 0;
-    gsl_odeiv_step* odeStep_ly = 0;
-    gsl_odeiv_control* odeControl_ly = 0;
-    gsl_odeiv_evolve* odeEvolve_ly = 0;
-    gsl_odeiv_system odeSystem_ly;
+    return GSL_SUCCESS;
+}
 
 
-    //cerr << 1 << endl;
-    double t0 = 0.0;
-    double t1 = 0.0;
-    double t2 = 0.0;
-    double dt = 0.0;
-    double h = 0.0;
-    double h2 = 0.0;
-    double dRelTolerance = 0.0;
-    double dAbsTolerance = 0.0;
-    int nSamples = 100;
-    int nLyapuSamples = 100;
-    vector<double> vInterval;
-    vector<double> vStartValues;
+/////////////////////////////////////////////////
+/// \brief Integrate the ODE system.
+///
+/// \param params OdeParams
+/// \param vStartValues const std::vector<double>&
+/// \param timeInterval const Interval&
+/// \param nSamples int
+/// \param nLyapuSamples int
+/// \param _idx Indices&
+/// \param sTarget const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool integrate(OdeParams params, const std::vector<double>& vStartValues, const Interval& timeInterval, int nSamples, int nLyapuSamples, Indices& _idx, const std::string& sTarget)
+{
+    bool systemPrints = NumeReKernel::getInstance()->getSettings().systemPrints();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-    string sFunc = "";
-    string sParams = "";
-    string sTarget = "ode()";
-    string sVarDecl = "y1";
-    Indices _idx;
-    bool bAllowCacheClearance = false;
-    bool bCalcLyapunov = false;
+    bool bCalcLyapunov = nLyapuSamples > 0;
+    bool bAllowCacheClearance = _idx.row.isFullRange(_data.getLines(sTarget));
 
-    time_t tTimeControl = time(0);
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _idx.row.front() + nSamples);
 
-    double* y = 0;
-    double* y2 = 0;
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + params.dims + (long long int)bCalcLyapunov*2);
+
+    if (bAllowCacheClearance)
+        _data.deleteBulk(sTarget, _idx.row, _idx.col);
+
+    std::vector<double> y(params.dims, 0.0);
+    std::vector<double> y2;
+
+    if (bCalcLyapunov)
+        y2.resize(params.dims, 0.0);
+
+    // Startwerte festlegen
+    for (int i = 0; i < params.dims; i++)
+    {
+        if (i < (int)vStartValues.size())
+            y[i] = vStartValues[i];
+
+        if (bCalcLyapunov)
+        {
+            if (i < (int)vStartValues.size())
+                y2[i] = vStartValues[i];
+
+            if (!i)
+                y2[i] += 1e-6; // Lyapunov specific offset
+        }
+    }
+
+    params.vars = _parser.GetVar();
+
+    if (params.dims > 1)
+        _parser.SetExpr("{" + params.func + "}");
+    else
+        _parser.SetExpr(params.func);
+
+    // Write the x column title
+    if (bAllowCacheClearance || !_idx.row.front())
+        _data.setHeadLineElement(_idx.col.front(), sTarget, "x");
+
+    double startTime = timeInterval.min();
+
+    // Write x start value
+    _data.writeToTable(_idx.row.front(), _idx.col.front(), sTarget, startTime);
+
+    // Write position column titles and start values
+    for (int j = 0; j < params.dims; j++)
+    {
+        if (_idx.col[j+1] == VectorIndex::INVALID)
+            break;
+
+        if (bAllowCacheClearance || !_idx.row.front())
+            _data.setHeadLineElement(_idx.col[1+j], sTarget, "y_"+toString(j+1));
+
+        _data.writeToTable(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
+    }
+
+    // Write the Lyapunov column titles
+    if (bCalcLyapunov && (bAllowCacheClearance || !_idx.row.front()) && _idx.col[params.dims+2] != VectorIndex::INVALID)
+    {
+        _data.setHeadLineElement(_idx.col[1+params.dims], sTarget, "x_lypnv");
+        _data.setHeadLineElement(_idx.col[2+params.dims], sTarget, "lyapunov");
+    }
+
+    // Initialize systems
+    OdeSystem ode;
+    OdeSystem lyapunov;
+
+    ode.init(odeFunction, jacobian, params);
+
+    if (bCalcLyapunov)
+        lyapunov.init(odeFunction, jacobian, params);
+
     double lyapu[2] = {0.0, 0.0};
-    double dist[2] = {1.0e-6,0.0};
-    double t = 0.0;
+    double dist[2] = {1e-6, 0.0};
+    double t = startTime;
+    double t2 = startTime;
+    double dt = timeInterval.range() / (nSamples - 1);
 
-    if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
+    double h = params.eps_rel;
+    double h2 = params.eps_rel;
+
+    _defVars.vValue[0][0] = mu::Value(startTime);
+    time_t tTimeControl = time(nullptr);
+
+    if (systemPrints)
+        NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ..."));
+
+    // integrieren
+    for (size_t i = 0; i < (size_t)nSamples; i++)
     {
-        if (sCmd.find("-set") != string::npos)
+        if (time(nullptr) - tTimeControl > 1 && systemPrints)
         {
-            sFunc = sCmd.substr(0,sCmd.find("-set"));
-            sParams = sCmd.substr(sCmd.find("-set"));
-        }
-        else
-        {
-            sFunc = sCmd.substr(0,sCmd.find("--"));
-            sParams = sCmd.substr(sCmd.find("--"));
+            NumeReKernel::printPreFmt("\r|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ... "
+                                      + toString((int)(i*100.0/(double)(nSamples-1))) + " %");
         }
 
-        sFunc.erase(0,findCommand(sFunc).nPos+8); //odesolve EXPR -set...
-        StripSpaces(sFunc);
+        if (NumeReKernel::GetAsyncCancelState())
+        {
+            NumeReKernel::printPreFmt(" " + _lang.get("COMMON_CANCEL") + ".\n");
+            throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
+        }
+
+        if (_idx.row.size() <= i+1)
+            break;
+
+        // Update current target time
+        double currentTime = timeInterval(i, nSamples).real();
+
+        // Iterate as long as the simulation time is smaller than the
+        // target time
+        while (t < currentTime)
+        {
+            if (GSL_SUCCESS != ode.iterate(&t, currentTime, &h, y))
+                break;
+        }
+
+        // Store the current simulated time (not the target time)
+        _data.writeToTable(_idx.row[i+1], _idx.col[0], sTarget, t);
+
+        // Store the integrated results
+        for (int j = 0; j < params.dims; j++)
+        {
+            if (_idx.col[j+1] == VectorIndex::INVALID)
+                break;
+
+            _data.writeToTable(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);
+        }
+
+        // Do we need to calculate Lyapunov values?
+        if (bCalcLyapunov)
+        {
+            h2 = params.eps_rel;
+
+            // Iterate as long as the simulation time is smaller than the
+            // target time
+            while (t2 < currentTime)
+            {
+                if (GSL_SUCCESS != lyapunov.iterate(&t2, currentTime, &h2, y2))
+                    break;
+            }
+
+            dist[1] = 0.0;
+
+            // Calculate the distance
+            for (int n = 0; n < params.dims; n++)
+            {
+                dist[1] += (y[n]-y2[n])*(y[n]-y2[n]);
+            }
+
+            dist[1] = std::sqrt(dist[1]);
+            lyapu[1] = std::log(dist[1]/dist[0])/dt;
+
+            // Calculate the current Lyapunov parameter
+            lyapu[0] = (i*lyapu[0] + lyapu[1])/(double)(i+1);
+
+            // Store the Lyapunov parameter
+            if (!((i+1) % nLyapuSamples) && _idx.col[params.dims + 2] != VectorIndex::INVALID)
+            {
+                _data.writeToTable((i+1)/nLyapuSamples-1, _idx.col[params.dims+1], sTarget, currentTime);
+                _data.writeToTable((i+1)/nLyapuSamples-1, _idx.col[params.dims+2], sTarget, lyapu[0]);
+            }
+
+            // Update the starting values
+            for (int n = 0; n < params.dims; n++)
+            {
+                y2[n] = y[n] + (y2[n]-y[n])*dist[0]/dist[1];
+            }
+
+            lyapunov.reset();
+        }
     }
-    else
-        throw SyntaxError(SyntaxError::NO_OPTIONS_FOR_ODE, sCmd, SyntaxError::invalid_position);
 
-    if (!sFunc.length())
-        throw SyntaxError(SyntaxError::NO_EXPRESSION_FOR_ODE, sCmd, SyntaxError::invalid_position);
+    if (systemPrints)
+        NumeReKernel::printPreFmt(" " + _lang.get("COMMON_SUCCESS") + ".\n");
 
-    if (!_odeFunctions->call(sFunc))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFunc, sFunc);
+    return true;
+}
 
-    if (_odeData->containsTablesOrClusters(sFunc))
-        getDataElements(sFunc, *_odeParser, *_odeData);
 
-    if (findParameter(sParams, "target", '='))
-    {
-        sTarget = getArgAtPos(sParams, findParameter(sParams, "target", '=')+6);
-        sParams.erase(sParams.find(sTarget, findParameter(sParams, "target", '=')+6), sTarget.length());
-        sParams.erase(findParameter(sParams, "target", '=')-1, 7);
+/////////////////////////////////////////////////
+/// \brief Solve the ODE.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Odesolver::solve(CommandLineParser& cmdParser)
+{
+    OdeParams params;
+    params.func = cmdParser.getExprAsMathExpression(true);
+    params.method = cmdParser.getParameterValue("method");
 
-        if (sTarget.find('(') == string::npos)
-        {
-            sTarget += "()";
-            bAllowCacheClearance = true;
-        }
-    }
-    else
-        bAllowCacheClearance = true;
+    Indices _idx;
 
-    if (!_odeData->isTable(sTarget))
-        _odeData->addTable(sTarget, *_odeSettings);
+    if (!cmdParser.getParameterList().length())
+        throw SyntaxError(SyntaxError::NO_OPTIONS_FOR_ODE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    getIndices(sTarget, _idx, *_odeParser, *_odeData, true);
+    if (!params.func.length())
+        throw SyntaxError(SyntaxError::NO_EXPRESSION_FOR_ODE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+
+    std::string sTarget = cmdParser.getTargetTable(_idx, "ode");
 
     if (!isValidIndexSet(_idx))
-        return false;
+        throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-    sTarget.erase(sTarget.find('('));
+    std::vector<double> vStartValues;
 
-    if (!_odeFunctions->call(sParams))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
-
-    if (_odeData->containsTablesOrClusters(sParams))
-        getDataElements(sParams, *_odeParser, *_odeData);
-
-    if (findParameter(sParams, "method", '='))
+    if (cmdParser.hasParam("fx0"))
     {
-        if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rkf45")
-            odeStepType = gsl_odeiv_step_rkf45;
-        else if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rk2")
-            odeStepType = gsl_odeiv_step_rk2;
-        else if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rkck")
-            odeStepType = gsl_odeiv_step_rkck;
-        else if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rk8pd")
-            odeStepType = gsl_odeiv_step_rk8pd;
-        else
-            odeStepType = gsl_odeiv_step_rk4;
-    }
-    else
-        odeStepType = gsl_odeiv_step_rk4;
-
-    if (findParameter(sParams, "lyapunov"))
-        bCalcLyapunov = true;
-
-    if (findParameter(sParams, "tol", '='))
-    {
-        std::string sToleranceParams = getArgAtPos(sParams, findParameter(sParams, "tol", '=')+3);
-
-        if (sToleranceParams.front() == '[' && sToleranceParams.back() == ']')
-        {
-            sToleranceParams.pop_back();
-            sToleranceParams.erase(0,1);
-        }
-
-        _odeParser->SetExpr("{" + sToleranceParams + "}");
-        mu::Array v = _odeParser->Eval();
-
-        if (v.size() > 1)
-        {
-            dRelTolerance = v[0].getNum().asF64();
-            dAbsTolerance = v[1].getNum().asF64();
-        }
-        else
-        {
-            dRelTolerance = v[0].getNum().asF64();
-            dAbsTolerance = v[0].getNum().asF64();
-        }
-    }
-    else
-    {
-        dRelTolerance = 1e-6;
-        dAbsTolerance = 1e-6;
-    }
-
-    if (findParameter(sParams, "fx0", '='))
-    {
-        std::string sStartValues = getArgAtPos(sParams, findParameter(sParams, "fx0", '=')+3);
-
-        if (sStartValues.front() == '[' && sStartValues.back() == ']')
-        {
-            sStartValues.pop_back();
-            sStartValues.erase(0,1);
-        }
-
-        _odeParser->SetExpr("{" + sStartValues + "}");
-        mu::Array v = _odeParser->Eval();
+        mu::Array v = cmdParser.getParsedParameterValue("fx0");
 
         for (size_t i = 0; i < v.size(); i++)
         {
@@ -266,15 +441,19 @@ bool Odesolver::solve(const string& sCmd)
         }
     }
 
-    if (findParameter(sParams, "samples", '='))
+    int nSamples = 100;
+
+    if (cmdParser.hasParam("samples"))
     {
-        _odeParser->SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=')+7));
-        nSamples = _odeParser->Eval().getAsScalarInt();
+        nSamples = cmdParser.getParsedParameterValue("samples").getAsScalarInt();
+
         if (nSamples <= 0)
             nSamples = 100;
     }
 
-    if (bCalcLyapunov)
+    int nLyapuSamples = 0;
+
+    if (cmdParser.hasParam("lyapunov"))
     {
         if (nSamples <= 200)
             nLyapuSamples = nSamples / 10;
@@ -284,233 +463,64 @@ bool Odesolver::solve(const string& sCmd)
             nLyapuSamples = nSamples / 100;
     }
 
-    vInterval = readAndParseIntervals(sParams, *_odeParser, *_odeData, *_odeFunctions, false);
+    if (cmdParser.hasParam("tol"))
+    {
+        mu::Array v = cmdParser.getParsedParameterValue("tol");
 
-    if (!vInterval.size() || isnan(vInterval[0]) || isinf(vInterval[0]) || isnan(vInterval[1]) || isinf(vInterval[1]))
-        throw SyntaxError(SyntaxError::NO_INTERVAL_FOR_ODE, sCmd, SyntaxError::invalid_position);
+        if (v.size() > 1)
+        {
+            params.eps_rel = std::abs(v[0].getNum().asF64());
+            params.eps_abs = std::abs(v[1].getNum().asF64());
+        }
+        else
+        {
+            params.eps_rel = std::abs(v[0].getNum().asF64());
+            params.eps_abs = std::abs(v[0].getNum().asF64());
+        }
 
-    dt = (vInterval[1]-vInterval[0])/(double)nSamples;
-    t0 = vInterval[0];
-    t1 = vInterval[0];
-    h = dRelTolerance;
-    h2 = dRelTolerance;
+        if (std::isnan(params.eps_rel) || std::isinf(params.eps_rel))
+            params.eps_rel = 1e-6;
 
-    _defVars.vValue[0][0] = mu::Value(t0);
-    t = t0;
+        if (std::isnan(params.eps_abs) || std::isinf(params.eps_abs))
+            params.eps_abs = 1e-6;
+    }
+
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     // Dimension des ODE-Systems bestimmen: odesolve dy1 = y2*x, dy2 = sin(y1)
-    _odeParser->SetExpr(sFunc);
-    _odeParser->Eval(nDimensions);
+    _parser.SetInitValue(mu::Value(0.0));
 
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _idx.row.front() + nSamples);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + nDimensions + (long long int)bCalcLyapunov*2);
-
-    if (bAllowCacheClearance)
-        _odeData->deleteBulk(sTarget, 0, _odeData->getLines(sTarget, false) - 1, 0, nDimensions+(long long int)bCalcLyapunov*2);
-
-    y = new double[nDimensions];
-
-    if (bCalcLyapunov)
-        y2 = new double[nDimensions];
-
-    // Startwerte festlegen
-    for (int i = 0; i < nDimensions; i++)
+    try
     {
-        if (i < (int)vStartValues.size())
-            y[i] = vStartValues[i];
-        else
-            y[i] = 0.0;
+        _parser.SetExpr(params.func);
+        _parser.Eval(params.dims);
 
-        if (bCalcLyapunov)
-        {
-            if (i < (int)vStartValues.size())
-                y2[i] = vStartValues[i];
-            else
-                y2[i] = 0.0;
+        std::string sVarDecl = "y1";
 
-            if (!i)
-                y2[i] += dist[0];
-        }
+        for (int i = 1; i < params.dims; i++)
+            sVarDecl += ", y" + toString(i+1);
+
+        _parser.SetExpr(sVarDecl);
+        _parser.Eval();
+    }
+    catch (...)
+    {
+        _parser.SetInitValue(mu::Value());
+        throw;
     }
 
-    for (int i = 1; i < nDimensions; i++)
-        sVarDecl += ", y" + toString(i+1);
+    _parser.SetInitValue(mu::Value());
 
-    _odeParser->SetExpr(sVarDecl);
-    _odeParser->Eval();
-    mVars = _odeParser->GetVar();
+    IntervalSet ivlSet = cmdParser.parseIntervals(false);
 
-    if (nDimensions > 1)
-        _odeParser->SetExpr("{" + sFunc + "}");
-    else
-        _odeParser->SetExpr(sFunc);
+    if (!ivlSet.intervals.size()
+        || std::isnan(ivlSet.intervals[0].min())
+        || std::isinf(ivlSet.intervals[0].min())
+        || std::isnan(ivlSet.intervals[0].max())
+        || std::isinf(ivlSet.intervals[0].max()))
+        throw SyntaxError(SyntaxError::NO_INTERVAL_FOR_ODE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    // Routinen initialisieren
-    odeStep = gsl_odeiv_step_alloc(odeStepType, nDimensions);
-    odeControl = gsl_odeiv_control_y_new(dAbsTolerance, dRelTolerance);
-    odeEvolve = gsl_odeiv_evolve_alloc(nDimensions);
-
-    gsl_odeiv_system odeSystem = {odeFunction, jacobian, (unsigned)nDimensions, 0};
-
-    if (bCalcLyapunov)
-    {
-        odeStepType_ly = odeStepType;
-        odeStep_ly = gsl_odeiv_step_alloc(odeStepType_ly, nDimensions);
-        odeControl_ly = gsl_odeiv_control_y_new(dAbsTolerance, dRelTolerance);
-        odeEvolve_ly = gsl_odeiv_evolve_alloc(nDimensions);
-
-        odeSystem_ly.function = odeFunction;
-        odeSystem_ly.jacobian = jacobian;
-        odeSystem_ly.dimension = (unsigned)nDimensions;
-        odeSystem_ly.params = 0;
-    }
-
-    if (_odeSettings->systemPrints())
-        NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ..."));
-
-    if (bAllowCacheClearance || !_idx.row.front())
-        _odeData->setHeadLineElement(_idx.col.front(), sTarget, "x");
-
-    _odeData->writeToTable(_idx.row.front(), _idx.col.front(), sTarget, t);
-
-    for (int j = 0; j < nDimensions; j++)
-    {
-        if (_idx.col[j+1] == VectorIndex::INVALID)
-            break;
-
-        if (bAllowCacheClearance || !_idx.row.front())
-            _odeData->setHeadLineElement(_idx.col[1+j], sTarget, "y_"+toString(j+1));
-
-        _odeData->writeToTable(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
-    }
-
-    if (bCalcLyapunov && (bAllowCacheClearance || !_idx.row.front()) && _idx.col[nDimensions+2] != VectorIndex::INVALID)
-    {
-        _odeData->setHeadLineElement(_idx.col[1+nDimensions], sTarget, "x_lypnv");
-        _odeData->setHeadLineElement(_idx.col[2+nDimensions], sTarget, "lyapunov");
-    }
-
-    // integrieren
-    for (size_t i = 0; i < (size_t)nSamples; i++)
-    {
-        if (time(0) - tTimeControl > 1 && _odeSettings->systemPrints())
-        {
-            NumeReKernel::printPreFmt(toSystemCodePage("\r|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ... " + toString((int)(i*100.0/(double)nSamples)) + " %"));
-        }
-
-        if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
-        {
-            NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("COMMON_CANCEL")) + ".\n");
-            gsl_odeiv_evolve_free(odeEvolve);
-            gsl_odeiv_control_free(odeControl);
-            gsl_odeiv_step_free(odeStep);
-
-            if (bCalcLyapunov)
-            {
-                gsl_odeiv_evolve_free(odeEvolve_ly);
-                gsl_odeiv_control_free(odeControl_ly);
-                gsl_odeiv_step_free(odeStep_ly);
-            }
-
-            odeEvolve = 0;
-            odeControl = 0;
-            odeStep = 0;
-
-            if (y)
-                delete[] y;
-
-            if (y2)
-                delete[] y2;
-
-            throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
-        }
-
-        if (_idx.row.size() <= i+1)
-            break;
-
-        t1 += dt;
-
-        while (t < t1)
-        {
-            if (GSL_SUCCESS != gsl_odeiv_evolve_apply(odeEvolve, odeControl, odeStep, &odeSystem, &t, t1, &h, y))
-                break;
-        }
-
-        h2 = dRelTolerance;
-
-        while (t2 < t1 && bCalcLyapunov)
-        {
-            if (GSL_SUCCESS != gsl_odeiv_evolve_apply(odeEvolve_ly, odeControl_ly, odeStep_ly, &odeSystem_ly, &t2, t1, &h2, y2))
-                break;
-        }
-
-        if (bCalcLyapunov)
-        {
-            dist[1] = 0.0;
-
-            for (int n = 0; n < nDimensions; n++)
-            {
-                dist[1] += (y[n]-y2[n])*(y[n]-y2[n]);
-            }
-
-            dist[1] = sqrt(dist[1]);
-            lyapu[1] = log(dist[1]/dist[0])/dt;
-            lyapu[0] = (i*lyapu[0] + lyapu[1])/(double)(i+1);
-
-            if (!((i+1) % nLyapuSamples) && _idx.col[nDimensions + 2] != VectorIndex::INVALID)
-            {
-                _odeData->writeToTable((i+1)/nLyapuSamples-1, _idx.col[nDimensions+1], sTarget, t1);
-                _odeData->writeToTable((i+1)/nLyapuSamples-1, _idx.col[nDimensions+2], sTarget, lyapu[0]);
-            }
-
-            for (int n = 0; n < nDimensions; n++)
-            {
-                y2[n] = y[n] + (y2[n]-y[n])*dist[0]/dist[1];
-            }
-
-            gsl_odeiv_evolve_reset(odeEvolve_ly);
-            gsl_odeiv_step_reset(odeStep_ly);
-        }
-
-        _odeData->writeToTable(_idx.row[i+1], _idx.col[0], sTarget, t);
-
-        for (int j = 0; j < nDimensions; j++)
-        {
-            if (_idx.col[j+1] == VectorIndex::INVALID)
-                break;
-
-            _odeData->writeToTable(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);
-        }
-    }
-
-    gsl_odeiv_evolve_free(odeEvolve);
-    gsl_odeiv_control_free(odeControl);
-    gsl_odeiv_step_free(odeStep);
-
-    if (bCalcLyapunov)
-    {
-        gsl_odeiv_evolve_free(odeEvolve_ly);
-        gsl_odeiv_control_free(odeControl_ly);
-        gsl_odeiv_step_free(odeStep_ly);
-    }
-
-    odeEvolve = 0;
-    odeControl = 0;
-    odeStep = 0;
-
-    if (y)
-        delete[] y;
-
-    if (y2)
-        delete[] y2;
-
-    if (_odeSettings->systemPrints())
-        NumeReKernel::printPreFmt(" " + _lang.get("COMMON_SUCCESS") + ".\n");
-
-    return true;
+    return integrate(params, vStartValues, ivlSet.intervals[0], nSamples, nLyapuSamples, _idx, sTarget);
 }
 
 

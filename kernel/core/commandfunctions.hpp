@@ -2945,18 +2945,13 @@ static CommandReturnValues cmd_quit(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_odesolve(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-
     if (sCmd.length() > 9)
     {
-        Odesolver _solver(&_parser, &_data, &_functions, &_option);
-        _solver.solve(sCmd);
+        CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_EXPR_set_PAR);
+        Odesolver::solve(cmdParser);
     }
     else
-        doc_Help("odesolver", _option);
+        doc_Help("odesolver", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }

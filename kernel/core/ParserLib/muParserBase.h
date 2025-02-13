@@ -132,6 +132,7 @@ namespace mu
 			void SetExpr(StringView a_sExpr);
 
 			void SetDecSep(char_type cDecSep);
+			void SetInitValue(const Value& init);
 			void SetThousandsSep(char_type cThousandsSep = 0);
 			void ResetLocale();
 

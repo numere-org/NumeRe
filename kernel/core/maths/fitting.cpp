@@ -42,7 +42,8 @@ struct FittingData
     bool bSaveErrors;
     bool bNoParams;
     bool b1DChiMap;
-    double dPrecision;
+    double eps_rel;
+    double eps_abs;
     int nMaxIterations;
 
     std::string sFitFunction;
@@ -104,7 +105,8 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     fitData.bSaveErrors = false;
     fitData.bNoParams = false;
     fitData.b1DChiMap = false;
-    fitData.dPrecision = 1e-4;
+    fitData.eps_abs = 1e-4;
+    fitData.eps_rel = 1e-4;
     fitData.nMaxIterations = 500;
     fitData.sChiMap_Vars[0].clear();
     fitData.sChiMap_Vars[1].clear();
@@ -124,20 +126,35 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     vInterVal = evaluateFittingParams(fitData, sCmd, _idx, sTeXExportFile, bTeXExport, bMaskDialog);
 
     fitData.sFitFunction = " " + fitData.sFitFunction + " ";
-    _parser.SetExpr(fitData.sFitFunction);
-    _parser.Eval();
-    mu::varmap_type varMap = _parser.GetUsedVar();
+    _parser.SetInitValue(mu::Value(0.0));
+    mu::varmap_type varMap;
+    mu::varmap_type paramsMap;
 
-    // Ensure that no variable is initialized to VOID
-    for (auto& iter : varMap)
+    try
     {
-        if (iter.second->getCommonType() == mu::TYPE_VOID)
-            *iter.second = mu::Value(0.0);
+        _parser.SetExpr(fitData.sFitFunction);
+        _parser.Eval();
+        varMap = _parser.GetUsedVar();
+
+        // Ensure that no variable is initialized to VOID
+        for (auto& iter : varMap)
+        {
+            if (iter.second->getCommonType() == mu::TYPE_VOID)
+                *iter.second = mu::Value(0.0);
+        }
+
+        // Get the map containing all the fitting parameters,
+        // which will be used by the fit
+        paramsMap = getFittingParameters(fitData, varMap, sCmd);
+    }
+    catch (...)
+    {
+        // Duplication needed for fallbacks
+        _parser.SetInitValue(mu::Value());
+        throw;
     }
 
-    // Get the map containing all the fitting parameters,
-    // which will be used by the fit
-    mu::varmap_type paramsMap = getFittingParameters(fitData, varMap, sCmd);
+    _parser.SetInitValue(mu::Value());
 
     fitData.sParams.clear();
 
@@ -538,10 +555,25 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "tol", '=') + 3));
         eraseToken(sCmd, "tol", true);
         eraseToken(fitData.sFitFunction, "tol", true);
-        fitData.dPrecision = fabs(_parser.Eval().front().getNum().asCF64());
 
-        if (isnan(fitData.dPrecision) || isinf(fitData.dPrecision) || fitData.dPrecision == 0)
-            fitData.dPrecision = 1e-4;
+        mu::Array v = _parser.Eval();
+
+        if (v.size() > 1)
+        {
+            fitData.eps_rel = std::abs(v[0].getNum().asF64());
+            fitData.eps_abs = std::abs(v[1].getNum().asF64());
+        }
+        else
+        {
+            fitData.eps_rel = std::abs(v[0].getNum().asF64());
+            fitData.eps_abs = std::abs(v[0].getNum().asF64());
+        }
+
+        if (std::isnan(fitData.eps_rel) || std::isinf(fitData.eps_rel))
+            fitData.eps_rel = 1e-4;
+
+        if (std::isnan(fitData.eps_abs) || std::isinf(fitData.eps_abs))
+            fitData.eps_abs = 1e-4;
     }
 
     // Changes to the maximal number of iterations
@@ -1215,7 +1247,8 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
             {
                 if (!fitData.bUseErrors)
                 {
-                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                                       fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
                     {
                         if (_option.systemPrints())
                             NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1227,7 +1260,8 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
                 }
                 else
                 {
-                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                                       fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
                     {
                         if (_option.systemPrints())
                             NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1240,7 +1274,8 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
             }
             else if (fitData.nDim == 3)
             {
-                if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                                   fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
                 {
                     if (_option.systemPrints())
                         NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1252,7 +1287,8 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
             }
             else if (fitData.nDim == 5)
             {
-                if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                                   fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
                 {
                     if (_option.systemPrints())
                         NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1319,7 +1355,8 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
     {
         if (!fitData.bUseErrors)
         {
-            if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+            if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                               fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
             {
                 if (_option.systemPrints())
                     NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1331,7 +1368,8 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
         }
         else
         {
-            if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+            if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                               fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
             {
                 if (_option.systemPrints())
                     NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1344,7 +1382,8 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
     }
     else if (fitData.nDim == 3)
     {
-        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                           fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
         {
             if (_option.systemPrints())
                 NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1356,7 +1395,8 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
     }
     else if (fitData.nDim == 5)
     {
-        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap,
+                           fitData.eps_rel, fitData.eps_abs, fitData.nMaxIterations))
         {
             if (_option.systemPrints())
                 NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1440,7 +1480,7 @@ static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData,
         sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", fitData.sRestrictions) + "\n";
 
     sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString(nSize - paramsMap.size())) + "\n";
-    sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) + "\n";
+    sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.eps_rel, 5), toString(fitData.eps_abs, 5), toString(fitData.nMaxIterations)) + "\n";
     sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) + "\n";
 
     if (nSize != paramsMap.size() && !(fitData.nFitVars & 2))
@@ -1682,7 +1722,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
         oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(fitData.sRestrictions, true) + "$") << endl;
 
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString(nSize - paramsMap.size())) << endl;
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) << endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.eps_rel, 5), toString(fitData.eps_abs, 5), toString(fitData.nMaxIterations)) << endl;
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
 
     // Write the calculated fitting result values to the TeX file

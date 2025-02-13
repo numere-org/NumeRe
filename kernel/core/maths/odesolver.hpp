@@ -19,57 +19,27 @@
 
 #ifndef ODESOLVER_HPP
 #define ODESOLVER_HPP
-#include <iostream>
+
 #include <string>
-#include <vector>
+
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv.h>
 
 #include "../ParserLib/muParser.h"
-#include "../utils/tools.hpp"
 #include "../datamanagement/memorymanager.hpp"
 #include "define.hpp"
-#include "parser_functions.hpp"
 #include "../settings.hpp"
-#include "../ui/error.hpp"
+#include "../commandlineparser.hpp"
 
+/////////////////////////////////////////////////
+/// \brief This class solves an ODE system.
+/////////////////////////////////////////////////
 class Odesolver
 {
-    private:
-        MemoryManager* _odeData;
-        FunctionDefinitionManager* _odeFunctions;
-        Settings* _odeSettings;
-        const gsl_odeiv_step_type* odeStepType;
-        gsl_odeiv_step* odeStep;
-        gsl_odeiv_control* odeControl;
-        gsl_odeiv_evolve* odeEvolve;
-
-        static int odeFunction(double x, const double y[], double dydx[], void* params);
-        inline static int jacobian(double x, const double y[], double dydx[], double dfdt[], void* params)
-            {return GSL_SUCCESS;}
-
     public:
-        static mu::Parser* _odeParser;
-        static int nDimensions;
-        static mu::varmap_type mVars;
-
-        Odesolver();
-        Odesolver(mu::Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option);
-        ~Odesolver();
-
-        inline void setObjects(mu::Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option)
-            {
-                _odeParser = _parser;
-                _odeData = _data;
-                _odeFunctions = _functions;
-                _odeSettings = _option;
-                return;
-            }
-        bool solve(const std::string& sCmd);
+        static bool solve(CommandLineParser& cmdParser);
 };
-
-typedef int (Odesolver::*odeFunction)(double, const double*, double*, void*);
 
 #endif // ODESOLVER_HPP
 
