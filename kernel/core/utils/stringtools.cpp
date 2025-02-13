@@ -1089,14 +1089,17 @@ std::string toUpperCase(const std::string& sLowerCase)
 /////////////////////////////////////////////////
 static bool isDateTimePattern(const std::string& sStr, size_t pos)
 {
-    if (pos
-        && isdigit(sStr[pos-1])
-        && isdigit(sStr[pos+1])
-        && ((pos+3 < sStr.length() && sStr[pos+3] == sStr[pos])
-            || (pos+2 < sStr.length() && sStr[pos+2] == sStr[pos])
-            || sStr[pos] == ':'
-            || (sStr[pos] == '.' && pos > 6 && sStr[pos-2] == ':')))
-        return true;
+    if (!pos || !(isdigit(sStr[pos-1]) && isdigit(sStr[pos+1])))
+        return false;
+
+    // Scan for the following non-digit. This must be either the
+    // same separator (occuing in pairs) or a group separator
+    // between date and time
+    for (size_t i = pos+1; i < sStr.length(); i++)
+    {
+        if (!isdigit(sStr[i]))
+            return i <= pos+3 && (sStr[i] == sStr[pos] || sStr[i] == ' ' || sStr[i] == ',' || sStr[i] == '\t' || sStr[i] == 'T');
+    }
 
     return false;
 }
@@ -1111,7 +1114,8 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsVoter* voter){
+bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsVoter* voter)
+{
     if (type == CONVTYPE_VALUE)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
@@ -1133,19 +1137,25 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
         // Regression fix introduced because NA is accepted as NaNhow to
         for (size_t i = 0; i < sStr.length(); i++)
         {
-            if(voter && (sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i]))) {
-                if(!inNum && sStr[i] != '0'){
+            if (voter && (sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i])))
+            {
+                if (!inNum && sStr[i] != '0')
+                {
                     inNum = true;
                     voter->startParseNumber(i);
                 }
-                if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' ) {
+
+                if (sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' )
                     voter->addSeperator(sStr[i], i);
-                }
-            } else {
-                if(voter && inNum){
+            }
+            else
+            {
+                if (voter && inNum)
+                {
                     voter->endParseAndVote(i-1);  // last one was one before
                     inNum = false;
                 }
+
                 if (i > 0 && i-1 < sStr.length() && (sStr[i] == '-' || sStr[i] == '+'))
                 {
                     if (tolower(sStr[i-1]) != 'e'
@@ -1186,8 +1196,12 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
         // Try to detect dates
         size_t pos = sStr.find_first_not_of(" \t");
 
-        if (sStr.length() >= pos+3 && isdigit(sStr[pos]))
+        if (sStr.length() >= pos+3
+            && (isdigit(sStr[pos]) || (sStr[pos] == '-' && isdigit(sStr[pos+1])))) // might be negative year
         {
+            if (sStr[pos] == '-')
+                pos++;
+
             for (size_t i = pos; i < sStr.length()-1; i++)
             {
                 // Detects these candidates:
@@ -1197,12 +1211,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
                 // hh:mm:ss:iii, h:mm:ss:iii, hh:mm:ss.iii, h:mm:ss.iii
                 // YYYY-MM-DDThh:mm:ss.iiiZ
                 if (sStr[i] == '-' || sStr[i] == '.' || sStr[i] == '/' || sStr[i] == ':')
-                {
-                    if (isDateTimePattern(sStr, i))
-                        return true;
-
-                    return false;
-                }
+                    return isDateTimePattern(sStr, i);
             }
         }
     }
@@ -1226,6 +1235,28 @@ static int isDatePattern_US(const std::string& sStr, size_t i)
     // Surrounded by digits?
     if (!i || !isdigit(sStr[i-1]) || !isdigit(sStr[i+1]))
         return TD_NONE;
+
+    // May not be preceded by a colon: hh:yy-mm-dd or by a previously
+    // examined date format
+    int p = i-1;
+
+    while (p >= 0)
+    {
+        if (!isdigit(sStr[p]))
+        {
+            if (sStr[p] == ':' || sStr[p] == '/')
+                return TD_NONE;
+
+            // Ensure that a minus sign is not used as a negative
+            // year
+            if (sStr[p] == '-' && p > 0 && isdigit(sStr[p-1]))
+                return TD_NONE;
+
+            break;
+        }
+
+        p--;
+    }
 
     // Detects these candidates:
     // YY-MM-DD, yy-m-d, YY/MM/DD, YY/M/D, DD/MM/YYYY, D/M/YY(YY)
@@ -1259,6 +1290,23 @@ static int isDatePattern_DE(const std::string& sStr, size_t i)
     // Surrounded by digits?
     if (!i || !isdigit(sStr[i-1]) || !isdigit(sStr[i+1]))
         return TD_NONE;
+
+    // May not be preceded by a colon: hh:d.m.yy or by a previously
+    // examined date format
+    int p = i-1;
+
+    while (p >= 0)
+    {
+        if (!isdigit(sStr[p]))
+        {
+            if (sStr[p] == ':' || sStr[p] == '.')
+                return TD_NONE;
+
+            break;
+        }
+
+        p--;
+    }
 
     // Detects these candidates:
     // DD.MM.YY, d.m.yy
@@ -1294,6 +1342,11 @@ static int isTimePattern(const std::string& sStr, size_t i)
     if ((i+3 < sStr.length() && sStr[i+3] == sStr[i])
         || (i+2 < sStr.length() && sStr[i+2] == sStr[i]))
         return TD_HHMMSS | TD_SEP_COLON;
+
+    // Invalidate such combinations: hh:mm.ss or h:mm.ss
+    if ((i+3 < sStr.length() && sStr[i+3] == '.')
+        || (i+2 < sStr.length() && sStr[i+2] == '.'))
+        return TD_NONE;
 
     // h:mm, hh:mm
     return TD_HHMM | TD_SEP_COLON;
