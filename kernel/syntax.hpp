@@ -85,6 +85,7 @@ class NumeReSyntax
         std::vector<std::string> splitString(std::string sString);
         std::vector<SyntaxBlockDefinition> splitDefs(std::string sDefString);
         bool matchItem(const std::vector<std::string>& vVector, const std::string& sString);
+        void prepareAutoCompMaps();
     public:
         enum SyntaxColors
         {
@@ -142,12 +143,12 @@ class NumeReSyntax
             {return constructString(vCppKeyWords);}
         std::string getCppFunctions() const
             {return constructString(vCppFunctions);}
-        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense = false, SyntaxColors varType = SYNTAX_STD);
-        std::string getAutoCompListMATLAB(std::string sFirstChars);
-        std::string getAutoCompListCPP(std::string sFirstChars);
-        std::string getAutoCompListTeX(std::string sFirstChars);
-        std::string getProcAutoCompList(std::string sFirstChars, std::string sBaseNameSpace, std::string sSelectedNameSpace);
-        std::string getNameSpaceAutoCompList(std::string sFirstChars);
+        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense, SyntaxColors varType = SYNTAX_STD, bool isVect = false) const;
+        std::string getAutoCompListMATLAB(std::string sFirstChars) const;
+        std::string getAutoCompListCPP(std::string sFirstChars) const;
+        std::string getAutoCompListTeX(std::string sFirstChars) const;
+        std::string getProcAutoCompList(std::string sFirstChars, std::string sBaseNameSpace, std::string sSelectedNameSpace) const;
+        std::string getNameSpaceAutoCompList(std::string sFirstChars) const;
 
         std::string highlightLine(const std::string& sCommandLine);
         std::string highlightError(const std::string& sCommandLine);

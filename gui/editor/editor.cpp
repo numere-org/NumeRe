@@ -959,26 +959,105 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
             {
                 int smartSenseWordStart = wordstartpos;
                 NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_METHODS;
+                bool isVect = false;
 
                 // SmartSense extension: match only methods
                 if (isMethod)
                 {
+                    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
                     smartSenseWordStart--;
+                    int style = GetStyleAt(wordstartpos-2);
+                    char c = GetCharAt(wordstartpos-2);
 
                     // Identify the type of the current method host. Is currently quite rudimentary
                     // and should be extended with the semi-static parser model
-                    if (GetStyleAt(wordstartpos-2) == wxSTC_NSCR_IDENTIFIER)
-                        varType = NumeReSyntax::SYNTAX_STD;
-                    else if (GetStyleAt(wordstartpos-2) == wxSTC_NSCR_METHOD
-                             || (GetTextRange(wordstartpos-3, wordstartpos-1) == "()"
-                                 && (GetStyleAt(wordstartpos-4) == wxSTC_NSCR_CUSTOM_FUNCTION
-                                     || GetStyleAt(wordstartpos-4) == wxSTC_NSCR_PREDEFS)))
-                        varType = NumeReSyntax::SYNTAX_TABLE;
+                    if (style == wxSTC_NSCR_IDENTIFIER)
+                    {
+                        int c_pos = WordStartPosition(wordstartpos-2, true);
+                        varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
+                            || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
+                            ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                        isVect = true;
+                    }
+                    else if (style == wxSTC_NSCR_STRING || style == wxSTC_NSCR_STRING_PARSER)
+                        varType = NumeReSyntax::SYNTAX_STRING;
+                    else if (style == wxSTC_NSCR_METHOD)
+                    {
+                        // Examine method return values
+                        std::string sReturnValue = _provider.getMethodReturnValue(GetTextRange(WordStartPosition(wordstartpos-2, true),
+                                                                                               wordstartpos-1).ToStdString());
+
+                        varType = sReturnValue.find("STR") != std::string::npos
+                            || sReturnValue.find("ARG") != std::string::npos
+                            || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                        isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                    }
+                    else if (c == '}')
+                    {
+                        int braceStart = BraceMatch(wordstartpos-2);
+                        int prevStyle = GetStyleAt(braceStart-1);
+
+                        varType = prevStyle == wxSTC_NSCR_CLUSTER
+                            || prevStyle == wxSTC_NSCR_PREDEFS
+                            || prevStyle == wxSTC_NSCR_STRING_PARSER
+                            || GetTextRange(braceStart, wordstartpos-1).find('"') != std::string::npos
+                            ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_CLUSTER;
+                        isVect = true;
+                    }
+                    else if (c == ')')
+                    {
+                        int braceStart = BraceMatch(wordstartpos-2);
+                        int prevStyle = GetStyleAt(braceStart-1);
+
+                        if (prevStyle == wxSTC_NSCR_METHOD || prevStyle == wxSTC_NSCR_FUNCTION)
+                        {
+                            // Examine method or function return values
+                            std::string sReturnValue = GetTextRange(WordStartPosition(braceStart-1, true), braceStart).ToStdString();
+
+                            if (prevStyle == wxSTC_NSCR_METHOD)
+                                sReturnValue = _provider.getMethodReturnValue(sReturnValue);
+                            else
+                                sReturnValue = _provider.getFunctionReturnValue(sReturnValue);
+
+                            varType = sReturnValue.find("STR") != std::string::npos
+                                || sReturnValue.find("ARG") != std::string::npos
+                                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                        }
+                        else if (prevStyle == wxSTC_NSCR_PROCEDURES)
+                        {
+                            // Examine procedure return values
+                            m_search->FindMarkedProcedure(braceStart-1);
+                            wxString procdef = m_search->FindProcedureDefinition();
+
+                            if (procdef.length() && procdef.find("->") != std::string::npos)
+                            {
+                                std::string sReturnValue = procdef.substr(procdef.find_first_not_of("-> ", procdef.find("->"))).ToStdString();
+
+                                if (sReturnValue.find("::") != std::string::npos)
+                                    sReturnValue.erase(sReturnValue.find("::"));
+
+                                varType = sReturnValue.find("STR") != std::string::npos
+                                    || sReturnValue.find("ARG") != std::string::npos
+                                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                            }
+
+                        }
+                        else if (prevStyle == wxSTC_NSCR_STRING_PARSER)
+                            varType = NumeReSyntax::SYNTAX_STRING;
+                        else if (prevStyle == wxSTC_NSCR_PREDEFS || prevStyle == wxSTC_NSCR_CUSTOM_FUNCTION)
+                        {
+                            varType = GetTextRange(braceStart, wordstartpos-1) == "()"
+                                ? NumeReSyntax::SYNTAX_TABLE : NumeReSyntax::SYNTAX_STRING;
+                            isVect = true;
+                        }
+                    }
                 }
 
                 sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
                                                      _syntax->getAutoCompList(GetTextRange(smartSenseWordStart, currentPos).ToStdString(),
-                                                                              useSmartSense, varType));
+                                                                              useSmartSense, varType, isVect));
 
                 if (sAutoCompList.length())
                     AutoCompShow(lenEntered, sAutoCompList);

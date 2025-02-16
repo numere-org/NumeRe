@@ -6126,7 +6126,7 @@ void NumeReWindow::prepareFunctionTree()
         currentNode = m_functionTree->AppendItem(methodNode, _guilang.get("PARSERFUNCS_LISTFUNC_METHODS_TYPE_" + toUpperCase(vKeyList[i])),
                                                  idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[" + toUpperCase(vKeyList[i]) + "]");
-        std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : (vKeyList[i] == "string" ? "STRINGVAR" : "VAR");
+        std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : (vKeyList[i] == "string" ? "STRING" : "VECT");
 
         for (size_t j = 0; j < vDirList.size(); j++)
         {

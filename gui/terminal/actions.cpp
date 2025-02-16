@@ -239,8 +239,9 @@ void GenericTerminal::tab()
         else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
         {
             isMethod = true;
-            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
-                                                    get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
+            std::pair<NumeReSyntax::SyntaxColors, bool> type = get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1,
+                                                                                    termCursor.y);
+            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense, type.first, type.second);
         }
         else
             sAutoCompList = generateAutoCompList(sAutoCompWordStart, _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense));
@@ -264,8 +265,11 @@ void GenericTerminal::tab()
                 sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
             }
             else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
-                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
-                                                        get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
+            {
+                std::pair<NumeReSyntax::SyntaxColors, bool> type = get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1,
+                                                                                        termCursor.y);
+                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense, type.first, type.second);
+            }
             else
                 sAutoCompList = generateAutoCompList(sAutoCompWordStart, _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense));
         }

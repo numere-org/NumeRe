@@ -222,7 +222,7 @@ void GenericTerminal::handle_calltip(int x, int y)
 
         while (x >= 0)
         {
-            if (((vColors[x] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && (sLine[x] == '(' || sLine[x] =='{'))
+            if (((vColors[x] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && (sLine[x] == '(' || sLine[x] == '{'))
                 isInParens = getMatchingParenthesis(StringView(sLine, x)) >= cursor_x-x;
 
             // Functions and commands
@@ -302,29 +302,145 @@ void GenericTerminal::handle_calltip(int x, int y)
 ///
 /// \param x int
 /// \param y int
-/// \return NumeReSyntax::SyntaxColors
+/// \return std::pair<NumeReSyntax::SyntaxColors, bool>
 ///
 /////////////////////////////////////////////////
-NumeReSyntax::SyntaxColors GenericTerminal::get_method_root_type(int x, int y)
+std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_type(int x, int y)
 {
     // Get the rendered line and the corresponding syntax colors
     std::string sLine = tm.getRenderedString(y);
     std::vector<unsigned short> vColors = tm.getRenderedColors(y);
+    bool isVect = false;
+    NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_METHODS;
 
     if ((int)vColors.size() <= x || x < 1)
-        return NumeReSyntax::SYNTAX_METHODS;
+        return std::make_pair(varType, isVect);
 
     // Should replicate the logic from the editor
     if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STD)
-        return NumeReSyntax::SYNTAX_STD;
-    else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_METHODS
-             || (x > 3
-                 && sLine.substr(x-2,2) == "()"
-                 && (((vColors[x-3] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STD
-                     || ((vColors[x-3] >> 4) & 0xf) == NumeReSyntax::SYNTAX_SPECIALVAL)))
-        return NumeReSyntax::SYNTAX_TABLE;
+    {
+        int posStart = x-1;
 
-    return NumeReSyntax::SYNTAX_METHODS;
+        while (posStart > 0 && vColors[posStart-1] == vColors[x-1] && isalnum(sLine[posStart-1]))
+            posStart--;
+
+        std::string sVarType = getVariableType(sLine.substr(posStart, x - posStart));
+
+        // Examine the variable types
+        varType = sVarType.find("STR") != std::string::npos
+            || sVarType.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+        isVect = sVarType.find('{') != std::string::npos || sVarType.find("CST") != std::string::npos;
+    }
+    else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STRING)
+        varType = NumeReSyntax::SYNTAX_STRING;
+    else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_METHODS)
+    {
+        // Examine method return values
+        size_t p = sLine.rfind('.', x-1);
+        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1));
+
+        varType = sReturnValue.find("STR") != std::string::npos
+            || sReturnValue.find("ARG") != std::string::npos
+            || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+        isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+    }
+    else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && sLine[x-1] == '}')
+    {
+        // Examine vector braces. Find start position first
+        int x0 = x-2;
+        int p = 1;
+
+        while (x0 > 0)
+        {
+            if (((vColors[x0] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR)
+            {
+                p += (sLine[x0] == '}') - (sLine[x0] == '{') + (sLine[x0] == ')') - (sLine[x0] == '(');
+
+                if (!p && sLine[x0] == '{')
+                    break;
+            }
+
+            x0--;
+        }
+
+        if (!p && sLine[x0] == '{')
+        {
+            int prevStyle = ((vColors[x0-1] >> 4) & 0xf);
+
+            varType = ((prevStyle == NumeReSyntax::SYNTAX_STD
+                        || prevStyle == NumeReSyntax::SYNTAX_SPECIALVAL)
+                       && isalnum(sLine[x0-1]))
+                || sLine[x0-1] == '#'
+                || sLine.substr(x0, x-1-x0).find('"') != std::string::npos
+                ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_CLUSTER;
+        }
+
+        isVect = true;
+    }
+    else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && sLine[x-1] == ')')
+    {
+        // Examine parentheses. Find start position first
+        int x0 = x-2;
+        int p = 1;
+
+        while (x0 > 0)
+        {
+            if (((vColors[x0] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR)
+            {
+                p += (sLine[x0] == '}') - (sLine[x0] == '{') + (sLine[x0] == ')') - (sLine[x0] == '(');
+
+                if (!p && sLine[x0] == '(')
+                    break;
+            }
+
+            x0--;
+        }
+
+        if (!p && sLine[x0] == '(')
+        {
+            int prevStyle = ((vColors[x0-1] >> 4) & 0xf);
+
+            if (prevStyle == NumeReSyntax::SYNTAX_FUNCTION
+                || prevStyle == NumeReSyntax::SYNTAX_METHODS
+                || prevStyle == NumeReSyntax::SYNTAX_PROCEDURE)
+            {
+                int posStart = x0-1;
+
+                while (posStart > 0 && vColors[posStart-1] == vColors[x0-1])
+                    posStart--;
+
+                std::string sReturnValue = sLine.substr(posStart, x0 - posStart);
+
+                // Determine the type of the color
+                switch (prevStyle)
+                {
+                    case NumeReSyntax::SYNTAX_FUNCTION:
+                        sReturnValue = m_tipProvider.getFunctionReturnValue(sReturnValue);
+                        break;
+                    case NumeReSyntax::SYNTAX_PROCEDURE:
+                        sReturnValue = m_tipProvider.getProcedureReturnValue(sReturnValue);
+                        break;
+                    case NumeReSyntax::SYNTAX_METHODS:
+                        sReturnValue = m_tipProvider.getMethodReturnValue(sReturnValue);
+                        break;
+                }
+
+                varType = sReturnValue.find("STR") != std::string::npos
+                    || sReturnValue.find("ARG") != std::string::npos
+                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+            }
+            else if (prevStyle == NumeReSyntax::SYNTAX_OPERATOR && sLine[x0-1] == '#')
+                varType = NumeReSyntax::SYNTAX_STRING;
+            else if (prevStyle == NumeReSyntax::SYNTAX_STD || prevStyle == NumeReSyntax::SYNTAX_SPECIALVAL)
+            {
+                varType = sLine.substr(x0, x-x0) == "()" ? NumeReSyntax::SYNTAX_TABLE : NumeReSyntax::SYNTAX_STRING;
+                isVect = true;
+            }
+        }
+    }
+
+    return std::make_pair(varType, isVect);
 }
 
 

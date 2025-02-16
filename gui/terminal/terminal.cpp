@@ -942,6 +942,36 @@ std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, 
 
 
 /////////////////////////////////////////////////
+/// \brief Get the type of a selected variable
+/// encoded as return-value string.
+///
+/// \param sVarName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string NumeReTerminal::getVariableType(const std::string& sVarName)
+{
+    NumeReVariables globalVars = getVariableList();
+
+    for (size_t i = 0; i < globalVars.vVariables.size(); i++)
+    {
+        if (globalVars.vVariables[i].starts_with(sVarName + "\t"))
+        {
+            if (i < globalVars.nNumerics)
+                return globalVars.vVariables[i].find("\t1 x 1\t") != std::string::npos ?  "VAR" : "{VAR}";
+
+            if (i < globalVars.nNumerics + globalVars.nStrings)
+                return globalVars.vVariables[i].find("\t1 x 1\t") != std::string::npos ?  "STR" : "{STR}";
+
+            break;
+        }
+    }
+
+    return "VAR";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Pass the entered command line to the
 /// kernel.
 ///

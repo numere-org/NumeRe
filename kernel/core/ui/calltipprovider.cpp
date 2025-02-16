@@ -790,10 +790,10 @@ namespace NumeRe
             && _lang.get(pref + toUpperCase(sToken) + "_*") == pref + toUpperCase(sToken) + "_*")
             return CallTip();
 
-        if (_lang.get(pref + toUpperCase(sToken) + "_[ANY]") != pref + toUpperCase(sToken) + "_[ANY]")
-            sToken = "VAR." + _lang.get(pref + toUpperCase(sToken) + "_[ANY]");
+        if (_lang.get(pref + toUpperCase(sToken) + "_[VECT]") != pref + toUpperCase(sToken) + "_[VECT]")
+            sToken = "VECT." + _lang.get(pref + toUpperCase(sToken) + "_[VECT]");
         else if (_lang.get(pref + toUpperCase(sToken) + "_[STRING]") != pref + toUpperCase(sToken) + "_[STRING]")
-            sToken = "STRINGVAR." + _lang.get(pref + toUpperCase(sToken) + "_[STRING]");
+            sToken = "STRING." + _lang.get(pref + toUpperCase(sToken) + "_[STRING]");
         else
             sToken = "TABLE()." + _lang.get(pref + toUpperCase(sToken) + "_[DATA]");
 
@@ -845,6 +845,61 @@ namespace NumeRe
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Get the return value of the selected
+    /// function.
+    ///
+    /// \param sToken std::string
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string CallTipProvider::getFunctionReturnValue(std::string sToken) const
+    {
+        sToken = getFunction(sToken).sDefinition;
+
+        if (sToken.find("->") != std::string::npos)
+            return sToken.substr(sToken.find_first_not_of("-> ", sToken.find("->")));
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the return value of the selected
+    /// method.
+    ///
+    /// \param sToken std::string
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string CallTipProvider::getMethodReturnValue(std::string sToken) const
+    {
+        sToken = getMethod(sToken).sDefinition;
+
+        if (sToken.find("->") != std::string::npos)
+            return sToken.substr(sToken.find_first_not_of("-> ", sToken.find("->")));
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the return value of the selected
+    /// (global) procedure, if it has been documented.
+    ///
+    /// \param sToken std::string
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string CallTipProvider::getProcedureReturnValue(std::string sToken) const
+    {
+        sToken = getProcedure(sToken).sDefinition;
+
+        if (sToken.find("->") != std::string::npos)
+            return sToken.substr(sToken.find_first_not_of("-> ", sToken.find("->")));
+
+        return "";
+    }
 
 }
 

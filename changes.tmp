@@ -18,3 +18,4 @@ Fixed	The initializing of fitting parameters is now set to zero and not to "void
 Cleaned	The interface for "odesolve" and "fit" have been adapted to follow the current syntax approach more.
 Fixed	The correct column title is now used as plotting legend, if used in scenarios like "plot TABLE()"
 Fixed	The automatic date-time conversion of columns and "to_time()" is now more restrictive and focuses on the valid combinations according DIN5008 and ISO8601 (not all are implemented). Invalid combinations should not be converted any more.
+Applied	The method autocompletion recommendation has been improved and should now return better fitting candidates.

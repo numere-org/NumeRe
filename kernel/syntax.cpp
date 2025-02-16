@@ -150,6 +150,8 @@ void NumeReSyntax::loadSyntax(const std::string& _sPath)
         else if (sLine.starts_with("TEXKEYWORDS"))
             vTeXKeyWords = splitString(sLine.substr(sLine.find('=')+1));
     }
+
+    prepareAutoCompMaps();
 }
 
 
@@ -165,10 +167,11 @@ void NumeReSyntax::loadSyntax(const std::string& _sPath)
 /////////////////////////////////////////////////
 void NumeReSyntax::addPlugins(const std::vector<std::string>& vPlugins)
 {
-    mAutoCompList.clear();
-
     loadSyntax();
     vNSCRCommands.insert(vNSCRCommands.end(), vPlugins.begin(), vPlugins.end());
+
+    mAutoCompList.clear();
+    prepareAutoCompMaps();
 }
 
 
@@ -426,6 +429,90 @@ bool NumeReSyntax::matchItem(const std::vector<std::string>& vVector, const std:
 
     // Nothing found
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Prepares the autocompletion maps.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReSyntax::prepareAutoCompMaps()
+{
+    // Prepare the autocompletion maps
+    // Only of the autocompletion map is not filled
+    if (!mAutoCompList.size())
+    {
+        // Insert every element in the map
+        for (size_t i = 0; i < vNSCRCommands.size(); i++)
+            mAutoCompList[toLowerCase(vNSCRCommands[i])] = std::make_pair(vNSCRCommands[i] + "?" + toString((int)SYNTAX_COMMAND),
+                                                                          SYNTAX_COMMAND);
+
+        for (size_t i = 0; i < vNPRCCommands.size(); i++)
+            mAutoCompList[toLowerCase(vNPRCCommands[i])] = std::make_pair(vNPRCCommands[i] + "?" + toString((int)SYNTAX_COMMAND),
+                                                                          SYNTAX_COMMAND);
+
+        for (size_t i = 0; i < vFunctions.size(); i++)
+            mAutoCompList[toLowerCase(vFunctions[i])+"("] = std::make_pair(vFunctions[i]+"(?" + toString((int)SYNTAX_FUNCTION),
+                                                                           SYNTAX_FUNCTION);
+
+        for (size_t i = 0; i < vMethods.size(); i++)
+            mAutoCompList[toLowerCase(vMethods[i])] = std::make_pair(vMethods[i].substr(0, vMethods[i].find('.'))+"?"+toString((int)SYNTAX_METHODS),
+                                                                         SYNTAX_METHODS); // Methods shall not override functions
+
+        for (size_t i = 0; i < vMethodsArgs.size(); i++)
+            mAutoCompList[toLowerCase(vMethodsArgs[i])] = std::make_pair(vMethodsArgs[i].substr(0, vMethodsArgs[i].find('.'))+"(?"+toString((int)SYNTAX_METHODS),
+                                                                              SYNTAX_METHODS); // Methods shall not override functions
+
+        for (size_t i = 0; i < vOptions.size(); i++)
+            mAutoCompList[toLowerCase(vOptions[i])] = std::make_pair(vOptions[i] + "?" + toString((int)SYNTAX_OPTION),
+                                                                     SYNTAX_OPTION);
+
+        for (size_t i = 0; i < vConstants.size(); i++)
+            mAutoCompList[toLowerCase(vConstants[i])] = std::make_pair(vConstants[i] + "?" + toString((int)SYNTAX_CONSTANT),
+                                                                       SYNTAX_CONSTANT);
+
+        for (size_t i = 0; i < vSpecialValues.size(); i++)
+        {
+            if (vSpecialValues[i] == "ans")
+                mAutoCompList["ans"] = std::make_pair("ans{?" + toString((int)SYNTAX_SPECIALVAL), SYNTAX_SPECIALVAL);
+            else if (vSpecialValues[i] == "table" || vSpecialValues[i] == "data" || vSpecialValues[i] == "string")
+                mAutoCompList[toLowerCase(vSpecialValues[i])] = std::make_pair(vSpecialValues[i] + "(?" + toString((int)SYNTAX_SPECIALVAL),
+                                                                               SYNTAX_SPECIALVAL);
+            else
+                mAutoCompList[toLowerCase(vSpecialValues[i])] = std::make_pair(vSpecialValues[i] + "?" + toString((int)SYNTAX_SPECIALVAL),
+                                                                               SYNTAX_SPECIALVAL);
+        }
+
+        for (size_t i = 0; i < vOperators.size(); i++)
+            mAutoCompList[toLowerCase(vOperators[i])] = std::make_pair(vOperators[i] + "?" + toString((int)SYNTAX_OPERATOR),
+                                                                       SYNTAX_OPERATOR);
+    }
+
+    if (!mAutoCompListMATLAB.size())
+    {
+        for (size_t i = 0; i < vMatlabKeyWords.size(); i++)
+            mAutoCompListMATLAB[toLowerCase(vMatlabKeyWords[i])+" |"+vMatlabKeyWords[i]] = SYNTAX_COMMAND;
+
+        for (size_t i = 0; i < vMatlabFunctions.size(); i++)
+            mAutoCompListMATLAB[toLowerCase(vMatlabFunctions[i])+" |"+vMatlabFunctions[i]+"("] = SYNTAX_FUNCTION;
+    }
+
+    if (!mAutoCompListCPP.size())
+    {
+        for (size_t i = 0; i < vCppKeyWords.size(); i++)
+            mAutoCompListCPP[toLowerCase(vCppKeyWords[i])+" |"+vCppKeyWords[i]] = SYNTAX_COMMAND;
+
+        for (size_t i = 0; i < vCppFunctions.size(); i++)
+            mAutoCompListCPP[toLowerCase(vCppFunctions[i])+" |"+vCppFunctions[i]+"("] = SYNTAX_FUNCTION;
+    }
+
+    if (!mAutoCompListTeX.size())
+    {
+        for (size_t i = 0; i < vTeXKeyWords.size(); i++)
+            mAutoCompListTeX[toLowerCase(vTeXKeyWords[i])+" |"+vTeXKeyWords[i]] = SYNTAX_COMMAND;
+    }
 }
 
 
@@ -743,61 +830,13 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 /// \param sFirstChars std::string
 /// \param useSmartSense bool
 /// \param varType NumeReSyntax::SyntaxColors
+/// \param isVect bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType)
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType, bool isVect) const
 {
     std::string sAutoCompList;
-
-    // Only of the autocompletion map is not filled
-    if (!mAutoCompList.size())
-    {
-        // Insert every element in the map
-        for (size_t i = 0; i < vNSCRCommands.size(); i++)
-            mAutoCompList[toLowerCase(vNSCRCommands[i])] = std::make_pair(vNSCRCommands[i] + "?" + toString((int)SYNTAX_COMMAND),
-                                                                          SYNTAX_COMMAND);
-
-        for (size_t i = 0; i < vNPRCCommands.size(); i++)
-            mAutoCompList[toLowerCase(vNPRCCommands[i])] = std::make_pair(vNPRCCommands[i] + "?" + toString((int)SYNTAX_COMMAND),
-                                                                          SYNTAX_COMMAND);
-
-        for (size_t i = 0; i < vFunctions.size(); i++)
-            mAutoCompList[toLowerCase(vFunctions[i])+"("] = std::make_pair(vFunctions[i]+"(?" + toString((int)SYNTAX_FUNCTION),
-                                                                           SYNTAX_FUNCTION);
-
-        for (size_t i = 0; i < vMethods.size(); i++)
-            mAutoCompList[toLowerCase(vMethods[i])] = std::make_pair(vMethods[i].substr(0, vMethods[i].find('.'))+"?"+toString((int)SYNTAX_METHODS),
-                                                                         SYNTAX_METHODS); // Methods shall not override functions
-
-        for (size_t i = 0; i < vMethodsArgs.size(); i++)
-            mAutoCompList[toLowerCase(vMethodsArgs[i])] = std::make_pair(vMethodsArgs[i].substr(0, vMethodsArgs[i].find('.'))+"(?"+toString((int)SYNTAX_METHODS),
-                                                                              SYNTAX_METHODS); // Methods shall not override functions
-
-        for (size_t i = 0; i < vOptions.size(); i++)
-            mAutoCompList[toLowerCase(vOptions[i])] = std::make_pair(vOptions[i] + "?" + toString((int)SYNTAX_OPTION),
-                                                                     SYNTAX_OPTION);
-
-        for (size_t i = 0; i < vConstants.size(); i++)
-            mAutoCompList[toLowerCase(vConstants[i])] = std::make_pair(vConstants[i] + "?" + toString((int)SYNTAX_CONSTANT),
-                                                                       SYNTAX_CONSTANT);
-
-        for (size_t i = 0; i < vSpecialValues.size(); i++)
-        {
-            if (vSpecialValues[i] == "ans")
-                mAutoCompList["ans"] = std::make_pair("ans{?" + toString((int)SYNTAX_SPECIALVAL), SYNTAX_SPECIALVAL);
-            else if (vSpecialValues[i] == "table" || vSpecialValues[i] == "data" || vSpecialValues[i] == "string")
-                mAutoCompList[toLowerCase(vSpecialValues[i])] = std::make_pair(vSpecialValues[i] + "(?" + toString((int)SYNTAX_SPECIALVAL),
-                                                                               SYNTAX_SPECIALVAL);
-            else
-                mAutoCompList[toLowerCase(vSpecialValues[i])] = std::make_pair(vSpecialValues[i] + "?" + toString((int)SYNTAX_SPECIALVAL),
-                                                                               SYNTAX_SPECIALVAL);
-        }
-
-        for (size_t i = 0; i < vOperators.size(); i++)
-            mAutoCompList[toLowerCase(vOperators[i])] = std::make_pair(vOperators[i] + "?" + toString((int)SYNTAX_OPERATOR),
-                                                                       SYNTAX_OPERATOR);
-    }
 
     // Transform the passed first characters to lower case to avoid case sensitivity
     sFirstChars = toLowerCase(sFirstChars);
@@ -811,33 +850,63 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     std::string methodSelector = ".unknown";
 
     if (varType == SYNTAX_TABLE)
+    {
         methodSelector = ".tab";
-    else if (varType == SYNTAX_STD)
+        isVect = true;
+    }
+    else if (varType == SYNTAX_STRING)
         methodSelector = ".str";
 
     // Try to find the correspondig elements in the map
-    for (auto iter = mAutoCompList.begin(); iter != mAutoCompList.end(); ++iter)
+    for (const auto& iter : mAutoCompList)
     {
-        if (selectAllMethods || (iter->first).front() == sFirstChars.front())
+        if (selectAllMethods || iter.first.front() == sFirstChars.front())
         {
             if (useSmartSense)
             {
-                if (selectMethods && (iter->second.second != SYNTAX_METHODS
-                                      || (iter->first.find(methodSelector) == std::string::npos
-                                          && iter->first.find(".any") == std::string::npos)))
+                if (selectMethods && (iter.second.second != SYNTAX_METHODS
+                                      || (iter.first.find(methodSelector) == std::string::npos
+                                          && (!isVect || iter.first.find(".vect") == std::string::npos))))
                     continue;
-                else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
+                else if (!selectMethods && iter.second.second == SYNTAX_METHODS)
                     continue;
             }
 
-            if (iter->first.starts_with(sFirstChars) || selectAllMethods)
-                sAutoCompList += iter->second.first + " ";
+            if (iter.first.starts_with(sFirstChars) || selectAllMethods)
+                sAutoCompList += iter.second.first + " ";
         }
-        else if ((iter->first).front() > sFirstChars.front())
+        else if (iter.first.front() > sFirstChars.front())
             break;
     }
 
     // return the created list
+    return sAutoCompList;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper for "generic" type of
+/// autocompletions.
+///
+/// \param sFirstChars std::string
+/// \param mAutoCompMap const std::map<std::string, int>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getAutoCompListGeneric(std::string sFirstChars, const std::map<std::string, int>& mAutoCompMap)
+{
+    std::string sAutoCompList;
+
+    sFirstChars = toLowerCase(sFirstChars);
+
+    for (const auto& iter : mAutoCompMap)
+    {
+        if (iter.first.front() == sFirstChars.front() && iter.first.starts_with(sFirstChars))
+            sAutoCompList += iter.first.substr(iter.first.find('|')+1) + "?" + toString((int)iter.second) + " ";
+        else if (iter.first.front() > sFirstChars.front())
+            break;
+    }
+
     return sAutoCompList;
 }
 
@@ -850,33 +919,9 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompListMATLAB(std::string sFirstChars)
+std::string NumeReSyntax::getAutoCompListMATLAB(std::string sFirstChars) const
 {
-    std::string sAutoCompList;
-
-    if (!mAutoCompListMATLAB.size())
-    {
-        for (size_t i = 0; i < vMatlabKeyWords.size(); i++)
-            mAutoCompListMATLAB[toLowerCase(vMatlabKeyWords[i])+" |"+vMatlabKeyWords[i]] = SYNTAX_COMMAND;
-
-        for (size_t i = 0; i < vMatlabFunctions.size(); i++)
-            mAutoCompListMATLAB[toLowerCase(vMatlabFunctions[i])+" |"+vMatlabFunctions[i]+"("] = SYNTAX_FUNCTION;
-    }
-
-    sFirstChars = toLowerCase(sFirstChars);
-
-    for (auto iter = mAutoCompListMATLAB.begin(); iter != mAutoCompListMATLAB.end(); ++iter)
-    {
-        if ((iter->first).front() == sFirstChars.front())
-        {
-            if (iter->first.starts_with(sFirstChars))
-                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
-        }
-        else if ((iter->first).front() > sFirstChars.front())
-            break;
-    }
-
-    return sAutoCompList;
+    return getAutoCompListGeneric(sFirstChars, mAutoCompListMATLAB);
 }
 
 
@@ -888,33 +933,9 @@ std::string NumeReSyntax::getAutoCompListMATLAB(std::string sFirstChars)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompListCPP(std::string sFirstChars)
+std::string NumeReSyntax::getAutoCompListCPP(std::string sFirstChars) const
 {
-    std::string sAutoCompList;
-
-    if (!mAutoCompListCPP.size())
-    {
-        for (size_t i = 0; i < vCppKeyWords.size(); i++)
-            mAutoCompListCPP[toLowerCase(vCppKeyWords[i])+" |"+vCppKeyWords[i]] = SYNTAX_COMMAND;
-
-        for (size_t i = 0; i < vCppFunctions.size(); i++)
-            mAutoCompListCPP[toLowerCase(vCppFunctions[i])+" |"+vCppFunctions[i]+"("] = SYNTAX_FUNCTION;
-    }
-
-    sFirstChars = toLowerCase(sFirstChars);
-
-    for (auto iter = mAutoCompListCPP.begin(); iter != mAutoCompListCPP.end(); ++iter)
-    {
-        if ((iter->first).front() == sFirstChars.front())
-        {
-            if (iter->first.starts_with(sFirstChars))
-                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
-        }
-        else if ((iter->first).front() > sFirstChars.front())
-            break;
-    }
-
-    return sAutoCompList;
+    return getAutoCompListGeneric(sFirstChars, mAutoCompListCPP);
 }
 
 
@@ -926,30 +947,9 @@ std::string NumeReSyntax::getAutoCompListCPP(std::string sFirstChars)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompListTeX(std::string sFirstChars)
+std::string NumeReSyntax::getAutoCompListTeX(std::string sFirstChars) const
 {
-    std::string sAutoCompList;
-
-    if (!mAutoCompListTeX.size())
-    {
-        for (size_t i = 0; i < vTeXKeyWords.size(); i++)
-            mAutoCompListTeX[toLowerCase(vTeXKeyWords[i])+" |"+vTeXKeyWords[i]] = SYNTAX_COMMAND;
-    }
-
-    sFirstChars = toLowerCase(sFirstChars);
-
-    for (auto iter = mAutoCompListTeX.begin(); iter != mAutoCompListTeX.end(); ++iter)
-    {
-        if ((iter->first).front() == sFirstChars.front())
-        {
-            if (iter->first.starts_with(sFirstChars))
-                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
-        }
-        else if ((iter->first).front() > sFirstChars.front())
-            break;
-    }
-
-    return sAutoCompList;
+    return getAutoCompListGeneric(sFirstChars, mAutoCompListTeX);
 }
 
 
@@ -964,7 +964,7 @@ std::string NumeReSyntax::getAutoCompListTeX(std::string sFirstChars)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::string sBaseNameSpace, std::string sSelectedNameSpace)
+std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::string sBaseNameSpace, std::string sSelectedNameSpace) const
 {
     if (!vProcedureTree.size())
         return "";
@@ -1063,7 +1063,7 @@ std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::stri
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getNameSpaceAutoCompList(std::string sFirstChars)
+std::string NumeReSyntax::getNameSpaceAutoCompList(std::string sFirstChars) const
 {
     if (!vProcedureTree.size())
         return "";

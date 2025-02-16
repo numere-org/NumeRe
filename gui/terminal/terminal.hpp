@@ -134,6 +134,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 
 	private:
 		virtual std::string generateAutoCompList(const std::string& sWordStart, std::string sPreDefList) override;
+		virtual std::string getVariableType(const std::string& sVarName) override;
 		void pipe_command(const std::string& sCommand);
 		BOLDSTYLE
 		m_boldStyle;
