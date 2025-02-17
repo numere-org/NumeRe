@@ -34,6 +34,8 @@ struct StatsLogic
         OPERATION_MULT,
         OPERATION_ADDSQ,
         OPERATION_ADDSQSUB,
+        OPERATION_ADDCBSUB,
+        OPERATION_ADDSQSQSUB,
         OPERATION_MAX,
         OPERATION_MIN,
         OPERATION_NUM
@@ -71,6 +73,12 @@ struct StatsLogic
                 return;
             case OPERATION_ADDSQSUB:
                 m_val += (newVal - m_compval)*std::conj(newVal - m_compval);
+                return;
+            case OPERATION_ADDCBSUB:
+                m_val += (newVal - m_compval)*std::conj(newVal - m_compval)*(newVal - m_compval);
+                return;
+            case OPERATION_ADDSQSQSUB:
+                m_val += (newVal - m_compval)*std::conj(newVal - m_compval)*(newVal - m_compval)*std::conj(newVal - m_compval);
                 return;
             case OPERATION_MAX:
                 m_val = newVal.real() > m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();

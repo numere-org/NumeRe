@@ -39,7 +39,7 @@ enum StatsFields
 {
     STATS_AVG,
     STATS_STD,
-    STATS_CONFINT,
+    STATS_CI_W,
     STATS_STDERR,
     STATS_MED,
     STATS_Q1,
@@ -74,38 +74,48 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
     for (size_t j = 0; j < _idx.col.size(); j++)
     {
+        bool isValueLike = _data.isValueLike(_idx.col.subidx(j, 1), sTable);
+
         // Calculate built-in statistical values (short-cuts)
-        vStats[STATS_AVG].push_back(_data.avg(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_STD].push_back(_data.std(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_MED].push_back(_data.med(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_Q1].push_back(_data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.25).real());
-        vStats[STATS_Q3].push_back(_data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.75).real());
-        vStats[STATS_MIN].push_back(_data.min(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_MAX].push_back(_data.max(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_AVG].push_back(isValueLike ? _data.avg(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_STD].push_back(isValueLike ? _data.std(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_MED].push_back(isValueLike ? _data.med(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_Q1].push_back(isValueLike ? _data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.25).real() : NAN);
+        vStats[STATS_Q3].push_back(isValueLike ? _data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.75).real() : NAN);
+        vStats[STATS_MIN].push_back(isValueLike ? _data.min(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_MAX].push_back(isValueLike ? _data.max(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
         vStats[STATS_NUM].push_back(_data.num(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
         vStats[STATS_CNT].push_back(_data.cnt(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_RMS].push_back(_data.norm(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_RMS].push_back(isValueLike ? _data.rms(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_EXC].push_back(isValueLike ? _data.exc(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_SKEW].push_back(isValueLike ? _data.skew(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_STDERR].push_back(isValueLike ? _data.stderr_func(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
 
         // Many values make no sense if no data
         // is available
-        if (!vStats[STATS_NUM].back())
+        if (!vStats[STATS_NUM].back() || !isValueLike)
         {
-            vStats[STATS_CONFINT].push_back(NAN);
-            vStats[STATS_SKEW].push_back(NAN);
-            vStats[STATS_EXC].push_back(NAN);
-            vStats[STATS_STDERR].push_back(NAN);
-            vStats[STATS_S_T].push_back(NAN);
+            vStats[STATS_SKEW].back() = NAN;
+            vStats[STATS_EXC].back() = NAN;
+            vStats[STATS_STDERR].back() = NAN;
             vStats[STATS_STD].back() = NAN;
             vStats[STATS_RMS].back() = NAN;
+
+            //vStats[STATS_CI_P].push_back(NAN);
+            vStats[STATS_CI_W].push_back(NAN);
+            vStats[STATS_S_T].push_back(NAN);
             continue;
         }
 
-        vStats[STATS_CONFINT].push_back(0.0);
-        vStats[STATS_SKEW].push_back(0.0);
-        vStats[STATS_EXC].push_back(0.0);
 
-        // Calculate Confidence interval count,
-        // Skewness and Excess
+        // Use BOOST to calculate the Student-t value for
+        // the current number of freedoms
+        vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM].back()-1, 0.95));
+        vStats[STATS_CI_W].push_back(vStats[STATS_S_T].back() * vStats[STATS_STD].back() / std::sqrt(vStats[STATS_NUM].back()));
+
+        /*vStats[STATS_CI_P].push_back(0.0);
+
+        // Calculate Confidence interval count
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
             if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
@@ -113,30 +123,14 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
             double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).getNum().asF64();
 
-            if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_STD].back())
-                vStats[STATS_CONFINT].back()++;
-
-            vStats[STATS_SKEW].back() += intPower(val - vStats[STATS_AVG].back(), 3);
-            vStats[STATS_EXC].back() += intPower(val - vStats[STATS_AVG].back(), 4);
+            if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_CI_W].back())
+                vStats[STATS_CI_P].back()++;
         }
 
         // Finalize the confidence interval count
-        vStats[STATS_CONFINT].back() /= vStats[STATS_NUM].back();
-        vStats[STATS_CONFINT].back() = round(10000.0*vStats[STATS_CONFINT].back()) / 100.0;
+        vStats[STATS_CI_P].back() /= vStats[STATS_NUM].back();
+        vStats[STATS_CI_P].back() = round(10000.0*vStats[STATS_CI_P].back()) / 100.0;*/
 
-        // Finalize Skewness and Excess
-        vStats[STATS_SKEW].back() /= vStats[STATS_NUM].back() * intPower(vStats[STATS_STD].back(), 3);
-        vStats[STATS_EXC].back() /= vStats[STATS_NUM].back() * intPower(vStats[STATS_STD].back(), 4);
-        vStats[STATS_EXC].back() -= 3.0; // Convert Kurtosis to Excess
-
-        // Calculate 2nd order stats values available
-        // from simple arithmetic operations
-        vStats[STATS_STDERR].push_back(vStats[STATS_STD].back() / sqrt(vStats[STATS_NUM].back()));
-        vStats[STATS_RMS].back() /= sqrt(vStats[STATS_NUM].back());
-
-        // Use BOOST to calculate the Student-t value for
-        // the current number of freedoms
-        vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM].back(), 0.95));
     }
 
     return vStats;
@@ -160,7 +154,7 @@ static std::string getStatFieldName(int nStatField)
             return _lang.get("STATS_TYPE_AVG");
         case STATS_STD:
             return _lang.get("STATS_TYPE_STD");
-        case STATS_CONFINT:
+        case STATS_CI_W:
             return _lang.get("STATS_TYPE_CONFINT");
         case STATS_STDERR:
             return _lang.get("STATS_TYPE_STDERR");
@@ -271,7 +265,12 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         sOut[nHeadlines + nLine + 0][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
 
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
-            sOut[nHeadlines + nLine + 1 + n][j] = getStatFieldName(n) + ": " + toString(vStats[n][j], nPrecision);
+        {
+            if (std::isnan(vStats[n][j]))
+                sOut[nHeadlines + nLine + 1 + n][j] = getStatFieldName(n) + ": ---";
+            else
+                sOut[nHeadlines + nLine + 1 + n][j] = getStatFieldName(n) + ": " + toString(vStats[n][j], nPrecision);
+        }
     }
 
     // --> Allgemeine Ausgabe-Info-Parameter setzen <--
@@ -377,12 +376,19 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
         // Write the actual values to the string table
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
-            if (n == STATS_CONFINT)
-                sOverview[nHeadlines + n][j+1] = toString(vStats[n][j], nPrecision) + " %";
-            else if (n == STATS_CNT || n == STATS_NUM || n == STATS_S_T || n == STATS_EXC || n == STATS_SKEW)
-                sOverview[nHeadlines + n][j+1] = toString(vStats[n][j], nPrecision);
+            std::string sValue;
+
+            if (std::isnan(vStats[n][j]))
+                sValue = "---";
             else
-                sOverview[nHeadlines + n][j+1] = toString(vStats[n][j], nPrecision) + sUnit;
+                sValue = toString(vStats[n][j], nPrecision);
+
+            /*if (n == STATS_CI_P)
+                sOverview[nHeadlines + n][j+1] = sValue + " %";
+            else*/ if (n == STATS_CNT || n == STATS_NUM || n == STATS_S_T || n == STATS_EXC || n == STATS_SKEW)
+                sOverview[nHeadlines + n][j+1] = sValue;
+            else
+                sOverview[nHeadlines + n][j+1] = sValue + sUnit;
         }
     }
 

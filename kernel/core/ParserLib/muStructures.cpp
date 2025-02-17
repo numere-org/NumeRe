@@ -2214,6 +2214,14 @@ namespace mu
             return numfnc_MaxPos(*this);
         else if (sMethod == "minpos")
             return numfnc_MinPos(*this);
+        else if (sMethod == "exc")
+            return numfnc_Exc(this, 1);
+        else if (sMethod == "skw")
+            return numfnc_Skew(this, 1);
+        else if (sMethod == "stderr")
+            return numfnc_StdErr(this, 1);
+        else if (sMethod == "rms")
+            return numfnc_Rms(this, 1);
         else if (sMethod == "order")
             return numfnc_order(this, 1);
         else if (sMethod == "unwrap")

@@ -276,8 +276,8 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
 static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, mu::Parser& _parser, MemoryManager& _data);
 static StringView getLastToken(StringView sLine);
 
-static const int sMafListLength = 16;
-static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
+static const int sMafListLength = 20;
+static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos", "exc", "skw", "rms", "stderr"};
 
 
 /////////////////////////////////////////////////
@@ -1001,6 +1001,18 @@ static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, con
 
     if (sMafname == "xor")
         return _data.xor_func(sCache, sMafAccess);
+
+    if (sMafname == "exc")
+        return _data.exc(sCache, sMafAccess);
+
+    if (sMafname == "skw")
+        return _data.skew(sCache, sMafAccess);
+
+    if (sMafname == "rms")
+        return _data.rms(sCache, sMafAccess);
+
+    if (sMafname == "stderr")
+        return _data.stderr_func(sCache, sMafAccess);
 
     if (sMafname == "size")
         return _data.size(sCache, sMafAccess);

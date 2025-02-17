@@ -815,7 +815,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         else
         {
             print("|");
-            NumeReKernel::print(LineBreak(sCommentLine, _option));
+            NumeReKernel::print(sCommentLine);
         }
     }
 

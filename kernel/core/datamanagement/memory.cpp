@@ -3282,6 +3282,102 @@ std::complex<double> Memory::pct(const VectorIndex& _vLine, const VectorIndex& _
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation for the EXC multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> Memory::exc(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    if (!memArray.size())
+        return NAN;
+
+    std::complex<double> dAvg = avg(_vLine, _vCol);
+    std::complex<double> dExc = 0.0;
+
+    int lines = getLines(false);
+    int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
+
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDSQSQSUB, 0.0, dAvg));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
+        dExc += val.m_val;
+
+    return dExc / (num(_vLine, _vCol) * intPower(std(_vLine, _vCol), 4)) - 3.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the SKEW multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> Memory::skew(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    if (!memArray.size())
+        return NAN;
+
+    std::complex<double> dAvg = avg(_vLine, _vCol);
+    std::complex<double> dSkew = 0.0;
+
+    int lines = getLines(false);
+    int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
+
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDCBSUB, 0.0, dAvg));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
+        dSkew += val.m_val;
+
+    return dSkew / (num(_vLine, _vCol) * intPower(std(_vLine, _vCol), 3));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the STDERR multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> Memory::stderr_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    return std(_vLine, _vCol) / std::sqrt(num(_vLine, _vCol));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the RMS multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> Memory::rms(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    return norm(_vLine, _vCol) / std::sqrt(num(_vLine, _vCol));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the SIZE multi
 /// argument function.
 ///

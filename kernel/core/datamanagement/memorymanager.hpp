@@ -729,6 +729,26 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return resolveMAF(sTable, sDir, MemoryManager::med);
         }
 
+		std::vector<std::complex<double>> exc(const std::string& sTable, std::string sDir) const
+        {
+            return resolveMAF(sTable, sDir, MemoryManager::exc);
+        }
+
+		std::vector<std::complex<double>> skew(const std::string& sTable, std::string sDir) const
+        {
+            return resolveMAF(sTable, sDir, MemoryManager::skew);
+        }
+
+		std::vector<std::complex<double>> stderr_func(const std::string& sTable, std::string sDir) const
+        {
+            return resolveMAF(sTable, sDir, MemoryManager::stderr_func);
+        }
+
+		std::vector<std::complex<double>> rms(const std::string& sTable, std::string sDir) const
+        {
+            return resolveMAF(sTable, sDir, MemoryManager::rms);
+        }
+
 		std::vector<std::complex<double>> cmp(const std::string& sTable, std::string sDir, std::complex<double> dRef = 0.0, int nType = 0) const
         {
             std::vector<std::complex<double>> vResults;
@@ -1021,6 +1041,26 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 		inline std::complex<double> pct(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1, std::complex<double> dPct = 0.5) const
 		{
 			return vMemory[findTable(_sCache)]->pct(VectorIndex(i1, i2), VectorIndex(j1, j2), dPct);
+		}
+
+		inline std::complex<double> exc(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+		{
+			return vMemory[findTable(_sCache)]->exc(_vLine, _vCol);
+		}
+
+		inline std::complex<double> skew(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+		{
+			return vMemory[findTable(_sCache)]->skew(_vLine, _vCol);
+		}
+
+		inline std::complex<double> stderr_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+		{
+			return vMemory[findTable(_sCache)]->stderr_func(_vLine, _vCol);
+		}
+
+		inline std::complex<double> rms(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+		{
+			return vMemory[findTable(_sCache)]->rms(_vLine, _vCol);
 		}
 
 };

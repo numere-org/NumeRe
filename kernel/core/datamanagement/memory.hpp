@@ -204,6 +204,10 @@ class Memory : public Sorter
         std::complex<double> cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dRef = 0.0, int _nType = 0) const;
         std::complex<double> med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         std::complex<double> pct(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dPct = 0.5) const;
+        std::complex<double> exc(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> skew(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> stderr_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        std::complex<double> rms(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         std::vector<std::complex<double>> size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<std::complex<double>> minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<std::complex<double>> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
