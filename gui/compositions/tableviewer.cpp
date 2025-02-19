@@ -929,7 +929,7 @@ void TableViewer::createFilter(int col)
         return;
 
     // Ensure that we have enough filters available
-    if (m_filter.size() <= col)
+    if ((int)m_filter.size() <= col)
         m_filter.resize(col+1);
 
     // Open up the corresponding dialog
@@ -954,7 +954,7 @@ void TableViewer::createFilter(int col)
 /////////////////////////////////////////////////
 void TableViewer::deleteFilter(int col)
 {
-    if (col >= GetNumberCols()-1 || col >= m_filter.size())
+    if (col >= GetNumberCols()-1 || (size_t)col >= m_filter.size())
         return;
 
     // Delete the filter by resetting it
@@ -979,7 +979,7 @@ void TableViewer::applyFilter()
     {
         wxString label = GetColLabelValue(j);
 
-        if (j < m_filter.size() && m_filter[j].m_type != CellFilterCondition::CT_NONE)
+        if ((size_t)j < m_filter.size() && m_filter[j].m_type != CellFilterCondition::CT_NONE)
             SetColLabelValue(j, label[label.length()-1] != L'\uE16E' ? label + L" \uE16E" : label);
         else
             SetColLabelValue(j, label[label.length()-1] != L'\uE16E' ? label : label.substr(0, label.length()-2));
@@ -1539,7 +1539,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
         for (int col = selectedExtent.m_topleft.GetCol(); col <= selectedExtent.m_bottomright.GetCol(); col++)
         {
-            if (vTypes.size() > col)
+            if (vTypes.size() > (size_t)col)
                 types.insert(vTypes[col]);
         }
 
@@ -1936,7 +1936,6 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
     SetTable(new GridNumeReTable(std::move(_table),
                                  NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
     isGridNumeReTable = true;
-
     layoutGrid();
 
     updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
@@ -1962,7 +1961,7 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
     {
         if (m_popUpMenu.FindItem(ID_MENU_CUT))
         {
-            for (int i = 0; i < nFirstNumRow; i++)
+            for (int i = 0; i < (int)nFirstNumRow; i++)
             {
                 for (int j = 0; j < GetNumberCols(); j++)
                 {
@@ -2126,7 +2125,7 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
 
     m_popUpMenu.Enable(ID_MENU_COLUMNS, true);
     m_popUpMenu.Enable(ID_MENU_DELETE_FILTER,
-                       event.GetCol() < m_filter.size() && m_filter[event.GetCol()].m_type != CellFilterCondition::CT_NONE);
+                       event.GetCol() < (int)m_filter.size() && m_filter[event.GetCol()].m_type != CellFilterCondition::CT_NONE);
 
     m_popUpMenu.Enable(ID_MENU_SORT_COL_ASC, isGridNumeReTable);
     m_popUpMenu.Enable(ID_MENU_SORT_COL_DESC, isGridNumeReTable);
@@ -2184,7 +2183,7 @@ void TableViewer::OnLabelRightClick(wxGridEvent& event)
     {
         m_popUpMenu.Enable(ID_MENU_COLUMNS, true);
         m_popUpMenu.Enable(ID_MENU_DELETE_FILTER,
-                           event.GetCol() < m_filter.size() && m_filter[event.GetCol()].m_type != CellFilterCondition::CT_NONE);
+                           event.GetCol() < (int)m_filter.size() && m_filter[event.GetCol()].m_type != CellFilterCondition::CT_NONE);
 
         m_popUpMenu.Enable(ID_MENU_SORT_COL_ASC, isGridNumeReTable);
         m_popUpMenu.Enable(ID_MENU_SORT_COL_DESC, isGridNumeReTable);
@@ -2586,7 +2585,7 @@ void TableViewer::groupHeaders(int startCol, int endCol, int row)
                         // If there are further rows, call
                         // this function recursively for the grouped
                         // set of columns
-                        if (row+1 < nFirstNumRow)
+                        if (row+1 < (int)nFirstNumRow)
                             groupHeaders(j, n, row+1);
                     }
 
@@ -2606,7 +2605,7 @@ void TableViewer::groupHeaders(int startCol, int endCol, int row)
                         // If there are further rows, call
                         // this function recursively for the grouped
                         // set of columns
-                        if (row+1 < nFirstNumRow)
+                        if (row+1 < (int)nFirstNumRow)
                             groupHeaders(j, endCol, row+1);
                     }
 

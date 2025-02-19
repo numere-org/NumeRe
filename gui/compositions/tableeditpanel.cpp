@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "tableeditpanel.hpp"
+#include "grouppanel.hpp"
 #include "../../kernel/core/datamanagement/container.hpp"
 #include "../NumeReWindow.h"
 #include "../../common/Options.h"
@@ -61,8 +62,8 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
 
     vsizer = new wxBoxSizer(wxVERTICAL);
     hsizer = new wxBoxSizer(wxHORIZONTAL);
-    m_commentField = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(200, -1),
-                                    wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH | wxBORDER_STATIC | (readOnly ? wxTE_READONLY : 0));
+    m_commentField = new TextField(this, wxID_ANY, wxEmptyString, wxSize(200, -1),
+                                   wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxBORDER_STATIC | wxTE_AUTO_URL | (readOnly ? wxTE_READONLY : 0));
     m_sourceField = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
                                    wxTE_READONLY | wxBORDER_THEME);
     m_lastSaveText = new wxStaticText(this, wxID_ANY, _guilang.get("GUI_TABLEPANEL_LASTSAVE"));
@@ -96,7 +97,7 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
 /////////////////////////////////////////////////
 void TablePanel::update(const NumeRe::TableMetaData& meta)
 {
-    m_commentField->SetValue(meta.comment);
+    m_commentField->SetMarkupText(meta.comment);
     m_sourceField->SetValue(meta.source);
     m_lastSaveText->SetLabel(_guilang.get("GUI_TABLEPANEL_LASTSAVE", toString(meta.lastSavedTime, GET_WITH_TEXT)));
 }
@@ -173,6 +174,20 @@ wxMenuBar* TablePanel::getMenuBar()
 wxFrame* TablePanel::getFrame()
 {
     return static_cast<wxFrame*>(m_parent);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Indicate that the table panel is ready.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::ready()
+{
+    m_commentField->ShowPosition(0);
+    Update();
+    Refresh();
 }
 
 

@@ -174,9 +174,9 @@ void plugin_random(std::string& sCmd)
     std::student_t_distribution<double> studentTDistribution(nFreedoms);
 
     // Fill the table with the newly created random numbers
-    for (long long int i = 0; i < nDataPoints; i++)
+    for (size_t i = 0; i < (size_t)nDataPoints; i++)
     {
-        for (long long int j = 0; j < nDataRows; j++)
+        for (size_t j = 0; j < (size_t)nDataRows; j++)
         {
             switch (nDistribution)
             {

@@ -198,7 +198,7 @@ bool Sorter::sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long l
     ColumnKeys* subKeyList = KeyList->subkeys;
     int nStart = i1;
 
-    if (subKeyList->cols.front() >= _vCol.size() && subKeyList->cols.front() < 0)
+    if (subKeyList->cols.front() >= (int)_vCol.size() && subKeyList->cols.front() < 0)
         return false;
 
     // If the subkey list is valid and contains further subkeys and the current
@@ -209,7 +209,7 @@ bool Sorter::sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long l
     {
         for (int k = i1 + 1; k <= i2 && k < nElements; k++)
         {
-            if (subKeyList->cols.front() >= _vCol.size() || subKeyList->cols.front() < 0)
+            if (subKeyList->cols.front() >= (int)_vCol.size() || subKeyList->cols.front() < 0)
                 return false;
 
             // Is this the first element in the parent column, which is not equal to the current

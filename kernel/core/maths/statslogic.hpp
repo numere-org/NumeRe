@@ -111,6 +111,8 @@ struct StatsLogic
             case OPERATION_NUM:
             case OPERATION_ADDSQ:
             case OPERATION_ADDSQSUB:
+            case OPERATION_ADDCBSUB:
+            case OPERATION_ADDSQSQSUB:
                 m_val += other.m_val;
                 return;
             case OPERATION_MULT:

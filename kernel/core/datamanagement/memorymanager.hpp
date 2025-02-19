@@ -249,6 +249,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 
 
 		// TABLE INFORMATION AND SAVING METHODS
+		VectorIndex arrayToIndex(const mu::Array& arr, const std::string& sTable) const;
 		bool getSaveStatus() const;
 		void setSaveStatus(bool _bIsSaved);
 		long long int getLastSaved() const;

@@ -2136,6 +2136,7 @@ void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDispl
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
+    panel->ready();
 }
 
 
@@ -2160,6 +2161,7 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
+    panel->ready();
 }
 
 

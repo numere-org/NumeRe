@@ -191,6 +191,7 @@ namespace NumeRe
             NumeRe::TableMetaData meta;
             meta.comment = info.sComment;
             meta.source = sFile;
+            meta.save();
 
             _mem->setMetaData(meta);
 

@@ -37,7 +37,7 @@ namespace NumeRe
 
         void save()
         {
-            lastSavedTime = _time64(0);
+            lastSavedTime = _time64(nullptr);
             isSaved = true;
         }
 
@@ -46,7 +46,7 @@ namespace NumeRe
             if (!isSaved)
                 return;
 
-            lastSavedTime = _time64(0);
+            lastSavedTime = _time64(nullptr);
             isSaved = false;
         }
 

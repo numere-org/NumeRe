@@ -3145,7 +3145,7 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0,  _idx.row.front() + vWaveletData.size()-1);
 
-    for (long long int i = 0; i < vWaveletData.size(); i++)
+    for (size_t i = 0; i < vWaveletData.size(); i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;

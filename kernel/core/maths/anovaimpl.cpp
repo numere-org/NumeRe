@@ -119,7 +119,7 @@ void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, int start, int
     if(max_depth < currentSet.size()+1)
         max_depth = currentSet.size()+1;
 
-    for (size_t i = start; i <= n; ++i)
+    for (size_t i = (size_t)start; i <= n; ++i)
     {
         std::vector<size_t> newSubset = currentSet;
         newSubset.push_back(i);
@@ -286,7 +286,7 @@ void AnovaCalculationStructure::getResultsHelper(FactorNode* node, std::vector<A
             return;
 
         ss << "Factor" << node->subset[0];
-        for(int i = 1; i < node->subset.size(); i++)
+        for(size_t i = 1; i < node->subset.size(); i++)
             ss << "x" << node->subset[i];
 
         r.prefix = ss.str();
@@ -347,7 +347,7 @@ void AnovaCalculationStructure::buildTree(std::vector<std::vector<std::string>> 
 /////////////////////////////////////////////////
 void AnovaCalculationStructure::calculateResults()
 {
-    for(int l = 1; l <= max_depth; l++)
+    for(size_t l = 1; l <= max_depth; l++)
         calculateLevel(root, l);
 
     SS_Within /= dof_within;

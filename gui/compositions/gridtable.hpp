@@ -35,12 +35,12 @@ class GridNumeReTable : public wxGridTableBase
 {
     private:
         NumeRe::Table _table;
-        int getNumHeadlines() const;
         std::complex<double> cmplx;
         mu::Value value;
         bool m_showQMarks;
         std::map<int,wxString> m_customColLabels;
         VectorIndex m_sortIndex;
+        int m_numHeadLines;
 
         int getRow(int row) const;
 

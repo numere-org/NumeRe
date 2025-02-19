@@ -2022,6 +2022,10 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 void CategoricalColumn::setCategories(const std::vector<std::string>& vCategories)
 {
+    // Do nothing, if no new categories have been passed
+    if (vCategories.size())
+        return;
+
     // Simply use the complete category set, if no categories have been set right now
     if (!m_categories.size())
     {
@@ -2048,7 +2052,7 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
             // Find a free spot right after the new categories
             for (size_t j = vCategories.size(); j <= i; j++)
             {
-                if (vMap[j] >= 0 && vMap[j] < j && std::find(vMap.begin(), vMap.end(), j) == vMap.end())
+                if (vMap[j] >= 0 && vMap[j] < (int)j && std::find(vMap.begin(), vMap.end(), j) == vMap.end())
                 {
                     vMap[i] = j;
                     assigned = true;
@@ -2075,7 +2079,7 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
         // Find a free spot right after the new categories
         for (size_t j = vCategories.size(); j < vMap.size(); j++)
         {
-            if (vMap[j] >= 0 && vMap[j] < j && std::find(vMap.begin(), vMap.end(), j) == vMap.end())
+            if (vMap[j] >= 0 && vMap[j] < (int)j && std::find(vMap.begin(), vMap.end(), j) == vMap.end())
             {
                 vMap[vFreeList[i]] = j;
                 assigned = true;

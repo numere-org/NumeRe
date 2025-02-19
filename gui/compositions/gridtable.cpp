@@ -31,10 +31,10 @@
 /////////////////////////////////////////////////
 int GridNumeReTable::getRow(int row) const
 {
-    if ((size_t)(row-getNumHeadlines()) < m_sortIndex.size())
-        return m_sortIndex[(row-getNumHeadlines())];
+    if ((size_t)(row-m_numHeadLines) < m_sortIndex.size())
+        return m_sortIndex[row-m_numHeadLines];
 
-    return (row-getNumHeadlines());
+    return row-m_numHeadLines;
 }
 
 
@@ -44,6 +44,7 @@ int GridNumeReTable::getRow(int row) const
 GridNumeReTable::GridNumeReTable() : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END)
 {
     _table = NumeRe::Table();
+    m_numHeadLines = _table.getHeadCount();
 }
 
 
@@ -58,6 +59,7 @@ GridNumeReTable::GridNumeReTable() : m_showQMarks(true), m_sortIndex(0, VectorIn
 GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END)
 {
     _table = NumeRe::Table(numRows-2, numCols-1);
+    m_numHeadLines = _table.getHeadCount();
 }
 
 
@@ -72,20 +74,7 @@ GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true),
 GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m_showQMarks(showQMarks), m_sortIndex(0, VectorIndex::OPEN_END)
 {
     _table = std::move(_extTable);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function will return the
-/// number of headlines available in the internal
-/// buffer.
-///
-/// \return int
-///
-/////////////////////////////////////////////////
-int GridNumeReTable::getNumHeadlines() const
-{
-    return _table.getHeadCount();
+    m_numHeadLines = _table.getHeadCount();
 }
 
 
@@ -126,7 +115,7 @@ NumeRe::Table& GridNumeReTable::getTableRef()
 /////////////////////////////////////////////////
 int GridNumeReTable::GetNumberRows()
 {
-    return std::max(_table.getLines(), (size_t)1u) + getNumHeadlines() + 1;
+    return std::max(_table.getLines(), (size_t)1u) + m_numHeadLines + 1;
 }
 
 
@@ -160,7 +149,7 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
     // Headlines
     if (row == 0 && (sTypeName == wxGRID_VALUE_FLOAT || sTypeName == "complex"))
         return false;
-    else if (row < getNumHeadlines() && (sTypeName == wxGRID_VALUE_STRING || sTypeName == "plain"))
+    else if (row < m_numHeadLines && (sTypeName == wxGRID_VALUE_STRING || sTypeName == "plain"))
         return true;
 
     // Regular cells
@@ -202,10 +191,10 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
 double GridNumeReTable::GetValueAsDouble(int row, int col)
 {
     // Return NAN, if this is not a numeric cell
-    if (row < getNumHeadlines())
+    if (row < m_numHeadLines)
         return NAN;
 
-    if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+    if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return NAN;
 
     return _table.getValue(getRow(row), col).real();
@@ -224,10 +213,10 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
 bool GridNumeReTable::GetValueAsBool(int row, int col)
 {
     // Return NAN, if this is not a numeric cell
-    if (row < getNumHeadlines())
+    if (row < m_numHeadLines)
         return false;
 
-    if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+    if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return false;
 
     return _table.getValue(getRow(row), col).real() != 0.0;
@@ -269,9 +258,9 @@ void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeN
 /////////////////////////////////////////////////
 wxString GridNumeReTable::GetValue(int row, int col)
 {
-    if (row < getNumHeadlines() && col < (int)_table.getCols())
+    if (row < m_numHeadLines && col < (int)_table.getCols())
         return _table.getCleanHeadPart(col, row);
-    else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+    else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
     {
@@ -296,9 +285,9 @@ wxString GridNumeReTable::GetValue(int row, int col)
 /////////////////////////////////////////////////
 wxString GridNumeReTable::GetEditableValue(int row, int col)
 {
-    if (row < getNumHeadlines() && col < (int)_table.getCols())
+    if (row < m_numHeadLines && col < (int)_table.getCols())
         return _table.getCleanHeadPart(col, row);
-    else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+    else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else
         return replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col));
@@ -320,26 +309,28 @@ wxString GridNumeReTable::GetEditableValue(int row, int col)
 /////////////////////////////////////////////////
 void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 {
-    int nHeadRows = getNumHeadlines();
+    int nHeadRows = m_numHeadLines;
 
     // Set the value
-    if (row < nHeadRows)
+    if (row < m_numHeadLines)
         _table.setHeadPart(col, row, value.ToStdString());
     else
         _table.setValueAsString(getRow(row), col, value.ToStdString());
 
+    m_numHeadLines = _table.getHeadCount();
+
     // If the number of headlines changed, notify the
     // grid to draw the newly added cells
-    if (nHeadRows != getNumHeadlines() && GetView())
+    if (nHeadRows != m_numHeadLines && GetView())
     {
-        if (nHeadRows < getNumHeadlines())
+        if (nHeadRows < m_numHeadLines)
         {
-            wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_ROWS_INSERTED, nHeadRows, getNumHeadlines() - nHeadRows);
+            wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_ROWS_INSERTED, nHeadRows, m_numHeadLines - nHeadRows);
             GetView()->ProcessTableMessage(msg);
         }
         else
         {
-            wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_ROWS_DELETED, getNumHeadlines(), nHeadRows - getNumHeadlines());
+            wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_ROWS_DELETED, m_numHeadLines, nHeadRows - m_numHeadLines);
             GetView()->ProcessTableMessage(msg);
         }
     }
@@ -357,6 +348,7 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 void GridNumeReTable::Clear()
 {
     _table.Clear();
+    m_numHeadLines = _table.getHeadCount();
     m_sortIndex = VectorIndex(0, VectorIndex::OPEN_END);
 }
 
@@ -374,10 +366,11 @@ void GridNumeReTable::Clear()
 bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
 {
     if ((isSorted() && numRows > 1)
-        || pos < getNumHeadlines())
+        || pos < (size_t)m_numHeadLines)
         return false;
 
     _table.insertLines(getRow(pos), numRows);
+    m_numHeadLines = _table.getHeadCount();
 
     // Update the index, if necessary
     if (isSorted())
@@ -394,15 +387,15 @@ bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
 
         // Insert the new index value at the correct position. First
         // and last position are quite simple
-        if (pos-getNumHeadlines() == 0)
+        if (pos-m_numHeadLines == 0)
             m_sortIndex.prepend(partition);
-        else if (pos-getNumHeadlines()+1 == m_sortIndex.size())
+        else if (pos-m_numHeadLines+1 == m_sortIndex.size())
             m_sortIndex.append(partition);
         else
         {
-            VectorIndex inserted = m_sortIndex.subidx(0, pos-getNumHeadlines());
+            VectorIndex inserted = m_sortIndex.subidx(0, pos-m_numHeadLines);
             inserted.append(partition);
-            inserted.append(m_sortIndex.subidx(pos-getNumHeadlines()));
+            inserted.append(m_sortIndex.subidx(pos-m_numHeadLines));
             m_sortIndex = inserted;
         }
     }
@@ -431,6 +424,7 @@ bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
 bool GridNumeReTable::AppendRows(size_t numRows)
 {
     _table.appendLines(numRows);
+    m_numHeadLines = _table.getHeadCount();
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
@@ -457,10 +451,11 @@ bool GridNumeReTable::AppendRows(size_t numRows)
 bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
 {
     if ((isSorted() && numRows > 1)
-        || pos < getNumHeadlines())
+        || pos < (size_t)m_numHeadLines)
         return false;
 
     _table.deleteLines(getRow(pos), numRows);
+    m_numHeadLines = _table.getHeadCount();
 
     // Update the index, if necessary
     if (isSorted())
@@ -477,14 +472,14 @@ bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
 
         // Remove the index value from the correct position. First
         // and last position are quite simple
-        if (pos-getNumHeadlines() == 0)
+        if (pos-m_numHeadLines == 0)
             m_sortIndex = m_sortIndex.subidx(1);
-        else if (pos-getNumHeadlines()+1 == m_sortIndex.size())
+        else if (pos-m_numHeadLines+1 == m_sortIndex.size())
             m_sortIndex = m_sortIndex.subidx(0, m_sortIndex.size()-1);
         else
         {
-            VectorIndex removed = m_sortIndex.subidx(0, pos-getNumHeadlines());
-            removed.append(m_sortIndex.subidx(pos-getNumHeadlines()+1));
+            VectorIndex removed = m_sortIndex.subidx(0, pos-m_numHeadLines);
+            removed.append(m_sortIndex.subidx(pos-m_numHeadLines+1));
             m_sortIndex = removed;
         }
     }
@@ -514,6 +509,7 @@ bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
 bool GridNumeReTable::InsertCols(size_t pos, size_t numRows)
 {
     _table.insertCols(pos, numRows);
+    m_numHeadLines = _table.getHeadCount();
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
@@ -539,6 +535,7 @@ bool GridNumeReTable::InsertCols(size_t pos, size_t numRows)
 bool GridNumeReTable::AppendCols(size_t numRows)
 {
     _table.appendCols(numRows);
+    m_numHeadLines = _table.getHeadCount();
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
@@ -565,6 +562,7 @@ bool GridNumeReTable::AppendCols(size_t numRows)
 bool GridNumeReTable::DeleteCols(size_t pos, size_t numRows)
 {
     _table.deleteCols(pos, numRows);
+    m_numHeadLines = _table.getHeadCount();
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
@@ -589,7 +587,7 @@ bool GridNumeReTable::DeleteCols(size_t pos, size_t numRows)
 /////////////////////////////////////////////////
 wxString GridNumeReTable::GetRowLabelValue(int row)
 {
-    if (row < getNumHeadlines())
+    if (row < m_numHeadLines)
         return "#";
     else
         return toString(getRow(row)+1);
@@ -626,7 +624,7 @@ wxString GridNumeReTable::GetColLabelValue(int col)
 /////////////////////////////////////////////////
 void GridNumeReTable::SetColLabelValue(int col, const wxString& label)
 {
-    if (col >= 0 && col < _table.getCols())
+    if (col >= 0 && (size_t)col < _table.getCols())
         m_customColLabels[col] = label;
 }
 
@@ -773,7 +771,7 @@ std::complex<double> GridNumeReTable::sum(const wxGridCellCoordsContainer& coord
 std::string GridNumeReTable::serialize(const wxGridCellCoordsContainer& coords) const
 {
     std::string sSerialized;
-    const int nHeadLines = getNumHeadlines();
+    const int nHeadLines = m_numHeadLines;
     const wxGridCellsExtent& cellExtent = coords.getExtent();
 
     if (cellExtent.m_topleft.GetRow() < nHeadLines)
@@ -871,7 +869,7 @@ void GridNumeReTable::enableQuotationMarks(bool enable)
 /////////////////////////////////////////////////
 void GridNumeReTable::sortCol(int col, bool ascending)
 {
-    if (col >= _table.getCols())
+    if (col >= (int)_table.getCols())
         return;
 
     m_sortIndex = VectorIndex(_table.getColumn(col)->get(VectorIndex(0, VectorIndex::OPEN_END)).call("order"));

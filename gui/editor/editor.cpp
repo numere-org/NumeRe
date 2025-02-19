@@ -987,10 +987,18 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         std::string sReturnValue = _provider.getMethodReturnValue(GetTextRange(WordStartPosition(wordstartpos-2, true),
                                                                                                wordstartpos-1).ToStdString());
 
-                        varType = sReturnValue.find("STR") != std::string::npos
-                            || sReturnValue.find("ARG") != std::string::npos
-                            || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                        isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                        if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
+                        {
+                            varType = NumeReSyntax::SYNTAX_TABLE;
+                            isVect = true;
+                        }
+                        else
+                        {
+                            varType = sReturnValue.find("STR") != std::string::npos
+                                || sReturnValue.find("ARG") != std::string::npos
+                                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                        }
                     }
                     else if (c == '}')
                     {
@@ -1019,10 +1027,18 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                             else
                                 sReturnValue = _provider.getFunctionReturnValue(sReturnValue);
 
-                            varType = sReturnValue.find("STR") != std::string::npos
-                                || sReturnValue.find("ARG") != std::string::npos
-                                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                            if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
+                            {
+                                varType = NumeReSyntax::SYNTAX_TABLE;
+                                isVect = true;
+                            }
+                            else
+                            {
+                                varType = sReturnValue.find("STR") != std::string::npos
+                                    || sReturnValue.find("ARG") != std::string::npos
+                                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                            }
                         }
                         else if (prevStyle == wxSTC_NSCR_PROCEDURES)
                         {

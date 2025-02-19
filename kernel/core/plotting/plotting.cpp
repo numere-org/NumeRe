@@ -1671,7 +1671,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         _pInfo.nStyle = _pInfo.nextStyle();
 
         // Create the legend
-        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1 && m_manager.assets.size() > n+nDataOffset+1)
+        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1 && (int)m_manager.assets.size() > n+nDataOffset+1)
             sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
                             + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\"";
         else
@@ -4566,7 +4566,7 @@ void Plot::createDataLegends()
                             sTemp = "\"";
 
                             // Don't use the first one
-                            for (int i = 0; i < vCols.size(); i++)
+                            for (size_t i = 0; i < vCols.size(); i++)
                             {
                                 sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
                             }
@@ -4610,7 +4610,7 @@ void Plot::createDataLegends()
                             sTemp = "\"";
 
                             // Don't use the first one
-                            for (int i = 0; i < vCols.size(); i++)
+                            for (size_t i = 0; i < vCols.size(); i++)
                             {
                                 sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
                             }

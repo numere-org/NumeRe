@@ -457,7 +457,7 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 
     if ((_vLine.size() > 1 && _vCol.size() > 1)
         || !memArray.size()
-        || _vCol.size() == 1 && !getElemsInColumn(_vCol.front()))
+        || (_vCol.size() == 1 && !getElemsInColumn(_vCol.front())))
         return vReturn;
 
     vReturn.resize(_vLine.size()*_vCol.size(), NAN);
@@ -514,7 +514,7 @@ Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vC
     #pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (_vCol[j] < 0 || _vCol[j] >= memArray.size() || !memArray[_vCol[j]])
+        if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
             continue;
 
         // Get the complete column as a whole because it seems
@@ -845,7 +845,7 @@ bool Memory::shrink(const VectorIndex& _vCol)
     // Shrink each column
     for (size_t i = 0; i < _vCol.size(); i++)
     {
-        if (_vCol[i] < 0 || _vCol[i] >= memArray.size())
+        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
             continue;
 
         TblColPtr& col = memArray[_vCol[i]];
@@ -1107,7 +1107,7 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
 /////////////////////////////////////////////////
 std::string Memory::getUnit(int nCol) const
 {
-    if (nCol < memArray.size() && memArray[nCol])
+    if (nCol < (int)memArray.size() && memArray[nCol])
         return memArray[nCol]->m_sUnit;
 
     return "";
@@ -1197,7 +1197,7 @@ bool Memory::setHeadLineElement(size_t _i, const std::string& _sHead)
 /////////////////////////////////////////////////
 bool Memory::setUnit(int nCol, const std::string& sUnit)
 {
-    if (nCol >= memArray.size())
+    if (nCol >= (int)memArray.size())
     {
         if (!resizeMemory(1, nCol + 1))
             return false;
@@ -1234,7 +1234,7 @@ std::vector<std::string> Memory::toSiUnits(const VectorIndex& _vCols, UnitConver
 
     for (size_t i = 0; i < _vCols.size(); i++)
     {
-        if (_vCols[i] < memArray.size() && memArray[_vCols[i]] && TableColumn::isValueType(memArray[_vCols[i]]->m_type))
+        if (_vCols[i] < (int)memArray.size() && memArray[_vCols[i]] && TableColumn::isValueType(memArray[_vCols[i]]->m_type))
         {
             memArray[_vCols[i]]->setValue(VectorIndex(0, VectorIndex::OPEN_END), asSiUnits(_vCols[i], mode));
             std::string sUnit = getUnitConversion(memArray[_vCols[i]]->m_sUnit, mode).formatUnit(mode);
@@ -1678,7 +1678,7 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
             // Go through the group definition
             for (size_t j = 0; j < keys->cols.size(); j++)
             {
-                if (keys->cols[j] >= _vCol.size() || keys->cols[j] < 0)
+                if (keys->cols[j] >= (int)_vCol.size() || keys->cols[j] < 0)
                 {
                     delete keys;
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sSortingExpression, SyntaxError::invalid_position);
@@ -1719,7 +1719,7 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
                     // Reorder the subordinate key list
                     for (size_t _j = 0; _j < subKeyList->cols.size(); _j++)
                     {
-                        if (subKeyList->cols[_j] >= _vCol.size() || subKeyList->cols[_j] < 0)
+                        if (subKeyList->cols[_j] >= (int)_vCol.size() || subKeyList->cols[_j] < 0)
                             throw SyntaxError(SyntaxError::INVALID_INDEX, sSortingExpression, SyntaxError::invalid_position);
 
                         reorderColumn(vIndex, _vLine, _vCol[subKeyList->cols[_j]]);
@@ -1997,11 +1997,11 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
 /////////////////////////////////////////////////
 bool Memory::insertBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
 {
-    if (atRow >= getLines() || atCol >= memArray.size())
+    if (atRow >= (size_t)getLines() || atCol >= memArray.size())
         return false;
 
     // Catch whole rows and cols
-    if (atRow == 0 && rows >= getLines())
+    if (atRow == 0 && rows >= (size_t)getLines())
         return insertCols(atCol, cols);
     else if (atCol == 0 && cols >= memArray.size())
         return insertRows(atRow, rows);
@@ -2050,7 +2050,7 @@ bool Memory::insertCols(size_t atCol, size_t num)
 /////////////////////////////////////////////////
 bool Memory::insertRows(size_t atRow, size_t num)
 {
-    if (atRow >= getLines())
+    if (atRow >= (size_t)getLines())
         return false;
 
     for (TblColPtr& col : memArray)
@@ -2079,11 +2079,11 @@ bool Memory::insertRows(size_t atRow, size_t num)
 /////////////////////////////////////////////////
 bool Memory::removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
 {
-    if (atRow >= getLines() || atCol >= memArray.size())
+    if (atRow >= (size_t)getLines() || atCol >= memArray.size())
         return false;
 
     // Catch whole rows and cols
-    if (atRow == 0 && rows >= getLines())
+    if (atRow == 0 && rows >= (size_t)getLines())
         return removeCols(VectorIndex(atCol, atCol+cols-1));
     else if (atCol == 0 && cols >= memArray.size())
         return removeRows(VectorIndex(atRow, atRow+rows-1));
@@ -2110,7 +2110,7 @@ bool Memory::removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
 /////////////////////////////////////////////////
 bool Memory::removeCols(const VectorIndex& _vCols)
 {
-    if (_vCols.min() >= memArray.size())
+    if (_vCols.min() >= (int)memArray.size())
         return false;
 
     _vCols.setOpenEndIndex(memArray.size()-1);
@@ -2126,7 +2126,7 @@ bool Memory::removeCols(const VectorIndex& _vCols)
 
         for (int i = vVals.size()-1; i >= 0; i--)
         {
-            if (vVals[i] < memArray.size())
+            if (vVals[i] < (int)memArray.size())
                 memArray.erase(memArray.begin()+vVals[i]);
         }
     }
@@ -2207,8 +2207,8 @@ bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrde
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vCols.size()
-        || _vCols.size() > getCols()
-        || _vNewOrder.max() >= (long long int)_vNewOrder.size()
+        || _vCols.size() > (size_t)getCols()
+        || _vNewOrder.max() >= (int)_vNewOrder.size()
         || !_vCols.isUnique()
         || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
         return false;
@@ -2219,7 +2219,7 @@ bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrde
     // Move the columns to the buffer
     for (size_t i = 0; i < _vCols.size(); i++)
     {
-        if (_vCols[i] != VectorIndex::INVALID && _vCols[i] < memArray.size())
+        if (_vCols[i] != VectorIndex::INVALID && _vCols[i] < (int)memArray.size())
             buffer[i].reset(memArray[_vCols[i]].release());
     }
 
@@ -2254,7 +2254,7 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vRows.size()
-        || _vRows.size() > getLines()
+        || _vRows.size() > (size_t)getLines()
         || _vNewOrder.max() >= (long long int)_vNewOrder.size()
         || !_vRows.isUnique()
         || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
@@ -3046,7 +3046,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
             break;
     }
 
-    for (long long int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -3056,7 +3056,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
         if (!elems)
             continue;
 
-        for (long long int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
@@ -3826,9 +3826,9 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     size_t col_size = getElemsInColumn(colValues);
     for(size_t i = 0; i < colCategories.size(); i++)
         {
-        if (colCategories[i] > memArray.size() || !memArray[colCategories[i]]
+        if (colCategories[i] > (int)memArray.size() || !memArray[colCategories[i]]
             || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
-            || getElemsInColumn(colCategories[i]) != col_size)
+            || (size_t)getElemsInColumn(colCategories[i]) != col_size)
         {
             AnovaResult res;
             res.m_FRatio = NAN;
@@ -3950,7 +3950,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 {
     for(size_t i = 0; i < columns.size(); i++)
     {
-        if (memArray.size() <= columns[0] || !memArray[columns[0]]                // check if column does have data
+        if ((int)memArray.size() <= columns[0] || !memArray[columns[0]]                // check if column does have data
             || getElemsInColumn(columns[0]) != getElemsInColumn(columns[i]))      // All columns should have same size
             return KMeansResult();
     }

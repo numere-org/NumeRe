@@ -180,6 +180,41 @@ bool MemoryManager::isValid() const
 
 
 /////////////////////////////////////////////////
+/// \brief Converts an arbitrary mu::Array into a
+/// VectorIndex instance.
+///
+/// \param arr const mu::Array&
+/// \param sTable const std::string&
+/// \return VectorIndex
+///
+/////////////////////////////////////////////////
+VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string& sTable) const
+{
+    if (arr.getCommonType() == mu::TYPE_STRING)
+        return VectorIndex(vMemory[findTable(sTable)]->findCols(arr.as_str_vector(), false, false));
+    else if (arr.getCommonType() == mu::TYPE_NUMERICAL)
+        return VectorIndex(arr);
+
+    VectorIndex idx;
+
+    for (const mu::Value& val : arr)
+    {
+        if (val.getType() == mu::TYPE_NUMERICAL)
+            idx.push_back(val.getNum().asI64()-1);
+        else if (val.getType() == mu::TYPE_STRING)
+        {
+            std::vector<size_t> cols = vMemory[findTable(sTable)]->findCols({val.getStr()}, false, false);
+
+            for (size_t c : cols)
+            {
+                idx.push_back(c-1);
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns, whether there's at least a
 /// single table in memory, which has not been
 /// saved yet.
@@ -591,7 +626,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                     sHead += cHeadLine[i][j][k];
                 }
 
-                if (i < cachemapssize)
+                if (i < (int)cachemapssize)
                     vMemory[i]->setHeadLineElement(j, sHead);
             }
         }
@@ -604,7 +639,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
             {
                 cache_file.read((char*)dCache, sizeof(double)*nLayers);
 
-                for (long long int k = 0; k < cachemapssize; k++)
+                for (long long int k = 0; k < (long long int)cachemapssize; k++)
                     vMemory[k]->writeData(i, j, dCache[k]);
             }
         }
@@ -615,7 +650,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
             {
                 cache_file.read((char*)bValidData, sizeof(bool)*nLayers);
 
-                for (long long int k = 0; k < cachemapssize; k++)
+                for (long long int k = 0; k < (long long int)cachemapssize; k++)
                 {
                     if (!bValidData[k])
                         vMemory[k]->writeData(i, j, NAN);
@@ -767,8 +802,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             _parser.SetExpr(sEveryCell);
             int nResults;
             mu::Array* v = _parser.Eval(nResults);
-
-            return VectorIndex(v[0]);
+            return arrayToIndex(v[0], sTableName);
         }
         else
         {
@@ -802,7 +836,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return VectorIndex(v[0]);
+                return arrayToIndex(v[0], sTableName);
         }
     }
 

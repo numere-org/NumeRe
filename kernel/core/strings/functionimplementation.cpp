@@ -1778,7 +1778,7 @@ mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
     for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
     {
         const std::string& s = sStr.get(i).getStr();
-        int64_t p = pos.get(i).getNum().asI64();
+        size_t p = pos.get(i).getNum().asUI64();
 
         if (p < 1)
             p = 1;

@@ -83,22 +83,7 @@ class GenericValueColumn : public TableColumn
             return getValueAsInternalString(elem) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
         }
 
-        /////////////////////////////////////////////////
-        /// \brief Returns the contents as an internal
-        /// string (i.e. without quotation marks and
-        /// unit).
-        ///
-        /// \param elem size_t
-        /// \return std::string
-        ///
-        /////////////////////////////////////////////////
-        virtual std::string getValueAsInternalString(size_t elem) const override
-        {
-            if (elem < m_data.size())
-                return toString(std::complex<double>(m_data[elem]), 14);
-
-            return "nan";
-        }
+        virtual std::string getValueAsInternalString(size_t elem) const = 0;
 
         /////////////////////////////////////////////////
         /// \brief Returns the contents as parser
@@ -113,22 +98,7 @@ class GenericValueColumn : public TableColumn
             return getValueAsString(elem);
         }
 
-        /////////////////////////////////////////////////
-        /// \brief Returns the contents as parser
-        /// string (i.e. without quotation marks).
-        ///
-        /// \param elem size_t
-        /// \return std::string
-        ///
-        /////////////////////////////////////////////////
-        virtual std::string getValueAsStringLiteral(size_t elem) const override
-        {
-#warning FIXME (numere#6#11/09/23): Using the explicit constructor is a hack
-            if (elem < m_data.size())
-                return toString(std::complex<double>(m_data[elem]), NumeReKernel::getInstance()->getSettings().getPrecision()) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
-
-            return "nan";
-        }
+        virtual std::string getValueAsStringLiteral(size_t elem) const = 0;
 
         /////////////////////////////////////////////////
         /// \brief Returns the selected value as a
@@ -503,6 +473,39 @@ class BaseFloatColumn : public GenericValueColumn<T, COLTYPE>
         virtual ~BaseFloatColumn() {}
 
         /////////////////////////////////////////////////
+        /// \brief Returns the contents as an internal
+        /// string (i.e. without quotation marks and
+        /// unit).
+        ///
+        /// \param elem size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        virtual std::string getValueAsInternalString(size_t elem) const override
+        {
+            if (elem <this-> m_data.size())
+                return toString((double)this->m_data[elem], 14);
+
+            return "nan";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the contents as parser
+        /// string (i.e. without quotation marks).
+        ///
+        /// \param elem size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        virtual std::string getValueAsStringLiteral(size_t elem) const override
+        {
+            if (elem < this->m_data.size())
+                return toString((double)this->m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision()) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
+
+            return "nan";
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Set a single numerical value.
         ///
         /// \param elem size_t
@@ -596,6 +599,39 @@ class BaseComplexColumn : public GenericValueColumn<T, COLTYPE>
         }
 
         virtual ~BaseComplexColumn() {}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the contents as an internal
+        /// string (i.e. without quotation marks and
+        /// unit).
+        ///
+        /// \param elem size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        virtual std::string getValueAsInternalString(size_t elem) const override
+        {
+            if (elem < this->m_data.size())
+                return toString(this->m_data[elem], 14);
+
+            return "nan";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the contents as parser
+        /// string (i.e. without quotation marks).
+        ///
+        /// \param elem size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        virtual std::string getValueAsStringLiteral(size_t elem) const override
+        {
+            if (elem < this->m_data.size())
+                return toString(this->m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision()) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
+
+            return "nan";
+        }
 
         /////////////////////////////////////////////////
         /// \brief Set a single numerical value.
@@ -692,6 +728,39 @@ class BaseIntColumn : public GenericValueColumn<T, COLTYPE>
         }
 
         virtual ~BaseIntColumn() {}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the contents as an internal
+        /// string (i.e. without quotation marks and
+        /// unit).
+        ///
+        /// \param elem size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        virtual std::string getValueAsInternalString(size_t elem) const override
+        {
+            if (elem < this->m_data.size())
+                return std::is_unsigned_v<T> ? toString((size_t)this->m_data[elem]) : toString((long long int)this->m_data[elem]);
+
+            return "nan";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the contents as parser
+        /// string (i.e. without quotation marks).
+        ///
+        /// \param elem size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        virtual std::string getValueAsStringLiteral(size_t elem) const override
+        {
+            if (elem < this->m_data.size())
+                return getValueAsInternalString(elem) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
+
+            return "nan";
+        }
 
         /////////////////////////////////////////////////
         /// \brief Set a single numerical value.

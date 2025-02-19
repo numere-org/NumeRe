@@ -254,14 +254,14 @@ class VectorIndex
         /////////////////////////////////////////////////
         VectorIndex(const mu::Array& indices)
         {
+            vStorage.resize(indices.size(), INVALID);
+
             // Store the indices and convert them to integers
             // using the intCast() function
             for (size_t i = 0; i < indices.size(); i++)
             {
                 if (!std::isnan(indices[i].getNum().asF64()) && !std::isinf(indices[i].getNum().asF64()))
-                    vStorage.push_back(indices[i].getNum().asI64() - 1);
-                else
-                    vStorage.push_back(INVALID);
+                    vStorage[i] = indices[i].getNum().asI64() - 1;
             }
 
             expand = false;
@@ -301,6 +301,32 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Constructor from a size_t STL vector.
+        ///
+        /// \param vIndex const std::vector<size_t>&
+        ///
+        /////////////////////////////////////////////////
+        VectorIndex(const std::vector<size_t>& vIndex)
+        {
+            if (vIndex.size())
+            {
+                vStorage.resize(vIndex.size());
+
+                for (size_t i = 0; i < vIndex.size(); i++)
+                {
+                    vStorage[i] = (int)vIndex[i]-1;
+                }
+
+                expand = false;
+            }
+            else
+            {
+                vStorage.assign({INVALID, INVALID});
+                expand = true;
+            }
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Assignment operator overload for the
         /// same type.
         ///
@@ -312,6 +338,30 @@ class VectorIndex
         {
             vStorage = vIndex.vStorage;
             expand = vIndex.expand;
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload for the
+        /// same type.
+        ///
+        /// \param indices const mu::Array&
+        /// \return VectorIndex&
+        ///
+        /////////////////////////////////////////////////
+        VectorIndex& operator=(const mu::Array& indices)
+        {
+            vStorage.resize(indices.size(), INVALID);
+
+            // Store the indices and convert them to integers
+            // using the intCast() function
+            for (size_t i = 0; i < indices.size(); i++)
+            {
+                if (!std::isnan(indices[i].getNum().asF64()) && !std::isinf(indices[i].getNum().asF64()))
+                    vStorage[i] = indices[i].getNum().asI64() - 1;
+            }
+
+            expand = false;
             return *this;
         }
 
@@ -328,6 +378,31 @@ class VectorIndex
             if (vIndex.size())
             {
                 vStorage = vIndex;
+                expand = false;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload for STL
+        /// vectors containing size_t.
+        ///
+        /// \param vIndex const std::vector<size_t>&
+        /// \return VectorIndex&
+        ///
+        /////////////////////////////////////////////////
+        VectorIndex& operator=(const std::vector<size_t>& vIndex)
+        {
+            if (vIndex.size())
+            {
+                vStorage.resize(vIndex.size());
+
+                for (size_t i = 0; i < vIndex.size(); i++)
+                {
+                    vStorage[i] = (int)vIndex[i]-1;
+                }
+
                 expand = false;
             }
 

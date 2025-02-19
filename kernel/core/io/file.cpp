@@ -254,7 +254,7 @@ namespace NumeRe
         }
 
 		// If now all lines are comments, we have a string table
-		if (vFileContents.size() == nComment)
+		if ((int)vFileContents.size() == nComment)
             nComment = 1;
 
 		// Determine now, how many columns are found in the file
@@ -262,7 +262,7 @@ namespace NumeRe
         {
             size_t elem = tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size();
 
-            if (elem > nCols)
+            if ((int64_t)elem > nCols)
                 nCols = elem;
         }
 
@@ -286,7 +286,7 @@ namespace NumeRe
 		// Copy the data from the file to the internal memory
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
-            if (vFileContents[i][0] == '#' || (i < nComment && !isNumeric(vFileContents[i])))
+            if (vFileContents[i][0] == '#' || ((int)i < nComment && !isNumeric(vFileContents[i])))
             {
                 // ignore table heads
                 continue;
@@ -298,7 +298,7 @@ namespace NumeRe
             // Ensure that the number of columns is matching
             // If it does not match, then we did not determine
             // the columns correctly
-            if (vLine.size() > nCols)
+            if ((int)vLine.size() > nCols)
                 throw SyntaxError(SyntaxError::COL_COUNTS_DOESNT_MATCH, sFileName, SyntaxError::invalid_position, sFileName);
 
             // Go through the already tokenized line and store
@@ -550,7 +550,7 @@ namespace NumeRe
                         // Considering the comment character, which is the
                         // first token, does the number of elements match to
                         // the number of columns?
-                        if (nCols + 1 == tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size())
+                        if ((size_t)nCols + 1 == tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size())
                             _nHeadline = 1;
                     }
 
@@ -559,7 +559,7 @@ namespace NumeRe
                 else if (!isNumeric(vFileContents[i]))
                 {
                     // Simply a non-numeric line
-                    if (nCols == tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size())
+                    if ((size_t)nCols == tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size())
                         _nHeadline = 1;
                 }
             }
@@ -598,7 +598,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-1], " ", GenericFile::SKIP_EMPTY).size() <= nCols+1)
+                            if (tokenize(vFileContents[i-1], " ", GenericFile::SKIP_EMPTY).size() <= (size_t)nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
@@ -630,7 +630,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-2], " ", GenericFile::SKIP_EMPTY).size() <= nCols+1)
+                            if (tokenize(vFileContents[i-2], " ", GenericFile::SKIP_EMPTY).size() <= (size_t)nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -659,7 +659,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-1], " ", GenericFile::SKIP_EMPTY).size() == nCols+1)
+                            if (tokenize(vFileContents[i-1], " ", GenericFile::SKIP_EMPTY).size() == (size_t)nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
@@ -691,7 +691,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-2], " ", GenericFile::SKIP_EMPTY).size() == nCols+1)
+                            if (tokenize(vFileContents[i-2], " ", GenericFile::SKIP_EMPTY).size() == (size_t)nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -2467,7 +2467,7 @@ namespace NumeRe
 
             // Copy the tokenized strings to the target
             // table column headline vector
-            for (size_t n = 0; n < (vTokens.size() < nCols ? vTokens.size() : nCols); n++)
+            for (size_t n = 0; n < (vTokens.size() < (size_t)nCols ? vTokens.size() : nCols); n++)
             {
                 vHeadLine[n] = utf8parser(vTokens[n]);
                 StripSpaces(vHeadLine[n]);
@@ -2543,7 +2543,7 @@ namespace NumeRe
             for (size_t j = 0; j < vTokens.size(); j++)
             {
                 // Ensure that enough space is available
-                if (j >= nCols)
+                if (j >= (size_t)nCols)
                     break;
 
                 fileData->at(j)->setValue(i-nComment, vTokens[j]);
@@ -3345,7 +3345,7 @@ namespace NumeRe
         // Find maximal number of rows
         for (long long int j = 0; j < nCols; j++)
         {
-            if (fileData->at(j)->size() > nRows)
+            if (fileData->at(j)->size() > (size_t)nRows)
                 nRows = fileData->at(j)->size();
         }
     }
@@ -3996,7 +3996,7 @@ namespace NumeRe
             std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
-            nRows = col->size() > nRows ? col->size() : nRows;
+            nRows = col->size() > (size_t)nRows ? col->size() : nRows;
         }
     }
 
@@ -4113,7 +4113,7 @@ namespace NumeRe
             vCommentLines.push_back(nCommentLines);
 
             // Find the maximal number of needed rows
-            if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
+            if ((size_t)nExcelLines < _sheet->GetTotalRows()-nCommentLines)
                 nExcelLines = _sheet->GetTotalRows()-nCommentLines;
 
             // Add the number of columns of the current
@@ -4817,7 +4817,7 @@ namespace NumeRe
             std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
-            nRows = col->size() > nRows ? col->size() : nRows;
+            nRows = col->size() > (size_t)nRows ? col->size() : nRows;
         }
     }
 

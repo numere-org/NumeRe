@@ -27,6 +27,7 @@
 #include "../../kernel/core/ui/language.hpp"
 
 extern Language _guilang;
+class TextField;
 
 /////////////////////////////////////////////////
 /// \brief Generic table panel, which also
@@ -35,7 +36,7 @@ extern Language _guilang;
 class TablePanel : public wxPanel
 {
     protected:
-        wxTextCtrl* m_commentField;
+        TextField* m_commentField;
         wxTextCtrl* m_sourceField;
         wxBoxSizer* vsizer;
         wxBoxSizer* hsizer;
@@ -57,6 +58,7 @@ class TablePanel : public wxPanel
         void dismissMessage();
         wxMenuBar* getMenuBar();
         wxFrame* getFrame();
+        void ready();
 
         void OnClose(wxCloseEvent& event);
 

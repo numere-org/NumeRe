@@ -339,10 +339,18 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
         size_t p = sLine.rfind('.', x-1);
         std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1));
 
-        varType = sReturnValue.find("STR") != std::string::npos
-            || sReturnValue.find("ARG") != std::string::npos
-            || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-        isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+        if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
+        {
+            varType = NumeReSyntax::SYNTAX_TABLE;
+            isVect = true;
+        }
+        else
+        {
+            varType = sReturnValue.find("STR") != std::string::npos
+                || sReturnValue.find("ARG") != std::string::npos
+                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+        }
     }
     else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && sLine[x-1] == '}')
     {
@@ -425,10 +433,18 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
                         break;
                 }
 
-                varType = sReturnValue.find("STR") != std::string::npos
-                    || sReturnValue.find("ARG") != std::string::npos
-                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
+                {
+                    varType = NumeReSyntax::SYNTAX_TABLE;
+                    isVect = true;
+                }
+                else
+                {
+                    varType = sReturnValue.find("STR") != std::string::npos
+                        || sReturnValue.find("ARG") != std::string::npos
+                        || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                    isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                }
             }
             else if (prevStyle == NumeReSyntax::SYNTAX_OPERATOR && sLine[x0-1] == '#')
                 varType = NumeReSyntax::SYNTAX_STRING;
