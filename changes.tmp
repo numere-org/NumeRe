@@ -20,6 +20,6 @@ Fixed	The correct column title is now used as plotting legend, if used in scenar
 Fixed	The automatic date-time conversion of columns and "to_time()" is now more restrictive and focuses on the valid combinations according DIN5008 and ISO8601 (not all are implemented). Invalid combinations should not be converted any more.
 Applied	The method autocompletion recommendation has been improved and should now return better fitting candidates.
 Cleaned	Improved and cleaned the "stats" command: some field were renamed or replaced with more important values.
-Applied	Most table method accept now table column names instead of column IDs. Note: If there are multiple columns with the same name, in general, all will be used for the table method.
+Applied	Most table methods accept now table column names in addition to column IDs. Note: If there are multiple columns with the same name, in general, all will be used for the table method.
 Fixed	Resolved a regression with the autocompletion of table methods.
 Added	The new table method "replacevals()" can be used to replace every occurence of a set of values with new values.
