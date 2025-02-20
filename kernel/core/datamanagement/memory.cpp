@@ -2278,6 +2278,95 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 }
 
 
+bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals)
+{
+    if (_oldVals.size() != _newVals.size() || !_oldVals.size())
+        return false;
+
+    _vCols.setOpenEndIndex(getCols()-1);
+    bool success = false;
+
+    // Search in all columns
+    for (size_t j = 0; j < _vCols.size(); j++)
+    {
+        if (_vCols[j] != VectorIndex::INVALID
+            && _vCols[j] < (int)memArray.size()
+            && memArray[_vCols[j]])
+        {
+            // Get a reference to the current column
+            TblColPtr& col = memArray[_vCols[j]];
+
+            // Categorical columns only compare their category values
+            if (col->m_type == TableColumn::TYPE_CATEGORICAL)
+            {
+                std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(col.get())->getCategories();
+
+                for (size_t i = 0; i < vCategories.size(); i++)
+                {
+                    for (size_t n = 0; n < _oldVals.size(); n++)
+                    {
+                        if (_oldVals[n].isString() && _oldVals[n] == vCategories[i])
+                        {
+                            vCategories[i] = _newVals[n].printVal();
+                            success = true;
+                            break;
+                        }
+                    }
+                }
+
+                continue;
+            }
+
+            TableColumn::ColumnType targetType = TableColumn::TYPE_NONE;
+            std::map<size_t, size_t> idxMap;
+
+            // Find all matches and get the promoted type
+            for (size_t i = 0; i < col->size(); i++)
+            {
+                mu::Value v = col->get(i);
+
+                for (size_t n = 0; n < _oldVals.size(); n++)
+                {
+                    if (_oldVals[n] == v)
+                    {
+                        targetType = to_promoted_type(targetType, to_column_type(_newVals[n]));
+                        idxMap[i] = n;
+                        success = true;
+                        break;
+                    }
+                }
+            }
+
+            // Did we find something?
+            if (idxMap.size())
+            {
+                // Ensure that a type is available. Otherwise fall back to
+                // strings
+                if (targetType == TableColumn::TYPE_NONE)
+                    targetType = TableColumn::TYPE_STRING;
+
+                if (col->m_type != targetType)
+                {
+                    targetType = to_promoted_type(col->m_type, targetType);
+
+                    if (targetType == TableColumn::TYPE_NONE)
+                        targetType = TableColumn::TYPE_STRING;
+
+                    convert_if_needed(col, _vCols[j], targetType, true);
+                }
+
+                for (const auto& iter : idxMap)
+                {
+                    col->set(iter.first, _newVals[iter.second]);
+                }
+            }
+        }
+    }
+
+    return success;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This member function is used for
 /// saving the contents of this memory page into

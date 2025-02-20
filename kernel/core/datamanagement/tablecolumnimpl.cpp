@@ -2529,6 +2529,9 @@ static mu::NumericalType to_numerical_type(TableColumn::ColumnType type)
 /////////////////////////////////////////////////
 TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableColumn::ColumnType other)
 {
+    if (current == TableColumn::TYPE_NONE)
+        return other;
+
     if (current == other)
         return current;
 

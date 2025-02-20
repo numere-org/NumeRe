@@ -1390,6 +1390,34 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "replacevals()" table
+/// method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_replacevals(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::Array* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 3)
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().replacevals()", ".replacevals(", ".replacevals(");
+
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().replaceVals(sTableName, cols, v[1], v[2])));
+    return sResultVectorName;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Realizes the "fndcols()" table method.
 ///
 /// \param sTableName const std::string&
@@ -2134,6 +2162,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["describe"] = tableMethod_annotate;
     mTableMethods["categoriesof"] = tableMethod_categories;
     mTableMethods["categorize"] = tableMethod_categorize;
+    mTableMethods["replacevals"] = tableMethod_replacevals;
     mTableMethods["fndcols"] = tableMethod_findCols;
     mTableMethods["countif"] = tableMethod_counteq;
     mTableMethods["indexof"] = tableMethod_index;

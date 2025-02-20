@@ -187,6 +187,7 @@ class Memory : public Sorter
         bool removeRows(const VectorIndex& _vRows);
         bool reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrder);
         bool reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder);
+        bool replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals);
 
         // MAFIMPLEMENTATIONS
         std::complex<double> std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;

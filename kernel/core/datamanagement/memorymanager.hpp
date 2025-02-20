@@ -222,6 +222,11 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vMemory[findTable(sTable)]->reorderRows(_vRows, _vNewOrder);
         }
 
+        bool replaceVals(const std::string& sTable, const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals)
+        {
+            return vMemory[findTable(sTable)]->replaceVals(_vCols, _oldVals, _newVals);
+        }
+
         bool resizeTable(int _nCols, const std::string& _sTable)
 		{
 			return vMemory[findTable(_sTable)]->resizeMemory(1, _nCols);
