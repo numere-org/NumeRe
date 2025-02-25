@@ -192,10 +192,10 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
     // Create the tooltip and set it
     size_t pos = sVar.find('\t');
 
-    if (pos < 2e3)
+    if (pos <= 1010)
         tooltip += " = " + sVar.substr(0, pos);
     else
-        tooltip += " = " + sVar.substr(0, 1000) + "[...]" + sVar.substr(pos-1000, pos);
+        tooltip += " = " + sVar.substr(0, 500) + "[...]" + sVar.substr(pos-500, 500);
 
     SetItemToolTip(currentItem, tooltip);
 

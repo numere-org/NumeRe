@@ -1530,10 +1530,10 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
     // Calculate the simple statistics
     bool isDateTime = false;
     wxString colTypes;
+    wxGridCellsExtent selectedExtent = coords.getExtent();
 
     if (isGridNumeReTable)
     {
-        wxGridCellsExtent selectedExtent = coords.getExtent();
         std::vector<int> vTypes = static_cast<GridNumeReTable*>(GetTable())->getColumnTypes();
         std::set<int> types;
 
@@ -1557,10 +1557,19 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     wxString statustext;
 
-    double dMin = calculateMin(coords);
-    double dMax = calculateMax(coords);
-    std::complex<double> dSum = calculateSum(coords);
-    std::complex<double> dAvg = calculateAvg(coords);
+    double dMin = NAN;
+    double dMax = NAN;
+    std::complex<double> dSum = NAN;
+    std::complex<double> dAvg = NAN;
+
+    if ((selectedExtent.m_bottomright.GetCol() - selectedExtent.m_topleft.GetCol() + 1)
+        * (selectedExtent.m_bottomright.GetRow() - selectedExtent.m_topleft.GetRow() + 1) < 2000000)
+    {
+        dMin = calculateMin(coords);
+        dMax = calculateMax(coords);
+        dSum = calculateSum(coords);
+        dAvg = calculateAvg(coords);
+    }
 
     if (isDateTime && !isnan(dMin))
     {

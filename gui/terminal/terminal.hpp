@@ -249,6 +249,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 			m_updateProcedureLibrary = true;
 		}
         NumeReVariables getVariableList();
+        NumeReVariables getVariableListForAutocompletion();
 
 		// Styling functions
         bool SetFont(const wxFont& font);

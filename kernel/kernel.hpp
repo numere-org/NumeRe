@@ -335,6 +335,7 @@ class NumeReKernel
         std::string getDocumentation(const std::string& sCommand);
         std::vector<std::string> getDocIndex();
         NumeReVariables getVariableList();
+        NumeReVariables getVariableListForAutocompletion();
         bool SettingsModified();
         int getAutosaveInterval() const
 		{

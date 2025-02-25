@@ -2483,6 +2483,54 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Print an overview of the contained
+    /// elements, i.e. the first and the last few
+    /// elements in the array.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param maxElems size_t
+    /// \param alwaysBraces bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Array::printOverview(size_t digits, size_t chrs, size_t maxElems, bool alwaysBraces) const
+    {
+        // Return an empty brace pair, if no data is
+        // available
+        if (!size())
+            return alwaysBraces ? "{}" : "void";
+
+        // If only one value is available, omit the brace
+        if (size() == 1 && !alwaysBraces)
+            return print(digits, chrs, false);
+
+        std::string sVector;
+
+        // Append the contained data depending on its type but
+        // restrict the number to maximal five values (use the first
+        // and the last ones) and insert an ellipsis in the middle
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (sVector.size())
+                sVector += ", ";
+
+            sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+
+            // Insert the ellipsis in the middle. The additional -1 is to
+            // handle the zero-based indices
+            if (i == maxElems / 2 - 1 && size() > maxElems)
+            {
+                sVector += ", ...";
+                i = size()-maxElems / 2 - 1;
+            }
+        }
+
+        return "{" + sVector + "}";
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Return the number of acquired bytes
     /// for this Array.
     ///

@@ -28,7 +28,7 @@
 /////////////////////////////////////////////////
 struct AnovaResult
 {
-    std::string prefix;
+    std::string name;
     std::complex<double> m_FRatio;
     std::complex<double> m_significanceVal;
     std::complex<double> m_significance;

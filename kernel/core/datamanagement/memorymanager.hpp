@@ -419,8 +419,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues);
         }
 
-        std::vector<double> getIndex(const std::string& sTable, size_t nCol,
-                                     const mu::Array& vValues) const
+        mu::Array getIndex(const std::string& sTable, size_t nCol, const mu::Array& vValues) const
         {
             return vMemory[findTable(sTable)]->getIndex(nCol, vValues);
         }

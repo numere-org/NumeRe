@@ -205,6 +205,7 @@ namespace mu
             std::string printVals(size_t digits = 0, size_t chrs = 0) const;
             std::string printDims() const;
             std::string printJoined(const std::string& sSep = "", bool keepEmpty = false) const;
+            std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
 
             Value& get(size_t i);

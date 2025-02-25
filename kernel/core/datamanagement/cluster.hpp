@@ -69,8 +69,6 @@ namespace NumeRe
             void setValueArray(const mu::Array& a);
             void assignResults(Indices _idx, const mu::Array& data);
 
-            std::string getShortVectorRepresentation(size_t maxStringLength) const;
-
             std::vector<int> sortElements(const VectorIndex& row, const std::string& sSortingExpression);
             void deleteItems(const VectorIndex& vLines);
     };

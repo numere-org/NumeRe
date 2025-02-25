@@ -393,6 +393,20 @@ NumeReVariables NumeReTerminal::getVariableList()
 
 
 /////////////////////////////////////////////////
+/// \brief This will return the variable list
+/// from the kernel to be used for autocompletion.
+///
+/// \return NumeReVariables
+///
+/////////////////////////////////////////////////
+NumeReVariables NumeReTerminal::getVariableListForAutocompletion()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getVariableListForAutocompletion();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This will return a copy of the
 /// internal settings object of the kernel.
 ///
@@ -919,7 +933,7 @@ NumeReTerminal::SetCursorBlinkRate(int rate)
 /////////////////////////////////////////////////
 std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, std::string sPreDefList)
 {
-    NumeReVariables globalVars = getVariableList();
+    NumeReVariables globalVars = getVariableListForAutocompletion();
     std::string sScopedList;
 
     // Now find all possible candidates
@@ -951,7 +965,7 @@ std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, 
 /////////////////////////////////////////////////
 std::string NumeReTerminal::getVariableType(const std::string& sVarName)
 {
-    NumeReVariables globalVars = getVariableList();
+    NumeReVariables globalVars = getVariableListForAutocompletion();
 
     for (size_t i = 0; i < globalVars.vVariables.size(); i++)
     {

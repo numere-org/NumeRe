@@ -189,6 +189,8 @@ class Memory : public Sorter
         bool reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder);
         bool replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals);
 
+        std::pair<double, double> minmax() const;
+
         // MAFIMPLEMENTATIONS
         std::complex<double> std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         std::complex<double> avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
@@ -214,7 +216,7 @@ class Memory : public Sorter
         std::vector<std::complex<double>> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<size_t> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
         std::vector<size_t> countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const;
-        std::vector<double> getIndex(size_t col, const mu::Array& vValues) const;
+        mu::Array getIndex(size_t col, const mu::Array& vValues) const;
         double getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         double getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         double getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;

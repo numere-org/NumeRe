@@ -34,6 +34,9 @@ namespace NumeRe
         std::string source;
         __time64_t lastSavedTime;
         bool isSaved;
+        mutable bool statsCurrent = false;
+        mutable double minVal = NAN;
+        mutable double maxVal = NAN;
 
         void save()
         {
@@ -43,6 +46,8 @@ namespace NumeRe
 
         void modify()
         {
+            statsCurrent = false;
+
             if (!isSaved)
                 return;
 

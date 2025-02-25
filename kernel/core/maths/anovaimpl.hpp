@@ -19,6 +19,7 @@
 #include "../maths/anova.hpp"
 
 #include <vector>
+#include <string>
 
 #ifndef ANOVAIMPL_HPP
 #define ANOVAIMPL_HPP
@@ -37,8 +38,9 @@ public:
 
     // this is used for "navigation" in the tree, to access correct elements
     std::vector<size_t> subset;
+    std::string name;
 
-    std::vector<std::vector<double>> catIndex;
+    std::vector<mu::Array> catIndex;
     std::vector<std::complex<double>> means;
     std::vector<std::complex<double>> nums;
     std::complex<double> SS;
@@ -77,8 +79,8 @@ public:
             delete child;
     }
 
-    void calculateSS(const std::complex<double> overallMean);
-    void calculateMean(const Memory *mem, const std::vector<std::vector<std::string>> &factors, size_t facIdx);
+    void calculateSS(const std::complex<double>& overallMean);
+    void calculateMean(const Memory* mem, const std::vector<std::string>& factorSet, size_t facIdx);
     void calculateDof(size_t factorCnt);
 };
 
@@ -100,20 +102,21 @@ private:
     double dof_within = 0;
     size_t max_depth = 0;
 
-    void buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet);
-    void calculateLevel(FactorNode* node,  size_t depth);
+    void buildTreeHelper(FactorNode* node, size_t start, size_t n, std::vector<size_t>& currentSet);
+    void calculateLevel(FactorNode* node, size_t depth);
 
     void calculateSSInteraction(FactorNode* node);
     void calculateSSWithin(FactorNode* node);
-    std::vector<std::complex<double>> getAllSubSetSS(std::vector<size_t> set);
-    void getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<std::complex<double>> &retvec);
-    bool isSubSet(std::vector<size_t> set, std::vector<size_t> subSet);
+    std::vector<std::complex<double>> getAllSubSetSS(const std::vector<size_t>& set);
+    void getAllChild_SS_helper(FactorNode* node, const std::vector<size_t>& set, std::vector<std::complex<double>>& retvec);
+    bool isSubSet(const std::vector<size_t>& set, const std::vector<size_t>& subSet);
     void getResultsHelper(FactorNode* node, std::vector<AnovaResult>& res, size_t depth);
 
 public:
 
     AnovaCalculationStructure();
-    void buildTree(std::vector<std::vector<std::string>> _factors, Memory* _mem, double _significance);
+    ~AnovaCalculationStructure();
+    void buildTree(const std::vector<std::vector<std::string>>& _factors, Memory* _mem, double _significance);
     void calculateResults();
     std::vector<AnovaResult> getResults();
 };

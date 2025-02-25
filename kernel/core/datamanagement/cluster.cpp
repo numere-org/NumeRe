@@ -297,47 +297,6 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function constructs a
-    /// short version of a plain vector from the data
-    /// in memory, which is used to display a preview
-    /// of the contained data in the variable viewers.
-    ///
-    /// \param maxStringLength size_t
-    /// \return std::string
-    ///
-    /////////////////////////////////////////////////
-    std::string Cluster::getShortVectorRepresentation(size_t maxStringLength) const
-    {
-        // Return an empty brace pair, if no data is
-        // available
-        if (!size())
-            return "{}";
-
-        std::string sVector;
-
-        // Append the contained data depending on its type but
-        // restrict the number to maximal five values (use the first
-        // and the last ones) and insert an ellipsis in the middle
-        for (size_t i = 0; i < size(); i++)
-        {
-            if (sVector.size())
-                sVector += ", ";
-
-            sVector += mu::Array::get(i).print(5, maxStringLength < std::string::npos ? maxStringLength/4 : std::string::npos, false);
-
-            // Insert the ellipsis in the middle
-            if (i == 1 && size() > 5)
-            {
-                sVector += "...";
-                i = size()-3;
-            }
-        }
-
-        return "{" + sVector + "}";
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief This public member function provides
     /// access to the sorting algorithm for the
     /// cluster object.

@@ -2574,6 +2574,27 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
 
 
 /////////////////////////////////////////////////
+/// \brief Return min and max value of the table
+/// to be presented as part of the variable
+/// viewer.
+///
+/// \return std::pair<double, double>
+///
+/////////////////////////////////////////////////
+std::pair<double, double> Memory::minmax() const
+{
+    if (!m_meta.statsCurrent)
+    {
+        m_meta.minVal = min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END)).real();
+        m_meta.maxVal = max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END)).real();
+        m_meta.statsCurrent = true;
+    }
+
+    return std::make_pair(m_meta.minVal, m_meta.maxVal);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation for the STD multi
 /// argument function.
 ///
@@ -3800,7 +3821,7 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
         {
             int pos = getCols(false);
             resizeMemory(-1, pos+1);
-            memArray[pos].reset(new ValueColumn);
+            memArray[pos].reset(new LogicalColumn);
             memArray[pos]->m_sHeadLine = sName;
             g_logger.info("Created new column " + toString(pos+1) + " for '" + sName + "'");
             vColIndices.push_back(pos+1);
@@ -3860,34 +3881,41 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
 ///
 /// \param col size_t
 /// \param vValues const mu::Array&
-/// \return std::vector<double>
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-std::vector<double> Memory::getIndex(size_t col, const mu::Array& vValues) const
+mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
 {
-    std::vector<double> vIndex;
+    mu::Array indices;
 
     if (col >= memArray.size() || !memArray[col])
-        return std::vector<double>(1, NAN);
+    {
+        indices.push_back(NAN);
+        return indices;
+    }
 
     for (const auto& val : vValues)
     {
-        if (vIndex.size())
-            vIndex.push_back(NAN);
+        mu::Array idxSet;
 
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
             if (val.isNumerical()
                 ? closeEnough(memArray[col]->getValue(i), val.getNum().asCF64())
                 : memArray[col]->getValueAsInternalString(i) == val.getStr())
-                vIndex.push_back(i+1);
+                idxSet.push_back(i+1);
         }
+
+        if (vValues.size() > 1)
+            indices.push_back(idxSet);
+        else
+            indices = idxSet;
     }
 
-    if (!vIndex.size())
-        vIndex.push_back(NAN);
+    if (!indices.size())
+        indices.push_back(NAN);
 
-    return vIndex;
+    return indices;
 }
 
 /////////////////////////////////////////////////
@@ -3914,7 +3942,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
 
     size_t col_size = getElemsInColumn(colValues);
     for(size_t i = 0; i < colCategories.size(); i++)
-        {
+    {
         if (colCategories[i] > (int)memArray.size() || !memArray[colCategories[i]]
             || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
             || (size_t)getElemsInColumn(colCategories[i]) != col_size)

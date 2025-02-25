@@ -2717,7 +2717,7 @@ static std::string formatByteSize(double bytes)
 NumeReVariables NumeReKernel::getVariableList()
 {
     NumeReVariables vars;
-    constexpr size_t MAXSTRINGLENGTH = 1024;
+    constexpr size_t MAXSTRINGLENGTH = 512;
 
     mu::varmap_type varmap = _parser.GetVar();
     std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
@@ -2734,7 +2734,7 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
-            + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
         vars.vVariables.push_back(sCurrentLine);
@@ -2752,7 +2752,7 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
-            + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
         vars.vVariables.push_back(sCurrentLine);
@@ -2768,8 +2768,11 @@ NumeReVariables NumeReKernel::getVariableList()
 
         sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
             + toString(_memoryManager.getCols(iter->first, false));
-        sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
-            + toString(_memoryManager.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
+
+        std::pair<double,double> stats = _memoryManager.getTable(iter->first)->minmax();
+
+        sCurrentLine += "\ttable\t{" + toString(stats.first, DEFAULT_MINMAX_PRECISION) + ", ..., "
+            + toString(stats.second, DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
             + formatByteSize(_memoryManager.getBytes(iter->first));
 
         vars.vVariables.push_back(sCurrentLine);
@@ -2784,8 +2787,88 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
-        sCurrentLine += "\tcluster\t" + replaceControlCharacters(iter->second.getShortVectorRepresentation(MAXSTRINGLENGTH))
+        sCurrentLine += "\tcluster\t" + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true)
             + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
+
+    return vars;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a structure
+/// containing all currently declared variables,
+/// which can be used for autocompletion purposes.
+///
+/// \return NumeReVariables
+///
+/////////////////////////////////////////////////
+NumeReVariables NumeReKernel::getVariableListForAutocompletion()
+{
+    NumeReVariables vars;
+
+    mu::varmap_type varmap = _parser.GetVar();
+    std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
+    const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
+    std::string sCurrentLine;
+
+    // Gather all (global) numerical variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() == mu::TYPE_STRING
+            || isDimensionVar(iter->first))
+            continue;
+
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nNumerics = vars.vVariables.size();
+
+    // Gather all (global) string variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() != mu::TYPE_STRING
+            || isDimensionVar(iter->first))
+            continue;
+
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
+
+    // Gather all (global) tables
+    for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~"))
+            continue;
+
+        sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
+            + toString(_memoryManager.getCols(iter->first, false)) + "\ttable";
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
+
+    // Gather all (global) clusters
+    for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~"))
+            continue;
+
+        sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1\tcluster";
 
         vars.vVariables.push_back(sCurrentLine);
     }

@@ -408,8 +408,10 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
 
                     src.evalIndices();
 
+                    _parser.DisableAccessCaching();
                     _data.copyTable(src.getDataObject(), src.getIndices(), tgt.getDataObject(), tgt.getIndices());
-                    sLine = _parser.CreateTempVar(mu::Array(std::vector<std::complex<double>>({src.getIndices().row.size(), src.getIndices().col.size()})));
+                    sLine = _parser.CreateTempVar(mu::Array(std::vector<std::complex<double>>({src.getIndices().row.size(),
+                                                                                               src.getIndices().col.size()})));
                     return "";
                 }
             }
@@ -1701,25 +1703,34 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
     std::vector<AnovaResult> res = _kernel->getMemoryManager().getAnova(sTableName, cols1, cols2.front(), vIndex, significance);
 
-    mu::Array vRet;
+    mu::Array results;
 
     for (size_t i = 0; i < res.size(); i++)
     {
-        std::string prefix = res.size() > 1 ? (res[i].prefix + "-") : "";
+        mu::Array anovaSet;
+        std::string sAnovaSetName = res.size() > 1 ? ("[" + res[i].name + "]") : "";
 
-        vRet.push_back(prefix + "FisherRatio");
-        vRet.push_back(res[i].m_FRatio);
-        vRet.push_back(prefix + "FisherSignificanceVal");
-        vRet.push_back(res[i].m_significanceVal);
-        vRet.push_back(prefix + "SignificanceLevel");
-        vRet.push_back(res[i].m_significance);
-        vRet.push_back(prefix + "SignificantVariation");
-        vRet.push_back(res[i].m_isSignificant);
-        vRet.push_back(prefix + "Categories");
-        vRet.push_back(res[i].m_numCategories);
+        anovaSet.push_back("FisherRatio");
+        anovaSet.push_back(res[i].m_FRatio);
+        anovaSet.push_back("FisherSignificanceVal");
+        anovaSet.push_back(res[i].m_significanceVal);
+        anovaSet.push_back("SignificanceLevel");
+        anovaSet.push_back(res[i].m_significance);
+        anovaSet.push_back("SignificantVariation");
+        anovaSet.push_back(res[i].m_isSignificant);
+        anovaSet.push_back("Categories");
+        anovaSet.push_back(res[i].m_numCategories);
+
+        if (res.size() > 1)
+        {
+            results.push_back(sAnovaSetName);
+            results.push_back(anovaSet);
+        }
+        else
+            results = anovaSet;
     }
 
-    _kernel->getParser().SetInternalVar(sResultVectorName, vRet);
+    _kernel->getParser().SetInternalVar(sResultVectorName, results);
     return sResultVectorName;
 }
 

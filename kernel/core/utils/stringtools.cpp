@@ -1169,6 +1169,9 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
         if (voter && inNum)
             voter->endParseAndVote(sStr.length()-1);
 
+        if (!sStr.length() || toLowerCase(sStr) == "nan" || sStr == "---")
+            return true;
+
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }
@@ -1189,6 +1192,10 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
     {
         // Apply the simplest heuristic: only digits and separators
         // and ignore characters, which cannot represent a date by themselves
+        // NaN is also allowed
+        if (!sStr.length() || toLowerCase(sStr) == "nan" || sStr == "---")
+            return true;
+
         if (sStr.find_first_not_of(" 0123456789,.:-/\tTZ") != std::string::npos
             || sStr.find_first_not_of(" \t,.:-/TZ") == std::string::npos)
             return false;

@@ -19,72 +19,81 @@
 #include "anovaimpl.hpp"
 #include "../datamanagement/memory.hpp"
 
+#include "../io/logger.hpp"
+
+mu::Value overall;
+
 /////////////////////////////////////////////////
-/// \brief This function calculates the mean and num values for the given node by
-///  first splitting up all values into factor groups and then caluclation of means of these gropus
+/// \brief This function calculates the mean and
+/// num values for the given node by first
+/// splitting up values into factor groups and
+/// then calculating the means of these groups.
 ///
-/// \param node FactorNode*
+/// \param mem const Memory*
+/// \param factorSet const std::vector<std::string>&
 /// \param facIdx size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<std::string>> &factors, size_t facIdx)
+void FactorNode::calculateMean(const Memory* mem, const std::vector<std::string>& factorSet, size_t facIdx)
 {
-    Memory tmp_mem(0);
-    for (size_t i = 0; i < factors[facIdx].size(); i++)
+    for (size_t i = 0; i < factorSet.size(); i++)
     {
-        //positions of all elements, which correspond to the passed values
-        std::vector<double> catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factors[facIdx][i]));
+        // positions of all elements, which correspond to the passed values
+        mu::Array catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factorSet[i]));
 
-        if (std::isnan(catIndex1.front()))
+        if (!catIndex1.front().isValid())
             continue;
 
         if (parent == nullptr)
         {
-            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(catIndex1))));
+            means.push_back(mem->avg(catIndex1, VectorIndex(0)));
+            nums.push_back(mem->num(catIndex1, VectorIndex(0)));
+
             catIndex.push_back(catIndex1);
         }
         else
         {
             // Intersect with parent groups
-            std::vector<std::vector<double>> catIndicesParent = parent->catIndex;
+            const std::vector<mu::Array>& catIndicesParent = parent->catIndex;
 
-            for (std::vector<double> catIndex2 : catIndicesParent)
+            for (const mu::Array& catIndex2 : catIndicesParent)
             {
-                std::vector<double> intersection;
+                mu::Array intersection;
 
-                for (auto a : catIndex1)
-                    for (auto b : catIndex2)
+                for (const auto& a : catIndex1)
+                    for (const auto& b : catIndex2)
                         if (a == b)
                             intersection.push_back(a);
 
                 if (intersection.size() == 0)
                     continue;
 
-                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(intersection))));
+                means.push_back(mem->avg(intersection, VectorIndex(0)));
+                nums.push_back(mem->num(intersection, VectorIndex(0)));
+
+
                 catIndex.push_back(intersection);
             }
         }
     }
-
-    for (size_t i = 0; i < tmp_mem.memArray.size(); i++)
-    {
-        means.push_back(tmp_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
-        nums.push_back(tmp_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
-    }
 }
+
 
 /////////////////////////////////////////////////
 /// \brief calculation of Sum of Squares of given node
 ///
-/// \param node FactorNode*
+/// \param overallMean const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FactorNode::calculateSS(const std::complex<double> overallMean)
+void FactorNode::calculateSS(const std::complex<double>& overallMean)
 {
-    for(size_t i = 0; i < means.size(); i++)
-        SS += nums[i] * intPower(means[i]-overallMean,2);
+    for (size_t i = 0; i < means.size(); i++)
+    {
+        if (!mu::isnan(means[i]))
+            SS += nums[i] * intPower(means[i] - overallMean, 2); // S_B
+    }
 }
 
 /////////////////////////////////////////////////
@@ -97,7 +106,8 @@ void FactorNode::calculateSS(const std::complex<double> overallMean)
 void FactorNode::calculateDof(size_t factorCnt)
 {
     dof = (factorCnt-1);
-    if(parent != nullptr)
+
+    if (parent != nullptr)
         dof *= parent->dof;
 }
 
@@ -105,34 +115,41 @@ void FactorNode::calculateDof(size_t factorCnt)
 /// \brief This helper function does build the Tree up to a given level n
 ///
 /// \param node FactorNode*
-/// \param start int
-/// \param n int
+/// \param start size_t
+/// \param n size_t
 /// \param currentSet std::vector<size_t>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet)
+void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, size_t start, size_t n, std::vector<size_t>& currentSet)
 {
-    if (start > n) return; // Base case: no more elements to add
+    if (start > n)
+        return; // Base case: no more elements to add
 
-    //depth is given by size of subset
-    if(max_depth < currentSet.size()+1)
+    // depth is given by size of subset
+    if (max_depth < currentSet.size()+1)
         max_depth = currentSet.size()+1;
 
-    for (size_t i = (size_t)start; i <= n; ++i)
+    for (size_t i = start; i <= n; ++i)
     {
         std::vector<size_t> newSubset = currentSet;
         newSubset.push_back(i);
         FactorNode* child = new FactorNode(newSubset);
 
         // we are at level > 2
-        if(currentSet.size() > 0)
+        if (currentSet.size() > 0)
             child->parent = node;
 
-        //calculate SS for new child
-        child->calculateMean(mem, factors, i);
+        // calculate SS for new child
+        child->calculateMean(mem, factors[i], i);
         child->calculateSS(overallMean);
         child->calculateDof(factors[i].size());
+
+        // Use the category column names as prefixes
+        child->name = mem->memArray[child->subset[0]+1]->m_sHeadLine;
+
+        for (size_t i = 1; i < child->subset.size(); i++)
+            child->name += " x " + mem->memArray[child->subset[i]+1]->m_sHeadLine;
 
         node->addChild(child);
         buildTreeHelper(child, i + 1, n, newSubset);
@@ -152,10 +169,10 @@ void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, int start, int
 /////////////////////////////////////////////////
 void AnovaCalculationStructure::calculateLevel(FactorNode* node,  size_t depth)
 {
-    if(node->subset.size() == max_depth)
+    if (node->subset.size() == max_depth)
         calculateSSWithin(node);
 
-    if(node->subset.size() == depth)
+    if (node->subset.size() == depth)
     {
         calculateSSInteraction(node);
         return;
@@ -177,11 +194,18 @@ void AnovaCalculationStructure::calculateLevel(FactorNode* node,  size_t depth)
 void AnovaCalculationStructure::calculateSSInteraction(FactorNode* node)
 {
     //no interaction effect if level 1
-    if(node->parent == nullptr)
+    if (node->parent == nullptr)
         return;
 
+    auto nanAcc = [](const std::complex<double>& acc, const std::complex<double>& i) {return mu::isnan(i) ? acc : acc+i;};
+
     std::vector<std::complex<double>> child_SS = getAllSubSetSS(node->subset);
-    node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),std::complex<double>());
+    node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(), std::complex<double>(), nanAcc);
+
+    // Just a guess how to construct the correlation term (equals to 1 for a two-way)
+    // Seems to correspond to the table at end of this article: https://en.wikipedia.org/wiki/Two-way_analysis_of_variance
+    double correlation = std::count_if(child_SS.begin(), child_SS.end(), [](const std::complex<double>& i) {return i != 0.0;}) - 1.0;
+    node->SS_interaction += correlation * overallNum * overallMean;
 }
 
 /////////////////////////////////////////////////
@@ -197,13 +221,18 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
     SS_Within = 0;
     dof_within = overallNum.real() - node->catIndex.size();
 
-    for(size_t i = 0; i < node->catIndex.size(); i++)
+    for (size_t i = 0; i < node->catIndex.size(); i++)
     {
-        for(std::complex<double> idx : node->catIndex[i])
+        if (mu::isnan(node->means[i]))
+            continue;
+
+        for (const auto& idx : node->catIndex[i])
         {
             // these indeces start at 1 ?
-            std::complex<double> val_j = mem->memArray[0].get()->getValue(idx.real()-1);
-            SS_Within +=  intPower(val_j - node->means[i],2);
+            std::complex<double> val_j = mem->readMem(idx.getNum().asI64()-1, 0).as_cmplx();
+
+            if (!mu::isnan(val_j))
+                SS_Within += intPower(val_j - node->means[i], 2); // S_W
         }
     }
 }
@@ -211,11 +240,11 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
 /////////////////////////////////////////////////
 /// \brief get all SS of elements which are subset of set
 ///
-/// \param set std::vector<size_t>
+/// \param set const std::vector<size_t>&
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> AnovaCalculationStructure::getAllSubSetSS(std::vector<size_t> set)
+std::vector<std::complex<double>> AnovaCalculationStructure::getAllSubSetSS(const std::vector<size_t>& set)
 {
     std::vector<std::complex<double>> retvec;
     getAllChild_SS_helper(root, set, retvec);
@@ -226,37 +255,40 @@ std::vector<std::complex<double>> AnovaCalculationStructure::getAllSubSetSS(std:
 /// \brief helper function to get all SS of elements which are subset of set
 ///
 /// \param node FactorNode*
-/// \param set std::vector<size_t>
+/// \param set const std::vector<size_t>&
 /// \param retvec std::vector<std::complex<double>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void AnovaCalculationStructure::getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<std::complex<double>> &retvec)
+void AnovaCalculationStructure::getAllChild_SS_helper(FactorNode* node, const std::vector<size_t>& set, std::vector<std::complex<double>>& retvec)
 {
     if (isSubSet(set, node->subset))
     {
         retvec.push_back(node->subset.size() == 1 ? node->SS : node->SS_interaction);
+        g_logger.info(node->name + ": " + toString(node->subset.size() == 1) + " -> " + toString(retvec.back(), 7));
+
         for (auto c : node->children)
             getAllChild_SS_helper(c, set, retvec);
     }
-    return;
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This function will checks if the given subSet is actually a valid subset of set
 ///
-/// \param set std::vector<size_t>
-/// \param subSet std::vector<size_t>
+/// \param set const std::vector<size_t>&
+/// \param subSet const std::vector<size_t>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool AnovaCalculationStructure::isSubSet(std::vector<size_t> set, std::vector<size_t> subSet)  //todo static outside ?
+bool AnovaCalculationStructure::isSubSet(const std::vector<size_t>& set, const std::vector<size_t>& subSet)  //todo static outside ?
 {
-    for (auto s : subSet) {
+    for (auto s : subSet)
+    {
         if (std::find(set.begin(), set.end(), s) == set.end())
             return false;
-        }
+    }
+
     return true;
 }
 
@@ -273,23 +305,18 @@ bool AnovaCalculationStructure::isSubSet(std::vector<size_t> set, std::vector<si
 /////////////////////////////////////////////////
 void AnovaCalculationStructure::getResultsHelper(FactorNode* node, std::vector<AnovaResult>& res, size_t depth)
 {
-    if(node->subset.size() == depth)
+    if (node->subset.size() == depth)
     {
         AnovaResult r;
         std::complex<double> SS = node->subset.size() > 1 ? node->SS_interaction : node->SS ;
         double dof = node->dof;
-        SS /= dof;
-        SS /= SS_Within;
+        SS /= dof; // MS_B
+        SS /= SS_Within; //MS_B / MS_W
 
-        std::stringstream ss;
-        if(node->subset.size() == 0)
+        if (node->subset.size() == 0)
             return;
 
-        ss << "Factor" << node->subset[0];
-        for(size_t i = 1; i < node->subset.size(); i++)
-            ss << "x" << node->subset[i];
-
-        r.prefix = ss.str();
+        r.name = node->name;
         r.m_FRatio = SS;
         r.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, dof, dof_within);
         r.m_significance = significance;
@@ -313,6 +340,17 @@ void AnovaCalculationStructure::getResultsHelper(FactorNode* node, std::vector<A
 AnovaCalculationStructure::AnovaCalculationStructure()
 {
     root = new FactorNode({});
+    root->name = "root";
+}
+
+/////////////////////////////////////////////////
+/// \brief Destructor of AnovaCalculationStructure
+///
+///
+/////////////////////////////////////////////////
+AnovaCalculationStructure::~AnovaCalculationStructure()
+{
+    delete root;
 }
 
 /////////////////////////////////////////////////
@@ -320,19 +358,21 @@ AnovaCalculationStructure::AnovaCalculationStructure()
 ///     given factors and the provided memory from the table columns the anova
 ///     is performed on.
 ///
-/// \param _factors std::vector<std::vector<std::string>>
+/// \param _factors const std::vector<std::vector<std::string>>&
 /// \param _mem Memory*
 /// \param _significance double
 /// \return void
 ///
 /////////////////////////////////////////////////
-void AnovaCalculationStructure::buildTree(std::vector<std::vector<std::string>> _factors, Memory* _mem, double _significance)
+void AnovaCalculationStructure::buildTree(const std::vector<std::vector<std::string>>& _factors, Memory* _mem, double _significance)
 {
     significance = _significance;
     factors = _factors;
     mem = _mem;
     overallMean = _mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
     overallNum = _mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+
+    overall = overallMean;
 
     size_t n = factors.size()-1;
     std::vector<size_t> startSet;
@@ -347,10 +387,10 @@ void AnovaCalculationStructure::buildTree(std::vector<std::vector<std::string>> 
 /////////////////////////////////////////////////
 void AnovaCalculationStructure::calculateResults()
 {
-    for(size_t l = 1; l <= max_depth; l++)
+    for (size_t l = 1; l <= max_depth; l++)
         calculateLevel(root, l);
 
-    SS_Within /= dof_within;
+    SS_Within /= dof_within; // MS_W
 }
 
 /////////////////////////////////////////////////
@@ -362,7 +402,10 @@ void AnovaCalculationStructure::calculateResults()
 std::vector<AnovaResult> AnovaCalculationStructure::getResults()
 {
     std::vector<AnovaResult> res;
-    for(size_t d = 1; d <= max_depth; d++)
+
+    for (size_t d = 1; d <= max_depth; d++)
         getResultsHelper(root, res, d);
+
     return res;
 }
+

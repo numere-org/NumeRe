@@ -26,7 +26,7 @@
 
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
-#define MAXSTRINGLENGTH 1024
+#define MAXSTRINGLENGTH 512
 
 using namespace std;
 
@@ -279,7 +279,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
 
         // Replace the value with its actual value and mark the
         // argument type as reference
-        sArgumentValue = cluster.getShortVectorRepresentation(MAXSTRINGLENGTH);
+        sArgumentValue = cluster.printOverview(DEFAULT_MINMAX_PRECISION, MAXSTRINGLENGTH, 5, true);
 
         // Determine whether this is a reference or a templated
         // variable
@@ -614,7 +614,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         // to display them in the variable viewer panel
         sTableData = toString(instance->getMemoryManager().getCluster(iter.second).size()) + " x 1";
         sTableData += "\tcluster\t"
-            + replaceControlCharacters(instance->getMemoryManager().getCluster(iter.second).getShortVectorRepresentation(MAXSTRINGLENGTH)) + "\t"
+            + instance->getMemoryManager().getCluster(iter.second).printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true) + "\t"
             + iter.second + "{}";
 
         mLocalClusters[iter.first + "{}"] = sTableData;
@@ -792,7 +792,7 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
         vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()
                         + (sepChar == '@' ? "\t(@) " : "\t")
                         + iter->second.getCommonTypeAsString() + "\t"
-                        + iter->second.print(dt == mu::TYPE_STRING ? MAXSTRINGLENGTH : DEFAULT_NUM_PRECISION) + "\t"
+                        + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
                         + iter->first.substr((iter->first).find(sepChar)+1));
     }
 
@@ -923,7 +923,7 @@ vector<string> NumeReDebugger::getGlobals()
         if (!iter->first.starts_with("_~"))
         {
             mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t"
-                + replaceControlCharacters(iter->second.getShortVectorRepresentation(MAXSTRINGLENGTH));
+                + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true);
         }
     }
 
@@ -935,7 +935,7 @@ vector<string> NumeReDebugger::getGlobals()
             && !isDimensionVar(iter->first))
         {
             mGlobals[iter->first] = iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
-                + iter->second->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
+                + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
         }
     }
 
