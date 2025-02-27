@@ -61,6 +61,7 @@ struct HistogramParameters
     bool bRelative;
     bool bGrid;
     bool bStoreGrid;
+    bool bBars;
 };
 
 
@@ -421,12 +422,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     {
         for (size_t i = 1; i < vHistMatrix[0].size() + 1; i++)
         {
-            sOut[0][i] = _histParams.sCountLabel + ": " + _data.getTopHeadLineElement(_idx.col[i-1], _histParams.sTable);
-
-            //size_t nPos;
-
-            //while ((nPos = sOut[0][i].find(' ')) != std::string::npos)
-            //    sOut[0][i][nPos] = '_';
+            sOut[0][i] = _data.getTopHeadLineElement(_idx.col[i-1], _histParams.sTable);
         }
     }
 
@@ -598,7 +594,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     // Add all legends to the graph
     for (size_t i = 0; i < vLegends.size(); i++)
     {
-        _histGraph->AddLegend(vLegends[i].c_str(), sColorStyles[nStyle].c_str());
+        _histGraph->AddLegend(vLegends[i].c_str(), (sColorStyles[nStyle] + (_histParams.bBars ? "" : "=.")).c_str());
 
         if (nStyle == nStyleMax - 1)
             nStyle = 0;
@@ -624,16 +620,20 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 
     // Update the y ranges for a possible logscale
     if (_pData.getLogscale(YRANGE))
-        _histGraph->SetRanges(_histParams.ranges[XCOORD].min(), _histParams.ranges[XCOORD].max() + (vCategories.size() != 0), 0.1, 1.4 * dMax);
+        _histGraph->SetRanges(_histParams.ranges[XCOORD].min(),
+                              _histParams.ranges[XCOORD].max() + (vCategories.size() != 0),
+                              0.1, 1.4 * dMax);
     else
-        _histGraph->SetRanges(_histParams.ranges[XCOORD].min(), _histParams.ranges[XCOORD].max() + (vCategories.size() != 0), 0.0, 1.05 * dMax);
+        _histGraph->SetRanges(_histParams.ranges[XCOORD].min(),
+                              _histParams.ranges[XCOORD].max() + (vCategories.size() != 0),
+                              _histParams.bBars ? 0.0 : -0.05 * dMax, 1.05 * dMax);
 
     // Create the axes
     if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
     {
         if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
             _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
-        else if (!_pData.getLogscale(XRANGE))
+        else if (!_pData.getLogscale(XRANGE) && _histParams.bBars)
         {
             if (vCategories.size())
                 _histGraph->SetTicksVal('x', _mAxisVals, sTicks.c_str());
@@ -761,6 +761,9 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     {
         sColor += sColorStyles[nStyle];
 
+        if (!_histParams.bBars)
+            sColor += "=.";
+
         if (nStyle == nStyleMax - 1)
             nStyle = 0;
         else
@@ -768,7 +771,10 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     }
 
     // Create the actual bars
-    _histGraph->Bars(_mAxisVals, _histData, sColor.c_str());
+    if (_histParams.bBars)
+        _histGraph->Bars(_mAxisVals, _histData, sColor.c_str());
+    else
+        _histGraph->Plot(_mAxisVals, _histData, sColor.c_str());
 
     // Open the plot in the graph viewer
     // of write it directly to file
@@ -1939,6 +1945,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
     _histParams.bAvg = sCountMethod == "asavg";
     _histParams.bSum = sCountMethod == "accum" || cmdParser.hasParam("sum");
     _histParams.bStoreGrid = cmdParser.hasParam("storegrid");
+    _histParams.bBars = !cmdParser.hasParam("nobars");
 
     // Ensure we have three intervals
     _histParams.ranges.intervals.resize(3);

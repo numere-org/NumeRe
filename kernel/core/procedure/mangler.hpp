@@ -28,6 +28,9 @@
 /////////////////////////////////////////////////
 class Mangler
 {
+    private:
+        constexpr static const char* PATTERN = "_~~?[\\w|~]+[_~A]?_?\\d+~~\\w+";
+
     public:
         /////////////////////////////////////////////////
         /// \brief Mangle local variables within flow
@@ -40,7 +43,7 @@ class Mangler
         /////////////////////////////////////////////////
         static std::string mangleFlowCtrlLocals(const std::string& sName, size_t level)
         {
-            return "_~~LOOP" + toString(level) + "~~" + sName;
+            return "_~~FCL" + toString(level) + "~~" + sName;
         }
 
         /////////////////////////////////////////////////
@@ -98,7 +101,7 @@ class Mangler
 
             while (true)
             {
-                std::regex_search(sMangledExpression, match, std::regex("_~~?[\\w|~]+_\\d+~~\\w+"));
+                std::regex_search(sMangledExpression, match, std::regex(PATTERN));
 
                 if (match.size())
                     sMangledExpression.replace(match.position(),
@@ -126,7 +129,7 @@ class Mangler
 
             while (true)
             {
-                std::regex_search(sMangledExpression, match, std::regex("_~~?[\\w|~]+_\\d+~~\\w+"));
+                std::regex_search(sMangledExpression, match, std::regex(PATTERN));
 
                 if (match.size())
                 {

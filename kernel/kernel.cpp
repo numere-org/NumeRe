@@ -641,6 +641,7 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("complement", numfnc_complement);                          // complement({x,y,z...}, {a,b,c,...})
     _parser.DefineFun("union", numfnc_union);                                    // union({x,y,z...}, {a,b,c,...})
     _parser.DefineFun("intersection", numfnc_intersection);                      // intersection({x,y,z...}, {a,b,c,...})
+    _parser.DefineFun("getoverlap", numfnc_getOverlap);                          // getoverlap({x1,x2}, {y1,y2})
 
     _parser.DefineFun("sinc", numfnc_SinusCardinalis);                           // sinc(x)
     _parser.DefineFun("sin", numfnc_sin);                                        // sin(x)

@@ -2680,6 +2680,10 @@ namespace NumeRe
                  && vTextData.size() > 1
                  && vTextData[1].find(' ') != std::string::npos)
             cSep = ' ';
+        else if (vTextData[0].find('|') != std::string::npos
+                 && vTextData.size() > 1
+                 && vTextData[1].find('|') != std::string::npos)
+            cSep = '|';
         else
         {
             if (vTextData[0].find(',') != std::string::npos)

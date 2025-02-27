@@ -101,36 +101,23 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
             vStats[STATS_STD].back() = NAN;
             vStats[STATS_RMS].back() = NAN;
 
-            //vStats[STATS_CI_P].push_back(NAN);
             vStats[STATS_CI_W].push_back(NAN);
             vStats[STATS_S_T].push_back(NAN);
             continue;
         }
 
-
-        // Use BOOST to calculate the Student-t value for
-        // the current number of freedoms
-        vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM].back()-1, 0.95));
-        vStats[STATS_CI_W].push_back(vStats[STATS_S_T].back() * vStats[STATS_STD].back() / std::sqrt(vStats[STATS_NUM].back()));
-
-        /*vStats[STATS_CI_P].push_back(0.0);
-
-        // Calculate Confidence interval count
-        for (size_t i = 0; i < _idx.row.size(); i++)
+        if (vStats[STATS_NUM].back() > 1)
         {
-            if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
-                continue;
-
-            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).getNum().asF64();
-
-            if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_CI_W].back())
-                vStats[STATS_CI_P].back()++;
+            // Use BOOST to calculate the Student-t value for
+            // the current number of freedoms.
+            vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM].back()-1, 0.95));
+            vStats[STATS_CI_W].push_back(vStats[STATS_S_T].back() * vStats[STATS_STD].back() / std::sqrt(vStats[STATS_NUM].back()));
         }
-
-        // Finalize the confidence interval count
-        vStats[STATS_CI_P].back() /= vStats[STATS_NUM].back();
-        vStats[STATS_CI_P].back() = round(10000.0*vStats[STATS_CI_P].back()) / 100.0;*/
-
+        else
+        {
+            vStats[STATS_CI_W].push_back(NAN);
+            vStats[STATS_S_T].push_back(NAN);
+        }
     }
 
     return vStats;

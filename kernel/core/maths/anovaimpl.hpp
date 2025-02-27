@@ -79,7 +79,7 @@ public:
             delete child;
     }
 
-    void calculateSS(const std::complex<double>& overallMean);
+    void calculateSS();
     void calculateMean(const Memory* mem, const std::vector<std::string>& factorSet, size_t facIdx);
     void calculateDof(size_t factorCnt);
 };

@@ -21,8 +21,6 @@
 
 #include "../io/logger.hpp"
 
-mu::Value overall;
-
 /////////////////////////////////////////////////
 /// \brief This function calculates the mean and
 /// num values for the given node by first
@@ -83,16 +81,15 @@ void FactorNode::calculateMean(const Memory* mem, const std::vector<std::string>
 /////////////////////////////////////////////////
 /// \brief calculation of Sum of Squares of given node
 ///
-/// \param overallMean const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FactorNode::calculateSS(const std::complex<double>& overallMean)
+void FactorNode::calculateSS()
 {
     for (size_t i = 0; i < means.size(); i++)
     {
         if (!mu::isnan(means[i]))
-            SS += nums[i] * intPower(means[i] - overallMean, 2); // S_B
+            SS += nums[i] * means[i] * means[i]; // S_B
     }
 }
 
@@ -142,7 +139,7 @@ void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, size_t start, 
 
         // calculate SS for new child
         child->calculateMean(mem, factors[i], i);
-        child->calculateSS(overallMean);
+        child->calculateSS();
         child->calculateDof(factors[i].size());
 
         // Use the category column names as prefixes
@@ -150,6 +147,10 @@ void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, size_t start, 
 
         for (size_t i = 1; i < child->subset.size(); i++)
             child->name += " x " + mem->memArray[child->subset[i]+1]->m_sHeadLine;
+
+//        g_logger.info(child->name + ":");
+//        g_logger.info("SS: " + toString(child->SS, 7));;
+//        g_logger.info("Dof: " + toString(child->dof, 7));;
 
         node->addChild(child);
         buildTreeHelper(child, i + 1, n, newSubset);
@@ -199,13 +200,17 @@ void AnovaCalculationStructure::calculateSSInteraction(FactorNode* node)
 
     auto nanAcc = [](const std::complex<double>& acc, const std::complex<double>& i) {return mu::isnan(i) ? acc : acc+i;};
 
+    //g_logger.info("Composite = " + toString(overallNum * overallMean * overallMean));
+
     std::vector<std::complex<double>> child_SS = getAllSubSetSS(node->subset);
     node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(), std::complex<double>(), nanAcc);
 
     // Just a guess how to construct the correlation term (equals to 1 for a two-way)
     // Seems to correspond to the table at end of this article: https://en.wikipedia.org/wiki/Two-way_analysis_of_variance
     double correlation = std::count_if(child_SS.begin(), child_SS.end(), [](const std::complex<double>& i) {return i != 0.0;}) - 1.0;
-    node->SS_interaction += correlation * overallNum * overallMean;
+    node->SS_interaction += correlation * overallNum * overallMean * overallMean;
+
+    //g_logger.info("SS-interaction: " + toString(node->SS_interaction, 7));
 }
 
 /////////////////////////////////////////////////
@@ -232,9 +237,11 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
             std::complex<double> val_j = mem->readMem(idx.getNum().asI64()-1, 0).as_cmplx();
 
             if (!mu::isnan(val_j))
-                SS_Within += intPower(val_j - node->means[i], 2); // S_W
+                SS_Within += val_j * val_j; // S_W
         }
     }
+
+    SS_Within -= node->SS;
 }
 
 /////////////////////////////////////////////////
@@ -265,7 +272,6 @@ void AnovaCalculationStructure::getAllChild_SS_helper(FactorNode* node, const st
     if (isSubSet(set, node->subset))
     {
         retvec.push_back(node->subset.size() == 1 ? node->SS : node->SS_interaction);
-        g_logger.info(node->name + ": " + toString(node->subset.size() == 1) + " -> " + toString(retvec.back(), 7));
 
         for (auto c : node->children)
             getAllChild_SS_helper(c, set, retvec);
@@ -307,15 +313,17 @@ void AnovaCalculationStructure::getResultsHelper(FactorNode* node, std::vector<A
 {
     if (node->subset.size() == depth)
     {
-        AnovaResult r;
-        std::complex<double> SS = node->subset.size() > 1 ? node->SS_interaction : node->SS ;
+        // Interactions are already compensated
+        std::complex<double> SS = node->subset.size() > 1 ? node->SS_interaction : node->SS - overallNum * overallMean * overallMean;
+        //g_logger.info("SS: " + toString(SS, 7));
         double dof = node->dof;
-        SS /= dof; // MS_B
+        SS /= dof; // S_B -> MS_B
         SS /= SS_Within; //MS_B / MS_W
 
         if (node->subset.size() == 0)
             return;
 
+        AnovaResult r;
         r.name = node->name;
         r.m_FRatio = SS;
         r.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, dof, dof_within);
@@ -372,8 +380,6 @@ void AnovaCalculationStructure::buildTree(const std::vector<std::vector<std::str
     overallMean = _mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
     overallNum = _mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
 
-    overall = overallMean;
-
     size_t n = factors.size()-1;
     std::vector<size_t> startSet;
     buildTreeHelper(root, 0, n, startSet);
@@ -390,7 +396,10 @@ void AnovaCalculationStructure::calculateResults()
     for (size_t l = 1; l <= max_depth; l++)
         calculateLevel(root, l);
 
-    SS_Within /= dof_within; // MS_W
+//    g_logger.info("Residual = " + toString(SS_Within, 7));
+//    g_logger.info("Residual_dof = " + toString(dof_within, 7));
+
+    SS_Within /= dof_within; // S_W -> MS_W
 }
 
 /////////////////////////////////////////////////

@@ -3485,7 +3485,7 @@ mu::Array numfnc_ivl(const mu::Array& x, const mu::Array& x0, const mu::Array& x
 /////////////////////////////////////////////////
 static std::complex<double> studentFactor_impl(const std::complex<double>& vFreedoms, const std::complex<double>& vAlpha)
 {
-    if (vAlpha.real() >= 1.0 || vAlpha.real() <= 0.0 || vFreedoms.real() < 2.0)
+    if (vAlpha.real() >= 1.0 || vAlpha.real() <= 0.0 || vFreedoms.real() < 1.0)
         return NAN;
 
     return student_t(intCast(vFreedoms), vAlpha.real());
@@ -4065,6 +4065,35 @@ mu::Array numfnc_intersection(const mu::Array& setA, const mu::Array& setB)
     }
 
     return intersected;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the overlap of all intervals
+/// between left and right or void.
+///
+/// \param left const mu::Array&
+/// \param right const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_getOverlap(const mu::Array& left, const mu::Array& right)
+{
+    if (left.size() < 2 || right.size() < 2)
+        return mu::Value();
+
+    mu::Value startPos = numfnc_Max(&left, 1).front();
+    mu::Value endPos = numfnc_Min(&right, 1).front();
+
+    if (startPos <= endPos)
+    {
+        mu::Array ret;
+        ret.push_back(startPos);
+        ret.push_back(endPos);
+        return ret;
+    }
+
+    return mu::Value();
 }
 
 

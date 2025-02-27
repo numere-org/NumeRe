@@ -28,3 +28,8 @@ Cleaned	The table method "TAB().anovaof()" will now return the results of multi-
 Removed	Large tables won't calculate the complete stats anymore, if opened in the table viewer (this is for performance reasons).
 Cleaned	The autocompletion in the terminal is much faster now.
 Cleaned	The return value of the table method "TAB().indexof()" has been changed to a cluster, where consecutive index sets are stored as embedded clusters.
+Added	The option "nobars" can be used together with "hist" to switch the output graph to a dashed line plot with distinct marks at the bars' positions. This can be handy if you try to compare multiple histograms in a single diagram.
+Cleaned	The table methods "TAB().categoriesof()" and "TAB().categorize()" will now return an array of categories (see function "category()" for reference) instead of a key-value list. This might break some code.
+Added	The character "|" is now also considered a potential column separator for CSV files.
+Cleaned	The function "student_t" will no longer subtract 1 from the passed DOF internally.
+Added	The function "getoverlap()" returns the overlap of all to be passed intervals.

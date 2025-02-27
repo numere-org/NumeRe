@@ -247,12 +247,12 @@ class SyntaxError
         /// invalid exception.
         /////////////////////////////////////////////////
         SyntaxError() : nErrorPosition(invalid_position), errorcode(EMPTY_ERROR_MESSAGE)
-			{
-                nErrorIndices[0] = -1;
-                nErrorIndices[1] = -1;
-                nErrorIndices[2] = -1;
-                nErrorIndices[3] = -1;
-            }
+        {
+            nErrorIndices[0] = -1;
+            nErrorIndices[1] = -1;
+            nErrorIndices[2] = -1;
+            nErrorIndices[3] = -1;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -264,11 +264,11 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos) : SyntaxError()
-            {
-                sFailingExpression = sExpr;
-                nErrorPosition = n_pos;
-                errorcode = _err;
-            }
+        {
+            sFailingExpression = sExpr;
+            nErrorPosition = n_pos;
+            errorcode = _err;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -282,12 +282,12 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, const std::string& sToken) : SyntaxError()
-            {
-                sFailingExpression = sExpr;
-                sErrorToken = sToken;
-                nErrorPosition = n_pos;
-                errorcode = _err;
-            }
+        {
+            sFailingExpression = sExpr;
+            sErrorToken = sToken;
+            nErrorPosition = n_pos;
+            errorcode = _err;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -303,13 +303,17 @@ class SyntaxError
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), nErrorPosition(n_pos), errorcode(_err)
-            {
-                nErrorIndices[0] = nInd1;
-                nErrorIndices[1] = nInd2;
-                nErrorIndices[2] = nInd3;
-                nErrorIndices[3] = nInd4;
-            }
+        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos,
+                    int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index)
+        {
+            sFailingExpression = sExpr;
+            nErrorPosition = n_pos;
+            errorcode = _err;
+            nErrorIndices[0] = nInd1;
+            nErrorIndices[1] = nInd2;
+            nErrorIndices[2] = nInd3;
+            nErrorIndices[3] = nInd4;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -327,13 +331,18 @@ class SyntaxError
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, const std::string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), nErrorPosition(n_pos), errorcode(_err)
-            {
-                nErrorIndices[0] = nInd1;
-                nErrorIndices[1] = nInd2;
-                nErrorIndices[2] = nInd3;
-                nErrorIndices[3] = nInd4;
-            }
+        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, const std::string& sToken,
+                    int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index)
+        {
+            sFailingExpression = sExpr;
+            sErrorToken = sToken;
+            nErrorPosition = n_pos;
+            errorcode = _err;
+            nErrorIndices[0] = nInd1;
+            nErrorIndices[1] = nInd2;
+            nErrorIndices[2] = nInd3;
+            nErrorIndices[3] = nInd4;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -347,11 +356,11 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok) : SyntaxError()
-            {
-                sFailingExpression = sExpr;
-                errorcode = _err;
-                nErrorPosition = sFailingExpression.find(sErrTok);
-            }
+        {
+            sFailingExpression = sExpr;
+            errorcode = _err;
+            nErrorPosition = sFailingExpression.find(sErrTok);
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -367,12 +376,12 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, const std::string& sToken) : SyntaxError()
-            {
-                sFailingExpression = sExpr;
-                sErrorToken = sToken;
-                errorcode = _err;
-                nErrorPosition = sFailingExpression.find(sErrTok);
-            }
+        {
+            sFailingExpression = sExpr;
+            sErrorToken = sToken;
+            errorcode = _err;
+            nErrorPosition = sFailingExpression.find(sErrTok);
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -390,14 +399,17 @@ class SyntaxError
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), errorcode(_err)
-            {
-                nErrorPosition = sFailingExpression.find(sErrTok);
-                nErrorIndices[0] = nInd1;
-                nErrorIndices[1] = nInd2;
-                nErrorIndices[2] = nInd3;
-                nErrorIndices[3] = nInd4;
-            }
+        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok,
+                    int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index)
+        {
+            sFailingExpression = sExpr;
+            errorcode = _err;
+            nErrorPosition = sFailingExpression.find(sErrTok);
+            nErrorIndices[0] = nInd1;
+            nErrorIndices[1] = nInd2;
+            nErrorIndices[2] = nInd3;
+            nErrorIndices[3] = nInd4;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Creates an exception based from an
@@ -417,14 +429,18 @@ class SyntaxError
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, const std::string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), errorcode(_err)
-            {
-                nErrorPosition = sFailingExpression.find(sErrTok);
-                nErrorIndices[0] = nInd1;
-                nErrorIndices[1] = nInd2;
-                nErrorIndices[2] = nInd3;
-                nErrorIndices[3] = nInd4;
-            }
+        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, const std::string& sToken,
+                    int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index)
+        {
+            sFailingExpression = sExpr;
+            sErrorToken = sToken;
+            errorcode = _err;
+            nErrorPosition = sFailingExpression.find(sErrTok);
+            nErrorIndices[0] = nInd1;
+            nErrorIndices[1] = nInd2;
+            nErrorIndices[2] = nInd3;
+            nErrorIndices[3] = nInd4;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Returns the erroneous expression.
@@ -433,7 +449,9 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         std::string getExpr() const
-            {return sFailingExpression;}
+        {
+            return sFailingExpression;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Returns the error token containing
@@ -443,7 +461,9 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         std::string getToken() const
-            {return sErrorToken;}
+        {
+            return sErrorToken;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Returns the position of the error in
@@ -453,7 +473,9 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         size_t getPosition() const
-            {return nErrorPosition;}
+        {
+            return nErrorPosition;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Returns a pointer to the internal
@@ -463,7 +485,9 @@ class SyntaxError
         ///
         /////////////////////////////////////////////////
         const int* getIndices() const
-            {return nErrorIndices;}
+        {
+            return nErrorIndices;
+        }
 
 };
 

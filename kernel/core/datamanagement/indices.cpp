@@ -27,8 +27,10 @@ using namespace mu;
 
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd, StringView sTableName, bool isAssignment);
 static void extractIndexList(StringView sCols, vector<StringView>& vLines, vector<StringView>& vCols);
-static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex, StringView sTableName, bool isAssignment);
-static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd, StringView sTableName, bool isAssignment);
+static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex, StringView sTableName,
+                               StringView sCmd, bool isAssignment);
+static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sTableName,
+                                StringView sCmd, bool isAssignment);
 static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign);
 static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView sCmd);
 
@@ -178,7 +180,7 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
     if (vLines.size() == 1)
     {
         // Try to match the textual indices to vectors
-        handleIndexVectors(_parser, _idx.row, vLines.front(), sTableName, isAssignment);
+        handleIndexVectors(_parser, _idx.row, vLines.front(), sTableName, sCmd, isAssignment);
     }
 
     // Detect, whether the column indices are candidates
@@ -186,14 +188,14 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
     if (vCols.size() == 1)
     {
         // Try to match the textual indices to vectors
-        handleIndexVectors(_parser, _idx.col, vCols.front(), sTableName, isAssignment);
+        handleIndexVectors(_parser, _idx.col, vCols.front(), sTableName, sCmd, isAssignment);
     }
 
     // Ensure that the indices are casuals and no indices
     if (vLines.size() > 1 || vCols.size() > 1)
     {
         // Handle the casual indices
-        handleCasualIndices(_parser, _idx, vLines, vCols, sCmd, sTableName, isAssignment);
+        handleCasualIndices(_parser, _idx, vLines, vCols, sTableName, sCmd, isAssignment);
     }
 
     if (_idx.row.numberOfNodes() > 2 || _idx.col.numberOfNodes() > 2)
@@ -297,11 +299,12 @@ static void stringToNumIndex(mu::Array& a, StringView sTableName, bool isAssignm
 /// \param _vIdx VectorIndex&
 /// \param sIndex StringView
 /// \param sTableName StringView
+/// \param sCmd StringView
 /// \param isAssignment bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex, StringView sTableName, bool isAssignment)
+static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex, StringView sTableName, StringView sCmd, bool isAssignment)
 {
     mu::Array v;
 
@@ -313,6 +316,9 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
     {
         _parser.SetExpr(sIndex);
         v = _parser.Eval();
+
+        if (!v.size())
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v.print());
 
         stringToNumIndex(v, sTableName, isAssignment);
 
@@ -409,13 +415,13 @@ static std::string convertToString(Array* v, const vector<int> vIndexNumbers)
 /// \param _idx Indices&
 /// \param vLines vector<StringView>&
 /// \param vCols vector<StringView>&
-/// \param sCmd StringView
 /// \param sTableName StringView
+/// \param sCmd StringView
 /// \param isAssignment bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd, StringView sTableName, bool isAssignment)
+static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sTableName, StringView sCmd, bool isAssignment)
 {
     string sIndexExpressions;
     vector<int> vIndexNumbers;
@@ -444,6 +450,9 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
         // map the results to their assignments
         for (int i = 0; i < nResults; i++)
         {
+            if (!v[i].size())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v[i].print());
+
             stringToNumIndex(v[i], sTableName, isAssignment);
 
             if (isinf(v[i].front().getNum().asF64())) // infinity => last possible index

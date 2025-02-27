@@ -786,7 +786,8 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
     {
         char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
 
-        if (iter->second.getCommonType() != dt)
+        if (iter->second.getCommonType() != dt
+            && !(dt == mu::TYPE_NUMERICAL && iter->second.getCommonType() == mu::TYPE_VOID))
             continue;
 
         vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()

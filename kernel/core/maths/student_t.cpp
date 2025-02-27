@@ -34,7 +34,7 @@
 /////////////////////////////////////////////////
 double student_t(int nFreedoms, double dConfidenceInterval)
 {
-    boost::math::students_t dist(nFreedoms-1);
+    boost::math::students_t dist(nFreedoms);
     return boost::math::quantile(boost::math::complement(dist, (1.0-dConfidenceInterval)/2.0));
 }
 

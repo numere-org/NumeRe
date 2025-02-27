@@ -680,8 +680,7 @@ mu::Array Memory::getCategoryList(const VectorIndex& _vCol) const
 
                 for (size_t c = 0; c < vCategories.size(); c++)
                 {
-                    vRet.push_back(vCategories[c]);
-                    vRet.push_back(mu::Numerical(c+1));
+                    vRet.push_back(mu::Category{mu::Numerical(c+1), vCategories[c]});
                 }
             }
         }
@@ -3907,7 +3906,12 @@ mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
         }
 
         if (vValues.size() > 1)
-            indices.push_back(idxSet);
+        {
+            if (idxSet.size())
+                indices.push_back(idxSet);
+            else
+                indices.push_back(mu::Value());
+        }
         else
             indices = idxSet;
     }
