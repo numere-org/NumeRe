@@ -211,6 +211,8 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
             }
         }
     }
+
+    return idx;
 }
 
 
@@ -393,33 +395,43 @@ bool MemoryManager::saveToCacheFile()
     bSaveMutex = true;
 
     sCache_file = ValidFileName(sCache_file, ".cache");
+    std::string sTempFile = sCache_file + ".temp";
+    bool success = true;
 
-    NumeRe::CacheFile cacheFile(sCache_file);
-
-    cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
-    cacheFile.writeCacheHeader();
-
-    int nLines;
-    int nCols;
-
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    // Write the data to a temporary file first
+    if (sCache_file.length())
     {
-        if (iter->first == "data")
-            continue;
+        NumeRe::CacheFile cacheFile(sTempFile);
 
-        nLines = vMemory[iter->second.first]->getLines(false);
-        nCols = vMemory[iter->second.first]->getCols(false);
+        cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
+        cacheFile.writeCacheHeader();
 
-        cacheFile.setDimensions(nLines, nCols);
-        cacheFile.setData(&vMemory[iter->second.first]->memArray, nLines, nCols);
-        cacheFile.setTableName(iter->first);
-        cacheFile.setComment(vMemory[iter->second.first]->m_meta.comment);
+        int nLines;
+        int nCols;
 
-        cacheFile.write();
+        for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+        {
+            if (iter->first == "data")
+                continue;
+
+            nLines = vMemory[iter->second.first]->getLines(false);
+            nCols = vMemory[iter->second.first]->getCols(false);
+
+            cacheFile.setDimensions(nLines, nCols);
+            cacheFile.setData(&vMemory[iter->second.first]->memArray, nLines, nCols);
+            cacheFile.setTableName(iter->first);
+            cacheFile.setComment(vMemory[iter->second.first]->m_meta.comment);
+
+            success = success && cacheFile.write();
+        }
     }
 
-    setSaveStatus(true);
+    // If the file has been written successfully, move it to the
+    // actual file name
+    if (success)
+        moveFile(sTempFile, sCache_file);
 
+    setSaveStatus(true);
     bSaveMutex = false;
     return true;
 }

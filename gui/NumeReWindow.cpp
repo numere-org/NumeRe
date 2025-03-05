@@ -1936,6 +1936,13 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                       std::make_pair(type, event.GetPath().GetFullPath())) == m_modifiedFiles.end())
             m_modifiedFiles.push_back(std::make_pair(type, event.GetPath().GetFullPath()));
 
+        // Update the recent opened file list correspondingly
+        if (type == wxFSW_EVENT_RENAME)
+            m_recentOpenedFiles.renameFile(event.GetPath().GetFullPath(), event.GetNewPath().GetFullPath());
+
+        if (type == wxFSW_EVENT_DELETE)
+            m_recentOpenedFiles.deleteFile(event.GetPath().GetFullPath());
+
         m_dragDropSourceItem = wxTreeItemId();
         m_fileEventTimer->StartOnce(500);
     }
@@ -2104,7 +2111,7 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
                                          m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
-    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, this, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable, tableDisplayName, sIntName);
     frame->SetSize(std::min((size_t)800u, grid->GetWidth()), std::max(std::min((size_t)600u, grid->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
@@ -2201,10 +2208,10 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDispl
 /////////////////////////////////////////////////
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
-    if (tableDisplayName.find("{}") != std::string::npos)
-        openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
-    else
+    if (tableDisplayName.find("()") != std::string::npos)
         openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
+    else
+        openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
 }
 
 
@@ -2748,7 +2755,9 @@ void NumeReWindow::renameFile()
         std::unique_ptr<FileRevisions> revisions(manager.getRevisions(source_filename.GetFullPath()));
 
         if (revisions.get())
-            revisions->renameFile(source_filename.GetFullName(), target_filename.GetFullName(), manager.getRevisionPath(target_filename.GetFullPath()));
+            revisions->renameFile(source_filename.GetFullName(),
+                                  target_filename.GetFullName(),
+                                  manager.getRevisionPath(target_filename.GetFullPath()));
     }
 
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
@@ -3036,17 +3045,17 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfilename)
 {
-    g_logger.info("Creating new editor for '" + defaultfilename.ToStdString() + "'");
-
-    if (m_book->GetPageCount() == 1 && m_book->isDefaultPage(0))
-    {
-        m_book->closeDefaultPage();
-        m_defaultPage = nullptr;
-        m_fileNum = 0;
-    }
-
     if (_filetype == FILE_NONSOURCE)
     {
+        g_logger.info("Creating new editor for empty file.");
+
+        if (m_book->isDefaultPage(m_book->GetSelection()))
+        {
+            m_book->closeDefaultPage();
+            m_defaultPage = nullptr;
+            m_fileNum--;
+        }
+
         m_fileNum += 1;
 
         //wxString locationPrefix = "(?) ";
@@ -3070,8 +3079,16 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     }
     else if (_filetype == FILE_DIFF)
     {
-        wxString filename = defaultfilename;
+        g_logger.info("Creating new editor for '" + defaultfilename.ToStdString() + "'");
 
+        if (m_book->isDefaultPage(m_book->GetSelection()))
+        {
+            m_book->closeDefaultPage();
+            m_defaultPage = nullptr;
+            m_fileNum--;
+        }
+
+        wxString filename = defaultfilename;
         std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
         m_fileNum += 1;
@@ -3137,6 +3154,15 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         {
             filename = defaultfilename.ToStdString();
             isExternal = filename.starts_with(vPaths[PROCPATH]);
+        }
+
+        g_logger.info("Creating new editor for '" + filename + "'");
+
+        if (m_book->isDefaultPage(m_book->GetSelection()))
+        {
+            m_book->closeDefaultPage();
+            m_defaultPage = nullptr;
+            m_fileNum--;
         }
 
         // Remove the dollar sign, if there is one
@@ -6942,6 +6968,8 @@ void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileNam
         m_book->Refresh();
         UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
     }
+
+    m_recentOpenedFiles.renameFile(fname.GetFullPath(), newFName.GetFullPath());
 }
 
 

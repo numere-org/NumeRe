@@ -49,7 +49,8 @@ END_EVENT_TABLE()
 /////////////////////////////////////////////////
 TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly) : wxPanel(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC | wxTAB_TRAVERSAL)
 {
-    SyntaxStyles uiTheme = static_cast<NumeReWindow*>(parent->GetParent())->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+    NumeReWindow* window = static_cast<NumeReWindow*>(parent->GetParent());
+    SyntaxStyles uiTheme = window->getOptions()->GetSyntaxStyle(Options::UI_THEME);
     statusbar->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
     SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
 
@@ -68,7 +69,7 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
                                    wxTE_READONLY | wxBORDER_THEME);
     m_lastSaveText = new wxStaticText(this, wxID_ANY, _guilang.get("GUI_TABLEPANEL_LASTSAVE"));
 
-    grid = new TableViewer(this, wxID_ANY, statusbar, this, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    grid = new TableViewer(this, wxID_ANY, statusbar, this, window, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetTableReadOnly(readOnly);
     grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
 

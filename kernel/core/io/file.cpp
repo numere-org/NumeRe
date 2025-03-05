@@ -2467,9 +2467,15 @@ namespace NumeRe
 
             // Copy the tokenized strings to the target
             // table column headline vector
-            for (size_t n = 0; n < (vTokens.size() < (size_t)nCols ? vTokens.size() : nCols); n++)
+            for (size_t n = 0; n < vTokens.size() ; n++)
             {
-                vHeadLine[n] = utf8parser(vTokens[n]);
+                // Just append additional cells at the end, if more than nCols cells
+                // are part of this row
+                if (n >= (size_t)nCols)
+                    vHeadLine.back() = cSep + utf8parser(vTokens[n]);
+                else
+                    vHeadLine[n] = utf8parser(vTokens[n]);
+
                 StripSpaces(vHeadLine[n]);
             }
 
@@ -2542,11 +2548,12 @@ namespace NumeRe
             // Decode each token
             for (size_t j = 0; j < vTokens.size(); j++)
             {
-                // Ensure that enough space is available
+                // Just append additional cells at the end, if more than nCols cells
+                // are part of this row
                 if (j >= (size_t)nCols)
-                    break;
-
-                fileData->at(j)->setValue(i-nComment, vTokens[j]);
+                    fileData->at(nCols-1)->setValue(i-nComment, fileData->at(nCols-1)->getValueAsInternalString(i-nComment) + cSep + vTokens[j]);
+                else
+                    fileData->at(j)->setValue(i-nComment, vTokens[j]);
             }
         }
     }

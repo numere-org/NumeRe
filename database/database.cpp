@@ -108,14 +108,14 @@ void databaseCommand(CommandLineParser& cmdParser)
                 // print a summary here
                 Output& _out = NumeReKernel::getInstance()->getOutput();
 
-                size_t presentedRows = std::min(result.getLines(), (size_t)10)+1;
+                size_t presentedRows = std::min(result.getLines(), (size_t)10);
                 size_t presentedCols = result.getCols();
 
                 // Create the overview string table
                 // on the heap
-                std::string** sOverview = new std::string*[presentedRows];
+                std::string** sOverview = new std::string*[presentedRows+1];
 
-                for (size_t i = 0; i < presentedRows; i++)
+                for (size_t i = 0; i < presentedRows+1; i++)
                     sOverview[i] = new std::string[presentedCols];
 
                 // Write the calculated statistics to the
@@ -126,12 +126,12 @@ void databaseCommand(CommandLineParser& cmdParser)
                     sOverview[0][j] = result.getHead(j);
 
                     // Write the actual values to the string table
-                    for (size_t i = 1; i < presentedRows; i++)
+                    for (size_t i = 0; i < presentedRows; i++)
                     {
-                        if (result.getLines() > presentedRows-1 && i+1 == presentedRows)
-                            sOverview[i][j] = "[...]";
+                        if (result.getLines() > presentedRows && i+1 == presentedRows)
+                            sOverview[i+1][j] = "[...]";
                         else
-                            sOverview[i][j] = result.get(i-1, j).print(7, 21);
+                            sOverview[i+1][j] = result.get(i, j).print(7, 25);
                     }
                 }
 
@@ -142,13 +142,13 @@ void databaseCommand(CommandLineParser& cmdParser)
                 make_hline();
                 NumeReKernel::print("NUMERE: QUERY RESULT");
                 make_hline();
-                _out.format(sOverview, presentedCols, presentedRows, NumeReKernel::getInstance()->getSettings(), true, 1);
+                _out.format(sOverview, presentedCols, presentedRows+1, NumeReKernel::getInstance()->getSettings(), true, 1);
                 _out.reset();
                 NumeReKernel::toggleTableStatus();
                 make_hline();
 
                 // --> Speicher wieder freigeben! <--
-                for (size_t i = 0; i < presentedRows; i++)
+                for (size_t i = 0; i < presentedRows+1; i++)
                     delete[] sOverview[i];
 
                 delete[] sOverview;

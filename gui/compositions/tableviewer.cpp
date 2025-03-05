@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "tableviewer.hpp"
+#include "../NumeReWindow.h"
 #include "gridtable.hpp"
 #include "tableeditpanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
@@ -45,6 +46,7 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_CHAR                    (TableViewer::OnChar)
     EVT_GRID_CELL_CHANGING      (TableViewer::OnCellChange)
     EVT_GRID_CELL_RIGHT_CLICK   (TableViewer::OnCellRightClick)
+    EVT_GRID_CELL_LEFT_DCLICK   (TableViewer::OnCellDoubleClick)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
     EVT_GRID_LABEL_LEFT_DCLICK  (TableViewer::OnLabelDoubleClick)
     EVT_MENU_RANGE              (ID_MENU_SAVE, ID_MENU_TABLE_END, TableViewer::OnMenu)
@@ -66,8 +68,8 @@ END_EVENT_TABLE()
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
-            : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true)
+TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, NumeReWindow* window, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+            : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true), m_numereWindow(window)
 {
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
@@ -1591,6 +1593,12 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
     if (colTypes.length())
         statustext << "  |  Type: " << colTypes;
 
+    if (coords.size() == 1)
+        statustext << "  |  Value: " << GetCellValue(selectedExtent.m_topleft);
+    else
+        statustext << "  |  Values: {" << GetCellValue(selectedExtent.m_topleft) << ", ..., "
+                   << GetCellValue(selectedExtent.m_bottomright) << "}";
+
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);
     m_statusBar->SetStatusText(sel, 1);
@@ -1746,7 +1754,7 @@ void TableViewer::createZeroElementTable()
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-2, this->GetCols()-2)));
 }
 
 
@@ -1909,7 +1917,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(GetRows()-1, GetCols()-1)));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(GetRows()-2, GetCols()-2)));
 }
 
 
@@ -1947,7 +1955,7 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
     isGridNumeReTable = true;
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-2, this->GetCols()-2)));
 }
 
 
@@ -2148,6 +2156,27 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
     {
         wxCommandEvent evt(wxEVT_MENU, id);
         GetEventHandler()->ProcessEvent(evt);
+    }
+}
+
+
+void TableViewer::OnCellDoubleClick(wxGridEvent& event)
+{
+    if (isGridNumeReTable && !m_numereWindow)
+    {
+        event.Skip();
+        return;
+    }
+
+    wxString cellValue = GetCellValue(event.GetRow(), event.GetCol());
+
+    if (!cellValue.length())
+        return;
+
+    if (cellValue.Matches("{* x * *}"))
+    {
+        m_numereWindow->showTable(m_intName + ".sel(" + toString(event.GetRow()+1) + ")",
+                                  m_displayName + ".sel(" + toString(event.GetRow()+1) + ")");
     }
 }
 
@@ -2416,7 +2445,7 @@ void TableViewer::saveTable(bool saveAs)
         filename = fd.GetPath().ToStdString();
     }
     else
-        filename = vPaths[SAVEPATH ] + "/" + filename;
+        filename = vPaths[SAVEPATH] + "/" + filename;
 
     // Try to open the file type
     std::unique_ptr<NumeRe::GenericFile> file(NumeRe::getFileByType(filename));

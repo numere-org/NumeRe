@@ -168,7 +168,16 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
         {
             wxGridCellAttr* customAttr = attr.Clone();
 
-            if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
+            if (grid.GetTable()->CanGetValueAs(row, col, "mu::Value"))
+            {
+                mu::Value* val = static_cast<mu::Value*>(grid.GetTable()->GetValueAsCustom(row, col, "mu::Value"));
+
+                if (val->isString())
+                    customAttr->SetBackgroundColour(m_shader.getColour(val->getStr()));
+                else
+                    customAttr->SetBackgroundColour(m_shader.getColour(val->as_cmplx()));
+            }
+            else if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
                 customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<std::complex<double>*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
             else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_NUMBER) || grid.GetTable()->CanGetValueAs(row, col, "datetime"))
                 customAttr->SetBackgroundColour(m_shader.getColour(std::complex<double>(grid.GetTable()->GetValueAsDouble(row, col))));

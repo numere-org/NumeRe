@@ -22,6 +22,7 @@
 
 #include "dbinternals.hpp"
 #include "../kernel/core/ui/error.hpp"
+#include "../kernel/core/io/logger.hpp"
 
 #include "../externals/qtl/include/qtl_sqlite.hpp"
 #include "../externals/qtl/include/qtl_mysql.hpp"
@@ -348,13 +349,14 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::mysql::datab
                         {
                             std::any& blob = stmt.get_value(j);
 
-                            if (blob.has_value())
+                            if (!stmt.is_null(j) && blob.has_value())
                             {
                                 if (stmt.blob_is_text(j))
                                 {
                                     qtl::mysql::blobbuf& buf = std::any_cast<qtl::mysql::blobbuf&>(blob);
                                     std::stringstream s;
-                                    s << &buf;
+                                    s << &buf << std::flush;
+                                    g_logger.info(s.str());
                                     result.set(i, j, mu::Value(s.str()));
                                 }
                                 else

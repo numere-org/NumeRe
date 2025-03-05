@@ -18,6 +18,7 @@
 
 #include "recentfilemanager.hpp"
 #include "../externals/tinyxml2/tinyxml2.h"
+#include "../kernel/core/io/logger.hpp"
 #include <fstream>
 
 
@@ -94,6 +95,52 @@ size_t RecentFilesManager::size() const
 const RecentFile& RecentFilesManager::operator[](size_t i) const
 {
     return m_fileList[i];
+}
+
+
+/////////////////////////////////////////////////
+/// \brief A file has been renamed or moved.
+/// Update its occurence in this list.
+///
+/// \param oldName const wxString&
+/// \param newName const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void RecentFilesManager::renameFile(const wxString& oldName, const wxString& newName)
+{
+    RecentFile renamedFile(oldName);
+
+    auto iter = std::find(m_fileList.begin(), m_fileList.end(), renamedFile);
+
+    if (iter != m_fileList.end())
+    {
+        g_logger.info("Renaming '" + oldName.ToStdString() + "' to '" + newName.ToStdString() + "' in the list of recent files.");
+        iter->name = newName;
+        iter->name.Replace("\\", "/");
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief A file has been deleted. Remove it
+/// from this list.
+///
+/// \param fileName const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void RecentFilesManager::deleteFile(const wxString& fileName)
+{
+    RecentFile deletedFile(fileName);
+
+    auto iter = std::find(m_fileList.begin(), m_fileList.end(), deletedFile);
+
+    if (iter != m_fileList.end())
+    {
+        g_logger.info("Removing '" + fileName.ToStdString() + "' from the list of recent files.");
+        m_fileList.erase(iter);
+    }
 }
 
 

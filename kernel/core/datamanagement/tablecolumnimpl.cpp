@@ -2023,7 +2023,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 void CategoricalColumn::setCategories(const std::vector<std::string>& vCategories)
 {
     // Do nothing, if no new categories have been passed
-    if (vCategories.size())
+    if (!vCategories.size())
         return;
 
     // Simply use the complete category set, if no categories have been set right now

@@ -618,7 +618,7 @@ void VariableViewer::OnDoubleClick(wxTreeEvent& event)
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()) + "@TAB()");
         }
 
-        return;
+        //return;
     }
 
     OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));

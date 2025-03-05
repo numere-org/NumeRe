@@ -33,3 +33,8 @@ Cleaned	The table methods "TAB().categoriesof()" and "TAB().categorize()" will n
 Added	The character "|" is now also considered a potential column separator for CSV files.
 Cleaned	The function "student_t" will no longer subtract 1 from the passed DOF internally.
 Added	The function "getoverlap()" returns the overlap of all to be passed intervals.
+Fixed	The random and only sometimes happening jumps of the keyboard focus from the terminal to the editor if the mouse has been moved to the editor (without explictly clicking) have been resolved.
+Added	Double-clicking on any embedded cluster in the cluster viewer window will open the embedded cluster in a new cluster viewer window.
+Fixed	Resolved a segmentation fault within the MySQL database interface.
+Cleaned	The cache file is written as a tempory file first and then moved to its actual file name to avoid being overwritten with corrupted data in case of a crash.
+Added	Standard variables can now also be viewed in a table viewer. This is especially useful for vectorial variables.

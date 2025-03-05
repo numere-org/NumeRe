@@ -237,12 +237,12 @@ class CellValueShaderDialog : public wxDialog
 
             // Define the possible comparisons
             wxArrayString lt_gt;
+            lt_gt.Add("==");
+            lt_gt.Add("!=");
             lt_gt.Add("<");
             lt_gt.Add("<=");
             lt_gt.Add(">");
             lt_gt.Add(">=");
-            lt_gt.Add("==");
-            lt_gt.Add("!=");
             lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_EQ_CONTAINS"));
             lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_EQ_NOT_CONTAINS"));
             lt_gt.Add(_guilang.get("GUI_DLG_CVS_LT_GT_EMPTY"));
@@ -474,19 +474,12 @@ class CellValueShaderDialog : public wxDialog
                         // Extract the value and convert multiple values into
                         // a vector
                         std::string val = m_lt_gt_value->GetValue().ToStdString();
-
-                        if (!val.length())
-                            break;
-
                         std::vector<std::string> vecVal;
 
                         if (val.front() == '{' && val.back() == '}')
                             vecVal = toStrVector(val);
                         else
                             vecVal.push_back(val);
-
-                        if (!vecVal.size())
-                            break;
 
                         // Get colour and update the statics
                         colors.push_back(m_lt_gt_colour->GetColour());

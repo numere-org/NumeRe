@@ -1252,7 +1252,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         {
             // Add a table grid
             int proportion = currentChild->IntAttribute("prop", 1);
-            TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
+            TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, static_cast<NumeReWindow*>(m_parent),
+                                                 wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
             currSizer->Add(table, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxFIXED_MINSIZE, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
             table->SetTableReadOnly(state == READONLY);

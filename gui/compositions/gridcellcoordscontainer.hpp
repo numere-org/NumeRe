@@ -318,6 +318,24 @@ class wxGridCellCoordsContainer
         {
             return m_array;
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Get the number of cells contained
+        /// within this container.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t size() const
+        {
+            if (m_array.size())
+                return m_array.size();
+
+            if (m_rowsOrCols.size())
+                return m_rowsOrCols.size();
+
+            return getRows() * getCols();
+        }
 };
 
 #endif // GRIDCELLCOORDSCONTAINER_HPP

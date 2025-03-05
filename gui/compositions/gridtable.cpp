@@ -153,6 +153,9 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
         return true;
 
     // Regular cells
+    if (sTypeName == "mu::Value")
+        return true;
+
     if (sTypeName == "complex" && TableColumn::isValueType(_table.getColumnType(col)))// == TableColumn::TYPE_VALUE)
         return true;
 

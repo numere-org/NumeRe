@@ -33,6 +33,7 @@
 
 class TablePanel;
 class CellValueShader;
+class NumeReWindow;
 
 /////////////////////////////////////////////////
 /// \brief This class is an adaption of the
@@ -59,6 +60,7 @@ class TableViewer : public wxGrid
 
         // External window elements
         TablePanel* m_parentPanel;
+        NumeReWindow* m_numereWindow;
         wxStatusBar* m_statusBar;
 
         void layoutGrid();
@@ -69,6 +71,7 @@ class TableViewer : public wxGrid
         void OnEnter(wxMouseEvent& event);
         void OnCellChange(wxGridEvent& event);
         void OnCellSelect(wxGridEvent& event);
+        void OnCellDoubleClick(wxGridEvent& event);
         void OnCellRangeSelect(wxGridRangeSelectEvent& event);
         void OnLabelDoubleClick(wxGridEvent& event);
         void updateFrame();
@@ -107,7 +110,7 @@ class TableViewer : public wxGrid
 
 
     public:
-        TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
+        TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, NumeReWindow* window, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(NumeRe::Container<std::string>& _stringTable, const std::string& sName, const std::string& sIntName);
         void SetData(NumeRe::Table& _table, const std::string& sName, const std::string& sIntName);

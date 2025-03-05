@@ -3685,6 +3685,8 @@ NumeRe::Table NumeReKernel::getTable()
 /////////////////////////////////////////////////
 NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 {
+    g_logger.info("Requested table: " + sTableName);
+
     std::string sSelectedTable = sTableName;
 
     if (sSelectedTable.find("()") != std::string::npos)
@@ -3707,15 +3709,69 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 /////////////////////////////////////////////////
 NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& sStringTableName)
 {
+    g_logger.info("Requested variable: " + sStringTableName);
+
     if (_memoryManager.isCluster(sStringTableName))
     {
         // Create the container for the selected cluster
         NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
-        NumeRe::Container<std::string> stringTable(clust.size(), 1);
 
-        for (size_t i = 0; i < clust.size(); i++)
+        if (sStringTableName.find(".sel(") == std::string::npos)
         {
-            const mu::Value& val = clust.get(i);
+            NumeRe::Container<std::string> stringTable(clust.size(), 1);
+
+            for (size_t i = 0; i < clust.size(); i++)
+            {
+                const mu::Value& val = clust.get(i);
+
+                if (val.getType() == mu::TYPE_STRING)
+                    stringTable.set(i, 0, val.print());
+                else
+                    stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
+            }
+
+            return stringTable;
+        }
+
+        size_t p = 0;
+        mu::Array selected = clust;
+
+        while ((p = sStringTableName.find(".sel(", p)) != std::string::npos)
+        {
+            std::string element = sStringTableName.substr(p+5, getMatchingParenthesis(StringView(sStringTableName, p+4))-1);
+            size_t el = StrToInt(element)-1;
+
+            if (el >= selected.size())
+                return NumeRe::Container<std::string>();
+
+            selected = selected.get(el);
+            p++;
+        }
+
+        NumeRe::Container<std::string> stringTable(selected.size(), 1);
+
+        for (size_t i = 0; i < selected.size(); i++)
+        {
+            const mu::Value& val = selected.get(i);
+
+            if (val.getType() == mu::TYPE_STRING)
+                stringTable.set(i, 0, val.print());
+            else
+                stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
+        }
+
+        return stringTable;
+    }
+    else if (_parser.GetVar().find(sStringTableName) != _parser.GetVar().end())
+    {
+        auto iter = _parser.GetVar().find(sStringTableName);
+        const mu::Array& arr = *(iter->second);
+
+        NumeRe::Container<std::string> stringTable(arr.size(), 1);
+
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            const mu::Value& val = arr.get(i);
 
             if (val.getType() == mu::TYPE_STRING)
                 stringTable.set(i, 0, val.print());

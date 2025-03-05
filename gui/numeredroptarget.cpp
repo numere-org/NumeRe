@@ -281,10 +281,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         }
 
                         top->UpdateLocationIfOpen(filenames[0], filename);
-
-                        if (wxCopyFile(filenames[0], filename, true))
-                            wxRemoveFile(filenames[0]);
-
+                        wxRenameFile(filenames[0], filename, true);
                         tree->SetDnDHighlight(wxTreeItemId());
                         return defaultDragResult;
                     }

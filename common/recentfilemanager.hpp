@@ -52,6 +52,9 @@ class RecentFilesManager
         size_t size() const;
         const RecentFile& operator[](size_t i) const;
 
+        void renameFile(const wxString& oldName, const wxString& newName);
+        void deleteFile(const wxString& fileName);
+
         void importList(const wxString& fileName);
         void exportList(const wxString& fileName);
 };
