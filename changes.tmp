@@ -2,7 +2,7 @@ Cleaned	NDAT files do no longer show "NOTHING", if the extended file information
 Fixed	edit can now handle paths supplied via string variables again.
 Fixed	The "start from line" functionality of scripts now doesn't create endless loops, if the starting line lays beyond the valid regime.
 Fixed	Layout scripts are now better checked against syntax and typing errors (notably unmatched parentheses).
-Cleaned	The function "cnt()" will now return 0 if "void" values are inserted as its argument (note that this is not true for an array of "void" values. Empty columns and empty tables will now also return "void" instead of "nan".
+Cleaned	The function "cnt()" will now return 0 if "void" values are inserted as its argument (note that this is not true for an array of "void" values). Completely empty and uninitialized columns and empty tables will now also return "void" instead of "nan" or an empty string.
 Added	The functions "complement()", "intersection()" and "union()" provide means to apply set theory operations.
 Added	A menu option is now available to check for NumeRe updates.
 Added	You can now change the file filters for each of the default folders in the left tree. The option can be found beneath the path settings in the settings dialog.
@@ -38,3 +38,11 @@ Added	Double-clicking on any embedded cluster in the cluster viewer window will 
 Fixed	Resolved a segmentation fault within the MySQL database interface.
 Cleaned	The cache file is written as a tempory file first and then moved to its actual file name to avoid being overwritten with corrupted data in case of a crash.
 Added	Standard variables can now also be viewed in a table viewer. This is especially useful for vectorial variables.
+Applied	The target folders used with "move" or "copy" can now contain wildcards within their path as well and will be replaced by their counterpart of the copied/moved filename, if it exists.
+Fixed	Resolved a styling problem within "textfields" with markup support.
+Cleaned	If a table is exported as an HTML file, the strings are now encoded as UTF-8.
+Applied	Table autosizing has been sped up and vertical alignment of cells with empty lines has been improved.
+Fixed	An error in selecting of the wrong comparison operator if a table column filter is edited has been resolved.
+Fixed	If table cells containing line breaks have been edited, the line break character was re-encoded erroneously. This has been fixed.
+Fixed	A segmentation fault within the table method "TAB().categorize()" has been resolved.
+Fixed	The function "textparse()" did not return the complete token, if it was the last token in the pattern and the string ended with it. This has been resolved.

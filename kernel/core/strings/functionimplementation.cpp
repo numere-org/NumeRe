@@ -1950,7 +1950,7 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
             continue;
         }
 
-        sSearchString = sSearchString.subview(pos1-1, pos2-pos1);
+        sSearchString = sSearchString.subview(pos1-1, pos2-pos1+1);
 
         // Examples for text, which shall be parsed
         // 2018-09-21: Message VAL=12452

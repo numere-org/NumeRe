@@ -2160,9 +2160,16 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Event handler for cell double clicks.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnCellDoubleClick(wxGridEvent& event)
 {
-    if (isGridNumeReTable && !m_numereWindow)
+    if (isGridNumeReTable || !m_numereWindow)
     {
         event.Skip();
         return;
@@ -2170,14 +2177,13 @@ void TableViewer::OnCellDoubleClick(wxGridEvent& event)
 
     wxString cellValue = GetCellValue(event.GetRow(), event.GetCol());
 
-    if (!cellValue.length())
-        return;
-
-    if (cellValue.Matches("{* x * *}"))
+    if (cellValue.length() && cellValue.Matches("{* x * *}"))
     {
         m_numereWindow->showTable(m_intName + ".sel(" + toString(event.GetRow()+1) + ")",
                                   m_displayName + ".sel(" + toString(event.GetRow()+1) + ")");
     }
+
+    event.Skip();
 }
 
 

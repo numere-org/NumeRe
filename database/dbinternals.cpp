@@ -215,12 +215,12 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::sqlite::data
 
         if (columnCount)
         {
-            std::vector<int> types;
+            //std::vector<int> types;
             result.setSize(0, columnCount);
 
             for (int j = 0; j < columnCount; j++)
             {
-                types.push_back(stmt.get_column_type(j));
+                //types.push_back(stmt.get_column_type(j));
                 result.setHead(j, stmt.get_column_name(j));
             }
 
@@ -230,7 +230,8 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::sqlite::data
             {
                 for (int j = 0; j < columnCount; j++)
                 {
-                    switch (types[j])
+                    //switch (types[j])
+                    switch (stmt.get_column_type(j))
                     {
                         case SQLITE_NULL:
                             break;
@@ -291,6 +292,9 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::mysql::datab
             {
                 for (int j = 0; j < columnCount; j++)
                 {
+                    if (stmt.is_null(j))
+                        continue;
+
                     switch (types[j])
                     {
                         case MYSQL_TYPE_NULL:
@@ -356,7 +360,6 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::mysql::datab
                                     qtl::mysql::blobbuf& buf = std::any_cast<qtl::mysql::blobbuf&>(blob);
                                     std::stringstream s;
                                     s << &buf << std::flush;
-                                    g_logger.info(s.str());
                                     result.set(i, j, mu::Value(s.str()));
                                 }
                                 else
@@ -554,6 +557,9 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::odbc::databa
             {
                 for (int j = 0; j < columnCount; j++)
                 {
+                    /*if (stmt.is_null(j))
+                        continue;*/
+
                     switch (types[j])
                     {
                         case SQL_BIT:

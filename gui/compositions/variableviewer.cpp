@@ -611,11 +611,20 @@ void VariableViewer::OnDoubleClick(wxTreeEvent& event)
         if (debuggerMode && (GetItemParent(event.GetItem()) == argumentRoot || GetItemParent(event.GetItem()) == globalRoot))
         {
             if (GetItemText(event.GetItem()).find("()") != std::string::npos || GetItemText(event.GetItem()).find("{}") != std::string::npos)
+            {
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
+                return;
+            }
             else if (GetInternalName(event.GetItem()).find("{}") != std::string::npos) // Fix for macros and templates
+            {
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()) + "@CST{}");
+                return;
+            }
             else if (GetInternalName(event.GetItem()).find("()") != std::string::npos) // Fix for macros and templates
+            {
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()) + "@TAB()");
+                return;
+            }
         }
 
         //return;

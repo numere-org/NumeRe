@@ -457,10 +457,10 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 
     if ((_vLine.size() > 1 && _vCol.size() > 1)
         || !memArray.size()
-        || (_vCol.size() == 1 && !getElemsInColumn(_vCol.front())))
+        /*|| (_vCol.size() == 1 && !getElemsInColumn(_vCol.front()))*/)
         return vReturn;
 
-    vReturn.resize(_vLine.size()*_vCol.size(), NAN);
+    vReturn.resize(_vLine.size()*_vCol.size(), mu::Value());
 
     //#pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
@@ -468,23 +468,23 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
         if (_vCol[j] < 0)
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
+        /*int elems = getElemsInColumn(_vCol[j]);
 
         if (!elems)
-            continue;
+            continue;*/
 
         for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
+            /*if (_vLine[i] >= elems)
             {
                 if (_vLine.isExpanded() && _vLine.isOrdered())
                     break;
 
                 continue;
-            }
+            }*/
 
             vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
         }
@@ -757,10 +757,10 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vTarget->assign(1, NAN);
+        vTarget->assign(1, mu::Value());
     else
     {
-        vTarget->assign(_vLine.size()*_vCol.size(), NAN);
+        vTarget->assign(_vLine.size()*_vCol.size(), mu::Value());
 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)
@@ -768,23 +768,23 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
             if (_vCol[j] < 0)
                 continue;
 
-            int elems = getElemsInColumn(_vCol[j]);
+            /*int elems = getElemsInColumn(_vCol[j]);
 
             if (!elems)
-                continue;
+                continue;*/
 
             for (size_t i = 0; i < _vLine.size(); i++)
             {
                 if (_vLine[i] < 0)
                     continue;
 
-                if (_vLine[i] >= elems)
+                /*if (_vLine[i] >= elems)
                 {
                     if (_vLine.isExpanded() && _vLine.isOrdered())
                         break;
 
                     continue;
-                }
+                }*/
 
                 (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }

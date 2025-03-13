@@ -395,6 +395,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
                     {
                         std::string sName = sTableName.substr(0, sTableName.find('('));
                         _data.deleteBulk(sName, 0, _data.getLines(sName) - 1, 0, _data.getCols(sName) - 1);
+                        _data.writeComment(sName, "");
 
                         if (sReturnVal.length())
                             sReturnVal += ", ";
@@ -3201,10 +3202,8 @@ static CommandReturnValues cmd_copy(string& sCmd)
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", cmdParser.getReturnValueStatement()));
             }
         }
-        else
-        {
-            throw SyntaxError(SyntaxError::CANNOT_COPY_FILE, sCmd, SyntaxError::invalid_position, sCmd);
-        }
+        else if (_option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_NO_FILE", cmdParser.getReturnValueStatement()));
     }
 
     return COMMAND_PROCESSED;

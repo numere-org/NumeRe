@@ -43,10 +43,11 @@ void TextField::SetMarkupText(const wxString& text)
     // Clear first (Clear() will generate an obsolete event)
     ChangeValue("");
 
-    wxFont defaultFont = GetFont();
+    static const wxFont defaultFont = GetFont();
     wxTextAttr attr;
     attr.SetFont(defaultFont);
     attr.SetTextColour(*wxBLACK);
+    attr.SetBackgroundColour(*wxWHITE);
     attr.SetLeftIndent(0);
     SetDefaultStyle(attr);
     size_t lastPos = 0;
@@ -163,7 +164,7 @@ void TextField::SetMarkupText(const wxString& text)
             attr.SetBackgroundColour(wxColour(240,240,240));
             SetDefaultStyle(attr);
         }
-        else if (text.substr(i, 3) == "***")
+        else if (text.substr(i, 3) == "***" && (highlightLevel == 3 || (text.length() > i+3 && !std::isblank(text[i+3]))))
         {
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+3;
@@ -182,7 +183,7 @@ void TextField::SetMarkupText(const wxString& text)
             SetDefaultStyle(attr);
             i += 2;
         }
-        else if (text.substr(i, 2) == "**")
+        else if (text.substr(i, 2) == "**" && (highlightLevel == 2 || (text.length() > i+2 && !std::isblank(text[i+2]))))
         {
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+2;
@@ -201,7 +202,7 @@ void TextField::SetMarkupText(const wxString& text)
             SetDefaultStyle(attr);
             i++;
         }
-        else if (text[i] == '*')
+        else if (text[i] == '*' && (highlightLevel == 1 || (text.length() > i+1 && !std::isblank(text[i+1]))))
         {
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+1;
@@ -219,7 +220,7 @@ void TextField::SetMarkupText(const wxString& text)
 
             SetDefaultStyle(attr);
         }
-        else if (text.substr(i, 2) == "==")
+        else if (text.substr(i, 2) == "==" && (emph || (text.length() > i+2 && !std::isblank(text[i+2]))))
         {
             AppendText(text.substr(lastPos, i - lastPos));
             lastPos = i+2;

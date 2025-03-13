@@ -98,6 +98,123 @@ bool removeFile(CommandLineParser& cmdParser)
 
 
 /////////////////////////////////////////////////
+/// \brief Handle tags in the target filename and
+/// resolve them correspondingly.
+///
+/// \param sCurrentTarget std::string&
+/// \param sFile const std::string&
+/// \param nthFile size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+static void handleFileTags(std::string& sCurrentTarget, const std::string& sFile, size_t nthFile)
+{
+    if (sCurrentTarget.find('<') == std::string::npos)
+        return;
+
+    std::string sToken = "";
+
+    for (size_t i = 0; i < sCurrentTarget.length(); i++)
+    {
+        if (sCurrentTarget[i] == '<')
+        {
+            if (sCurrentTarget.find('>', i) == std::string::npos)
+                break;
+
+            sToken = sCurrentTarget.substr(i, sCurrentTarget.find('>', i)+1-i);
+
+            if (sToken.find('#') != std::string::npos)
+            {
+                size_t nLength = 1;
+
+                if (sToken.find('~') != std::string::npos)
+                    nLength = sToken.rfind('~')-sToken.find('#')+1;
+
+                sToken.clear();
+
+                if (nLength > toString(nthFile).length())
+                    sToken.append(nLength-toString(nthFile).length(),'0');
+
+                sToken += toString(nthFile);
+                sCurrentTarget.replace(i,sCurrentTarget.find('>',i)+1-i,sToken);
+                i += sToken.length();
+            }
+            else if (sToken == "<fname>")
+            {
+                sToken = sFile.substr(sFile.rfind('/')+1, sFile.rfind('.')-1-sFile.rfind('/'));
+                sCurrentTarget.replace(i, sCurrentTarget.find('>', i)+1-i, sToken);
+                i += sToken.length();
+            }
+        }
+
+        if (sCurrentTarget.find('<',i) == std::string::npos)
+            break;
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Prepare the target file name for
+/// copying or moving a file.
+///
+/// \param sTarget std::string
+/// \param sFile const std::string&
+/// \param nthFile size_t
+/// \param _fSys const FileSystem&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string prepareTargetFileName(std::string sTarget, const std::string& sFile, size_t nthFile, const FileSystem& _fSys)
+{
+    if (sTarget.back() == '/')
+        sTarget += '*';
+
+    // Split up the paths into individual folders
+    std::vector<std::string> vSplitTarget = split(sTarget, '/');
+    std::vector<std::string> vSplitFile = split(sFile, '/');
+
+    int i = vSplitTarget.size()-1;
+    int j = vSplitFile.size()-1;
+
+    // Replace all wildcards with their counterparts from the
+    // copied/moved filename. Could be a for loop but is more
+    // readable in the way it is right now
+    while (i >= 0 && j >= 0)
+    {
+        if (vSplitTarget[i] == "*")
+            vSplitTarget[i] = vSplitFile[j];
+
+        i--;
+        j--;
+    }
+
+    sTarget.clear();
+
+    // Combine the path back into a regular path
+    for (const std::string& sPart : vSplitTarget)
+    {
+        if (sTarget.length())
+            sTarget += '/';
+
+        sTarget += sPart;
+    }
+
+    // Prepare the file tags
+    handleFileTags(sTarget, sFile, nthFile);
+    StripSpaces(sTarget);
+
+    // Validate target file name
+    sTarget = _fSys.ValidizeAndPrepareName(sTarget);
+
+    // Check for an identical extension
+    if (sTarget.substr(sTarget.rfind('.')) != sFile.substr(sFile.rfind('.')))
+        sTarget = sTarget.substr(0, sTarget.rfind('.')) + sFile.substr(sFile.rfind('.'));
+
+    return sTarget;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Moves or copies files from one
 /// location to another. Supports also wildcards
 /// and file lists.
@@ -113,10 +230,6 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
     std::string sSource = cmdParser.parseExprAsString();
     std::string sTarget = "";
-    std::string _sTarget = "";
-    std::string sDummy = "";
-    std::string sFile = "";
-    std::vector<std::string> vFileList;
 
     size_t nthFile = 1;
     bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
@@ -125,8 +238,6 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     FileSystem _fSys;
     _fSys.initializeFromKernel();
     cmdParser.clearReturnValue();
-
-    //sCmd = fromSystemCodePage(sCmd);
 
     // Get the target
     if (cmdParser.hasParam("target") || cmdParser.hasParam("t"))
@@ -144,7 +255,6 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     // Clean source and target paths
     sSource = replacePathSeparator(sSource);
     sTarget = replacePathSeparator(sTarget);
-    sSource = removeQuotationMarks(sSource);
 
     // In 'all' case it is necessary to set the return value
     // from the source string
@@ -152,7 +262,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         cmdParser.setReturnValue(sSource);
 
     // Get the source file list an validate
-    vFileList = _fSys.getFileList(sSource, FileSystem::FULLPATH);
+    std::vector<std::string> vFileList = _fSys.getFileList(sSource, FileSystem::FULLPATH);
 
     if (!vFileList.size())
         return false;
@@ -160,8 +270,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     // Operate on each file in the list
     for (size_t nFile = 0; nFile < vFileList.size(); nFile++)
     {
-        _sTarget = sTarget;
-        sFile = vFileList[nFile];
+        std::string sFile = vFileList[nFile];
 
         if (sFile.find('.') != std::string::npos)
         {
@@ -174,89 +283,21 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         // Resolve the file name
         sFile = _fSys.ValidFileName(sFile);
 
-        if (_sTarget[_sTarget.length()-1] == '*' && _sTarget[_sTarget.length()-2] == '/')
-            _sTarget = _sTarget.substr(0, _sTarget.length()-2) + sFile.substr(sFile.rfind('/'));
-        else if (_sTarget[_sTarget.length()-1] == '/')
-            _sTarget = _sTarget.substr(0, _sTarget.length()-1) + sFile.substr(sFile.rfind('/'));
-
-        // Prepare the file tags
-        if (_sTarget.find('<') != std::string::npos && _sTarget.find('>', _sTarget.find('<')) != std::string::npos)
-        {
-            std::string sToken = "";
-
-            for (size_t i = 0; i < _sTarget.length(); i++)
-            {
-                if (_sTarget[i] == '<')
-                {
-                    if (_sTarget.find('>', i) == std::string::npos)
-                        break;
-
-                    sToken = _sTarget.substr(i, _sTarget.find('>', i)+1-i);
-
-                    if (sToken.find('#') != std::string::npos)
-                    {
-                        size_t nLength = 1;
-
-                        if (sToken.find('~') != std::string::npos)
-                            nLength = sToken.rfind('~')-sToken.find('#')+1;
-
-                        sToken.clear();
-
-                        if (nLength > toString(nthFile).length())
-                            sToken.append(nLength-toString(nthFile).length(),'0');
-
-                        sToken += toString(nthFile);
-                        _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
-                        i += sToken.length();
-                    }
-                    else if (sToken == "<fname>")
-                    {
-                        sToken = sDummy.substr(sDummy.rfind('/')+1, sDummy.rfind('.')-1-sDummy.rfind('/'));
-                        _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
-                        i += sToken.length();
-                    }
-                }
-
-                if (_sTarget.find('<',i) == std::string::npos)
-                    break;
-            }
-        }
-
-//        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
-//            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true, false, true);
-
-        _sTarget = removeQuotationMarks(_sTarget);
-        StripSpaces(_sTarget);
-
-        if (_sTarget.ends_with("/*"))
-            _sTarget.pop_back();
-
-        // Validate target file name
-        _sTarget = _fSys.ValidizeAndPrepareName(_sTarget);
-
-        if (_sTarget.ends_with("*.dat"))
-            _sTarget = _sTarget.substr(0,_sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
-        else if (_sTarget.ends_with("/.dat"))
-            _sTarget = _sTarget.substr(0, _sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
-
-        if (_sTarget.substr(_sTarget.rfind('.')) != sFile.substr(sFile.rfind('.')))
-            _sTarget = _sTarget.substr(0, _sTarget.rfind('.')) + sFile.substr(sFile.rfind('.'));
-
         if (!fileExists(sFile))
             continue;
 
+        std::string sCurrentTarget = prepareTargetFileName(sTarget, sFile, nthFile, _fSys);
+
         // Perform the actual file operation
         if (cmdParser.getCommand() == "move")
-            moveFile(sFile, _sTarget);
+            moveFile(sFile, sCurrentTarget);
         else
-            copyFile(sFile, _sTarget);
+            copyFile(sFile, sCurrentTarget);
 
         nthFile++;
         bSuccess = true;
 
-        if (!bAll
-            || (cmdParser.getCommandLine().find_first_of("?*") == std::string::npos)
-            || (sTarget.find('*') == std::string::npos && (sTarget.back() != '/' && !sTarget.ends_with("/\"")) && sTarget.find("<#") == std::string::npos && sTarget.find("<fname>") == std::string::npos))
+        if (!bAll)
         {
             cmdParser.setReturnValue(sFile);
             break;

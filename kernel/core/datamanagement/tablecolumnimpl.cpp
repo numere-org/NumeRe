@@ -2113,7 +2113,8 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
     // Remap all existing ids to their new values
     for (int& val : m_data)
     {
-        val = vMap[val];
+        if (val != CATEGORICAL_NAN)
+            val = vMap[val];
     }
 }
 

@@ -3710,6 +3710,7 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& sStringTableName)
 {
     g_logger.info("Requested variable: " + sStringTableName);
+    constexpr size_t MAXSTRINGLENGTH = 1024;
 
     if (_memoryManager.isCluster(sStringTableName))
     {
@@ -3725,7 +3726,7 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
                 const mu::Value& val = clust.get(i);
 
                 if (val.getType() == mu::TYPE_STRING)
-                    stringTable.set(i, 0, val.print());
+                    stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
                 else
                     stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
             }
@@ -3755,7 +3756,7 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
             const mu::Value& val = selected.get(i);
 
             if (val.getType() == mu::TYPE_STRING)
-                stringTable.set(i, 0, val.print());
+                stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
             else
                 stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
         }
@@ -3774,7 +3775,7 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
             const mu::Value& val = arr.get(i);
 
             if (val.getType() == mu::TYPE_STRING)
-                stringTable.set(i, 0, val.print());
+                stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
             else
                 stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
         }

@@ -345,9 +345,9 @@ namespace NumeRe
         }
         else if (vTableData[j]
                  && vTableData[j]->m_type == TableColumn::TYPE_CATEGORICAL
-                 && static_cast<CategoricalColumn*>(vTableData[j].get())->isCategory(_sValue))
+                 && static_cast<CategoricalColumn*>(vTableData[j].get())->isCategory(toInternalString(_sValue)))
         {
-            vTableData[j]->setValue(i, _sValue);
+            vTableData[j]->setValue(i, toInternalString(_sValue));
         }
         else if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
         {
@@ -380,7 +380,7 @@ namespace NumeRe
                 vTableData[j]->deleteElements(VectorIndex(i));
 
             convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING, false);
-            vTableData[j]->setValue(i, _sValue);
+            vTableData[j]->setValue(i, toInternalString(_sValue));
         }
     }
 
@@ -638,13 +638,15 @@ namespace NumeRe
     /////////////////////////////////////////////////
     std::string Table::getValueAsString(size_t i, size_t j) const
     {
+        constexpr size_t MAXSTRINGLENGTH = 1024;
+
         if (vTableData.size() > j && vTableData[j])
         {
             // Invalid number
             if (!vTableData[j]->isValid(i))
                 return "---";
 
-            return vTableData[j]->getValueAsStringLiteral(i);
+            return truncString(vTableData[j]->getValueAsStringLiteral(i), MAXSTRINGLENGTH);
         }
 
         return "---";

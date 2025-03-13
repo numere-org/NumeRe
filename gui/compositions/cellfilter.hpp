@@ -37,14 +37,14 @@ struct CellFilterCondition
     enum ConditionType
     {
         CT_NONE,
-        CT_LESS_THAN,
-        CT_LESS_EQ_THAN,
-        CT_GREATER_THAN,
-        CT_GREATER_EQ_THAN,
         CT_EQUALS_VAL,
         CT_NOT_EQUALS_VAL,
         CT_EQUALS_STR,
         CT_NOT_EQUALS_STR,
+        CT_LESS_THAN,
+        CT_LESS_EQ_THAN,
+        CT_GREATER_THAN,
+        CT_GREATER_EQ_THAN,
         CT_FIND_STR,
         CT_NOT_FIND_STR,
         CT_EMPTY,

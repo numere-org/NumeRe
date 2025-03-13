@@ -2431,8 +2431,13 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
                 static_cast<wxStaticText*>(object.second)->SetLabel(_value.val.get(0).printVal());
                 break;
             case CustomWindow::TEXTCTRL:
-                static_cast<TextField*>(object.second)->SetMarkupText(_value.val.get(0).printVal());
+            {
+                TextField* field = static_cast<TextField*>(object.second);
+                field->SetMarkupText(_value.val.get(0).printVal());
+                field->ShowPosition(0);
+
                 break;
+            }
             case CustomWindow::LAMP:
             {
                 wxColour color = colorFromLampStates(_value.val.get(0).printVal());

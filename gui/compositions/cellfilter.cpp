@@ -256,12 +256,10 @@ CellFilterDialog::CellFilterDialog(wxWindow* parent, CellFilterCondition cond, w
     else
     {
         // Initialize with the previous values from the filter - if any
-        if (cond.m_type < CellFilterCondition::CT_EQUALS_VAL)
-            m_lt_gt_choice->SetSelection(cond.m_type - 1);
-        else if (cond.m_type == CellFilterCondition::CT_EQUALS_VAL || cond.m_type == CellFilterCondition::CT_EQUALS_STR)
-            m_lt_gt_choice->SetSelection(4);
+        if (cond.m_type == CellFilterCondition::CT_EQUALS_VAL || cond.m_type == CellFilterCondition::CT_EQUALS_STR)
+            m_lt_gt_choice->SetSelection(0);
         else if (cond.m_type == CellFilterCondition::CT_NOT_EQUALS_VAL || cond.m_type == CellFilterCondition::CT_NOT_EQUALS_STR)
-            m_lt_gt_choice->SetSelection(5);
+            m_lt_gt_choice->SetSelection(1);
         else if (cond.m_type <= CellFilterCondition::CT_NOT_EMPTY)
             m_lt_gt_choice->SetSelection(cond.m_type - 3);
 

@@ -1139,7 +1139,7 @@ namespace NumeRe
     {
         // Open the file
         open(std::ios::out | std::ios::trunc);
-        fFileStream << "<!DOCTYPE html>\n<html>\n<head>\n<title>Table: " << sTableName << "()</title>\n";
+        fFileStream << "<!DOCTYPE html>\n<meta charset=\"UTF-8\">\n<html>\n<head>\n<title>Table: " << sTableName << "()</title>\n";
         fFileStream << "<style>\n\t.NumeRe {\n\t\tfont-family: Arial, Helvetica, sans-serif;\n\t\tborder-collapse: collapse;\n\t\twidth: 100%;\n\t}\n\n\t.NumeRe td, .NumeRe th {\n\t\tborder: 1px solid #ddd;\n\t\tpadding: 8px;\n\t}\n\n\t.NumeRe tr:nth-child(even){background-color: #f2f2f2;}\n\n\t.NumeRe tr:hover {background-color: rgb(192, 227, 248);}\n\n\t.NumeRe th {\n\t\tpadding-top: 12px;\n\t\tpadding-bottom: 12px;\n\t\ttext-align: left;\n\t\tbackground-color: rgb(80, 176, 235);\n\t\tcolor: rgb(226, 242, 252);\n\t}\n</style>\n";
         fFileStream << "</head>\n<body>\n<table class=\"NumeRe\">\n\t<tr>\n";
 
@@ -1147,7 +1147,7 @@ namespace NumeRe
         {
             std::string sHead = fileData->at(n)->m_sHeadLine;
             replaceAll(sHead, "\n", "<br/>");
-            fFileStream << "\t\t<th>" << sHead << "</th>\n";
+            fFileStream << "\t\t<th>" << ansiToUtf8(sHead) << "</th>\n";
         }
 
         fFileStream << "\t</tr>\n";
@@ -1177,7 +1177,7 @@ namespace NumeRe
                     {
                         std::string cellValue = fileData->at(m)->get(n).printVal();
                         replaceAll(cellValue, "\n", "<br/>");
-                        fFileStream << cellValue << "</td>\n";
+                        fFileStream << ansiToUtf8(cellValue) << "</td>\n";
                     }
                     else
                         fFileStream << fileData->at(m)->get(n).printVal() + formatUnit(fileData->at(m)->m_sUnit) << "</td>\n";
