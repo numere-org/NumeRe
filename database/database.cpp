@@ -21,6 +21,16 @@
 #include "../kernel/kernel.hpp"
 
 
+/////////////////////////////////////////////////
+/// \brief This is an interface function for
+/// accessing one of the supported types of
+/// database, either for connecting or for
+/// running queries.
+///
+/// \param cmdParser CommandLineParser&
+/// \return void
+///
+/////////////////////////////////////////////////
 void databaseCommand(CommandLineParser& cmdParser)
 {
     std::vector<mu::Array> expression = cmdParser.parseExpr();
@@ -130,6 +140,8 @@ void databaseCommand(CommandLineParser& cmdParser)
                     {
                         if (result.getLines() > presentedRows && i+1 == presentedRows)
                             sOverview[i+1][j] = "[...]";
+                        else if (!result.get(i, j).isValid())
+                            sOverview[i+1][j] = "---";
                         else
                             sOverview[i+1][j] = result.get(i, j).print(7, 25);
                     }

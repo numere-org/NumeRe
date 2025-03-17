@@ -34,6 +34,12 @@ sys_time_point getTimePointFromTime_t(__time64_t t);
 sys_time_point getTimePointFromYMD(int year, int month, int day);
 sys_time_point getTimePointFromHMS(int hours, int minutes, int seconds, int milliseconds, int microseconds);
 
+std::string toUpperCase(const std::string& sLowerCase);
+
+/////////////////////////////////////////////////
+/// \brief This struct manages a single database
+/// connection.
+/////////////////////////////////////////////////
 struct DatabaseInstance
 {
     //std::variant<qtl::sqlite::database, qtl::mysql::database, qtl::postgres::database> database;
@@ -45,7 +51,46 @@ struct DatabaseInstance
 static std::map<int64_t, DatabaseInstance> activeInstances;
 static qtl::odbc::environment odbcEnvironment;
 
+/////////////////////////////////////////////////
+/// \brief This simple function is used to
+/// detect, whether a SQL statement needs
+/// prepared mode or can be run in simple mode.
+///
+/// \param sqlCommand std::string
+/// \return bool
+///
+/// \note This seems only be required by MySQL
+/// and MariaDB connections. SQLite, PostGreSQL
+/// and ODBC do not seem to have this limitation.
+/////////////////////////////////////////////////
+static bool isSimpleQuery(std::string sqlCommand)
+{
+    sqlCommand = toUpperCase(sqlCommand);
 
+    static std::string prepared[30] = {"ALTER", "ANALYZE", "CALL", "CHANGE", "CHECKSUM",
+        "COMMIT", "CREATE", "DROP", "RENAME", "DELETE", "DO", "EXECUTE", "FLUSH", "GRANT",
+        "INSERT", "INSTALL", "KILL", "OPTIMIZE", "PREPARE", "REPAIR", "REPLACE", "REPLICA",
+        "RESET", "REVOKE", "SELECT", "SET", "SHOW", "TRUNCATE", "UNINSTALL", "UPDATE"};
+
+    for (size_t i = 0; i < 30; i++)
+    {
+        if (sqlCommand.starts_with(prepared[i] + " "))
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Open a SQLite database connection and
+/// return the connection ID.
+///
+/// \param fileName const std::string&
+/// \param type DatabaseType
+/// \return int64_t
+///
+/////////////////////////////////////////////////
 int64_t openDbConnection(const std::string& fileName, DatabaseType type)
 {
     if (type != DB_SQLITE)
@@ -74,6 +119,21 @@ int64_t openDbConnection(const std::string& fileName, DatabaseType type)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Open all of the non-SQLite database
+/// connections, i.e. MySQL, MariaDB, ODBC, and
+/// PostGreSQL (once enabled).
+///
+/// \param host const std::string&
+/// \param user const std::string&
+/// \param password const std::string&
+/// \param dbname const std::string&
+/// \param port size_t
+/// \param type DatabaseType
+/// \param driver const std::string&
+/// \return int64_t
+///
+/////////////////////////////////////////////////
 int64_t openDbConnection(const std::string& host, const std::string& user, const std::string& password, const std::string& dbname, size_t port, DatabaseType type, const std::string& driver)
 {
     if (type == DB_SQLITE)
@@ -189,6 +249,14 @@ int64_t openDbConnection(const std::string& host, const std::string& user, const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Close a connection based upon the
+/// connection ID.
+///
+/// \param dbId int64_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool closeDbConnection(int64_t dbId)
 {
     auto iter = activeInstances.find(dbId);
@@ -203,6 +271,16 @@ bool closeDbConnection(int64_t dbId)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Execute a SQL statement on a SQLite
+/// database.
+///
+/// \param sqlCommand const std::string&
+/// \param db qtl::sqlite::database&
+/// \param host const std::string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::sqlite::database& db, const std::string& host)
 {
     NumeRe::Table result;
@@ -264,12 +342,28 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::sqlite::data
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Execute a SQL statement on a MySQL or
+/// MariaDB database.
+///
+/// \param sqlCommand const std::string&
+/// \param db qtl::mysql::database&
+/// \param host const std::string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::mysql::database& db, const std::string& host)
 {
     NumeRe::Table result;
 
     try
     {
+        if (isSimpleQuery(sqlCommand))
+        {
+            db.simple_execute(sqlCommand.c_str(), sqlCommand.length(), nullptr);
+            return result;
+        }
+
         qtl::mysql::statement stmt = db.open_command(sqlCommand);
         stmt.execute();
         int columnCount = stmt.get_column_count();
@@ -529,6 +623,16 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::postgres::da
 */
 
 
+/////////////////////////////////////////////////
+/// \brief Execute a SQL statement on a ODBC
+/// connection.
+///
+/// \param sqlCommand const std::string&
+/// \param db qtl::odbc::database&
+/// \param host const std::string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::odbc::database& db, const std::string& host)
 {
     NumeRe::Table result;
@@ -667,8 +771,15 @@ static NumeRe::Table executeSql(const std::string& sqlCommand, qtl::odbc::databa
 }
 
 
-
-
+/////////////////////////////////////////////////
+/// \brief Execute a SQL statement on a database
+/// connection passed as an ID.
+///
+/// \param dbId int64_t
+/// \param sqlCommand const std::string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 NumeRe::Table executeSql(int64_t dbId, const std::string& sqlCommand)
 {
     auto iter = activeInstances.find(dbId);
@@ -691,6 +802,13 @@ NumeRe::Table executeSql(int64_t dbId, const std::string& sqlCommand)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Return a list of installed ODBC
+/// drivers.
+///
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
 std::vector<std::string> getOdbcDrivers()
 {
     std::vector<qtl::odbc::driver> drivers = odbcEnvironment.drivers();

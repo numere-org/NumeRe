@@ -46,3 +46,4 @@ Fixed	An error in selecting of the wrong comparison operator if a table column f
 Fixed	If table cells containing line breaks have been edited, the line break character was re-encoded erroneously. This has been fixed.
 Fixed	A segmentation fault within the table method "TAB().categorize()" has been resolved.
 Fixed	The function "textparse()" did not return the complete token, if it was the last token in the pattern and the string ended with it. This has been resolved.
+Fixed	The problem with the SQL "USE" command in MySQL connections has been resolved.

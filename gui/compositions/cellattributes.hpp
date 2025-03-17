@@ -63,16 +63,46 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
     protected:
         CellValueShader m_shader;
 
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if the current row is a
+        /// headline row.
+        ///
+        /// \param grid const wxGrid&
+        /// \param row int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool isHeadLine(const wxGrid& grid, int row)
         {
             return grid.GetRowLabelValue(row) == "#";
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if the current cell is
+        /// part of the surrounding frame.
+        ///
+        /// \param grid const wxGrid&
+        /// \param row int
+        /// \param col int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool isFrame(const wxGrid& grid, int row, int col)
         {
             return col+1 == grid.GetNumberCols() || row+1 == grid.GetNumberRows();
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if the current cell is
+        /// either in the same row or the same column as
+        /// the cursor.
+        ///
+        /// \param grid const wxGrid&
+        /// \param row int
+        /// \param col int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool isPartOfCursor(const wxGrid& grid, int row, int col)
         {
             int rows, cols;
@@ -88,11 +118,29 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
                 && !isFrame(grid, row, col);
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if the user has set a
+        /// custom conditional shader.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool hasCustomColor()
         {
             return m_shader.isActive();
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Create a wxGridCellAttr for cells
+        /// within the same row or column as the cursor.
+        ///
+        /// \param attr const wxGridCellAttr&
+        /// \param grid const wxGrid&
+        /// \param row int
+        /// \param col int
+        /// \return wxGridCellAttr*
+        ///
+        /////////////////////////////////////////////////
         wxGridCellAttr* createHighlightedAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
         {
             wxGridCellAttr* highlightAttr;
@@ -141,6 +189,14 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             return highlightAttr;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Create a wxGridCellAttr for cells
+        /// forming the surrounding border.
+        ///
+        /// \param attr const wxGridCellAttr&
+        /// \return wxGridCellAttr*
+        ///
+        /////////////////////////////////////////////////
         wxGridCellAttr* createFrameAttr(const wxGridCellAttr& attr)
         {
             wxGridCellAttr* frameAttr = attr.Clone();
@@ -148,6 +204,17 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             return frameAttr;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Create a wxGridCellAttr for cells,
+        /// which are part of any of the headline rows.
+        ///
+        /// \param attr const wxGridCellAttr&
+        /// \param grid const wxGrid&
+        /// \param row int
+        /// \param col int
+        /// \return wxGridCellAttr*
+        ///
+        /////////////////////////////////////////////////
         wxGridCellAttr* createHeadlineAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
         {
             wxGridCellAttr* headlineAttr = attr.Clone();
@@ -164,6 +231,17 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             return headlineAttr;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Create a wxGridCellAttr for cells with
+        /// a custom conditional shader.
+        ///
+        /// \param attr const wxGridCellAttr&
+        /// \param grid const wxGrid&
+        /// \param row int
+        /// \param col int
+        /// \return wxGridCellAttr*
+        ///
+        /////////////////////////////////////////////////
         wxGridCellAttr* createCustomColorAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
         {
             wxGridCellAttr* customAttr = attr.Clone();
@@ -197,6 +275,19 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
         }
 
 
+        /////////////////////////////////////////////////
+        /// \brief Copied function from the parent class
+        /// because the parent class declared them private.
+        ///
+        /// \param grid wxGrid&
+        /// \param dc wxDC&
+        /// \param attr const wxGridCellAttr&
+        /// \param rect const wxRect&
+        /// \param row int
+        /// \param col int
+        /// \return wxArrayString
+        ///
+        ////////////////////////////////////////////////
         wxArrayString GetTextLines(wxGrid& grid, wxDC& dc, const wxGridCellAttr& attr, const wxRect& rect, int row, int col)
         {
             dc.SetFont(attr.GetFont());
@@ -234,6 +325,17 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             return physicalLines;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Copied function from the parent class
+        /// because the parent class declared them private.
+        ///
+        /// \param dc wxDC&
+        /// \param logicalLine const wxString&
+        /// \param maxWidth wxCoord
+        /// \param lines wxArrayString&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void BreakLine(wxDC& dc, const wxString& logicalLine, wxCoord maxWidth, wxArrayString& lines)
         {
             wxCoord lineWidth = 0;
@@ -284,6 +386,18 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
         }
 
 
+        /////////////////////////////////////////////////
+        /// \brief Copied function from the parent class
+        /// because the parent class declared them private.
+        ///
+        /// \param dc wxDC&
+        /// \param word const wxString&
+        /// \param maxWidth wxCoord
+        /// \param lines wxArrayString&
+        /// \param line wxString&
+        /// \return wxCoord
+        ///
+        /////////////////////////////////////////////////
         wxCoord BreakWord(wxDC& dc, const wxString& word, wxCoord maxWidth, wxArrayString& lines, wxString& line)
         {
             wxArrayInt widths;
@@ -329,6 +443,20 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             return BreakWord(dc, rest, maxWidth, lines, line);
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Draw the cell contents considering
+        /// automatic line wrapping.
+        ///
+        /// \param grid wxGrid&
+        /// \param attr wxGridCellAttr&
+        /// \param dc wxDC&
+        /// \param rectCell const wxRect&
+        /// \param row int
+        /// \param col int
+        /// \param isSelected bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void DrawWrapped(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, const wxRect& rectCell, int row, int col, bool isSelected)
         {
             wxGridCellRenderer::Draw(grid, attr, dc, rectCell, row, col, isSelected);
@@ -351,12 +479,22 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
     public:
         AdvStringCellRenderer(const CellValueShader shader = CellValueShader()) : m_shader(shader) {}
 
-        virtual void Draw(wxGrid& grid,
-                          wxGridCellAttr& attr,
-                          wxDC& dc,
-                          const wxRect& rect,
-                          int row, int col,
-                          bool isSelected)
+        /////////////////////////////////////////////////
+        /// \brief Draw the selected cell using
+        /// additional information about the position and
+        /// custom conditional shaders.
+        ///
+        /// \param grid wxGrid&
+        /// \param attr wxGridCellAttr&
+        /// \param dc wxDC&
+        /// \param rect const wxRect&
+        /// \param row int
+        /// \param col int
+        /// \param isSelected bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        virtual void Draw(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, const wxRect& rect, int row, int col, bool isSelected)
         {
             if (isPartOfCursor(grid, row, col))
             {
@@ -413,6 +551,22 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             }
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Return the best size for the cell's
+        /// contents. For a cell with autowrapping
+        /// enabled, this results in a desired aspect
+        /// ratio and a optimisation iteration. For
+        /// performance reasons, we've changed that here
+        /// a little bit.
+        ///
+        /// \param grid wxGrid&
+        /// \param attr wxGridCellAttr&
+        /// \param dc wxDC&
+        /// \param row int
+        /// \param col int
+        /// \return wxSize
+        ///
+        /////////////////////////////////////////////////
         virtual wxSize GetBestSize(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, int row, int col)
         {
             if (grid.GetCellValue(row, col).length() <= DATESTRINGLEN)
@@ -454,6 +608,12 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             return currSize;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Clone this object.
+        ///
+        /// \return virtual wxGridCellRenderer*
+        ///
+        /////////////////////////////////////////////////
         virtual wxGridCellRenderer *Clone() const
             { return new AdvStringCellRenderer(m_shader); }
 };
@@ -470,13 +630,22 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
     public:
         AdvBooleanCellRenderer(const CellValueShader& shader = CellValueShader()) : AdvStringCellRenderer(shader) {}
 
-    // draw a check mark or nothing
-        virtual void Draw(wxGrid& grid,
-                          wxGridCellAttr& attr,
-                          wxDC& dc,
-                          const wxRect& rect,
-                          int row, int col,
-                          bool isSelected)
+        /////////////////////////////////////////////////
+        /// \brief Draw the selected cell using
+        /// additional information about the position and
+        /// custom conditional shaders.
+        ///
+        /// \param grid wxGrid&
+        /// \param attr wxGridCellAttr&
+        /// \param dc wxDC&
+        /// \param rect const wxRect&
+        /// \param row int
+        /// \param col int
+        /// \param isSelected bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        virtual void Draw(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, const wxRect& rect, int row, int col, bool isSelected)
         {
             if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL) && !isHeadLine(grid, row))
             {
@@ -560,11 +729,21 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
                 AdvStringCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
         }
 
-        // return the checkmark size
-        virtual wxSize GetBestSize(wxGrid& grid,
-                                   wxGridCellAttr& attr,
-                                   wxDC& dc,
-                                   int row, int col)
+        /////////////////////////////////////////////////
+        /// \brief Return the best size for the cell's
+        /// contents. For a cell with a logical value
+        /// only, this results in returning the
+        /// dimensions of the displayed checkmark.
+        ///
+        /// \param grid wxGrid&
+        /// \param attr wxGridCellAttr&
+        /// \param dc wxDC&
+        /// \param row int
+        /// \param col int
+        /// \return wxSize
+        ///
+        /////////////////////////////////////////////////
+        virtual wxSize GetBestSize(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, int row, int col)
         {
             // Calculate only once bc, "---" is wider than the checkmark
             if (!bestSize.x)
@@ -576,6 +755,12 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
             return bestSize;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Clone this object.
+        ///
+        /// \return virtual wxGridCellRenderer*
+        ///
+        /////////////////////////////////////////////////
         virtual wxGridCellRenderer *Clone() const
             { return new AdvBooleanCellRenderer(m_shader); }
 
