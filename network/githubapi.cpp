@@ -77,6 +77,9 @@ namespace GitHub
             json += "]";
         }
 
+        if (type.length())
+            json += ", \"type\": " "\"" + strToJson(type) + "\"";
+
         return json + "}";
     }
 

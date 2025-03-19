@@ -245,16 +245,23 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
         issue.body += "\n\n-----------------------------------------------------\n## DEVS' SECTION\n### ANALYSIS\n(*Describe, what's the issue and which changes have to be made*)\n\n### IMPLEMENTATION STEPS\n(*see also our [Wiki for implementation guidelines](https://github.com/numeredev/NumeRe/wiki/HowTo:-Contribute-Code)*)\n- Implement the necessary changes in a new branch created here on GitHub\n- Test your implementation\n\n### DOCUMENTATION STEPS\n(*see also our [Wiki for further information](https://github.com/numeredev/NumeRe/wiki/HowTo:-Create-Language-Strings)*)\n- Update the changes log\n- Add comments to your implementation\n- Add Doxygen documentation comments- Create or update the documentation articles (`*.NHLP` and `*.NDB` files, if needed)\n- Update the language strings (`*.NLNG` files, if needed)\n\n### PULL REQUEST\n- Create a pull request for your changes\n- Fill out the template\n- Assign @numere-org/maintainers as reviewers";
 
         if (isFeature)
+        {
+            issue.type = "Feature request";
             issue.labels.push_back("feature");
+        }
         else if (isBug)
         {
+            issue.type = "Bug report";
             issue.labels.push_back("bug");
 
             if (m_isCriticalIssue)
                 issue.labels.push_back("critical");
         }
         else
+        {
+            issue.type = "Change request";
             issue.labels.push_back("change");
+        }
 
 
         static std::string sAuthToken = loadAuthToken();

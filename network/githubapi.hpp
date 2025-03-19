@@ -32,6 +32,7 @@ namespace GitHub
     {
         std::string title;
         std::string body;
+        std::string type;
         std::vector<std::string> assignees;
         std::vector<std::string> labels;
 
