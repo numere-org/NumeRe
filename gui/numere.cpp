@@ -137,11 +137,13 @@ bool NumeReApp::OnInit()
 
         if (connection)
         {
-            // don't eval here just forward the whole command line to the other instance
+            // don't eval here just forward the whole command line to the other
+            // instance. Enclose everything in quotation marks to avoid problems
+            // with whitespaces
             wxString cmdLine;
 
-            for (int i = 1 ; i < argc; ++i)
-                cmdLine += wxString(argv[i]) + ' ';
+            for (int i = 1; i < argc; ++i)
+                cmdLine += wxString(argv[i]) + "<>";
 
             if (!cmdLine.IsEmpty())
             {

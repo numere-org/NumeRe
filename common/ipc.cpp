@@ -92,8 +92,8 @@ namespace DDE
 
                 while (line.length())
                 {
-                    m_ArgV.Add(line.substr(0, line.find(' ')));
-                    line.erase(0, line.find(' ')+1);
+                    m_ArgV.Add(line.substr(0, line.find("<>")));
+                    line.erase(0, line.find("<>")+2);
                 }
             }
 

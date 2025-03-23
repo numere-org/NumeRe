@@ -3673,7 +3673,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 
     StripSpaces(sSubPlotIDX);
 
-    if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "lines", '='))
+    if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "lines", '=') || findParameter(sCmd, "rows", '='))
     {
         size_t nMultiLines = 1, nMultiCols = 1;
 
@@ -3683,7 +3683,12 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             nMultiCols = (size_t)_parser.Eval().getAsScalarInt();
         }
 
-        if (findParameter(sCmd, "lines", '='))
+        if (findParameter(sCmd, "rows", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "rows", '=') + 4));
+            nMultiLines = (size_t)_parser.Eval().getAsScalarInt();
+        }
+        else if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
             nMultiLines = (size_t)_parser.Eval().getAsScalarInt();

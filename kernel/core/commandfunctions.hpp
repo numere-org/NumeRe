@@ -1132,8 +1132,9 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
     // Print the obtained function list on the terminal
     for (size_t i = 0; i < vFuncs.size(); i++)
     {
-        NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 75) + "\n");
+        NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 85) + "\n");
     }
+
     NumeReKernel::printPreFmt("|\n");
     NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));
     NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"), _option));
@@ -1444,7 +1445,7 @@ static void listCommands(const Settings& _option)
     // Print the complete list on the terminal
     for (size_t i = 0; i < vCMDList.size(); i++)
     {
-        NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 42) + "\n");
+        NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 46) + "\n");
     }
 
     NumeReKernel::printPreFmt("|\n");
@@ -3897,7 +3898,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     // Find the app dir
     if (cmdParser.hasParam("grid"))
         dir = MemoryManager::GRID;
-    else if (cmdParser.hasParam("lines"))
+    else if (cmdParser.hasParam("rows") || cmdParser.hasParam("lines"))
         dir = MemoryManager::LINES;
     else if (cmdParser.hasParam("cols"))
         dir = MemoryManager::COLS;
@@ -4267,7 +4268,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
             dir = MemoryManager::GRID;
         else if (cmdParser.hasParam("cols"))
             dir = MemoryManager::COLS;
-        else if (cmdParser.hasParam("lines"))
+        else if (cmdParser.hasParam("rows") || cmdParser.hasParam("lines"))
             dir = MemoryManager::LINES;
 
         std::string sFilter = "lanczos3";
@@ -4460,7 +4461,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 
         if (findParameter(sCmd, "grid"))
             dir = MemoryManager::GRID;
-        else if (findParameter(sCmd, "lines"))
+        else if (findParameter(sCmd, "rows") || findParameter(sCmd, "lines"))
             dir = MemoryManager::LINES;
         else if (findParameter(sCmd, "cols"))
             dir = MemoryManager::COLS;
