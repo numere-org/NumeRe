@@ -1742,7 +1742,7 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
                 return converter;
         }
 
-        mu::Value res = converter(mu::Value(1.0)).front();
+        mu::Value res = converter(mu::Value(1.00001)).front();
         converter.m_finalScale = res.getNum().asF64();
         double remainingScale = converter.m_finalScale;
 
@@ -1816,16 +1816,16 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
             converter.m_metricPrefix = exp > 0 ? "M" : "µ";
             converter.m_finalScale /= fact(6, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(3, exp, unitScale))
+        else if (converter.m_finalScale >= fact(4, exp, unitScale)) // The prefixes for k and m will be used for a slightly larger regime
         {
             converter.m_metricPrefix = exp > 0 ? "k" : "m";
             converter.m_finalScale /= fact(3, exp, unitScale);
         }
-        else if (converter.m_finalScale >= 1/unitScale)
+        else if (converter.m_finalScale >= fact(-1, exp, unitScale)) // We do also accept down to 0.1 here
         {
             // Just do nothing
         }
-        else if (converter.m_finalScale >= fact(-3, exp, unitScale))
+        else if (converter.m_finalScale >= fact(-4, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "m" : "k";
             converter.m_finalScale /= fact(-3, exp, unitScale);
@@ -1897,4 +1897,66 @@ std::string printUnitConversion(StringView sUnit, UnitConversionMode mode)
 
     return "1 " + sUnit + " = " + convert(mu::Value(1.0)).front().print(7) + " " + convert.formatUnit(mode);
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Provides and implements a unit
+/// conversion function.
+///
+/// \param vals const mu::Array&
+/// \param units const mu::Array&
+/// \param methods const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array unit_conversion(const mu::Array& vals, const mu::Array& units, const mu::Array& methods)
+{
+    // Simple setup
+    if (units.size() == 1 && methods.size() <= 1)
+    {
+        UnitConversionMode mode = MODE_DIRECT;
+
+        if (!methods.isDefault() && methods.get(0) == mu::Value("base"))
+            mode = MODE_BASESI;
+        else if (!methods.isDefault() && methods.get(0) == mu::Value("simplify"))
+            mode = MODE_SIMPLIFY;
+
+        UnitConversion convert = getUnitConversion(units.get(0).getStr(), mode);
+        mu::Array converted;
+
+        if (vals.size() == 1)
+            converted.push_back(convert(vals).front());
+        else
+            converted.push_back(convert(vals));
+
+        converted.push_back(convert.formatUnit(mode));
+
+        return converted;
+    }
+
+    mu::Array converted;
+    mu::Array convVals;
+    mu::Array convUnits;
+
+    // Individual units or methods
+    for (size_t i = 0; i < std::max({vals.size(), units.size(), methods.size()}); i++)
+    {
+        UnitConversionMode mode = MODE_DIRECT;
+
+        if (!methods.isDefault() && methods.get(i) == mu::Value("base"))
+            mode = MODE_BASESI;
+        else if (!methods.isDefault() && methods.get(i) == mu::Value("simplify"))
+            mode = MODE_SIMPLIFY;
+
+        UnitConversion convert = getUnitConversion(units.get(i).getStr(), mode);
+        convVals.push_back(convert(vals.get(i)).front());
+        convUnits.push_back(convert.formatUnit(mode));
+    }
+
+    converted.push_back(convVals);
+    converted.push_back(convUnits);
+
+    return converted;
+}
+
 

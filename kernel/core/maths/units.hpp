@@ -128,6 +128,9 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode);
 bool canConvert(StringView sUnit);
 std::string printUnitConversion(StringView sUnit, UnitConversionMode mode);
 
+// Function for the user interaction
+mu::Array unit_conversion(const mu::Array& vals, const mu::Array& units, const mu::Array& methods); // OPT=1
+
 
 #endif // UNITS_HPP
 

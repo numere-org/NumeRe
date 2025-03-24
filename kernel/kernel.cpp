@@ -643,6 +643,8 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("intersection", numfnc_intersection);                      // intersection({x,y,z...}, {a,b,c,...})
     _parser.DefineFun("getoverlap", numfnc_getOverlap);                          // getoverlap({x1,x2}, {y1,y2})
 
+    _parser.DefineFun("convertunit", unit_conversion, true, 1);                  // convertunit({x,y,..},{u1,u2,...}[,{m1,...}])
+
     _parser.DefineFun("sinc", numfnc_SinusCardinalis);                           // sinc(x)
     _parser.DefineFun("sin", numfnc_sin);                                        // sin(x)
     _parser.DefineFun("cos", numfnc_cos);                                        // cos(x)

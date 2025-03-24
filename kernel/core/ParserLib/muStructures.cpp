@@ -2686,6 +2686,9 @@ namespace mu
     /////////////////////////////////////////////////
     Variable& Variable::operator=(const Value& other)
     {
+        if (other.getType() == TYPE_ARRAY)
+            return Variable::operator=(other.getArray());
+
         if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
         {
             Array::operator=(Array(other));
