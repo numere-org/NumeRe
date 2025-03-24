@@ -73,6 +73,7 @@ class PackageDialog : public wxDialog
         wxString getPackageIdentifier();
         wxString getPackageVersion();
         wxString getDocFile();
+        wxString getPostInstallScript();
         bool includeDocs();
         bool isPlugin();
 

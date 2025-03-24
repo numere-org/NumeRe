@@ -7434,6 +7434,15 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                     edit->AddText(fcontents + "\r\n");
             }
 
+            if (dlg.getPostInstallScript().length())
+            {
+                wxFile postInstallFile(dlg.getPostInstallScript());
+                wxString fcontents;
+
+                if (postInstallFile.ReadAll(&fcontents))
+                    edit->AddText(fcontents + "\r\n");
+            }
+
             edit->AddText("\treturn;\r\n<endinstall>\r\n");
             edit->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
             edit->UpdateSyntaxHighlighting(true);
@@ -7460,37 +7469,6 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 m_terminal->updatePackage(sPackage);
                 notifyInstallationDone();
             }
-
-            // Check, whether this package is already installed and
-            // ask the user to synchronize the package versions
-            //const std::vector<Package>& vPackages = m_terminal->getInstalledPackages();
-            //std::string sPackageName = dlg.getPackageName().ToStdString();
-            //
-            //for (const auto& package : vPackages)
-            //{
-            //    if (package.getName() == sPackageName)
-            //    {
-            //        size_t nInstalledVersion = versionToInt(package.sVersion);
-            //
-            //        // Compare the installed version with the currently
-            //        // packed version and ask the user, whether we shall
-            //        // synchronize those two
-            //        if (nInstalledVersion < versionToInt(dlg.getPackageVersion().ToStdString())
-            //            && wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),
-            //                                     _guilang.get("GUI_PKGDLG_UPDATEINSTALLED_HEAD"), wxYES_NO | wxICON_QUESTION, this))
-            //        {
-            //            std::string sPackage = installinfo.ToStdString();
-            //            replaceAll(sPackage, "\r\n", " ");
-            //            replaceAll(sPackage, "\t", " ");
-            //            replaceAll(sPackage, "<info>", "");
-            //            replaceAll(sPackage, "<endinfo>", "");
-            //
-            //            m_terminal->updatePackage(sPackage);
-            //        }
-            //
-            //        break;
-            //    }
-            //}
         }
     }
     catch (SyntaxError& e)

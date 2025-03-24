@@ -35,6 +35,7 @@
 
 #define INCLUDEDOCS "_doctemplate"
 #define DOCFILE "_docfile"
+#define POSTINSTALL "_postinstall"
 
 extern Language _guilang;
 extern const std::string sInternalVersion;
@@ -79,17 +80,13 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
 
     // Create a property grid containing the package
     // properties
-    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 260*g_pixelScale), wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
+    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 260*g_pixelScale),
+                                             wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
     m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_GENERAL_CATEGORY")));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PACKAGENAME"), "-name"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_AUTHOR"), "-author"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_VERSION"), "-version", "<AUTO>"));
 
-    wxArrayString flags;
-    flags.Add("ENABLE_DEFAULTS");
-    flags.Add("ENABLE_FULL_LOGGING");
-    flags.Add("DISABLE_SCREEN_OUTPUT");
-    m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_FLAGS"), "-flags", flags));
 
     wxArrayString type;
     type.Add("TYPE_PACKAGE");
@@ -122,7 +119,20 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_PLUGINDESC"), "-desc"));
     m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_KEYWORDS"), "-keywords"));
     m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_CHANGESLOG"), "-changelog"));
+
+    // Options related to installing
+    m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_INSTALL_CATEGORY")));
+    wxArrayString flags;
+    flags.Add("ENABLE_DEFAULTS");
+    flags.Add("ENABLE_FULL_LOGGING");
+    flags.Add("DISABLE_SCREEN_OUTPUT");
+    m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_FLAGS"), "-flags", flags));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_DEPENDENCIES"), "-requirepackages"));
+    wxFileProperty* postInstallFile = new wxFileProperty(_guilang.get("GUI_PKGDLG_POSTINSTALL"), POSTINSTALL);
+    postInstallFile->SetAttribute(wxPG_FILE_DIALOG_STYLE, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    postInstallFile->SetAttribute(wxPG_FILE_WILDCARD, "Script files (*.nscr)|*.nscr|All files (*.*)|*.*");
+    postInstallFile->SetAttribute(wxPG_FILE_DIALOG_TITLE, _guilang.get("GUI_DLG_OPEN"));
+    m_packageProperties->Append(postInstallFile);
 
     // Add a validator to the package command to enssure that the user
     // only uses alphanumeric characters as command string
@@ -605,7 +615,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
                 continue;
             }
         }
-        else if (prop->GetName() == DOCFILE && !fileExists(infoitem->GetText()))
+        else if ((prop->GetName() == DOCFILE || prop->GetName() == POSTINSTALL) && !fileExists(infoitem->GetText()))
         {
             allFilesFound = false;
             continue;
@@ -617,6 +627,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
     m_fileList->DeleteAllItems();
 
     tinyxml2::XMLElement* file = files->FirstChildElement();
+    bool changesDetected = false;
 
     // Load all files to the table
     while (file)
@@ -629,12 +640,21 @@ void PackageDialog::loadProjectFile(const wxString& filename)
         }
         else
         {
-            std::string sExt = file->GetText();
-            sExt = sExt.substr(sExt.rfind('.'));
+            std::string sFile = file->GetText();
 
-            m_fileList->InsertItem(m_fileList->GetItemCount(), file->GetText(), m_icons->GetIconIndex(sExt));
+            if (file->Attribute("lastmodified"))
+            {
+                wxString t = file->Attribute("lastmodified");
+                wxFileName fn(sFile);
+
+                if (t != fn.GetModificationTime().ToTimezone(wxDateTime::TimeZone(wxDateTime::GMT0)).FormatISOCombined())
+                    changesDetected = true;
+            }
+
+            std::string sExt = sFile.substr(sFile.rfind('.'));
+
+            m_fileList->InsertItem(m_fileList->GetItemCount(), sFile, m_icons->GetIconIndex(sExt));
         }
-
 
         file = file->NextSiblingElement();
     }
@@ -648,6 +668,9 @@ void PackageDialog::loadProjectFile(const wxString& filename)
 
     if (!allFilesFound)
         wxMessageBox(_guilang.get("GUI_PKGDLG_NOTALLFILESFOUND"), _guilang.get("GUI_PKGDLG_NOTALLFILESFOUND_HEAD"), wxOK, this);
+
+    if (changesDetected)
+        wxMessageBox(_guilang.get("GUI_PKGDLG_CHANGESDETECTED"), _guilang.get("GUI_PKGDLG_CHANGESDETECTED_HEAD"), wxOK, this);
 }
 
 
@@ -721,6 +744,15 @@ void PackageDialog::saveProjectFile(const wxString& filename)
 
         if (sFile.substr(0, 4) == "(!) ")
             sFile.erase(0, 4);
+        else
+        {
+            // Only set the file modification time, if
+            // the file has been found
+            wxFileName fn(sFile);
+            wxDateTime t = fn.GetModificationTime();
+            t = t.ToTimezone(wxDateTime::TimeZone(wxDateTime::GMT0));
+            file->SetAttribute("lastmodified", t.FormatISOCombined().ToStdString().c_str());
+        }
 
         file->SetText(sFile.c_str());
         files->InsertEndChild(file);
@@ -937,6 +969,7 @@ wxString PackageDialog::getPackageVersion()
     return m_packageProperties->GetPropertyByName("-version")->GetValueAsString();
 }
 
+
 /////////////////////////////////////////////////
 /// \brief Returns the user-chosen documentation
 /// file.
@@ -947,6 +980,19 @@ wxString PackageDialog::getPackageVersion()
 wxString PackageDialog::getDocFile()
 {
     return m_packageProperties->GetPropertyByName(DOCFILE)->GetValueAsString();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the user-chosen post-install
+/// script.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString PackageDialog::getPostInstallScript()
+{
+    return m_packageProperties->GetPropertyByName(POSTINSTALL)->GetValueAsString();
 }
 
 

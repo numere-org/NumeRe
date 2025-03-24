@@ -49,3 +49,5 @@ Fixed	The function "textparse()" did not return the complete token, if it was th
 Fixed	The problem with the SQL "USE" command in MySQL connections has been resolved.
 Fixed	Double-clicking a NumeRe file (with whitespaces in its path) or using the context menu on it to open it while NumeRe is running, will now succeed.
 Added	The function "convertunit()" allows for unit conversions towards SI units (like the corresponding table methods).
+Added	A possibility to define a post-install script for a package was added to the package creator.
+Applied	The package creator will now log the last modification time of each bundled procedure in its project file. Once the project is loaded again, it is checked, whether there have been any file modifications in the mean time.
