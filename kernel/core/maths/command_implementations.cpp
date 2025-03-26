@@ -776,10 +776,10 @@ bool differentiate(CommandLineParser& cmdParser)
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, cmdParser.getCommandLine(), sVar, sVar);
 
         // Is a variable interval defined?
-        if (sVar.find('=') != string::npos
-            || (sVar.find('[') != string::npos
-                && sVar.find(']', sVar.find('[')) != string::npos
-                && sVar.find(':', sVar.find('[')) != string::npos))
+        if (sVar.find('=') != std::string::npos
+            || (sVar.find('[') != std::string::npos
+                && sVar.find(']', sVar.find('[')) != std::string::npos
+                && sVar.find(':', sVar.find('[')) != std::string::npos))
         {
             // Remove possible parameter list initializers
             if (sVar.substr(0, 2) == "--")
@@ -788,9 +788,9 @@ bool differentiate(CommandLineParser& cmdParser)
                 sVar = sVar.substr(4);
 
             // Extract variable intervals or locations
-            if (sVar.find('[') != string::npos
-                    && sVar.find(']', sVar.find('[')) != string::npos
-                    && sVar.find(':', sVar.find('[')) != string::npos)
+            if (sVar.find('[') != std::string::npos
+                    && sVar.find(']', sVar.find('[')) != std::string::npos
+                    && sVar.find(':', sVar.find('[')) != std::string::npos)
             {
                 sPos = sVar.substr(sVar.find('[') + 1, getMatchingParenthesis(StringView(sVar, sVar.find('['))) - 1);
                 sVar = "x";
@@ -814,7 +814,9 @@ bool differentiate(CommandLineParser& cmdParser)
                 if (_data.containsTablesOrClusters(sPos))
                     getDataElements(sPos, _parser, _data);
 
-                if (sPos.find(':') != string::npos)
+                if (sPos.front() != '{'
+                    && sPos.back() != '}'
+                    && sPos.find(':') != std::string::npos)
                     sPos.replace(sPos.find(':'), 1, ",");
 
                 _parser.SetExpr("{" + sPos + "}");
@@ -883,7 +885,8 @@ bool differentiate(CommandLineParser& cmdParser)
 
         // Validate the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position,
+                              _idx.row.to_string() + ", " + _idx.col.to_string());
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _data.getLines(sTableName, false)-1);
@@ -892,7 +895,8 @@ bool differentiate(CommandLineParser& cmdParser)
             _idx.col.setRange(0, _idx.col.front()+1);
 
         if (!_data.isValueLike(accessParser.getIndices().col, accessParser.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
+                              accessParser.getDataObject()+"(", accessParser.getDataObject());
 
         // If shorter than filter's size return an invalid
         // value
@@ -924,7 +928,9 @@ bool differentiate(CommandLineParser& cmdParser)
                 for (int j = 0; j < (int)nFilterSize; j++)
                 {
                     if (_data.isValidElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName))
-                        vResult[i] += mu::Value(diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName).getNum().asCF64()));
+                        vResult[i] += mu::Value(diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFilterSize/2],
+                                                                                  _idx.col.front(),
+                                                                                  sTableName).getNum().asCF64()));
                 }
             }
 

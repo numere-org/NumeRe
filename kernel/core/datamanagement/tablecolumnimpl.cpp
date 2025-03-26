@@ -1587,10 +1587,10 @@ mu::Value CategoricalColumn::get(size_t elem) const
 /////////////////////////////////////////////////
 void CategoricalColumn::set(size_t elem, const mu::Value& val)
 {
-    if (val.isNumerical())
-        setValue(elem, val.getNum().asCF64());
-    else
+    if (val.isString() || val.isCategory())
         setValue(elem, val.getStr());
+    else
+        setValue(elem, val.getNum().asCF64());
 }
 
 

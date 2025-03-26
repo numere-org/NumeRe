@@ -6669,7 +6669,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
         // Write some preface comment
         edit->AddText("## " + _guilang.get("GUI_REFACTORING_NOTE") + "\r\n");
         edit->AddText("##\r\n");
-        edit->AddText("## " + _guilang.get("GUI_REFACTORING_ARGUMENTLIST") + "\r\n");
+        edit->AddText("## " + _guilang.get("GUI_REFACTORING_ARGUMENTLIST") + "\r\n\r\n");
 
         // Write the input argument list
         edit->AddText("procedure $NEWPROCEDURE(" + sInputList + ")\r\n");
@@ -6699,6 +6699,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
 
         edit->AddText("endprocedure\r\n");
         statusbar->SetStatusText(_guilang.get("GUI_STATUSBAR_NPRC"), 1);
+
     }
     else if (m_fileType == FILE_MATLAB)
     {
@@ -6744,6 +6745,12 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
     copyFrame->SetIcon(m_mainFrame->getStandardIcon());
     copyFrame->Show();
     copyFrame->SetFocus();
+
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        edit->GotoLine(4);
+        edit->AddProcedureDocumentation();
+    }
 }
 
 

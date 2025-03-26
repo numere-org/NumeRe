@@ -491,7 +491,10 @@ namespace mu
             if (data.real() >= INT32_MIN && data.real() <= INT32_MAX)
                 return Numerical((int32_t)data.real());
 
-            return Numerical((int64_t)data.real());
+            if (data.real() >= INT64_MIN && data.real() <= INT64_MAX)
+                return Numerical((int64_t)data.real());
+
+            return Numerical((uint64_t)data.real());
         }
 
         if (data.imag() == 0.0)
@@ -984,11 +987,11 @@ namespace mu
         if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);
 
-        if (m_type <= I64)
-            return toString(i64);
-
         if (m_type <= UI64)
             return toString(ui64);
+
+        if (m_type <= I64)
+            return toString(i64);
 
         return toString(cf64, (cf64.imag() != 0.0 ? 2 : 1) * (digits > 0 ? digits : 7));
     }

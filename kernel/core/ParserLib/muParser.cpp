@@ -297,7 +297,7 @@ namespace mu
         for (size_t i = 0; i < f.size(); i++)
         {
             *a_Var = a_fPos + Value(factors[i]) * fEpsilon;
-            f[i] = Eval().front();
+            f[i] = Eval();
         }
 
         // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
@@ -310,7 +310,9 @@ namespace mu
         else
             fRes = Value(NAN);
 
-        *a_Var = fBuf; // restore variable
+        a_Var->overwrite(fBuf); // restore variable
         return fRes;
     }
 } // namespace mu
+
+

@@ -747,6 +747,7 @@ sys_time_point StrToTime(const std::string& sString)
     timeStruct.m_microsecs = std::chrono::microseconds::zero();
 
     const char* DIGITS = "0123456789";
+    const char* DIGITS_MINUS = "-0123456789";
 
     // Contains time
     if (format & TD_HHMM || format & TD_HHMMSS)
@@ -846,12 +847,12 @@ sys_time_point StrToTime(const std::string& sString)
         if (format & TD_SEP_MINUS)
         {
             toks = split(sString, '-');
-            isFirst = sString.find('-') < 5 + pos;
+            isFirst = sString.find('-') == sString.find_first_not_of(DIGITS, pos);
         }
         else
         {
             toks = split(sString, '/');
-            isFirst = sString.find('/') < 5 + pos;
+            isFirst = sString.find('/') == sString.find_first_not_of(DIGITS_MINUS, pos);
         }
 
         for (size_t i = 0; i < toks.size(); i++)
@@ -859,15 +860,15 @@ sys_time_point StrToTime(const std::string& sString)
             StripSpaces(toks[i]);
 
             // Remove leading or trailing non-date chars
-            if (toks[i].find_first_not_of(DIGITS) != std::string::npos)
+            if (toks[i].find_first_not_of(DIGITS_MINUS) != std::string::npos)
             {
                 if ((isFirst && i+1 != toks.size()) || (!isFirst && i))
                     break;
 
                 if (isFirst)
-                    toks[i].erase(toks[i].find_first_not_of(DIGITS));
+                    toks[i].erase(toks[i].find_first_not_of(DIGITS_MINUS));
                 else
-                    toks[i].erase(0, toks[i].find_last_not_of(DIGITS)+1);
+                    toks[i].erase(0, toks[i].find_last_not_of(DIGITS_MINUS)+1);
             }
 
             if (!i)
@@ -1377,7 +1378,7 @@ int detectTimeDateFormat(const std::string& sStr)
     size_t pos = sStr.find_first_not_of(" \t");
     int format = TD_NONE;
 
-    if (sStr.length() >= pos+3 && isdigit(sStr[pos]))
+    if (sStr.length() >= pos+3 && (isdigit(sStr[pos]) || sStr[pos] == '-')) // consider negative years
     {
         for (size_t i = pos; i < sStr.length()-1; i++)
         {

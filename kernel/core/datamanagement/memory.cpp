@@ -465,7 +465,7 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
     //#pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (_vCol[j] < 0)
+        if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
             continue;
 
         /*int elems = getElemsInColumn(_vCol[j]);
@@ -765,7 +765,7 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (_vCol[j] < 0)
+            if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
                 continue;
 
             /*int elems = getElemsInColumn(_vCol[j]);

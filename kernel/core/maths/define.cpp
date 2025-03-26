@@ -424,12 +424,6 @@ bool FunctionDefinition::convertToValues()
     {
         std::string sAsVal = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "asval", '=')+5);
 
-        if (sAsVal.front() == '{')
-            sAsVal.erase(0,1);
-
-        if (sAsVal.back() == '}')
-            sAsVal.pop_back();
-
         // Parse the list numerically
         NumeReKernel::getInstance()->getParser().SetExpr(sAsVal);
         NumeReKernel::getInstance()->getParser().Eval();
