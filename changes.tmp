@@ -52,3 +52,6 @@ Added	The function "convertunit()" allows for unit conversions towards SI units 
 Added	A possibility to define a post-install script for a package was added to the package creator.
 Applied	The package creator will now log the last modification time of each bundled procedure in its project file. Once the project is loaded again, it is checked, whether there have been any file modifications in the mean time.
 Fixed	A parsing error in "diff" was resolved.
+Fixed	A regression error with "continue" and "break" was resolved.
+Fixed	Problems in the autoformatter were resolved.
+Added	The command "print" can now also display a table's contents (the first and last 5 rows) in the terminal.

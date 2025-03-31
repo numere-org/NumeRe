@@ -25,6 +25,7 @@
 #include "../settings.hpp"
 #include "../version.h"
 #include "../utils/tools.hpp"
+#include "../datamanagement/table.hpp"
 
 #ifndef OUTPUT_HPP
 #define OUTPUT_HPP
@@ -52,7 +53,7 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 		std::ofstream file_out;						// Ein Objekt eines Dateistreams
 		std::string getDate(bool bForFile);			// Eine Methode, die das aktuelle Datum als String zurueckgibt.
 		std::string replaceTeXControls(const std::string& _sText);
-		//string ValidFileName(string _sFileName);// Eine Methode, die den Dateinamen auf Gueltigkeit prueft
+
 	public:
 		//--> Konstruktoren und Destruktor <--
 		Output(); 								// setzt bFile & bFileOpen = false und sFileName auf default
@@ -78,7 +79,9 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 		void print_legal();						// Gibt ein paar Copyright-Infos in das Ziel
 		void setCompact(bool _bCompact);        // setzt den Wert des Kompakte-Ausgabe-Booleans
 		inline bool isCompact() const
-            {return bCompact;}
+        {
+            return bCompact;
+        }
         void setTotalNumRows(int64_t rows)
         {
             nTotalNumRows = rows;
@@ -95,7 +98,8 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 			 * Zuletzt werden diese formatierten Eintraege zeilenweise an die Output-Klasse uebergeben, die sie entsprechend
 			 * der Voreinstellung weiterverarbeitet.
 			 */
-		void format(std::string** _sMatrix, long long int _nCol, long long int _nLine, const Settings& _option, bool bDontAsk = false, int nHeadLineCount = 1);
+		void format(std::vector<std::vector<std::string>>& _sMatrix, size_t nHeadLineCount = 1);
+		void format(NumeRe::Table _table, size_t digits = 0, size_t chars = 0);
 		void print(std::string sOutput); 			// Zentrale Methode
 												// 		|-> Schreibt den String in das Ziel.
 												// 		|-> Prueft ggf., ob bFileOpen == true und ruft ggf. start() auf.

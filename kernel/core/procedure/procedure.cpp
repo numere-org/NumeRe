@@ -122,13 +122,12 @@ void Procedure::init()
 /// \param _functions Define&
 /// \param _data Datafile&
 /// \param _option Settings&
-/// \param _out Output&
 /// \param _pData PlotData&
 /// \param _script Script&
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
+Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script)
 {
     Returnvalue thisReturnVal;
     int nNum = 0;
@@ -318,7 +317,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // It may also be possible that some procedure occures at this
             // position. Handle them here
             if (sLine.find('$') != std::string::npos)
-                procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, 0);
+                procedureInterface(sLine, _parser, _functions, _data, _pData, _script, _option, 0);
         }
 
     }
@@ -536,14 +535,13 @@ bool Procedure::setProcName(StringView sProc, bool bInstallFileName)
 /// \param _functions Define&
 /// \param _data Datafile&
 /// \param _option Settings&
-/// \param _out Output&
 /// \param _pData PlotData&
 /// \param _script Script&
 /// \param nth_procedure size_t
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
+Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script, size_t nth_procedure)
 {
     // Measure the current stack size and ensure
     // that the current call won't exceed the
@@ -993,7 +991,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
             // virtual procedure interface function
             try
             {
-                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out,
+                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data,
                                                                                 _pData, _script, _option, 0);
                 // Only those two return values indicate that this line
                 // does contain a procedure or a plugin
@@ -1116,7 +1114,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
                     }
                     else if (sReturnValue.length())
                         _ReturnVal = ProcCalc(sReturnValue, sCurrentCommand, nCurrentByteCode,
-                                              _parser, _functions, _data, _option, _out, _pData, _script);
+                                              _parser, _functions, _data, _option, _pData, _script);
 
                     break;
                 }
@@ -1137,7 +1135,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
         try
         {
             ProcCalc(sProcCommandLine, sCurrentCommand, nCurrentByteCode,
-                     _parser, _functions, _data, _option, _out, _pData, _script);
+                     _parser, _functions, _data, _option, _pData, _script);
 
             if (getReturnSignal())
             {
@@ -1209,7 +1207,6 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
 /// \param _parser mu::Parser&
 /// \param _functions Define&
 /// \param _data Datafile&
-/// \param _out Output&
 /// \param _pData PlotData&
 /// \param _script Script&
 /// \param _option Settings&
@@ -1217,7 +1214,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
 /// \return FlowCtrl::ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
 {
     // Create a new procedure object on the heap
     std::unique_ptr<Procedure> _procedure(new Procedure(*this));
@@ -1287,7 +1284,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 }
 
                 // Call the current procedure
-                Returnvalue tempreturnval = _procedure->execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
+                Returnvalue tempreturnval = _procedure->execute(__sName, __sVarList, _parser, _functions, _data, _option, _pData, _script, nthRecursion + 1);
 
                 // Evaluate the return value of the called procedure
                 if (!_procedure->nReturnType)
@@ -1348,7 +1345,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
             // Call the plugin routines
             if (!_option.systemPrints())
             {
-                _return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
+                _return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _pData, _script, nthRecursion + 1);
 
                 if (nFlags & ProcedureCommandLine::FLAG_MASK)
                     _option.enableSystemPrints(false);
@@ -1356,7 +1353,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
             else
             {
                 _option.enableSystemPrints(false);
-                _return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
+                _return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _pData, _script, nthRecursion + 1);
                 _option.enableSystemPrints(true);
             }
 

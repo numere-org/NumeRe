@@ -123,31 +123,6 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 
 
 /////////////////////////////////////////////////
-/// \brief This function presents the passed data
-/// to the user in a visual way.
-///
-/// \param _data Datafile&
-/// \param _out Output&
-/// \param _option Settings&
-/// \param _sCache const string&
-/// \param nPrecision size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision)
-{
-    string sCache = _sCache;
-    string sFileName;
-
-    // Do only stuff, if data is available
-    if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
-        NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
-    else
-        throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function handles appending data
 /// sets to already existing data.
 ///

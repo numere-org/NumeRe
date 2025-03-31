@@ -117,7 +117,6 @@ void ProcedureVarFactory::init()
     _dataRef = &NumeReKernel::getInstance()->getMemoryManager();
     _optionRef = &NumeReKernel::getInstance()->getSettings();
     _functionRef = &NumeReKernel::getInstance()->getDefinitions();
-    _outRef = &NumeReKernel::getInstance()->getOutput();
     _pDataRef = &NumeReKernel::getInstance()->getPlottingData();
     _scriptRef = &NumeReKernel::getInstance()->getScript();
 
@@ -654,7 +653,9 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
         }
 
-        FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+        FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef,
+                                                                                           *_dataRef, *_pDataRef, *_scriptRef, *_optionRef,
+                                                                                           nth_procedure);
 
         if (nReturn == FlowCtrl::INTERFACE_ERROR)
         {
@@ -723,7 +724,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
 
                 currentValue.insert(0, sNewArgName + "() = ");
                 FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef,
-                                                                                                   *_dataRef, *_outRef, *_pDataRef,
+                                                                                                   *_dataRef, *_pDataRef,
                                                                                                    *_scriptRef, *_optionRef, nth_procedure);
 
                 if (nReturn == FlowCtrl::INTERFACE_ERROR)
@@ -1023,7 +1024,7 @@ void ProcedureVarFactory::createLocalVars(std::string sVarList, const mu::Value&
                 try
                 {
                     FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef,
-                                                                                                       *_dataRef, *_outRef, *_pDataRef,
+                                                                                                       *_dataRef, *_pDataRef,
                                                                                                        *_scriptRef, *_optionRef,
                                                                                                        nth_procedure);
 
@@ -1131,7 +1132,10 @@ void ProcedureVarFactory::createLocalTables(std::string sTableList)
 
                     sCurrentValue.insert(0, currentVar + "() = ");
 
-                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef,
+                                                                                                       *_functionRef, *_dataRef, *_pDataRef,
+                                                                                                       *_scriptRef, *_optionRef,
+                                                                                                       nth_procedure);
 
                     if (nReturn == FlowCtrl::INTERFACE_ERROR)
                         throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sTableList, SyntaxError::invalid_position);
@@ -1246,7 +1250,10 @@ void ProcedureVarFactory::createLocalClusters(std::string sClusterList)
                         throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sClusterList, SyntaxError::invalid_position);
                     }
 
-                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef,
+                                                                                                       *_functionRef, *_dataRef, *_pDataRef,
+                                                                                                       *_scriptRef, *_optionRef,
+                                                                                                       nth_procedure);
 
                     if (nReturn == FlowCtrl::INTERFACE_ERROR)
                         throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sClusterList, SyntaxError::invalid_position);

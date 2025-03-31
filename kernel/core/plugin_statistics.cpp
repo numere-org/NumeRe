@@ -197,13 +197,8 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
     int nHeadlines = _data.getHeadlineCount(sTable);
     const int nPrecision = 4;
 
-    // Create an output string matrix on the heap
-    std::string** sOut = new std::string*[nLine + STATS_FIELD_COUNT+1 + nHeadlines];
-
-    for (int i = 0; i < nLine + STATS_FIELD_COUNT+1 + nHeadlines; i++)
-    {
-        sOut[i] = new std::string[nCol];
-    }
+    // Create an output string matrix
+    std::vector<std::vector<std::string>> sOut(nLine+STATS_FIELD_COUNT+1+nHeadlines, std::vector<std::string>(nCol));
 
     // Fill the output matrix with the
     // previously calculated values
@@ -268,14 +263,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
     _out.setCompact(false);
     _out.setCommentLine(_lang.get("STATS_OUT_COMMENTLINE"));
 
-    _out.format(sOut, nCol, nLine + STATS_FIELD_COUNT+1 + nHeadlines, _option, true, nHeadlines);
-
-    for (int i = 0; i < nLine + STATS_FIELD_COUNT+1 + nHeadlines; i++)
-    {
-        delete[] sOut[i];
-    }
-
-    delete[] sOut;
+    _out.format(sOut, nHeadlines);
 
     _out.reset();
 }
@@ -310,13 +298,7 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
         createStatsFile(_out, vStats, sSavePath, _data, sTable, _idx, _option);
 
     // Create the overview string table
-    // on the heap
-    std::string** sOverview = new std::string*[STATS_FIELD_COUNT + nHeadlines];
-
-    for (int i = 0; i < STATS_FIELD_COUNT+nHeadlines; i++)
-        sOverview[i] = new std::string[nCol+1];
-
-    sOverview[0][0] = " ";
+    std::vector<std::vector<std::string>> sOverview(STATS_FIELD_COUNT+nHeadlines, std::vector<std::string>(nCol+1));
 
     // Write the calculated statistics to the
     // string table
@@ -386,20 +368,10 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
     make_hline();
     NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("STATS_HEADLINE"))));
     make_hline();
-    _out.format(sOverview, nCol+1, STATS_FIELD_COUNT+nHeadlines, _option, true, nHeadlines);
+    _out.format(sOverview, nHeadlines);
     _out.reset();
     NumeReKernel::toggleTableStatus();
     make_hline();
-
-    // --> Speicher wieder freigeben! <--
-    for (int i = 0; i < STATS_FIELD_COUNT+nHeadlines; i++)
-        delete[] sOverview[i];
-
-    delete[] sOverview;
-
-    // --> Output-Instanz wieder zuruecksetzen <--
-    _out.reset();
-
 }
 
 

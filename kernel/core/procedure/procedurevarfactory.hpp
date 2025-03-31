@@ -47,7 +47,6 @@ class ProcedureVarFactory
         MemoryManager* _dataRef;
         Settings* _optionRef;
         FunctionDefinitionManager* _functionRef;
-        Output* _outRef;
         PlotData* _pDataRef;
         Script* _scriptRef;
 

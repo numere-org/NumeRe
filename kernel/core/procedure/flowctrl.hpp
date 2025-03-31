@@ -50,7 +50,6 @@ class FlowCtrl
 
         mu::Parser* _parserRef;
         MemoryManager* _dataRef;
-        Output* _outRef;
         Settings* _optionRef;
         FunctionDefinitionManager* _functionRef;
         PlotData* _pDataRef;
@@ -177,7 +176,7 @@ class FlowCtrl
 
 
         virtual int procedureCmdInterface(StringView sLine, bool compiling);
-        virtual ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command);
+        virtual ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, PlotData& _pData, Script& _script, Settings& _option, int nth_command);
         virtual int isInline(const std::string& sProc);
         virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();

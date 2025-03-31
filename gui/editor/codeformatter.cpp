@@ -354,9 +354,16 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine)
             || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, i))
             continue;
 
-        if (m_editor->GetCharAt(i) == '\r'
-            || m_editor->GetCharAt(i) == '\n')
+        if (m_editor->GetCharAt(i) == '\r')
             continue;
+
+        if (m_editor->GetCharAt(i) == '\n')
+        {
+            // Need to refresh the styling bc. that doesn't get updated
+            // automatically (problem for brace-match and such)
+            m_editor->Colourise(i, nLastPosition);
+            continue;
+        }
 
         // Jump over operator keywords
         if (m_editor->GetStyleAt(i) == wxSTC_NSCR_OPERATOR_KEYWORDS
@@ -472,21 +479,20 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine)
                 || command == "switch"
                 || command == "while")
             {
-                int parens = i;
-                parens = m_editor->FindText(i, nCurrentLineEnd, "(");
+                int parenStart = m_editor->FindText(i, nCurrentLineEnd, "(");
 
-                if (parens > 0)
+                if (parenStart > 0)
                 {
-                    parens = m_editor->BraceMatch(parens);
+                    int parenEnd = m_editor->BraceMatch(parenStart);
 
-                    if (parens > 0)
+                    if (parenEnd > 0)
                     {
-                        int nextVisibleCharAfterParens = m_editor->GetTextRange(parens + 1, nCurrentLineEnd).find_first_not_of(" \r\n\t");
+                        int nextVisibleCharAfterParens = m_editor->GetTextRange(parenEnd + 1, nCurrentLineEnd).find_first_not_of(" \r\n\t");
 
                         if (nextVisibleCharAfterParens != wxNOT_FOUND
-                            && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, parens + 1 + nextVisibleCharAfterParens)
-                            && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, parens + 1 + nextVisibleCharAfterParens))
-                            nLastPosition += insertTextAndMove(parens + 1, "\r\n");
+                            && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, parenEnd + 1 + nextVisibleCharAfterParens)
+                            && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, parenEnd + 1 + nextVisibleCharAfterParens))
+                            nLastPosition += insertTextAndMove(parenEnd + 1, "\r\n");
                     }
                 }
             }
@@ -532,8 +538,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine)
 
                     if (nLine
                         && m_editor->GetLine(nLine - 1).find_first_not_of(" \t\r\n") != std::string::npos
-                        && m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->PositionFromLine(nLine - 1))
-                        && m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_editor->PositionFromLine(nLine - 1))
+                        && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->PositionFromLine(nLine - 1))
                         && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, position))
                     {
                         nLastPosition += insertTextAndMove(m_editor->PositionFromLine(nLine), "\r\n");
@@ -564,6 +569,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine)
     }
 
     m_editor->EndUndoAction();
+    m_editor->Colourise(0, -1);
 }
 
 

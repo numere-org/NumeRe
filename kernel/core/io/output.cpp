@@ -47,18 +47,13 @@ Output::Output(bool bStatus, string sFile) : FileSystem()
     }
 
     sPath = "save";
-    return;
 }
 
 // --> Destruktor <--
 Output::~Output()
 {
     if (bFile == true && bFileOpen == true)
-    {
         end();					// Schliesse Datei, falls eine geoeffnet ist
-    }
-
-    return;
 }
 
 // --> Methoden <--
@@ -68,7 +63,6 @@ void Output::setStatus(bool bStatus)
         end();					// Falls zuvor bereits ein Datenfile erzeugt wurde, schliesse dieses zuerst
 
     bFile = bStatus;			// Weise den neuen Wert an den Bool bFile zu.
-    return;
 }
 
 // --> setzt Output auf die Defaultwerte zurueck <--
@@ -89,7 +83,6 @@ void Output::reset()
     sCommentLine = "";
     sPluginPrefix = "data";
     generateFileName();
-    return;
 }
 
 string Output::replaceTeXControls(const string& _sText)
@@ -135,6 +128,11 @@ string Output::replaceTeXControls(const string& _sText)
             sReturn.insert(i,1,'\\');
     }
 
+    if (sReturn == "inf")
+        sReturn = "\\infty";
+    else if (sReturn == "-inf")
+        sReturn = "-\\infty";
+
     return sReturn;
 }
 
@@ -154,9 +152,7 @@ bool Output::isFile() const
 void Output::setFileName(string sFile)
 {
     if (bFileOpen)				// Ist bereits eine Datei offen? Besser wir schliessen sie vorher.
-    {
         end();
-    }
 
     if (sFile != "0")		// Ist sFile != 0, pruefe und korrigiere sFile und weise dann an
     {							//		sFileName zu, sonst verwende den Default
@@ -174,11 +170,7 @@ void Output::setFileName(string sFile)
             bPrintCSV = true;
     }
     else
-    {
         generateFileName();		// Generiere einen Dateinamen aus data_YYYY-MM-DD-hhmmss.dat
-    }
-
-    return;
 }
 
 
@@ -196,23 +188,18 @@ void Output::start()
         bFileOpen = true;		// Setze den Boolean auf TRUE
         print_legal();			// Schreibe das Copyright
     }
-
-    return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben werden soll,
-                                // 		oder die Datei bereits geoeffnet ist
 }
 
 
 void Output::setPluginName(string _sPluginName)
 {
     sPluginName = _sPluginName;	// Setze sPluginName = _sPluginName
-    return;
 }
 
 
 void Output::setCommentLine(string _sCommentLine)
 {
     sCommentLine = _sCommentLine;	// setze sCommentLine = _sCommentLine;
-    return;
 }
 
 
@@ -259,8 +246,8 @@ void Output::print_legal()		// Pro forma Kommentare in die Datei
         print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_STD"));
 
     print(sCommentSign);
-    return;
 }
+
 
 void Output::end()
 {
@@ -269,9 +256,6 @@ void Output::end()
         file_out.close();		// Schliesse die Datei
         bFileOpen = false;		// Setze den Boolean auf FALSE
     }
-
-    return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben wurde,
-                                //		oder die Datei bereits geschlossen ist
 }
 
 
@@ -300,10 +284,7 @@ void Output::print(string sOutput)
     if (bFile)
     {
         if (!bFileOpen)
-        {
-            start();			// Wenn in eine Datei geschrieben werden soll, aber diese noch nicht geoeffnet wurde,
-                                // 		rufe die Methode start() auf.
-        }
+            start();
 
         if (file_out.fail())	// Fehlermeldung, falls nicht in die Datei geschrieben werden kann
         {
@@ -319,18 +300,14 @@ void Output::print(string sOutput)
             print(sOutput);		// Wiederhole den Aufruf dieser Methode und schreibe von nun an auf die Konsole
         }
         else if (bSumBar && !bPrintTeX && !bPrintCSV)					// Ausgabe in die Datei
-            file_out << "#" << sOutput.substr(1) << endl;
+            file_out << "#" << sOutput.substr(1) << "\n";
         else
-            file_out << sOutput << endl;
+            file_out << sOutput << "\n";
     }
-    else if (bSumBar)						// Ausgabe auf die Konsole. Kann in Linux mit dem Umlenker '>' trotzdem in eine Datei ausgegeben werden.
-    {
+    else if (bSumBar)
         NumeReKernel::printPreFmt("|   " + sOutput.substr(4) + "\n");
-    }
     else
         NumeReKernel::printPreFmt(sOutput + "\n");
-
-    return;
 }
 
 
@@ -350,151 +327,82 @@ void Output::generateFileName()	// Generiert einen Dateinamen auf Basis des aktu
     sTime += getDate(true);		// Datum aus der Klasse laden
     sTime += ".dat";
     sFileName = sTime;			// Dateinamen an sFileName zuweisen
-    return;
 }
 
 
 string Output::getDate(bool bForFile)	// Der Boolean entscheidet, ob ein Dateinamen-Datum oder ein "Kommentar-Datum" gewuenscht ist
 {
-    time_t now = time(0);		// Aktuelle Zeit initialisieren
-    tm *ltm = localtime(&now);
-    ostringstream Temp_str;
-    Temp_str << 1900+ltm->tm_year << "-"; //YYYY-
-
-    if(1+ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
-        Temp_str << "0";
-
-    Temp_str << 1+ltm->tm_mon << "-"; // MM-
-
-    if(ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
-        Temp_str << "0";
-
-    Temp_str << ltm->tm_mday; 	// DD
-
-    if(bForFile)
-        Temp_str << "_";		// Unterstrich im Dateinamen
-    else
-        Temp_str << ", um ";	// Komma im regulaeren Datum
-
-    if(ltm->tm_hour < 10)
-        Temp_str << "0";
-
-    Temp_str << ltm->tm_hour; 	// hh
-
-    if(!bForFile)
-        Temp_str << ":";		// ':' im regulaeren Datum
-
-    if(ltm->tm_min < 10)
-        Temp_str << "0";
-
-    Temp_str << ltm->tm_min;	// mm
-
-    if(!bForFile)
-        Temp_str << ":";
-
-    if(ltm->tm_sec < 10)
-        Temp_str << "0";
-
-    Temp_str << ltm->tm_sec;	// ss
-
-    return Temp_str.str();
+    return toString(sys_time_now(), bForFile ? GET_AS_TIMESTAMP : GET_WITH_TEXT);
 }
 
 
-void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine, const Settings& _option, bool bDontAsk, int nHeadLineCount)
+void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLineCount)
 {
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
     if (!nHeadLineCount)
         nHeadLineCount = 1;
 
-    size_t nLongest[_nCol];		// Int fuer die laengste Zeichenkette: unsigned da string::length() einen unsigned zurueck gibt
-    size_t nLen = 0;			// Int fuer die aktuelle Laenge: dito
-    string sPrint = "";				// String fuer die endgueltige Ausgabe
-    string sLabel = sFileName;
+    size_t nRows = _sMatrix.size();
+    size_t nCols = _sMatrix.front().size();
+
+    if (bPrintCSV)
+    {
+        std::string sPrint;
+
+        for (size_t i = 0; i < nRows; i++)
+        {
+            for (size_t j = 0; j < nCols; j++)
+            {
+                if (_sMatrix[i][j] != "---")
+                    sPrint += _sMatrix[i][j];
+
+                sPrint += ",";
+            }
+
+            print(sPrint);
+            sPrint.clear();
+        }
+
+        std::string sConsoleOut = "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
+                                                          toString(nCols*(nTotalNumRows ? nTotalNumRows : nRows-nHeadLineCount)),
+                                                          sFileName));
+
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
+
+        end();
+        return;
+    }
+
+    std::vector<size_t> nLongest(nCols, 0);
     const size_t COLUMNSEPARATOR = 3;
 
-    if (sLabel.find('/') != string::npos)
-        sLabel.erase(0,sLabel.rfind('/')+1);
-
-    if (sLabel.find(".tex") != string::npos)
-        sLabel.erase(sLabel.rfind(".tex"));
-
-    while (sLabel.find(' ') != string::npos)
-        sLabel[sLabel.find(' ')] = '_';
-
-    string cRerun = "";				// String fuer den erneuten Aufruf
-                                    // Wegen dem Rueckgabewert von string::length() sind alle Schleifenindices unsigned
-
-    if ((!bCompact || _nLine < 12) && !bPrintCSV)
+    if (!bCompact || nRows < 12)
     {
         // --> Laufe durch jedes Element der Tabelle <--
-        for (long long int j = 0; j < _nCol; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
-            nLongest[j] = 0;
-
-            for (long long int i = 0; i < _nLine; i++)
+            for (size_t i = 0; i < nRows; i++)
             {
-                if (i >= nHeadLineCount && bPrintTeX)
-                {
-                    if (_sMatrix[i][j].find('e') != string::npos)
-                    {
-                        _sMatrix[i][j] = _sMatrix[i][j].substr(0,_sMatrix[i][j].find('e'))
-                                + "\\cdot10^{"
-                                + (_sMatrix[i][j][_sMatrix[i][j].find('e')+1] == '-' ? "-" : "")
-                                + _sMatrix[i][j].substr(_sMatrix[i][j].find_first_not_of('0', _sMatrix[i][j].find('e')+2))
-                                + "}";
-                    }
-
-                    if (_sMatrix[i][j].find('%') != string::npos)
-                    {
-                        _sMatrix[i][j] = _sMatrix[i][j].substr(0,_sMatrix[i][j].find('%'))
-                                + "\\"
-                                + _sMatrix[i][j].substr(_sMatrix[i][j].find('%'));
-                    }
-
-                    if (_sMatrix[i][j].find("+/-") != string::npos)
-                    {
-                        _sMatrix[i][j] = _sMatrix[i][j].substr(0,_sMatrix[i][j].find("+/-"))
-                                + "\\pm"
-                                + _sMatrix[i][j].substr(_sMatrix[i][j].find("+/-")+3);
-                    }
-
-                    if (_sMatrix[i][j] == "inf")
-                    {
-                        _sMatrix[i][j] = "\\infty";
-                    }
-
-                    if (_sMatrix[i][j] == "-inf")
-                    {
-                        _sMatrix[i][j] = "-\\infty";
-                    }
-                }
-
                 if (bPrintTeX)
                     _sMatrix[i][j] = replaceTeXControls(_sMatrix[i][j]);
 
-                nLen = _sMatrix[i][j].length(); // Erhalte die Laenge der aktuellen Zeichenkette
-
-                if (nLen > nLongest[j])
-                    nLongest[j] = nLen;	// Weise neue Laenge an nLongest zu, falls nLen > nLongest
+                nLongest[j] = std::max(nLongest[j], _sMatrix[i][j].length());
             }
 
             nLongest[j] += COLUMNSEPARATOR;
         }
     }
-    else if (!bPrintCSV)
+    else
     {
-        for (long long int j = 0; j < _nCol; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
-            nLongest[j] = 0;
-
-            for (long long int i = 0; i < _nLine; i++)
+            for (size_t i = 0; i < nRows; i++)
             {
-                if (i < 5 || i >= _nLine - 5)
+                if (i < 5 || i >= nRows - 5)
                 {
-                    nLen = _sMatrix[i][j].length();
-
-                    if (nLen > nLongest[j])
-                        nLongest[j] = nLen;
+                    nLongest[j] = std::max(nLongest[j], _sMatrix[i][j].length());
                 }
             }
 
@@ -504,38 +412,37 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
     if (bCompact)
     {
-        for (long long int j = 0; j < _nCol; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             if (nLongest[j] < 7)
                 nLongest[j] = 7;
         }
     }
 
-    nLen = 0;
+    size_t nLen = 0;
 
-    for (long long int j = 0; j < _nCol; j++)
+    for (size_t j = 0; j < nCols; j++)
         nLen += nLongest[j];
-
-    if (bFile && !bPrintTeX && !bPrintCSV)
-    {
-        print("# " + _lang.get("OUTPUT_FORMAT_COMMENTLINE", sPluginName));	// Informative Ausgabe
-        print("#");
-    }
-    else if (bPrintTeX && !bPrintCSV)
-    {
-        print("% " + _lang.get("OUTPUT_FORMAT_COMMENTLINE", sPluginName));
-        print("%");
-    }
 
     if (bPrintTeX)
     {
-        if (_nLine < 30)
+        std::string sLabel = sFileName;
+
+        if (sLabel.find('/') != string::npos)
+            sLabel.erase(0,sLabel.rfind('/')+1);
+
+        if (sLabel.find(".tex") != string::npos)
+            sLabel.erase(sLabel.rfind(".tex"));
+
+        replaceAll(sLabel, " ", "_");
+
+        if (nRows < 30)
         {
             print("\\begin{table}[htb]");
             print("\\centering");
-            sPrint = "\\begin{tabular}{";
+            std::string sPrint = "\\begin{tabular}{";
 
-            for (long long int j = 0; j < _nCol; j++)
+            for (size_t j = 0; j < nCols; j++)
                 sPrint += "c";
 
             sPrint += "}";
@@ -544,9 +451,9 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         }
         else
         {
-            sPrint = "\\begin{longtable}{";
+            std::string sPrint = "\\begin{longtable}{";
 
-            for (long long int j = 0; j < _nCol; j++)
+            for (size_t j = 0; j < nCols; j++)
                 sPrint += "c";
 
             sPrint += "}";
@@ -554,11 +461,11 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             print("\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
             print("\\label{tab:" + sLabel + "}\\\\");
             print("\\toprule");
-            sPrint = "";
+            sPrint.clear();
 
-            for (int i = 0; i < nHeadLineCount; i++)
+            for (size_t i = 0; i < nHeadLineCount; i++)
             {
-                for (long long int j = 0; j < _nCol; j++)
+                for (size_t j = 0; j < nCols; j++)
                     sPrint += _sMatrix[i][j] + " & ";
 
                 sPrint = sPrint.substr(0,sPrint.length()-2) + "\\\\\n";
@@ -579,238 +486,232 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             print("\\midrule");
             print("\\endhead");
             print("\\midrule");
-            print("\\multicolumn{" + toString(_nCol) + "}{c}{--- \\emph{"+_lang.get("OUTPUT_FORMAT_TEXLONG_FOOT")+"} ---}\\\\");
+            print("\\multicolumn{" + toString(nCols) + "}{c}{--- \\emph{"+_lang.get("OUTPUT_FORMAT_TEXLONG_FOOT")+"} ---}\\\\");
             print("\\bottomrule");
             print("\\endfoot");
             print("\\bottomrule");
             print("\\endlastfoot");
         }
 
-        sPrint = "";
-    }
-
-    if (bPrintCSV)
-    {
-        for (long long int i = 0; i < _nLine; i++)
+        // Do the matrix printing here
+        for (size_t i = 0; i < nRows; i++)
         {
-            for (long long int j = 0; j < _nCol; j++)
-            {
-                if (_sMatrix[i][j] != "---")
-                    sPrint += _sMatrix[i][j];
+            if (nRows >= 30 && i < nHeadLineCount)
+                continue;
 
-                sPrint += ",";
+            std::string sPrint;
+
+            for (size_t j = 0; j < nCols; j++)
+            {
+                if (j)
+                    sPrint += " &";
+
+                if (i < nHeadLineCount)
+                    sPrint.append(COLUMNSEPARATOR, ' ');
+                else
+                    sPrint.append(nLongest[j] - _sMatrix[i][j].length(), ' ');
+
+                if (i >= nHeadLineCount && _sMatrix[i][j] != "---" && !bSumBar)
+                    sPrint += "$";
+                else if (!bSumBar)
+                    sPrint += "  ";
+
+                if (bSumBar)
+                {
+                    if (_sMatrix[i][j].find(':') == string::npos)
+                        sPrint += '$' + _sMatrix[i][j];
+                    else
+                        sPrint += _sMatrix[i][j].substr(0,_sMatrix[i][j].find(':')+2) + "$"
+                            + _sMatrix[i][j].substr(_sMatrix[i][j].find(':')+2);
+                }
+
+                if (i < nHeadLineCount)
+                    sPrint.append(nLongest[j] - _sMatrix[i][j].length() - COLUMNSEPARATOR, ' ');
+
+                if (i >= nHeadLineCount && _sMatrix[i][j] != "---")
+                    sPrint += "$";
             }
 
-            print(sPrint);
-            sPrint = "";
+            print(sPrint + "\\\\");
+
+            if (i == nHeadLineCount-1 && nRows < 30)
+                print("\\midrule");
+        }
+
+        if (sCommentLine.length())
+        {
+            print("%");
+            print("% " + sCommentLine);
+        }
+
+        if (nRows < 30)
+        {
+            print("\\bottomrule");
+            print("\\end{tabular}");
+            print("\\caption{"+ _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
+            print("\\label{tab:" + sLabel + "}");
+            print("\\end{table}");
+        }
+        else
+            print("\\end{longtable}");
+
+        std::string sConsoleOut = "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
+                                                          toString(nCols*(nTotalNumRows ? nTotalNumRows : nRows-nHeadLineCount)),
+                                                          sFileName));
+
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
+
+        end();
+        return;
+    }
+
+    size_t nLineStartCol = 0;
+    size_t nLineEndCol = nCols;
+    size_t nLineLength = 0;
+    int nNotRepeatFirstCol = 1;
+
+    if (!bFile && _option.getWindow()-4 < nLen)
+    {
+        for (size_t j = 0; j < nCols; j++)
+        {
+            if (_option.getWindow()-4 < nLineLength+nLongest[j])
+            {
+                nLineEndCol = j;
+                break;
+            }
+
+            nLineLength += nLongest[j];
         }
     }
     else
-    {
-        long long int nCol_0 = 0;
-        long long int nCol_1 = _nCol;
-        size_t nLine = 0;
-        int nNotRepeatFirstCol = 1;
+        nLineLength = nLen;
 
-        if (!bFile && _option.getWindow()-4 < nLen)
+    do
+    {
+        if (nLineStartCol == nLineEndCol)
+            nLineEndCol = nCols;
+
+        for (size_t i = 0; i < nRows; i++)
         {
-            for (long long int j = 0; j < _nCol; j++)
+            std::string sPrint;
+
+            if (!bCompact || nRows < 12 || (bCompact && nRows >= 12 && (i < 5 || i >= nRows - 5)))
             {
-                if (_option.getWindow()-4 < nLine+nLongest[j])
+                for (size_t j = nLineStartCol*nNotRepeatFirstCol; j < nLineEndCol; j++)
                 {
-                    nCol_1 = j;
+                    if (i < nHeadLineCount && j == nLineStartCol*nNotRepeatFirstCol) 	// Erstes Element, erste Zeile?
+                    {
+                        if (bFile)
+                            sPrint = "#";		// Tabellenheader, Auskommentierung fuer GNUPlot
+                        else if (!bFile)
+                            sPrint = "|   ";
+                    }
+                    else	    // In allen anderen Faellen: ergaenze die fehlenden Leerstellen vor dem String
+                    {
+                        if (!bFile && j == nLineStartCol*nNotRepeatFirstCol)
+                            sPrint = "|";
+
+                        if (i < nHeadLineCount)
+                            sPrint.append(COLUMNSEPARATOR, ' ');
+                        else
+                            sPrint.append(nLongest[j] - _sMatrix[i][j].length(), ' ');
+                    }
+
+                    sPrint += _sMatrix[i][j];	// Verknuepfe alle Elemente einer Zeile zu einem einzigen String
+
+                    if (i < nHeadLineCount)
+                        sPrint.append(nLongest[j] - _sMatrix[i][j].length() - COLUMNSEPARATOR, ' ');
+
+                    if (!nLineStartCol && nLineEndCol != nCols && nNotRepeatFirstCol && i >= nHeadLineCount)
+                    {
+                        if (_sMatrix[i][0].find(':') != string::npos)
+                            nNotRepeatFirstCol = 0;
+                    }
+
+                    if (!nNotRepeatFirstCol && nLineStartCol && !j)
+                        j = nLineStartCol-1;
+                }
+
+                print(sPrint); 				// Ende der Zeile: Ausgabe in das Ziel
+            }
+            else if (bCompact && nRows >= 10 && i == 5)
+            {
+                if (!bFile)
+                    sPrint = "|  ";
+
+                for (size_t j = nLineStartCol*nNotRepeatFirstCol; j < nLineEndCol; j++)
+                {
+                    for (size_t k = 0; k < nLongest[j] - 5; k++)
+                    {
+                        if (j == nLineStartCol*nNotRepeatFirstCol && k == nLongest[j]-6)
+                            break;
+
+                        sPrint += " ";
+                    }
+
+                    sPrint += "[...]";
+
+                    if (!nNotRepeatFirstCol && nLineStartCol && !j)
+                        j = nLineStartCol-1;
+                }
+
+                print(sPrint);
+            }
+
+            if (i == nHeadLineCount-1)	// War das die erste Zeile? Mach' darunter eine schoene, auskommentierte Doppellinie
+            {
+                if (bFile)
+                    sPrint = "#";
+                else
+                    sPrint = "|   ";
+
+                if (!bFile)
+                    sPrint.assign(nLineLength+1, '-');
+                else
+                {
+                    sPrint.assign(nLen-1, '=');
+                    sPrint.insert(0, "#");
+                }
+
+                print(sPrint);
+            }
+        }
+
+        if (nLineEndCol != nCols)
+        {
+            if (nLineLength > 2)
+                print(std::string(nLineLength+1, '-'));
+
+            nLineStartCol = nLineEndCol;
+            nLineLength = 0;
+
+            if (!nNotRepeatFirstCol)
+                nLineLength = nLongest[0];
+
+            for (size_t j = nLineEndCol; j < nCols; j++)
+            {
+                if (_option.getWindow()-4 < nLineLength + nLongest[j])
+                {
+                    nLineEndCol = j;
                     break;
                 }
 
-                nLine += nLongest[j];
+                nLineLength += nLongest[j];
             }
         }
-        else
-            nLine = nLen;
-
-        do
-        {
-            if (nCol_0 == nCol_1)
-                nCol_1 = _nCol;
-
-            for (long long int i = 0; i < _nLine; i++)
-            {
-                if (bPrintTeX && _nLine >= 30 && i < nHeadLineCount)
-                    continue;
-
-                if (!bCompact || _nLine < 12 || (bCompact && _nLine >= 12 && (i < 5 || i >= _nLine - 5)))
-                {
-                    for (long long int j = nCol_0*nNotRepeatFirstCol; j < nCol_1; j++)
-                    {
-                        if (i < nHeadLineCount && j == nCol_0*nNotRepeatFirstCol) 	// Erstes Element, erste Zeile?
-                        {
-                            if (bFile && !bPrintTeX)
-                                sPrint = "#";		// Tabellenheader, Auskommentierung fuer GNUPlot
-                            else if (!bFile)
-                                sPrint = "|   ";
-                        }
-                        else	    // In allen anderen Faellen: ergaenze die fehlenden Leerstellen vor dem String
-                        {
-                            if (!bFile && j == nCol_0*nNotRepeatFirstCol)
-                                sPrint = "|";
-                            else if (bPrintTeX && j)
-                                sPrint += " &";
-
-                            if (i < nHeadLineCount)
-                                sPrint.append(COLUMNSEPARATOR, ' ');
-                            else
-                                sPrint.append(nLongest[j] - _sMatrix[i][j].length(), ' ');
-                        }
-
-                        if (bPrintTeX && i >= nHeadLineCount && _sMatrix[i][j] != "---" && !bSumBar)
-                            sPrint += "$";
-                        else if (bPrintTeX && !bSumBar)
-                            sPrint += "  ";
-
-                        if (bPrintTeX && bSumBar)
-                        {
-                            if (_sMatrix[i][j].find(':') == string::npos)
-                                sPrint += '$' + _sMatrix[i][j];
-                            else
-                                sPrint += _sMatrix[i][j].substr(0,_sMatrix[i][j].find(':')+2) + "$" + _sMatrix[i][j].substr(_sMatrix[i][j].find(':')+2);
-                        }
-                        else
-                            sPrint += _sMatrix[i][j];	// Verknuepfe alle Elemente einer Zeile zu einem einzigen String
-
-                        if (i < nHeadLineCount)
-                            sPrint.append(nLongest[j] - _sMatrix[i][j].length() - COLUMNSEPARATOR, ' ');
-
-                        if (!nCol_0 && nCol_1 != _nCol && nNotRepeatFirstCol && i >= nHeadLineCount)
-                        {
-                            if (_sMatrix[i][0].find(':') != string::npos)
-                                nNotRepeatFirstCol = 0;
-                        }
-
-                        if (bPrintTeX && i >= nHeadLineCount && _sMatrix[i][j] != "---")
-                            sPrint += "$";
-
-                        if (!nNotRepeatFirstCol && nCol_0 && !j)
-                            j = nCol_0-1;
-                    }
-
-                    if (bPrintTeX && i < nHeadLineCount)
-                    {
-                        for (size_t k = 0; k < sPrint.length(); k++)
-                        {
-                            if (sPrint[k] == '_')
-                                sPrint[k] = ' ';
-                        }
-                    }
-
-                    if (bPrintTeX)
-                        sPrint += "\\\\";
-
-                    print(sPrint); 				// Ende der Zeile: Ausgabe in das Ziel
-                }
-                else if (bCompact && _nLine >= 10 && i == 5)
-                {
-                    if (!bFile)
-                        sPrint = "|  ";
-
-                    for (long long int j = nCol_0*nNotRepeatFirstCol; j < nCol_1; j++)
-                    {
-                        for (size_t k = 0; k < nLongest[j] - 5; k++)
-                        {
-                            if (j == nCol_0*nNotRepeatFirstCol && k == nLongest[j]-6)
-                                break;
-
-                            sPrint += " ";
-                        }
-
-                        sPrint += "[...]";
-
-                        if (!nNotRepeatFirstCol && nCol_0 && !j)
-                            j = nCol_0-1;
-                    }
-
-                    print(sPrint);
-                }
-
-                if (i == nHeadLineCount-1)					// War das die erste Zeile? Mach' darunter eine schoene, auskommentierte Doppellinie
-                {
-                    if (bFile)
-                    {
-                        if (bPrintTeX && _nLine < 30)
-                            sPrint = "\\midrule";
-                        else if (!bPrintTeX)
-                            sPrint = "#";
-                    }
-                    else
-                        sPrint = "|   ";
-
-                    if (!bPrintTeX)
-                    {
-                        if (!bFile)
-                        {
-                            sPrint.assign(nLine+2, '-');
-                        }
-                        else
-                        {
-                            sPrint.assign(nLen-1, '=');
-                            sPrint.insert(0, "#");
-                        }
-                    }
-
-                    print(sPrint);
-                }
-
-                sPrint = "";				// WICHTIG: sPrint auf einen leeren String setzen, sonst verknuepft man alle Zeilen iterativ miteinander... LOL
-            }
-
-            if (nCol_1 != _nCol)
-            {
-                if (nLine > 2)
-                {
-                    sPrint.assign(nLine+2, '-');
-                    print(sPrint);
-                    sPrint.clear();
-                }
-
-                nCol_0 = nCol_1;
-                nLine = 0;
-
-                if (!nNotRepeatFirstCol)
-                {
-                    nLine = nLongest[0];
-                }
-
-                for (long long int j = nCol_1; j < _nCol; j++)
-                {
-                    if (_option.getWindow()-4 < nLine + nLongest[j])
-                    {
-                        nCol_1 = j;
-                        break;
-                    }
-
-                    nLine += nLongest[j];
-                }
-            }
-        }
-        while (nCol_1 != _nCol);
     }
+    while (nLineEndCol != nCols);
 
-    if (sCommentLine.length() && !bPrintCSV)
+    if (sCommentLine.length())
     {
         if (bSumBar)
             bSumBar = false;
 
         if (bFile)
         {
-            if (bPrintTeX)
-            {
-                print("%");
-                print("% " + sCommentLine);
-            }
-            else
-            {
-                print("#");
-                print("# " + sCommentLine);		// Kommentarzeile fuer eventuell zusaetzliche Informationen
-            }
+            print("#");
+            print("# " + sCommentLine);
         }
         else
         {
@@ -819,89 +720,497 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         }
     }
 
-    if (bPrintTeX && _nLine < 30)
-    {
-        print("\\bottomrule");
-        print("\\end{tabular}");
-        print("\\caption{"+ _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
-        print("\\label{tab:" + sLabel + "}");
-        print("\\end{table}");
-    }
-    else if (bPrintTeX)
-    {
-        print("\\end{longtable}");
-    }
-
-    string sConsoleOut = "";
+    std::string sConsoleOut = "";
 
     if (!bFile)
     {
         sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY",
-                                                              toString(_nCol),
-                                                              toString(nTotalNumRows ? nTotalNumRows : _nLine-nHeadLineCount),
-                                                              toString(_nCol*(nTotalNumRows ? nTotalNumRows : _nLine-nHeadLineCount)))) + " --";
+                                                              toString(nCols),
+                                                              toString(nTotalNumRows ? nTotalNumRows : nRows-nHeadLineCount),
+                                                              toString(nCols*(nTotalNumRows ? nTotalNumRows : nRows-nHeadLineCount)))) + " --";
     }
     else
         sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
-                                                         toString(_nCol*(nTotalNumRows ? nTotalNumRows : _nLine-nHeadLineCount)),
+                                                         toString(nCols*(nTotalNumRows ? nTotalNumRows : nRows-nHeadLineCount)),
                                                          sFileName));
 
     if (_option.systemPrints())
         NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
 
     if (bFile)
+        end();
+}
+
+
+static std::string formatUnit(const std::string& sValue, const std::string& sUnit)
+{
+    if (sUnit.length())
+        return sValue + " " + sUnit;
+
+    return sValue;
+}
+
+
+void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
+{
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    size_t nHeadLineCount = _table.getHeadCount();
+    size_t nRows = _table.getLines();
+    size_t nCols = _table.getCols();
+    std::vector<TableColumn::ColumnType> vTypes;
+
+    for (size_t i = 0; i < nCols; i++)
     {
+        vTypes.push_back(_table.getColumnType(i));
+    }
+
+    if (bPrintCSV)
+    {
+        std::string sPrint;
+
+        for (size_t i = 0; i < nHeadLineCount; i++)
+        {
+            for (size_t j = 0; j < nCols; j++)
+            {
+                sPrint += _table.getCleanHeadPart(j, i) + ",";
+            }
+
+            print(sPrint);
+            sPrint.clear();
+        }
+
+        for (size_t i = 0; i < nRows; i++)
+        {
+            for (size_t j = 0; j < nCols; j++)
+            {
+                if (_table.get(i, j).isValid())
+                    sPrint += _table.get(i, j).printVal();
+
+                sPrint += ",";
+            }
+
+            print(sPrint);
+            sPrint.clear();
+        }
+
+        std::string sConsoleOut = "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
+                                                          toString(nCols*nRows),
+                                                          sFileName));
+
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
+
         end();
         return;
     }
+
+    if (bPrintTeX)
+    {
+        std::string sLabel = sFileName;
+
+        if (sLabel.find('/') != string::npos)
+            sLabel.erase(0,sLabel.rfind('/')+1);
+
+        if (sLabel.find(".tex") != string::npos)
+            sLabel.erase(sLabel.rfind(".tex"));
+
+        replaceAll(sLabel, " ", "_");
+
+        if (nRows < 30)
+        {
+            print("\\begin{table}[htb]");
+            print("\\centering");
+            std::string sPrint = "\\begin{tabular}{";
+
+            for (size_t j = 0; j < nCols; j++)
+                sPrint += "c";
+
+            sPrint += "}";
+            print(sPrint);
+            print("\\toprule");
+
+            for (size_t i = 0; i < nHeadLineCount; i++)
+            {
+                for (size_t j = 0; j < nCols; j++)
+                    sPrint += _table.getCleanHeadPart(j, i) + " & ";
+
+                sPrint = sPrint.substr(0,sPrint.length()-2) + "\\\\\n";
+            }
+
+            print("\\midrule");
+        }
+        else
+        {
+            std::string sPrint = "\\begin{longtable}{";
+
+            for (size_t j = 0; j < nCols; j++)
+                sPrint += "c";
+
+            sPrint += "}";
+            print(sPrint);
+            print("\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
+            print("\\label{tab:" + sLabel + "}\\\\");
+            print("\\toprule");
+            sPrint.clear();
+
+            for (size_t i = 0; i < nHeadLineCount; i++)
+            {
+                for (size_t j = 0; j < nCols; j++)
+                    sPrint += _table.getCleanHeadPart(j, i) + " & ";
+
+                sPrint = sPrint.substr(0,sPrint.length()-2) + "\\\\\n";
+            }
+
+            for (size_t i = 0; i < sPrint.length(); i++)
+            {
+                if (sPrint[i] == '_')
+                    sPrint[i] = ' ';
+            }
+
+            print(sPrint);
+            print("\\midrule");
+            print("\\endfirsthead");
+            print("\\caption{"+_lang.get("OUTPUT_FORMAT_TEXLONG_CAPTION")+"}\\\\");
+            print("\\toprule");
+            print(sPrint);
+            print("\\midrule");
+            print("\\endhead");
+            print("\\midrule");
+            print("\\multicolumn{" + toString(nCols) + "}{c}{--- \\emph{"+_lang.get("OUTPUT_FORMAT_TEXLONG_FOOT")+"} ---}\\\\");
+            print("\\bottomrule");
+            print("\\endfoot");
+            print("\\bottomrule");
+            print("\\endlastfoot");
+        }
+
+        // Do the matrix printing here
+        for (size_t i = 0; i < nRows; i++)
+        {
+            std::string sPrint;
+
+            for (size_t j = 0; j < nCols; j++)
+            {
+                if (j)
+                    sPrint += " &";
+
+                if (_table.get(i, j).isValid() && TableColumn::isValueType(vTypes[j]))
+                    sPrint += "$";
+                else
+                    sPrint += "  ";
+
+                sPrint += replaceTeXControls(_table.get(i, j).printVal());
+
+                if (_table.get(i, j).isValid() && TableColumn::isValueType(vTypes[j]))
+                    sPrint += "$";
+            }
+
+            print(sPrint + "\\\\");
+        }
+
+        if (sCommentLine.length())
+        {
+            print("%");
+            print("% " + sCommentLine);
+        }
+
+        if (nRows < 30)
+        {
+            print("\\bottomrule");
+            print("\\end{tabular}");
+            print("\\caption{"+ _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
+            print("\\label{tab:" + sLabel + "}");
+            print("\\end{table}");
+        }
+        else
+            print("\\end{longtable}");
+
+        std::string sConsoleOut = "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
+                                                          toString(nCols*nRows),
+                                                          sFileName));
+
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
+
+        end();
+        return;
+    }
+
+    std::vector<size_t> nLongest(nCols, 0);
+    const size_t COLUMNSEPARATOR = 3;
+
+    for (size_t i = 0; i < nHeadLineCount; i++)
+    {
+        for (size_t j = 0; j < nCols; j++)
+            nLongest[j] = std::max(nLongest[j], _table.getCleanHeadPart(j, i).length());
+    }
+
+    if (!bCompact || nRows < 12)
+    {
+        // --> Laufe durch jedes Element der Tabelle <--
+        for (size_t j = 0; j < nCols; j++)
+        {
+            if (_table.getColumn(j))
+            {
+                for (size_t i = 0; i < nRows; i++)
+                {
+                    nLongest[j] = std::max(nLongest[j],
+                                           formatUnit(_table.get(i, j).print(digits, chars),
+                                                      _table.getColumn(j)->m_sUnit).length());
+                }
+            }
+
+            nLongest[j] += COLUMNSEPARATOR;
+        }
+    }
     else
     {
-        if (!bDontAsk)
+        for (size_t j = 0; j < nCols; j++)
         {
-            NumeReKernel::print(toSystemCodePage(_lang.get("OUTPUT_FORMAT_ASK_FILEOUT")));
-            NumeReKernel::printPreFmt("|\n|<- ");
-            NumeReKernel::getline(cRerun);
-        }
-
-
-        if (cRerun == _lang.YES())
-        {
-            setCompact(false);
-            generateFileName();			// Im Voraus schon einmal den Dateinamen generieren
-            NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_ASK_FILENAME"), _option));
-            NumeReKernel::printPreFmt("|   (-> " + sFileName + ")\n");
-            NumeReKernel::print(toSystemCodePage(_lang.get("COMMON_FILENAME")) + ":");
-            NumeReKernel::printPreFmt("|\n|<- " + sPath + "/");
-
-            NumeReKernel::getline(sPrint);
-
-            bFile = true;
-
-            if (sPrint != "0")	// WICHTIG: Diese Bedingung liefert FALSE, wenn sPrint == "0";
+            if (_table.getColumn(j))
             {
-                setFileName(sPrint);	// WICHTIG: Durch das Aufrufen dieser Funktion wird auch geprueft, ob der Dateiname moeglich ist
-            }
-            else
-            {
-               NumeReKernel::print(toSystemCodePage(_lang.get("OUTPUT_FORMAT_CONFIRMDEFAULT")));
+                for (size_t i = 0; i < nRows; i++)
+                {
+                    if (i < 5 || i >= nRows - 5)
+                    {
+                        nLongest[j] = std::max(nLongest[j],
+                                               formatUnit(_table.get(i, j).print(digits, chars),
+                                                          _table.getColumn(j)->m_sUnit).length());
+                    }
+                }
             }
 
-            format(_sMatrix, _nCol, _nLine, _option);	// Nochmal dieselbe Funktion mit neuen Parametern aufrufen
-        }
-        else if (!bDontAsk)
-        {
-            NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_NOFILECREATED"), _option));
+            nLongest[j] += COLUMNSEPARATOR;
         }
     }
 
-    return;
+    if (bCompact)
+    {
+        for (size_t j = 0; j < nCols; j++)
+        {
+            // Ensure that the hidden parts have enough room for being print
+            if (nLongest[j] < COLUMNSEPARATOR+5)
+                nLongest[j] = COLUMNSEPARATOR+5;
+        }
+    }
+
+    size_t nLen = 0;
+
+    for (size_t j = 0; j < nCols; j++)
+        nLen += nLongest[j];
+
+    size_t nLineStartCol = 0;
+    size_t nLineEndCol = nCols;
+    size_t nLineLength = 0;
+    int nNotRepeatFirstCol = 1;
+
+    if (!bFile && _option.getWindow()-4 < nLen)
+    {
+        for (size_t j = 0; j < nCols; j++)
+        {
+            if (_option.getWindow()-4 < nLineLength+nLongest[j])
+            {
+                nLineEndCol = j;
+                break;
+            }
+
+            nLineLength += nLongest[j];
+        }
+    }
+    else
+        nLineLength = nLen;
+
+    do
+    {
+        if (nLineStartCol == nLineEndCol)
+            nLineEndCol = nCols;
+
+        for (size_t i = 0; i < nHeadLineCount; i++)
+        {
+            std::string sPrint;
+
+            for (size_t j = nLineStartCol*nNotRepeatFirstCol; j < nLineEndCol; j++)
+            {
+                std::string sValue = _table.getCleanHeadPart(j, i);
+
+                if (j == nLineStartCol*nNotRepeatFirstCol)
+                {
+                    if (bFile)
+                        sPrint = "#";
+                    else if (!bFile)
+                        sPrint = "|   ";
+                }
+                else
+                {
+                    if (!bFile && j == nLineStartCol*nNotRepeatFirstCol)
+                        sPrint = "|";
+
+                    sPrint.append(COLUMNSEPARATOR, ' ');
+                }
+
+                sPrint += sValue;
+                sPrint.append(nLongest[j] - sValue.length() - COLUMNSEPARATOR, ' ');
+
+                /*if (!nLineStartCol && nLineEndCol != nCols && nNotRepeatFirstCol && i >= nHeadLineCount)
+                {
+                    if (_sMatrix[i][0].find(':') != string::npos)
+                        nNotRepeatFirstCol = 0;
+                }*/
+
+                if (!nNotRepeatFirstCol && nLineStartCol && !j)
+                    j = nLineStartCol-1;
+            }
+
+            print(sPrint); 				// Ende der Zeile: Ausgabe in das Ziel
+        }
+
+        if (bFile)
+        {
+            std::string sPrint = "#";
+            sPrint.append(nLen-1, '=');
+            print(sPrint);
+        }
+        else
+        {
+            std::string sPrint = "|   ";
+            sPrint.append(nLineLength-3, '-');
+            print(sPrint);
+        }
+
+        for (size_t i = 0; i < nRows; i++)
+        {
+            std::string sPrint;
+
+            if (!bCompact || nRows < 12 || (bCompact && nRows >= 12 && (i < 5 || i >= nRows - 5)))
+            {
+                for (size_t j = nLineStartCol*nNotRepeatFirstCol; j < nLineEndCol; j++)
+                {
+                    std::string sValue = "---";
+
+                    if (_table.getColumn(j))
+                    {
+                        sValue = _table.get(i,j).isValid() ? formatUnit(_table.get(i, j).print(digits, chars),
+                                                                        _table.getColumn(j)->m_sUnit) : "---";
+                    }
+
+                    if (!bFile && j == nLineStartCol*nNotRepeatFirstCol)
+                        sPrint = "|";
+
+                    if (!TableColumn::isValueType(vTypes[j]))
+                        sPrint.append(COLUMNSEPARATOR, ' ');
+                    else
+                        sPrint.append(nLongest[j] - sValue.length(), ' ');
+
+                    sPrint += sValue;
+
+                    if (!TableColumn::isValueType(vTypes[j]))
+                        sPrint.append(nLongest[j] - sValue.length() - COLUMNSEPARATOR, ' ');
+
+                    /*if (!nLineStartCol && nLineEndCol != nCols && nNotRepeatFirstCol && i >= nHeadLineCount)
+                    {
+                        if (_sMatrix[i][0].find(':') != string::npos)
+                            nNotRepeatFirstCol = 0;
+                    }*/
+
+                    if (!nNotRepeatFirstCol && nLineStartCol && !j)
+                        j = nLineStartCol-1;
+                }
+
+                print(sPrint); 				// Ende der Zeile: Ausgabe in das Ziel
+            }
+            else if (bCompact && nRows >= 10 && i == 5)
+            {
+                if (!bFile)
+                    sPrint = "|";
+
+                for (size_t j = nLineStartCol*nNotRepeatFirstCol; j < nLineEndCol; j++)
+                {
+                    if (!TableColumn::isValueType(vTypes[j]))
+                        sPrint.append(COLUMNSEPARATOR, ' ');
+                    else
+                        sPrint.append(nLongest[j] - 5, ' ');
+
+                    sPrint += "[...]";
+
+                    if (!TableColumn::isValueType(vTypes[j]))
+                        sPrint.append(nLongest[j] - 5 - COLUMNSEPARATOR, ' ');
+
+                    if (!nNotRepeatFirstCol && nLineStartCol && !j)
+                        j = nLineStartCol-1;
+                }
+
+                print(sPrint);
+            }
+        }
+
+        if (nLineEndCol != nCols)
+        {
+            if (nLineLength > 2)
+                print(std::string(nLineLength+1, '-'));
+
+            nLineStartCol = nLineEndCol;
+            nLineLength = 0;
+
+            if (!nNotRepeatFirstCol)
+                nLineLength = nLongest[0];
+
+            for (size_t j = nLineEndCol; j < nCols; j++)
+            {
+                if (_option.getWindow()-4 < nLineLength + nLongest[j])
+                {
+                    nLineEndCol = j;
+                    break;
+                }
+
+                nLineLength += nLongest[j];
+            }
+        }
+    }
+    while (nLineEndCol != nCols);
+
+    if (sCommentLine.length())
+    {
+        if (bSumBar)
+            bSumBar = false;
+
+        if (bFile)
+        {
+            print("#");
+            print("# " + sCommentLine);
+        }
+        else
+        {
+            print("|");
+            NumeReKernel::print(sCommentLine);
+        }
+    }
+
+    std::string sConsoleOut = "";
+
+    if (!bFile)
+    {
+        sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY",
+                                                              toString(nCols),
+                                                              toString(nRows),
+                                                              toString(nCols*nRows))) + " --";
+    }
+    else
+        sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE",
+                                                         toString(nCols*nRows),
+                                                         sFileName));
+
+    if (_option.systemPrints())
+        NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
+
+    if (bFile)
+        end();
 }
+
 
 // --> setzt sPluginPrefix auf _sPrefix <--
 void Output::setPrefix(string _sPrefix)
 {
     sPluginPrefix = _sPrefix;
-    return;
 }
 
 // --> gibt sPluginPrefix zureuck <--

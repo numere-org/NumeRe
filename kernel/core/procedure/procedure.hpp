@@ -77,7 +77,7 @@ class Procedure : public FlowCtrl, public PackageManager
 
         void init();
 
-        Returnvalue ProcCalc(std::string sLine, std::string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
+        Returnvalue ProcCalc(std::string sLine, std::string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script);
         bool setProcName(StringView sProc, bool bInstallFileName = false);
         void resetProcedure(mu::Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(StringView sProc);
@@ -97,11 +97,11 @@ class Procedure : public FlowCtrl, public PackageManager
         Procedure(const Procedure& _procedure);
         ~Procedure();
 
-        Returnvalue execute(StringView sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure = 0);
+        Returnvalue execute(StringView sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script, size_t nth_procedure = 0);
         static std::string mangleName(std::string sProcedureName);
         static std::string nameSpaceToPath(std::string sEncodedNameSpace, const std::string& thisPath, const std::string& thisFilePath = "");
         static void cleanRelativeNameSpaces(std::string& nameSpace);
-        virtual FlowCtrl::ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command = 0) override;
+        virtual FlowCtrl::ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, PlotData& _pData, Script& _script, Settings& _option, int nth_command = 0) override;
         bool writeProcedure(std::string sProcedureLine);
         virtual int isInline(const std::string& sProc) override;
         virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option) override;

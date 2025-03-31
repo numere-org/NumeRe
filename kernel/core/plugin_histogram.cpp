@@ -401,17 +401,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
 {
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    std::string** sOut = new std::string*[vHistMatrix.size() + 1];
-
-    for (size_t i = 0; i < vHistMatrix.size() + 1; i++)
-    {
-        sOut[i] = new std::string[vHistMatrix[0].size() + 1];
-
-        for (size_t j = 0; j < vHistMatrix[0].size() + 1; j++)
-        {
-            sOut[i][j] = "";
-        }
-    }
+    std::vector<std::vector<std::string>> sOut(vHistMatrix.size()+1, std::vector<std::string>(vHistMatrix[0].size()+1));
 
     // --> Schreibe Tabellenkoepfe <--
     sOut[0][0] = _histParams.sBinLabel;
@@ -481,7 +471,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
                 make_hline();
             }
 
-            _out.format(sOut, vHistMatrix[0].size() + 1, vHistMatrix.size() + 1, _option, true);
+            _out.format(sOut);
 
             if (!_out.isFile())
             {
@@ -490,14 +480,6 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
             }
         }
     }
-
-    // --> WICHTIG: Speicher wieder freigeben! <--
-    for (size_t i = 0; i < vHistMatrix.size() + 1; i++)
-    {
-        delete[] sOut[i];
-    }
-
-    delete[] sOut;
 }
 
 
@@ -1362,10 +1344,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
 
     int maxRow = std::max(_histParams.nBin[XCOORD], _histParams.nBin[YCOORD])+1;
 
-    std::string** sOut = new std::string*[maxRow];
-
-    for (int k = 0; k < maxRow; k++)
-        sOut[k] = new std::string[4];
+    std::vector<std::vector<std::string>> sOut(maxRow, std::vector<std::string>(4));
 
     std::string sCountLabelStart = "Counts";
 
@@ -1473,7 +1452,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
                 make_hline();
             }
 
-            _out.format(sOut, 4, maxRow, _option, true);
+            _out.format(sOut);
 
             if (!_out.isFile())
             {
@@ -1482,11 +1461,6 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
             }
         }
     }
-
-
-    for (int k = 0; k < maxRow; k++)
-        delete[] sOut[k];
-    delete[] sOut;
 }
 
 

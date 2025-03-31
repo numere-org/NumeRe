@@ -1847,12 +1847,11 @@ static bool executeCommand(std::string& sCmd, Parser& _parser, MemoryManager& _d
 /// the application termination.
 ///
 /// \param _data Datafile&
-/// \param _out Output&
 /// \param _option Settings&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void autoSave(MemoryManager& _data, Output& _out, Settings& _option)
+static void autoSave(MemoryManager& _data, Settings& _option)
 {
     // Only do something, if there's unsaved and valid data
     if (_data.isValid() && !_data.getSaveStatus())
@@ -2924,11 +2923,10 @@ static CommandReturnValues cmd_taylor(string& sCmd)
 static CommandReturnValues cmd_quit(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "as"))
-        autoSave(_data, _out, _option);
+        autoSave(_data, _option);
 
     if (findParameter(sCmd, "i"))
         _data.setSaveStatus(true);
@@ -3778,16 +3776,8 @@ static CommandReturnValues cmd_show(string& sCmd)
 {
     // Get references to the main objects
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
-
-    // Handle the compact mode (probably not needed any more)
-    if (cmdParser.getCommand().starts_with("showf"))
-        _out.setCompact(false);
-    else
-        _out.setCompact(_option.createCompactTables());
 
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
     _accessParser.evalIndices();
@@ -3823,21 +3813,20 @@ static CommandReturnValues cmd_show(string& sCmd)
 
             // Validize the obtained index sets
             if (!isValidIndexSet(_accessParser.getIndices()))
-                throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
+                throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd,
+                                  _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
 
-            // Copy the target data to a new table
-            copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
-            _cache.renameTable("table", "*" + _accessParser.getDataObject(), true);
+            // Do only stuff, if data is available
+            if (_data.isValid())
+                NumeReKernel::showTable(_data.extractTable(_accessParser.getDataObject()), _accessParser.getDataObject());
+            else
+                throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 
-            // Redirect the control
-            show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision());
             return COMMAND_PROCESSED;
         }
     }
     else
-    {
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-    }
 
     return COMMAND_PROCESSED;
 }
@@ -4990,6 +4979,28 @@ static CommandReturnValues cmd_progress(string& sCmd)
 static CommandReturnValues cmd_print(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "print", CommandLineParser::CMD_EXPR_set_PAR);
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+    if (_data.isTable(cmdParser.getExpr()) && getMatchingParenthesis(cmdParser.getExpr())+1 == cmdParser.getExpr().length())
+    {
+        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+        Output& _out = NumeReKernel::getInstance()->getOutput();
+        Settings& _option = NumeReKernel::getInstance()->getSettings();
+        _out.setCompact(true);
+
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+        NumeReKernel::print("NUMERE: " + toUpperCase(_accessParser.getDataObject()) + "()");
+        make_hline();
+        _out.format(_data.extractTable(_accessParser.getDataObject(), _accessParser.getIndices().row, _accessParser.getIndices().col),
+                    _option.getPrecision(), 4*_option.getPrecision());
+        _out.reset();
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+
+        return COMMAND_PROCESSED;
+    }
+
     std::vector<mu::Array> res = cmdParser.parseExpr();
 
     NumeReKernel::toggleTableStatus();

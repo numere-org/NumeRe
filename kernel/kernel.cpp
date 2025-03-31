@@ -2070,7 +2070,7 @@ bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
             if (!isInQuotes(sLine, nPos, true))
             {
                 // Execute the current procedure
-                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _memoryManager, _option, _out, _pData, _script);
+                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _memoryManager, _option, _pData, _script);
                 if (!_procedure.getReturnType())
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
@@ -2144,7 +2144,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             _option.enableSystemPrints(false);
 
             // Call the relevant procedure
-            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _out, _pData, _script);
+            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _pData, _script);
 
             // Handle the return values
             if (_rTemp.sReturnedTable.length())
@@ -2514,12 +2514,6 @@ void NumeReKernel::CloseSession()
 
     saveData();
     _memoryManager.removeTablesFromMemory();
-
-    // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
-    /*_option.getSetting(SETTING_S_SAVEPATH).stringval() = _out.getPath();
-    _option.getSetting(SETTING_S_LOADPATH).stringval() = _memoryManager.getPath();
-    _option.getSetting(SETTING_S_PLOTPATH).stringval() = _pData.getPath();
-    _option.getSetting(SETTING_S_SCRIPTPATH).stringval() = _script.getPath();*/
 
     // Save the function definitions
     if (_option.controlDefinitions() && _functions.getDefinedFunctions())

@@ -77,7 +77,6 @@ FlowCtrl::FlowCtrl(bool asSyntaxHelper)
     bIsSyntaxHelper = asSyntaxHelper;
     _parserRef = nullptr;
     _dataRef = nullptr;
-    _outRef = nullptr;
     _optionRef = nullptr;
     _functionRef = nullptr;
     _pDataRef = nullptr;
@@ -297,7 +296,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 break;
             else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
                 return nJumpTable[nth_Cmd][BLOCK_END];
-            else if (__i == nFirstVal && !nCalcType[__j])
+            else if (!nCalcType[__j]) // Has to be checked every time bc. previous "continue"s could increment __i before this line is reached
             {
                 std::string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
 
@@ -1523,7 +1522,7 @@ mu::Array* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression, bool bIs
 
         // Call the procedure interface function
         ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef,
-                                                              *_functionRef, *_dataRef, *_outRef,
+                                                              *_functionRef, *_dataRef,
                                                               *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
 
         // Handle the return value
@@ -1696,7 +1695,7 @@ mu::Array FlowCtrl::evalRangeBasedHeader(std::string sHeadExpression, int nth_Cm
 
         // Call the procedure interface function
         ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef,
-                                                              *_functionRef, *_dataRef, *_outRef,
+                                                              *_functionRef, *_dataRef,
                                                               *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
 
         // Handle the return value
@@ -2241,7 +2240,6 @@ void FlowCtrl::eval()
     // Copy the references to the centeral objects
     _parserRef = &NumeReKernel::getInstance()->getParser();
     _dataRef = &NumeReKernel::getInstance()->getMemoryManager();
-    _outRef = &NumeReKernel::getInstance()->getOutput();
     _optionRef = &NumeReKernel::getInstance()->getSettings();
     _functionRef = &NumeReKernel::getInstance()->getDefinitions();
     _pDataRef = &NumeReKernel::getInstance()->getPlottingData();
@@ -2496,7 +2494,6 @@ void FlowCtrl::reset()
     inlineClusters.clear();
     _parserRef = nullptr;
     _dataRef = nullptr;
-    _outRef = nullptr;
     _optionRef = nullptr;
     _functionRef = nullptr;
     _pDataRef = nullptr;
@@ -2830,7 +2827,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (returnCommand)
             sLine.insert(0, "return ");
 
-        ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -2921,7 +2918,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         // It may be possible that some procedure occures at this
         // position. Handle them here
         if (sLine.find('$') != std::string::npos)
-            procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+            procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
     }
 
     if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -3347,7 +3344,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
             sBuffer.insert(0, "return ");
 
-        ProcedureInterfaceRetVal nReturn = procedureInterface(sBuffer, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sBuffer, *_parserRef, *_functionRef, *_dataRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -3434,7 +3431,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             // It may be possible that some procedure occures at this
             // position. Handle them here
             if (sBuffer.find('$') != std::string::npos)
-                procedureInterface(sBuffer, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+                procedureInterface(sBuffer, *_parserRef, *_functionRef, *_dataRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
             sLine = StringView(sBuffer);
         }
@@ -4408,7 +4405,6 @@ std::string FlowCtrl::resolveVariables(const std::string& sCommandLine) const
 /// \param _parser Parser&
 /// \param _functions Define&
 /// \param _data Datafile&
-/// \param _out Output&
 /// \param _pData PlotData&
 /// \param _script Script&
 /// \param _option Settings&
@@ -4416,7 +4412,7 @@ std::string FlowCtrl::resolveVariables(const std::string& sCommandLine) const
 /// \return ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(std::string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(std::string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
 {
     return FlowCtrl::INTERFACE_NONE;
 }
