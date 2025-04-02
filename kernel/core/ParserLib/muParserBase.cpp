@@ -2339,13 +2339,15 @@ namespace mu
                                 ParserToken tok;
                                 tok.Set(cmEXP2, MU_VECTOR_EXP2);
                                 stOpt.push(tok);
+                                break;
                             }
                             else if (stOpt.top().GetCode() == cmEXP2 && stVal.size() > 1)
+                            {
                                 stOpt.top().Set(cmEXP3, MU_VECTOR_EXP3);
-                            else
+                                break;
+                            }
+                            else if (stOpt.top().GetCode() != cmIF)
                                 Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
-
-						    break;
 						}
                     }
 

@@ -494,7 +494,8 @@ namespace mu
             if (data.real() >= INT64_MIN && data.real() <= INT64_MAX)
                 return Numerical((int64_t)data.real());
 
-            return Numerical((uint64_t)data.real());
+            if (data.real() <= UINT64_MAX)
+                return Numerical((uint64_t)data.real());
         }
 
         if (data.imag() == 0.0)
@@ -610,6 +611,10 @@ namespace mu
     Numerical Numerical::operator+(const Numerical& other) const
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
+
+        if (promotion == LOGICAL && asI64() && other.asI64())
+            return Numerical(2LL, I8);
+
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -713,6 +718,15 @@ namespace mu
     Numerical& Numerical::operator+=(const Numerical& other)
     {
         NumericalType promotion = m_info.getPromotedType(other.m_info);
+
+        if (promotion == LOGICAL && asI64() && other.asI64())
+        {
+            i64 = 2;
+            m_type = I8;
+            m_info = TypeInfo(m_type);
+            return *this;
+        }
+
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -802,9 +816,9 @@ namespace mu
     Numerical Numerical::pow(const Numerical& exponent) const
     {
         if (exponent.isInt())
-            return Numerical::autoType(intPower(asCF64(), exponent.asI64()));
+            return Numerical::autoType(intPower(asCF64(), exponent.asI64()), m_info.m_flags & TypeInfo::TYPE_INT ? I64 : F64);
 
-        return Numerical::autoType(std::pow(asCF64(), exponent.asCF64()));
+        return Numerical::autoType(std::pow(asCF64(), exponent.asCF64()), F64);
     }
 
 

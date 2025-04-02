@@ -1295,7 +1295,9 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
                              _pInfo.sContStyles[_pInfo.nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
 
-            _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+            sConvLegends = m_manager.assets[n+nDataOffset].legend;
+            getDataElements(sConvLegends, _parser, _data);
+            _parser.SetExpr(sConvLegends);
             sConvLegends = _parser.Eval().printVals();
 
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
@@ -1677,6 +1679,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         else
             sConvLegends = m_manager.assets[n+nDataOffset].legend + "";
 
+        getDataElements(sConvLegends, _parser, _data);
         _parser.SetExpr(sConvLegends);
         sConvLegends = _parser.Eval().printVals();
 
@@ -3201,7 +3204,9 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             {
                 for (int k = 0; k < 2; k++)
                 {
-                    _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+                    sConvLegends = m_manager.assets[n+nDataOffset].legend;
+                    getDataElements(sConvLegends, _parser, _data);
+                    _parser.SetExpr(sConvLegends);
                     sConvLegends = _parser.Eval().printVals();
                     sConvLegends = "\"" + sConvLegends + "\"";
 
@@ -3247,7 +3252,9 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         }
         else
         {
-            _parser.SetExpr(m_manager.assets[n+nDataOffset].legend);
+            sConvLegends = m_manager.assets[n+nDataOffset].legend;
+            getDataElements(sConvLegends, _parser, _data);
+            _parser.SetExpr(sConvLegends);
             sConvLegends = _parser.Eval().printVals();
 
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())

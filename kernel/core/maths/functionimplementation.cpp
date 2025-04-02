@@ -4106,7 +4106,9 @@ mu::Array numfnc_getOverlap(const mu::Array& left, const mu::Array& right)
 /////////////////////////////////////////////////
 mu::Array numfnc_numereversion()
 {
+#ifndef PARSERSTANDALONE
     return mu::Value(fFloatingPointVersion);
+#endif
 }
 
 

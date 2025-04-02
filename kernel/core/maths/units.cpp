@@ -1293,8 +1293,6 @@ static std::vector<Unit> tokenizeUnit(StringView sUnit)
             && getMatchingParenthesis(sUnit.subview(nParens)) != std::string::npos)
             nOperator = sUnit.find_first_of(" *^/", getMatchingParenthesis(sUnit.subview(nParens))+nParens+1);
 
-        Unit unit;
-
         if (nOperator)
             vTokens.push_back(sUnit.subview(0, nOperator));
 
@@ -1494,6 +1492,9 @@ static double detectSiScaling(StringView& sUnit)
 static std::vector<UnitFunction> getUnitFunction(Unit unit)
 {
     StringView sUnit = unit.m_unit;
+
+    if ((unit.m_exp == 1.0 || unit.m_exp == -1.0) && isConvertible(sUnit.to_string(), CONVTYPE_VALUE))
+        return {UnitFunction{.m_unit{""}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{StrToCmplx(sUnit.to_string()).real()}}};
 
     if (sUnit == "kmh" || sUnit == "kph")
         return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{1e3}},
@@ -1742,7 +1743,12 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
                 return converter;
         }
 
-        mu::Value res = converter(mu::Value(1.00001)).front();
+        // get the comparison value
+        mu::Value res = converter(mu::Value(mu::Numerical(1.00001))).front();
+        double compVal = res.getNum().asF64();
+
+        // Get the actual scale
+        res = converter(mu::Value(mu::Numerical(1.0))).front();
         converter.m_finalScale = res.getNum().asF64();
         double remainingScale = converter.m_finalScale;
 
@@ -1791,61 +1797,61 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
         auto fact = [](int p, double exp, double unitScale) {return std::pow(10.0, p*std::abs(exp))/unitScale;};
 
         // Reduce the final scale factor
-        if (converter.m_finalScale >= fact(18, exp, unitScale))
+        if (compVal >= fact(18, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "E" : "a";
             converter.m_finalScale /= fact(18, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(15, exp, unitScale))
+        else if (compVal >= fact(15, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "P" : "f";
             converter.m_finalScale /= fact(15, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(12, exp, unitScale))
+        else if (compVal >= fact(12, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "T" : "p";
             converter.m_finalScale /= fact(12, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(9, exp, unitScale))
+        else if (compVal >= fact(9, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "G" : "n";
             converter.m_finalScale /= fact(9, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(6, exp, unitScale))
+        else if (compVal >= fact(6, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "M" : "µ";
             converter.m_finalScale /= fact(6, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(4, exp, unitScale)) // The prefixes for k and m will be used for a slightly larger regime
+        else if (compVal >= fact(4, exp, unitScale)) // The prefixes for k and m will be used for a slightly larger regime
         {
             converter.m_metricPrefix = exp > 0 ? "k" : "m";
             converter.m_finalScale /= fact(3, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(-1, exp, unitScale)) // We do also accept down to 0.1 here
+        else if (compVal >= fact(-1, exp, unitScale)) // We do also accept down to 0.1 here
         {
             // Just do nothing
         }
-        else if (converter.m_finalScale >= fact(-4, exp, unitScale))
+        else if (compVal >= fact(-4, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "m" : "k";
             converter.m_finalScale /= fact(-3, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(-6, exp, unitScale))
+        else if (compVal >= fact(-6, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "µ" : "M";
             converter.m_finalScale /= fact(-6, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(-9, exp, unitScale))
+        else if (compVal >= fact(-9, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "n" : "G";
             converter.m_finalScale /= fact(-9, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(-12, exp, unitScale))
+        else if (compVal >= fact(-12, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "p" : "T";
             converter.m_finalScale /= fact(-12, exp, unitScale);
         }
-        else if (converter.m_finalScale >= fact(-15, exp, unitScale))
+        else if (compVal >= fact(-15, exp, unitScale))
         {
             converter.m_metricPrefix = exp > 0 ? "f" : "P";
             converter.m_finalScale /= fact(-15, exp, unitScale);

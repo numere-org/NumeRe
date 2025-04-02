@@ -55,3 +55,6 @@ Fixed	A parsing error in "diff" was resolved.
 Fixed	A regression error with "continue" and "break" was resolved.
 Fixed	Problems in the autoformatter were resolved.
 Added	The command "print" can now also display a table's contents (the first and last 5 rows) in the terminal.
+Fixed	The function "findtoken()" now works again as it was working before.
+Cleaned	The automatic type conversion now avoids automatic conversions from floating point to int.
+Fixed	Inline conditionals can now be used within a vector brace.

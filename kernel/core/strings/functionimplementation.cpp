@@ -2412,7 +2412,7 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
 mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu::Array& sep)
 {
     mu::Array ret;
-    ret.reserve(std::max({sStr.size(), tok.size(), sep.size()}));
+    ret.resize(std::max({sStr.size(), tok.size(), sep.size()}), size_t(0));
 
     for (size_t i = 0; i < std::max({sStr.size(), tok.size(), sep.size()}); i++)
     {
@@ -2433,16 +2433,13 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
             if ((!nMatch || s.find(sView1[nMatch-1]) != std::string::npos)
                 && (nMatch + t.length() >= sView1.length() || s.find(sView1[nMatch+t.length()]) != std::string::npos))
             {
-                ret.emplace_back(nMatch+1);
+                ret.get(i) = mu::Value(nMatch+1);
                 break;
             }
 
             nMatch++;
         }
     }
-
-    if (!ret.size())
-        return mu::Value(false);
 
     return ret;
 }

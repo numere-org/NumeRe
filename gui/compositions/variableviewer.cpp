@@ -603,12 +603,14 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
 /////////////////////////////////////////////////
 void VariableViewer::OnDoubleClick(wxTreeEvent& event)
 {
-    if (GetItemParent(event.GetItem()) != tableRoot && GetItemParent(event.GetItem()) != clusterRoot)
+    wxTreeItemId parent = GetItemParent(event.GetItem());
+
+    if (parent != tableRoot && parent != clusterRoot)
     {
         // In the debugger mode it's possible that the arguments
         // or the globals contain table variables, which should
         // also be viewable
-        if (debuggerMode && (GetItemParent(event.GetItem()) == argumentRoot || GetItemParent(event.GetItem()) == globalRoot))
+        if (debuggerMode && (parent == argumentRoot || parent == globalRoot))
         {
             if (GetItemText(event.GetItem()).find("()") != std::string::npos || GetItemText(event.GetItem()).find("{}") != std::string::npos)
             {
@@ -630,7 +632,9 @@ void VariableViewer::OnDoubleClick(wxTreeEvent& event)
         //return;
     }
 
-    OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
+    // Ensure that the current item is not one of the grouping headlines
+    if (parent != GetRootItem())
+        OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
 }
 
 

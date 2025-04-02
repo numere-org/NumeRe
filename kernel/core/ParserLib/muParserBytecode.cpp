@@ -386,7 +386,11 @@ namespace mu
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[sz - 2].Val().data  /= m_vRPN[sz - 1].Val().data2;
-							m_vRPN[sz - 2].Val().data2 /= m_vRPN[sz - 1].Val().data2;
+
+							// Added to avoid problems with the optimisation
+							if (m_vRPN[sz - 2].Val().data2.getCommonType() != TYPE_VOID)
+                                m_vRPN[sz - 2].Val().data2 /= m_vRPN[sz - 1].Val().data2;
+
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
