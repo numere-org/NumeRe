@@ -211,7 +211,7 @@ namespace NumeRe
             else
                 melt(_mem, "data");
 
-            g_logger.info("File sucessfully loaded. Data file dimensions = {" + toString(info.nRows) + ", " + toString(info.nCols) + "}");
+            g_logger.info("File successfully loaded. Data file dimensions = {" + toString(info.nRows) + ", " + toString(info.nCols) + "}");
         }
         else
         {

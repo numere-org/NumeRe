@@ -1677,7 +1677,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
                             + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\"";
         else
-            sConvLegends = m_manager.assets[n+nDataOffset].legend + "";
+            sConvLegends = m_manager.assets[n+nDataOffset].legend;
 
         getDataElements(sConvLegends, _parser, _data);
         _parser.SetExpr(sConvLegends);
@@ -4563,7 +4563,7 @@ void Plot::createDataLegends()
             const VectorIndex& vCols = _access.getIndices().col;
 
             if (vCols.numberOfNodes() == 1)
-                sTemp = "\"" + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.front(), sTableName));
             else if (vCols.numberOfNodes() == 2)
             {
                 // First and second index value available
@@ -4575,38 +4575,41 @@ void Plot::createDataLegends()
                         // Handle here barcharts
                         if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
                         {
-                            sTemp = "\"";
+                            sTemp.clear();
 
                             // Don't use the first one
                             for (size_t i = 0; i < vCols.size(); i++)
                             {
-                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
+                                if (sTemp.length())
+                                    sTemp += "\n";
+
+                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
                             }
 
-                            sTemp.back() = '"';
+                            sTemp = toExternalString(sTemp);
                         }
                         else
                         {
                             if (vCols.isOpenEnd())
-                                sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                    + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                                         + _data.getTopHeadLineElement(vCols[0], sTableName));
                             else
-                                sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                                    + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
+                                                         + _data.getTopHeadLineElement(vCols.front(), sTableName));
                         }
                     }
                     else
                     {
-                        sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                            + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                                 + _data.getTopHeadLineElement(vCols[0], sTableName));
                     }
                 }
                 else
                 {
                     // three-dimensional plot
-                    sTemp = "\"" + _data.getTopHeadLineElement(vCols[0], sTableName) + ", "
-                        + _data.getTopHeadLineElement(vCols[1], sTableName) + ", "
-                        + _data.getTopHeadLineElement(vCols[2], sTableName) + "\"";
+                    sTemp = toExternalString(_data.getTopHeadLineElement(vCols[0], sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vCols[1], sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vCols[2], sTableName));
                 }
             }
             else if (vCols.numberOfNodes() == 3)
@@ -4619,37 +4622,40 @@ void Plot::createDataLegends()
                         // Handle here barcharts
                         if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
                         {
-                            sTemp = "\"";
+                            sTemp.clear();
 
                             // Don't use the first one
                             for (size_t i = 0; i < vCols.size(); i++)
                             {
-                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
+                                if (sTemp.length())
+                                    sTemp += "\n";
+
+                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
                             }
 
-                            sTemp.back() = '"';
+                            sTemp = toExternalString(sTemp);
                         }
                         else
-                            sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                            sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                                     + _data.getTopHeadLineElement(vCols[0], sTableName));
                     }
                     else
                     {
-                        sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                            + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                                 + _data.getTopHeadLineElement(vCols[0], sTableName));
                     }
                 }
                 else
                 {
                     // three-dimensional plot
                     std::vector<int> vNodes = vCols.getVector();
-                    sTemp = "\"" + _data.getTopHeadLineElement(vNodes[0], sTableName) + ", "
-                        + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
-                        + _data.getTopHeadLineElement(vNodes[2], sTableName) + "\"";
+                    sTemp = toExternalString(_data.getTopHeadLineElement(vNodes[0], sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vNodes[2], sTableName));
                 }
             }
             else
-                sTemp = "\"" + sTemp + "\"";
+                sTemp = toExternalString(sTemp);
 
             // Prepend backslashes before opening and closing
             // braces

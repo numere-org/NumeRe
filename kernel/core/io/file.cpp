@@ -315,11 +315,11 @@ namespace NumeRe
             nLine++;
         }
 
+        g_logger.info(toString(nComment));
+
         // Decode the table headlines in this member function
         if (nComment)
-        {
             decodeTableHeads(vFileContents, nComment);
-        }
     }
 
 
