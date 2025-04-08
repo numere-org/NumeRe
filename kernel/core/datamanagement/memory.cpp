@@ -29,7 +29,6 @@
 #include "../ui/error.hpp"
 #include "../settings.hpp"
 #include "../utils/tools.hpp"
-#include "../version.h"
 #include "../maths/resampler.h"
 #include "../maths/statslogic.hpp"
 #include "../maths/matdatastructures.hpp"

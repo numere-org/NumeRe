@@ -29,6 +29,7 @@
 #include "../utils/tools.hpp"
 #include "../../../externals/tinyxml2/tinyxml2.h"
 #include "../ui/language.hpp"
+#include "../../versioninformation.hpp"
 #include "../version.h"
 #include "../../kernel.hpp"
 
@@ -361,18 +362,12 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void TextDataFile::writeHeader()
     {
-        std::string sBuild = AutoVersion::YEAR;
-        sBuild += "-";
-        sBuild += AutoVersion::MONTH;
-        sBuild += "-";
-        sBuild += AutoVersion::DATE;
-
         fFileStream << "#\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
         fFileStream << "# " + _lang.get("COMMON_APPNAME") << "\n";
         fFileStream << "#=============================================" << "\n";
-        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
-        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", getVersion(), printBuildDate()) << "\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", getBuildYear()) << "\n";
         fFileStream << "#\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getTimeStamp(false)) << "\n";
         fFileStream << "#\n";
@@ -2951,18 +2946,12 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void LaTeXTable::writeHeader()
     {
-        std::string sBuild = AutoVersion::YEAR;
-        sBuild += "-";
-        sBuild += AutoVersion::MONTH;
-        sBuild += "-";
-        sBuild += AutoVersion::DATE;
-
         fFileStream << "%\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
         fFileStream << "% " + _lang.get("COMMON_APPNAME") << "\n";
         fFileStream << "%=============================================" << "\n";
-        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
-        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", getVersion(), printBuildDate()) << "\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", getBuildYear()) << "\n";
         fFileStream << "%\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getTimeStamp(false)) << "\n";
         fFileStream << "%\n";

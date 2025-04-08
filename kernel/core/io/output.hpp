@@ -23,7 +23,7 @@
 #include "../ui/error.hpp"
 #include "filesystem.hpp"
 #include "../settings.hpp"
-#include "../version.h"
+#include "../../versioninformation.hpp"
 #include "../utils/tools.hpp"
 #include "../datamanagement/table.hpp"
 
@@ -34,7 +34,6 @@
  * Headerdatei 'output.hpp' fuer die Class 'Output'
  * --> Definiert zugleich das Interface <--
  */
-extern const std::string sVersion; 					// String, der die Versionsnummmer beinhaelt;
 
 class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 {

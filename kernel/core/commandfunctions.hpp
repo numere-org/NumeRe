@@ -3225,9 +3225,9 @@ static CommandReturnValues cmd_credits(string& sCmd)
     NumeReKernel::getInstance()->displaySplash();
     NumeReKernel::printPreFmt("\n");
     make_hline();
-    NumeReKernel::printPreFmt("|-> Version: " + sVersion);
-    NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-    NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + utf8ToAnsi(", Erik HÄNEL et al.")) );
+    NumeReKernel::printPreFmt("|-> Version: " + getVersion());
+    NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + printBuildDate() + "\n");
+    NumeReKernel::print("Copyright (c) 2013-" + getBuildYear() + utf8ToAnsi(", Erik HÄNEL et al."));
     NumeReKernel::printPreFmt("|   <dev@numere.org>\n" );
     NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
     make_hline(-80);
@@ -3706,7 +3706,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 }
                 while (!sArgument.length());
 
-                if (sArgument == AutoVersion::STATUS)
+                if (sArgument == getVersionName())
                 {
                     mSettings[SETTING_B_DEVELOPERMODE].active() = true;
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS"), _option) );

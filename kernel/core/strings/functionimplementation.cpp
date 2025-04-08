@@ -24,7 +24,7 @@
 #ifndef PARSERSTANDALONE
 #include "../../../database/dbinternals.hpp"
 #include "../../kernel.hpp"
-extern const std::string sInternalVersion;
+#include "../../versioninformation.hpp"
 #endif
 #include <boost/tokenizer.hpp>
 #include <regex>
@@ -2882,21 +2882,6 @@ mu::Array strfnc_geterrormessage(const mu::Array& errCode)
     return msg;
 }
 
-#ifndef PARSERSTANDALONE
-/////////////////////////////////////////////////
-/// \brief Simple helper to convert the build
-/// date into a time point.
-///
-/// \return sys_time_point
-///
-/////////////////////////////////////////////////
-static sys_time_point getBuildDate()
-{
-    time_stamp ts;
-    ts.m_ymd = date::year(std::atoi(AutoVersion::YEAR)) / date::month(std::atoi(AutoVersion::MONTH)) / date::day(std::atoi(AutoVersion::DATE));
-    return getTimePointFromTimeStamp(ts);
-}
-#endif
 
 /////////////////////////////////////////////////
 /// \brief Implementation of the getversioninfo()
@@ -2907,31 +2892,16 @@ static sys_time_point getBuildDate()
 /////////////////////////////////////////////////
 mu::Array strfnc_getversioninfo()
 {
-#ifndef PARSERSTANDALONE
-    static sys_time_point BUILDDATE = getBuildDate();
-    static std::string sINTVERSION = sInternalVersion
-#ifdef __GNUWIN64__
-        + "-x64"
-#endif
-        ;
-    static std::string sINSTNAME = toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
-        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "")
-#ifdef __GNUWIN64__
-        + "_x64"
-#endif
-        ;
-#endif // PARSERSTANDALONE
-
     mu::Array sVersionInfo;
 #ifndef PARSERSTANDALONE
     sVersionInfo.emplace_back("Version");
-    sVersionInfo.emplace_back(sVersion);
+    sVersionInfo.emplace_back(getVersion());
     sVersionInfo.emplace_back("BuildDate");
-    sVersionInfo.emplace_back(BUILDDATE);
+    sVersionInfo.emplace_back(getBuildDate());
     sVersionInfo.emplace_back("FullVersion");
-    sVersionInfo.emplace_back(sINTVERSION);
+    sVersionInfo.emplace_back(getFullVersionWithArchitecture());
     sVersionInfo.emplace_back("FileVersion");
-    sVersionInfo.emplace_back(sINSTNAME);
+    sVersionInfo.emplace_back(getFileVersion());
     sVersionInfo.emplace_back("Architecture");
 #ifdef __GNUWIN64__
     sVersionInfo.emplace_back("64 bit");

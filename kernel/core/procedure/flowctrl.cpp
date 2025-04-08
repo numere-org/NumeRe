@@ -2633,8 +2633,14 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (sLine.length() > 6)
         {
             sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
+
+            // Get the data from the used data object
+            if (_dataRef->containsTablesOrClusters(sErrorToken))
+                getDataElements(sErrorToken, *_parserRef, *_dataRef);
+
             _parserRef->SetExpr(sErrorToken);
             sErrorToken = _parserRef->Eval().printVals();
+            replaceAll(sErrorToken, "\n", "\n|   ");
         }
 
         nCalcType[nthCmd] |= CALCTYPE_THROWCOMMAND;
@@ -3156,8 +3162,14 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         if (sLine.length() > 6)
         {
             sErrorToken = sBuffer.substr(findCommand(sBuffer).nPos+6);
+
+            // Get the data from the used data object
+            if (_dataRef->containsTablesOrClusters(sErrorToken))
+                getDataElements(sErrorToken, *_parserRef, *_dataRef);
+
             _parserRef->SetExpr(sErrorToken);
             sErrorToken = _parserRef->Eval().printVals();
+            replaceAll(sErrorToken, "\n", "\n|   ");
         }
 
         throw SyntaxError(SyntaxError::LOOP_THROW, sBuffer, SyntaxError::invalid_position, sErrorToken);

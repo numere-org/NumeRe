@@ -23,8 +23,6 @@
 #include <string>
 #include "../settings.hpp"
 
-extern const std::string sVersion;
-
 void doc_Help(const std::string&, Settings&);
 std::string doc_HelpAsHTML(const std::string&, bool, Settings& _option);
 void doc_SearchFct(const std::string& sToLookFor, Settings& _option);

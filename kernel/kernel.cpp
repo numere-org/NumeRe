@@ -22,6 +22,7 @@
 #include "core/io/logger.hpp"
 #include "core/plotting/plotting.hpp"
 #include "core/procedure/mangler.hpp"
+#include "versioninformation.hpp"
 
 #include "core/maths/functionimplementation.hpp"
 #include "core/strings/functionimplementation.hpp"
@@ -45,15 +46,6 @@
 #define UINT16_MAX 65535
 #define UINT32_MAX 0xffffffffU  /* 4294967295U */
 #define UINT64_MAX 0xffffffffffffffffULL /* 18446744073709551615ULL */
-
-
-extern const std::string sVersion;
-/* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
- *     z.B.: Biot(1774), Boltzmann(1844), Becquerel(1852), Bragg(1862), Bohr(1885), Brillouin(1889),
- *     de Broglie(1892, Bose(1894), Bloch(1905), Bethe(1906)) <--
- * --> de Coulomb(1736), Carnot(1796), P.Curie(1859), M.Curie(1867), A.Compton(1892), Cherenkov(1904),
- *     Casimir(1909), Chandrasekhar(1910), Chamberlain(1920), Cabibbo(1935) <--
- */
 
 Language _lang;
 mglGraph _fontData;
@@ -883,9 +875,9 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
     std::string sAppName = toUpperCase(_lang.get("COMMON_APPNAME"));
 
     printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
-    printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length())
-                + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. H\xe4nel et al.")
+    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - getVersion().length())
+                + printBuildDate() + " |\n");
+    printPreFmt("| Copyright (c) 2013-" + getBuildYear() + toSystemCodePage(", Erik A. H\xe4nel et al.")
                 + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
     make_hline(80);
 
@@ -1347,7 +1339,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
             make_hline();
-            print(LineBreak(_lang.get("ERR_STD_BADALLOC", sVersion), _option, false, 4));
+            print(LineBreak(_lang.get("ERR_STD_BADALLOC", getVersion()), _option, false, 4));
             make_hline();
             sendErrorNotification();
 

@@ -21,9 +21,9 @@
 #include "../../common/datastructures.h"
 #include "../../common/recentfilemanager.hpp"
 #include "../../kernel/core/ui/language.hpp"
-#include "../../kernel/core/version.h"
 #include "../../network/githubapi.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
+#include "../../kernel/versioninformation.hpp"
 
 #include <wx/stdpaths.h>
 
@@ -207,10 +207,6 @@ void DefaultPage::loadLatestRelease()
 
     Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe",
                                                wxStandardPaths::Get().GetExecutablePath().ToStdString());
-    static std::string sINTVERSION = "v" + toString((int)AutoVersion::MAJOR) + "."
-        + toString((int)AutoVersion::MINOR) + "."
-        + toString((int)AutoVersion::BUILD) + "."
-        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
 
     if (releases.empty())
     {
@@ -220,7 +216,7 @@ void DefaultPage::loadLatestRelease()
 
     wxString headline;
 
-    if (releases[0]["tag_name"].asString() > sINTVERSION)
+    if (versionToFloat(releases[0]["tag_name"].asString()) > getFloatingPointVersion())
         headline = "#==New: Highlighted changes in " + releases[0]["name"].asString() + "==";
     else
         headline = "#Highlighted changes in the currently installed version " + releases[0]["name"].asString();

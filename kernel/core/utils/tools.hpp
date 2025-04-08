@@ -33,8 +33,6 @@
 
 #ifndef PARSERSTANDALONE
 
-extern const std::string sVersion;
-
 std::string getUserDisplayName(bool informal);
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const std::string& sCmd, std::string& sArgument);

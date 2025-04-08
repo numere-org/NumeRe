@@ -23,15 +23,13 @@
 #include "../../kernel/core/io/logger.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../network/githubapi.hpp"
-#include "../../kernel/core/version.h"
+#include "../../kernel/versioninformation.hpp"
 
 #ifdef RELEASE
 // This file securely encodes the github api token. It cannot be found in the
 // repository for this reason and is only compiled within the release version.
 #include "../../secureauth.hpp"
 #endif // RELEASE
-
-extern const std::string sVersion;
 
 BEGIN_EVENT_TABLE(ReportIssueDialog, wxDialog)
     EVT_BUTTON(-1, ReportIssueDialog::OnButtonClick)
@@ -226,7 +224,7 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
         issue.body += "\n\n**Describe, what you expect to happen:**\n" + std::string(m_expectedBehavior->GetValue().mb_str(wxConvUTF8));
 
         if (isBug)
-            issue.body += "\n\n**System information:**\n- " + g_logger.get_system_information() + "\n- Version: v" + sVersion + " (var. " + AutoVersion::UBUNTU_VERSION_STYLE + ")";
+            issue.body += "\n\n**System information:**\n- " + g_logger.get_system_information() + "\n- Version: v" + getVersion() + " (var. " + getSubVersion() + ")";
 
         if (m_contact->GetValue().length())
             issue.body += "\n\n**How we can contact you:**\n" + std::string(m_contact->GetValue().mb_str(wxConvUTF8));

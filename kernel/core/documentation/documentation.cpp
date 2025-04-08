@@ -22,6 +22,7 @@
 #include <regex>
 #include "documentation.hpp"
 #include "../../kernel.hpp"
+#include "../../versioninformation.hpp"
 #include "../datamanagement/database.hpp"
 #include "../ui/calltipprovider.hpp"
 #include "../utils/tools.hpp"
@@ -484,7 +485,7 @@ void doc_SearchFct(const std::string& sToLookFor, Settings& _option)
             NumeReKernel::printPreFmt(toString(intCast(iter->first / dMax * 100)) + "%]   ");
 
             if (findDataBase.getElement(iter->second[j], 0) == "NumeRe v $$$")
-                NumeReKernel::printPreFmt("NumeRe v " + sVersion);
+                NumeReKernel::printPreFmt("NumeRe v " + getVersion());
             else
                 NumeReKernel::printPreFmt(toSystemCodePage(findDataBase.getElement(iter->second[j], 0)));
 

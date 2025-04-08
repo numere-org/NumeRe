@@ -37,14 +37,11 @@
 #include "maths/define.hpp"
 #include "plotting/plotdata.hpp"
 #include "script.hpp"
-#include "version.h"
 #include "documentation/documentation.hpp"
 #include "maths/odesolver.hpp"
 
 #ifndef COMMANDHANDLER_HPP
 #define COMMANDHANDLER_HPP
-
-extern const std::string sVersion;
 
 enum CommandReturnValues
 {

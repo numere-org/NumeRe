@@ -135,8 +135,6 @@ class DefaultPage;
 
 
 extern Language _guilang;
-extern const double fFloatingPointVersion;
-extern const std::string sInternalVersion;
 
 
 /////////////////////////////////////////////////

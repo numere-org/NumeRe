@@ -23,7 +23,6 @@
 
 #include "memorymanager.hpp"
 #include "../utils/tools.hpp"
-#include "../version.h"
 #include "../maths/resampler.h"
 #include "../../kernel.hpp"
 #include "tablecolumnimpl.hpp"

@@ -236,8 +236,14 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (sLine.length() > 6)
             {
                 sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
+
+                // Get the data from the used data object
+                if (_data.containsTablesOrClusters(sErrorToken))
+                    getDataElements(sErrorToken, _parser, _data);
+
                 _parser.SetExpr(sErrorToken);
                 sErrorToken = _parser.Eval().printVals();
+                replaceAll(sErrorToken, "\n", "\n|   ");
             }
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)

@@ -29,7 +29,6 @@
 #include "core/plugins.hpp"
 #include "core/script.hpp"
 #include "core/settings.hpp"
-#include "core/version.h"
 
 #include "core/datamanagement/container.hpp"
 #include "core/datamanagement/memorymanager.hpp"

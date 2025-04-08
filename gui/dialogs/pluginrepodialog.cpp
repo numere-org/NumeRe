@@ -22,6 +22,7 @@
 #include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
+#include "../../kernel/versioninformation.hpp"
 #include "../../common/datastructures.h"
 #include "../../network/http.h"
 #include "../controls/searchctrl.hpp"
@@ -29,8 +30,6 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-
-extern const double fFloatingPointVersion;
 
 #define WINDOWWIDTH 1000*g_pixelScale
 #define CTRLWIDTH WINDOWWIDTH-50*g_pixelScale
@@ -358,7 +357,7 @@ void PackageRepoBrowser::DetectInstalledPackages()
 
         // Ensure that the current NumeRe version is sufficient to handle
         // this package
-        if (fRequiredVersion > fFloatingPointVersion)
+        if (fRequiredVersion > getFloatingPointVersion())
         {
             m_listCtrl->SetItemBackgroundColour(item, OUTDATEDVERSIONCOLOUR);
 

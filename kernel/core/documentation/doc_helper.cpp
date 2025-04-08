@@ -19,7 +19,6 @@
 
 #include "doc_helper.hpp"
 #include "docfile.hpp"
-#include "../version.h"
 #include "../utils/tools.hpp"
 #include "../../kernel.hpp"
 #include <algorithm>

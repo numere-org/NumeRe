@@ -19,15 +19,13 @@
 
 // Implementation der Script-Klasse
 
-#include "version.h"
 #include "script.hpp"
 #include "../kernel.hpp"
+#include "../versioninformation.hpp"
 #include "utils/tools.hpp"
 #include "documentation/docfile.hpp"
 
 #include <algorithm>
-
-extern double fFloatingPointVersion;
 
 using namespace std;
 
@@ -297,7 +295,7 @@ bool Script::startInstallation(string& sScriptCommand)
 /////////////////////////////////////////////////
 bool Script::handleInstallInformation(string& sScriptCommand)
 {
-    double fRequiredVersion = fFloatingPointVersion;
+    double fRequiredVersion = getFloatingPointVersion();
 
     // If the current install information string is incomplete
     // (i.e. no "<endinfo>" tag), then search for the corresponding
@@ -397,7 +395,7 @@ bool Script::handleInstallInformation(string& sScriptCommand)
         fRequiredVersion = versionToFloat(getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
 
     // Throw an error, if the current version if NumeRe is too old
-    if (fRequiredVersion > fFloatingPointVersion)
+    if (fRequiredVersion > getFloatingPointVersion())
         throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position,
                           getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
 

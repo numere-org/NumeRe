@@ -30,7 +30,7 @@
 #include "../kernel/core/io/logger.hpp"
 #include "../kernel/core/ParserLib/muParser.h"
 #include "../kernel/core/ui/error.hpp"
-#include "../kernel/core/version.h"
+#include "../kernel/versioninformation.hpp"
 
 IMPLEMENT_APP(NumeReApp)
 
@@ -115,7 +115,7 @@ bool NumeReApp::OnInit()
     #endif // DO_LOG
 
     g_logger.push_info(LOGGER_STARTUP_LINE);
-    g_logger.push_info("NumeRe v " + sVersion + " (var. " + AutoVersion::UBUNTU_VERSION_STYLE + ")");
+    g_logger.push_info("NumeRe v " + getVersion() + " (var. " + getSubVersion() + ")");
     g_logger.write_system_information();
     g_logger.info("Starting up.");
 
@@ -186,7 +186,7 @@ bool NumeReApp::OnInit()
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
     // caches and preparing the editor.
-    m_mainWindow = new NumeReWindow("NumeRe (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+    m_mainWindow = new NumeReWindow("NumeRe (v" + getVersion() + ")", wxDefaultPosition, wxDefaultSize);
 
     // The logger should now know, if we start from
     // a crash

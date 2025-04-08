@@ -93,7 +93,7 @@
 
 #include "terminal/terminal.hpp"
 
-#include "../kernel/core/version.h"
+#include "../kernel/versioninformation.hpp"
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/procedure/dependency.hpp"
 #include "../kernel/core/datamanagement/database.hpp"
@@ -114,26 +114,6 @@
 
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
-
-#ifdef __GNUWIN64__
-#  ifdef DO_LOG
-const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x64-DEBUG)";
-#  else
-const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x64)";
-#  endif
-#else
-#  ifdef DO_LOG
-const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86-DEBUG)";
-#  else
-const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86)";
-#  endif
-#endif
-
-const double fFloatingPointVersion = 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0;
-const std::string sInternalVersion = toString((int)AutoVersion::MAJOR) + "."
-        + toString((int)AutoVersion::MINOR) + "."
-        + toString((int)AutoVersion::BUILD) + "."
-        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
 
 // Forward declaration
 std::string removeMaskedStrings(const std::string& sString);
@@ -5814,7 +5794,7 @@ void NumeReWindow::UpdateVarViewer()
 /////////////////////////////////////////////////
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
 {
-    wxTopLevelWindow::SetTitle((filename.length() ? filename + " - " : wxString()) + _guilang.get("COMMON_APPNAME") + " (v " + sVersion + ")");
+    wxTopLevelWindow::SetTitle((filename.length() ? filename + " - " : wxString()) + _guilang.get("COMMON_APPNAME") + " (v " + getVersion() + ")");
 }
 
 
@@ -7800,20 +7780,16 @@ void NumeReWindow::OnReportIssue(ErrorLocation errLoc)
 void NumeReWindow::OnFindUpdate()
 {
     Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe", getProgramFolder().ToStdString());
-    static std::string sINTVERSION = "v" + toString((int)AutoVersion::MAJOR) + "."
-        + toString((int)AutoVersion::MINOR) + "."
-        + toString((int)AutoVersion::BUILD) + "."
-        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
 
     if (!releases.empty())
     {
         Json::ArrayIndex latest = 0;
 
-        if (releases[latest]["tag_name"].asString() > sINTVERSION)
+        if (versionToFloat(releases[latest]["tag_name"].asString()) > getFloatingPointVersion())
         {
             if (wxMessageBox(_guilang.get(releases[latest]["prerelease"].asBool() ? "GUI_UPDATECHECK_FND_RC" : "GUI_UPDATECHECK_FND",
                                           releases[latest]["name"].asString(),
-                                          sINTVERSION,
+                                          getFullVersion(),
                                           releases[latest]["tag_name"].asString()),
                              _guilang.get("GUI_UPDATECHECK_FND_HL"), wxCENTER | wxYES | wxNO | wxICON_QUESTION, this) == wxYES)
                 wxLaunchDefaultBrowser(releases[latest]["html_url"].asString());

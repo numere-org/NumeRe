@@ -39,11 +39,10 @@
 #include "student_t.hpp"
 #ifndef PARSERSTANDALONE
 extern double g_pixelScale;
-extern double fFloatingPointVersion;
 #include "../datamanagement/memorymanager.hpp"
 #endif
 #include "../utils/tools.hpp"
-#include "../version.h"
+#include "../../versioninformation.hpp"
 
 /*
  * Ende der globalen Variablen
@@ -4107,7 +4106,7 @@ mu::Array numfnc_getOverlap(const mu::Array& left, const mu::Array& right)
 mu::Array numfnc_numereversion()
 {
 #ifndef PARSERSTANDALONE
-    return mu::Value(fFloatingPointVersion);
+    return mu::Value(getFloatingPointVersion());
 #endif
 }
 

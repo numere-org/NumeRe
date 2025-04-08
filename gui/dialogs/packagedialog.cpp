@@ -29,6 +29,7 @@
 #include "../../common/vcsmanager.hpp"
 #include "../../common/filerevisions.hpp"
 #include "../../common/datastructures.h"
+#include "../../kernel/versioninformation.hpp"
 
 #include <set>
 #include <memory>
@@ -38,7 +39,6 @@
 #define POSTINSTALL "_postinstall"
 
 extern Language _guilang;
-extern const std::string sInternalVersion;
 
 
 BEGIN_EVENT_TABLE(PackageDialog, wxDialog)
@@ -705,7 +705,7 @@ void PackageDialog::saveProjectFile(const wxString& filename)
     tinyxml2::XMLElement* files = project.NewElement("files");
 
     root->SetAttribute("version.npkp", "1");
-    root->SetAttribute("version.numere", sVersion.c_str());
+    root->SetAttribute("version.numere", getVersion().c_str());
 
     project.InsertFirstChild(root);
     root->InsertFirstChild(info);
@@ -899,7 +899,7 @@ wxString PackageDialog::getInstallInfo()
 
     // Add the require version property to the current install
     // information
-    installInfo += "\t\t-requireversion=\"" + sInternalVersion + "\"\r\n";
+    installInfo += "\t\t-requireversion=\"" + getFullVersion() + "\"\r\n";
     installInfo += "\t<endinfo>\r\n";
 
     return installInfo;
