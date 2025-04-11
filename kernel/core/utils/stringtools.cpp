@@ -1102,6 +1102,10 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
             return i <= pos+3 && (sStr[i] == sStr[pos] || sStr[i] == ' ' || sStr[i] == ',' || sStr[i] == '\t' || sStr[i] == 'T');
     }
 
+    // digit colon digit is unique enough
+    if (sStr[pos] == ':')
+        return true;
+
     return false;
 }
 
@@ -1212,6 +1216,11 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
 
             for (size_t i = pos; i < sStr.length()-1; i++)
             {
+                // A date-time value may not contain single values
+                // separated by a simple whitespace
+                if (sStr[i] == ' ' || sStr[i] == '\t')
+                    return false;
+
                 // Detects these candidates:
                 // (YY)YY-MM-DD, DD.MM.YY(YY), (yy)yy-m-d, d.m.yy(yy),
                 // d.m., dd.mm., (YY)YY/MM/DD, (YY)YY/M/D,

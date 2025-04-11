@@ -4559,7 +4559,6 @@ void Plot::createDataLegends()
             DataAccessParser _access = getAccessParserForPlotAndFit(sTemp);
             //_access.evalIndices();
             std::string sTableName = _access.getDataObject();
-
             const VectorIndex& vCols = _access.getIndices().col;
 
             if (vCols.numberOfNodes() == 1)
@@ -4576,6 +4575,7 @@ void Plot::createDataLegends()
                         if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
                         {
                             sTemp.clear();
+                            vCols.setOpenEndIndex(_data.getCols(sTableName)-1);
 
                             // Don't use the first one
                             for (size_t i = 0; i < vCols.size(); i++)

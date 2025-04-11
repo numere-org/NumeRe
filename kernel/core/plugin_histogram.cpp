@@ -293,7 +293,7 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
     {
         if (vCategories.size())
         {
-            for (size_t i = 0; i < vCategories.size(); i += 2)
+            for (size_t i = 0; i < vCategories.size(); i++)
             {
                 if (i)
                     sTicks += "\\n";
@@ -447,10 +447,10 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     // --> Fuelle die Ausgabe-Matrix <--
     for (size_t i = 1; i < vHistMatrix.size() + 1; i++)
     {
-        if (vCategories.size() <= 2*(i-1))
+        if (vCategories.size() <= (i-1))
             sOut[i][0] = toString(_mAxisVals.a[i - 1]-diff, _option);
         else
-            sOut[i][0] = vCategories[2*(i-1)];
+            sOut[i][0] = vCategories[i-1].getStr();
 
         for (size_t j = 0; j < vHistMatrix[0].size(); j++)
         {
@@ -805,7 +805,7 @@ static mu::Array isSubSet(const mu::Array& lhs, const mu::Array& rhs)
     const mu::Array& shorter = lhs.size() > rhs.size() ? rhs : lhs;
 
     // Ensure that one of the category definitions is a subset of the other one
-    for (size_t i = 0; i < shorter.size(); i += 2)
+    for (size_t i = 0; i < shorter.size(); i++)
     {
         auto pos = std::find(longer.begin(), longer.end(), shorter[i]);
 
@@ -846,14 +846,15 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
             {
                 // If that's not the case, we simply use their IDs as
                 // abstract categories to at least us reasoable bin values
-                int nCategoryMin = intCast(std::max(_data.min(_histParams.sTable, _idx.row, _idx.col).real(), _histParams.ranges[XCOORD].min()));
-                int nCategoryMax = intCast(std::min(_data.max(_histParams.sTable, _idx.row, _idx.col).real(), _histParams.ranges[XCOORD].max()));
+                int nCategoryMin = intCast(std::max(_data.min(_histParams.sTable, _idx.row, _idx.col).real(),
+                                                    _histParams.ranges[XCOORD].min()));
+                int nCategoryMax = intCast(std::min(_data.max(_histParams.sTable, _idx.row, _idx.col).real(),
+                                                    _histParams.ranges[XCOORD].max()));
                 _histParams.nBin[XCOORD] = nCategoryMax - nCategoryMin + 1;
 
                 for (int i = 0; i < _histParams.nBin[XCOORD]; i++)
                 {
-                    vCategories.push_back("Cat:" + toString(i+nCategoryMin));
-                    vCategories.push_back(mu::Value(i+nCategoryMin));
+                    vCategories.push_back(mu::Category{mu::Numerical(i+nCategoryMin), "Cat:" + toString(i+nCategoryMin)});
                 }
 
                 return true;
@@ -865,27 +866,25 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
         // Use logical values as bins and labels
         _histParams.binWidth[XCOORD] = 1.0;
         _histParams.nBin[XCOORD] = 2;
-        vCategories = mu::Value("false");
-        vCategories.push_back(mu::Value(0));
-        vCategories.push_back(mu::Value("true"));
-        vCategories.push_back(mu::Value(1));
+        vCategories.push_back(mu::Category{mu::Numerical(0), "false"});
+        vCategories.push_back(mu::Category{mu::Numerical(1), "true"});
     }
 
     // If we found a set of categories, ensure that their IDs are part of the
     // user specified x interval
     if (vCategories.size())
     {
-        size_t i = 1;
+        size_t i = 0;
 
         while (i < vCategories.size())
         {
             if (!_histParams.ranges[XCOORD].isInside(vCategories[i].getNum().asI64()))
-                vCategories.erase(vCategories.begin() + i - 1, vCategories.begin() + i + 1);
+                vCategories.erase(vCategories.begin() + i);
             else
-                i += 2;
+                i++;
         }
 
-        _histParams.nBin[XCOORD] = vCategories.size() / 2;
+        _histParams.nBin[XCOORD] = vCategories.size();
 
         return true;
     }
@@ -1081,11 +1080,11 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
             if (_tIdx.row.size() <= i)
                 break;
 
-            if (vCategories.size() <= 2*i)
+            if (vCategories.size() <= i)
                 _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable,
                                    _histParams.ranges[XCOORD].min() + i * _histParams.binWidth[XCOORD]);
             else
-                _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, vCategories[2*i]);
+                _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, vCategories[i].getStr());
 
             for (size_t j = 0; j < vHistMatrix[0].size(); j++)
             {

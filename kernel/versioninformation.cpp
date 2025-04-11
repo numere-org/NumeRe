@@ -20,6 +20,29 @@
 #include "core/version.h"
 #include "core/utils/stringtools.hpp"
 
+#ifdef NIGHTLY
+// Solution extracted from https://stackoverflow.com/a/64718070
+constexpr unsigned int compileYear = (__DATE__[7] - '0') * 1000 + (__DATE__[8] - '0') * 100 + (__DATE__[9] - '0') * 10 + (__DATE__[10] - '0');;
+constexpr unsigned int compileMonth = (__DATE__[0] == 'J') ? ((__DATE__[1] == 'a') ? 1 : ((__DATE__[2] == 'n') ? 6 : 7))    // Jan, Jun or Jul
+                                : (__DATE__[0] == 'F') ? 2                                                              // Feb
+                                : (__DATE__[0] == 'M') ? ((__DATE__[2] == 'r') ? 3 : 5)                                 // Mar or May
+                                : (__DATE__[0] == 'A') ? ((__DATE__[1] == 'p') ? 4 : 8)                                 // Apr or Aug
+                                : (__DATE__[0] == 'S') ? 9                                                              // Sep
+                                : (__DATE__[0] == 'O') ? 10                                                             // Oct
+                                : (__DATE__[0] == 'N') ? 11                                                             // Nov
+                                : (__DATE__[0] == 'D') ? 12                                                             // Dec
+                                : 0;
+constexpr unsigned int compileDay = (__DATE__[4] == ' ') ? (__DATE__[5] - '0') : (__DATE__[4] - '0') * 10 + (__DATE__[5] - '0');
+
+constexpr char NIGHTLYVER[] = // YYMMDD
+{   (compileYear % 100)/10 + '0', compileYear % 10 + '0', // YY
+    compileMonth/10 + '0', compileMonth % 10 + '0', // MM
+    compileDay/10 + '0', compileDay % 10 + '0', // DD
+    0
+};
+
+#endif // NIGHTLY
+
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
  *     z.B.: Biot(1774), Boltzmann(1844), Becquerel(1852), Bragg(1862), Bohr(1885), Brillouin(1889),
  *     de Broglie(1892, Bose(1894), Bloch(1905), Bethe(1906)) <--
@@ -37,7 +60,11 @@
 sys_time_point getBuildDate()
 {
     time_stamp ts;
+#ifdef NIGHTLY
+    ts.m_ymd = date::year(compileYear) / date::month(compileMonth) / date::day(compileDay);
+#else
     ts.m_ymd = date::year(std::atoi(AutoVersion::YEAR)) / date::month(std::atoi(AutoVersion::MONTH)) / date::day(std::atoi(AutoVersion::DATE));
+#endif
     return getTimePointFromTimeStamp(ts);
 }
 
@@ -64,7 +91,11 @@ std::string printBuildDate()
 /////////////////////////////////////////////////
 std::string getBuildYear()
 {
+#ifdef NIGHTLY
+    return toString((int)compileYear);
+#else
     return AutoVersion::YEAR;
+#endif
 }
 
 
@@ -102,7 +133,7 @@ std::string getVersion()
 std::string getVersionName()
 {
 #ifdef NIGHTLY
-    return getSubVersion();
+    return "Nightly/" + std::string(NIGHTLYVER);
 #else
     return AutoVersion::STATUS;
 #endif // NIGHTLY
@@ -118,7 +149,7 @@ std::string getVersionName()
 std::string getSubVersion()
 {
 #ifdef NIGHTLY
-    return AutoVersion::UBUNTU_VERSION_STYLE + ("n" + std::string(AutoVersion::DATE));
+    return AutoVersion::UBUNTU_VERSION_STYLE + ("n" + std::string(NIGHTLYVER));
 #else
     return AutoVersion::UBUNTU_VERSION_STYLE;
 #endif // NIGHTLY
@@ -138,7 +169,7 @@ std::string getFullVersion()
             + toString((int)AutoVersion::MINOR) + "."
             + toString((int)AutoVersion::BUILD) + "."
 #ifdef NIGHTLY
-            + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100)) + AutoVersion::DATE;
+            + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100)) + NIGHTLYVER;
 #else
             + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
 #endif // NIGHTLY
@@ -176,7 +207,7 @@ std::string getFileVersion()
     return toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
             + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "")
 #ifdef NIGHTLY
-            + "_n" + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100)) + AutoVersion::DATE
+            + "_n" + NIGHTLYVER
 #endif // NIGHTLY
 #ifdef __GNUWIN64__
             + "_x64"
@@ -195,7 +226,7 @@ std::string getFileVersion()
 double getFloatingPointVersion()
 {
 #ifdef NIGHTLY
-    return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0 + std::atof(AutoVersion::DATE) / 1000000.0;
+    return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0 + std::atof(NIGHTLYVER) / 10000000000.0;
 #else
     return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0;
 #endif // NIGHTLY

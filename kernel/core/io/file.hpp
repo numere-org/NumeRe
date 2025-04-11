@@ -833,7 +833,7 @@ namespace NumeRe
                 if (!sString.length())
                     return false;
 
-                return isConvertible(sString, CONVTYPE_VALUE) || isConvertible(sString, CONVTYPE_DATE_TIME);
+                return isConvertible(sString, CONVTYPE_VALUE);// || isConvertible(sString, CONVTYPE_DATE_TIME);
             }
 
             /////////////////////////////////////////////////
