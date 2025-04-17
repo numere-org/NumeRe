@@ -2630,8 +2630,11 @@ namespace mu
 			{
                 while (stOpt.size())
                 {
-                    if (stOpt.top().GetCode() == cmIF && stArgCount.top() == 3)
+                    if (stOpt.top().GetCode() == cmIF)
                     {
+                        if (stArgCount.top() != 3)
+                            Error(ecUNEXPECTED_CONDITIONAL, m_pTokenReader->GetPos(), "?");
+
                         stArgCount.pop();
                         stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
                         ApplyFunc(stOpt, stVal, 3);

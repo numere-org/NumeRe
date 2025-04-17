@@ -212,6 +212,13 @@ void ReportIssueDialog::OnButtonClick(wxCommandEvent& event)
             return;
         }
 
+#ifdef RELEASE
+        // Is the user sure that he does not want to share any contact details
+        if (m_contact->IsEmpty()
+            && wxMessageBox("Are you sure that you do not want to share any contact details? Social network handles are also acceptable, if you add the network type.\n\nWithout the possibility to ask you any questions, resolving your issue might be impossible.", "Share contact details", wxCENTER | wxICON_QUESTION | wxYES_NO, this) == wxNO)
+            return;
+#endif // RELEASE
+
         // Create the issue
         GitHub::Issue issue;
         issue.title = m_issueTitle->GetValue().mb_str(wxConvUTF8);

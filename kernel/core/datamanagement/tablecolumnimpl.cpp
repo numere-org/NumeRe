@@ -633,7 +633,7 @@ mu::Value LogicalColumn::get(size_t elem) const
     if (elem < m_data.size() && m_data[elem] != LOGICAL_NAN)
         return m_data[elem] != 0.0;
 
-    return NAN;
+    return mu::TYPE_INVALID;
 }
 
 
@@ -1573,7 +1573,7 @@ mu::Value CategoricalColumn::get(size_t elem) const
     if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
         return mu::Category(m_data[elem]+1, m_categories[m_data[elem]]);
 
-    return NAN;
+    return mu::TYPE_INVALID;
 }
 
 
@@ -2034,13 +2034,13 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
     }
 
     // Vector for the old-to-new categories mapping
-    std::vector<int> vMap(m_categories.size(), -1);
-    std::vector<int> vFreeList;
+    std::vector<int> vMap(std::max(m_categories.size(), vCategories.size()), -1);
+    //std::vector<int> vFreeList;
 
     // Create a mapping for the old categories in the set of
     // new categories. Their order might be different and some
     // might be missing. Move those to the end of the index
-    for (size_t i = 0; i < m_categories.size(); i++)
+    /*for (size_t i = 0; i < m_categories.size(); i++)
     {
         auto iter = std::find(vCategories.begin(), vCategories.end(), m_categories[i]);
 
@@ -2069,7 +2069,7 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
                 vFreeList.push_back(i);
         }
         else
-            vMap[i] = std::max({(int)vCategories.size(), (int)vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
+            vMap[i] = i; //std::max({(int)vCategories.size(), (int)vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
     }
 
     // Attach all elements of the free list
@@ -2089,11 +2089,37 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
 
         if (!assigned)
             vMap[vFreeList[i]] = std::max({(int)vCategories.size(), (int)vMap.size(), (*std::max_element(vMap.begin(), vMap.end()))+1});
+    }*/
+
+    // Reorder known categories first
+    for (size_t i = 0; i < m_categories.size(); i++)
+    {
+        auto iter = std::find(vCategories.begin(), vCategories.end(), m_categories[i]);
+
+        if (iter != vCategories.end())
+            vMap[i] = std::distance(vCategories.begin(), iter);
+    }
+
+    // Find free spots for the other categories
+    for (size_t i = 0; i < vMap.size(); i++)
+    {
+        if (vMap[i] < 0)
+        {
+            for (int j = 0; j < vMap.size(); j++)
+            {
+                if (std::find(vMap.begin(), vMap.end(), j) == vMap.end())
+                {
+                    vMap[i] = j;
+                    break;
+                }
+            }
+        }
     }
 
     // Resize the categories array correspondingly (might be equal in
     // size but never smaller than before)
-    m_categories.resize(std::max((int)vCategories.size(), (*std::max_element(vMap.begin(), vMap.end()))+1));
+//    m_categories.resize(std::max((int)vCategories.size(), (*std::max_element(vMap.begin(), vMap.end()))+1));
+    m_categories.resize(vMap.size());
 
     // Create a buffer for reordering
     std::vector<std::string> buffer(m_categories);

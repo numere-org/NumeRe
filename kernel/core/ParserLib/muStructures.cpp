@@ -55,6 +55,7 @@ namespace mu
                 m_data = new Category;
                 *static_cast<Category*>(m_data) = *static_cast<Category*>(data.m_data);
                 break;
+            case TYPE_INVALID:
             case TYPE_NUMERICAL:
                 m_data = new Numerical;
                 *static_cast<Numerical*>(m_data) = data.getNum();
@@ -279,6 +280,38 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct a Value from a data type.
+    ///
+    /// \param type DataType
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(DataType type)
+    {
+        m_type = type;
+
+        switch (m_type)
+        {
+            case TYPE_CATEGORY:
+                m_data = new Category;
+                break;
+            case TYPE_INVALID:
+                m_data = new Numerical((double)NAN);
+                break;
+            case TYPE_NUMERICAL:
+                m_data = new Numerical;
+                break;
+            case TYPE_STRING:
+                m_data = new std::string;
+                break;
+            case TYPE_ARRAY:
+                m_data = new Array;
+                break;
+            default:
+                m_data = nullptr;
+        }
+    }
+
+    /////////////////////////////////////////////////
     /// \brief Destroy a Value.
     /////////////////////////////////////////////////
     Value::~Value()
@@ -313,6 +346,7 @@ namespace mu
 
                 *static_cast<Category*>(m_data) = *static_cast<Category*>(other.m_data);
                 break;
+            case TYPE_INVALID:
             case TYPE_NUMERICAL:
                 if (!m_data)
                     m_data = new Numerical;
@@ -385,6 +419,7 @@ namespace mu
         {
             case TYPE_CATEGORY:
                 return "category";
+            case TYPE_INVALID:
             case TYPE_NUMERICAL:
                 return getNum().getTypeAsString();
             case TYPE_STRING:
@@ -434,7 +469,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isNumerical() const
     {
-        return (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY) && m_data;
+        return (m_type == TYPE_NUMERICAL || m_type == TYPE_INVALID || m_type == TYPE_CATEGORY) && m_data;
     }
 
 
@@ -677,7 +712,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator-() const
     {
-        if (m_type == TYPE_NUMERICAL || m_type == TYPE_CATEGORY)
+        if (m_type == TYPE_NUMERICAL || m_type == TYPE_INVALID || m_type == TYPE_CATEGORY)
             return -getNum();
 
         if (m_type == TYPE_ARRAY)
@@ -810,7 +845,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value& Value::operator+=(const Value& other)
     {
-        if (m_type == TYPE_VOID)
+        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
             return operator=(other);
 
         DataType common = detectCommonType(other);
@@ -863,7 +898,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value& Value::operator-=(const Value& other)
     {
-        if (m_type == TYPE_VOID)
+        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
             return operator=(-other);
 
         DataType common = detectCommonType(other);
@@ -952,7 +987,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value& Value::operator*=(const Value& other)
     {
-        if (m_type == TYPE_VOID)
+        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
             return operator=(other);
 
         DataType common = detectCommonType(other);
@@ -1289,6 +1324,7 @@ namespace mu
             case TYPE_CATEGORY:
                 delete static_cast<Category*>(m_data);
                 break;
+            case TYPE_INVALID:
             case TYPE_NUMERICAL:
                 delete static_cast<Numerical*>(m_data);
                 break;
@@ -1319,6 +1355,7 @@ namespace mu
             case TYPE_STRING:
                 return getStr().length();
             case TYPE_CATEGORY:
+            case TYPE_INVALID:
             case TYPE_NUMERICAL:
                 return getNum().getBytes();
             case TYPE_ARRAY:
@@ -1351,10 +1388,10 @@ namespace mu
             && (other.m_type == TYPE_STRING || other.m_type == TYPE_CATEGORY))
             return TYPE_STRING;
 
-        if (m_type == other.m_type || other.m_type == TYPE_VOID)
+        if (m_type == other.m_type || other.m_type == TYPE_VOID || other.m_type == TYPE_INVALID)
             return m_type;
 
-        if (m_type == TYPE_VOID)
+        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
             return other.m_type;
 
         return TYPE_MIXED;
@@ -1618,12 +1655,16 @@ namespace mu
         {
             types.push_back(operator[](i).getType());
 
-            if (m_commonType == TYPE_VOID)
+            if (m_commonType == TYPE_VOID
+                || (m_commonType == TYPE_INVALID && types.back() != TYPE_VOID))
                 m_commonType = types.back();
 
-            if (m_commonType != types.back())
+            if (types.back() != TYPE_VOID && types.back() != TYPE_INVALID && m_commonType != types.back())
                 m_commonType = TYPE_MIXED;
         }
+
+        if (m_commonType == TYPE_INVALID)
+            m_commonType = TYPE_NUMERICAL;
 
         return types;
     }

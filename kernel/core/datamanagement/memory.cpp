@@ -3934,7 +3934,6 @@ mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
 /////////////////////////////////////////////////
 std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
-
     if (significance >= 1.0
         || significance <= 0.0 )
     {
@@ -3944,9 +3943,11 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     }
 
     size_t col_size = getElemsInColumn(colValues);
-    for(size_t i = 0; i < colCategories.size(); i++)
+
+    for (size_t i = 0; i < colCategories.size(); i++)
     {
-        if (colCategories[i] > (int)memArray.size() || !memArray[colCategories[i]]
+        if (colCategories[i] > (int)memArray.size()
+            || !memArray[colCategories[i]]
             || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
             || (size_t)getElemsInColumn(colCategories[i]) != col_size)
         {
@@ -3956,18 +3957,56 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
         }
     }
 
-
     colCategories.setOpenEndIndex(getCols()-1);
     _vIndex.setOpenEndIndex(col_size-1);
 
+    // We need to eliminate invalid values from the index vector first
+    std::vector<int> vExpanded = _vIndex.getVector();
+    auto iter = vExpanded.begin();
+
+    while (iter != vExpanded.end())
+    {
+        // Any invalids in the numerical values colum n?
+        if (!memArray[colValues]->get(*iter).isValid())
+        {
+            iter = vExpanded.erase(iter);
+            continue;
+        }
+
+        bool erased = false;
+
+        // Any invalids in the categorical columns?
+        for (size_t i = 0; i < colCategories.size(); i++)
+        {
+            if (!memArray[colCategories[i]]->get(*iter).isValid())
+            {
+                iter = vExpanded.erase(iter);
+                erased = true;
+                break;
+            }
+        }
+
+        if (!erased)
+            iter++;
+    }
+
+    // Create a new index vector
+    VectorIndex vPrepared(vExpanded);
+
     Memory _mem(colCategories.size()+1);
-    _mem.memArray[0].reset(memArray[colValues]->copy(_vIndex));
-    for(size_t i = 0; i < colCategories.size(); i++)
-        _mem.memArray[i+1].reset(memArray[colCategories[i]]->copy(_vIndex));
+    _mem.memArray[0].reset(memArray[colValues]->copy(vPrepared));
+
+    for (size_t i = 0; i < colCategories.size(); i++)
+    {
+        _mem.memArray[i+1].reset(memArray[colCategories[i]]->copy(vPrepared));
+    }
 
     std::vector<std::vector<std::string>> factors;
-    for(size_t i = 0; i < colCategories.size(); i++)
+
+    for (size_t i = 0; i < colCategories.size(); i++)
+    {
         factors.push_back(static_cast<CategoricalColumn*>(_mem.memArray[i+1].get())->getCategories());
+    }
 
     AnovaCalculationStructure ft = AnovaCalculationStructure();
     ft.buildTree(factors, &_mem, significance);
@@ -4338,6 +4377,9 @@ static void evaluateRankingStrategy(std::vector<double>& vRank, size_t& nEqualRa
 /////////////////////////////////////////////////
 std::vector<double> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
 {
+    if (col >= memArray.size() || !memArray[col])
+        return {NAN};
+
     _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
 
     Memory _mem(1);

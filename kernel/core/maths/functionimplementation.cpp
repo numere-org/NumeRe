@@ -3997,6 +3997,9 @@ mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
 
     for (size_t i = 0; i < setA.size(); i++)
     {
+        if (setA.get(i).isVoid())
+            continue;
+
         bool found = false;
 
         for (size_t j = 0; j < unified.size(); j++)
@@ -4014,6 +4017,9 @@ mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
 
     for (size_t i = 0; i < setB.size(); i++)
     {
+        if (setB.get(i).isVoid())
+            continue;
+
         bool found = false;
 
         for (size_t j = 0; j < unified.size(); j++)

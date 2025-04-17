@@ -400,7 +400,12 @@ void VariableViewer::OnNewTable()
 /////////////////////////////////////////////////
 void VariableViewer::OnShowTable(const wxString& table, const wxString& tableDisplayName)
 {
-    mainWindow->showTable(table, tableDisplayName);
+    if (tableDisplayName.EndsWith("()") && !table.EndsWith("()"))
+        mainWindow->showTable(table + "()", tableDisplayName);
+    else if (tableDisplayName.EndsWith("{}") && !table.EndsWith("{}"))
+        mainWindow->showTable(table + "{}", tableDisplayName);
+    else
+        mainWindow->showTable(table, tableDisplayName);
 }
 
 

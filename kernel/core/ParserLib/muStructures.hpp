@@ -59,6 +59,7 @@ namespace mu
             Value(const std::complex<double>& value, bool autoType = true);
             Value(const std::string& sData);
             Value(const char* sData);
+            Value(DataType type);
 
             virtual ~Value();
 

@@ -62,6 +62,10 @@ static std::string fileNameToProcedureName(std::string fileName)
     {
         fileName.erase(0, procPath.length());
         replaceAll(fileName, "/", "~");
+
+        if (fileName.find('~') == std::string::npos)
+            return "$main~" + fileName.substr(0, fileName.rfind('.'));
+
         return "$" + fileName.substr(0, fileName.rfind('.'));
     }
 

@@ -2456,6 +2456,16 @@ void Procedure::cleanRelativeNameSpaces(std::string& nameSpace)
         else
             nameSpace.erase(0, relPos+2);
     }
+
+    while ((relPos = nameSpace.find("/../")) != std::string::npos)
+    {
+        size_t prevFolder = nameSpace.rfind('/', relPos-1);
+
+        if (prevFolder != std::string::npos)
+            nameSpace.erase(prevFolder, relPos+3-prevFolder);
+        else
+            nameSpace.erase(0, relPos+4);
+    }
 }
 
 
