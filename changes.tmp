@@ -22,7 +22,7 @@ Applied	The method autocompletion recommendation has been improved and should no
 Cleaned	Improved and cleaned the "stats" command: some field were renamed or replaced with more important values.
 Applied	Most table methods accept now table column names in addition to column IDs. Note: If there are multiple columns with the same name, in general, all will be used for the table method.
 Fixed	Resolved a regression with the autocompletion of table methods.
-Added	The new table method "replacevals()" can be used to replace every occurence of a set of values with new values.
+Added	The new table method "TAB().replacevals()" can be used to replace every occurence of a set of values with new values.
 Fixed	The table method "TAB().anovaof()" is now more robust against invalid values.
 Cleaned	The table method "TAB().anovaof()" will now return the results of multi-dimensional ANOVAs in distinct embedded clusters.
 Removed	Large tables won't calculate the complete stats anymore, if opened in the table viewer (this is for performance reasons).
