@@ -44,7 +44,6 @@ size_t findVariableInExpression(const std::string& sExpr, const std::string& sVa
     size_t nMatch = nPosStart;
     const static std::string sOperators = "+-*/,^!%&|?:#<>='; ";
     const static std::string sDelimiterLeft = sOperators + "([{";
-#warning TODO (numere#2#12/05/21): Cannot detect variables with methods (if that is needed)
     const static std::string sDelimiterRight = sOperators + ")]}.";
 
     // search the first match of the token, which is surrounded by the
