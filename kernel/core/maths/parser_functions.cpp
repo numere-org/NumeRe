@@ -45,14 +45,14 @@ size_t findVariableInExpression(const std::string& sExpr, const std::string& sVa
     const static std::string sOperators = "+-*/,^!%&|?:#<>='; ";
     const static std::string sDelimiterLeft = sOperators + "([{";
 #warning TODO (numere#2#12/05/21): Cannot detect variables with methods (if that is needed)
-    const static std::string sDelimiterRight = sOperators + ")]}";
+    const static std::string sDelimiterRight = sOperators + ")]}.";
 
     // search the first match of the token, which is surrounded by the
     // defined separator characters
-    while ((nMatch = sExpr.find(sVarName, nMatch)) != string::npos)
+    while ((nMatch = sExpr.find(sVarName, nMatch)) != std::string::npos)
     {
-        if ((!nMatch || sDelimiterLeft.find(sExpr[nMatch-1]) != string::npos)
-            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiterRight.find(sExpr[nMatch+sVarName.length()]) != string::npos)
+        if ((!nMatch || sDelimiterLeft.find(sExpr[nMatch-1]) != std::string::npos)
+            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiterRight.find(sExpr[nMatch+sVarName.length()]) != std::string::npos)
             && !isInQuotes(sExpr, nMatch, true))
         {
             return nMatch;
