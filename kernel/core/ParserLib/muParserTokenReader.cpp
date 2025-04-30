@@ -606,7 +606,7 @@ namespace mu
             if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN | noMETHOD;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noASSIGN | noMETHOD;
 			return true;
         }
 
@@ -623,7 +623,7 @@ namespace mu
 			if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN | noMETHOD;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noASSIGN | noMETHOD;
 			return true;
 		}
 

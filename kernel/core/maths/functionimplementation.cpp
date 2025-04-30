@@ -3608,17 +3608,14 @@ mu::Array oprt_Mod(const mu::Array& v1, const mu::Array& v2)
 /// \brief Internal implementation of the XOR
 /// operator.
 ///
-/// \param v1 const std::complex<double>&
-/// \param v2 const std::complex<double>&
-/// \return std::complex<double>
+/// \param v1 const mu::Value&
+/// \param v2 const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
-static std::complex<double> xor_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+static mu::Value xor_impl(const mu::Value& v1, const mu::Value& v2)
 {
-    if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
-        return NAN;
-
-    return (v1 != 0.0) xor (v2 != 0.0);
+    return bool((bool)v1 xor (bool)v2);
 }
 
 
