@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+#include <wx/utils.h>
 
 #include "functionimplementation.hpp"
 #include "../utils/tools.hpp"
@@ -30,6 +31,7 @@
 #include <regex>
 #include <sstream>
 #include <libsha.hpp>
+
 
 /////////////////////////////////////////////////
 /// \brief Simple helper to create a LaTeX
@@ -2923,6 +2925,29 @@ mu::Array strfnc_getversioninfo()
 mu::Array strfnc_getuilang()
 {
     return mu::Value(_lang.get("LANGUAGE"));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the getuserinfo()
+/// function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_getuserinfo()
+{
+    mu::Array userinfo;
+    userinfo.push_back("GivenName");
+    userinfo.push_back(getUserDisplayName(true));
+    userinfo.push_back("FullName");
+    userinfo.push_back(getUserDisplayName(false));
+    userinfo.push_back("UserId");
+    userinfo.push_back(wxGetUserId().ToStdString());
+    userinfo.push_back("UserProfile");
+    userinfo.push_back(getenv("USERPROFILE"));
+
+    return userinfo;
 }
 
 

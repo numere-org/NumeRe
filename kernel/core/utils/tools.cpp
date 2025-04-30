@@ -210,8 +210,16 @@ std::string getUserDisplayName(bool informal)
 
     // Return an informal name if a whitespace is found and no
     // comma is used for the inverted NAME, GIVEN-NAME order
-    if (informal && sUserName.find(' ') != std::string::npos && sUserName.find(',') == std::string::npos)
-        sUserName.erase(sUserName.find(' '));
+    if (informal)
+    {
+        if (sUserName.find(',') == std::string::npos)
+            sUserName.erase(0, sUserName.find(',')+1);
+
+        StripSpaces(sUserName);
+
+        if (sUserName.find(' ') != std::string::npos)
+            sUserName.erase(sUserName.find(' '));
+    }
 
     return sUserName;
 }

@@ -86,6 +86,7 @@ mu::Array strfnc_getlasterror();
 mu::Array strfnc_geterrormessage(const mu::Array& errCode);
 mu::Array strfnc_getversioninfo();
 mu::Array strfnc_getuilang();
+mu::Array strfnc_getuserinfo();
 mu::Array strfnc_getuuid();
 mu::Array strfnc_getodbcdrivers();
 mu::Array strfnc_getfileinfo(const mu::Array& file);

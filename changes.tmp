@@ -1,1 +1,2 @@
 Fixed	Symbols created with "declare" may now also be used together with methods.
+New	The function "getuserinfo()" will return information about the user name, id and homedir.
