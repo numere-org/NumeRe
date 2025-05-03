@@ -381,9 +381,7 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
                 source.strip();
 
                 // Is the source also a complete table
-                if (source.find('(') != std::string::npos
-                        && getMatchingParenthesis(source) == source.length() - 1
-                        && _data.isTable(source))
+                if (_data.isTable(source, true))
                 {
                     // We need to parse the source first, because it might be a
                     // standard vector access, which does not work with this copy

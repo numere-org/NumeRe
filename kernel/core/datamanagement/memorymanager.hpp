@@ -137,8 +137,8 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 
 		// VALIDATION METHODS
         bool isValid() const;
-		bool isTable(const std::string& sTable) const;
-		bool isTable(StringView sTable) const;
+		bool isTable(const std::string& sTable, bool only = false) const;
+		bool isTable(StringView sTable, bool only = false) const;
 
         bool isEmpty(const std::string& sTable) const
         {

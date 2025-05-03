@@ -1234,11 +1234,16 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 /// table.
 ///
 /// \param sTable const std::string&
+/// \param only bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::isTable(const std::string& sTable) const
+bool MemoryManager::isTable(const std::string& sTable, bool only) const
 {
+    if (only && (sTable.find('(') == std::string::npos
+                 || getMatchingParenthesis(sTable) != sTable.length() - 1))
+        return false;
+
     if (mCachesMap.find(sTable.substr(0, sTable.find('('))) != mCachesMap.end())
         return true;
 
@@ -1252,11 +1257,16 @@ bool MemoryManager::isTable(const std::string& sTable) const
 /// table.
 ///
 /// \param sTable StringView
+/// \param only bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::isTable(StringView sTable) const
+bool MemoryManager::isTable(StringView sTable, bool only) const
 {
+    if (only && (sTable.find('(') == std::string::npos
+                 || getMatchingParenthesis(sTable) != sTable.length() - 1))
+        return false;
+
     sTable = sTable.subview(0, sTable.find('('));
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)

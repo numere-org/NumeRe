@@ -576,11 +576,16 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
             MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
             NumeRe::WinItemValue value;
 
-            if (_memManager.containsTables(sValue))
+            if (_memManager.isTable(sValue, true))
             {
                 DataAccessParser _access(sValue, false);
+                _access.evalIndices(true);
                 value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
-                value.val = mu::Value(_access.getDataObject() + "()");
+
+                if (!_access.isMatrix())
+                    value.val = _memManager.getElement(_access.getIndices().row, _access.getIndices().col, _access.getDataObject());
+                else
+                    value.val = mu::Value(_access.getDataObject() + "()");
             }
             else
                 value.val = cmdParser.getParsedParameterValue("value");
