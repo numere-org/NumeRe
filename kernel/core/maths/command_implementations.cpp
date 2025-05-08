@@ -20,6 +20,7 @@
 #include <gsl/gsl_sort.h>
 #include <algorithm>
 #include <memory>
+#include <regex>
 
 #include "command_implementations.hpp"
 #include "parser_functions.hpp"
@@ -4896,6 +4897,113 @@ void urlExecute(CommandLineParser& cmdParser)
     catch (url::Error& e)
     {
         throw SyntaxError(SyntaxError::URL_ERROR, cmdParser.getCommandLine(), cmdParser.parseExprAsString(), e.what());
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Handle mail actions based upon the
+/// command line arguments for the command "mail".
+///
+/// \param cmdParser CommandLineParser&
+/// \return void
+///
+/////////////////////////////////////////////////
+void mailClient(CommandLineParser& cmdParser)
+{
+    // Handle mail actions
+    try
+    {
+        // Get body, smtp server, username and password
+        std::string sBody = cmdParser.parseExprAsString();
+        std::string sServer = cmdParser.getParsedParameterValueAsString("server", "", true);
+        std::string sUserName = cmdParser.getParsedParameterValueAsString("usr", "", true);
+        std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
+        std::string sFromMail = cmdParser.getParsedParameterValueAsString("from", "", true);
+        std::string sSubject = cmdParser.getParsedParameterValueAsString("subject", "", true);
+
+        mu::Array rcpt;
+        mu::Array cc;
+        mu::Array bcc;
+
+        if (cmdParser.hasParam("rcpt"))
+            rcpt = cmdParser.getParsedParameterValue("rcpt");
+
+        if (cmdParser.hasParam("cc"))
+            cc = cmdParser.getParsedParameterValue("cc");
+
+        if (cmdParser.hasParam("bcc"))
+            bcc = cmdParser.getParsedParameterValue("bcc");
+
+        // Remove all CRLF combinations first
+        replaceAll(sBody, "\r\n", "\n");
+
+        // Ensure that the body does not exceed the RFC 5322
+        // line length limit
+        std::vector<std::string> vLines = splitIntoLines(sBody, 78, true, 0, 0);
+        sBody.clear();
+
+        for (const auto& line : vLines)
+        {
+            if (sBody.length())
+                sBody += "\n";
+
+            sBody += line;
+        }
+
+        // Prepare the actual mail body from the string
+        std::string sHeader;
+        sHeader = "Date: " + formatRfc5322(sys_time_now()) + "\n";
+
+        if (sFromMail.length())
+            sHeader += "From: NumeRe <" + sFromMail + ">\n";
+
+        if (rcpt.size())
+            sHeader += "To: <" + rcpt.printJoined(">,<") + ">\n";
+
+        if (cc.size())
+            sHeader += "Cc: <" + cc.printJoined(">,<") + ">\n";
+
+        if (bcc.size())
+            sHeader += "Bcc: <" + bcc.printJoined(">,<") + ">\n";
+
+        if (sFromMail.length())
+            sHeader += "Message-ID: <" + getUuidV4() + sFromMail.substr(sFromMail.find('@')) + ">\n";
+
+        sHeader += "Subject: " + sSubject + "\n";
+
+        // Insert an empty line to divide headers from body, see RFC 5322
+        sBody = sHeader + "\n" + sBody;
+
+        // Convert all line breaks into CRLF combinations
+        replaceAll(sBody, "\n", "\r\n");
+
+        // Combine all recipient types into a common recipients list
+        if (cc.size())
+            rcpt.insert(rcpt.end(), cc.begin(), cc.end());
+
+        if (bcc.size())
+            rcpt.insert(rcpt.end(), bcc.begin(), bcc.end());
+
+        // Validate all available recipient addresses
+        static const std::regex mailValidator("^[^\\s@]+@([^\\s@.,]+\\.)+[^\\s@.,]{2,}$");
+
+        if (sFromMail.length() && !std::regex_match(sFromMail, mailValidator))
+            throw url::Error(sFromMail + " is not a valid mail address.");
+
+        for (const mu::Value& mail : rcpt)
+        {
+            if (!std::regex_match(mail.printVal(), mailValidator))
+                throw url::Error(mail.printVal() + " is not a valid mail address.");
+        }
+
+        // Send the mail to the recipients
+        size_t bytes = url::sendMail(sServer, sBody, sUserName, sPassword, sFromMail, rcpt.as_str_vector());
+        cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
+    }
+    catch (url::Error& e)
+    {
+        throw SyntaxError(SyntaxError::MAIL_ERROR, cmdParser.getCommandLine(), cmdParser.parseExprAsString(), e.what());
     }
 }
 

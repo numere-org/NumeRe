@@ -5055,6 +5055,24 @@ static CommandReturnValues cmd_url(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
+/// "mail" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_mail(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "mail", CommandLineParser::CMD_EXPR_set_PAR);
+    mailClient(cmdParser);
+    sCmd = cmdParser.getReturnValueStatement();
+
+    return COMMAND_HAS_RETURNVALUE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
 /// "qrcode" command.
 ///
 /// \param sCmd string&
@@ -5285,6 +5303,7 @@ static std::map<std::string, CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["integrate"] = cmd_integrate;
     mCommandFuncMap["integrate2d"] = cmd_integrate;
     mCommandFuncMap["load"] = cmd_load;
+    mCommandFuncMap["mail"] = cmd_mail;
     mCommandFuncMap["pso"] = cmd_pso;
     mCommandFuncMap["pulse"] = cmd_pulse;
     mCommandFuncMap["read"] = cmd_read;

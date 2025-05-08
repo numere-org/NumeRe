@@ -2,3 +2,5 @@ Fixed	Symbols created with "declare" may now also be used together with methods.
 New	The function "getuserinfo()" will return information about the user name, id and homedir.
 Fixed	The support for logical operations on strings was improved.
 Fixed	Table cells can now be used for window item values as expected.
+New	The command "mail" can be used to send e-mails via SMTP.
+Added	The constant "loremipsum" contains the famous text to be used as example text.

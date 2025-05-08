@@ -25,6 +25,7 @@
 #include "../kernel/core/utils/tools.hpp"
 #include "curlcpp.hpp"
 #include <fstream>
+#include <sstream>
 
 // Further possible features enabled in cURL:
 // DICT FILE FTPS GOPHER GOPHERS IMAP IMAPS LDAP MQTT POP3 POP3S RTSP SCP SFTP SMB SMBS SMTP SMTPS TELNET TFTP
@@ -71,8 +72,8 @@ namespace url
     /////////////////////////////////////////////////
     static size_t reader(char *ptr, size_t size, size_t nmemb, void *stream)
     {
-        std::ifstream* filestream = static_cast<std::ifstream*>(stream);
-        size_t bytes = filestream->readsome(ptr, size * nmemb);
+        std::istream* inStream = static_cast<std::istream*>(stream);
+        size_t bytes = inStream->readsome(ptr, size * nmemb);
         return bytes;
     }
 
@@ -285,6 +286,50 @@ namespace url
 
 
     /////////////////////////////////////////////////
+    /// \brief libcurl mail initialization.
+    ///
+    /// \param sUrl const std::string&
+    /// \param sUserName const std::string&
+    /// \param sPassWord const std::string&
+    /// \param sFromMail const std::string&
+    /// \param recipients const std::vector<std::string>&
+    /// \param body std::istringstream*
+    /// \param bodysize size_t
+    /// \return CurlCpp
+    ///
+    /////////////////////////////////////////////////
+    static CurlCpp mail_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::string& sFromMail, const std::vector<std::string>& recipients, std::istringstream* body, size_t bodysize)
+    {
+        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, std::vector<std::string>());
+
+        // This line enables the use of STARTTLS
+        if (!sUrl.starts_with("smtps://")
+            && (sUrl.ends_with(":465") || sUrl.ends_with(":587"))
+            && !curl.setOption(CURLOPT_USE_SSL, (long)CURLUSESSL_ALL))
+            throw Error("Failed to set SSL option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_UPLOAD, 1L))
+            throw Error("Failed to set upload option [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_READFUNCTION, reader))
+            throw Error("Failed to set reader [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_MAIL_FROM, sFromMail.c_str()))
+            throw Error("Failed to set from-mail [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setRecipients(recipients))
+            throw Error("Failed to set recipients list [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_READDATA, body))
+            throw Error("Failed to set body stream [" + std::string(errorBuffer) + "].");
+
+        curl.setOption(CURLOPT_INFILESIZE, bodysize);
+
+        return curl;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get the contents of a URL.
     ///
     /// \param sUrl const std::string&
@@ -376,5 +421,42 @@ namespace url
         // Return the file size
         return buffer;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Send a mail to the recipients list.
+    /// The mail body must follow RFC 5322 and is not
+    /// modified via this function.
+    ///
+    /// \param sUrl const std::string&
+    /// \param sBody const std::string&
+    /// \param sUserName const std::string&
+    /// \param sPassWord const std::string&
+    /// \param sFromMail const std::string&
+    /// \param recipients const std::vector<std::string>&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t sendMail(const std::string& sUrl, const std::string& sBody, const std::string& sUserName, const std::string& sPassWord, const std::string& sFromMail, const std::vector<std::string>& recipients)
+    {
+        std::istringstream bodyStream(sBody);
+
+        if (!sBody.length())
+            throw Error("No mail body attached.");
+
+        if (!recipients.size())
+            throw Error("No mail recipients defined.");
+
+        // Initialize CURL connection
+        CurlCpp curl = mail_init(sUrl, sUserName, sPassWord, sFromMail, recipients, &bodyStream, sBody.length());
+
+        // Retrieve content for the URL
+        if (!curl.perform())
+            throw Error("Failed to send mail via '" + sUrl + "': " + std::string(errorBuffer) + ".");
+
+        // Return the file size
+        return sBody.length();
+    }
+
 }
 

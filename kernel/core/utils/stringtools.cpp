@@ -395,6 +395,43 @@ std::string formatDuration(double dDuration)
 
 
 /////////////////////////////////////////////////
+/// \brief Formats a time-point according RFC
+/// 5322.
+///
+/// \param tp sys_time_point
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string formatRfc5322(sys_time_point tp)
+{
+    time_stamp ltm = getTimeStampFromTimePoint(tp);
+    time_zone tz = getCurrentTimeZone();
+
+    bool neg = (tz.Bias + tz.DayLightBias).count() > 0; // bias is oriented the other way around
+
+    int biasHours = std::abs((tz.Bias + tz.DayLightBias).count() / 60);
+    int biasMinutes = std::abs((tz.Bias + tz.DayLightBias).count()) - 60 * biasHours;
+
+    static const std::string MONTHNAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+    std::ostringstream timeStream;
+
+    // Mon, 29 Nov 2010 21:54:29 +1100
+    timeStream << std::setfill('0') << std::setw(2) << unsigned(ltm.m_ymd.day()) << " ";
+    timeStream << MONTHNAMES[(unsigned)ltm.m_ymd.month()-1] << " ";
+    timeStream << ltm.m_ymd.year() << " ";
+    timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() << ":"
+        << std::setfill('0') << std::setw(2) << ltm.m_minutes.count() << ":"
+        << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();
+
+    if (biasHours || biasMinutes)
+        timeStream << (neg ? " -" : " +") << std::setfill('0') << std::setw(2) << biasHours << std::setfill('0') << std::setw(2) << biasMinutes;
+
+    return timeStream.str();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function converts a std::string
 /// into a std::vector, where the string shall be
 /// passed as "{x,y,z,...}"

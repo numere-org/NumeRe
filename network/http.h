@@ -50,6 +50,9 @@ namespace url
 
     std::string post(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "",
                      const std::vector<std::string>& httpHeader = std::vector<std::string>(), const std::string& sPayLoad = "");
+
+    size_t sendMail(const std::string& sUrl, const std::string& sBody, const std::string& sUserName, const std::string& sPassWord,
+                    const std::string& sFromMail, const std::vector<std::string>& recipients);
 }
 
 #endif // HTTP_H

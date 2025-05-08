@@ -229,6 +229,7 @@ class SyntaxError
             UNKNOWN_PATH_TOKEN=3900,
             UNMATCHED_PARENTHESIS=4000,
             URL_ERROR,
+            MAIL_ERROR,
             WRONG_ARG_NAME=4100,
             WRONG_MATRIX_DIMENSIONS_FOR_MATOP,
             WRONG_PLOT_INTERVAL_FOR_LOGSCALE,

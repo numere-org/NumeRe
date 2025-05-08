@@ -226,6 +226,7 @@ EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 bool isDelimiter(char cChar);
 bool fileExists(const std::string& sFilename);
 bool isInt(const std::complex<double>& number);
+std::string getUuidV4();
 
 #endif
 

@@ -31,6 +31,7 @@ class CurlCpp
     private:
         CURL* m_curlInstance;
         curl_slist* m_httpHeader;
+        curl_slist* m_recipients;
 
         /////////////////////////////////////////////////
         /// \brief Reset this instance.
@@ -45,6 +46,9 @@ class CurlCpp
 
             if (m_httpHeader)
                 curl_slist_free_all(m_httpHeader);
+
+            if (m_recipients)
+                curl_slist_free_all(m_recipients);
         }
 
     public:
@@ -55,7 +59,7 @@ class CurlCpp
         /// \param autoInit bool
         ///
         /////////////////////////////////////////////////
-        CurlCpp(bool autoInit = false) : m_curlInstance(nullptr), m_httpHeader(nullptr)
+        CurlCpp(bool autoInit = false) : m_curlInstance(nullptr), m_httpHeader(nullptr), m_recipients(nullptr)
         {
             if (autoInit)
                 init();
@@ -71,9 +75,11 @@ class CurlCpp
         {
             m_curlInstance = curl.m_curlInstance;
             m_httpHeader = curl.m_httpHeader;
+            m_recipients = curl.m_recipients;
 
             curl.m_curlInstance = nullptr;
             curl.m_httpHeader = nullptr;
+            curl.m_recipients = nullptr;
         }
 
         // No copy constructor
@@ -103,9 +109,11 @@ class CurlCpp
 
             m_curlInstance = curl.m_curlInstance;
             m_httpHeader = curl.m_httpHeader;
+            m_recipients = curl.m_recipients;
 
             curl.m_curlInstance = nullptr;
             curl.m_httpHeader = nullptr;
+            curl.m_recipients = nullptr;
 
             return *this;
         }
@@ -163,6 +171,26 @@ class CurlCpp
                 m_curlInstance = curl_easy_init();
 
             return setOption(CURLOPT_HTTPHEADER, m_httpHeader);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Set the list of mail recipients.
+        ///
+        /// \param recipients const std::vector<std::string>&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool setRecipients(const std::vector<std::string>& recipients)
+        {
+            for (const auto& recipient : recipients)
+            {
+                m_recipients = curl_slist_append(m_recipients, recipient.c_str());
+            }
+
+            if (!m_curlInstance)
+                m_curlInstance = curl_easy_init();
+
+            return setOption(CURLOPT_MAIL_RCPT, m_recipients);
         }
 
         /////////////////////////////////////////////////

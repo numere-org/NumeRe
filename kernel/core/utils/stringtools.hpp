@@ -442,6 +442,7 @@ std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
 std::string toHexString(size_t nNumber);
 std::string formatDuration(double dDuration);
+std::string formatRfc5322(sys_time_point tp);
 
 /////////////////////////////////////////////////
 /// \brief This function converts a std::vector

@@ -29,6 +29,7 @@
 #define SECURITY_WIN32
 #include <secext.h>
 #include <lmcons.h>
+#include "../../../externals/stduuid/include/uuid.h"
 
 
 
@@ -3860,6 +3861,24 @@ EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList)
 bool isInt(const std::complex<double>& number)
 {
     return number.imag() == 0.0 && fabs(number.real() - rint(number.real())) < 1e-12;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return a new string-encoded UUID in V4
+/// format.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string getUuidV4()
+{
+    std::mt19937& generator = getRandGenInstance();
+    uuids::uuid_random_generator gen{generator};
+
+    const uuids::uuid id = gen();
+
+    return uuids::to_string(id);
 }
 
 

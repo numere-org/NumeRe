@@ -512,6 +512,7 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("cf32_max", std::complex<float>(__FLT_MAX__, __FLT_MAX__));
     _parser.DefineConst("cf32_min", std::complex<float>(__FLT_MIN__, __FLT_MIN__));
     _parser.DefineConst("cf32_eps", std::complex<float>(__FLT_EPSILON__, __FLT_EPSILON__));
+    _parser.DefineConst("loremipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 }
 
 
