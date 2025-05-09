@@ -89,7 +89,7 @@ static void ColouriseMatlabOctaveDoc(
 	bool transpose = false;
 
 	StyleContext sc(startPos, length, initStyle, styler);
-	
+
 	// Get the parentheses before the current block
 	int nParens = GetParenthesesCount(startPos, styler);
 
@@ -186,7 +186,7 @@ static void ColouriseMatlabOctaveDoc(
 					transpose = false;
 				}
 				if (sc.ch == '(' || sc.ch == '[' || sc.ch == '{')
-					nParens++;				
+					nParens++;
 				if (sc.ch == ')' || sc.ch == ']' || sc.ch == '}')
 					nParens--;
 				sc.SetState(SCE_MATLAB_OPERATOR);
@@ -223,7 +223,7 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 	char chNext = styler[startPos];
 	int styleNext = styler.StyleAt(startPos);
 	int style = initStyle;
-	for (unsigned int i = startPos; i < endPos; i++) 
+	for (unsigned int i = startPos; i < endPos; i++)
 	{
 		char ch = chNext;
 		chNext = styler.SafeGetCharAt(i + 1);
@@ -241,7 +241,7 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 			int nPar = 0;
 			for (int j = i; j < endPos; j++)
 			{
-				atEOL = (styler.SafeGetCharAt(j) == '\r' && styler.SafeGetCharAt(j+1) != '\n') 
+				atEOL = (styler.SafeGetCharAt(j) == '\r' && styler.SafeGetCharAt(j+1) != '\n')
 					|| (styler.SafeGetCharAt(j) == '\n');
 				if (styler.StyleAt(j) == SCE_MATLAB_OPERATOR &&
 					(styler.SafeGetCharAt(j) == '('
@@ -253,7 +253,7 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 					|| styler.SafeGetCharAt(j) == '}'
 					|| styler.SafeGetCharAt(j) == ']'))
 					nPar--;
-				if (atEOL) 
+				if (atEOL)
 				{
 					int levelUse = levelCurrent;
 					levelUse = levelMinCurrent;
@@ -262,7 +262,7 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 						lev |= SC_FOLDLEVELWHITEFLAG;*/
 					if (levelUse < levelNext)
 						lev |= SC_FOLDLEVELHEADERFLAG;
-					if (lev != styler.LevelAt(lineCurrent)) 
+					if (lev != styler.LevelAt(lineCurrent))
 					{
 						styler.SetLevel(lineCurrent, lev);
 					}
@@ -279,9 +279,9 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 			}
 			continue;
 		}
-		if (style == SCE_MATLAB_KEYWORD) 
+		if (style == SCE_MATLAB_KEYWORD)
 		{
-			if (styler.Match(i, "end"))			
+			if (styler.Match(i, "end"))
 			{
 				levelNext--;
 			}
@@ -295,13 +295,14 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 					|| styler.Match(i, "classdef")
 					|| styler.Match(i, "methods")
 					|| styler.Match(i, "properties")
+					|| styler.Match(i, "arguments")
 					|| styler.Match(i, "function"))
-				) 
+				)
 			{
 				levelNext++;
 			}
 		}
-		if (atEOL || (i == endPos-1)) 
+		if (atEOL || (i == endPos-1))
 		{
 			int levelUse = levelCurrent;
 			levelUse = levelMinCurrent;
@@ -310,7 +311,7 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 				lev |= SC_FOLDLEVELWHITEFLAG;*/
 			if (levelUse < levelNext)
 				lev |= SC_FOLDLEVELHEADERFLAG;
-			if (lev != styler.LevelAt(lineCurrent)) 
+			if (lev != styler.LevelAt(lineCurrent))
 			{
 				styler.SetLevel(lineCurrent, lev);
 			}
@@ -323,7 +324,7 @@ static void FoldMatlabOctaveDoc(unsigned int startPos, int length, int initStyle
 			visibleChars++;
 	}
 
-								
+
 	/*int endPos = startPos + length;
 
 	// Backtrack to previous line in case need to fix its fold status

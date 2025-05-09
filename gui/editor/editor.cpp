@@ -3738,15 +3738,7 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
             {
                 wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-                if (currentWord == "for"
-                        || currentWord == "while"
-                        || currentWord == "function"
-                        || currentWord == "if"
-                        || currentWord == "switch"
-                        || currentWord == "try"
-                        || currentWord == "classdef"
-                        || currentWord == "properties"
-                        || currentWord == "methods")
+                if (isBlockStart(currentWord, false) != wxNOT_FOUND)
                     nBlock--;
                 else if (currentWord == "end")
                     nBlock++;
@@ -3789,15 +3781,7 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
             {
                 wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-                if (currentWord == "for"
-                        || currentWord == "while"
-                        || currentWord == "function"
-                        || currentWord == "if"
-                        || currentWord == "switch"
-                        || currentWord == "try"
-                        || currentWord == "classdef"
-                        || currentWord == "properties"
-                        || currentWord == "methods")
+                if (isBlockStart(currentWord, false) != wxNOT_FOUND)
                     nBlock--;
                 else if (currentWord == "end")
                     nBlock++;
@@ -3846,15 +3830,7 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
             {
                 wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-                if (currentWord == "for"
-                        || currentWord == "while"
-                        || currentWord == "function"
-                        || currentWord == "if"
-                        || currentWord == "switch"
-                        || currentWord == "try"
-                        || currentWord == "classdef"
-                        || currentWord == "properties"
-                        || currentWord == "methods")
+                if (isBlockStart(currentWord, false) != wxNOT_FOUND)
                     nBlock--;
                 else if (currentWord == "end")
                     nBlock++;
@@ -3903,15 +3879,7 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
             {
                 wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-                if (currentWord == "for"
-                        || currentWord == "while"
-                        || currentWord == "function"
-                        || currentWord == "if"
-                        || currentWord == "switch"
-                        || currentWord == "try"
-                        || currentWord == "classdef"
-                        || currentWord == "properties"
-                        || currentWord == "methods")
+                if (isBlockStart(currentWord, false) != wxNOT_FOUND)
                     nBlock--;
                 else if (currentWord == "end")
                     nBlock++;
@@ -3949,15 +3917,7 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
         endblock = "end";
     }
 
-    if (startblock == "for"
-            || startblock == "while"
-            || startblock == "function"
-            || startblock == "if"
-            || startblock == "switch"
-            || startblock == "try"
-            || startblock == "classdef"
-            || startblock == "properties"
-            || startblock == "methods")
+    if (isBlockStart(startblock, false) != wxNOT_FOUND)
         endblock = "end";
     else
     {
@@ -3976,24 +3936,14 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
 
     vPos.push_back(nStartPos);
 
-    //if (nSearchDir == -1)
-    //    nStartPos = WordEndPosition(nPos, true);
-
-    for (int i = nStartPos; (i < GetLastPosition() && i >= 0); i += nSearchDir) // iterates down, if nSearchDir == 1, and up of nSearchDir == -1
+    // iterates down, if nSearchDir == 1, and up of nSearchDir == -1
+    for (int i = nStartPos; (i < GetLastPosition() && i >= 0); i += nSearchDir)
     {
         if (GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
         {
             wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-            if (currentWord == "for"
-                    || currentWord == "while"
-                    || currentWord == "function"
-                    || currentWord == "if"
-                    || currentWord == "switch"
-                    || currentWord == "try"
-                    || currentWord == "classdef"
-                    || currentWord == "properties"
-                    || currentWord == "methods")
+            if (isBlockStart(currentWord, false) != wxNOT_FOUND)
                 nBlock += nSearchDir; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
             else if (currentWord == "end")
                 nBlock -= nSearchDir;
@@ -7673,9 +7623,11 @@ int NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
     else if (m_fileType == FILE_MATLAB)
         return (sWord == "if"
                 || sWord == "for"
+                || sWord == "parfor"
                 || sWord == "do"
                 || sWord == "while"
                 || sWord == "classdef"
+                || sWord == "arguments"
                 || sWord == "properties"
                 || sWord == "function"
                 || sWord == "methods"
@@ -7802,8 +7754,10 @@ int NumeReEditor::getBlockID(const wxString& word)
     else if (m_fileType == FILE_MATLAB)
         return word == "if"
             || word == "for"
+            || word == "parfor"
             || word == "while"
             || word == "classdef"
+            || word == "arguments"
             || word == "properties"
             || word == "function"
             || word == "methods"
