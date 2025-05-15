@@ -2937,6 +2937,7 @@ mu::Array strfnc_getuilang()
 mu::Array strfnc_getuserinfo()
 {
     mu::Array userinfo;
+#ifndef PARSERSTANDALONE
     userinfo.push_back("GivenName");
     userinfo.push_back(getUserDisplayName(true));
     userinfo.push_back("FullName");
@@ -2945,7 +2946,7 @@ mu::Array strfnc_getuserinfo()
     userinfo.push_back(wxGetUserId().ToStdString());
     userinfo.push_back("UserProfile");
     userinfo.push_back(replacePathSeparator(getenv("USERPROFILE")));
-
+#endif
     return userinfo;
 }
 

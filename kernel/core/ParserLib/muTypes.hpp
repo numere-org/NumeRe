@@ -131,7 +131,6 @@ namespace mu
             };
 
             NumericalType m_type;
-            TypeInfo m_info;
 
             InternalType getConversion(NumericalType promotion) const;
 

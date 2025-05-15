@@ -23,10 +23,6 @@
 #include "../../kernel.hpp"
 #endif
 
-#warning TODO (numere#2#08/14/24): Handle new method types within autocompletion -> NEW ISSUE
-#warning TODO (numere#3#08/13/24): Update user documentation
-
-
 
 namespace mu
 {

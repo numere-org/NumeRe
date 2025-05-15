@@ -329,7 +329,6 @@ namespace mu
     /////////////////////////////////////////////////
     Value& Value::operator=(const Value& other)
     {
-        //Timer t("Value::operator=(&)");
         if (m_type != other.m_type)
         {
             if (m_data)
@@ -1592,7 +1591,6 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Array::operator=(const Array& other)
     {
-        //Timer t("Array::operator=(&)");
         if (other.size() == 1)
         {
             if (other.front().isArray())
@@ -1603,6 +1601,7 @@ namespace mu
         }
         else
         {
+            //Timer t("Array::operator=(&)");
             resize(other.size());
 
             //#pragma omp parallel for if(size() > 500)

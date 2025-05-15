@@ -24,31 +24,396 @@
 #include "../maths/functionimplementation.hpp"
 #include "../strings/functionimplementation.hpp"
 
+#include "../utils/timer.hpp"
+
 Language _lang;
 
-struct Base
+namespace mu
 {
-    virtual void hello() {std::cout << "Base" << std::endl;}
-};
-struct Child : public Base
+    class BaseValue
+    {
+        public:
+            DataType m_type;
+
+            virtual ~BaseValue() {}
+            virtual BaseValue& operator=(const BaseValue& other) = 0;
+            virtual BaseValue* clone() = 0;
+
+            virtual BaseValue* operator+(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue* operator-() const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue* operator-(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue* operator/(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue* operator*(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+
+            virtual BaseValue& operator+=(const BaseValue& other)
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue& operator-=(const BaseValue& other)
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue& operator/=(const BaseValue& other)
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual BaseValue& operator*=(const BaseValue& other)
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+
+            virtual BaseValue& pow(const BaseValue& other)
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+
+            virtual bool operator!() const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual bool operator==(const BaseValue& other) const
+            {
+                throw m_type == other.m_type;
+            }
+            virtual bool operator!=(const BaseValue& other) const
+            {
+                throw m_type != other.m_type;
+            }
+            virtual bool operator<(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual bool operator<=(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual bool operator>(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual bool operator>=(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+
+            virtual bool operator&&(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            virtual bool operator||(const BaseValue& other) const
+            {
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+
+            virtual size_t getBytes() const = 0;
+
+            virtual bool isMethod(const std::string& sMethod) const
+            {
+                return false;
+            }
+            virtual BaseValue* call(const std::string& sMethod) const
+            {
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+            }
+            virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const
+            {
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+            }
+            virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
+            {
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+            }
+    };
+
+    #define IMPL_DEFAULTS(CLASS, ID, TYPE, ATTR)                  \
+    private:                                                      \
+        TYPE ATTR;                                                \
+    public:                                                       \
+        CLASS() : BaseValue(), ATTR()                             \
+        {                                                         \
+            m_type = ID;                                          \
+        }                                                         \
+        CLASS(const TYPE& val) : BaseValue(), ATTR(val)           \
+        {                                                         \
+            m_type = ID;                                          \
+        }                                                         \
+        CLASS(const CLASS& other): BaseValue()                    \
+        {                                                         \
+            m_type = ID;                                          \
+            ATTR = other.ATTR;                                    \
+        }                                                         \
+        CLASS(CLASS&& other) = default;                           \
+        CLASS(const BaseValue& other) : BaseValue()               \
+        {                                                         \
+            m_type = ID;                                          \
+            if (other.m_type == ID)                               \
+                ATTR = static_cast<const CLASS&>(other).ATTR;     \
+            else                                                  \
+                throw ParserError(ecASSIGNED_TYPE_MISMATCH);      \
+        }                                                         \
+        CLASS& operator=(const BaseValue& other) override         \
+        {                                                         \
+            if (other.m_type == ID)                               \
+                ATTR = static_cast<const CLASS&>(other).ATTR;     \
+            else                                                  \
+                throw ParserError(ecASSIGNED_TYPE_MISMATCH);      \
+            return *this;                                         \
+        }                                                         \
+        CLASS& operator=(const TYPE& val)                         \
+        {                                                         \
+            ATTR = val;                                           \
+            return *this;                                         \
+        }                                                         \
+        CLASS& operator=(const CLASS& other)                      \
+        {                                                         \
+            ATTR = other.ATTR;                                    \
+            return *this;                                         \
+        }                                                         \
+        CLASS& operator=(CLASS&& other) = default;                \
+        BaseValue* clone() override                               \
+        {                                                         \
+            return new CLASS(*this);                              \
+        }                                                         \
+        TYPE& get()                                               \
+        {                                                         \
+            return ATTR;                                          \
+        }                                                         \
+        const TYPE& get() const                                   \
+        {                                                         \
+            return ATTR;                                          \
+        }
+
+    class NumericValue : public BaseValue
+    {
+        IMPL_DEFAULTS(NumericValue, TYPE_NUMERICAL, mu::Numerical, m_val)
+
+        BaseValue& operator+=(const BaseValue& other) override
+        {
+            if (other.m_type == TYPE_NUMERICAL)
+                m_val += static_cast<const NumericValue&>(other).m_val;
+            else
+                throw ParserError(ecTYPE_MISMATCH);
+            return *this;
+        }
+        BaseValue* operator+(const BaseValue& other) const override
+        {
+            if (other.m_type == TYPE_NUMERICAL)
+                return new NumericValue(m_val + static_cast<const NumericValue&>(other).m_val);
+
+            throw ParserError(ecTYPE_MISMATCH);
+        }
+
+        size_t getBytes() override const
+        {
+            return m_val.getBytes();
+        }
+    };
+
+
+    class StringValue : public BaseValue
+    {
+        IMPL_DEFAULTS(StringValue, TYPE_STRING, std::string, m_val)
+
+        BaseValue& operator+=(const BaseValue& other) override
+        {
+            if (other.m_type == TYPE_STRING)
+                m_val += static_cast<const StringValue&>(other).m_val;
+            else
+                throw ParserError(ecTYPE_MISMATCH);
+            return *this;
+        }
+        BaseValue* operator+(const BaseValue& other) const override
+        {
+            if (other.m_type == TYPE_STRING)
+                return new StringValue(m_val + static_cast<const StringValue&>(other).m_val);
+
+            throw ParserError(ecTYPE_MISMATCH);
+        }
+
+        size_t getBytes() override const
+        {
+            return m_val.length();
+        }
+    };
+}
+
+class Value : public std::unique_ptr<mu::BaseValue>
 {
-    virtual void hello() {std::cout << "Child" << std::endl;}
+    public:
+        Value() : std::unique_ptr<mu::BaseValue>() {}
+        Value(mu::BaseValue* other) : std::unique_ptr<mu::BaseValue>(other) {}
+        Value(const mu::Numerical& val) : Value()
+        {
+            reset(new NumericValue(val));
+        }
+        Value(bool logical) : Value()
+        {
+            reset(new NumericalValue(logical));
+        }
+        Value(const std::string& val) : Value()
+        {
+            reset(new StringValue(val));
+        }
+        Value(const char* val) : Value()
+        {
+            reset(new StringValue(val));
+        }
+        Value(const Value& other)
+        {
+            if (other)
+                reset(other->clone());
+        }
+        Value(Value&& other)
+        {
+            reset(other.release());
+        }
+        Value& operator=(const Value& other)
+        {
+            if ((!get() && other) || (get()->m_type != other->m_type))
+                reset(other->clone());
+            else
+                *get() = *other;
+
+            return *this;
+        }
+        Value& operator+=(const Value& other)
+        {
+            if (get() && other)
+                *get() += *other;
+
+            return *this;
+        }
 };
+
+struct arr : public std::vector<Value>
+{
+    arr() = default;
+    arr(const arr& other) : arr()
+    {
+        resize(other.size());
+
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i).reset(other[i]->clone());
+        }
+    }
+    arr(arr&& other) = default;
+    arr& operator=(const arr& other)
+    {
+        //Timer t("arr::operator=()");
+        if (size() != other.size())
+            resize(other.size());
+
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = other[i];
+        }
+
+        return *this;
+    }
+    arr& operator+=(const arr& other)
+    {
+        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        {
+            operator[](i) += other[i];
+        }
+
+        return *this;
+    }
+    arr operator+(const arr& other) const
+    {
+        arr res;
+        res.resize(std::max(size(), other.size()));
+
+        for (size_t i = 0; i < res.size(); i++)
+        {
+            res[i].reset(*operator[](i) + *other[i]);
+        }
+
+        return res;
+    }
+};
+
+
+void testfunc(const std::vector<int>& oplist)
+{
+    arr testArr;
+
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+
+    {
+        Timer t("arr");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr += testArr;
+        }
+    }
+}
+
+
+void testfunc2(const std::vector<int>& oplist)
+{
+    mu::Array testArr;
+
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+
+    {
+        Timer t("mu::Array");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr += testArr;
+        }
+    }
+}
+
+
 
 
 int main()
 {
-    /*Base b;
-    Child c;
-
-    b.hello();
-    c.hello();
-
-    Base& rb = c;
-    rb.hello(); // "child"
-    Base b2 = c;
-    b2.hello(); // "base"
-    */
 
     mu::Parser _parser;
     _parser.EnableDebugDump(true, false);
@@ -129,6 +494,16 @@ int main()
     _parser.DefineVar("strvect", &stringVect);
     _parser.DefineVar("mixed", &mixed);
     _parser.DefineVar("categories", &categories);
+
+
+    testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc2({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc2({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
 
     while (true)
     {
