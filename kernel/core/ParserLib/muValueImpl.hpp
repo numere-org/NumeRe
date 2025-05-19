@@ -32,7 +32,7 @@ namespace mu
         VoidValue(const VoidValue& other);
         BaseValue& operator=(const BaseValue& other) override;
         BaseValue& operator=(const VoidValue& other) override;
-        BaseValue* clone() override;
+        BaseValue* clone() const override;
 
         bool operator==(const BaseValue& other) const override;
         bool operator<(const BaseValue& other) const override;
@@ -40,8 +40,9 @@ namespace mu
         size_t getBytes() const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
+    */
 
     class NeutralValue : public BaseValue
     {
@@ -49,8 +50,8 @@ namespace mu
         NeutralValue();
         NeutralValue(const NeutralValue& other);
         BaseValue& operator=(const BaseValue& other) override;
-        BaseValue& operator=(const NeutralValue& other) override;
-        BaseValue* clone() override;
+        BaseValue& operator=(const NeutralValue& other);
+        BaseValue* clone() const override;
 
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
@@ -58,22 +59,15 @@ namespace mu
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
 
-        BaseValue& operator+=(const BaseValue& other) override;
-        BaseValue& operator-=(const BaseValue& other) override;
-        BaseValue& operator/=(const BaseValue& other) override;
-        BaseValue& operator*=(const BaseValue& other) override;
-
-        BaseValue* pow(const BaseValue& other) const override;
-
+        operator bool() const;
         bool operator==(const BaseValue& other) const override;
         bool operator<(const BaseValue& other) const override;
 
         size_t getBytes() const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
-    */
 
     class NumValue : public BaseValue
     {
@@ -99,7 +93,7 @@ namespace mu
         size_t getBytes() const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
 
 
@@ -120,7 +114,7 @@ namespace mu
         size_t getBytes() const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
 
 
@@ -134,13 +128,6 @@ namespace mu
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
 
-        BaseValue& operator+=(const BaseValue& other) override;
-        BaseValue& operator-=(const BaseValue& other) override;
-        BaseValue& operator/=(const BaseValue& other) override;
-        BaseValue& operator*=(const BaseValue& other) override;
-
-        BaseValue* pow(const BaseValue& other) const override;
-
         operator bool() const override;
         bool operator==(const BaseValue& other) const override;
         bool operator<(const BaseValue& other) const override;
@@ -148,7 +135,7 @@ namespace mu
         size_t getBytes() const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
 
 
@@ -176,7 +163,7 @@ namespace mu
         size_t getBytes() const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
 }
 

@@ -24,11 +24,414 @@
 #include "../strings/functionimplementation.hpp" // for string method callees
 #include "../maths/functionimplementation.hpp" // for numerical method callees
 
+#include "muValueImpl.hpp"
+
 #warning FIXME (numere#1#12/09/24): Removed all move operations due to memory leaks
 
+#define VALUE20
 
 namespace mu
 {
+#ifdef VALUE20
+    Value::Value() : std::unique_ptr<BaseValue>()
+    { }
+    Value::Value(const Value& data)
+    {
+        if (data.get())
+            reset(data->clone());
+    }
+    Value::Value(BaseValue* other) : std::unique_ptr<BaseValue>(other)
+    { }
+    Value::Value(const Numerical& data)
+    {
+        reset(new NumValue(data));
+    }
+    Value::Value(const Category& data)
+    {
+        reset(new CatValue(data));
+    }
+    Value::Value(const Array& data)
+    {
+        reset(new ArrValue(data));
+    }
+    Value::Value(bool logical) : Value(Numerical(logical))
+    { }
+    Value::Value(int32_t value) : Value(Numerical(value))
+    { }
+    Value::Value(uint32_t value) : Value(Numerical(value))
+    { }
+    Value::Value(int64_t value) : Value(Numerical(value))
+    { }
+    Value::Value(uint64_t value) : Value(Numerical(value))
+    { }
+    Value::Value(double value) : Value(Numerical(value))
+    { }
+    Value::Value(const sys_time_point& value) : Value(Numerical(value))
+    { }
+    Value::Value(const std::complex<float>& value) : Value(Numerical(value))
+    { }
+    Value::Value(const std::complex<double>& value, bool autoType)
+    {
+        reset(new NumValue(Numerical(value, autoType ? AUTO : CF64)));
+    }
+    Value::Value(const std::string& sData)
+    {
+        reset(new StrValue(sData));
+    }
+    Value::Value(const char* sData)
+    {
+        reset(new StrValue(sData));
+    }
+    Value::Value(DataType type)
+    {
+        switch (type)
+        {
+            case TYPE_CATEGORY:
+               reset(new CatValue);
+                break;
+            case TYPE_INVALID:
+                reset(new NeutralValue);
+                break;
+            case TYPE_NUMERICAL:
+                reset(new NumValue);
+                break;
+            case TYPE_STRING:
+                reset(new StrValue);
+                break;
+            case TYPE_ARRAY:
+                reset(new ArrValue);
+                break;
+        }
+    }
+
+    Value::~Value()
+    { }
+
+    Value& Value::operator=(const Value& other)
+    {
+        if (this == &other)
+            return *this;
+
+        if (!other.get())
+            reset(nullptr);
+        else if (!get() || (get()->m_type != other->m_type))
+            reset(other->clone());
+        else// if (get() != other.get())
+            *get() = *other.get();
+
+        return *this;
+    }
+    //Value& operator=(Value&& other);
+
+    DataType Value::getType() const
+    {
+        if (get())
+            return get()->m_type;
+
+        return TYPE_VOID;
+    }
+
+    std::string Value::getTypeAsString() const
+    {
+        switch (getType())
+        {
+            case TYPE_CATEGORY:
+                return "category";
+            case TYPE_INVALID:
+                return "void";
+            case TYPE_NUMERICAL:
+                return getNum().getTypeAsString();
+            case TYPE_STRING:
+                return "string";
+            case TYPE_ARRAY:
+                return "cluster";
+        }
+
+        return "void";
+    }
+
+    bool Value::isVoid() const
+    {
+        return !get();
+    }
+    bool Value::isValid() const
+    {
+        return get() && bool(*get());
+    }
+    bool Value::isNumerical() const
+    {
+        return get() && (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_CATEGORY);
+    }
+    bool Value::isString() const
+    {
+        return get() && (get()->m_type == TYPE_STRING || get()->m_type == TYPE_CATEGORY);
+    }
+    bool Value::isCategory() const
+    {
+        return get() && get()->m_type == TYPE_CATEGORY;
+    }
+    bool Value::isArray() const
+    {
+        return get() && get()->m_type == TYPE_ARRAY;
+    }
+
+    std::string& Value::getStr()
+    {
+        if (get())
+        {
+            if (get()->m_type == TYPE_STRING)
+                return static_cast<StrValue*>(get())->get();
+            else if (get()->m_type == TYPE_CATEGORY)
+                return static_cast<CatValue*>(get())->get().name;
+        }
+
+        throw ParserError(ecTYPE_NO_STR);
+    }
+
+    const std::string& Value::getStr() const
+    {
+        if (get())
+        {
+            if (get()->m_type == TYPE_STRING)
+                return static_cast<const StrValue*>(get())->get();
+            else if (get()->m_type == TYPE_CATEGORY)
+                return static_cast<const CatValue*>(get())->get().name;
+        }
+
+        return m_defString;
+    }
+
+
+    Numerical& Value::getNum()
+    {
+        if (get())
+        {
+            if (get()->m_type == TYPE_NUMERICAL)
+                return static_cast<NumValue*>(get())->get();
+            else if (get()->m_type == TYPE_CATEGORY)
+                return static_cast<CatValue*>(get())->get().val;
+        }
+
+        throw ParserError(ecTYPE_NO_VAL);
+    }
+
+    const Numerical& Value::getNum() const
+    {
+        if (get())
+        {
+            if (get()->m_type == TYPE_NUMERICAL)
+                return static_cast<const NumValue*>(get())->get();
+            else if (get()->m_type == TYPE_CATEGORY)
+                return static_cast<const CatValue*>(get())->get().val;
+        }
+
+        return m_defVal;
+    }
+
+    Category& Value::getCategory()
+    {
+        if (get() && get()->m_type == TYPE_CATEGORY)
+            return static_cast<CatValue*>(get())->get();
+
+        throw ParserError(ecTYPE_NO_VAL);
+    }
+    const Category& Value::getCategory() const
+    {
+        if (get() && get()->m_type == TYPE_CATEGORY)
+            return static_cast<const CatValue*>(get())->get();
+
+        throw ParserError(ecTYPE_NO_VAL);
+    }
+
+    Array& Value::getArray()
+    {
+        if (get() && get()->m_type == TYPE_ARRAY)
+            return static_cast<ArrValue*>(get())->get();
+
+        throw ParserError(ecTYPE_NO_VAL);
+    }
+    const Array& Value::getArray() const
+    {
+        if (get() && get()->m_type == TYPE_ARRAY)
+            return static_cast<const ArrValue*>(get())->get();
+
+        throw ParserError(ecTYPE_NO_VAL);
+    }
+
+    std::complex<double> Value::as_cmplx() const
+    {
+        if (get())
+        {
+            if (get()->m_type == TYPE_NUMERICAL)
+                return static_cast<const NumValue*>(get())->get().asCF64();
+            else if (get()->m_type == TYPE_CATEGORY)
+                return static_cast<const CatValue*>(get())->get().val.asCF64();
+        }
+
+        return NAN;
+    }
+
+    Value Value::operator+(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() + *other.get();
+
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+
+    Value Value::operator-() const
+    {
+        if (get())
+            return -(*get());
+
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+    Value Value::operator-(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() - *other.get();
+
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+    Value Value::operator/(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() / *other.get();
+
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+    Value Value::operator*(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() * *other.get();
+
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+    Value& Value::operator+=(const Value& other)
+    {
+        if (get() && other.get())
+            *get() += *other.get();
+
+        return *this;
+    }
+    Value& Value::operator-=(const Value& other)
+    {
+        if (get() && other.get())
+            *get() -= *other.get();
+
+        return *this;
+    }
+    Value& Value::operator/=(const Value& other)
+    {
+        if (get() && other.get())
+            *get() /= *other.get();
+
+        return *this;
+    }
+    Value& Value::operator*=(const Value& other)
+    {
+        if (get() && other.get())
+            *get() *= *other.get();
+
+        return *this;
+    }
+
+    Value Value::pow(const Value& exponent) const
+    {
+        if (get() && exponent.get())
+            return get()->pow(*exponent.get());
+
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+
+    Value::operator bool() const
+    {
+        return get() && bool(*get());
+    }
+
+    Value Value::operator!() const
+    {
+        return get() && !*get();
+    }
+    Value Value::operator==(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() == *other.get();
+
+        return false;
+    }
+    Value Value::operator!=(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() != *other.get();
+
+        return false;
+    }
+    Value Value::operator<(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() < *other.get();
+
+        return false;
+    }
+    Value Value::operator<=(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() <= *other.get();
+
+        return false;
+    }
+    Value Value::operator>(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() > *other.get();
+
+        return false;
+    }
+    Value Value::operator>=(const Value& other) const
+    {
+        if (get() && other.get())
+            return *get() >= *other.get();
+
+        return false;
+    }
+
+    Value Value::operator&&(const Value& other) const
+    {
+        return bool(*this) && bool(other);
+    }
+    Value Value::operator||(const Value& other) const
+    {
+        return bool(*this) || bool(other);
+    }
+
+    std::string Value::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (get())
+            return get()->print(digits, chrs, trunc);
+
+        return "void";
+    }
+    std::string Value::printVal(size_t digits, size_t chrs) const
+    {
+        if (get())
+            return get()->printVal(digits, chrs);
+
+        return "void";
+    }
+    void Value::clear()
+    {
+        reset(nullptr);
+    }
+
+    size_t Value::getBytes() const
+    {
+        if (get())
+            return get()->getBytes();
+
+        return 0;
+    }
+#else
     /////////////////////////////////////////////////
     /// \brief Construct an empty Value instance.
     /////////////////////////////////////////////////
@@ -1395,7 +1798,7 @@ namespace mu
 
         return TYPE_MIXED;
     }
-
+#endif
 
 
 
@@ -3128,7 +3531,7 @@ namespace mu
     // Instantiation of the static member variables
     const std::string Value::m_defString;
     const Numerical Value::m_defVal;
-    const Value Array::m_default;
+    const Value Array::m_default(TYPE_INVALID);
 
 
 

@@ -22,6 +22,84 @@
 
 namespace mu
 {
+    NeutralValue::NeutralValue()
+    {
+        m_type = TYPE_INVALID;
+    }
+    NeutralValue::NeutralValue(const NeutralValue& other)
+    {
+        m_type = TYPE_INVALID;
+    }
+    BaseValue& NeutralValue::operator=(const BaseValue& other)
+    {
+        if (other.m_type != TYPE_INVALID)
+            throw ParserError(ecTYPE_MISMATCH_OOB);
+
+        return *this;
+    }
+    BaseValue& NeutralValue::operator=(const NeutralValue& other)
+    {
+        return *this;
+    }
+    BaseValue* NeutralValue::clone() const
+    {
+        return new NeutralValue(*this);
+    }
+
+    BaseValue* NeutralValue::operator+(const BaseValue& other) const
+    {
+        return other.clone();
+    }
+    BaseValue* NeutralValue::operator-() const
+    {
+        return clone();
+    }
+    BaseValue* NeutralValue::operator-(const BaseValue& other) const
+    {
+        return -other;
+    }
+    BaseValue* NeutralValue::operator/(const BaseValue& other) const
+    {
+        return NumValue(Numerical(0.0)) / other;// NumValue(Numerical(1.0)) / other;
+    }
+    BaseValue* NeutralValue::operator*(const BaseValue& other) const
+    {
+        return NumValue(Numerical(0.0)) * other;//other.clone();
+    }
+
+    NeutralValue::operator bool() const
+    {
+        return false;
+    }
+
+    bool NeutralValue::operator==(const BaseValue& other) const
+    {
+        return false;
+    }
+
+    bool NeutralValue::operator<(const BaseValue& other) const
+    {
+        return false;
+    }
+
+    size_t NeutralValue::getBytes() const
+    {
+        return 0;
+    }
+
+    std::string NeutralValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "void*";
+    }
+    std::string NeutralValue::printVal(size_t digits, size_t chrs) const
+    {
+        return "void*";
+    }
+
+
+
+
+
     BASE_VALUE_IMPL(NumValue, TYPE_NUMERICAL, m_val)
 
     BaseValue* NumValue::operator+(const BaseValue& other) const
@@ -32,6 +110,8 @@ namespace mu
             return new NumValue(m_val + static_cast<const CatValue&>(other).get().val);
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) + static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -49,6 +129,8 @@ namespace mu
             return new NumValue(m_val - static_cast<const CatValue&>(other).get().val);
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) - static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -61,6 +143,8 @@ namespace mu
             return new NumValue(m_val / static_cast<const CatValue&>(other).get().val);
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -75,6 +159,8 @@ namespace mu
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_STRING)
             return new StrValue(strRepeat(static_cast<const StrValue&>(other).get(), m_val.asI64()));
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -123,6 +209,8 @@ namespace mu
             return new NumValue(m_val.pow(static_cast<const CatValue&>(other).get().val));
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Array(Value(m_val)).pow(static_cast<const ArrValue&>(other).get()));
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -155,7 +243,7 @@ namespace mu
         return m_val.print(digits);
     }
 
-    std::string NumValue::printVal(size_t digits, size_t chrs, bool trunc) const
+    std::string NumValue::printVal(size_t digits, size_t chrs) const
     {
         return m_val.printVal(digits);
     }
@@ -174,6 +262,8 @@ namespace mu
             return new StrValue(m_val + static_cast<const CatValue&>(other).get().name);
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) + static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -186,6 +276,8 @@ namespace mu
             return new StrValue(strRepeat(m_val, static_cast<const CatValue&>(other).get().val.asI64()));
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -244,7 +336,7 @@ namespace mu
         return toExternalString(replaceControlCharacters(m_val));
     }
 
-    std::string StrValue::printVal(size_t digits, size_t chrs, bool trunc) const
+    std::string StrValue::printVal(size_t digits, size_t chrs) const
     {
         if (chrs > 0)
             return ellipsize(m_val, chrs);
@@ -275,6 +367,8 @@ namespace mu
             return new StrValue(m_val.name + static_cast<const StrValue&>(other).get());
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) + static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -292,6 +386,8 @@ namespace mu
             return new NumValue(m_val.val - static_cast<const CatValue&>(other).m_val.val);
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) - static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -304,6 +400,8 @@ namespace mu
             return new NumValue(m_val.val / static_cast<const CatValue&>(other).m_val.val);
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -318,6 +416,8 @@ namespace mu
             return new StrValue(strRepeat(static_cast<const StrValue&>(other).get(), m_val.val.asI64()));
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -342,7 +442,7 @@ namespace mu
 
     size_t CatValue::getBytes() const
     {
-        m_val.val.getBytes();
+        return m_val.val.getBytes();
     }
 
     std::string CatValue::print(size_t digits, size_t chrs, bool trunc) const
@@ -350,7 +450,7 @@ namespace mu
         return toExternalString(m_val.name) + ": " + toString(m_val.val.asI64());
     }
 
-    std::string CatValue::printVal(size_t digits, size_t chrs, bool trunc) const
+    std::string CatValue::printVal(size_t digits, size_t chrs) const
     {
         if (chrs > 0)
             return ellipsize(m_val.name, chrs);
@@ -371,6 +471,8 @@ namespace mu
     {
         if (other == TYPE_ARRAY)
             return new ArrValue(m_val + static_cast<const ArrValue&>(other).m_val);
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         return new ArrValue(m_val + Value(other.clone()));
     }
@@ -384,6 +486,8 @@ namespace mu
     {
         if (other == TYPE_ARRAY)
             return new ArrValue(m_val - static_cast<const ArrValue&>(other).m_val);
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         return new ArrValue(m_val - Value(other.clone()));
     }
@@ -392,6 +496,8 @@ namespace mu
     {
         if (other == TYPE_ARRAY)
             return new ArrValue(m_val / static_cast<const ArrValue&>(other).m_val);
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         return new ArrValue(m_val / Value(other.clone()));
     }
@@ -400,6 +506,8 @@ namespace mu
     {
         if (other == TYPE_ARRAY)
             return new ArrValue(m_val * static_cast<const ArrValue&>(other).m_val);
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         return new ArrValue(m_val * Value(other.clone()));
     }
@@ -448,13 +556,15 @@ namespace mu
     {
         if (other == TYPE_ARRAY)
             return new ArrValue(m_val.pow(static_cast<const ArrValue&>(other).m_val));
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
 
         return new ArrValue(m_val.pow(Value(other.clone())));
     }
 
     ArrValue::operator bool() const
     {
-        return bool(m_val);
+        return all(m_val);
     }
 
     bool ArrValue::operator==(const BaseValue& other) const
@@ -462,7 +572,7 @@ namespace mu
         if (other == TYPE_ARRAY)
             return all(m_val == static_cast<const ArrValue&>(other).m_val);
 
-        return all(m_val == Value(other.clone()));
+        return all(m_val == Array(Value(other.clone())));
     }
 
     bool ArrValue::operator<(const BaseValue& other) const
@@ -480,12 +590,12 @@ namespace mu
 
     std::string ArrValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return m_val.print(digits, chrs, trunc);
+        return "{" + m_val.printDims() + " " + m_val.print(digits, chrs, trunc) + "}";
     }
 
-    std::string ArrValue::printVal(size_t digits, size_t chrs, bool trunc) const
+    std::string ArrValue::printVal(size_t digits, size_t chrs) const
     {
-        return m_val.printVals(digits, chrs);
+        return "{" + m_val.printVals(digits, chrs) + "}";
     }
 
 

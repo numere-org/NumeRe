@@ -20,9 +20,13 @@
 #define MUSTRUCTURES_HPP
 
 #include <vector>
+#include <memory>
 
 #include "muTypes.hpp"
 #include "muApply.hpp"
+#include "muValueBase.hpp"
+
+#define VALUE20
 
 namespace mu
 {
@@ -38,12 +42,20 @@ namespace mu
     /// added to this implementation in the future,
     /// e.g. classes).
     /////////////////////////////////////////////////
+#ifdef VALUE20
+    class Value : public std::unique_ptr<BaseValue>
+#else
     class Value
+#endif
     {
         public:
             Value();
             Value(const Value& data);
             //Value(Value&& data);
+
+#ifdef VALUE20
+            Value(BaseValue* other);
+#endif
 
             Value(const Numerical& data);
             Value(const Category& data);
@@ -120,13 +132,15 @@ namespace mu
             void clear();
             size_t getBytes() const;
 
+#ifndef VALUE20
         protected:
             void* m_data;
             DataType m_type;
-            static const std::string m_defString;
-            static const Numerical m_defVal;
-
             DataType detectCommonType(const Value& other) const;
+
+#endif
+            static const Numerical m_defVal;
+            static const std::string m_defString;
     };
 
 

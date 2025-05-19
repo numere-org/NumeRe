@@ -31,7 +31,7 @@ namespace mu
 
             virtual ~BaseValue() {}
             virtual BaseValue& operator=(const BaseValue& other) = 0;
-            virtual BaseValue* clone() = 0;
+            virtual BaseValue* clone() const = 0;
 
             virtual BaseValue* operator+(const BaseValue& other) const;
             virtual BaseValue* operator-() const;
@@ -63,7 +63,7 @@ namespace mu
             virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const;
 
             virtual std::string print(size_t digits, size_t chrs, bool trunc) const = 0;
-            virtual std::string printVal(size_t digits, size_t chrs, bool trunc) const = 0;
+            virtual std::string printVal(size_t digits, size_t chrs) const = 0;
     };
 }
 
@@ -99,7 +99,7 @@ public:                                                       \
         return *this;                                         \
     }                                                         \
     CLASS& operator=(CLASS&& other) = default;                \
-    BaseValue* clone() override                               \
+    BaseValue* clone() const override                         \
     {                                                         \
         return new CLASS(*this);                              \
     }                                                         \
