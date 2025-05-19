@@ -1690,19 +1690,19 @@ namespace mu
                     continue;
                 case  cmADD:
                     --sidx;
-                    Stack[sidx] += Stack[1 + sidx];
+                    Stack[sidx]  = Stack[sidx] + Stack[1 + sidx];
                     continue;
                 case  cmSUB:
                     --sidx;
-                    Stack[sidx] -= Stack[1 + sidx];
+                    Stack[sidx]  = Stack[sidx] - Stack[1 + sidx];
                     continue;
                 case  cmMUL:
                     --sidx;
-                    Stack[sidx] *= Stack[1 + sidx];
+                    Stack[sidx]  = Stack[sidx] * Stack[1 + sidx];
                     continue;
                 case  cmDIV:
                     --sidx;
-                    Stack[sidx] /= Stack[1 + sidx];
+                    Stack[sidx]  = Stack[sidx] / Stack[1 + sidx];
                     continue;
 
                 case  cmPOW:
@@ -2008,19 +2008,19 @@ namespace mu
                         continue;
                     case  cmADD:
                         --sidx;
-                        Stack[sidx] += Stack[1 + sidx];
+                        Stack[sidx]  = Stack[sidx] + Stack[1 + sidx];
                         continue;
                     case  cmSUB:
                         --sidx;
-                        Stack[sidx] -= Stack[1 + sidx];
+                        Stack[sidx]  = Stack[sidx] - Stack[1 + sidx];
                         continue;
                     case  cmMUL:
                         --sidx;
-                        Stack[sidx] *= Stack[1 + sidx];
+                        Stack[sidx]  = Stack[sidx] * Stack[1 + sidx];
                         continue;
                     case  cmDIV:
                         --sidx;
-                        Stack[sidx] /= Stack[1 + sidx];
+                        Stack[sidx]  = Stack[sidx] / Stack[1 + sidx];
                         continue;
 
                     case  cmPOW:

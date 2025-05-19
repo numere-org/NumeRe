@@ -2553,6 +2553,10 @@
 		<Unit filename="kernel/core/ParserLib/muStructures.hpp" />
 		<Unit filename="kernel/core/ParserLib/muTypes.cpp" />
 		<Unit filename="kernel/core/ParserLib/muTypes.hpp" />
+		<Unit filename="kernel/core/ParserLib/muValueBase.cpp" />
+		<Unit filename="kernel/core/ParserLib/muValueBase.hpp" />
+		<Unit filename="kernel/core/ParserLib/muValueImpl.cpp" />
+		<Unit filename="kernel/core/ParserLib/muValueImpl.hpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.cpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.hpp" />
 		<Unit filename="kernel/core/ParserLib/parserstandalone.cpp">

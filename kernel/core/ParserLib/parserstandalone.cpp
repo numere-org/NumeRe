@@ -198,6 +198,32 @@ namespace mu
             return ATTR;                                          \
         }
 
+    class CategoryValue : public BaseValue
+    {
+        IMPL_DEFAULTS(CategoryValue, TYPE_CATEGORY, mu::Category, m_val)
+
+        BaseValue& operator+=(const BaseValue& other) override
+        {
+            if (other.m_type == TYPE_CATEGORY)
+                m_val.name += static_cast<const CategoryValue&>(other).m_val.name;
+            else
+                throw ParserError(ecTYPE_MISMATCH);
+            return *this;
+        }
+        BaseValue* operator+(const BaseValue& other) const override
+        {
+            if (other.m_type == TYPE_CATEGORY)
+                return new CategoryValue(mu::Category(m_val.val, m_val.name + static_cast<const CategoryValue&>(other).m_val.name));
+
+            throw ParserError(ecTYPE_MISMATCH);
+        }
+
+        size_t getBytes() const override
+        {
+            return m_val.name.length() + m_val.val.getBytes();
+        }
+    };
+
     class NumericValue : public BaseValue
     {
         IMPL_DEFAULTS(NumericValue, TYPE_NUMERICAL, mu::Numerical, m_val)
@@ -206,6 +232,8 @@ namespace mu
         {
             if (other.m_type == TYPE_NUMERICAL)
                 m_val += static_cast<const NumericValue&>(other).m_val;
+            else if (other.m_type == TYPE_CATEGORY)
+                m_val += static_cast<const CategoryValue&>(other).get().val;
             else
                 throw ParserError(ecTYPE_MISMATCH);
             return *this;
@@ -214,11 +242,13 @@ namespace mu
         {
             if (other.m_type == TYPE_NUMERICAL)
                 return new NumericValue(m_val + static_cast<const NumericValue&>(other).m_val);
+            else if (other.m_type == TYPE_CATEGORY)
+                return new NumericValue(m_val + static_cast<const CategoryValue&>(other).get().val);
 
             throw ParserError(ecTYPE_MISMATCH);
         }
 
-        size_t getBytes() override const
+        size_t getBytes() const override
         {
             return m_val.getBytes();
         }
@@ -233,6 +263,8 @@ namespace mu
         {
             if (other.m_type == TYPE_STRING)
                 m_val += static_cast<const StringValue&>(other).m_val;
+            else if (other.m_type == TYPE_STRING)
+                m_val += static_cast<const CategoryValue&>(other).get().name;
             else
                 throw ParserError(ecTYPE_MISMATCH);
             return *this;
@@ -241,15 +273,20 @@ namespace mu
         {
             if (other.m_type == TYPE_STRING)
                 return new StringValue(m_val + static_cast<const StringValue&>(other).m_val);
+            else if (other.m_type == TYPE_CATEGORY)
+                return new StringValue(m_val + static_cast<const CategoryValue&>(other).get().name);
 
             throw ParserError(ecTYPE_MISMATCH);
         }
 
-        size_t getBytes() override const
+        size_t getBytes() const override
         {
             return m_val.length();
         }
     };
+
+
+
 }
 
 class Value : public std::unique_ptr<mu::BaseValue>
@@ -259,19 +296,19 @@ class Value : public std::unique_ptr<mu::BaseValue>
         Value(mu::BaseValue* other) : std::unique_ptr<mu::BaseValue>(other) {}
         Value(const mu::Numerical& val) : Value()
         {
-            reset(new NumericValue(val));
+            reset(new mu::NumericValue(val));
         }
         Value(bool logical) : Value()
         {
-            reset(new NumericalValue(logical));
+            reset(new mu::NumericValue(logical));
         }
         Value(const std::string& val) : Value()
         {
-            reset(new StringValue(val));
+            reset(new mu::StringValue(val));
         }
         Value(const char* val) : Value()
         {
-            reset(new StringValue(val));
+            reset(new mu::StringValue(val));
         }
         Value(const Value& other)
         {
@@ -409,6 +446,65 @@ void testfunc2(const std::vector<int>& oplist)
     }
 }
 
+void testfunc3(const std::vector<int>& oplist)
+{
+    arr testArr;
+
+    /*testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));*/
+    testArr.push_back(Value(""));
+    /*testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));*/
+
+    {
+        Timer t("arr-singleton");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr += testArr;
+        }
+    }
+}
+
+
+void testfunc4(const std::vector<int>& oplist)
+{
+    mu::Array testArr;
+
+    /*testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));*/
+    testArr.push_back(mu::Value(""));
+    /*testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));*/
+
+    {
+        Timer t("mu::Array-singleton");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr += testArr;
+        }
+    }
+}
+
 
 
 
@@ -496,14 +592,22 @@ int main()
     _parser.DefineVar("categories", &categories);
 
 
-    testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
     testfunc({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
     testfunc({1,0,1,1,1,0,1,1,0,1,1,0,0});
     testfunc2({1,0,1,1,1,0,1,1,0,1,1,0,0});
-    testfunc2({1,0,0,1,1,0,1,0,1,1,0,1,1});
     testfunc({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc2({1,0,0,1,1,0,1,0,1,1,0,1,1});
     testfunc({1,0,1,0,1,0,1,1,0,1,0,1,0});
     testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc3({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc4({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc3({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc4({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc3({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc4({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc3({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc4({1,0,1,0,1,0,1,1,0,1,0,1,0});
 
     while (true)
     {
