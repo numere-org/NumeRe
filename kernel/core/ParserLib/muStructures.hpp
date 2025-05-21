@@ -25,6 +25,7 @@
 #include "muTypes.hpp"
 #include "muApply.hpp"
 #include "muValueBase.hpp"
+#include "muParserError.h"
 
 #define VALUE20
 
@@ -42,21 +43,13 @@ namespace mu
     /// added to this implementation in the future,
     /// e.g. classes).
     /////////////////////////////////////////////////
-#ifdef VALUE20
     class Value : public std::unique_ptr<BaseValue>
-#else
-    class Value
-#endif
     {
         public:
             Value();
             Value(const Value& data);
             //Value(Value&& data);
-
-#ifdef VALUE20
             Value(BaseValue* other);
-#endif
-
             Value(const Numerical& data);
             Value(const Category& data);
             Value(const Array& data);
@@ -73,9 +66,17 @@ namespace mu
             Value(const char* sData);
             Value(DataType type);
 
-            virtual ~Value();
+            Value& operator=(const Value& other)
+            {
+                if (!other.get())
+                    reset(nullptr);
+                else if (!get() || (get()->m_type != other->m_type))
+                    reset(other->clone());
+                else if (this != &other)
+                    *get() = *other.get();
 
-            Value& operator=(const Value& other);
+                return *this;
+            }
             //Value& operator=(Value&& other);
 
             DataType getType() const;
@@ -102,15 +103,76 @@ namespace mu
 
             std::complex<double> as_cmplx() const;
 
-            Value operator+(const Value& other) const;
-            Value operator-() const;
-            Value operator-(const Value& other) const;
-            Value operator/(const Value& other) const;
-            Value operator*(const Value& other) const;
-            Value& operator+=(const Value& other);
-            Value& operator-=(const Value& other);
-            Value& operator/=(const Value& other);
-            Value& operator*=(const Value& other);
+            Value operator+(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() + *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            Value operator-() const
+            {
+                if (get())
+                    return -(*get());
+
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            Value operator-(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() - *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            Value operator/(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() / *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            Value operator*(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() * *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH);
+            }
+            Value& operator+=(const Value& other)
+            {
+                if (!get())
+                    reset(other->clone());
+                else if (get() && other.get())
+                    *get() += *other.get();
+
+                return *this;
+            }
+            Value& operator-=(const Value& other)
+            {
+                if (!get())
+                    return operator=(-other);
+
+                if (get() && other.get())
+                    *get() -= *other.get();
+
+                return *this;
+            }
+            Value& operator/=(const Value& other)
+            {
+                if (get() && other.get())
+                    *get() /= *other.get();
+
+                return *this;
+            }
+            Value& operator*=(const Value& other)
+            {
+                if (!get())
+                    reset(other->clone());
+                else if (get() && other.get())
+                    *get() *= *other.get();
+
+                return *this;
+            }
 
             Value pow(const Value& exponent) const;
 
@@ -132,13 +194,7 @@ namespace mu
             void clear();
             size_t getBytes() const;
 
-#ifndef VALUE20
         protected:
-            void* m_data;
-            DataType m_type;
-            DataType detectCommonType(const Value& other) const;
-
-#endif
             static const Numerical m_defVal;
             static const std::string m_defString;
     };
@@ -171,7 +227,32 @@ namespace mu
             Array(const Array& fst, const Array& lst);
             Array(const Array& fst, const Array& inc, const Array& lst);
 
-            Array& operator=(const Array& other);
+            Array& operator=(const Array& other)
+            {
+                if (other.size() == 1)
+                {
+                    //if (other.front().isArray())
+                    //    return operator=(other.front().getArray());
+
+                    if (size() != 1)
+                        resize(1);
+
+                    front() = other.front();
+                }
+                else
+                {
+                    resize(other.size());
+
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) = other[i];
+                    }
+                }
+
+                m_commonType = other.m_commonType;
+
+                return *this;
+            }
             //Array& operator=(Array&& other);
 
             std::vector<DataType> getType() const;
@@ -181,15 +262,117 @@ namespace mu
             bool isScalar() const;
             bool isDefault() const;
 
-            Array operator+(const Array& other) const;
-            Array operator-() const;
-            Array operator-(const Array& other) const;
-            Array operator/(const Array& other) const;
-            Array operator*(const Array& other) const;
-            Array& operator+=(const Array& other);
-            Array& operator-=(const Array& other);
-            Array& operator/=(const Array& other);
-            Array& operator*=(const Array& other);
+            Array operator+(const Array& other) const
+            {
+                Array ret;
+
+                for (size_t i = 0; i < std::max(size(), other.size()); i++)
+                {
+                    ret.push_back(get(i) + other.get(i));
+                }
+
+                return ret;
+            }
+            Array operator-() const
+            {
+                Array ret;
+
+                for (size_t i = 0; i < size(); i++)
+                {
+                    ret.push_back(-get(i));
+                }
+
+                return ret;
+            }
+            Array operator-(const Array& other) const
+            {
+                Array ret;
+
+                for (size_t i = 0; i < std::max(size(), other.size()); i++)
+                {
+                    ret.push_back(get(i) - other.get(i));
+                }
+
+                return ret;
+            }
+            Array operator/(const Array& other) const
+            {
+                Array ret;
+
+                for (size_t i = 0; i < std::max(size(), other.size()); i++)
+                {
+                    ret.push_back(get(i) / other.get(i));
+                }
+
+                return ret;
+            }
+            Array operator*(const Array& other) const
+            {
+                Array ret;
+
+                for (size_t i = 0; i < std::max(size(), other.size()); i++)
+                {
+                    ret.push_back(get(i) * other.get(i));
+                }
+
+                return ret;
+            }
+            Array& operator+=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator+(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) += other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+            Array& operator-=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator-(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) -= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+            Array& operator/=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator/(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) /= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+            Array& operator*=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator*(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) *= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
 
             Array pow(const Array& exponent) const;
             Array pow(const Numerical& exponent) const;
@@ -223,8 +406,24 @@ namespace mu
             std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
 
-            Value& get(size_t i);
-            const Value& get(size_t i) const;
+            Value& get(size_t i)
+            {
+                if (size() == 1u)
+                    return front();
+                else if (size() <= i)
+                    throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
+
+                return operator[](i);
+            }
+            const Value& get(size_t i) const
+            {
+                if (size() == 1u)
+                    return front();
+                else if (size() <= i)
+                    return m_default;
+
+                return operator[](i);
+            }
 
             void zerosToVoid();
             bool isCommutative() const;

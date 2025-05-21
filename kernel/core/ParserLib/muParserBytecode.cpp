@@ -341,7 +341,7 @@ namespace mu
 							m_vRPN[sz-2].Cmd = cmVARMUL;
 							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
 							m_vRPN[sz-2].Val().data = m_vRPN[sz-2].Val().data2 + m_vRPN[sz-1].Val().data2;
-							m_vRPN[sz-2].Val().data2 = Array(Value());
+							m_vRPN[sz-2].Val().data2 = Array();
 							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
@@ -785,7 +785,7 @@ namespace mu
 		}
 
 		toggleTableMode();
-		print("Number of RPN tokens: " + toString(m_vRPN.size()));
+		print("Stack size: " + toString(m_vRPN.size()));
 
 		for (std::size_t i = 0; i < m_vRPN.size() && m_vRPN[i].Cmd != cmEND; ++i)
 		{
@@ -793,7 +793,7 @@ namespace mu
 			switch (m_vRPN[i].Cmd)
 			{
 				case cmVAL:
-				    printFormatted("VAL       \t[" + m_vRPN[i].Val().data2.print() + "]\n");
+				    printFormatted("VAL       \t<" + m_vRPN[i].Val().data2.print() + ">\n");
 					break;
 
 				case cmVAR:
@@ -817,17 +817,17 @@ namespace mu
 					break;
 
 				case cmVARPOWN:
-					printFormatted("VARPOWN   \t[" + m_vRPN[i].Val().var->print() + "] ^ [" + m_vRPN[i].Val().data.print() + "]\n");
+					printFormatted("VARPOWN   \t[" + m_vRPN[i].Val().var->print() + "] ^ <" + m_vRPN[i].Val().data.print() + ">\n");
 					break;
 
 				case cmVARMUL:
 					printFormatted("VARMUL    \t[" + m_vRPN[i].Val().var->print() + "]");
-					printFormatted(" * [" + m_vRPN[i].Val().data.print() + "] + [" + m_vRPN[i].Val().data2.print() + "]\n");
+					printFormatted(" * <" + m_vRPN[i].Val().data.print() + "> + <" + m_vRPN[i].Val().data2.print() + ">\n");
 					break;
 
 				case cmREVVARMUL:
-					printFormatted("REVVARMUL \t[" + m_vRPN[i].Val().data2.print() + "]");
-					printFormatted(" + [" + m_vRPN[i].Val().var->print() + "] * [" + m_vRPN[i].Val().data.print() + "]\n");
+					printFormatted("REVVARMUL \t<" + m_vRPN[i].Val().data2.print() + "<");
+					printFormatted(" + [" + m_vRPN[i].Val().var->print() + "] * <" + m_vRPN[i].Val().data.print() + ">\n");
 					break;
 
 				case cmFUNC:

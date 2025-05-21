@@ -154,7 +154,12 @@ namespace mu
         if (other.m_type == TYPE_NUMERICAL)
             return new NumValue(m_val * static_cast<const NumValue&>(other).m_val);
         else if (other.m_type == TYPE_CATEGORY)
+        {
+            if (m_val.isInt() && m_val.asI64() == 1)
+                return other.clone();
+
             return new NumValue(m_val * static_cast<const CatValue&>(other).get().val);
+        }
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_STRING)
@@ -409,13 +414,20 @@ namespace mu
     BaseValue* CatValue::operator*(const BaseValue& other) const
     {
         if (other.m_type == TYPE_NUMERICAL)
-            return new NumValue(m_val.val / static_cast<const NumValue&>(other).get());
+        {
+            const Numerical& n = static_cast<const NumValue&>(other).get();
+
+            if (n.isInt() && n.asI64() == 1)
+                return clone();
+
+            return new NumValue(m_val.val * n);
+        }
         else if (other.m_type == TYPE_CATEGORY)
-            return new NumValue(m_val.val / static_cast<const CatValue&>(other).m_val.val);
+            return new NumValue(m_val.val * static_cast<const CatValue&>(other).m_val.val);
         else if (other.m_type == TYPE_STRING)
             return new StrValue(strRepeat(static_cast<const StrValue&>(other).get(), m_val.val.asI64()));
         else if (other.m_type == TYPE_ARRAY)
-            return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
+            return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_INVALID)
             return clone();
 

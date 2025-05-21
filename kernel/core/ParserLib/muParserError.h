@@ -33,7 +33,7 @@
 #include <vector>
 #include <memory>
 
-#include "muParserDef.h"
+#include "muStringTypeDefs.hpp"
 
 
 /** \file
@@ -42,7 +42,6 @@
 
 namespace mu
 {
-
     /** \brief Error codes. */
     enum EErrorCodes
     {
@@ -149,7 +148,7 @@ namespace mu
             explicit ParserError(const string_type& sMsg);
             ParserError( EErrorCodes a_iErrc,
                          const string_type& sTok,
-                         const string_type& sFormula = string_type(_nrT("(formula is not available)")),
+                         const string_type& sFormula = string_type("(formula is not available)"),
                          int a_iPos = -1);
             ParserError( EErrorCodes a_iErrc,
                          int a_iPos,

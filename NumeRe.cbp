@@ -2549,6 +2549,7 @@
 		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />
+		<Unit filename="kernel/core/ParserLib/muStringTypeDefs.hpp" />
 		<Unit filename="kernel/core/ParserLib/muStructures.cpp" />
 		<Unit filename="kernel/core/ParserLib/muStructures.hpp" />
 		<Unit filename="kernel/core/ParserLib/muTypes.cpp" />
@@ -2560,6 +2561,12 @@
 		<Unit filename="kernel/core/ParserLib/muVarFactory.cpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.hpp" />
 		<Unit filename="kernel/core/ParserLib/parserstandalone.cpp">
+			<Option target="ParserLib_x64" />
+		</Unit>
+		<Unit filename="kernel/core/ParserLib/testTypes.cpp">
+			<Option target="ParserLib_x64" />
+		</Unit>
+		<Unit filename="kernel/core/ParserLib/testTypes.hpp">
 			<Option target="ParserLib_x64" />
 		</Unit>
 		<Unit filename="kernel/core/built-in.cpp">

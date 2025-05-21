@@ -153,7 +153,7 @@ namespace mu
         m_strMsg = m_ErrMsg[m_iErrc];
 
         if (!m_strMsg.length())
-            m_strMsg = _nrT("Generic parser error");
+            m_strMsg = "Generic parser error";
         else
             m_strMsg = ::_lang.get(m_strMsg);
     }
@@ -187,8 +187,8 @@ namespace mu
         m_strMsg = ::_lang.get(m_ErrMsg[m_iErrc]);
         stringstream_type stream;
         stream << (int)m_iPos;
-        ReplaceSubString(m_strMsg, _nrT("$POS$"), stream.str());
-        ReplaceSubString(m_strMsg, _nrT("$TOK$"), m_strTok);
+        ReplaceSubString(m_strMsg, "$POS$", stream.str());
+        ReplaceSubString(m_strMsg, "$TOK$", m_strTok);
     }
 
     //------------------------------------------------------------------------------
@@ -208,8 +208,8 @@ namespace mu
         m_strMsg = m_ErrMsg[m_iErrc];
         stringstream_type stream;
         stream << (int)m_iPos;
-        ReplaceSubString(m_strMsg, _nrT("$POS$"), stream.str());
-        ReplaceSubString(m_strMsg, _nrT("$TOK$"), m_strTok);
+        ReplaceSubString(m_strMsg, "$POS$", stream.str());
+        ReplaceSubString(m_strMsg, "$TOK$", m_strTok);
     }
 
     //------------------------------------------------------------------------------
@@ -228,8 +228,8 @@ namespace mu
     {
         stringstream_type stream;
         stream << (int)m_iPos;
-        ReplaceSubString(m_strMsg, _nrT("$POS$"), stream.str());
-        ReplaceSubString(m_strMsg, _nrT("$TOK$"), m_strTok);
+        ReplaceSubString(m_strMsg, "$POS$", stream.str());
+        ReplaceSubString(m_strMsg, "$TOK$", m_strTok);
     }
 
     //------------------------------------------------------------------------------
@@ -294,9 +294,9 @@ namespace mu
     /** \brief Reset the erro object. */
     void ParserError::Reset()
     {
-        m_strMsg = _nrT("");
-        m_strFormula = _nrT("");
-        m_strTok = _nrT("");
+        m_strMsg.clear();
+        m_strFormula.clear();
+        m_strTok.clear();
         m_iPos = -1;
         m_iErrc = ecUNDEFINED;
     }

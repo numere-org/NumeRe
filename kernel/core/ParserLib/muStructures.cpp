@@ -104,23 +104,17 @@ namespace mu
         }
     }
 
-    Value::~Value()
-    { }
-
-    Value& Value::operator=(const Value& other)
+    /*Value& Value::operator=(const Value& other)
     {
-        if (this == &other)
-            return *this;
-
         if (!other.get())
             reset(nullptr);
         else if (!get() || (get()->m_type != other->m_type))
             reset(other->clone());
-        else// if (get() != other.get())
+        else if (this != &other)
             *get() = *other.get();
 
         return *this;
-    }
+    }*/
     //Value& operator=(Value&& other);
 
     DataType Value::getType() const
@@ -138,7 +132,11 @@ namespace mu
             case TYPE_CATEGORY:
                 return "category";
             case TYPE_INVALID:
+#ifdef PARSERSTANDALONE
+                return "neutral";
+#else
                 return "void";
+#endif
             case TYPE_NUMERICAL:
                 return getNum().getTypeAsString();
             case TYPE_STRING:
@@ -197,8 +195,10 @@ namespace mu
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().name;
         }
+        else
+            return m_defString;
 
-        return m_defString;
+        throw ParserError(ecTYPE_NO_STR);
     }
 
 
@@ -224,8 +224,10 @@ namespace mu
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val;
         }
+        else
+            return m_defVal;
 
-        return m_defVal;
+        throw ParserError(ecTYPE_NO_VAL);
     }
 
     Category& Value::getCategory()
@@ -235,6 +237,7 @@ namespace mu
 
         throw ParserError(ecTYPE_NO_VAL);
     }
+
     const Category& Value::getCategory() const
     {
         if (get() && get()->m_type == TYPE_CATEGORY)
@@ -250,6 +253,7 @@ namespace mu
 
         throw ParserError(ecTYPE_NO_VAL);
     }
+
     const Array& Value::getArray() const
     {
         if (get() && get()->m_type == TYPE_ARRAY)
@@ -271,7 +275,7 @@ namespace mu
         return NAN;
     }
 
-    Value Value::operator+(const Value& other) const
+    /*Value Value::operator+(const Value& other) const
     {
         if (get() && other.get())
             return *get() + *other.get();
@@ -334,7 +338,7 @@ namespace mu
             *get() *= *other.get();
 
         return *this;
-    }
+    }*/
 
     Value Value::pow(const Value& exponent) const
     {
@@ -410,7 +414,11 @@ namespace mu
         if (get())
             return get()->print(digits, chrs, trunc);
 
+#ifdef PARSERSTANDALONE
+        return "0x0";
+#else
         return "void";
+#endif
     }
     std::string Value::printVal(size_t digits, size_t chrs) const
     {
@@ -1992,14 +2000,16 @@ namespace mu
     /// \return Array&
     ///
     /////////////////////////////////////////////////
-    Array& Array::operator=(const Array& other)
+    /*Array& Array::operator=(const Array& other)
     {
         if (other.size() == 1)
         {
             if (other.front().isArray())
                 return operator=(other.front().getArray());
 
-            resize(1);
+            if (size() != 1)
+                resize(1);
+
             front() = other.front();
         }
         else
@@ -2017,7 +2027,7 @@ namespace mu
         m_commonType = other.m_commonType;
 
         return *this;
-    }
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -2178,7 +2188,7 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array Array::operator+(const Array& other) const
+    /*Array Array::operator+(const Array& other) const
     {
         Array ret;
 
@@ -2359,7 +2369,7 @@ namespace mu
         }
 
         return *this;
-    }
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -2838,7 +2848,11 @@ namespace mu
     std::string Array::print(size_t digits, size_t chrs, bool trunc) const
     {
         if (isDefault())
+#ifdef PARSERSTANDALONE
+            return "default";
+#else
             return "void";
+#endif
 
         std::string ret;
 
@@ -3000,7 +3014,7 @@ namespace mu
     /// \return Value&
     ///
     /////////////////////////////////////////////////
-    Value& Array::get(size_t i)
+    /*Value& Array::get(size_t i)
     {
         if (size() == 1u)
             return front();
@@ -3026,7 +3040,7 @@ namespace mu
             return m_default;
 
         return operator[](i);
-    }
+    }*/
 
 
     /////////////////////////////////////////////////

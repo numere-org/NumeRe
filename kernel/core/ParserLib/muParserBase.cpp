@@ -2650,8 +2650,8 @@ namespace mu
 			// Commented out - might be necessary for deep debugging stuff
 			//if (ParserBase::g_DbgDumpStack)
 			//{
-				StackDump(stVal, stOpt);
-				m_compilingState.m_byteCode.AsciiDump();
+//				StackDump(stVal, stOpt);
+//				m_compilingState.m_byteCode.AsciiDump();
 			//}
 		} // while (true)
 

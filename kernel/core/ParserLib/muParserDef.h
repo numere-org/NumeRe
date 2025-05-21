@@ -25,13 +25,11 @@
 #ifndef MUP_DEF_H
 #define MUP_DEF_H
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <map>
 #include <complex>
 #include <vector>
 
+#include "muStringTypeDefs.hpp"
 #include "muParserFixes.h"
 #include "muStructures.hpp"
 
@@ -114,43 +112,6 @@ class StringView;
 
 namespace mu
 {
-#if defined(_UNICODE)
-
-    //------------------------------------------------------------------------------
-    /** \brief Encapsulate wcout. */
-    inline std::wostream& console()
-    {
-        return std::wcout;
-    }
-
-    /** \brief Encapsulate cin. */
-    inline std::wistream& console_in()
-    {
-        return std::wcin;
-    }
-
-#else
-
-    /** \brief Encapsulate cout.
-
-      Used for supporting UNICODE more easily.
-    */
-    inline std::ostream& console()
-    {
-        return std::cout;
-    }
-
-    /** \brief Encapsulate cin.
-
-      Used for supporting UNICODE more easily.
-    */
-    inline std::istream& console_in()
-    {
-        return std::cin;
-    }
-
-#endif
-
     //------------------------------------------------------------------------------
     /** \brief Bytecode values.
 
@@ -272,25 +233,9 @@ namespace mu
     */
     //typedef MUP_BASETYPE value_type;
 
-    /** \brief The stringtype used by the parser.
-
-      Depends on wether UNICODE is used or not.
-    */
-    typedef std::string string_type;
-
-    /** \brief The character type used by the parser.
-
-      Depends on wether UNICODE is used or not.
-    */
-    typedef string_type::value_type char_type;
-
-    /** \brief Typedef for easily using stringstream that respect the parser stringtype. */
-    typedef std::basic_stringstream<char_type,
-            std::char_traits<char_type>,
-            std::allocator<char_type> > stringstream_type;
-
     // Data container types
 
+    class Variable;
     /** \brief Type used for storing variables. */
     typedef std::map<string_type, Variable*> varmap_type;
 
