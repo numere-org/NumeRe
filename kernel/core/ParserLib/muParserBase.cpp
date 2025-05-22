@@ -1809,11 +1809,21 @@ namespace mu
                     continue;
 
                 case  cmVARMUL:
-                    Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                    Stack[++sidx] = pTok->Val().data2.isDefault()
+                        ? Array(*pTok->Val().var) * pTok->Val().data
+                        : Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
                     continue;
 
                 case  cmREVVARMUL:
-                    Stack[++sidx] = pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                    Stack[++sidx] = pTok->Val().data2.isDefault()
+                        ? Array(*pTok->Val().var) * pTok->Val().data
+                        : pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                    continue;
+
+                case  cmDIVVAR:
+                    Stack[++sidx] = pTok->Val().data2.isDefault()
+                        ? pTok->Val().data / Array(*pTok->Val().var)
+                        : pTok->Val().data / Array(*pTok->Val().var) + pTok->Val().data2;
                     continue;
 
                 // Next is treatment of numeric functions
@@ -2128,11 +2138,21 @@ namespace mu
                         continue;
 
                     case  cmVARMUL:
-                        Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                        Stack[++sidx] = pTok->Val().data2.isDefault()
+                            ? Array(*pTok->Val().var) * pTok->Val().data
+                            : Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
                         continue;
 
                     case  cmREVVARMUL:
-                        Stack[++sidx] = pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                        Stack[++sidx] = pTok->Val().data2.isDefault()
+                            ? Array(*pTok->Val().var) * pTok->Val().data
+                            : pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                        continue;
+
+                    case  cmDIVVAR:
+                        Stack[++sidx] = pTok->Val().data2.isDefault()
+                            ? pTok->Val().data / Array(*pTok->Val().var)
+                            : pTok->Val().data / Array(*pTok->Val().var) + pTok->Val().data2;
                         continue;
 
                     // Next is treatment of numeric functions

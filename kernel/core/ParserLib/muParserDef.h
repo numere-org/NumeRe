@@ -162,8 +162,9 @@ namespace mu
         cmVARPOW3,
         cmVARPOW4,
         cmVARPOWN,
-        cmVARMUL,
-        cmREVVARMUL,
+        cmVARMUL,              ///< Multiply-add a var
+        cmREVVARMUL,           ///< Reverse multiply-add a var (vor non-commutative operations)
+        cmDIVVAR,              ///< Divide value through a var
         cmVAR_END,             ///< Only for identifying the end of the variable block
 
         // operators and functions

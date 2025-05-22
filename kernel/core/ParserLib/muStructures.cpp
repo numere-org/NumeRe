@@ -150,7 +150,7 @@ namespace mu
 
     bool Value::isVoid() const
     {
-        return !get();
+        return !get() || get()->m_type == TYPE_INVALID;
     }
     bool Value::isValid() const
     {
@@ -3056,11 +3056,18 @@ namespace mu
         if (getCommonType() != TYPE_NUMERICAL)
             return;
 
+        bool canBeDefaulted = true;
+
         for (size_t i = 0; i < size(); i++)
         {
             if (operator[](i).getNum().asCF64() == 0.0)
                 operator[](i).clear();
+            else
+                canBeDefaulted = false;
         }
+
+        if (canBeDefaulted)
+            clear();
 
         m_commonType = TYPE_VOID;
     }

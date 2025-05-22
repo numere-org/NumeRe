@@ -137,6 +137,10 @@ namespace mu
             }
             Value operator*(const Value& other) const
             {
+                // Special case for optimizer
+                if (!other.get())
+                    return Value();
+
                 if (get() && other.get())
                     return *get() * *other.get();
 
@@ -185,9 +189,7 @@ namespace mu
             }
             Value& operator*=(const Value& other)
             {
-                if (!get())
-                    reset(other->clone());
-                else if (get() && other.get())
+                if (get() && other.get())
                 {
                     DataType thisType = get()->m_type;
                     DataType otherType = other->m_type;
