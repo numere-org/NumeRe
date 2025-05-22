@@ -105,6 +105,10 @@ namespace mu
 
             Value operator+(const Value& other) const
             {
+                // Special case for optimizer
+                if (!other.get())
+                    return *this;
+
                 if (get() && other.get())
                     return *get() + *other.get();
 
@@ -143,7 +147,12 @@ namespace mu
                 if (!get())
                     reset(other->clone());
                 else if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this + other);
+
                     *get() += *other.get();
+                }
 
                 return *this;
             }
@@ -153,14 +162,24 @@ namespace mu
                     return operator=(-other);
 
                 if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this - other);
+
                     *get() -= *other.get();
+                }
 
                 return *this;
             }
             Value& operator/=(const Value& other)
             {
                 if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this / other);
+
                     *get() /= *other.get();
+                }
 
                 return *this;
             }
@@ -169,7 +188,16 @@ namespace mu
                 if (!get())
                     reset(other->clone());
                 else if (get() && other.get())
+                {
+                    DataType thisType = get()->m_type;
+                    DataType otherType = other->m_type;
+
+                    if (nonRecursiveOps(thisType, otherType)
+                        || (thisType == TYPE_NUMERICAL && otherType == TYPE_STRING))
+                        return operator=(*this * other);
+
                     *get() *= *other.get();
+                }
 
                 return *this;
             }

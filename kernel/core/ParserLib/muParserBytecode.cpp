@@ -826,7 +826,7 @@ namespace mu
 					break;
 
 				case cmREVVARMUL:
-					printFormatted("REVVARMUL \t<" + m_vRPN[i].Val().data2.print() + "<");
+					printFormatted("REVVARMUL \t<" + m_vRPN[i].Val().data2.print() + ">");
 					printFormatted(" + [" + m_vRPN[i].Val().var->print() + "] * <" + m_vRPN[i].Val().data.print() + ">\n");
 					break;
 

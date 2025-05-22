@@ -67,6 +67,11 @@ namespace mu
         return NumValue(Numerical(0.0)) * other;//other.clone();
     }
 
+    bool NeutralValue::isValid() const
+    {
+        return false;
+    }
+
     NeutralValue::operator bool() const
     {
         return false;
@@ -97,8 +102,10 @@ namespace mu
     }
 
 
+    // X' OP= ARR
+    // CAT OP= X
 
-
+    // NUM *= STR
 
     BASE_VALUE_IMPL(NumValue, TYPE_NUMERICAL, m_val)
 
@@ -172,37 +179,49 @@ namespace mu
 
     BaseValue& NumValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL)
+            m_val += static_cast<const NumValue&>(other).m_val;
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val += static_cast<const CatValue&>(other).get().val;
+        else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
-        m_val += static_cast<const NumValue&>(other).m_val;
         return *this;
     }
 
     BaseValue& NumValue::operator-=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL)
+            m_val -= static_cast<const NumValue&>(other).m_val;
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val -= static_cast<const CatValue&>(other).get().val;
+        else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
-        m_val -= static_cast<const NumValue&>(other).m_val;
         return *this;
     }
 
     BaseValue& NumValue::operator/=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL)
+            m_val /= static_cast<const NumValue&>(other).m_val;
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val /= static_cast<const CatValue&>(other).get().val;
+        else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
-        m_val /= static_cast<const NumValue&>(other).m_val;
         return *this;
     }
 
     BaseValue& NumValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL)
+            m_val *= static_cast<const NumValue&>(other).m_val;
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val *= static_cast<const CatValue&>(other).get().val;
+        else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
-        m_val *= static_cast<const NumValue&>(other).m_val;
         return *this;
     }
 
@@ -218,6 +237,11 @@ namespace mu
             return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
+    }
+
+    bool NumValue::isValid() const
+    {
+        return m_val.asCF64() == m_val.asCF64();
     }
 
     NumValue::operator bool() const
@@ -289,20 +313,31 @@ namespace mu
 
     BaseValue& StrValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_STRING)
+        if (other.m_type == TYPE_STRING)
+            m_val += static_cast<const StrValue&>(other).m_val;
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val += static_cast<const CatValue&>(other).get().name;
+        else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
-        m_val += static_cast<const StrValue&>(other).m_val;
         return *this;
     }
 
     BaseValue& StrValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL)
+            m_val = strRepeat(m_val, static_cast<const NumValue&>(other).get().asI64());
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val = strRepeat(m_val, static_cast<const CatValue&>(other).get().val.asI64());
+        else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
-        m_val = strRepeat(m_val, static_cast<const NumValue&>(other).get().asI64());
         return *this;
+    }
+
+    bool StrValue::isValid() const
+    {
+        return m_val.length() > 0;
     }
 
     StrValue::operator bool() const
@@ -432,6 +467,11 @@ namespace mu
             return clone();
 
         throw ParserError(ecTYPE_MISMATCH);
+    }
+
+    bool CatValue::isValid() const
+    {
+        return m_val.name.length() > 0;
     }
 
     CatValue::operator bool() const
@@ -572,6 +612,11 @@ namespace mu
             return clone();
 
         return new ArrValue(m_val.pow(Value(other.clone())));
+    }
+
+    bool ArrValue::isValid() const
+    {
+        return m_val.size() > 0;
     }
 
     ArrValue::operator bool() const

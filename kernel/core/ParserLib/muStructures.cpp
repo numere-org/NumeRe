@@ -154,7 +154,7 @@ namespace mu
     }
     bool Value::isValid() const
     {
-        return get() && bool(*get());
+        return get() && get()->isValid();
     }
     bool Value::isNumerical() const
     {

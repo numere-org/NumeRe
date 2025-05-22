@@ -59,6 +59,8 @@ namespace mu
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
 
+        bool isValid() const override;
+
         operator bool() const;
         bool operator==(const BaseValue& other) const override;
         bool operator<(const BaseValue& other) const override;
@@ -86,6 +88,8 @@ namespace mu
 
         BaseValue* pow(const BaseValue& other) const override;
 
+        bool isValid() const override;
+
         operator bool() const override;
         bool operator==(const BaseValue& other) const override;
         bool operator<(const BaseValue& other) const override;
@@ -107,6 +111,8 @@ namespace mu
         BaseValue& operator+=(const BaseValue& other) override;
         BaseValue& operator*=(const BaseValue& other) override;
 
+        bool isValid() const override;
+
         operator bool() const override;
         bool operator==(const BaseValue& other) const override;
         bool operator<(const BaseValue& other) const override;
@@ -127,6 +133,8 @@ namespace mu
         BaseValue* operator-(const BaseValue& other) const override;
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
+
+        bool isValid() const override;
 
         operator bool() const override;
         bool operator==(const BaseValue& other) const override;
@@ -155,6 +163,8 @@ namespace mu
         BaseValue& operator*=(const BaseValue& other) override;
 
         BaseValue* pow(const BaseValue& other) const override;
+
+        bool isValid() const override;
 
         operator bool() const override;
         bool operator==(const BaseValue& other) const override;

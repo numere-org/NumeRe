@@ -52,7 +52,7 @@ void testfunc(const std::vector<int>& oplist)
             if (op == 0)
                 testArr = testArr;
             else if (op == 1)
-                testArr += testArr;
+                testArr = testArr + testArr;
         }
     }
 }
@@ -111,7 +111,7 @@ void testfunc3(const std::vector<int>& oplist)
             if (op == 0)
                 testArr = testArr;
             else if (op == 1)
-                testArr += testArr;
+                testArr = testArr + testArr;
         }
     }
 }
@@ -224,6 +224,7 @@ int main()
     _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);
 
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
+    _parser.DefineConst("nan", mu::Value(NAN));
 
     std::string sInput;
     int nResults;

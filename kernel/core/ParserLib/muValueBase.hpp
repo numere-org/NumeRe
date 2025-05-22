@@ -46,6 +46,8 @@ namespace mu
 
             virtual BaseValue* pow(const BaseValue& other) const;
 
+            virtual bool isValid() const = 0;
+
             virtual operator bool() const;
             virtual bool operator!() const;
             virtual bool operator==(const BaseValue& other) const;
@@ -65,6 +67,11 @@ namespace mu
             virtual std::string print(size_t digits, size_t chrs, bool trunc) const = 0;
             virtual std::string printVal(size_t digits, size_t chrs) const = 0;
     };
+
+    inline bool nonRecursiveOps(DataType lhs, DataType rhs)
+    {
+        return lhs == TYPE_CATEGORY || (rhs == TYPE_ARRAY && lhs != rhs);
+    }
 }
 
 
