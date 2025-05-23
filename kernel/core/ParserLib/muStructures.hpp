@@ -485,6 +485,48 @@ namespace mu
             Variable& operator=(const Variable& other);
 
             void overwrite(const Array& other);
+
+            /*void powN(int N, Array& res) const
+            {
+                res = *this;
+
+                for (int n = 1; n < N; n++)
+                {
+                    res *= *this;
+                }
+            }
+
+            void mul(const Array& fact, const Array& add, Array& res) const
+            {
+                res = *this;
+                res *= fact;
+
+                if (!add.isDefault())
+                    res += add;
+            }
+
+            void revMul(const Array& fact, const Array& add, Array& res) const
+            {
+                if (!add.isDefault())
+                {
+                    res = add;
+                    res += *this * fact;
+                }
+                else
+                {
+                    res = *this;
+                    res *= fact;
+                }
+            }
+
+            void div(const Array& fact, const Array& add, Array& res) const
+            {
+                res = fact;
+                res /= *this;
+
+                if (!add.isDefault())
+                    res += add;
+            }*/
     };
 
 
@@ -516,6 +558,169 @@ namespace mu
             bool isNull() const;
             std::string print() const;
             Array asArray() const;
+    };
+
+
+    class StackBuffer : protected Array
+    {
+        private:
+            Variable* m_var;
+
+        public:
+            StackBuffer() : Array(), m_var(nullptr) {}
+
+            void use(Variable* var)
+            {
+                m_var = var;
+            }
+
+            const Array& get() const
+            {
+                if (m_var)
+                    return *m_var;
+
+                return *this;
+            }
+
+            StackBuffer& operator=(const StackBuffer& other) = default; // ???
+            StackBuffer& operator=(const Array& other)
+            {
+                Array::operator=(other);
+                m_var = nullptr;
+                return *this;
+            }
+
+            StackBuffer& operator+=(const StackBuffer& other)
+            {
+                if (m_var)
+                    Array::operator=(*m_var + other.get());
+                else
+                    Array::operator+=(other.get());
+
+                m_var = nullptr;
+                return *this;
+            }
+
+            StackBuffer& operator-=(const StackBuffer& other)
+            {
+                if (m_var)
+                    Array::operator=(*m_var - other.get());
+                else
+                    Array::operator-=(other.get());
+
+                m_var = nullptr;
+                return *this;
+            }
+
+            StackBuffer& operator*=(const StackBuffer& other)
+            {
+                if (m_var)
+                    Array::operator=(*m_var * other.get());
+                else
+                    Array::operator*=(other.get());
+
+                m_var = nullptr;
+                return *this;
+            }
+
+            StackBuffer& operator/=(const StackBuffer& other)
+            {
+                if (m_var)
+                    Array::operator=(*m_var / other.get());
+                else
+                    Array::operator/=(other.get());
+
+                m_var = nullptr;
+                return *this;
+            }
+
+            Array operator<(const StackBuffer& other) const
+            {
+                return get() < other.get();
+            }
+
+            Array operator<=(const StackBuffer& other) const
+            {
+                return get() <= other.get();
+            }
+
+            Array operator>(const StackBuffer& other) const
+            {
+                return get() > other.get();
+            }
+
+            Array operator>=(const StackBuffer& other) const
+            {
+                return get() >= other.get();
+            }
+
+            Array operator!=(const StackBuffer& other) const
+            {
+                return get() != other.get();
+            }
+
+            Array operator==(const StackBuffer& other) const
+            {
+                return get() == other.get();
+            }
+
+            Array operator&&(const StackBuffer& other) const
+            {
+                return get() && other.get();
+            }
+
+            Array operator||(const StackBuffer& other) const
+            {
+                return get() || other.get();
+            }
+
+            Array pow(const StackBuffer& other) const
+            {
+                return get().pow(other.get());
+            }
+
+
+            void varPowN(const Variable& var, int N)
+            {
+                Array::operator=(var);
+
+                for (int n = 1; n < N; n++)
+                {
+                    Array::operator*=(var);
+                }
+            }
+
+            void varMul(const Array& fact, const Variable& var, const Array& add)
+            {
+                Array::operator=(var);
+                Array::operator*=(fact);
+
+                if (!add.isDefault())
+                    Array::operator+=(add);
+            }
+
+            void revVarMul(const Array& fact, const Variable& var, const Array& add)
+            {
+                if (!add.isDefault())
+                {
+                    Array::operator=(add);
+                    Array::operator+=(var * fact);
+                }
+                else
+                {
+                    Array::operator=(var);
+                    Array::operator*=(fact);
+                }
+            }
+
+            void divVar(const Array& fact, const Variable& var, const Array& add)
+            {
+                Array::operator=(fact);
+                Array::operator/=(var);
+
+                if (!add.isDefault())
+                    Array::operator+=(add);
+            }
     };
 
 

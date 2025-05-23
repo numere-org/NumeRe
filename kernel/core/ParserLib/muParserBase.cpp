@@ -1656,7 +1656,6 @@ namespace mu
             ? &m_state->m_stackBuffer[0]
             : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / nMaxThreads)];
 
-		Array buf;
 		int sidx(0);
 
         for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
@@ -1790,18 +1789,15 @@ namespace mu
                     continue;
 
                 case  cmVARPOW2:
-                    buf = *pTok->Val().var;
-                    Stack[++sidx] = buf * buf;
+                    pTok->Val().var->powN(2, Stack[++sidx]);
                     continue;
 
                 case  cmVARPOW3:
-                    buf = *pTok->Val().var;
-                    Stack[++sidx] = buf * buf * buf;
+                    pTok->Val().var->powN(3, Stack[++sidx]);
                     continue;
 
                 case  cmVARPOW4:
-                    buf = *pTok->Val().var;
-                    Stack[++sidx] = buf * buf * buf * buf;
+                    pTok->Val().var->powN(4, Stack[++sidx]);
                     continue;
 
                 case  cmVARPOWN:
@@ -1809,21 +1805,15 @@ namespace mu
                     continue;
 
                 case  cmVARMUL:
-                    Stack[++sidx] = pTok->Val().data2.isDefault()
-                        ? Array(*pTok->Val().var) * pTok->Val().data
-                        : Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                    pTok->Val().var->mul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
                     continue;
 
                 case  cmREVVARMUL:
-                    Stack[++sidx] = pTok->Val().data2.isDefault()
-                        ? Array(*pTok->Val().var) * pTok->Val().data
-                        : pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                    pTok->Val().var->revMul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
                     continue;
 
                 case  cmDIVVAR:
-                    Stack[++sidx] = pTok->Val().data2.isDefault()
-                        ? pTok->Val().data / Array(*pTok->Val().var)
-                        : pTok->Val().data / Array(*pTok->Val().var) + pTok->Val().data2;
+                    pTok->Val().var->div(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
                     continue;
 
                 // Next is treatment of numeric functions
@@ -1983,7 +1973,6 @@ namespace mu
         {
             int nThreadID = omp_get_thread_num();
             Array* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
-            Array buf;
             int sidx(0);
 
             // Run the bytecode
@@ -2119,18 +2108,15 @@ namespace mu
                         continue;
 
                     case  cmVARPOW2:
-                        buf = *pTok->Val().var;
-                        Stack[++sidx] = buf * buf;
+                        pTok->Val().var->powN(2, Stack[++sidx]);
                         continue;
 
                     case  cmVARPOW3:
-                        buf = *pTok->Val().var;
-                        Stack[++sidx] = buf * buf * buf;
+                        pTok->Val().var->powN(3, Stack[++sidx]);
                         continue;
 
                     case  cmVARPOW4:
-                        buf = *pTok->Val().var;
-                        Stack[++sidx] = buf * buf * buf * buf;
+                        pTok->Val().var->powN(4, Stack[++sidx]);
                         continue;
 
                     case  cmVARPOWN:
@@ -2138,21 +2124,15 @@ namespace mu
                         continue;
 
                     case  cmVARMUL:
-                        Stack[++sidx] = pTok->Val().data2.isDefault()
-                            ? Array(*pTok->Val().var) * pTok->Val().data
-                            : Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                        pTok->Val().var->mul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
                         continue;
 
                     case  cmREVVARMUL:
-                        Stack[++sidx] = pTok->Val().data2.isDefault()
-                            ? Array(*pTok->Val().var) * pTok->Val().data
-                            : pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                        pTok->Val().var->revMul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
                         continue;
 
                     case  cmDIVVAR:
-                        Stack[++sidx] = pTok->Val().data2.isDefault()
-                            ? pTok->Val().data / Array(*pTok->Val().var)
-                            : pTok->Val().data / Array(*pTok->Val().var) + pTok->Val().data2;
+                        pTok->Val().var->div(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
                         continue;
 
                     // Next is treatment of numeric functions
