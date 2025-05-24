@@ -1650,7 +1650,7 @@ namespace mu
 
 		// Note: The check for nOffset==0 and nThreadID here is not necessary but
 		//       brings a minor performance gain when not in bulk mode.
-		Array* Stack = nullptr;
+		StackItem* Stack = nullptr;
 
 		Stack = ((nOffset == 0) && (nThreadID == 0))
             ? &m_state->m_stackBuffer[0]
@@ -1720,51 +1720,73 @@ namespace mu
 
                 case  cmVAL2STR:
                     --sidx;
-                    Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().asUI64());
+                    Stack[sidx]  = val2Str(Stack[sidx].get(), Stack[sidx+1].get().front().getNum().asUI64());
                     continue;
 
                 case  cmASSIGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var = Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1].get();
                     continue;
 
                 case  cmADDASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var += Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1].get();
                     continue;
 
                 case  cmSUBASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var -= Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1].get();
                     continue;
 
                 case  cmMULASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var *= Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1].get();
                     continue;
 
                 case  cmDIVASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var /= Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1].get();
                     continue;
 
                 case  cmPOWASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]); // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
+                    else
+                        Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
                     continue;
 
                 case  cmINCR:
-                    //--sidx;
-                    Stack[sidx] = pTok->Oprt().var += Value(1); // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var += Value(1);
+                    else
+                        Stack[sidx] = pTok->Oprt().var += Value(1);
                     continue;
 
                 case  cmDECR:
-                    //--sidx;
-                    Stack[sidx] = pTok->Oprt().var -= Value(1); // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var -= Value(1);
+                    else
+                        Stack[sidx] = pTok->Oprt().var-= Value(1);
                     continue;
 
                 case  cmIF: // Not needed right now, operator converted to a function
-                    if (!all(Stack[sidx--]))
+                    if (!all(Stack[sidx--].get()))
                         pTok += pTok->Oprt().offset;
                     continue;
 
@@ -1777,11 +1799,11 @@ namespace mu
 
                 // value and variable tokens
                 case  cmVAL:
-                    Stack[++sidx] =  pTok->Val().data2; // Potential: this copy could be a ref
+                    Stack[++sidx].aliasOf(&pTok->Val().data2); // Potential: this copy could be a ref
                     continue;
 
                 case  cmVAR:
-                    Stack[++sidx] = *pTok->Val().var; // Potential: this copy could be a ref
+                    Stack[++sidx].aliasOf(pTok->Val().var);
                     continue;
 
                 case  cmVARARRAY:
@@ -1789,15 +1811,15 @@ namespace mu
                     continue;
 
                 case  cmVARPOW2:
-                    pTok->Val().var->powN(2, Stack[++sidx]);
+                    Stack[++sidx].varPowN(*pTok->Val().var, 2);
                     continue;
 
                 case  cmVARPOW3:
-                    pTok->Val().var->powN(3, Stack[++sidx]);
+                    Stack[++sidx].varPowN(*pTok->Val().var, 3);
                     continue;
 
                 case  cmVARPOW4:
-                    pTok->Val().var->powN(4, Stack[++sidx]);
+                    Stack[++sidx].varPowN(*pTok->Val().var, 4);
                     continue;
 
                 case  cmVARPOWN:
@@ -1805,15 +1827,15 @@ namespace mu
                     continue;
 
                 case  cmVARMUL:
-                    pTok->Val().var->mul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
+                    Stack[++sidx].varMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                     continue;
 
                 case  cmREVVARMUL:
-                    pTok->Val().var->revMul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
+                    Stack[++sidx].revVarMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                     continue;
 
                 case  cmDIVVAR:
-                    pTok->Val().var->div(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
+                    Stack[++sidx].divVar(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                     continue;
 
                 // Next is treatment of numeric functions
@@ -1829,95 +1851,104 @@ namespace mu
                                 Stack[sidx] = (*(fun_type0)pTok->Fun().ptr)();
                                 continue;
                             case 1:
-                                Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx]);
+                                Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx].get());
                                 continue;
                             case 2:
                                 sidx -= 1;
-                                Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1]);
+                                Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get());
                                 continue;
                             case 3:
                                 sidx -= 2;
-                                Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2]);
+                                Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get());
                                 continue;
                             case 4:
                                 sidx -= 3;
-                                Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3]);
+                                Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get());
                                 continue;
                             case 5:
                                 sidx -= 4;
-                                Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4]);
+                                Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get());
                                 continue;
                             case 6:
                                 sidx -= 5;
-                                Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5]);
+                                Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get());
                                 continue;
                             case 7:
                                 sidx -= 6;
-                                Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5],
-                                                                            Stack[sidx + 6]);
+                                Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get(),
+                                                                            Stack[sidx + 6].get());
                                 continue;
                             case 8:
                                 sidx -= 7;
-                                Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5],
-                                                                            Stack[sidx + 6],
-                                                                            Stack[sidx + 7]);
+                                Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get(),
+                                                                            Stack[sidx + 6].get(),
+                                                                            Stack[sidx + 7].get());
                                 continue;
                             case 9:
                                 sidx -= 8;
-                                Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5],
-                                                                            Stack[sidx + 6],
-                                                                            Stack[sidx + 7],
-                                                                            Stack[sidx + 8]);
+                                Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get(),
+                                                                            Stack[sidx + 6].get(),
+                                                                            Stack[sidx + 7].get(),
+                                                                            Stack[sidx + 8].get());
                                 continue;
                             case 10:
                                 sidx -= 9;
-                                Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx],
-                                                                             Stack[sidx + 1],
-                                                                             Stack[sidx + 2],
-                                                                             Stack[sidx + 3],
-                                                                             Stack[sidx + 4],
-                                                                             Stack[sidx + 5],
-                                                                             Stack[sidx + 6],
-                                                                             Stack[sidx + 7],
-                                                                             Stack[sidx + 8],
-                                                                             Stack[sidx + 9]);
+                                Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                             Stack[sidx + 1].get(),
+                                                                             Stack[sidx + 2].get(),
+                                                                             Stack[sidx + 3].get(),
+                                                                             Stack[sidx + 4].get(),
+                                                                             Stack[sidx + 5].get(),
+                                                                             Stack[sidx + 6].get(),
+                                                                             Stack[sidx + 7].get(),
+                                                                             Stack[sidx + 8].get(),
+                                                                             Stack[sidx + 9].get());
                                 continue;
                             default:
                                 if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                     Error(ecINTERNAL_ERROR, 1);
 
-                                sidx -= -iArgCount - 1;
-                                Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&Stack[sidx], -iArgCount);
+                                {
+                                    sidx -= -iArgCount - 1;
+                                    std::vector<Array> args(-iArgCount);
+
+                                    for (size_t i = 0; i < args.size(); i++)
+                                    {
+                                        args[i] = Stack[sidx+i].get();
+                                    }
+
+                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&args[0], args.size());
+                                }
                                 continue;
                         }
                     }
@@ -1930,18 +1961,18 @@ namespace mu
                         switch (iArgCount)
                         {
                             case 1:
-                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name);
+                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name);
                                 continue;
                             case 2:
                                 sidx -= 1;
-                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                               Stack[sidx + 1]);
+                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                               Stack[sidx + 1].get());
                                 continue;
                             case 3:
                                 sidx -= 2;
-                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                               Stack[sidx + 1],
-                                                               Stack[sidx + 2]);
+                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                               Stack[sidx + 1].get(),
+                                                               Stack[sidx + 2].get());
                                 continue;
                             default:
                                 Error(ecINTERNAL_ERROR, 1);
@@ -1972,7 +2003,7 @@ namespace mu
         for (size_t nOffset = 1; nOffset < nVectorLength; ++nOffset)
         {
             int nThreadID = omp_get_thread_num();
-            Array* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
+            StackItem* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
             int sidx(0);
 
             // Run the bytecode
@@ -2038,51 +2069,67 @@ namespace mu
 
                     case  cmVAL2STR:
                         --sidx;
-                        Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().asUI64());
+                        Stack[sidx]  = val2Str(Stack[sidx].get(), Stack[sidx+1].get().front().getNum().asUI64());
                         continue;
 
                     case  cmASSIGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var = Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1].get();
                         continue;
 
                     case  cmADDASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var += Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1].get();
                         continue;
 
                     case  cmSUBASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var -= Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1].get();
                         continue;
 
                     case  cmMULASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var *= Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1].get();
                         continue;
 
                     case  cmDIVASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var /= Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1].get();
                         continue;
 
                     case  cmPOWASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]);
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
+                        else
+                            Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
                         continue;
 
                     case  cmINCR:
-                        --sidx;
-                        Stack[sidx] = pTok->Oprt().var += Value(1);
+                        pTok->Oprt().var += Value(1);
                         continue;
 
                     case  cmDECR:
-                        --sidx;
-                        Stack[sidx] = pTok->Oprt().var -= Value(1);
+                        pTok->Oprt().var -= Value(1);
                         continue;
 
                     case  cmIF: // Not needed right now, operator converted to a function
-                        if (!all(Stack[sidx--]))
+                        if (!all(Stack[sidx--].get()))
                             pTok += pTok->Oprt().offset;
                         continue;
 
@@ -2095,12 +2142,11 @@ namespace mu
 
                     // value and variable tokens
                     case  cmVAL:
-                        Stack[++sidx] = pTok->Val().data2;
+                        Stack[++sidx].aliasOf(&pTok->Val().data2);
                         continue;
 
                     case  cmVAR:
-                        Stack[++sidx] = *pTok->Val().var;
-                        //print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
+                        Stack[++sidx].aliasOf(pTok->Val().var);
                         continue;
 
                     case  cmVARARRAY:
@@ -2108,15 +2154,15 @@ namespace mu
                         continue;
 
                     case  cmVARPOW2:
-                        pTok->Val().var->powN(2, Stack[++sidx]);
+                        Stack[++sidx].varPowN(*pTok->Val().var, 2);
                         continue;
 
                     case  cmVARPOW3:
-                        pTok->Val().var->powN(3, Stack[++sidx]);
+                        Stack[++sidx].varPowN(*pTok->Val().var, 3);
                         continue;
 
                     case  cmVARPOW4:
-                        pTok->Val().var->powN(4, Stack[++sidx]);
+                        Stack[++sidx].varPowN(*pTok->Val().var, 4);
                         continue;
 
                     case  cmVARPOWN:
@@ -2124,15 +2170,15 @@ namespace mu
                         continue;
 
                     case  cmVARMUL:
-                        pTok->Val().var->mul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
+                        Stack[++sidx].varMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                         continue;
 
                     case  cmREVVARMUL:
-                        pTok->Val().var->revMul(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
+                        Stack[++sidx].revVarMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                         continue;
 
                     case  cmDIVVAR:
-                        pTok->Val().var->div(pTok->Val().data, pTok->Val().data2, Stack[++sidx]);
+                        Stack[++sidx].divVar(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                         continue;
 
                     // Next is treatment of numeric functions
@@ -2148,95 +2194,104 @@ namespace mu
                                     Stack[sidx] = (*(fun_type0)pTok->Fun().ptr)();
                                     continue;
                                 case 1:
-                                    Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx]);
+                                    Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx].get());
                                     continue;
                                 case 2:
                                     sidx -= 1;
-                                    Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1]);
+                                    Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get());
                                     continue;
                                 case 3:
                                     sidx -= 2;
-                                    Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2]);
+                                    Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get());
                                     continue;
                                 case 4:
                                     sidx -= 3;
-                                    Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3]);
+                                    Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get());
                                     continue;
                                 case 5:
                                     sidx -= 4;
-                                    Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4]);
+                                    Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get());
                                     continue;
                                 case 6:
                                     sidx -= 5;
-                                    Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5]);
+                                    Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get());
                                     continue;
                                 case 7:
                                     sidx -= 6;
-                                    Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5],
-                                                                                Stack[sidx + 6]);
+                                    Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get(),
+                                                                                Stack[sidx + 6].get());
                                     continue;
                                 case 8:
                                     sidx -= 7;
-                                    Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5],
-                                                                                Stack[sidx + 6],
-                                                                                Stack[sidx + 7]);
+                                    Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get(),
+                                                                                Stack[sidx + 6].get(),
+                                                                                Stack[sidx + 7].get());
                                     continue;
                                 case 9:
                                     sidx -= 8;
-                                    Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5],
-                                                                                Stack[sidx + 6],
-                                                                                Stack[sidx + 7],
-                                                                                Stack[sidx + 8]);
+                                    Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get(),
+                                                                                Stack[sidx + 6].get(),
+                                                                                Stack[sidx + 7].get(),
+                                                                                Stack[sidx + 8].get());
                                     continue;
                                 case 10:
                                     sidx -= 9;
-                                    Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx],
-                                                                                 Stack[sidx + 1],
-                                                                                 Stack[sidx + 2],
-                                                                                 Stack[sidx + 3],
-                                                                                 Stack[sidx + 4],
-                                                                                 Stack[sidx + 5],
-                                                                                 Stack[sidx + 6],
-                                                                                 Stack[sidx + 7],
-                                                                                 Stack[sidx + 8],
-                                                                                 Stack[sidx + 9]);
+                                    Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                 Stack[sidx + 1].get(),
+                                                                                 Stack[sidx + 2].get(),
+                                                                                 Stack[sidx + 3].get(),
+                                                                                 Stack[sidx + 4].get(),
+                                                                                 Stack[sidx + 5].get(),
+                                                                                 Stack[sidx + 6].get(),
+                                                                                 Stack[sidx + 7].get(),
+                                                                                 Stack[sidx + 8].get(),
+                                                                                 Stack[sidx + 9].get());
                                     continue;
                                 default:
                                     if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                         Error(ecINTERNAL_ERROR, 1);
 
-                                    sidx -= -iArgCount - 1;
-                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&Stack[sidx], -iArgCount);
+                                    {
+                                        sidx -= -iArgCount - 1;
+                                        std::vector<Array> args(-iArgCount);
+
+                                        for (size_t i = 0; i < args.size(); i++)
+                                        {
+                                            args[i] = Stack[sidx+i].get();
+                                        }
+
+                                        Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&args[0], args.size());
+                                    }
                                     continue;
                             }
                         }
@@ -2249,18 +2304,18 @@ namespace mu
                             switch (iArgCount)
                             {
                                 case 1:
-                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name);
+                                    Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name);
                                     continue;
                                 case 2:
                                     sidx -= 1;
-                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                                   Stack[sidx + 1]);
+                                    Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get());
                                     continue;
                                 case 3:
                                     sidx -= 2;
-                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                                   Stack[sidx + 1],
-                                                                   Stack[sidx + 2]);
+                                    Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get(),
+                                                                   Stack[sidx + 2].get());
                                     continue;
                                 default:
                                     Error(ecINTERNAL_ERROR, 1);
@@ -2275,7 +2330,7 @@ namespace mu
             // Copy the results
             for (int j = 0; j < nStackSize; j++)
             {
-                m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
+                m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1].get();
             }
         }
 
@@ -3027,12 +3082,12 @@ namespace mu
     /// \brief Simple helper function to print the
     /// buffer's contents.
     ///
-    /// \param buffer const valbuf_type&
+    /// \param buffer const std::vector<Array>&
     /// \param nElems int
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-	static std::string printVector(const valbuf_type& buffer, int nElems)
+	static std::string printVector(const std::vector<Array>& buffer, int nElems)
 	{
 	    std::string s;
 
@@ -3066,8 +3121,13 @@ namespace mu
         nStackSize = m_state->m_numResults;
 
         // Copy the actual results (ignore the 0-th term)
-        m_buffer.assign(m_state->m_stackBuffer.begin()+1,
-                        m_state->m_stackBuffer.begin()+nStackSize+1);
+        m_buffer.resize(nStackSize);
+        for (int i = 0; i < nStackSize; i++)
+        {
+            m_buffer[i] = m_state->m_stackBuffer[i+1].get();
+        }
+        /*m_buffer.assign(m_state->m_stackBuffer.begin()+1,
+                        m_state->m_stackBuffer.begin()+nStackSize+1);*/
 
         // assign the results of the calculation to a possible
         // temporary vector

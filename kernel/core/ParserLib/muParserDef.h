@@ -247,7 +247,7 @@ namespace mu
     typedef std::map<string_type, std::size_t> strmap_type;
 
     /** \brief Type used for storing an array of values. */
-    typedef std::vector<Array> valbuf_type;
+    typedef std::vector<StackItem> valbuf_type;
 
     // Parser callbacks
 

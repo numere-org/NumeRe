@@ -192,7 +192,7 @@ namespace mu
 	    VarArray m_targets;
 
 	    void create(StringView sTargets, const varmap_type& usedVars);
-	    void assign(const valbuf_type& buffer, int nResults);
+	    void assign(const std::vector<Array>& buffer, int nResults);
 
 	    void clear()
 	    {

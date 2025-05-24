@@ -338,7 +338,7 @@ namespace mu
 			mutable ExpressionTarget m_compilingTarget;
 			mutable StateStacks m_stateStacks;
 			State* m_state;
-			mutable valbuf_type m_buffer;
+			mutable std::vector<Array> m_buffer;
 
 			mutable varmap_type mInternalVars;
 

@@ -244,6 +244,8 @@ int main()
     categories.push_back(mu::Value(mu::Category(1, "Hello")));
     categories.push_back(mu::Value(mu::Category(2, "World")));
     categories.push_back(mu::Value(mu::Category(1, "Hello")));
+    mu::Variable pi(mu::Value(3.141593));
+    mu::Variable e(mu::Value(2.718282));
     _parser.DefineVar("vect", &vectorVar);
     _parser.DefineVar("logicals", &logicalVar);
     _parser.DefineVar("var", &var);
@@ -251,6 +253,8 @@ int main()
     _parser.DefineVar("strvect", &stringVect);
     _parser.DefineVar("mixed", &mixed);
     _parser.DefineVar("categories", &categories);
+    _parser.DefineVar("pi", &pi);
+    _parser.DefineVar("e", &e);
 
     runtests();
 

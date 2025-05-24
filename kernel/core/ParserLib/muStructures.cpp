@@ -3171,7 +3171,7 @@ namespace mu
     /// \return Variable&
     ///
     /////////////////////////////////////////////////
-    Variable& Variable::operator=(const Array& other)
+    /*Variable& Variable::operator=(const Array& other)
     {
         //Timer t("Variable::operator=");
         if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
@@ -3181,7 +3181,7 @@ namespace mu
         }
 
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);
-    }
+    }*/
 
 
     /////////////////////////////////////////////////
@@ -3242,7 +3242,7 @@ namespace mu
     /// \return const Array&
     ///
     /////////////////////////////////////////////////
-    const Array& VarArray::operator=(const Array& values)
+    /*const Array& VarArray::operator=(const Array& values)
     {
         //Timer t("VarArray::operator=");
         if (size() == 1)
@@ -3263,7 +3263,7 @@ namespace mu
         }
 
         return values;
-    }
+    }*/
 
 
     /////////////////////////////////////////////////

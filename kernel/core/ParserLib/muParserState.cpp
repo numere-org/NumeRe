@@ -58,12 +58,12 @@ namespace mu
     /// \brief Assign the calculated values to the
     /// target vector components.
     ///
-    /// \param buffer const valbuf_type&
+    /// \param buffer const std::vector<Array>&
     /// \param nResults int
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ExpressionTarget::assign(const valbuf_type& buffer, int nResults)
+    void ExpressionTarget::assign(const std::vector<Array>& buffer, int nResults)
     {
         m_targets = buffer[0];
         //g_logger.debug("Using target. Size = " + toString(m_targets.size()));
