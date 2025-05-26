@@ -108,7 +108,7 @@ namespace mu
 		// optimization does not apply
 		SToken tok;
 		tok.Cmd       = cmVAR;
-		tok.m_data = SValData{.var{a_pVar}, .data{std::move(Value(1.0))}, .isVect{false}};
+		tok.m_data = SValData{.var{a_pVar}, .data{std::move(Value(1))}, .isVect{false}};
 		m_vRPN.push_back(std::move(tok));
 	}
 
@@ -152,7 +152,7 @@ namespace mu
 		// If optimization does not apply
 		SToken tok;
 		tok.Cmd = cmVAL;
-		tok.m_data = std::move(SValData{.data{std::move(Value(0.0))}, .data2{std::move(a_fVal)}, .isVect{false}});
+		tok.m_data = std::move(SValData{.data{std::move(Value(0))}, .data2{std::move(a_fVal)}, .isVect{false}});
 		m_vRPN.push_back(std::move(tok));
 	}
 
@@ -267,11 +267,11 @@ namespace mu
 						// Optimization for ploynomials of low order
 						if (m_vRPN[prev].Cmd == cmVAR && m_vRPN[curr].Cmd == cmVAL)
 						{
-							if (all(m_vRPN[curr].Val().data2 == Array(Value(2.0))))
+							if (all(m_vRPN[curr].Val().data2 == Array(Value(2))))
 								m_vRPN[prev].Cmd = cmVARPOW2;
-							else if (all(m_vRPN[curr].Val().data2 == Array(Value(3.0))))
+							else if (all(m_vRPN[curr].Val().data2 == Array(Value(3))))
 								m_vRPN[prev].Cmd = cmVARPOW3;
-							else if (all(m_vRPN[curr].Val().data2 == Array(Value(4.0))))
+							else if (all(m_vRPN[curr].Val().data2 == Array(Value(4))))
 								m_vRPN[prev].Cmd = cmVARPOW4;
 							else if (all(m_vRPN[curr].Val().data2 == Array(Value(m_vRPN[curr].Val().data2.getAsScalarInt()))))
 							{
@@ -459,7 +459,7 @@ namespace mu
 					case cmDIV:
                         if (m_vRPN[curr].Cmd == cmVAL
                             && m_vRPN[prev].Cmd == cmVARMUL
-                            && all(m_vRPN[curr].Val().data2 != Array(Value(0.0))))
+                            && all(m_vRPN[curr].Val().data2 != Array(Value(0))))
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[prev].Val().data /= m_vRPN[curr].Val().data2;
@@ -772,15 +772,15 @@ namespace mu
                 {
                     optimizeAway = true;
                     m_vRPN[sz-1].Cmd = cmVARMUL;
-                    m_vRPN[sz-1].Val().data = Value(-1.0);
+                    m_vRPN[sz-1].Val().data = Value(-1);
                     m_vRPN[sz-1].Val().data2 = Array();
                     m_vRPN[sz-1].Val().isVect = false;
                 }
                 else if (m_vRPN[sz-1].Cmd == cmVARMUL || m_vRPN[sz-1].Cmd == cmREVVARMUL)
                 {
                     optimizeAway = true;
-                    m_vRPN[sz-1].Val().data *= Value(-1.0);
-                    m_vRPN[sz-1].Val().data2 *= Value(-1.0);
+                    m_vRPN[sz-1].Val().data *= Value(-1);
+                    m_vRPN[sz-1].Val().data2 *= Value(-1);
                 }
             }
 		}

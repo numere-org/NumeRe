@@ -542,21 +542,25 @@ namespace mu
     {
         if (m_type >= I8 && m_type <= I32)
         {
-            TypeInfo info(m_type);
-
-            while ((i64 < -(1LL << (info.m_bits-1)) || i64 > (1LL << (info.m_bits-1))-1) && info.m_bits != 64)
-                info.m_bits *= 2;
-
-            m_type = info.asType();
+            if (m_type == I8 && i64 >= INT8_MIN && i64 <= INT8_MAX)
+                m_type = I8;
+            else if (m_type <= I16 && i64 >= INT16_MIN && i64 <= INT16_MAX)
+                m_type = I16;
+            else if (m_type <= I32 && i64 >= INT32_MIN && i64 <= INT32_MAX)
+                m_type = I32;
+            else
+                m_type = I64;
         }
         else if (m_type >= UI8 && m_type <= UI32)
         {
-            TypeInfo info(m_type);
-
-            while (ui64 > (1ULL << info.m_bits)-1 && info.m_bits != 64)
-                info.m_bits *= 2;
-
-            m_type = info.asType();
+            if (m_type == UI8 && ui64 <= UINT8_MAX)
+                m_type = UI8;
+            else if (m_type <= UI16 && ui64 <= UINT16_MAX)
+                m_type = UI16;
+            else if (m_type <= UI32 && ui64 <= UINT32_MAX)
+                m_type = UI32;
+            else
+                m_type = UI64;
         }
     }
 
