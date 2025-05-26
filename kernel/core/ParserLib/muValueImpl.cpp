@@ -177,6 +177,11 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    BaseValue* NumValue::operator^(const BaseValue& other) const
+    {
+        return pow(other);
+    }
+
     BaseValue& NumValue::operator+=(const BaseValue& other)
     {
         if (other.m_type == TYPE_NUMERICAL)
@@ -219,6 +224,18 @@ namespace mu
             m_val *= static_cast<const NumValue&>(other).m_val;
         else if (other.m_type == TYPE_CATEGORY)
             m_val *= static_cast<const CatValue&>(other).get().val;
+        else if (other.m_type != TYPE_INVALID)
+            throw ParserError(ecTYPE_MISMATCH);
+
+        return *this;
+    }
+
+    BaseValue& NumValue::operator^=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_NUMERICAL)
+            m_val = m_val.pow(static_cast<const NumValue&>(other).m_val);
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val = m_val.pow(static_cast<const CatValue&>(other).get().val);
         else if (other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
@@ -564,6 +581,16 @@ namespace mu
         return new ArrValue(m_val * Value(other.clone()));
     }
 
+    BaseValue* ArrValue::operator^(const BaseValue& other) const
+    {
+        if (other == TYPE_ARRAY)
+            return new ArrValue(m_val ^ static_cast<const ArrValue&>(other).m_val);
+        else if (other.m_type == TYPE_INVALID)
+            return clone();
+
+        return new ArrValue(m_val * Value(other.clone()));
+    }
+
     BaseValue& ArrValue::operator+=(const BaseValue& other)
     {
         if (other == TYPE_ARRAY)
@@ -600,6 +627,16 @@ namespace mu
             m_val *= static_cast<const ArrValue&>(other).m_val;
         else
             m_val *= Value(other.clone());
+
+        return *this;
+    }
+
+    BaseValue& ArrValue::operator^=(const BaseValue& other)
+    {
+        if (other == TYPE_ARRAY)
+            m_val ^= static_cast<const ArrValue&>(other).m_val;
+        else
+            m_val ^= Value(other.clone());
 
         return *this;
     }

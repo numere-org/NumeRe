@@ -318,7 +318,6 @@ namespace mu
 
 			void ParseString();
 			void ParseCmdCode();
-			void ParseCmdCodeBulk(int nOffset, int nThreadID);
 			void ParseCmdCodeBulkParallel(size_t nVectorLength);
 
 			void CheckName(const string_type& a_strName, const string_type& a_CharSet) const;

@@ -77,7 +77,11 @@ namespace mu
 
                 return *this;
             }
-            //Value& operator=(Value&& other);
+            Value& operator=(Value&& other)
+            {
+                reset(other.release());
+                return *this;
+            }
 
             DataType getType() const;
             std::string getTypeAsString() const;
@@ -146,6 +150,13 @@ namespace mu
 
                 throw ParserError(ecTYPE_MISMATCH);
             }
+            Value operator^(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() ^ *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH);
+            }
             Value& operator+=(const Value& other)
             {
                 if (!get())
@@ -203,6 +214,18 @@ namespace mu
 
                 return *this;
             }
+            Value& operator^=(const Value& other)
+            {
+                if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this ^ other);
+
+                    *get() ^= *other.get();
+                }
+
+                return *this;
+            }
 
             Value pow(const Value& exponent) const;
 
@@ -243,7 +266,7 @@ namespace mu
         public:
             Array();
             Array(const Array& other);
-            //Array(Array&& other) = default;
+            Array(Array&& other) = default;
 
             Array(size_t n, const Value& fillVal = Value());
             Array(const Value& singleton);
@@ -261,8 +284,8 @@ namespace mu
             {
                 if (other.size() == 1)
                 {
-                    //if (other.front().isArray())
-                    //    return operator=(other.front().getArray());
+                    if (other.front().isArray())
+                        return operator=(other.front().getArray());
 
                     if (size() != 1)
                         resize(1);
@@ -283,7 +306,17 @@ namespace mu
 
                 return *this;
             }
-            //Array& operator=(Array&& other);
+            Array& operator=(Array&& other)
+            {
+                _M_impl._M_start = other._M_impl._M_start;
+                _M_impl._M_finish = other._M_impl._M_finish;
+                _M_impl._M_end_of_storage = other._M_impl._M_end_of_storage;
+                m_commonType = other.m_commonType;
+
+                other._M_impl._M_start = other._M_impl._M_finish = other._M_impl._M_end_of_storage = pointer();
+
+                return *this;
+            }
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
@@ -347,6 +380,17 @@ namespace mu
 
                 return ret;
             }
+            Array operator^(const Array& other) const
+            {
+                Array ret;
+
+                for (size_t i = 0; i < std::max(size(), other.size()); i++)
+                {
+                    ret.push_back(get(i) ^ other.get(i));
+                }
+
+                return ret;
+            }
             Array& operator+=(const Array& other)
             {
                 if (size() < other.size())
@@ -398,6 +442,20 @@ namespace mu
                     for (size_t i = 0; i < size(); i++)
                     {
                         operator[](i) *= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+            Array& operator^=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator^(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) ^= other.get(i);
                     }
                 }
 
@@ -483,13 +541,13 @@ namespace mu
             Variable& operator=(const Value& other);
             Variable& operator=(const Array& other)
             {
-                //if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
-                //{
+                if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
+                {
                     Array::operator=(other);
                     return *this;
-                //}
-                //
-                //throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+                }
+
+                throw ParserError(ecASSIGNED_TYPE_MISMATCH);
             }
             Variable& operator=(const Variable& other);
 
@@ -628,6 +686,16 @@ namespace mu
                 return *this;
             }
 
+            StackItem& operator^=(const StackItem& other)
+            {
+                if (m_alias)
+                    operator=(*m_alias ^ other.get());
+                else
+                    Array::operator^=(other.get());
+
+                return *this;
+            }
+
             Array operator<(const StackItem& other) const
             {
                 return get() < other.get();
@@ -667,12 +735,6 @@ namespace mu
             {
                 return get() || other.get();
             }
-
-            Array pow(const StackItem& other) const
-            {
-                return get().pow(other.get());
-            }
-
 
             void varPowN(const Variable& var, int N)
             {

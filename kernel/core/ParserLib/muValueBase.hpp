@@ -38,11 +38,13 @@ namespace mu
             virtual BaseValue* operator-(const BaseValue& other) const;
             virtual BaseValue* operator/(const BaseValue& other) const;
             virtual BaseValue* operator*(const BaseValue& other) const;
+            virtual BaseValue* operator^(const BaseValue& other) const;
 
             virtual BaseValue& operator+=(const BaseValue& other);
             virtual BaseValue& operator-=(const BaseValue& other);
             virtual BaseValue& operator/=(const BaseValue& other);
             virtual BaseValue& operator*=(const BaseValue& other);
+            virtual BaseValue& operator^=(const BaseValue& other);
 
             virtual BaseValue* pow(const BaseValue& other) const;
 

@@ -149,10 +149,10 @@ namespace mu
 	}
 
 	//---------------------------------------------------------------------------
-	ParserTokenReader::token_type& ParserTokenReader::SaveBeforeReturn(const token_type& tok)
+	ParserTokenReader::token_type ParserTokenReader::SaveBeforeReturn(token_type&& tok)
 	{
 		m_lastTok = tok;
-		return m_lastTok;
+		return std::move(tok);
 	}
 
 	//---------------------------------------------------------------------------
@@ -255,27 +255,27 @@ namespace mu
 			++m_iPos;
 
 		if ( IsEOF(tok) )
-			return SaveBeforeReturn(tok); // Check for end of formula
+			return SaveBeforeReturn(std::move(tok)); // Check for end of formula
 		if ( IsOprt(tok) )
-			return SaveBeforeReturn(tok); // Check for user defined binary operator
+			return SaveBeforeReturn(std::move(tok)); // Check for user defined binary operator
 		if ( IsFunTok(tok) )
-			return SaveBeforeReturn(tok); // Check for function token
+			return SaveBeforeReturn(std::move(tok)); // Check for function token
 		if ( IsMethod(tok) )
-			return SaveBeforeReturn(tok); // Check for method token
+			return SaveBeforeReturn(std::move(tok)); // Check for method token
 		if ( IsBuiltIn(tok) )
-			return SaveBeforeReturn(tok); // Check built in operators / tokens
+			return SaveBeforeReturn(std::move(tok)); // Check built in operators / tokens
 		if ( IsArgSep(tok) )
-			return SaveBeforeReturn(tok); // Check for function argument separators
+			return SaveBeforeReturn(std::move(tok)); // Check for function argument separators
 		if ( IsValTok(tok) )
-			return SaveBeforeReturn(tok); // Check for values / constant tokens
+			return SaveBeforeReturn(std::move(tok)); // Check for values / constant tokens
 		if ( IsVarTok(tok) )
-			return SaveBeforeReturn(tok); // Check for variable tokens
+			return SaveBeforeReturn(std::move(tok)); // Check for variable tokens
 		if ( IsString(tok) )
-			return SaveBeforeReturn(tok); // Check for String tokens
+			return SaveBeforeReturn(std::move(tok)); // Check for String tokens
 		if (IsInfixOpTok(tok))
-			return SaveBeforeReturn(tok); // Check for unary operators
+			return SaveBeforeReturn(std::move(tok)); // Check for unary operators
 		if ( IsPostOpTok(tok) )
-			return SaveBeforeReturn(tok); // Check for unary operators
+			return SaveBeforeReturn(std::move(tok)); // Check for unary operators
 
 		// Check String for undefined variable token. Done only if a
 		// flag is set indicating to ignore undefined variables.
@@ -285,7 +285,7 @@ namespace mu
 		// undefined variables in order to collect all variable
 		// names including the undefined ones.)
 		if ( (m_bIgnoreUndefVar || m_factory) && IsUndefVarTok(tok) )
-			return SaveBeforeReturn(tok);
+			return SaveBeforeReturn(std::move(tok));
 
 		// Check for unknown token
 		//
@@ -853,7 +853,7 @@ namespace mu
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
-				a_Tok.SetVal(fVal, strTok);
+				a_Tok.MoveVal(fVal, strTok);
 				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
 				return true;
 			}
@@ -985,7 +985,7 @@ namespace mu
 		m_iPos += (int)strTok.length() +2+ (int)iSkip;  // +iSkip für entfernte escape zeichen+2 for quotation marks
 
 		// Replace all other known escaped characters and remove the surrounding quotation marks
-		a_Tok.SetVal(mu::Value(toInternalString("\"" + strTok + "\"")), strTok);
+		a_Tok.MoveVal(mu::Value(toInternalString("\"" + strTok + "\"")), strTok);
 		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
 
 		return true;

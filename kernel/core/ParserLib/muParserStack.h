@@ -41,85 +41,95 @@
 namespace mu
 {
 
-  /** \brief Parser stack implementation.
+    /** \brief Parser stack implementation.
 
-      Stack implementation based on a std::stack. The behaviour of pop() had been
-      slightly changed in order to get an error code if the stack is empty.
-      The stack is used within the Parser both as a value stack and as an operator stack.
+        Stack implementation based on a std::stack. The behaviour of pop() had been
+        slightly changed in order to get an error code if the stack is empty.
+        The stack is used within the Parser both as a value stack and as an operator stack.
 
-      \author (C) 2004-2011 Ingo Berg
-  */
-  template <typename TValueType>
-  class ParserStack
-  {
-    private:
+        \author (C) 2004-2011 Ingo Berg
+    */
+    template <typename TValueType>
+    class ParserStack
+    {
+        private:
 
-      /** \brief Type of the underlying stack implementation. */
-      typedef std::stack<TValueType, std::vector<TValueType> > impl_type;
+            /** \brief Type of the underlying stack implementation. */
+            typedef std::stack<TValueType, std::vector<TValueType> > impl_type;
 
-      impl_type m_Stack;  ///< This is the actual stack.
+            impl_type m_Stack;  ///< This is the actual stack.
 
-    public:
+        public:
 
-      //---------------------------------------------------------------------------
-      ParserStack()
-        :m_Stack()
-      {}
+            //---------------------------------------------------------------------------
+            ParserStack()
+                : m_Stack()
+            {}
 
-      //---------------------------------------------------------------------------
-      virtual ~ParserStack()
-      {}
+            //---------------------------------------------------------------------------
+            virtual ~ParserStack()
+            {}
 
-      //---------------------------------------------------------------------------
-      /** \brief Pop a value from the stack.
+            //---------------------------------------------------------------------------
+            /** \brief Pop a value from the stack.
 
-        Unlike the standard implementation this function will return the value that
-        is going to be taken from the stack.
+              Unlike the standard implementation this function will return the value that
+              is going to be taken from the stack.
 
-        \throw ParserException in case the stack is empty.
-        \sa pop(int &a_iErrc)
-      */
-	    TValueType pop()
-      {
-        if (empty())
-          throw ParserError( _nrT("stack is empty.") );
+              \throw ParserException in case the stack is empty.
+              \sa pop(int &a_iErrc)
+            */
+            TValueType pop()
+            {
+                if (empty())
+                    throw ParserError( _nrT("stack is empty.") );
 
-        TValueType el = top();
-        m_Stack.pop();
-        return el;
-      }
+                TValueType el = top();
+                m_Stack.pop();
+                return el;
+            }
 
-      /** \brief Push an object into the stack.
+            /** \brief Push an object into the stack.
 
-          \param a_Val object to push into the stack.
-          \throw nothrow
-      */
-      void push(const TValueType& a_Val)
-      {
-        m_Stack.push(a_Val);
-      }
+                \param a_Val object to push into the stack.
+                \throw nothrow
+            */
+            void push(const TValueType& a_Val)
+            {
+                m_Stack.push(a_Val);
+            }
 
-      /** \brief Return the number of stored elements. */
-      unsigned size() const
-      {
-        return (unsigned)m_Stack.size();
-      }
+            /** \brief Push an object into the stack.
 
-      /** \brief Returns true if stack is empty false otherwise. */
-      bool empty() const
-      {
-        return m_Stack.size()==0;
-      }
+                \param a_Val object to push into the stack.
+                \throw nothrow
+            */
+            void push(TValueType&& a_Val)
+            {
+                m_Stack.push(std::move(a_Val));
+            }
 
-      /** \brief Return reference to the top object in the stack.
+            /** \brief Return the number of stored elements. */
+            unsigned size() const
+            {
+                return (unsigned)m_Stack.size();
+            }
 
-          The top object is the one pushed most recently.
-      */
-      TValueType& top()
-      {
-        return m_Stack.top();
-      }
-  };
+            /** \brief Returns true if stack is empty false otherwise. */
+            bool empty() const
+            {
+                return m_Stack.size() == 0;
+            }
+
+            /** \brief Return reference to the top object in the stack.
+
+                The top object is the one pushed most recently.
+            */
+            TValueType& top()
+            {
+                return m_Stack.top();
+            }
+    };
 } // namespace MathUtils
 
 #endif

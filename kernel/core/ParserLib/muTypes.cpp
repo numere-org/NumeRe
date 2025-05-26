@@ -351,16 +351,7 @@ namespace mu
     Numerical::Numerical(int64_t data, NumericalType type) : m_type(type)
     {
         i64 = data;
-
-        if (m_type != I64)
-        {
-            TypeInfo info(m_type);
-
-            while ((i64 < -(1LL << (info.m_bits-1)) || i64 > (1LL << (info.m_bits-1))-1) && info.m_bits != 64)
-                info.m_bits *= 2;
-
-            m_type = info.asType();
-        }
+        resultPromote();
     }
 
 
@@ -376,16 +367,7 @@ namespace mu
     Numerical::Numerical(uint64_t data, NumericalType type) : m_type(type)
     {
         ui64 = data;
-
-        if (m_type != UI64)
-        {
-            TypeInfo info(m_type);
-
-            while (ui64 > (1ULL << info.m_bits)-1 && info.m_bits != 64)
-                info.m_bits *= 2;
-
-            m_type = info.asType();
-        }
+        resultPromote();
     }
 
 
@@ -546,6 +528,36 @@ namespace mu
             Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX};
 
         return CONVERSIONTABLE[promotion];
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Combining function to promote a type
+    /// based upon its value.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Numerical::resultPromote()
+    {
+        if (m_type >= I8 && m_type <= I32)
+        {
+            TypeInfo info(m_type);
+
+            while ((i64 < -(1LL << (info.m_bits-1)) || i64 > (1LL << (info.m_bits-1))-1) && info.m_bits != 64)
+                info.m_bits *= 2;
+
+            m_type = info.asType();
+        }
+        else if (m_type >= UI8 && m_type <= UI32)
+        {
+            TypeInfo info(m_type);
+
+            while (ui64 > (1ULL << info.m_bits)-1 && info.m_bits != 64)
+                info.m_bits *= 2;
+
+            m_type = info.asType();
+        }
     }
 
 
@@ -733,6 +745,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Power operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
+    Numerical Numerical::operator^(const Numerical& other) const
+    {
+        return pow(other);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Add-assign operator.
     ///
     /// \param other const Numerical&
@@ -760,6 +785,7 @@ namespace mu
             cf64 = asCF64() + other.asCF64();
 
         m_type = promotion;
+        resultPromote();
         return *this;
     }
 
@@ -784,6 +810,7 @@ namespace mu
             cf64 = asCF64() - other.asCF64();
 
         m_type = promotion;
+        resultPromote();
         return *this;
     }
 
@@ -822,6 +849,21 @@ namespace mu
             cf64 = asCF64() * other.asCF64();
 
         m_type = promotion;
+        resultPromote();
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Power-assign operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical& Numerical::operator^=(const Numerical& other)
+    {
+        operator=(pow(other));
         return *this;
     }
 

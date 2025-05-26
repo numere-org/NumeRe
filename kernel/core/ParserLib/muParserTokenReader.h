@@ -135,7 +135,7 @@ namespace mu
                        int a_iPos = -1,
                        const string_type& a_sTok = string_type() ) const;
 
-            token_type& SaveBeforeReturn(const token_type& tok);
+            token_type SaveBeforeReturn(token_type&& tok);
 
             ParserBase* m_pParser;
             StringView m_strFormula;

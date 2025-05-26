@@ -80,11 +80,13 @@ namespace mu
         BaseValue* operator-(const BaseValue& other) const override;
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
+        BaseValue* operator^(const BaseValue& other) const override;
 
         BaseValue& operator+=(const BaseValue& other) override;
         BaseValue& operator-=(const BaseValue& other) override;
         BaseValue& operator/=(const BaseValue& other) override;
         BaseValue& operator*=(const BaseValue& other) override;
+        BaseValue& operator^=(const BaseValue& other) override;
 
         BaseValue* pow(const BaseValue& other) const override;
 
@@ -156,11 +158,13 @@ namespace mu
         BaseValue* operator-(const BaseValue& other) const override;
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
+        BaseValue* operator^(const BaseValue& other) const override;
 
         BaseValue& operator+=(const BaseValue& other) override;
         BaseValue& operator-=(const BaseValue& other) override;
         BaseValue& operator/=(const BaseValue& other) override;
         BaseValue& operator*=(const BaseValue& other) override;
+        BaseValue& operator^=(const BaseValue& other) override;
 
         BaseValue* pow(const BaseValue& other) const override;
 

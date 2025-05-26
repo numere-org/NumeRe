@@ -165,6 +165,8 @@ namespace mu
         cmVARMUL,              ///< Multiply-add a var
         cmREVVARMUL,           ///< Reverse multiply-add a var (vor non-commutative operations)
         cmDIVVAR,              ///< Divide value through a var
+        cmVARCOPY,             ///< Copy the value of one var to another one
+        cmVARINIT,             ///< Assign a constant init value to a variable
         cmVAR_END,             ///< Only for identifying the end of the variable block
 
         // operators and functions

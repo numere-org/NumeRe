@@ -1439,7 +1439,7 @@ namespace mu
 
 		for (int i = 0; i < iArgCount+(funTok.GetCode() == cmMETHOD); ++i) // Methods have to remove their root element as well
 		{
-			stArg.push_back(a_stVal.pop());
+			stArg.push_back(std::move(a_stVal.pop()));
 			if (stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR)
 				Error(ecVAL_EXPECTED, m_pTokenReader->GetPos(), funTok.GetAsString());
 		}
@@ -1478,8 +1478,8 @@ namespace mu
 
 		// Push dummy value representing the function result to the stack
 		token_type token;
-		token.SetVal(Array(Value("rv@" + funTok.GetAsString())));
-		a_stVal.push(token);
+		token.MoveVal(Array(Value("rv@" + funTok.GetAsString())));
+		a_stVal.push(std::move(token));
 	}
 
 	//---------------------------------------------------------------------------
@@ -1503,7 +1503,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push(all(vExpr.GetVal() != Array(Value(0.0))) ? vVal1 : vVal2);
+			a_stVal.push(std::move(all(vExpr.GetVal() != Array(Value(0.0))) ? vVal1 : vVal2));
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1545,8 +1545,8 @@ namespace mu
 			else
 				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
 
-			resTok.SetVal(Array(Value(1.0)));
-			a_stVal.push(resTok);
+			resTok.MoveVal(Array(Value(1.0)));
+			a_stVal.push(std::move(resTok));
 		}
 	}
 
@@ -1562,8 +1562,8 @@ namespace mu
         m_compilingState.m_byteCode.AddOp(cmVAL2STR);
 
         // Push a dummy value to the stack
-        resTok.SetVal(Array(Value(1.0)));
-        a_stVal.push(resTok);
+        resTok.MoveVal(Array(Value(1.0)));
+        a_stVal.push(std::move(resTok));
 	}
 
 	//---------------------------------------------------------------------------
@@ -1635,31 +1635,13 @@ namespace mu
 	*/
 	void ParserBase::ParseCmdCode()
 	{
-		ParseCmdCodeBulk(0, 0);
-	}
-
-	//---------------------------------------------------------------------------
-	/** \brief Evaluate the RPN.
-	    \param nOffset The offset added to variable addresses (for bulk mode)
-	    \param nThreadID OpenMP Thread id of the calling thread
-	*/
-	void ParserBase::ParseCmdCodeBulk(int nOffset, int nThreadID)
-	{
-	    //Timer t("ParserBase::ParseCmdCodeBulk");
-		assert(nThreadID <= nMaxThreads);
-
-		// Note: The check for nOffset==0 and nThreadID here is not necessary but
-		//       brings a minor performance gain when not in bulk mode.
-		StackItem* Stack = nullptr;
-
-		Stack = ((nOffset == 0) && (nThreadID == 0))
-            ? &m_state->m_stackBuffer[0]
-            : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / nMaxThreads)];
-
 		int sidx(0);
+		std::vector<StackItem>& Stack = m_state->m_stackBuffer;
+		//return;
 
         for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
         {
+            //continue;
             switch (pTok->Cmd)
             {
                 // built in binary operators
@@ -1706,7 +1688,7 @@ namespace mu
 
                 case  cmPOW:
                     --sidx;
-                    Stack[sidx] = Stack[sidx].pow(Stack[1+sidx]);
+                    Stack[sidx]  ^= Stack[1 + sidx];
                     continue;
 
                 case  cmLAND:
@@ -1799,7 +1781,7 @@ namespace mu
 
                 // value and variable tokens
                 case  cmVAL:
-                    Stack[++sidx].aliasOf(&pTok->Val().data2); // Potential: this copy could be a ref
+                    Stack[++sidx].aliasOf(&pTok->Val().data2);
                     continue;
 
                 case  cmVAR:
@@ -1836,6 +1818,16 @@ namespace mu
 
                 case  cmDIVVAR:
                     Stack[++sidx].divVar(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
+                    continue;
+
+                case  cmVARCOPY:
+                    Stack[++sidx].aliasOf(pTok->Oprt().var.front());
+                    pTok->Oprt().var = *pTok->Oprt().src;
+                    continue;
+
+                case  cmVARINIT:
+                    Stack[++sidx].aliasOf(pTok->Oprt().var.front());
+                    pTok->Oprt().var = pTok->Oprt().val;
                     continue;
 
                 // Next is treatment of numeric functions
@@ -2055,7 +2047,7 @@ namespace mu
 
                     case  cmPOW:
                         --sidx;
-                        Stack[sidx] = Stack[sidx].pow(Stack[1+sidx]);
+                        Stack[sidx]  ^= Stack[1 + sidx];
                         continue;
 
                     case  cmLAND:
@@ -2376,7 +2368,7 @@ namespace mu
 				case cmVAL:
 				    varArrayCandidate = false;
 					stVal.push(opt);
-					m_compilingState.m_byteCode.AddVal(opt.GetVal());
+					m_compilingState.m_byteCode.AddVal(std::move(opt.GetVal()));
 					break;
 
 				case cmELSE:
@@ -2638,7 +2630,7 @@ namespace mu
                 case cmPATHPLACEHOLDER:
                     m_compilingState.m_byteCode.AddVal(Value(opt.GetAsString()));
                     m_compilingState.m_byteCode.AddFun((generic_fun_type)getPathToken, 1, false, opt.GetAsString());
-                    stVal.push(ParserToken().SetVal(Value(opt.GetAsString()), opt.GetAsString()));
+                    stVal.push(ParserToken().MoveVal(Value(opt.GetAsString()), opt.GetAsString()));
                     break;
 
 				case cmOPRT_INFIX:
@@ -2665,7 +2657,7 @@ namespace mu
                     else
                         Error(ecUNEXPECTED_OPERATOR, -1, ParserBase::c_DefaultOprt[opt.GetCode()]);
 
-                    stVal.push(ParserToken().SetVal(Value(1.0)));
+                    stVal.push(ParserToken().MoveVal(Value(1.0)));
                     break;
                 }
 
@@ -3122,12 +3114,11 @@ namespace mu
 
         // Copy the actual results (ignore the 0-th term)
         m_buffer.resize(nStackSize);
+
         for (int i = 0; i < nStackSize; i++)
         {
             m_buffer[i] = m_state->m_stackBuffer[i+1].get();
         }
-        /*m_buffer.assign(m_state->m_stackBuffer.begin()+1,
-                        m_state->m_stackBuffer.begin()+nStackSize+1);*/
 
         // assign the results of the calculation to a possible
         // temporary vector
@@ -3168,8 +3159,15 @@ namespace mu
 	{
 	    Array* v;
 	    int nResults;
-
-	    v = Eval(nResults);
+#ifdef PARSERSTANDALONE
+	    {
+	        Timer t("ParserBase::Eval");
+            for (size_t i = 0; i < 1000; i++)
+#endif
+                v = Eval(nResults);
+#ifdef PARSERSTANDALONE
+	    }
+#endif
 
 	    return v[0];
 	}

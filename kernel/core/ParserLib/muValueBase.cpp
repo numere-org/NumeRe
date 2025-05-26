@@ -41,6 +41,10 @@ namespace mu
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+    BaseValue* BaseValue::operator^(const BaseValue& other) const
+    {
+        throw ParserError(ecTYPE_MISMATCH);
+    }
 
     BaseValue& BaseValue::operator+=(const BaseValue& other)
     {
@@ -55,6 +59,10 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
     BaseValue& BaseValue::operator*=(const BaseValue& other)
+    {
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+    BaseValue& BaseValue::operator^=(const BaseValue& other)
     {
         throw ParserError(ecTYPE_MISMATCH);
     }

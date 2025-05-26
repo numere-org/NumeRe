@@ -133,6 +133,7 @@ namespace mu
             NumericalType m_type;
 
             InternalType getConversion(NumericalType promotion) const;
+            void resultPromote();
 
         public:
             Numerical(int8_t data);
@@ -162,11 +163,13 @@ namespace mu
             Numerical operator-(const Numerical& other) const;
             Numerical operator/(const Numerical& other) const;
             Numerical operator*(const Numerical& other) const;
+            Numerical operator^(const Numerical& other) const;
 
             Numerical& operator+=(const Numerical& other);
             Numerical& operator-=(const Numerical& other);
             Numerical& operator/=(const Numerical& other);
             Numerical& operator*=(const Numerical& other);
+            Numerical& operator^=(const Numerical& other);
 
             Numerical pow(const Numerical& exponent) const;
 
