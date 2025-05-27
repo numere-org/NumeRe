@@ -290,7 +290,7 @@ namespace mu
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();
 			void ReInit();
-            ExpressionTarget& getTarget() const;
+            //ExpressionTarget& getTarget() const;
 
 			void AddCallback( const string_type& a_strName,
 							  const ParserCallback& a_Callback,
@@ -334,7 +334,7 @@ namespace mu
 			*/
 			mutable ParseFunction  m_pParseFormula;
 			mutable State m_compilingState;
-			mutable ExpressionTarget m_compilingTarget;
+			//mutable ExpressionTarget m_compilingTarget;
 			mutable StateStacks m_stateStacks;
 			State* m_state;
 			mutable std::vector<Array> m_buffer;

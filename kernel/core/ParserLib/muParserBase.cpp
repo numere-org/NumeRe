@@ -287,13 +287,13 @@ namespace mu
     /// \return ExpressionTarget&
     ///
     /////////////////////////////////////////////////
-	ExpressionTarget& ParserBase::getTarget() const
+	/*ExpressionTarget& ParserBase::getTarget() const
 	{
 	    if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return m_stateStacks[nthLoopElement].m_target;
 
         return m_compilingTarget;
-	}
+	}*/
 
 	//---------------------------------------------------------------------------
 	void ParserBase::OnDetectVar(string_type* pExpr, int& nStart, int& nEnd)
@@ -572,7 +572,7 @@ namespace mu
                             // Store the results in the target vector
                             vResults.insert(vResults.end(), v, v+nResults);
 						    // Store the variable names
-						    getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
+						    //getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
 							SetInternalVar("_~TRGTVCT[~]", vResults.front());
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
 						}
@@ -3664,7 +3664,7 @@ namespace mu
         {
             //g_logger.debug("Clearing vector vars and target.");
 			mInternalVars.clear();
-            m_compilingTarget.clear();
+            //m_compilingTarget.clear();
         }
 	}
 

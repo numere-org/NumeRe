@@ -186,7 +186,7 @@ namespace mu
     /// expression target, if it is composed out of a
     /// temporary vector like {a,b}.
     /////////////////////////////////////////////////
-#warning TODO (numere#6#09/12/24): This thing is likely dead now
+/*#warning TODO (numere#6#09/12/24): This thing is likely dead now
 	struct ExpressionTarget
 	{
 	    VarArray m_targets;
@@ -203,7 +203,7 @@ namespace mu
 	    {
 	        return m_targets.size();
 	    }
-	};
+	};*/
 
 
     /////////////////////////////////////////////////
@@ -215,7 +215,7 @@ namespace mu
 	{
 	    std::vector<State> m_states;
 	    Cache m_cache;
-	    ExpressionTarget m_target;
+	    //ExpressionTarget m_target;
 
 	    LineStateStack() : m_states(std::vector<State>(1)) {}
 
@@ -223,7 +223,7 @@ namespace mu
 	    {
 	        m_states.clear();
 	        m_cache.clear();
-	        m_target.clear();
+	        //m_target.clear();
 	    }
 	};
 

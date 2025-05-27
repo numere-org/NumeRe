@@ -32,7 +32,7 @@ namespace mu
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
+    /*void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
     {
         if (m_targets.size())
             m_targets.clear();
@@ -71,7 +71,7 @@ namespace mu
         // and consider also singletons
         //for (size_t i = 0; i < m_targets.size(); i++)
         //    *m_targets[i] = buffer[nResults == 1 ? 0 : std::min((int)i, nResults-1)];
-    }
+    }*/
 }
 
 
