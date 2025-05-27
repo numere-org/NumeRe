@@ -141,6 +141,9 @@
 					<Add option="-DNR_HAVE_GSL2" />
 					<Add option="-DPARSERSTANDALONE" />
 				</Compiler>
+				<Linker>
+					<Add option="-fopenmp" />
+				</Linker>
 			</Target>
 			<Target title="Debug_x64">
 				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />

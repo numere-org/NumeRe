@@ -24,37 +24,44 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Simple alias definition to shorten the
+    /// function signatures enabling better
+    /// readability.
+    /////////////////////////////////////////////////
+    using cmplx64 = std::complex<double>;
+
     class Array;
     class Value;
 
-    Array apply(std::complex<double>(*)(const std::complex<double>&),
+    Array apply(cmplx64(*)(const cmplx64&),
                 const Array& a);
     Array apply(Value(*)(const Value&),
                 const Array& a);
     Array apply(std::string(*)(const std::string&),
                 const Array& a);
 
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&),
+    Array apply(cmplx64(*)(const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2);
     Array apply(Value(*)(const Value&, const Value&),
                 const Array& a1, const Array& a2);
 
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
+    Array apply(cmplx64(*)(const cmplx64&, const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2, const Array& a3);
     Array apply(Value(*)(const Value&, const Value&, const Value&),
                 const Array& a1, const Array& a2, const Array& a3);
 
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
+    Array apply(cmplx64(*)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4);
     Array apply(Value(*)(const Value&, const Value&, const Value&, const Value&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4);
 
-    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
+    Array apply(cmplx64(*)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
     Array apply(Value(*)(const Value&, const Value&, const Value&, const Value&, const Value&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
 
-    Array apply(std::complex<double>(*)(const std::complex<double>*, int),
+    Array apply(cmplx64(*)(const cmplx64*, int),
                 const Array* arrs, int elems);
     Array apply(Value(*)(const Value*, int),
                 const Array* arrs, int elems);

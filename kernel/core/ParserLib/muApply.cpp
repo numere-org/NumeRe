@@ -24,17 +24,19 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Apply a function to an Array.
     ///
-    /// \param func std::complex<double>(*func)(const std::complex<double>&)
+    /// \param func cmplx64(*func)(const cmplx64&)
     /// \param a const Array&
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::complex<double>(*func)(const std::complex<double>&), const Array& a)
+    Array apply(cmplx64(*func)(const cmplx64&),
+                const Array& a)
     {
         Array ret;
-        ret.reserve(a.size());
+        size_t elements = a.size();
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < a.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
             ret.emplace_back(func(a[i].getNum().asCF64()));
         }
@@ -51,14 +53,16 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(Value(*func)(const Value&), const Array& a)
+    Array apply(Value(*func)(const Value&),
+                const Array& a)
     {
         Array ret;
-        ret.resize(a.size());
+        size_t elements = a.size();
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < a.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret[i] = func(a[i]);
+            ret.emplace_back(func(a[i]));
         }
 
         return ret;
@@ -73,12 +77,14 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::string(*func)(const std::string&), const Array& a)
+    Array apply(std::string(*func)(const std::string&),
+                const Array& a)
     {
         Array ret;
-        ret.reserve(a.size());
+        size_t elements = a.size();
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < a.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
             ret.emplace_back(func(a[i].getStr()));
         }
@@ -97,14 +103,16 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(Value(*func)(const Value&, const Value&), const Array& a1, const Array& a2)
+    Array apply(Value(*func)(const Value&, const Value&),
+                const Array& a1, const Array& a2)
     {
         Array ret;
-        ret.resize(std::max(a1.size(), a2.size()));
+        size_t elements = std::max(a1.size(), a2.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < ret.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret[i] = func(a1.get(i), a2.get(i));
+            ret.emplace_back(func(a1.get(i), a2.get(i)));
         }
 
         return ret;
@@ -114,18 +122,20 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Apply a function to two Arrays.
     ///
-    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&)
+    /// \param func cmplx64(*func)(const cmplx64&, const cmplx64&)
     /// \param a1 const Array&
     /// \param a2 const Array&
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2)
+    Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&),
+                const Array& a1, const Array& a2)
     {
         Array ret;
-        ret.reserve(std::max(a1.size(), a2.size()));
+        size_t elements = std::max(a1.size(), a2.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < ret.capacity(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
             ret.emplace_back(func(a1.get(i).getNum().asCF64(),
                                   a2.get(i).getNum().asCF64()));
@@ -146,14 +156,16 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(Value(*func)(const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3)
+    Array apply(Value(*func)(const Value&, const Value&, const Value&),
+                const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
-        ret.resize(std::max({a1.size(), a2.size(), a3.size()}));
+        size_t elements = std::max({a1.size(), a2.size(), a3.size()});
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < ret.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret[i] = func(a1.get(i), a2.get(i), a3.get(i));
+            ret.emplace_back(func(a1.get(i), a2.get(i), a3.get(i)));
         }
 
         return ret;
@@ -162,19 +174,21 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Apply a function to three Arrays.
     ///
-    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&)
+    /// \param func cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&)
     /// \param a1 const Array&
     /// \param a2 const Array&
     /// \param a3 const Array&
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3)
+    Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&),
+                const Array& a1, const Array& a2, const Array& a3)
     {
         Array ret;
-        ret.reserve(std::max({a1.size(), a2.size(), a3.size()}));
+        size_t elements = std::max({a1.size(), a2.size(), a3.size()});
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
+        for (size_t i = 0; i < elements; i++)
         {
             ret.emplace_back(func(a1.get(i).getNum().asCF64(),
                                   a2.get(i).getNum().asCF64(),
@@ -189,7 +203,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Apply a function to four Arrays.
     ///
-    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&)
+    /// \param func cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&)
     /// \param a1 const Array&
     /// \param a2 const Array&
     /// \param a3 const Array&
@@ -197,12 +211,14 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
+    Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
-        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size()}));
+        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size()});
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
+        for (size_t i = 0; i < elements; i++)
         {
             ret.emplace_back(func(a1.get(i).getNum().asCF64(),
                                   a2.get(i).getNum().asCF64(),
@@ -225,14 +241,16 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
+    Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
         Array ret;
-        ret.resize(std::max({a1.size(), a2.size(), a3.size(), a4.size()}));
+        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size()});
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < ret.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret[i] = func(a1.get(i), a2.get(i), a3.get(i), a4.get(i));
+            ret.emplace_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i)));
         }
 
         return ret;
@@ -243,7 +261,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Apply a function to five Arrays.
     ///
-    /// \param func std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&)
+    /// \param func cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&)
     /// \param a1 const Array&
     /// \param a2 const Array&
     /// \param a3 const Array&
@@ -252,12 +270,14 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
+    Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
-        ret.reserve(std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}));
+        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()});
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
+        for (size_t i = 0; i < elements; i++)
         {
             ret.emplace_back(func(a1.get(i).getNum().asCF64(),
                                   a2.get(i).getNum().asCF64(),
@@ -282,14 +302,16 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
+    Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
         Array ret;
-        ret.resize(std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}));
+        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()});
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < ret.size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret[i] = func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i));
+            ret.emplace_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i)));
         }
 
         return ret;
@@ -300,13 +322,14 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Apply a function to an array of Arrays.
     ///
-    /// \param std::complex<double>(*func)(const std::complex<double>*, int)
+    /// \param cmplx64(*func)(const cmplx64*, int)
     /// \param arr const Array*
     /// \param elems int
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(std::complex<double>(*func)(const std::complex<double>*, int), const Array* arrs, int elems)
+    Array apply(cmplx64(*func)(const cmplx64*, int),
+                const Array* arrs, int elems)
     {
         size_t nCount = 0;
 
@@ -321,7 +344,7 @@ namespace mu
 
         for (size_t i = 0; i < nCount; i++)
         {
-            std::vector<std::complex<double>> vVals;
+            std::vector<cmplx64> vVals;
 
             for (int e = 0; e < elems; e++)
             {
@@ -343,7 +366,8 @@ namespace mu
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array apply(Value(*func)(const Value*, int), const Array* arrs, int elems)
+    Array apply(Value(*func)(const Value*, int),
+                const Array* arrs, int elems)
     {
         size_t nCount = 0;
 
