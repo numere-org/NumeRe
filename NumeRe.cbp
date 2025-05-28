@@ -2533,6 +2533,7 @@
 		<Unit filename="kernel/core/ParserLib/muApply.hpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.cpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.hpp" />
+		<Unit filename="kernel/core/ParserLib/muInternalStructures.hpp" />
 		<Unit filename="kernel/core/ParserLib/muParser.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParser.h" />
 		<Unit filename="kernel/core/ParserLib/muParserBase.cpp" />

@@ -171,6 +171,8 @@ namespace mu
             Numerical& operator*=(const Numerical& other);
             Numerical& operator^=(const Numerical& other);
 
+            void flipSign();
+
             Numerical pow(const Numerical& exponent) const;
 
             operator bool() const;

@@ -51,6 +51,20 @@ size_t getMatchingParenthesis(const StringView&);
     \brief This file contains the basic implementation of the muparser engine.
 */
 
+// Supported syntax elements include
+// {} = nD-EXPR
+// {} = {EXPR}
+// X += EXPR (and others)
+// X++ and X--
+// {a:b}, {a:c:b}, {a:b, ..., c}
+// {a, {b, c}}
+// VAR.METHOD (VAR.FIELD)
+
+// Missing syntax elements
+// X[i]
+// X[i] = EXPR
+// X.FIELD = EXPR
+// [X, Y, C] = A, B, C
 
 
 
@@ -295,24 +309,6 @@ namespace mu
         return m_compilingTarget;
 	}*/
 
-	//---------------------------------------------------------------------------
-	void ParserBase::OnDetectVar(string_type* pExpr, int& nStart, int& nEnd)
-	{
-		/*if (mInternalVars.size())
-		{
-			if (mInternalVars.find(pExpr->substr(nStart, nEnd - nStart)) != mInternalVars.end())
-				return;
-
-			Array vVar;
-
-			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
-				vVar = *(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second);
-			else
-				vVar.push_back(Value(Numerical(0.0)));
-
-			SetVectorVar(pExpr->substr(nStart, nEnd - nStart), vVar);
-		}*/
-	}
 
 	//---------------------------------------------------------------------------
 	/** \brief Returns the version of muparser.
@@ -483,202 +479,6 @@ namespace mu
 
 		// Convert the string directly to bytecode
 		ParseString();
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function pre-evaluates all
-    /// vectors, which are contained in the
-    /// expression passed through sExpr.
-    ///
-    /// \param sExpr MutableStringView containing the
-    /// expression
-    /// \return MutableStringView
-    ///
-    /////////////////////////////////////////////////
-	MutableStringView ParserBase::compileVectors(MutableStringView sExpr)
-	{
-		std::vector<Array> vResults;
-
-		// Resolve vectors, which are part of a multi-argument
-		// function's parentheses
-		for (auto iter = mInternalVars.begin(); iter != mInternalVars.end(); ++iter)
-        {
-            size_t match = 0;
-
-            if (iter->second->size() == 1)
-                continue;
-
-            while ((match = sExpr.find(iter->first, match)) != string::npos)
-            {
-                if (!match || sExpr.is_delimited_sequence(match, iter->first.length(), StringViewBase::PARSER_DELIMITER))
-                    compileVectorsInMultiArgFunc(sExpr, match);
-
-                match++;
-            }
-        }
-
-		// Walk through the whole expression
-		for (size_t i = 0; i < sExpr.length(); i++)
-		{
-		    // search for vector parentheses
-			if (sExpr[i] == '{' && (!i || isDelimiter(sExpr[i-1])) && sExpr.find('}', i) != string::npos)
-			{
-			    if (compileVectorsInMultiArgFunc(sExpr, i))
-                    continue;
-
-                vResults.clear();
-
-                // Find the matching brace for the current vector brace
-				size_t j = getMatchingParenthesis(sExpr.subview(i));
-
-				if (j != std::string::npos)
-					j += i; // if one is found, add the current position
-
-                if (i+1 == j) // This is an empty brace
-                    sExpr.replace(i, 2, "nan");
-			    else if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
-				{
-				    // This is vector expansion: e.g. "{1:10}"
-					// Store the result in a new temporary vector
-                    string sVectorVarName = CreateTempVar(vResults.front());
-
-				    // Get the expression and evaluate the expansion
-					compileVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
-
-					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
-				}
-				else
-				{
-					if (j != std::string::npos)
-					{
-					    // This is a normal vector, e.g. "{1,2,3}"
-					    // Set the sub expression and evaluate it
-						SetExpr(sExpr.subview(i + 1, j - i - 1));
-
-						// Determine, whether the current vector is a target vector or not
-						if (sExpr.find_first_not_of(' ') == i
-								&& sExpr.find('=', j) != std::string::npos
-								&& sExpr.find('=', j) < sExpr.length() - 1
-								&& sExpr.find('!', j) != sExpr.find('=', j) - 1
-								&& sExpr.find('<', j) != sExpr.find('=', j) - 1
-								&& sExpr.find('>', j) != sExpr.find('=', j) - 1
-								&& sExpr[sExpr.find('=', j) + 1] != '=')
-						{
-						    // This is a target vector
-#warning FIXME (numere#3#07/08/24): Target vectors do not work yet -> NEW ISSUE
-                            int nResults;
-                            Array* v = Eval(nResults);
-                            // Store the results in the target vector
-                            vResults.insert(vResults.end(), v, v+nResults);
-						    // Store the variable names
-						    //getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
-							SetInternalVar("_~TRGTVCT[~]", vResults.front());
-							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
-						}
-						else
-						{
-						    // This is a usual vector
-						    // Create a new temporary vector name
-                            std::string sVectorVarName = CreateTempVar(vResults.front());
-                            m_compilingState.m_vectEval.create(sVectorVarName);
-                            int nResults;
-                            // Calculate and store the results in the target vector
-                            Eval(nResults);
-						    // Update the expression
-							sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a,b}i
-						}
-					}
-				}
-			}
-
-			if (sExpr.subview(i, 9) == "logtoidx(" || sExpr.subview(i, 9) == "idxtolog(")
-            {
-                i += 8;
-                compileVectorsInMultiArgFunc(sExpr, i);
-            }
-		}
-
-		return sExpr;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function evaluates the vector
-    /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
-    ///
-    /// \param sSubExpr MutableStringView
-    /// \param sVectorVarName const std::string&
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-	void ParserBase::compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName)
-	{
-		int nResults = 0;
-
-		EndlessVector<StringView> args = getAllArguments(sSubExpr);
-		std::vector<int> vComponentType;
-		std::string sCompiledExpression;
-		const int SINGLETON = 1;
-
-		// Determine the type of every part of the vector brace
-		for (size_t n = 0; n < args.size(); n++)
-        {
-            if (args[n].find(':') == std::string::npos)
-            {
-                vComponentType.push_back(SINGLETON);
-
-                if (sCompiledExpression.length())
-                    sCompiledExpression += ",";
-
-                sCompiledExpression += args[n].to_string();
-            }
-            else
-            {
-                int isExpansion = -1;
-                MutableStringView sExpansion = args[n].make_mutable();
-
-                // Replace the colons with commas. But ensure that this is not a conditional statement
-                for (size_t i = 0; i < sExpansion.length(); i++)
-                {
-                    if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
-                        i += getMatchingParenthesis(sSubExpr.subview(i));
-
-                    if (sExpansion[i] == ':')
-                    {
-                        if (isExpansion == -1)
-                            isExpansion = 1;
-
-                        // This is a conditional operator
-                        if (isExpansion == 0)
-                            continue;
-
-                        sExpansion[i] = ',';
-                    }
-
-                    // This is a conditional operator
-                    if (sExpansion[i] == '?')
-                    {
-                        if (isExpansion == -1)
-                            isExpansion = 0;
-
-                        if (isExpansion == 1)
-                            throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
-                    }
-                }
-
-                if (sCompiledExpression.length())
-                    sCompiledExpression += ",";
-
-                sCompiledExpression += sExpansion.to_string();
-                vComponentType.push_back(getAllArguments(sExpansion).size());
-            }
-        }
-
-		// Evaluate
-		SetExpr(sCompiledExpression);
-		m_compilingState.m_vectEval.create(sVectorVarName, vComponentType);
-		Eval(nResults);
 	}
 
 
@@ -897,119 +697,6 @@ namespace mu
         }
 	}
 
-
-    /////////////////////////////////////////////////
-    /// \brief This private function will try to find
-    /// a surrounding multi-argument function,
-    /// resolve the arguments, apply the function and
-    /// store the result as a new vector.
-    ///
-    /// \param sExpr MutableStringView&
-    /// \param nPos size_t&
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-	bool ParserBase::compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
-	{
-        string sMultiArgFunc;
-	    // Try to find a multi-argument function. The size_t will store the start position of the function name
-        size_t nMultiArgParens = FindMultiArgFunc(sExpr, nPos, sMultiArgFunc);
-
-        if (nMultiArgParens != std::string::npos)
-        {
-            // This is part of a multi-argument function
-            // Find the matching parenthesis for the multi-argument function
-            size_t nClosingParens = getMatchingParenthesis(sExpr.subview(nMultiArgParens)) + nMultiArgParens;
-
-            // Set the argument of the function as expression and evaluate it recursively
-            std::vector<Array> vResults;
-            int nResults;
-            string sVectorVarName = CreateTempVar(vResults.front());
-            SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
-            m_compilingState.m_vectEval.create(sVectorVarName, sMultiArgFunc);
-            Eval(nResults);
-
-            // Store the result in a new temporary vector
-            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(),
-                          nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(),
-                          sVectorVarName);
-
-            // Set the position to the start of the multi-argument
-            // function to avoid jumping over consecutive vectors
-            nPos = nMultiArgParens-sMultiArgFunc.length();
-
-            return true;
-        }
-
-        return false;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function searches for the first
-    /// multi-argument function found in the passed
-    /// expression.
-    ///
-    /// \param sExpr StringView
-    /// \param nPos size_t
-    /// \param sMultArgFunc std::string& will contain
-    /// the name of the function
-    /// \return size_t the position of the opening
-    /// parenthesis
-    ///
-    /////////////////////////////////////////////////
-	size_t ParserBase::FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc)
-	{
-	    // Walk through the expression
-		for (int i = nPos; i >= 2; i--)
-		{
-		    // If there's a parenthesis and the character before is alphabetic
-			if (sExpr[i] == '(' && isalpha(sExpr[i - 1]))
-			{
-			    // Get the matching parenthesis
-				size_t nParPos = getMatchingParenthesis(sExpr.subview(i));
-
-				if (nParPos == string::npos)
-					return std::string::npos;
-				else
-					nParPos += i;
-
-                // Ignore all results before nPos
-				if (nParPos < nPos)
-					continue;
-
-                // Find the last character before the alphabetic part
-				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^,", i - 1) + 1;
-				// Extract the function
-				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
-
-				// Exclude the following functions
-                if (sFunc == "polynomial"
-                    || sFunc == "perlin"
-                    || sFunc == "as_date"
-                    || sFunc == "as_time")
-                    continue;
-                else if (sFunc == "logtoidx" || sFunc == "idxtolog")
-                {
-                    sMultArgFunc = sFunc;
-                    return i;
-                }
-
-				// Compare the function with the set of known multi-argument functions
-				auto iter = m_FunDef.find(sFunc);
-
-				if (iter != m_FunDef.end() && iter->second.GetArgc() == -1)
-				{
-				    // If the function is a multi-argument function, store it and return the position
-					sMultArgFunc = sFunc;
-					return i;
-				}
-			}
-		}
-
-		// Return string::npos if nothing was found
-		return std::string::npos;
-	}
 
 	//---------------------------------------------------------------------------
 	/** \brief Get the default symbols used for the built in operators.
@@ -1805,7 +1492,7 @@ namespace mu
                     continue;
 
                 case  cmVARPOWN:
-                    Stack[++sidx] = Array(*pTok->Val().var).pow(pTok->Val().data);
+                    Stack[++sidx].varPowN(*pTok->Val().var, pTok->Val().data.getAsScalarInt());
                     continue;
 
                 case  cmVARMUL:
@@ -3361,7 +3048,7 @@ namespace mu
         if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks[nthLoopElement].m_cache.m_accesses.size() > nthAccess)
             return m_stateStacks[nthLoopElement].m_cache.m_accesses[nthAccess];
 
-        return CachedDataAccess();
+        throw ParserError(ecINTERNAL_ERROR);
     }
 
 

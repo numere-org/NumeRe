@@ -26,62 +26,200 @@
 
 #include "muValueImpl.hpp"
 
-#warning FIXME (numere#1#12/09/24): Removed all move operations due to memory leaks
-
-#define VALUE20
-
 namespace mu
 {
-#ifdef VALUE20
+    /////////////////////////////////////////////////
+    /// \brief Construct an empty Value instance.
+    /////////////////////////////////////////////////
     Value::Value() : std::unique_ptr<BaseValue>()
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param data const Value&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Value& data)
     {
         if (data.get())
             reset(data->clone());
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a BaseValue
+    /// pointer (can be a nullptr).
+    ///
+    /// \param other BaseValue*
+    ///
+    /////////////////////////////////////////////////
     Value::Value(BaseValue* other) : std::unique_ptr<BaseValue>(other)
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an Numerical.
+    ///
+    /// \param data const Numerical&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Numerical& data)
     {
         reset(new NumValue(data));
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a Category.
+    ///
+    /// \param data const Category&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Category& data)
     {
         reset(new CatValue(data));
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an Array.
+    ///
+    /// \param data const Array&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const Array& data)
     {
         reset(new ArrValue(data));
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a logical value.
+    ///
+    /// \param logical bool
+    ///
+    /////////////////////////////////////////////////
     Value::Value(bool logical) : Value(Numerical(logical))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an int32_t.
+    ///
+    /// \param value int32_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(int32_t value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a uint32_t.
+    ///
+    /// \param value uint32_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(uint32_t value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an int64_t.
+    ///
+    /// \param value int64_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(int64_t value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a uint64_t.
+    ///
+    /// \param value uint64_t
+    ///
+    /////////////////////////////////////////////////
     Value::Value(uint64_t value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a double.
+    ///
+    /// \param value double
+    ///
+    /////////////////////////////////////////////////
     Value::Value(double value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a time point.
+    ///
+    /// \param value const sys_time_point&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const sys_time_point& value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a float variant
+    /// of a std::complex.
+    ///
+    /// \param value const std::complex<float>&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const std::complex<float>& value) : Value(Numerical(value))
     { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a std::complex
+    /// allowing for autotyping.
+    ///
+    /// \param value const std::complex<double>&
+    /// \param autoType bool
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const std::complex<double>& value, bool autoType)
     {
         reset(new NumValue(Numerical(value, autoType ? AUTO : CF64)));
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a std::string.
+    ///
+    /// \param sData const std::string&
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const std::string& sData)
     {
         reset(new StrValue(sData));
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a const char*.
+    ///
+    /// \param sData const char*
+    ///
+    /////////////////////////////////////////////////
     Value::Value(const char* sData)
     {
         reset(new StrValue(sData));
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from a data type.
+    ///
+    /// \param type DataType
+    ///
+    /////////////////////////////////////////////////
     Value::Value(DataType type)
     {
         switch (type)
@@ -104,19 +242,13 @@ namespace mu
         }
     }
 
-    /*Value& Value::operator=(const Value& other)
-    {
-        if (!other.get())
-            reset(nullptr);
-        else if (!get() || (get()->m_type != other->m_type))
-            reset(other->clone());
-        else if (this != &other)
-            *get() = *other.get();
 
-        return *this;
-    }*/
-    //Value& operator=(Value&& other);
-
+    /////////////////////////////////////////////////
+    /// \brief Return the contained general type.
+    ///
+    /// \return DataType
+    ///
+    /////////////////////////////////////////////////
     DataType Value::getType() const
     {
         if (get())
@@ -125,6 +257,14 @@ namespace mu
         return TYPE_VOID;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the contained type as a
+    /// std::string.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Value::getTypeAsString() const
     {
         switch (getType())
@@ -148,31 +288,89 @@ namespace mu
         return "void";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is empty.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isVoid() const
     {
         return !get() || get()->m_type == TYPE_INVALID;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isValid() const
     {
         return get() && get()->isValid();
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value can be
+    /// interpreted as a numerical value.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isNumerical() const
     {
         return get() && (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_CATEGORY);
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value can be
+    /// interpreted as a string.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isString() const
     {
         return get() && (get()->m_type == TYPE_STRING || get()->m_type == TYPE_CATEGORY);
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// category.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isCategory() const
     {
         return get() && get()->m_type == TYPE_CATEGORY;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is an
+    /// Array.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Value::isArray() const
     {
         return get() && get()->m_type == TYPE_ARRAY;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained string.
+    ///
+    /// \return std::string&
+    ///
+    /////////////////////////////////////////////////
     std::string& Value::getStr()
     {
         if (get())
@@ -186,6 +384,13 @@ namespace mu
         throw ParserError(ecTYPE_NO_STR);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained string.
+    ///
+    /// \return const std::string&
+    ///
+    /////////////////////////////////////////////////
     const std::string& Value::getStr() const
     {
         if (get())
@@ -202,6 +407,12 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Numerical.
+    ///
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
     Numerical& Value::getNum()
     {
         if (get())
@@ -215,6 +426,13 @@ namespace mu
         throw ParserError(ecTYPE_NO_VAL);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Numerical.
+    ///
+    /// \return const Numerical&
+    ///
+    /////////////////////////////////////////////////
     const Numerical& Value::getNum() const
     {
         if (get())
@@ -230,775 +448,6 @@ namespace mu
         throw ParserError(ecTYPE_NO_VAL);
     }
 
-    Category& Value::getCategory()
-    {
-        if (get() && get()->m_type == TYPE_CATEGORY)
-            return static_cast<CatValue*>(get())->get();
-
-        throw ParserError(ecTYPE_NO_VAL);
-    }
-
-    const Category& Value::getCategory() const
-    {
-        if (get() && get()->m_type == TYPE_CATEGORY)
-            return static_cast<const CatValue*>(get())->get();
-
-        throw ParserError(ecTYPE_NO_VAL);
-    }
-
-    Array& Value::getArray()
-    {
-        if (get() && get()->m_type == TYPE_ARRAY)
-            return static_cast<ArrValue*>(get())->get();
-
-        throw ParserError(ecTYPE_NO_VAL);
-    }
-
-    const Array& Value::getArray() const
-    {
-        if (get() && get()->m_type == TYPE_ARRAY)
-            return static_cast<const ArrValue*>(get())->get();
-
-        throw ParserError(ecTYPE_NO_VAL);
-    }
-
-    std::complex<double> Value::as_cmplx() const
-    {
-        if (get())
-        {
-            if (get()->m_type == TYPE_NUMERICAL)
-                return static_cast<const NumValue*>(get())->get().asCF64();
-            else if (get()->m_type == TYPE_CATEGORY)
-                return static_cast<const CatValue*>(get())->get().val.asCF64();
-        }
-
-        return NAN;
-    }
-
-    /*Value Value::operator+(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() + *other.get();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-    Value Value::operator-() const
-    {
-        if (get())
-            return -(*get());
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-    Value Value::operator-(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() - *other.get();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-    Value Value::operator/(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() / *other.get();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-    Value Value::operator*(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() * *other.get();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-    Value& Value::operator+=(const Value& other)
-    {
-        if (get() && other.get())
-            *get() += *other.get();
-
-        return *this;
-    }
-    Value& Value::operator-=(const Value& other)
-    {
-        if (get() && other.get())
-            *get() -= *other.get();
-
-        return *this;
-    }
-    Value& Value::operator/=(const Value& other)
-    {
-        if (get() && other.get())
-            *get() /= *other.get();
-
-        return *this;
-    }
-    Value& Value::operator*=(const Value& other)
-    {
-        if (get() && other.get())
-            *get() *= *other.get();
-
-        return *this;
-    }*/
-
-    Value Value::pow(const Value& exponent) const
-    {
-        if (get() && exponent.get())
-            return get()->pow(*exponent.get());
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-    Value::operator bool() const
-    {
-        return get() && bool(*get());
-    }
-
-    Value Value::operator!() const
-    {
-        return get() && !*get();
-    }
-    Value Value::operator==(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() == *other.get();
-
-        return false;
-    }
-    Value Value::operator!=(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() != *other.get();
-
-        return false;
-    }
-    Value Value::operator<(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() < *other.get();
-
-        return false;
-    }
-    Value Value::operator<=(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() <= *other.get();
-
-        return false;
-    }
-    Value Value::operator>(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() > *other.get();
-
-        return false;
-    }
-    Value Value::operator>=(const Value& other) const
-    {
-        if (get() && other.get())
-            return *get() >= *other.get();
-
-        return false;
-    }
-
-    Value Value::operator&&(const Value& other) const
-    {
-        return bool(*this) && bool(other);
-    }
-    Value Value::operator||(const Value& other) const
-    {
-        return bool(*this) || bool(other);
-    }
-
-    std::string Value::print(size_t digits, size_t chrs, bool trunc) const
-    {
-        if (get())
-            return get()->print(digits, chrs, trunc);
-
-#ifdef PARSERSTANDALONE
-        return "0x0";
-#else
-        return "void";
-#endif
-    }
-    std::string Value::printVal(size_t digits, size_t chrs) const
-    {
-        if (get())
-            return get()->printVal(digits, chrs);
-
-        return "void";
-    }
-    void Value::clear()
-    {
-        reset(nullptr);
-    }
-
-    size_t Value::getBytes() const
-    {
-        if (get())
-            return get()->getBytes();
-
-        return 0;
-    }
-#else
-    /////////////////////////////////////////////////
-    /// \brief Construct an empty Value instance.
-    /////////////////////////////////////////////////
-    Value::Value()
-    {
-        m_type = TYPE_VOID;
-        m_data = nullptr;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Copy constructor.
-    ///
-    /// \param data const Value&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const Value& data)
-    {
-        m_type = data.m_type;
-
-        switch (m_type)
-        {
-            case TYPE_CATEGORY:
-                m_data = new Category;
-                *static_cast<Category*>(m_data) = *static_cast<Category*>(data.m_data);
-                break;
-            case TYPE_INVALID:
-            case TYPE_NUMERICAL:
-                m_data = new Numerical;
-                *static_cast<Numerical*>(m_data) = data.getNum();
-                break;
-            case TYPE_STRING:
-                m_data = new std::string;
-                *static_cast<std::string*>(m_data) = data.getStr();
-                break;
-            case TYPE_ARRAY:
-                m_data = new Array;
-                *static_cast<Array*>(m_data) = data.getArray();
-                break;
-            default:
-                m_data = nullptr;
-        }
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Move constructor.
-    ///
-    /// \param data Value&&
-    ///
-    /////////////////////////////////////////////////
-    /*Value::Value(Value&& data)
-    {
-        m_type = data.m_type;
-        m_data = data.m_data;
-        data.m_data = nullptr;
-        data.m_type = TYPE_VOID;
-    }*/
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from an Numerical.
-    ///
-    /// \param data const Numerical&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const Numerical& data)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical;
-        *static_cast<Numerical*>(m_data) = data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a Category.
-    ///
-    /// \param data const Category&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const Category& data)
-    {
-        m_type = TYPE_CATEGORY;
-        m_data = new Category;
-        *static_cast<Category*>(m_data) = data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from an Array.
-    ///
-    /// \param data const Array&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const Array& data)
-    {
-        m_type = TYPE_ARRAY;
-        m_data = new Array;
-        *static_cast<Array*>(m_data) = data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a logical value.
-    ///
-    /// \param logical bool
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(bool logical)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(logical);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from an int32_t.
-    ///
-    /// \param value int32_t
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(int32_t value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a uint32_t.
-    ///
-    /// \param value uint32_t
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(uint32_t value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from an int64_t.
-    ///
-    /// \param value int64_t
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(int64_t value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a uint64_t.
-    ///
-    /// \param value uint64_t
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(uint64_t value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a double.
-    ///
-    /// \param value double
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(double value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a time point.
-    ///
-    /// \param value const sys_time_point&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const sys_time_point& value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a std::complex
-    /// allowing for autotyping.
-    ///
-    /// \param value const std::complex<double>&
-    /// \param autoType bool
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const std::complex<double>& value, bool autoType)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value, autoType ? AUTO : CF64);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a float variant
-    /// of a std::complex.
-    ///
-    /// \param value const std::complex<float>&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const std::complex<float>& value)
-    {
-        m_type = TYPE_NUMERICAL;
-        m_data = new Numerical(value);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a std::string.
-    ///
-    /// \param sData const std::string&
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const std::string& sData)
-    {
-        m_type = TYPE_STRING;
-        m_data = new std::string;
-        *static_cast<std::string*>(m_data) = sData;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a const char*.
-    ///
-    /// \param sData const char*
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(const char* sData)
-    {
-        m_type = TYPE_STRING;
-        m_data = new std::string;
-        *static_cast<std::string*>(m_data) = sData;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Construct a Value from a data type.
-    ///
-    /// \param type DataType
-    ///
-    /////////////////////////////////////////////////
-    Value::Value(DataType type)
-    {
-        m_type = type;
-
-        switch (m_type)
-        {
-            case TYPE_CATEGORY:
-                m_data = new Category;
-                break;
-            case TYPE_INVALID:
-                m_data = new Numerical((double)NAN);
-                break;
-            case TYPE_NUMERICAL:
-                m_data = new Numerical;
-                break;
-            case TYPE_STRING:
-                m_data = new std::string;
-                break;
-            case TYPE_ARRAY:
-                m_data = new Array;
-                break;
-            default:
-                m_data = nullptr;
-        }
-    }
-
-    /////////////////////////////////////////////////
-    /// \brief Destroy a Value.
-    /////////////////////////////////////////////////
-    Value::~Value()
-    {
-        clear();
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Assign a Value.
-    ///
-    /// \param other const Value&
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    Value& Value::operator=(const Value& other)
-    {
-        if (m_type != other.m_type)
-        {
-            if (m_data)
-                clear();
-
-            m_type = other.m_type;
-        }
-
-        switch (m_type)
-        {
-            case TYPE_CATEGORY:
-                if (!m_data)
-                    m_data = new Category;
-
-                *static_cast<Category*>(m_data) = *static_cast<Category*>(other.m_data);
-                break;
-            case TYPE_INVALID:
-            case TYPE_NUMERICAL:
-                if (!m_data)
-                    m_data = new Numerical;
-
-                *static_cast<Numerical*>(m_data) = *static_cast<Numerical*>(other.m_data);
-                break;
-            case TYPE_STRING:
-                if (!m_data)
-                    m_data = new std::string;
-
-                *static_cast<std::string*>(m_data) = *static_cast<std::string*>(other.m_data);
-                break;
-            case TYPE_ARRAY:
-                if (!m_data)
-                    m_data = new Array;
-
-                *static_cast<Array*>(m_data) = *static_cast<Array*>(other.m_data);
-                break;
-            default:
-                clear();
-        }
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Move-Assign a Value.
-    ///
-    /// \param other Value&&
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    /*Value& Value::operator=(Value&& other)
-    {
-        //Timer t("Value::operator=(&&)");
-        clear();
-
-        m_type = other.m_type;
-        m_data = other.m_data;
-        other.m_data = nullptr;
-        other.m_type = TYPE_VOID;
-
-        return *this;
-    }*/
-
-
-    /////////////////////////////////////////////////
-    /// \brief Return the contained general type.
-    ///
-    /// \return DataType
-    ///
-    /////////////////////////////////////////////////
-    DataType Value::getType() const
-    {
-        return m_type;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Return the contained type as a
-    /// std::string.
-    ///
-    /// \return std::string
-    ///
-    /////////////////////////////////////////////////
-    std::string Value::getTypeAsString() const
-    {
-        switch (m_type)
-        {
-            case TYPE_CATEGORY:
-                return "category";
-            case TYPE_INVALID:
-            case TYPE_NUMERICAL:
-                return getNum().getTypeAsString();
-            case TYPE_STRING:
-                return "string";
-            case TYPE_ARRAY:
-                return "cluster";
-        }
-
-        return "void";
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value is empty.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isVoid() const
-    {
-        return m_type == TYPE_VOID;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value is valid.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isValid() const
-    {
-        return m_type != TYPE_VOID
-            && m_data
-            && ((isString() && getStr().length())
-                || (isNumerical() && getNum().asCF64() == getNum().asCF64())
-                || (isArray() && getArray().size()));
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value can be
-    /// interpreted as a numerical value.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isNumerical() const
-    {
-        return (m_type == TYPE_NUMERICAL || m_type == TYPE_INVALID || m_type == TYPE_CATEGORY) && m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value can be
-    /// interpreted as a string.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isString() const
-    {
-        return (m_type == TYPE_STRING || m_type == TYPE_CATEGORY) && m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value is a
-    /// category.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isCategory() const
-    {
-        return m_type == TYPE_CATEGORY && m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value is an
-    /// Array.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isArray() const
-    {
-        return m_type == TYPE_ARRAY && m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the contained string.
-    ///
-    /// \return std::string&
-    ///
-    /////////////////////////////////////////////////
-    std::string& Value::getStr()
-    {
-        if (!isString())
-            throw ParserError(ecTYPE_NO_STR);
-
-        if (m_type == TYPE_CATEGORY)
-            return ((Category*)m_data)->name;
-
-        return *(std::string*)m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the contained string.
-    ///
-    /// \return const std::string&
-    ///
-    /////////////////////////////////////////////////
-    const std::string& Value::getStr() const
-    {
-        if (isVoid())
-            return m_defString;
-
-        if (!isString())
-            throw ParserError(ecTYPE_NO_STR);
-
-        if (m_type == TYPE_CATEGORY)
-            return ((Category*)m_data)->name;
-
-        return *(std::string*)m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the contained Numerical.
-    ///
-    /// \return Numerical&
-    ///
-    /////////////////////////////////////////////////
-    Numerical& Value::getNum()
-    {
-        if (!isNumerical())
-            throw ParserError(ecTYPE_NO_VAL);
-
-        if (m_type == TYPE_CATEGORY)
-            return ((Category*)m_data)->val;
-
-        return *(Numerical*)m_data;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the contained Numerical.
-    ///
-    /// \return const Numerical&
-    ///
-    /////////////////////////////////////////////////
-    const Numerical& Value::getNum() const
-    {
-        if (isVoid())
-            return m_defVal;
-
-        if (!isNumerical())
-            throw ParserError(ecTYPE_NO_VAL);
-
-        if (m_type == TYPE_CATEGORY)
-            return ((Category*)m_data)->val;
-
-        return *(Numerical*)m_data;
-    }
-
 
     /////////////////////////////////////////////////
     /// \brief Get the contained Category.
@@ -1008,10 +457,10 @@ namespace mu
     /////////////////////////////////////////////////
     Category& Value::getCategory()
     {
-        if (!isCategory())
-            throw ParserError(ecTYPE_NO_VAL);
+        if (get() && get()->m_type == TYPE_CATEGORY)
+            return static_cast<CatValue*>(get())->get();
 
-        return *(Category*)m_data;
+        throw ParserError(ecTYPE_NO_VAL);
     }
 
 
@@ -1023,10 +472,10 @@ namespace mu
     /////////////////////////////////////////////////
     const Category& Value::getCategory() const
     {
-        if (!isCategory())
-            throw ParserError(ecTYPE_NO_VAL);
+        if (get() && get()->m_type == TYPE_CATEGORY)
+            return static_cast<const CatValue*>(get())->get();
 
-        return *(Category*)m_data;
+        throw ParserError(ecTYPE_NO_VAL);
     }
 
 
@@ -1038,10 +487,10 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Value::getArray()
     {
-        if (!isArray())
-            throw ParserError(ecTYPE_NO_VAL);
+        if (get() && get()->m_type == TYPE_ARRAY)
+            return static_cast<ArrValue*>(get())->get();
 
-        return *(Array*)m_data;
+        throw ParserError(ecTYPE_NO_VAL);
     }
 
 
@@ -1053,10 +502,10 @@ namespace mu
     /////////////////////////////////////////////////
     const Array& Value::getArray() const
     {
-        if (!isArray())
-            throw ParserError(ecTYPE_NO_VAL);
+        if (get() && get()->m_type == TYPE_ARRAY)
+            return static_cast<const ArrValue*>(get())->get();
 
-        return *(Array*)m_data;
+        throw ParserError(ecTYPE_NO_VAL);
     }
 
 
@@ -1070,380 +519,15 @@ namespace mu
     /////////////////////////////////////////////////
     std::complex<double> Value::as_cmplx() const
     {
-        if (!isNumerical())
-            return NAN;
-
-        if (isCategory())
-            return ((Category*)m_data)->val.asCF64();
-
-        return static_cast<Numerical*>(m_data)->asCF64();
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Add operator.
-    ///
-    /// \param other const Value&
-    /// \return Value
-    ///
-    /////////////////////////////////////////////////
-    Value Value::operator+(const Value& other) const
-    {
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
+        if (get())
         {
-            if (isArray() && other.isArray())
-                return getArray() + other.getArray();
-
-            if (isArray())
-                return getArray() + other;
-
-            return *this + other.getArray();
+            if (get()->m_type == TYPE_NUMERICAL)
+                return static_cast<const NumValue*>(get())->get().asCF64();
+            else if (get()->m_type == TYPE_CATEGORY)
+                return static_cast<const CatValue*>(get())->get().val.asCF64();
         }
 
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH);
-
-        if (common == TYPE_NUMERICAL)
-            return getNum() + other.getNum();
-        else if (common == TYPE_STRING)
-            return getStr() + other.getStr();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Unary minus operator.
-    ///
-    /// \return Value
-    ///
-    /////////////////////////////////////////////////
-    Value Value::operator-() const
-    {
-        if (m_type == TYPE_NUMERICAL || m_type == TYPE_INVALID || m_type == TYPE_CATEGORY)
-            return -getNum();
-
-        if (m_type == TYPE_ARRAY)
-            return -getArray();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Minus operator.
-    ///
-    /// \param other const Value&
-    /// \return Value
-    ///
-    /////////////////////////////////////////////////
-    Value Value::operator-(const Value& other) const
-    {
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-                return getArray() - other.getArray();
-
-            if (isArray())
-                return getArray() - other;
-
-            return *this - other.getArray();
-        }
-
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH);
-
-        if (common == TYPE_NUMERICAL)
-            return getNum() - other.getNum();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Division operator.
-    ///
-    /// \param other const Value&
-    /// \return Value
-    ///
-    /////////////////////////////////////////////////
-    Value Value::operator/(const Value& other) const
-    {
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-                return getArray() / other.getArray();
-
-            if (isArray())
-                return getArray() / other;
-
-            return *this / other.getArray();
-        }
-
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH);
-
-        if (common == TYPE_NUMERICAL && other.m_type == TYPE_NUMERICAL)
-            return getNum() / other.getNum();
-        else if (common == TYPE_NUMERICAL)
-            return getNum(); // Do not divide by zero
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Multiplication operator.
-    ///
-    /// \param other const Value&
-    /// \return Value
-    ///
-    /////////////////////////////////////////////////
-    Value Value::operator*(const Value& other) const
-    {
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-                return getArray() * other.getArray();
-
-            if (isArray())
-                return getArray() * other;
-
-            return *this * other.getArray();
-        }
-
-        if (common == TYPE_MIXED)
-        {
-            // special allowed cases: str*int and int*str
-            if (m_type == TYPE_NUMERICAL && getNum().isInt())
-                return mu::Value(strRepeat(other.getStr(), getNum().asUI64()));
-            else if (other.m_type == TYPE_NUMERICAL && other.getNum().isInt())
-                return mu::Value(strRepeat(getStr(), other.getNum().asUI64()));
-
-            throw ParserError(ecTYPE_MISMATCH);
-        }
-
-        if (isCategory())
-        {
-            if (other.getNum().isInt() && other.getNum().asI64() == 1)
-                return *this;
-
-            return getNum() * other.getNum();
-        }
-
-        if (common == TYPE_NUMERICAL)
-            return getNum() * other.getNum();
-
-        throw ParserError(ecTYPE_MISMATCH);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Add-assign operator.
-    ///
-    /// \param other const Value&
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    Value& Value::operator+=(const Value& other)
-    {
-        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
-            return operator=(other);
-
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-            {
-                getArray() += other.getArray();
-                return *this;
-            }
-
-            if (isArray())
-            {
-                getArray() += other;
-                return *this;
-            }
-
-            return operator=(*this + other.getArray());
-        }
-
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH_OOB);
-
-        if (isCategory())
-        {
-            if (common == TYPE_STRING)
-                return operator=(getStr() + other.getStr());
-
-            return operator=(getNum() + other.getNum());
-        }
-
-        if (isNumerical())
-            getNum() += other.getNum();
-        else if (isString())
-            getStr() += other.getStr();
-        else
-            throw ParserError(ecTYPE_MISMATCH);
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Subtract-assign operator.
-    ///
-    /// \param other const Value&
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    Value& Value::operator-=(const Value& other)
-    {
-        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
-            return operator=(-other);
-
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-            {
-                getArray() -= other.getArray();
-                return *this;
-            }
-
-            if (isArray())
-            {
-                getArray() -= other;
-                return *this;
-            }
-
-            return operator=(*this - other.getArray());
-        }
-
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH_OOB);
-
-        if (isCategory())
-            return operator=(getNum() - other.getNum());
-
-        if (isNumerical())
-            getNum() -= other.getNum();
-        else
-            throw ParserError(ecTYPE_MISMATCH);
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Divide-assign operator.
-    ///
-    /// \param other const Value&
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    Value& Value::operator/=(const Value& other)
-    {
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-            {
-                getArray() /= other.getArray();
-                return *this;
-            }
-
-            if (isArray())
-            {
-                getArray() /= other;
-                return *this;
-            }
-
-            return operator=(*this / other.getArray());
-        }
-
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH_OOB);
-
-        if (isCategory())
-            return operator=(getNum() / other.getNum());
-
-        if (isNumerical())
-            getNum() /= other.getNum();
-        else
-            throw ParserError(ecTYPE_MISMATCH);
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Multiply-assign operator.
-    ///
-    /// \param other const Value&
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    Value& Value::operator*=(const Value& other)
-    {
-        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
-            return operator=(other);
-
-        DataType common = detectCommonType(other);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && other.isArray())
-            {
-                getArray() *= other.getArray();
-                return *this;
-            }
-
-            if (isArray())
-            {
-                getArray() *= other;
-                return *this;
-            }
-
-            return operator=(*this * other.getArray());
-        }
-
-        if (common == TYPE_MIXED)
-        {
-            // special allowed cases: str*=int and int*=str
-            if (m_type == TYPE_NUMERICAL && getNum().isInt())
-                return operator=(mu::Value(strRepeat(other.getStr(), getNum().asUI64())));
-            else if (other.m_type == TYPE_NUMERICAL && other.getNum().isInt())
-                return operator=(mu::Value(strRepeat(getStr(), other.getNum().asUI64())));
-
-            throw ParserError(ecTYPE_MISMATCH_OOB);
-        }
-
-        /*if (isCategory())
-        {
-            if (other.getNum().isInt() && other.getNum().asI64() == 1)
-                return *this;
-
-            return operator=(getNum() * other.getNum());
-        }*/
-
-        if (isNumerical())
-            getNum() *= other.getNum();
-        else
-            throw ParserError(ecTYPE_MISMATCH);
-
-        return *this;
+        return NAN;
     }
 
 
@@ -1456,24 +540,8 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::pow(const Value& exponent) const
     {
-        DataType common = detectCommonType(exponent);
-
-        if (common == TYPE_ARRAY)
-        {
-            if (isArray() && exponent.isArray())
-                return getArray().pow(exponent.getArray());
-
-            if (isArray())
-                return getArray().pow(exponent);
-
-            return mu::Array(*this).pow(exponent.getArray());
-        }
-
-        if (common == TYPE_MIXED)
-            throw ParserError(ecTYPE_MISMATCH);
-
-        if (common == TYPE_NUMERICAL)
-            return getNum().pow(exponent.getNum());
+        if (get() && exponent.get())
+            return get()->pow(*exponent.get());
 
         throw ParserError(ecTYPE_MISMATCH);
     }
@@ -1488,7 +556,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value::operator bool() const
     {
-        return isValid() && ((isString() && getStr().length()) || (isNumerical() && bool(getNum())) || (isArray() && all(getArray())));
+        return get() && bool(*get());
     }
 
 
@@ -1500,7 +568,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator!() const
     {
-        return !isValid() || ((isString() && !getStr().length()) || (isNumerical() && !getNum()) || (isArray() && !all(getArray())));
+        return get() && !*get();
     }
 
 
@@ -1513,11 +581,10 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator==(const Value& other) const
     {
-        return m_type == other.m_type
-            && ((isCategory() && getCategory() == other.getCategory())
-                || (isString() && getStr() == other.getStr())
-                || (isNumerical() && getNum() == other.getNum())
-                || (isArray() && all(getArray() == other.getArray())));
+        if (get() && other.get())
+            return *get() == *other.get();
+
+        return false;
     }
 
 
@@ -1530,11 +597,10 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator!=(const Value& other) const
     {
-        return m_type != other.m_type
-            || (isCategory() && getCategory() != other.getCategory())
-            || (isString() && getStr() != other.getStr())
-            || (isNumerical() && getNum() != other.getNum())
-            || (isArray() && all(getArray() != other.getArray()));
+        if (get() && other.get())
+            return *get() != *other.get();
+
+        return false;
     }
 
 
@@ -1547,20 +613,8 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator<(const Value& other) const
     {
-        if (m_type != other.m_type)
-            return false;
-
-        if (isCategory())
-            return getCategory() < other.getCategory();
-
-        if (isString())
-            return getStr() < other.getStr();
-
-        if (isNumerical())
-            return getNum() < other.getNum();
-
-        if (isArray())
-            return all(getArray() < other.getArray());
+        if (get() && other.get())
+            return *get() < *other.get();
 
         return false;
     }
@@ -1575,7 +629,10 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator<=(const Value& other) const
     {
-        return operator<(other) || operator==(other);
+        if (get() && other.get())
+            return *get() <= *other.get();
+
+        return false;
     }
 
 
@@ -1588,20 +645,8 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator>(const Value& other) const
     {
-        if (m_type != other.m_type)
-            return false;
-
-        if (isCategory())
-            return getCategory() > other.getCategory();
-
-        if (isString())
-            return getStr() > other.getStr();
-
-        if (isNumerical())
-            return getNum() > other.getNum();
-
-        if (isArray())
-            return all(getArray() > other.getArray());
+        if (get() && other.get())
+            return *get() > *other.get();
 
         return false;
     }
@@ -1616,7 +661,10 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator>=(const Value& other) const
     {
-        return operator>(other) || operator==(other);
+        if (get() && other.get())
+            return *get() >= *other.get();
+
+        return false;
     }
 
 
@@ -1661,30 +709,14 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Value::print(size_t digits, size_t chrs, bool trunc) const
     {
-        if (isCategory())
-            return toExternalString(getStr()) + ": " + toString(getNum().asI64());
+        if (get())
+            return get()->print(digits, chrs, trunc);
 
-        if (isString())
-        {
-            if (chrs > 0)
-            {
-                if (trunc)
-                    return truncString(toExternalString(replaceControlCharacters(getStr())), chrs);
-
-                return ellipsize(toExternalString(replaceControlCharacters(getStr())), chrs);
-            }
-
-            return toExternalString(replaceControlCharacters(getStr()));
-        }
-
-        if (isNumerical())
-            return getNum().print(digits);
-
-        if (isArray())
-            return "{" + getArray().printDims() + " " + getArray().getCommonTypeAsString() + "}";
-            //return getArray().print(digits, chrs, trunc);
-
+#ifdef PARSERSTANDALONE
+        return "0x0";
+#else
         return "void";
+#endif
     }
 
 
@@ -1702,19 +734,8 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Value::printVal(size_t digits, size_t chrs) const
     {
-        if (isString())
-        {
-            if (chrs > 0)
-                return ellipsize(getStr(), chrs);
-
-            return getStr();
-        }
-
-        if (isNumerical())
-            return getNum().printVal(digits);
-
-        if (isArray())
-            return "{" + getArray().printVals(digits, chrs) + "}";
+        if (get())
+            return get()->printVal(digits, chrs);
 
         return "void";
     }
@@ -1729,25 +750,7 @@ namespace mu
     /////////////////////////////////////////////////
     void Value::clear()
     {
-        switch (m_type)
-        {
-            case TYPE_CATEGORY:
-                delete static_cast<Category*>(m_data);
-                break;
-            case TYPE_INVALID:
-            case TYPE_NUMERICAL:
-                delete static_cast<Numerical*>(m_data);
-                break;
-            case TYPE_STRING:
-                delete static_cast<std::string*>(m_data);
-                break;
-            case TYPE_ARRAY:
-                delete static_cast<mu::Array*>(m_data);
-                break;
-        }
-
-        m_type = TYPE_VOID;
-        m_data = nullptr;
+        reset(nullptr);
     }
 
 
@@ -1760,53 +763,15 @@ namespace mu
     /////////////////////////////////////////////////
     size_t Value::getBytes() const
     {
-        switch (m_type)
-        {
-            case TYPE_STRING:
-                return getStr().length();
-            case TYPE_CATEGORY:
-            case TYPE_INVALID:
-            case TYPE_NUMERICAL:
-                return getNum().getBytes();
-            case TYPE_ARRAY:
-                return getArray().getBytes();
-        }
+        if (get())
+            return get()->getBytes();
 
         return 0;
     }
 
 
-    /////////////////////////////////////////////////
-    /// \brief Detect the common (general) type for
-    /// this and another value enabling the selection
-    /// of the correct operator implementation.
-    ///
-    /// \param other const Value&
-    /// \return DataType
-    ///
-    /////////////////////////////////////////////////
-    DataType Value::detectCommonType(const Value& other) const
-    {
-        if (m_type == TYPE_ARRAY || other.m_type == TYPE_ARRAY)
-            return TYPE_ARRAY;
 
-        if ((m_type == TYPE_CATEGORY || m_type == TYPE_NUMERICAL)
-            && (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_CATEGORY))
-            return TYPE_NUMERICAL;
 
-        if ((m_type == TYPE_CATEGORY || m_type == TYPE_STRING)
-            && (other.m_type == TYPE_STRING || other.m_type == TYPE_CATEGORY))
-            return TYPE_STRING;
-
-        if (m_type == other.m_type || other.m_type == TYPE_VOID || other.m_type == TYPE_INVALID)
-            return m_type;
-
-        if (m_type == TYPE_VOID || m_type == TYPE_INVALID)
-            return other.m_type;
-
-        return TYPE_MIXED;
-    }
-#endif
 
 
 
@@ -1994,65 +959,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Assign an Array.
-    ///
-    /// \param other const Array&
-    /// \return Array&
-    ///
-    /////////////////////////////////////////////////
-    /*Array& Array::operator=(const Array& other)
-    {
-        if (other.size() == 1)
-        {
-            if (other.front().isArray())
-                return operator=(other.front().getArray());
-
-            if (size() != 1)
-                resize(1);
-
-            front() = other.front();
-        }
-        else
-        {
-            //Timer t("Array::operator=(&)");
-            resize(other.size());
-
-            //#pragma omp parallel for if(size() > 500)
-            for (size_t i = 0; i < size(); i++)
-            {
-                operator[](i) = other[i];
-            }
-        }
-
-        m_commonType = other.m_commonType;
-
-        return *this;
-    }*/
-
-
-    /////////////////////////////////////////////////
-    /// \brief Move an Array.
-    ///
-    /// \param other Array&&
-    /// \return Array&
-    ///
-    /////////////////////////////////////////////////
-    /*Array& Array::operator=(Array&& other)
-    {
-       // Timer t("Array::operator=(&&)");
-
-        _M_impl._M_start = other._M_impl._M_start;
-        _M_impl._M_finish = other._M_impl._M_finish;
-        _M_impl._M_end_of_storage = other._M_impl._M_end_of_storage;
-        m_commonType = other.m_commonType;
-
-        other._M_impl._M_start = other._M_impl._M_finish = other._M_impl._M_end_of_storage = pointer();
-
-        return *this;
-    }*/
-
-
-    /////////////////////////////////////////////////
     /// \brief Get the (general) data types of every
     /// contained Value.
     ///
@@ -2182,197 +1088,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Add operator.
-    ///
-    /// \param other const Array&
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-    /*Array Array::operator+(const Array& other) const
-    {
-        Array ret;
-
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
-        {
-            ret.push_back(get(i) + other.get(i));
-        }
-
-        return ret;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Unary minus operator.
-    ///
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-    Array Array::operator-() const
-    {
-        Array ret;
-
-        for (size_t i = 0; i < size(); i++)
-        {
-            ret.push_back(-get(i));
-        }
-
-        return ret;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Subtract operator.
-    ///
-    /// \param other const Array&
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-    Array Array::operator-(const Array& other) const
-    {
-        Array ret;
-
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
-        {
-            ret.push_back(get(i) - other.get(i));
-        }
-
-        return ret;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Divide operator.
-    ///
-    /// \param other const Array&
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-    Array Array::operator/(const Array& other) const
-    {
-        Array ret;
-
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
-        {
-            ret.push_back(get(i) / other.get(i));
-        }
-
-        return ret;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Multiply operator.
-    ///
-    /// \param other const Array&
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-    Array Array::operator*(const Array& other) const
-    {
-        Array ret;
-
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
-        {
-            ret.push_back(get(i) * other.get(i));
-        }
-
-        return ret;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Add-assign operator.
-    ///
-    /// \param other const Array&
-    /// \return Array&
-    ///
-    /////////////////////////////////////////////////
-    Array& Array::operator+=(const Array& other)
-    {
-        if (size() < other.size())
-            operator=(operator+(other));
-        else
-        {
-            for (size_t i = 0; i < size(); i++)
-            {
-                operator[](i) += other.get(i);
-            }
-        }
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Subtract-assign operator.
-    ///
-    /// \param other const Array&
-    /// \return Array&
-    ///
-    /////////////////////////////////////////////////
-    Array& Array::operator-=(const Array& other)
-    {
-        if (size() < other.size())
-            operator=(operator-(other));
-        else
-        {
-            for (size_t i = 0; i < size(); i++)
-            {
-                operator[](i) -= other.get(i);
-            }
-        }
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Divide-assign operator.
-    ///
-    /// \param other const Array&
-    /// \return Array&
-    ///
-    /////////////////////////////////////////////////
-    Array& Array::operator/=(const Array& other)
-    {
-        if (size() < other.size())
-            operator=(operator/(other));
-        else
-        {
-            for (size_t i = 0; i < size(); i++)
-            {
-                operator[](i) /= other.get(i);
-            }
-        }
-
-        return *this;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Multiply-assign operator.
-    ///
-    /// \param other const Array&
-    /// \return Array&
-    ///
-    /////////////////////////////////////////////////
-    Array& Array::operator*=(const Array& other)
-    {
-        if (size() < other.size())
-            operator=(operator*(other));
-        else
-        {
-            for (size_t i = 0; i < size(); i++)
-            {
-                operator[](i) *= other.get(i);
-            }
-        }
-
-        return *this;
-    }*/
-
-
-    /////////////////////////////////////////////////
     /// \brief Optimized power function.
     ///
     /// \param exponent const Array&
@@ -2382,10 +1097,12 @@ namespace mu
     Array Array::pow(const Array& exponent) const
     {
         Array ret;
+        size_t elements = std::max(size(), exponent.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), exponent.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i).pow(exponent.get(i)));
+            ret.emplace_back(get(i).pow(exponent.get(i)));
         }
 
         return ret;
@@ -2402,10 +1119,12 @@ namespace mu
     Array Array::pow(const Numerical& exponent) const
     {
         Array ret;
+        size_t elements = size();
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i).pow(exponent));
+            ret.emplace_back(get(i).pow(exponent));
         }
 
         return ret;
@@ -3008,42 +1727,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Get the i-th element.
-    ///
-    /// \param i size_t
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    /*Value& Array::get(size_t i)
-    {
-        if (size() == 1u)
-            return front();
-        else if (size() <= i)
-            throw std::length_error("Element " + ::toString(i) + " is out of bounds.");
-
-        return operator[](i);
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the i-th element.
-    ///
-    /// \param i size_t
-    /// \return const Value&
-    ///
-    /////////////////////////////////////////////////
-    const Value& Array::get(size_t i) const
-    {
-        if (size() == 1u)
-            return front();
-        else if (size() <= i)
-            return m_default;
-
-        return operator[](i);
-    }*/
-
-
-    /////////////////////////////////////////////////
     /// \brief Helper method to convert all contained
     /// numerical types to void values (needed for
     /// some parser optimizations).
@@ -3164,27 +1847,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Assign an Array checking for type
-    /// compatibility.
-    ///
-    /// \param other const Array&
-    /// \return Variable&
-    ///
-    /////////////////////////////////////////////////
-    /*Variable& Variable::operator=(const Array& other)
-    {
-        //Timer t("Variable::operator=");
-        if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
-        {
-            Array::operator=(other);
-            return *this;
-        }
-
-        throw ParserError(ecASSIGNED_TYPE_MISMATCH);
-    }*/
-
-
-    /////////////////////////////////////////////////
     /// \brief Assign a Variable checking for type
     /// compatibility.
     ///
@@ -3233,37 +1895,6 @@ namespace mu
     {
         //
     }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Assign the values of an Array.
-    ///
-    /// \param values const Array&
-    /// \return const Array&
-    ///
-    /////////////////////////////////////////////////
-    /*const Array& VarArray::operator=(const Array& values)
-    {
-        //Timer t("VarArray::operator=");
-        if (size() == 1)
-            *front() = values;
-        else if (values.isScalar())
-        {
-            for (size_t i = 0; i < size(); i++)
-            {
-                *operator[](i) = values;
-            }
-        }
-        else
-        {
-            for (size_t i = 0; i < std::min(size(), values.size()); i++)
-            {
-                *operator[](i) = values[i];
-            }
-        }
-
-        return values;
-    }*/
 
 
     /////////////////////////////////////////////////

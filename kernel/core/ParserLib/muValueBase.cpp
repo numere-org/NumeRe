@@ -67,6 +67,11 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    void BaseValue::flipSign()
+    {
+        throw ParserError(ecTYPE_MISMATCH);
+    }
+
     BaseValue* BaseValue::pow(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);

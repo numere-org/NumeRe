@@ -57,7 +57,6 @@ namespace mu
             virtual void InitFun() override;
             virtual void InitConst() override;
             virtual void InitOprt() override;
-            virtual void OnDetectVar(string_type* pExpr, int& nStart, int& nEnd) override;
 
             Array Diff(Variable* a_Var,
                        const Array& a_fPos,

@@ -873,6 +873,31 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Flip the sign bit as fast as possible.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Numerical::flipSign()
+    {
+        if (m_type == LOGICAL)
+        {
+            m_type = I8;
+            i64 = -ui64;
+        }
+        else if (m_type <= UI64)
+        {
+            m_type = NumericalType(m_type + I8);
+            i64 = -ui64;
+        }
+        else if (m_type <= I64)
+            i64 = -i64;
+        else
+            cf64 = -cf64;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Optimized power function.
     ///
     /// \param exponent const Numerical&
@@ -884,7 +909,7 @@ namespace mu
         if (exponent.isInt())
             return Numerical::autoType(intPower(asCF64(), exponent.asI64()), (m_type > LOGICAL && m_type <= I64) ? I64 : F64);
 
-        return Numerical::autoType(std::pow(asCF64(), exponent.asCF64()), F64);
+        return Numerical(std::pow(asCF64(), exponent.asCF64()), AUTO);
     }
 
 

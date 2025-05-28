@@ -88,6 +88,8 @@ namespace mu
         BaseValue& operator*=(const BaseValue& other) override;
         BaseValue& operator^=(const BaseValue& other) override;
 
+        void flipSign() override;
+
         BaseValue* pow(const BaseValue& other) const override;
 
         bool isValid() const override;
@@ -136,6 +138,8 @@ namespace mu
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
 
+        void flipSign() override;
+
         bool isValid() const override;
 
         operator bool() const override;
@@ -165,6 +169,8 @@ namespace mu
         BaseValue& operator/=(const BaseValue& other) override;
         BaseValue& operator*=(const BaseValue& other) override;
         BaseValue& operator^=(const BaseValue& other) override;
+
+        void flipSign() override;
 
         BaseValue* pow(const BaseValue& other) const override;
 

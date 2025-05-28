@@ -890,9 +890,6 @@ namespace mu
 			Error(ecUNEXPECTED_VAR, m_iPos, strTok);
         }
 
-        // Disabled, because not needed
-		//m_pParser->OnDetectVar(&m_strFormula, m_iPos, iEnd);
-
 		m_iPos = iEnd;
 		a_Tok.SetVar(var, strTok);
 		m_UsedVar[strTok] = var;  // Add variable to used-var-list

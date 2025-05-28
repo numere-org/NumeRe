@@ -32,6 +32,7 @@
 #include "muStringTypeDefs.hpp"
 #include "muParserFixes.h"
 #include "muStructures.hpp"
+#include "muInternalStructures.hpp"
 
 /** \file
     \brief This file contains standard definitions used by the parser.

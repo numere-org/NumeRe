@@ -237,32 +237,6 @@ namespace mu
     }
 
     //---------------------------------------------------------------------------
-    void Parser::OnDetectVar(string_type* /*pExpr*/, int& /*nStart*/, int& /*nEnd*/)
-    {
-    }
-    // this is just sample code to illustrate modifying variable names on the fly.
-    // I'm not sure anyone really needs such a feature...
-    /*
-
-
-    string sVar(pExpr->begin()+nStart, pExpr->begin()+nEnd);
-    string sRepl = std::string("_") + sVar + "_";
-
-    int nOrigVarEnd = nEnd;
-    cout << "variable detected!\n";
-    cout << "  Expr: " << *pExpr << "\n";
-    cout << "  Start: " << nStart << "\n";
-    cout << "  End: " << nEnd << "\n";
-    cout << "  Var: \"" << sVar << "\"\n";
-    cout << "  Repl: \"" << sRepl << "\"\n";
-    nEnd = nStart + sRepl.length();
-    cout << "  End: " << nEnd << "\n";
-    pExpr->replace(pExpr->begin()+nStart, pExpr->begin()+nOrigVarEnd, sRepl);
-    cout << "  New expr: " << *pExpr << "\n";
-    */
-//}
-
-    //---------------------------------------------------------------------------
     /** \brief Numerically differentiate with regard to a variable.
         \param [in] a_Var Pointer to the differentiation variable.
         \param [in] a_fPos Position at which the differentiation should take place.

@@ -46,6 +46,8 @@ namespace mu
             virtual BaseValue& operator*=(const BaseValue& other);
             virtual BaseValue& operator^=(const BaseValue& other);
 
+            virtual void flipSign();
+
             virtual BaseValue* pow(const BaseValue& other) const;
 
             virtual bool isValid() const = 0;

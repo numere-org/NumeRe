@@ -779,8 +779,8 @@ namespace mu
                 else if (m_vRPN[sz-1].Cmd == cmVARMUL || m_vRPN[sz-1].Cmd == cmREVVARMUL)
                 {
                     optimizeAway = true;
-                    m_vRPN[sz-1].Val().data *= Value(-1);
-                    m_vRPN[sz-1].Val().data2 *= Value(-1);
+                    m_vRPN[sz-1].Val().data.flipSign();
+                    m_vRPN[sz-1].Val().data2.flipSign();
                 }
             }
 		}

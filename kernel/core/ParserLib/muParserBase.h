@@ -218,8 +218,6 @@ namespace mu
 			virtual void InitConst() = 0;
 			virtual void InitOprt() = 0;
 
-			virtual void OnDetectVar(string_type* pExpr, int& nStart, int& nEnd);
-
 			static const char_type* c_DefaultOprt[];
 			static std::locale s_locale;  ///< The locale used by the parser
 			static bool g_DbgDumpCmdCode;
@@ -282,10 +280,6 @@ namespace mu
                                      Array& vResults);
 
 		private:
-			MutableStringView compileVectors(MutableStringView sExpr);
-			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
-			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
-			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
 			string_type getNextTempVarIndex();
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();

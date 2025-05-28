@@ -102,10 +102,6 @@ namespace mu
     }
 
 
-    // X' OP= ARR
-    // CAT OP= X
-
-    // NUM *= STR
 
     BASE_VALUE_IMPL(NumValue, TYPE_NUMERICAL, m_val)
 
@@ -240,6 +236,11 @@ namespace mu
             throw ParserError(ecTYPE_MISMATCH);
 
         return *this;
+    }
+
+    void NumValue::flipSign()
+    {
+        m_val.flipSign();
     }
 
     BaseValue* NumValue::pow(const BaseValue& other) const
@@ -486,6 +487,11 @@ namespace mu
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    void CatValue::flipSign()
+    {
+        m_val.val.flipSign();
+    }
+
     bool CatValue::isValid() const
     {
         return m_val.name.length() > 0;
@@ -639,6 +645,11 @@ namespace mu
             m_val ^= Value(other.clone());
 
         return *this;
+    }
+
+    void ArrValue::flipSign()
+    {
+        m_val.flipSign();
     }
 
     BaseValue* ArrValue::pow(const BaseValue& other) const
