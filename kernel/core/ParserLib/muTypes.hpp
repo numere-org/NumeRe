@@ -42,7 +42,7 @@ namespace mu
         TYPE_CATEGORY,
         TYPE_ARRAY,
         TYPE_GENERATOR,
-        TYPE_INVALID,
+        TYPE_NEUTRAL,
         TYPE_MIXED
     };
 

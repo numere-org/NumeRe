@@ -227,7 +227,7 @@ namespace mu
             case TYPE_CATEGORY:
                reset(new CatValue);
                 break;
-            case TYPE_INVALID:
+            case TYPE_NEUTRAL:
                 reset(new NeutralValue);
                 break;
             case TYPE_NUMERICAL:
@@ -271,7 +271,7 @@ namespace mu
         {
             case TYPE_CATEGORY:
                 return "category";
-            case TYPE_INVALID:
+            case TYPE_NEUTRAL:
 #ifdef PARSERSTANDALONE
                 return "neutral";
 #else
@@ -297,7 +297,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isVoid() const
     {
-        return !get() || get()->m_type == TYPE_INVALID;
+        return !get() || get()->m_type == TYPE_NEUTRAL;
     }
 
 
@@ -974,14 +974,14 @@ namespace mu
             types.push_back(operator[](i).getType());
 
             if (m_commonType == TYPE_VOID
-                || (m_commonType == TYPE_INVALID && types.back() != TYPE_VOID))
+                || (m_commonType == TYPE_NEUTRAL && types.back() != TYPE_VOID))
                 m_commonType = types.back();
 
-            if (types.back() != TYPE_VOID && types.back() != TYPE_INVALID && m_commonType != types.back())
+            if (types.back() != TYPE_VOID && types.back() != TYPE_NEUTRAL && m_commonType != types.back())
                 m_commonType = TYPE_MIXED;
         }
 
-        if (m_commonType == TYPE_INVALID)
+        if (m_commonType == TYPE_NEUTRAL)
             m_commonType = TYPE_NUMERICAL;
 
         return types;
@@ -2183,7 +2183,7 @@ namespace mu
     // Instantiation of the static member variables
     const std::string Value::m_defString;
     const Numerical Value::m_defVal;
-    const Value Array::m_default(TYPE_INVALID);
+    const Value Array::m_default(TYPE_NEUTRAL);
 
 
 

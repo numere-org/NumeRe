@@ -44,6 +44,11 @@ namespace mu
     };
     */
 
+    /////////////////////////////////////////////////
+    /// \brief This implements the "neutral operand"
+    /// i.e. the "do-nothing" value, similar to a
+    /// neutral value in addition and multiplication.
+    /////////////////////////////////////////////////
     class NeutralValue : public BaseValue
     {
         public:
@@ -71,6 +76,10 @@ namespace mu
         std::string printVal(size_t digits, size_t chrs) const override;
     };
 
+
+    /////////////////////////////////////////////////
+    /// \brief This class is a numerical value.
+    /////////////////////////////////////////////////
     class NumValue : public BaseValue
     {
         BASE_VALUE_DECL(NumValue, TYPE_NUMERICAL, Numerical, m_val)
@@ -105,6 +114,9 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class is a string value.
+    /////////////////////////////////////////////////
     class StrValue : public BaseValue
     {
         BASE_VALUE_DECL(StrValue, TYPE_STRING, std::string, m_val)
@@ -128,6 +140,9 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class is a categorical value.
+    /////////////////////////////////////////////////
     class CatValue : public BaseValue
     {
         BASE_VALUE_DECL(CatValue, TYPE_CATEGORY, Category, m_val)
@@ -153,6 +168,10 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class wraps an array into a
+    /// value.
+    /////////////////////////////////////////////////
     class ArrValue : public BaseValue
     {
         BASE_VALUE_DECL(ArrValue, TYPE_ARRAY, Array, m_val)

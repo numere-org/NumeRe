@@ -115,6 +115,23 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Move an Array instance into the
+            /// internal buffer. Will automatically reset any
+            /// possible reference to another Array instance
+            /// (m_alias is set to a nullptr).
+            ///
+            /// \param other Array&&
+            /// \return StackItem&
+            ///
+            /////////////////////////////////////////////////
+            StackItem& operator=(Array&& other)
+            {
+                Array::operator=(std::move(other));
+                m_alias = nullptr;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Add-assign another StackItem instance.
             /// Will take care about used references and
             /// possible optimisation by swapping the order

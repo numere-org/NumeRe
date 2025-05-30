@@ -21,107 +21,310 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Addition operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::operator+(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Unary minus operator.
+    ///
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::operator-() const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Subtraction operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::operator-(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Division operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::operator/(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Multiplication operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::operator*(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Power operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::operator^(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Add-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
     BaseValue& BaseValue::operator+=(const BaseValue& other)
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
     BaseValue& BaseValue::operator-=(const BaseValue& other)
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Divide-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
     BaseValue& BaseValue::operator/=(const BaseValue& other)
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
     BaseValue& BaseValue::operator*=(const BaseValue& other)
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Power-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
     BaseValue& BaseValue::operator^=(const BaseValue& other)
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Flip the sign bit as fast as possible.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void BaseValue::flipSign()
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Power function.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::pow(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Convert this instance to a logical
+    /// value. Has to be overridden, if comparisons
+    /// shall work.
+    ///
+    /// \return BaseValue::operator
+    ///
+    /////////////////////////////////////////////////
     BaseValue::operator bool() const
     {
         return false;
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Operator NOT.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator!() const
     {
         return !bool(*this);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Equal comparison operator. Has to be
+    /// overridden, if comparisons shall work.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator==(const BaseValue& other) const
     {
         throw m_type == other.m_type;
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Not-equal comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator!=(const BaseValue& other) const
     {
         return !operator==(other);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Less-than comparison operator. Has to
+    /// be overridden, if comparisons shall work.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator<(const BaseValue& other) const
     {
         throw ParserError(ecTYPE_MISMATCH);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Less-or-equal comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator<=(const BaseValue& other) const
     {
         return operator<(other) || operator==(other);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-than comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator>(const BaseValue& other) const
     {
         return !operator<(other) && !operator==(other);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Greater-or-equal comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::operator>=(const BaseValue& other) const
     {
         return !operator<(other);
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Method to detect, whether a method
+    /// with the passed name is implemented in this
+    /// instance. Can also be used to detect possible
+    /// fields.
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool BaseValue::isMethod(const std::string& sMethod) const
     {
         return false;
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Call an instance specific method with
+    /// zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::call(const std::string& sMethod) const
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Call an instance specific method with
+    /// one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::call(const std::string& sMethod, const BaseValue& arg1) const
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Call an instance specific method with
+    /// two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* BaseValue::call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);

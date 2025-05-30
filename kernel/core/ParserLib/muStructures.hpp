@@ -435,6 +435,8 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
+                clear();
+
                 _M_impl._M_start = other._M_impl._M_start;
                 _M_impl._M_finish = other._M_impl._M_finish;
                 _M_impl._M_end_of_storage = other._M_impl._M_end_of_storage;

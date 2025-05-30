@@ -24,13 +24,38 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief This class is an abstract base class
+    /// with some default implementations (i.e.
+    /// throws errors) to signal missing
+    /// implementations. It dispatches all operations
+    /// to derived child classes, if they override
+    /// the corresponding base operations.
+    /////////////////////////////////////////////////
     class BaseValue
     {
         public:
             DataType m_type;
 
             virtual ~BaseValue() {}
+
+            /////////////////////////////////////////////////
+            /// \brief Assignment operator. Will be
+            /// auto-implemented by the macro below.
+            ///
+            /// \param other const BaseValue&
+            /// \return BaseValue&
+            ///
+            /////////////////////////////////////////////////
             virtual BaseValue& operator=(const BaseValue& other) = 0;
+
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance. Will be
+            /// auto-implemented by the macro below.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
             virtual BaseValue* clone() const = 0;
 
             virtual BaseValue* operator+(const BaseValue& other) const;
@@ -50,6 +75,14 @@ namespace mu
 
             virtual BaseValue* pow(const BaseValue& other) const;
 
+            /////////////////////////////////////////////////
+            /// \brief Determine, whether this instance
+            /// contains a valid value. That's typically used
+            /// for detecting NaN and such.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             virtual bool isValid() const = 0;
 
             virtual operator bool() const;
@@ -61,6 +94,13 @@ namespace mu
             virtual bool operator>(const BaseValue& other) const;
             virtual bool operator>=(const BaseValue& other) const;
 
+            /////////////////////////////////////////////////
+            /// \brief Get the size of the contained value
+            /// in bytes.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             virtual size_t getBytes() const = 0;
 
             virtual bool isMethod(const std::string& sMethod) const;
@@ -68,10 +108,42 @@ namespace mu
             virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const;
             virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const;
 
+            /////////////////////////////////////////////////
+            /// \brief Print the contained value into a
+            /// std::string (possibly adding quotation
+            /// marks).
+            ///
+            /// \param digits size_t
+            /// \param chrs size_t
+            /// \param trunc bool
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             virtual std::string print(size_t digits, size_t chrs, bool trunc) const = 0;
+
+            /////////////////////////////////////////////////
+            /// \brief Print the contained value into a
+            /// std::string (without any additional quotation
+            /// marks).
+            ///
+            /// \param digits size_t
+            /// \param chrs size_t
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             virtual std::string printVal(size_t digits, size_t chrs) const = 0;
     };
 
+    /////////////////////////////////////////////////
+    /// \brief This is a simple function to detect,
+    /// which combinations of operands cannot make
+    /// use of the faster recursive operations.
+    ///
+    /// \param lhs DataType
+    /// \param rhs DataType
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     inline bool nonRecursiveOps(DataType lhs, DataType rhs)
     {
         return lhs == TYPE_CATEGORY || (rhs == TYPE_ARRAY && lhs != rhs);
