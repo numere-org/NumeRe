@@ -2773,7 +2773,8 @@ namespace mu
 	    for (int i = 0; i < nElems; i++)
             s += buffer[i].print() + ",";
 
-        s.pop_back();
+		if (s.length())
+			s.pop_back();
 
         return s;
 	}

@@ -90,11 +90,11 @@ namespace mu
             /// \return Value&
             ///
             /////////////////////////////////////////////////
-            Value& operator=(Value&& other)
-            {
-                reset(other.release());
-                return *this;
-            }
+            //Value& operator=(Value&& other)
+            //{
+            //    reset(other.release());
+            //    return *this;
+            //}
 
             DataType getType() const;
             std::string getTypeAsString() const;
@@ -442,14 +442,10 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                clear();
-
-                _M_impl._M_start = other._M_impl._M_start;
-                _M_impl._M_finish = other._M_impl._M_finish;
-                _M_impl._M_end_of_storage = other._M_impl._M_end_of_storage;
-                m_commonType = other.m_commonType;
-
-                other._M_impl._M_start = other._M_impl._M_finish = other._M_impl._M_end_of_storage = pointer();
+                std::swap(_M_impl._M_start, other._M_impl._M_start);
+                std::swap(_M_impl._M_finish, other._M_impl._M_finish);
+                std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
+                std::swap(m_commonType, other.m_commonType);
 
                 return *this;
             }

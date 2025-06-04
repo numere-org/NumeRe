@@ -147,7 +147,7 @@ namespace mu
                 {
                     if (canOptimize(other.get()))
                     {
-                        Array* buf = m_alias;
+                        const Array* buf = m_alias;
                         operator=(other.get());
                         Array::operator+=(*buf);
                         return *this;
@@ -176,7 +176,7 @@ namespace mu
                 {
                     if (canOptimize(other.get()))
                     {
-                        Array* buf = m_alias;
+                        const Array* buf = m_alias;
                         operator=(other.get());
                         flipSign();
                         Array::operator+=(*buf);
@@ -206,7 +206,7 @@ namespace mu
                 {
                     if (canOptimize(other.get()))
                     {
-                        Array* buf = m_alias;
+                        const Array* buf = m_alias;
                         operator=(other.get());
                         Array::operator*=(*buf);
                         return *this;
