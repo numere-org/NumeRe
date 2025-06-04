@@ -306,4 +306,4 @@ Var& Var::operator=(const arr& other)
     return *this;
 }
 
-const mu::Value arr::m_default(mu::TYPE_INVALID);
+const mu::Value arr::m_default(mu::TYPE_NEUTRAL);

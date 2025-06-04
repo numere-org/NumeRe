@@ -84,6 +84,8 @@ namespace mu
     {
         BASE_VALUE_DECL(NumValue, TYPE_NUMERICAL, Numerical, m_val)
 
+        NumValue(double val, bool makeInvalid);
+
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
         BaseValue* operator-(const BaseValue& other) const override;

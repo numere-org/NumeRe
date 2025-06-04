@@ -233,6 +233,9 @@ namespace mu
             case TYPE_NUMERICAL:
                 reset(new NumValue);
                 break;
+            case TYPE_INVALID:
+                reset(new NumValue(NAN, true));
+                break;
             case TYPE_STRING:
                 reset(new StrValue);
                 break;
@@ -297,7 +300,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isVoid() const
     {
-        return !get() || get()->m_type == TYPE_NEUTRAL;
+        return !get() || get()->m_type == TYPE_NEUTRAL || get()->m_type == TYPE_INVALID;
     }
 
 
@@ -322,7 +325,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isNumerical() const
     {
-        return get() && (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_CATEGORY);
+        return get() && (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID || get()->m_type == TYPE_CATEGORY);
     }
 
 
@@ -417,7 +420,7 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL)
+            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
                 return static_cast<NumValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().val;
@@ -437,7 +440,7 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL)
+            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
                 return static_cast<const NumValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val;
@@ -521,7 +524,7 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL)
+            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
                 return static_cast<const NumValue*>(get())->get().asCF64();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val.asCF64();
@@ -810,19 +813,20 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Construct an Array from a single Value.
+    /// \brief Construct an Array from a single
+    /// scalar Value.
     ///
-    /// \param singleton const Value&
+    /// \param scalar const Value&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Value& singleton) : Array()
+    Array::Array(const Value& scalar) : Array()
     {
-        if (singleton.isArray())
-            operator=(singleton.getArray());
+        if (scalar.isArray())
+            operator=(scalar.getArray());
         else
         {
-            push_back(singleton);
-            m_commonType = singleton.getType();
+            push_back(scalar);
+            m_commonType = scalar.getType();
         }
     }
 
@@ -968,20 +972,25 @@ namespace mu
     std::vector<DataType> Array::getType() const
     {
         std::vector<DataType> types;
+        size_t elems = size();
+        types.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
             types.push_back(operator[](i).getType());
 
             if (m_commonType == TYPE_VOID
-                || (m_commonType == TYPE_NEUTRAL && types.back() != TYPE_VOID))
+                || ((m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID) && types.back() != TYPE_VOID))
                 m_commonType = types.back();
 
-            if (types.back() != TYPE_VOID && types.back() != TYPE_NEUTRAL && m_commonType != types.back())
+            if (types.back() != TYPE_VOID
+                && types.back() != TYPE_NEUTRAL
+                && types.back() != TYPE_INVALID
+                && m_commonType != types.back())
                 m_commonType = TYPE_MIXED;
         }
 
-        if (m_commonType == TYPE_NEUTRAL)
+        if (m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID)
             m_commonType = TYPE_NUMERICAL;
 
         return types;
@@ -1140,10 +1149,12 @@ namespace mu
     Array Array::operator!() const
     {
         Array ret;
+        size_t elements = size();
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(operator[](i).operator!());
+            ret.emplace_back(operator[](i).operator!());
         }
 
         return ret;
@@ -1160,10 +1171,12 @@ namespace mu
     Array Array::operator==(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) == other.get(i));
+            ret.emplace_back(get(i) == other.get(i));
         }
 
         return ret;
@@ -1180,10 +1193,12 @@ namespace mu
     Array Array::operator!=(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) != other.get(i));
+            ret.emplace_back(get(i) != other.get(i));
         }
 
         return ret;
@@ -1200,10 +1215,12 @@ namespace mu
     Array Array::operator<(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) < other.get(i));
+            ret.emplace_back(get(i) < other.get(i));
         }
 
         return ret;
@@ -1220,10 +1237,12 @@ namespace mu
     Array Array::operator<=(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) <= other.get(i));
+            ret.emplace_back(get(i) <= other.get(i));
         }
 
         return ret;
@@ -1240,10 +1259,12 @@ namespace mu
     Array Array::operator>(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) > other.get(i));
+            ret.emplace_back(get(i) > other.get(i));
         }
 
         return ret;
@@ -1260,10 +1281,12 @@ namespace mu
     Array Array::operator>=(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) >= other.get(i));
+            ret.emplace_back(get(i) >= other.get(i));
         }
 
         return ret;
@@ -1280,10 +1303,12 @@ namespace mu
     Array Array::operator&&(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) && other.get(i));
+            ret.emplace_back(get(i) && other.get(i));
         }
 
         return ret;
@@ -1300,10 +1325,12 @@ namespace mu
     Array Array::operator||(const Array& other) const
     {
         Array ret;
+        size_t elements = std::max(size(), other.size());
+        ret.reserve(elements);
 
-        for (size_t i = 0; i < std::max(size(), other.size()); i++)
+        for (size_t i = 0; i < elements; i++)
         {
-            ret.push_back(get(i) || other.get(i));
+            ret.emplace_back(get(i) || other.get(i));
         }
 
         return ret;

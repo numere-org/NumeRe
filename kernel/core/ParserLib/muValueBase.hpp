@@ -165,7 +165,7 @@ public:                                                       \
     }                                                         \
     CLASS(const CLASS& other): BaseValue()                    \
     {                                                         \
-        m_type = ID;                                          \
+        m_type = other.m_type;                                \
         ATTR = other.ATTR;                                    \
     }                                                         \
     CLASS(CLASS&& other) = default;                           \

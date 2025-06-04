@@ -243,8 +243,62 @@ namespace mu
 
     //------------------------------------------------------------------------------
 
-    // Basic implementation of the NumValue class
-    BASE_VALUE_IMPL(NumValue, TYPE_NUMERICAL, m_val)
+
+    /////////////////////////////////////////////////
+    /// \brief Copy another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    NumValue::NumValue(const BaseValue& other) : BaseValue()
+    {
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        {
+            m_type = other.m_type;
+            m_val = static_cast<const NumValue&>(other).m_val;
+        }
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return NumValue&
+    ///
+    /////////////////////////////////////////////////
+    NumValue& NumValue::operator=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        {
+            m_type = other.m_type;
+            m_val = static_cast<const NumValue&>(other).m_val;
+        }
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Helper constructor to create an
+    /// invalid value.
+    ///
+    /// \param val double
+    /// \param makeInvalid bool
+    ///
+    /////////////////////////////////////////////////
+    NumValue::NumValue(double val, bool makeInvalid)
+    {
+        if (makeInvalid)
+            m_type = TYPE_INVALID;
+        else
+            m_type = TYPE_NUMERICAL;
+
+        m_val = val;
+    }
 
 
     /////////////////////////////////////////////////
@@ -256,7 +310,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val + static_cast<const NumValue&>(other).m_val);
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val + static_cast<const CatValue&>(other).get().val);
@@ -290,7 +344,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator-(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val - static_cast<const NumValue&>(other).m_val);
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val - static_cast<const CatValue&>(other).get().val);
@@ -312,7 +366,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val / static_cast<const NumValue&>(other).m_val);
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val / static_cast<const CatValue&>(other).get().val);
@@ -334,7 +388,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val * static_cast<const NumValue&>(other).m_val);
         else if (other.m_type == TYPE_CATEGORY)
         {
@@ -376,7 +430,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             m_val += static_cast<const NumValue&>(other).m_val;
         else if (other.m_type == TYPE_CATEGORY)
             m_val += static_cast<const CatValue&>(other).get().val;
@@ -396,7 +450,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator-=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             m_val -= static_cast<const NumValue&>(other).m_val;
         else if (other.m_type == TYPE_CATEGORY)
             m_val -= static_cast<const CatValue&>(other).get().val;
@@ -416,7 +470,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator/=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             m_val /= static_cast<const NumValue&>(other).m_val;
         else if (other.m_type == TYPE_CATEGORY)
             m_val /= static_cast<const CatValue&>(other).get().val;
@@ -436,7 +490,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             m_val *= static_cast<const NumValue&>(other).m_val;
         else if (other.m_type == TYPE_CATEGORY)
             m_val *= static_cast<const CatValue&>(other).get().val;
@@ -456,7 +510,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator^=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             m_val = m_val.pow(static_cast<const NumValue&>(other).m_val);
         else if (other.m_type == TYPE_CATEGORY)
             m_val = m_val.pow(static_cast<const CatValue&>(other).get().val);
@@ -488,7 +542,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::pow(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val.pow(static_cast<const NumValue&>(other).m_val));
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val.pow(static_cast<const CatValue&>(other).get().val));
@@ -549,7 +603,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool NumValue::operator<(const BaseValue& other) const
     {
-        if (other.m_type != TYPE_NUMERICAL)
+        if (other.m_type != TYPE_NUMERICAL && other.m_type != TYPE_INVALID)
             throw ParserError(ecTYPE_MISMATCH);
 
         return m_val < static_cast<const NumValue&>(other).m_val;
@@ -818,7 +872,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val.val + static_cast<const NumValue&>(other).get());
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val.val + static_cast<const CatValue&>(other).m_val.val);
@@ -854,7 +908,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator-(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val.val - static_cast<const NumValue&>(other).get());
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val.val - static_cast<const CatValue&>(other).m_val.val);
@@ -876,7 +930,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
             return new NumValue(m_val.val / static_cast<const NumValue&>(other).get());
         else if (other.m_type == TYPE_CATEGORY)
             return new NumValue(m_val.val / static_cast<const CatValue&>(other).m_val.val);
@@ -899,7 +953,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
         {
             const Numerical& n = static_cast<const NumValue&>(other).get();
 
@@ -968,7 +1022,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool CatValue::operator==(const BaseValue& other) const
     {
-        return other == TYPE_CATEGORY && m_val == static_cast<const CatValue&>(other).m_val;
+        return other.m_type == TYPE_CATEGORY && m_val == static_cast<const CatValue&>(other).m_val;
     }
 
 
@@ -1052,7 +1106,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator+(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val + static_cast<const ArrValue&>(other).m_val);
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
@@ -1082,7 +1136,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator-(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val - static_cast<const ArrValue&>(other).m_val);
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
@@ -1100,7 +1154,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator/(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val / static_cast<const ArrValue&>(other).m_val);
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
@@ -1118,7 +1172,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator*(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val * static_cast<const ArrValue&>(other).m_val);
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
@@ -1136,7 +1190,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator^(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val ^ static_cast<const ArrValue&>(other).m_val);
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
@@ -1154,7 +1208,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator+=(const BaseValue& other)
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             m_val += static_cast<const ArrValue&>(other).m_val;
         else
             m_val += Value(other.clone());
@@ -1172,7 +1226,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator-=(const BaseValue& other)
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             m_val -= static_cast<const ArrValue&>(other).m_val;
         else
             m_val -= Value(other.clone());
@@ -1190,7 +1244,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator/=(const BaseValue& other)
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             m_val /= static_cast<const ArrValue&>(other).m_val;
         else
             m_val /= Value(other.clone());
@@ -1208,7 +1262,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator*=(const BaseValue& other)
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             m_val *= static_cast<const ArrValue&>(other).m_val;
         else
             m_val *= Value(other.clone());
@@ -1226,7 +1280,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator^=(const BaseValue& other)
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             m_val ^= static_cast<const ArrValue&>(other).m_val;
         else
             m_val ^= Value(other.clone());
@@ -1256,7 +1310,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::pow(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val.pow(static_cast<const ArrValue&>(other).m_val));
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
@@ -1300,7 +1354,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool ArrValue::operator==(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return all(m_val == static_cast<const ArrValue&>(other).m_val);
 
         return all(m_val == Array(Value(other.clone())));
@@ -1316,7 +1370,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool ArrValue::operator<(const BaseValue& other) const
     {
-        if (other == TYPE_ARRAY)
+        if (other.m_type == TYPE_ARRAY)
             return all(m_val < static_cast<const ArrValue&>(other).m_val);
 
         return all(m_val < Value(other.clone()));
@@ -1349,7 +1403,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string ArrValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return "{" + m_val.printDims() + " " + m_val.print(digits, chrs, trunc) + "}";
+        return "{" + m_val.printDims() + " " + m_val.getCommonTypeAsString() + "}";
     }
 
 

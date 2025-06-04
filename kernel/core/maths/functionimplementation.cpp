@@ -223,6 +223,10 @@ mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
             res.emplace_back(a.get(n-1));
     }
 
+    // Auto-expand a single embedded array
+    if (res.size() == 1 && res.get(0).isArray())
+        return res.get(0).getArray();
+
     return res;
 }
 

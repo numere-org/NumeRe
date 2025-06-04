@@ -365,6 +365,13 @@ namespace mu
     };
 
 
+    /*
+    class BaseArray {...}
+    class Array : public BaseArray, public std::vector<Value> {...}
+    class NumArray : public BaseArray, public std::vector<Numerical> {...}
+    class StrArray : public BaseArray, public std::vector<string> {...}
+    */
+
     /////////////////////////////////////////////////
     /// \brief This class handles the scalar-vector
     /// interactions and is the general datatype
@@ -381,7 +388,7 @@ namespace mu
             Array(Array&& other) = default;
 
             Array(size_t n, const Value& fillVal = Value());
-            Array(const Value& singleton);
+            Array(const Value& scalar);
             Array(const Variable& var);
             Array(const std::vector<std::complex<double>>& other);
             Array(const std::vector<double>& other);
@@ -878,10 +885,19 @@ namespace mu
             bool operator==(const VarArray& other) const;
 
             bool isNull() const;
+
+            /////////////////////////////////////////////////
+            /// \brief Return wether this VarArray is in fact
+            /// a scalar (i.e. a single variable).
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool isScalar() const
             {
                 return size() == 1u;
             }
+
             std::string print() const;
             Array asArray() const;
     };
