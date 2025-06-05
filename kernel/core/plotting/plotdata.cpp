@@ -37,10 +37,10 @@ bool isNotEmptyExpression(StringView sExpr);
 ///
 /// \param nResults int&
 /// \param sExpression std::string
-/// \return mu::Array*
+/// \return const mu::StackItem*
 ///
 /////////////////////////////////////////////////
-static mu::Array* evaluate(int& nResults, std::string sExpression)
+static const mu::StackItem* evaluate(int& nResults, std::string sExpression)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
@@ -480,9 +480,9 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp.find(',') && sTemp.find(',') != sTemp.length()-1)
             {
                 int nResults;
-                mu::Array* dTemp = evaluate(nResults, sTemp);
-                dRotateAngles[0] = dTemp[0].front().getNum().asF64();
-                dRotateAngles[1] = dTemp[1].front().getNum().asF64();
+                const mu::StackItem* dTemp = evaluate(nResults, sTemp);
+                dRotateAngles[0] = dTemp[0].get().front().getNum().asF64();
+                dRotateAngles[1] = dTemp[1].get().front().getNum().asF64();
             }
             else if (!sTemp.find(','))
             {
@@ -527,13 +527,13 @@ void PlotData::setParams(const std::string& sCmd, int nType)
         if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults = 0;
-            mu::Array* dTemp = evaluate(nResults, sTemp);
+            const mu::StackItem* dTemp = evaluate(nResults, sTemp);
             if (nResults)
             {
                 for (size_t i = 0; i < 3; i++)
                 {
-                    if (i < dTemp[0].size() && !isnan(dTemp[0][i].getNum().asF64()) && !isinf(dTemp[0][i].getNum().asF64()))
-                        dOrigin[i] = dTemp[0][i].getNum().asF64();
+                    if (i < dTemp[0].get().size() && !isnan(dTemp[0].get()[i].getNum().asF64()) && !isinf(dTemp[0].get()[i].getNum().asF64()))
+                        dOrigin[i] = dTemp[0].get()[i].getNum().asF64();
                     else
                         dOrigin[i] = 0.0;
                 }
@@ -558,18 +558,19 @@ void PlotData::setParams(const std::string& sCmd, int nType)
         if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults;
-            mu::Array* dTemp = evaluate(nResults, sTemp);
+            const mu::StackItem* dTemp = evaluate(nResults, sTemp);
 
             if (nResults)
             {
+                const mu::Array& val = dTemp[0].get();
                 for (size_t i = 0; i < 3; i++)
                 {
-                    if (i < dTemp[0].size()
-                        && !isnan(dTemp[0][i].getNum().asF64())
-                        && !isinf(dTemp[0][i].getNum().asF64())
-                        && dTemp[0][i].getNum().asF64() <= 5
-                        && dTemp[0][i].getNum().asF64() >= 0)
-                        nSlices[i] = dTemp[0][i].getNum().asI64();
+                    if (i < val.size()
+                        && !isnan(val[i].getNum().asF64())
+                        && !isinf(val[i].getNum().asF64())
+                        && val[i].getNum().asF64() <= 5
+                        && val[i].getNum().asF64() >= 0)
+                        nSlices[i] = val[i].getNum().asI64();
                     else
                         nSlices[i] = 1;
                 }
@@ -856,26 +857,26 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            mu::Array* v = nullptr;
+            const mu::StackItem* v = nullptr;
             int nResults = 0;
             v = evaluate(nResults, sTemp);
 
-            for (size_t i = 0; i < v[0].size(); i++)
+            for (size_t i = 0; i < v[0].get().size(); i++)
             {
                 if (i)
                     _lHlines.push_back(Line());
 
-                _lHlines[i+2].dPos = v[0][i].getNum().asF64();
+                _lHlines[i+2].dPos = v[0].get()[i].getNum().asF64();
             }
 
             if (nResults > 1)
             {
                 for (size_t i = 2; i < _lHlines.size(); i++)
                 {
-                    if (i-2 >= v[1].size())
+                    if (i-2 >= v[1].get().size())
                         break;
 
-                    _lHlines[i].sDesc = v[1][i-2].getStr();
+                    _lHlines[i].sDesc = v[1].get()[i-2].getStr();
                     replaceControlChars(_lHlines[i].sDesc);
                 }
 
@@ -883,10 +884,10 @@ void PlotData::setParams(const std::string& sCmd, int nType)
                 {
                     for (size_t i = 2; i < _lHlines.size(); i++)
                     {
-                        if (i-2 >= v[2].size())
+                        if (i-2 >= v[2].get().size())
                             break;
 
-                        _lHlines[i].sStyle = v[2][i-2].getStr();
+                        _lHlines[i].sStyle = v[2].get()[i-2].getStr();
                     }
                 }
             }
@@ -907,26 +908,26 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            mu::Array* v = nullptr;
+            const mu::StackItem* v = nullptr;
             int nResults = 0;
             v = evaluate(nResults, sTemp);
 
-            for (size_t i = 0; i < v[0].size(); i++)
+            for (size_t i = 0; i < v[0].get().size(); i++)
             {
                 if (i)
                     _lVLines.push_back(Line());
 
-                _lVLines[i+2].dPos = v[0][i].getNum().asF64();
+                _lVLines[i+2].dPos = v[0].get()[i].getNum().asF64();
             }
 
             if (nResults > 1)
             {
                 for (size_t i = 2; i < _lVLines.size(); i++)
                 {
-                    if (i-2 >= v[1].size())
+                    if (i-2 >= v[1].get().size())
                         break;
 
-                    _lVLines[i].sDesc = v[1][i-2].getStr();
+                    _lVLines[i].sDesc = v[1].get()[i-2].getStr();
                     replaceControlChars(_lVLines[i].sDesc);
                 }
 
@@ -934,10 +935,10 @@ void PlotData::setParams(const std::string& sCmd, int nType)
                 {
                     for (size_t i = 2; i < _lVLines.size(); i++)
                     {
-                        if (i-2 >= v[2].size())
+                        if (i-2 >= v[2].get().size())
                             break;
 
-                        _lVLines[i].sStyle = v[2][i-2].getStr();
+                        _lVLines[i].sStyle = v[2].get()[i-2].getStr();
                     }
                 }
             }
@@ -952,18 +953,18 @@ void PlotData::setParams(const std::string& sCmd, int nType)
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
 
-        mu::Array* v = nullptr;
+        const mu::StackItem* v = nullptr;
         int nResults = 0;
         v = evaluate(nResults, sTemp);
 
-        for (size_t i = 0; i < v[0].size(); i++)
+        for (size_t i = 0; i < v[0].get().size(); i++)
         {
-            std::string sAxis = v[0][i].getStr();
+            std::string sAxis = v[0].get()[i].getStr();
 
             if (sAxis == "c")
-                _timeAxes[3].activate(nResults > 1 ? v[1].get(i).getStr() : "");
+                _timeAxes[3].activate(nResults > 1 ? v[1].get().get(i).getStr() : "");
             else if (sAxis.find_first_of("xyz") != std::string::npos)
-                _timeAxes[sAxis[0]-'x'].activate(nResults > 1 ? v[1].get(i).getStr() : "");
+                _timeAxes[sAxis[0]-'x'].activate(nResults > 1 ? v[1].get().get(i).getStr() : "");
         }
     }
 
@@ -976,17 +977,17 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            mu::Array* v = nullptr;
+            const mu::StackItem* v = nullptr;
             int nResults = 0;
             v = evaluate(nResults, sTemp);
-            _lVLines[0].dPos = v[0].front().getNum().asF64();
+            _lVLines[0].dPos = v[0].get().front().getNum().asF64();
 
             if (nResults > 1)
             {
-                _lVLines[0].sDesc = v[1].printVals();
+                _lVLines[0].sDesc = v[1].get().printVals();
 
                 if (nResults > 2)
-                    _lVLines[0].sStyle = v[2].printVals();
+                    _lVLines[0].sStyle = v[2].get().printVals();
             }
         }
 
@@ -1002,17 +1003,17 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            mu::Array* v = nullptr;
+            const mu::StackItem* v = nullptr;
             int nResults = 0;
             v = evaluate(nResults, sTemp);
-            _lVLines[0].dPos = v[0].front().getNum().asF64();
+            _lVLines[0].dPos = v[0].get().front().getNum().asF64();
 
             if (nResults > 1)
             {
-                _lVLines[0].sDesc = v[1].printVals();
+                _lVLines[0].sDesc = v[1].get().printVals();
 
                 if (nResults > 2)
-                    _lVLines[0].sStyle = v[2].printVals();
+                    _lVLines[0].sStyle = v[2].get().printVals();
             }
         }
 
@@ -1028,22 +1029,22 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            mu::Array* v = nullptr;
+            const mu::StackItem* v = nullptr;
             int nResults = 0;
             v = evaluate(nResults, sTemp);
 
-            if (nResults > 1 && v[0].getCommonType() == mu::TYPE_NUMERICAL && v[1].getCommonType() == mu::TYPE_NUMERICAL)
+            if (nResults > 1 && v[0].get().getCommonType() == mu::TYPE_NUMERICAL && v[1].get().getCommonType() == mu::TYPE_NUMERICAL)
             {
-                _AddAxes[XCOORD].ivl.reset(v[0].get(0).getNum().asCF64(),
-                                           v[1].get(0).getNum().asCF64());
+                _AddAxes[XCOORD].ivl.reset(v[0].get().get(0).getNum().asCF64(),
+                                           v[1].get().get(0).getNum().asCF64());
 
                 if (nResults > 2)
                 {
-                    _AddAxes[XCOORD].sLabel = v[2].printVals();
+                    _AddAxes[XCOORD].sLabel = v[2].get().printVals();
 
                     if (nResults > 3)
                     {
-                        _AddAxes[XCOORD].sStyle = v[3].printVals();
+                        _AddAxes[XCOORD].sStyle = v[3].get().printVals();
 
                         if (!checkColorChars(_AddAxes[XCOORD].sStyle))
                             _AddAxes[XCOORD].sStyle = SECAXIS_DEFAULT_COLOR;
@@ -1054,11 +1055,11 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             }
             else
             {
-                _AddAxes[XCOORD].sLabel = v[0].printVals();
+                _AddAxes[XCOORD].sLabel = v[0].get().printVals();
 
                 if (nResults > 1)
                 {
-                    _AddAxes[XCOORD].sStyle = v[1].printVals();
+                    _AddAxes[XCOORD].sStyle = v[1].get().printVals();
 
                     if (!checkColorChars(_AddAxes[XCOORD].sStyle))
                         _AddAxes[XCOORD].sStyle = SECAXIS_DEFAULT_COLOR;
@@ -1076,22 +1077,22 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
 
-            mu::Array* v = nullptr;
+            const mu::StackItem* v = nullptr;
             int nResults = 0;
             v = evaluate(nResults, sTemp);
 
-            if (nResults > 1 && v[0].getCommonType() == mu::TYPE_NUMERICAL && v[1].getCommonType() == mu::TYPE_NUMERICAL)
+            if (nResults > 1 && v[0].get().getCommonType() == mu::TYPE_NUMERICAL && v[1].get().getCommonType() == mu::TYPE_NUMERICAL)
             {
-                _AddAxes[YCOORD].ivl.reset(v[0].get(0).getNum().asCF64(),
-                                           v[1].get(0).getNum().asCF64());
+                _AddAxes[YCOORD].ivl.reset(v[0].get().get(0).getNum().asCF64(),
+                                           v[1].get().get(0).getNum().asCF64());
 
                 if (nResults > 2)
                 {
-                    _AddAxes[YCOORD].sLabel = v[2].printVals();
+                    _AddAxes[YCOORD].sLabel = v[2].get().printVals();
 
                     if (nResults > 3)
                     {
-                        _AddAxes[YCOORD].sStyle = v[3].printVals();
+                        _AddAxes[YCOORD].sStyle = v[3].get().printVals();
 
                         if (!checkColorChars(_AddAxes[YCOORD].sStyle))
                             _AddAxes[YCOORD].sStyle = SECAXIS_DEFAULT_COLOR;
@@ -1102,11 +1103,11 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             }
             else
             {
-                _AddAxes[YCOORD].sLabel = v[0].printVals();
+                _AddAxes[YCOORD].sLabel = v[0].get().printVals();
 
                 if (nResults > 1)
                 {
-                    _AddAxes[YCOORD].sStyle = v[1].printVals();
+                    _AddAxes[YCOORD].sStyle = v[1].get().printVals();
 
                     if (!checkColorChars(_AddAxes[YCOORD].sStyle))
                         _AddAxes[YCOORD].sStyle = SECAXIS_DEFAULT_COLOR;

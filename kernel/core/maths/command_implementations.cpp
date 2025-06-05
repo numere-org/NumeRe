@@ -3233,8 +3233,8 @@ bool evalPoints(CommandLineParser& cmdParser)
 
                 _parser.SetExpr(indices[0] + "," + indices[1]);
                 int nIndices;
-                mu::Array* res = _parser.Eval(nIndices);
-                ivl.intervals.push_back(Interval(res[0].front().getNum().asCF64(), res[1].front().getNum().asCF64()));
+                const mu::StackItem* res = _parser.Eval(nIndices);
+                ivl.intervals.push_back(Interval(res[0].get().front().getNum().asCF64(), res[1].get().front().getNum().asCF64()));
 
                 break;
             }

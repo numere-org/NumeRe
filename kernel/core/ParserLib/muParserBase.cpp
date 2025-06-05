@@ -1619,13 +1619,7 @@ namespace mu
 
                                 {
                                     sidx -= -iArgCount - 1;
-                                    std::vector<Array> args(-iArgCount);
-
-                                    for (size_t i = 0; i < args.size(); i++)
-                                    {
-                                        args[i] = Stack[sidx+i].get();
-                                    }
-
+                                    std::vector<Array> args = make_vector(&Stack[sidx], -iArgCount);
                                     Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&args[0], args.size());
                                 }
                                 continue;
@@ -1962,13 +1956,7 @@ namespace mu
 
                                     {
                                         sidx -= -iArgCount - 1;
-                                        std::vector<Array> args(-iArgCount);
-
-                                        for (size_t i = 0; i < args.size(); i++)
-                                        {
-                                            args[i] = Stack[sidx+i].get();
-                                        }
-
+                                        std::vector<Array> args = make_vector(&Stack[sidx], -iArgCount);
                                         Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&args[0], args.size());
                                     }
                                     continue;
@@ -2007,10 +1995,10 @@ namespace mu
             } // for all bytecode tokens
 
             // Copy the results
-            for (int j = 0; j < nStackSize; j++)
-            {
-                m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1].get();
-            }
+            //for (int j = 0; j < nStackSize; j++)
+            //{
+            //    m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1].get();
+            //}
         }
 
 	}
@@ -2782,7 +2770,8 @@ namespace mu
 
     /////////////////////////////////////////////////
     /// \brief Evaluate an expression containing
-    /// comma seperated subexpressions.
+    /// comma seperated subexpressions avoiding the
+    /// final copy into the internal buffer.
     ///
     /// This member function can be used to retrieve
     /// all results of an expression made up of
@@ -2790,23 +2779,16 @@ namespace mu
     /// "x+y,sin(x),cos(y)").
     ///
     /// \param nStackSize int&
-    /// \return Array*
+    /// \return const StackItem*
     ///
     /////////////////////////////////////////////////
-	Array* ParserBase::Eval(int& nStackSize)
+	const StackItem* ParserBase::Eval(int& nStackSize)
 	{
 	    // Run the evaluation
         (this->*m_pParseFormula)();
 
         nStackSize = m_state->m_numResults;
-
-        // Copy the actual results (ignore the 0-th term)
-        m_buffer.resize(nStackSize);
-
-        for (int i = 0; i < nStackSize; i++)
-        {
-            m_buffer[i] = m_state->m_stackBuffer[i+1].get();
-        }
+        const StackItem* res = &m_state->m_stackBuffer[1];
 
         // assign the results of the calculation to a possible
         // temporary vector
@@ -2817,9 +2799,9 @@ namespace mu
             target.assign(m_buffer, nStackSize);*/
 
         if (g_DbgDumpStack)
-            print("ParserBase::Eval() @ ["
+            print("ParserBase::EvalUnbuffered() @ ["
                                 + toString(nthLoopElement) + "," + toString(nthLoopPartEquation)
-                                + "] m_buffer[:] = {" + printVector(m_buffer, nStackSize) + "}");
+                                + "] res = " + res->get().print());
 
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
         {
@@ -2827,12 +2809,16 @@ namespace mu
             nCurrVectorIndex = 0;
 
             if (m_stateStacks[nthLoopElement].m_states.size() <= nthLoopPartEquation)
+            {
                 m_stateStacks[nthLoopElement].m_states.push_back(State());
+                // Ensure we have the correct buffer even after some copies happened
+                res = &m_stateStacks(nthLoopElement, nthLoopPartEquation-1).m_stackBuffer[1];
+            }
 
             m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
         }
 
-        return &m_buffer[0];
+        return res;
 	}
 
 
@@ -2840,12 +2826,12 @@ namespace mu
     /// \brief Single-value wrapper around the
     /// vectorized overload of this member function.
     ///
-    /// \return Array
+    /// \return const Array&
     ///
     /////////////////////////////////////////////////
-	Array ParserBase::Eval() // declared as deprecated
+	const Array& ParserBase::Eval() // declared as deprecated
 	{
-	    Array* v;
+	    const StackItem* v;
 	    int nResults;
 #ifdef PARSERSTANDALONE
 	    {
@@ -2857,7 +2843,7 @@ namespace mu
 	    }
 #endif
 
-	    return v[0];
+	    return v->get();
 	}
 
 

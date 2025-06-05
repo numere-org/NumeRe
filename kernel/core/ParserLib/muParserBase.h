@@ -126,8 +126,8 @@ namespace mu
 
 			virtual ~ParserBase();
 
-			Array  Eval();
-			Array* Eval(int& nStackSize);
+			const Array& Eval();
+			const StackItem* Eval(int& nStackSize);
 
 			void SetExpr(StringView a_sExpr);
 
@@ -331,7 +331,6 @@ namespace mu
 			//mutable ExpressionTarget m_compilingTarget;
 			mutable StateStacks m_stateStacks;
 			State* m_state;
-			mutable std::vector<Array> m_buffer;
 
 			mutable varmap_type mInternalVars;
 

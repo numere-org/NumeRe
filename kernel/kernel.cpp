@@ -1291,7 +1291,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 _parser.SetExpr(sLine);
 
             int nNum;
-            mu::Array* v = _parser.Eval(nNum);
+            const mu::StackItem* v = _parser.Eval(nNum);
             _assertionHandler.checkAssertion(v, nNum);
 
             // Create the answer of the calculation and print it
@@ -1304,10 +1304,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 if (bWriteToCluster)
                 {
                     NumeRe::Cluster& cluster = _memoryManager.getCluster(sCache);
-                    cluster.assignResults(_idx, v[0]);
+                    cluster.assignResults(_idx, v[0].get());
                 }
                 else
-                    _memoryManager.writeToTable(_idx, sCache, v[0]);
+                    _memoryManager.writeToTable(_idx, sCache, v[0].get());
             }
         }
         // This section starts the error handling
@@ -2324,14 +2324,14 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /// then passed to NumeReKernel::printResult().
 ///
 /// \param nNum int
-/// \param v mu::Array*
+/// \param v const mu::StackItem*
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::createCalculationAnswer(int nNum, mu::Array* v)
+void NumeReKernel::createCalculationAnswer(int nNum, const mu::StackItem* v)
 {
-    vAns.overwrite(v[0]);
-    getAns().setValueArray(v[0]);
+    vAns.overwrite(v[0].get());
+    getAns().setValueArray(v[0].get());
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
@@ -3089,18 +3089,18 @@ void NumeReKernel::printPreFmt(const std::string& __sLine, bool printingEnabled)
 /// numerical-only results.
 ///
 /// \param nNum int
-/// \param v mu::Array*
+/// \param v const mu::StackItem*
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
+std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
 {
     size_t prec = getInstance()->getSettings().getPrecision();
     std::string sAns;
 
     for (int n = 0; n < nNum; n++)
     {
-        if (v[n].size() > 1)
+        if (v[n].get().size() > 1)
         {
             // More than one result
             //
@@ -3113,15 +3113,15 @@ std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
                 sAns = "ans = {";
 
             // compose the result
-            for (size_t i = 0; i < v[n].size(); ++i)
+            for (size_t i = 0; i < v[n].get().size(); ++i)
             {
-                sAns += strfill(v[n][i].print(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                sAns += strfill(v[n].get()[i].print(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
                                 prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
-                if (i < v[n].size() - 1)
+                if (i < v[n].get().size() - 1)
                     sAns += ", ";
 
-                if (v[n].size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < v[n].size() - 1)
+                if (v[n].get().size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < v[n].get().size() - 1)
                     sAns += "...\n|          ";
             }
 
@@ -3131,9 +3131,9 @@ std::string NumeReKernel::formatResultOutput(int nNum, mu::Array* v)
         {
             // Only one result
             if (n)
-                sAns += "\n|-> ans = " + v[n].print(prec, 0);
+                sAns += "\n|-> ans = " + v[n].get().print(prec, 0);
             else
-                sAns = "ans = " + v[n].print(prec, 0);
+                sAns = "ans = " + v[n].get().print(prec, 0);
         }
     }
 

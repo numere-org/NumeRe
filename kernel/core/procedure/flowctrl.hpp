@@ -157,7 +157,7 @@ class FlowCtrl
 
         int compile(std::string sLine, int nthCmd);
         int calc(StringView sLine, int nthCmd);
-        mu::Array* evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
+        const mu::StackItem* evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
         mu::Array evalRangeBasedHeader(std::string sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 

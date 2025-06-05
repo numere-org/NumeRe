@@ -280,7 +280,7 @@ int main()
 
         try
         {
-            mu::Array* res;
+            const mu::StackItem* res;
 
             _parser.SetExpr(sInput);
             res = _parser.Eval(nResults);
@@ -288,8 +288,9 @@ int main()
 
             for (int i = 0; i < nResults; i++)
             {
-                std::cout << i+1 << ">> " << res[i].print() << " [" << res[i].printDims() << " " << res[i].getCommonTypeAsString()
-                          << " w/ " << res[i].getBytes() << " byte]" << std::endl;
+                std::cout << i+1 << ">> " << res[i].get().print() << " [" << res[i].get().printDims() << " "
+                          << res[i].get().getCommonTypeAsString()
+                          << " w/ " << res[i].get().getBytes() << " byte]" << std::endl;
             }
         }
         catch (...)

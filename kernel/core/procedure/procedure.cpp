@@ -132,7 +132,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     Returnvalue thisReturnVal;
     int nNum = 0;
     int nCurrentByteCode = nByteCode;
-    mu::Array* v = nullptr;
+    const mu::StackItem* v = nullptr;
 
     // Do not clear the vector variables, if we are currently part of a
     // loop, because the loop uses the cached vector variables for
@@ -456,10 +456,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     _assertionHandler.checkAssertion(v, nNum);
 
     // Copy the return values
-    thisReturnVal.valArray.assign(v, v+nNum);
+    thisReturnVal.valArray = mu::make_vector(v, nNum);
 
-    vAns.overwrite(v[0]);
-    NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
+    vAns.overwrite(v[0].get());
+    NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
@@ -472,10 +472,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCluster)
         {
             NumeRe::Cluster& cluster = _data.getCluster(sCache);
-            cluster.assignResults(_idx, v[0]);
+            cluster.assignResults(_idx, v[0].get());
         }
         else
-            _data.writeToTable(_idx, sCache, v[0]);
+            _data.writeToTable(_idx, sCache, v[0].get());
     }
 
     // Clear the vector variables after the loop returned

@@ -3149,11 +3149,11 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
         {
             p.SetExpr(sStr[i].getStr());
             int res;
-            mu::Array* vals = p.Eval(res);
+            const mu::StackItem* vals = p.Eval(res);
 
             for (int n = 0; n < res; n++)
             {
-                ret.insert(ret.end(), vals[n].begin(), vals[n].end());
+                ret.insert(ret.end(), vals[n].get().begin(), vals[n].get().end());
             }
         }
         else

@@ -235,12 +235,12 @@ void Assertion::enable(const std::string& sExpr)
 /// \brief Checks the return value of a muParser
 /// evaluated result.
 ///
-/// \param v mu::Array*
+/// \param v const mu::StackItem*
 /// \param nNum int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Assertion::checkAssertion(mu::Array* v, int nNum)
+void Assertion::checkAssertion(const mu::StackItem* v, int nNum)
 {
     // Only do something, if the assertion mode is
     // active
@@ -250,7 +250,7 @@ void Assertion::checkAssertion(mu::Array* v, int nNum)
         {
             // If a single value is zero,
             // throw the assertion error
-            if (!mu::all(v[i]))
+            if (!mu::all(v[i].get()))
                 assertionFail();
         }
 

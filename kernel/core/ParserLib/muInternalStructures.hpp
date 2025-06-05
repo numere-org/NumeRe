@@ -34,7 +34,7 @@ namespace mu
     class StackItem : protected Array
     {
         private:
-            Array* m_alias;
+            const Array* m_alias;
 
             /////////////////////////////////////////////////
             /// \brief Can the calculation be optimized by
@@ -57,9 +57,58 @@ namespace mu
             /////////////////////////////////////////////////
             StackItem() : Array(), m_alias(nullptr) {}
 
-            void aliasOf(Array* var)
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor
+            ///
+            /// \param other const StackItem&
+            ///
+            /////////////////////////////////////////////////
+            StackItem(const StackItem& other) : StackItem()
+            {
+                if (other.m_alias)
+                    m_alias = other.m_alias;
+                else
+                    Array::operator=(other);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief MOve constructor
+            ///
+            /// \param other StackItem&&
+            ///
+            /////////////////////////////////////////////////
+            StackItem(StackItem&& other) : StackItem()
+            {
+                if (other.m_alias)
+                    m_alias = other.m_alias;
+                else
+                    Array::operator=(std::move(other));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Reference another Array instance
+            /// within this StackItem instance.
+            ///
+            /// \param var const Array*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void aliasOf(const Array* var)
             {
                 m_alias = var;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Check, whether this StackItem
+            /// references the passed array.
+            ///
+            /// \param var const Array*
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isAliasOf(const Array* var)
+            {
+                return m_alias == var;
             }
 
             /////////////////////////////////////////////////
@@ -91,9 +140,32 @@ namespace mu
             /////////////////////////////////////////////////
             StackItem& operator=(const StackItem& other)
             {
-                // Do not copy anything at all
                 m_alias = nullptr;
-                clear();
+
+                if (other.m_alias)
+                    m_alias = other.m_alias;
+                else
+                    Array::operator=(other);
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Move-assign another StackItem instance.
+            ///
+            /// \param other StackItem&&
+            /// \return StackItem&
+            ///
+            /////////////////////////////////////////////////
+            StackItem& operator=(StackItem&& other)
+            {
+                m_alias = nullptr;
+
+                if (other.m_alias)
+                    m_alias = other.m_alias;
+                else
+                    Array::operator=(std::move(other));
+
                 return *this;
             }
 
@@ -438,6 +510,27 @@ namespace mu
             }
     };
 
+
+    /////////////////////////////////////////////////
+    /// \brief Make a vector from an array of
+    /// StackItem instances.
+    ///
+    /// \param beg const StackItem*
+    /// \param elems int
+    /// \return std::vector<Array>
+    ///
+    /////////////////////////////////////////////////
+    inline std::vector<Array> make_vector(const StackItem* beg, int elems)
+    {
+        std::vector<Array> ret(elems);
+
+        for (size_t i = 0; i < ret.size(); i++)
+        {
+            ret[i] = beg[i].get();
+        }
+
+        return ret;
+    }
 }
 
 #endif // MUINTERNALSTRUCTURES_HPP

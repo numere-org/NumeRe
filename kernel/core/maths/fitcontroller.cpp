@@ -293,7 +293,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
     FitData* _fData = static_cast<FitData*>(data);
     size_t i = 0;
     int nVals = 0;
-    mu::Array* v = nullptr;
+    const mu::StackItem* v = nullptr;
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
@@ -365,7 +365,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
     const double eps_rel = _fData->eps_rel*1.0e-1;
     FitMatrix vFuncRes;
     FitMatrix vDiffRes;
-    mu::Array* v = nullptr;
+    const mu::StackItem* v = nullptr;
     int nVals = 0;
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
@@ -496,24 +496,24 @@ int Fitcontroller::fitfuncjacrestricted(const gsl_vector* params, void* data, gs
 /////////////////////////////////////////////////
 /// \brief Evaluate additional restrictions.
 ///
-/// \param v const mu::Array*
+/// \param v const mu::StackItem*
 /// \param nVals int
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Fitcontroller::evalRestrictions(const mu::Array* v, int nVals)
+double Fitcontroller::evalRestrictions(const mu::StackItem* v, int nVals)
 {
     if (nVals == 1)
-        return v[0].front().getNum().asF64();
+        return v[0].get().front().getNum().asF64();
     else
     {
         for (int i = 1; i < nVals; i++)
         {
-            if (!mu::all(v[i]))
+            if (!mu::all(v[i].get()))
                 return NAN;
         }
 
-        return v[0].front().getNum().asF64();
+        return v[0].get().front().getNum().asF64();
     }
 
     return NAN;
@@ -794,7 +794,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     if (__sRestrictions.length())
     {
         int nVals = 0;
-        mu::Array* v = _fitParser->Eval(nVals);
+        const mu::StackItem* v = _fitParser->Eval(nVals);
 
         if (isnan(evalRestrictions(v, nVals)))
             return false;

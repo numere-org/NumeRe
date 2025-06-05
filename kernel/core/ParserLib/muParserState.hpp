@@ -143,6 +143,48 @@ namespace mu
 	    VectorEvaluation m_vectEval;
 
 	    State() : m_valid(1), m_numResults(0) {}
+	    State(const State& other)
+	    {
+	        assign(other);
+	    }
+
+	    State& operator=(const State& other)
+	    {
+	        assign(other);
+	        return *this;
+	    }
+
+	    void assign(const State& other)
+	    {
+	        m_byteCode = other.m_byteCode;
+	        m_expr = other.m_expr;
+	        m_valid = other.m_valid;
+	        m_numResults = other.m_numResults;
+	        m_stackBuffer = other.m_stackBuffer;
+	        m_usedVar = other.m_usedVar;
+	        m_vectEval = other.m_vectEval;
+
+	        // Update the contained pointers in the
+	        // stack buffer
+	        const std::vector<SToken>& otherRpn = other.m_byteCode.GetRPN();
+	        const std::vector<SToken>& thisRpn = m_byteCode.GetRPN();
+
+	        for (size_t i = 0; i < otherRpn.size(); i++)
+            {
+                // Only plain values are a problem to be solved
+                if (otherRpn[i].Cmd == cmVAL)
+                {
+                    const Array* oldAddr = &otherRpn[i].Val().data2;
+                    const Array* newAddr = &thisRpn[i].Val().data2;
+
+                    for (size_t j = 0; j < m_stackBuffer.size(); j++)
+                    {
+                        if (m_stackBuffer[j].isAliasOf(oldAddr))
+                            m_stackBuffer[j].aliasOf(newAddr);
+                    }
+                }
+            }
+	    }
 
 	    void clear()
 	    {

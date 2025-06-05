@@ -189,6 +189,10 @@ namespace mu
 			std::size_t GetSize() const;
 
 			SToken* GetBase();
+			const std::vector<SToken>& GetRPN() const
+			{
+			    return m_vRPN;
+			}
 			void AsciiDump();
 	};
 

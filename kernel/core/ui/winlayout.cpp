@@ -118,18 +118,18 @@ static void evaluateExpression(std::string& sExpr)
     instance->getParser().SetExpr(sExpr);
 
     int results;
-    mu::Array* v = instance->getParser().Eval(results);
+    const mu::StackItem* v = instance->getParser().Eval(results);
 
     sExpr.clear();
 
     for (int i = 0; i < results; i++)
     {
-        for (size_t j = 0; j < v[i].size(); j++)
+        for (size_t j = 0; j < v[i].get().size(); j++)
         {
             if (sExpr.length())
                 sExpr += ",";
 
-            sExpr += toExternalString(v[i][j].printVal());
+            sExpr += toExternalString(v[i].get()[j].printVal());
         }
 
 

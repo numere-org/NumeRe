@@ -151,9 +151,9 @@
 				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-ggdb" />
 					<Add option="-Og" />
 					<Add option="-g" />
-					<Add option="-ggdb3" />
 					<Add option="-fno-omit-frame-pointer" />
 					<Add option="-D__GNUWIN64__" />
 					<Add option="-DNR_HAVE_GSL2" />
