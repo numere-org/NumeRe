@@ -291,7 +291,7 @@ namespace mu
     typedef Array (*fun_type10)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with a variable argument list. */
-    typedef Array (*multfun_type)(const Array*, int);
+    typedef Array (*multfun_type)(const MultiArgFuncParams&);
 
     /** \brief Callback used for functions that identify values in a string. */
     typedef int (*identfun_type)(StringView sExpr, int* nPos, Value* fVal);

@@ -384,7 +384,7 @@ namespace mu
                 return static_cast<CatValue*>(get())->get().name;
         }
 
-        throw ParserError(ecTYPE_NO_STR);
+        throw ParserError(ecTYPE_NO_STR, getTypeAsString());
     }
 
 
@@ -406,7 +406,7 @@ namespace mu
         else
             return m_defString;
 
-        throw ParserError(ecTYPE_NO_STR);
+        throw ParserError(ecTYPE_NO_STR, getTypeAsString());
     }
 
 
@@ -426,7 +426,7 @@ namespace mu
                 return static_cast<CatValue*>(get())->get().val;
         }
 
-        throw ParserError(ecTYPE_NO_VAL);
+        throw ParserError(ecTYPE_NO_VAL, getTypeAsString());
     }
 
 
@@ -448,7 +448,7 @@ namespace mu
         else
             return m_defVal;
 
-        throw ParserError(ecTYPE_NO_VAL);
+        throw ParserError(ecTYPE_NO_VAL, getTypeAsString());
     }
 
 
@@ -463,7 +463,7 @@ namespace mu
         if (get() && get()->m_type == TYPE_CATEGORY)
             return static_cast<CatValue*>(get())->get();
 
-        throw ParserError(ecTYPE_NO_VAL);
+        throw ParserError(ecTYPE_NO_CAT, getTypeAsString());
     }
 
 
@@ -478,7 +478,7 @@ namespace mu
         if (get() && get()->m_type == TYPE_CATEGORY)
             return static_cast<const CatValue*>(get())->get();
 
-        throw ParserError(ecTYPE_NO_VAL);
+        throw ParserError(ecTYPE_NO_CAT, getTypeAsString());
     }
 
 
@@ -493,7 +493,7 @@ namespace mu
         if (get() && get()->m_type == TYPE_ARRAY)
             return static_cast<ArrValue*>(get())->get();
 
-        throw ParserError(ecTYPE_NO_VAL);
+        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
     }
 
 
@@ -508,7 +508,7 @@ namespace mu
         if (get() && get()->m_type == TYPE_ARRAY)
             return static_cast<const ArrValue*>(get())->get();
 
-        throw ParserError(ecTYPE_NO_VAL);
+        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
     }
 
 
@@ -546,7 +546,7 @@ namespace mu
         if (get() && exponent.get())
             return get()->pow(*exponent.get());
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " ^ " + exponent.getTypeAsString());
     }
 
 
@@ -1382,47 +1382,47 @@ namespace mu
         else if (sMethod == "last")
             return strfnc_lastch(*this);
         else if (sMethod == "std")
-            return numfnc_Std(this, 1); // Pointer as single-element array
+            return numfnc_Std(this); // Pointer as single-element array
         else if (sMethod == "avg")
-            return numfnc_Avg(this, 1);
+            return numfnc_Avg(this);
         else if (sMethod == "prd")
-            return numfnc_product(this, 1);
+            return numfnc_product(this);
         else if (sMethod == "sum")
-            return numfnc_Sum(this, 1);
+            return numfnc_Sum(this);
         else if (sMethod == "min")
-            return numfnc_Min(this, 1);
+            return numfnc_Min(this);
         else if (sMethod == "max")
-            return numfnc_Max(this, 1);
+            return numfnc_Max(this);
         else if (sMethod == "norm")
-            return numfnc_Norm(this, 1);
+            return numfnc_Norm(this);
         else if (sMethod == "num")
-            return numfnc_Num(this, 1);
+            return numfnc_Num(this);
         else if (sMethod == "cnt")
-            return numfnc_Cnt(this, 1);
+            return numfnc_Cnt(this);
         else if (sMethod == "med")
-            return numfnc_Med(this, 1);
+            return numfnc_Med(this);
         else if (sMethod == "and")
-            return numfnc_and(this, 1);
+            return numfnc_and(this);
         else if (sMethod == "or")
-            return numfnc_or(this, 1);
+            return numfnc_or(this);
         else if (sMethod == "xor")
-            return numfnc_xor(this, 1);
+            return numfnc_xor(this);
         else if (sMethod == "size")
-            return numfnc_Cnt(this, 1);
+            return numfnc_Cnt(this);
         else if (sMethod == "maxpos")
             return numfnc_MaxPos(*this);
         else if (sMethod == "minpos")
             return numfnc_MinPos(*this);
         else if (sMethod == "exc")
-            return numfnc_Exc(this, 1);
+            return numfnc_Exc(this);
         else if (sMethod == "skw")
-            return numfnc_Skew(this, 1);
+            return numfnc_Skew(this);
         else if (sMethod == "stderr")
-            return numfnc_StdErr(this, 1);
+            return numfnc_StdErr(this);
         else if (sMethod == "rms")
-            return numfnc_Rms(this, 1);
+            return numfnc_Rms(this);
         else if (sMethod == "order")
-            return numfnc_order(this, 1);
+            return numfnc_order(this);
         else if (sMethod == "unwrap")
             return unWrap();
 

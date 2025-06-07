@@ -510,21 +510,20 @@ namespace mu
     /// \brief Internal alias function to construct a
     /// vector from a list of elements.
     ///
-    /// \param arrs const mu::Array*
-    /// \param n int
+    /// \param arrs const mu::MultiArgFuncParams&
     /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    Array ParserBase::VectorCreate(const Array* arrs, int n)
+    Array ParserBase::VectorCreate(const MultiArgFuncParams& arrs)
     {
         // If no arguments have been passed, we simply
         // return void
-        if (!n)
+        if (!arrs.count())
             return mu::Value();
 
         mu::Array res;
 
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < arrs.count(); i++)
         {
             if (arrs[i].isScalar())
                 res.push_back(arrs[i].front());
@@ -1617,11 +1616,8 @@ namespace mu
                                 if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                     Error(ecINTERNAL_ERROR, 1);
 
-                                {
-                                    sidx -= -iArgCount - 1;
-                                    std::vector<Array> args = make_vector(&Stack[sidx], -iArgCount);
-                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&args[0], args.size());
-                                }
+                                sidx -= -iArgCount - 1;
+                                Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(MultiArgFuncParams(&Stack[sidx], -iArgCount));
                                 continue;
                         }
                     }
@@ -1670,7 +1666,7 @@ namespace mu
 	void ParserBase::ParseCmdCodeBulkParallel(size_t nVectorLength)
 	{
 	    size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
-	    int nStackSize = m_state->m_numResults;
+	    //int nStackSize = m_state->m_numResults;
 
         #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
         for (size_t nOffset = 1; nOffset < nVectorLength; ++nOffset)
@@ -1954,11 +1950,8 @@ namespace mu
                                     if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                         Error(ecINTERNAL_ERROR, 1);
 
-                                    {
-                                        sidx -= -iArgCount - 1;
-                                        std::vector<Array> args = make_vector(&Stack[sidx], -iArgCount);
-                                        Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&args[0], args.size());
-                                    }
+                                    sidx -= -iArgCount - 1;
+                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(MultiArgFuncParams(&Stack[sidx], -iArgCount));
                                     continue;
                             }
                         }
@@ -2754,7 +2747,7 @@ namespace mu
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-	static std::string printVector(const std::vector<Array>& buffer, int nElems)
+	/*static std::string printVector(const std::vector<Array>& buffer, int nElems)
 	{
 	    std::string s;
 
@@ -2765,7 +2758,7 @@ namespace mu
 			s.pop_back();
 
         return s;
-	}
+	}*/
 
 
     /////////////////////////////////////////////////

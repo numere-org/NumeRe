@@ -136,7 +136,7 @@ namespace mu
                 if (get() && other.get())
                     return *get() + *other.get();
 
-                throw ParserError(ecTYPE_MISMATCH);
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " + " + other.getTypeAsString());
             }
 
             /////////////////////////////////////////////////
@@ -150,7 +150,7 @@ namespace mu
                 if (get())
                     return -(*get());
 
-                throw ParserError(ecTYPE_MISMATCH);
+                throw ParserError(ecTYPE_MISMATCH, "-" + getTypeAsString());
             }
 
             /////////////////////////////////////////////////
@@ -165,7 +165,7 @@ namespace mu
                 if (get() && other.get())
                     return *get() - *other.get();
 
-                throw ParserError(ecTYPE_MISMATCH);
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " - " + other.getTypeAsString());
             }
 
             /////////////////////////////////////////////////
@@ -180,7 +180,7 @@ namespace mu
                 if (get() && other.get())
                     return *get() / *other.get();
 
-                throw ParserError(ecTYPE_MISMATCH);
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " / " + other.getTypeAsString());
             }
 
             /////////////////////////////////////////////////
@@ -199,7 +199,7 @@ namespace mu
                 if (get() && other.get())
                     return *get() * *other.get();
 
-                throw ParserError(ecTYPE_MISMATCH);
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " * " + other.getTypeAsString());
             }
 
             /////////////////////////////////////////////////
@@ -214,7 +214,7 @@ namespace mu
                 if (get() && other.get())
                     return *get() ^ *other.get();
 
-                throw ParserError(ecTYPE_MISMATCH);
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " ^ " + other.getTypeAsString());
             }
 
             /////////////////////////////////////////////////

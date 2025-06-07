@@ -43,10 +43,10 @@ using namespace std;
     \brief Implementation of the standard floating point parser.
 */
 
-mu::Array numfnc_Sum(const mu::Array*, int);
-mu::Array numfnc_Avg(const mu::Array*, int);
-mu::Array numfnc_Min(const mu::Array*, int);
-mu::Array numfnc_Max(const mu::Array*, int);
+mu::Array numfnc_Sum(const mu::MultiArgFuncParams&);
+mu::Array numfnc_Avg(const mu::MultiArgFuncParams&);
+mu::Array numfnc_Min(const mu::MultiArgFuncParams&);
+mu::Array numfnc_Max(const mu::MultiArgFuncParams&);
 mu::Array numfnc_abs(const mu::Array& a);
 
 /** \brief Namespace for mathematical applications. */
@@ -89,51 +89,47 @@ namespace mu
     //---------------------------------------------------------------------------
     /** \brief Callback for adding multiple values.
         \param [in] a_afArg Vector with the function arguments
-        \param [in] a_iArgc The size of a_afArg
     */
-    Array Parser::Sum(const Array* a_afArg, int a_iArgc)
+    Array Parser::Sum(const MultiArgFuncParams& a_afArg)
     {
-        if (!a_iArgc)
+        if (!a_afArg.count())
             throw exception_type(_nrT("too few arguments for function sum."));
-        return numfnc_Sum(a_afArg, a_iArgc);
+        return numfnc_Sum(a_afArg);
     }
 
     //---------------------------------------------------------------------------
     /** \brief Callback for averaging multiple values.
         \param [in] a_afArg Vector with the function arguments
-        \param [in] a_iArgc The size of a_afArg
     */
-    Array Parser::Avg(const Array* a_afArg, int a_iArgc)
+    Array Parser::Avg(const MultiArgFuncParams& a_afArg)
     {
-        if (!a_iArgc)
+        if (!a_afArg.count())
             throw exception_type(_nrT("too few arguments for function avg."));
-        return numfnc_Avg(a_afArg, a_iArgc);
+        return numfnc_Avg(a_afArg);
     }
 
 
     //---------------------------------------------------------------------------
     /** \brief Callback for determining the minimum value out of a vector.
         \param [in] a_afArg Vector with the function arguments
-        \param [in] a_iArgc The size of a_afArg
     */
-    Array Parser::Min(const Array* a_afArg, int a_iArgc)
+    Array Parser::Min(const MultiArgFuncParams& a_afArg)
     {
-        if (!a_iArgc)
+        if (!a_afArg.count())
             throw exception_type(_nrT("too few arguments for function min."));
-        return numfnc_Min(a_afArg, a_iArgc);
+        return numfnc_Min(a_afArg);
     }
 
 
     //---------------------------------------------------------------------------
     /** \brief Callback for determining the maximum value out of a vector.
         \param [in] a_afArg Vector with the function arguments
-        \param [in] a_iArgc The size of a_afArg
     */
-    Array Parser::Max(const Array* a_afArg, int a_iArgc)
+    Array Parser::Max(const MultiArgFuncParams& a_afArg)
     {
-        if (!a_iArgc)
+        if (!a_afArg.count())
             throw exception_type(_nrT("too few arguments for function max."));
-        return numfnc_Max(a_afArg, a_iArgc);
+        return numfnc_Max(a_afArg);
     }
 
 
@@ -265,7 +261,7 @@ namespace mu
         if (fEpsilon == Value(0.0))
         {
             Array absVal = numfnc_abs(a_fPos);
-            fEpsilon = all(a_fPos == Array(Value(0.0))) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
+            fEpsilon = all(a_fPos == Array(Value(0.0))) ? Value(1e-10) : Value(Value(1e-7)*Max(MultiArgFuncParams(&absVal)).front()*intPower(10, 2*(order-1)));
         }
 
         for (size_t i = 0; i < f.size(); i++)

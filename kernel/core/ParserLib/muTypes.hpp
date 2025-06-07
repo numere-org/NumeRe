@@ -75,6 +75,8 @@ namespace mu
         AUTO
     };
 
+    std::string getTypeAsString(DataType type);
+
 
     /////////////////////////////////////////////////
     /// \brief This structure separates a

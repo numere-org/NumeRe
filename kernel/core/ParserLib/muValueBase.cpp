@@ -30,7 +30,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator+(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -41,7 +41,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator-() const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(m_type));
     }
 
     /////////////////////////////////////////////////
@@ -53,7 +53,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator-(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -65,7 +65,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator/(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -77,7 +77,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator*(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -89,7 +89,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator^(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -101,7 +101,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator+=(const BaseValue& other)
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -113,7 +113,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator-=(const BaseValue& other)
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -125,7 +125,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator/=(const BaseValue& other)
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -137,7 +137,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator*=(const BaseValue& other)
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -149,7 +149,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator^=(const BaseValue& other)
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -160,7 +160,7 @@ namespace mu
     /////////////////////////////////////////////////
     void BaseValue::flipSign()
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(m_type));
     }
 
     /////////////////////////////////////////////////
@@ -172,7 +172,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::pow(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////
@@ -234,7 +234,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool BaseValue::operator<(const BaseValue& other) const
     {
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
     }
 
     /////////////////////////////////////////////////

@@ -263,7 +263,7 @@ namespace mu
 			static Array evalIfElse(const Array& cond,
                                     const Array& true_case,
                                     const Array& false_case);
-            static Array VectorCreate(const Array*, int);  // vector creation
+            static Array VectorCreate(const MultiArgFuncParams&);  // vector creation
             static Array Vector2Generator(const Array& firstVal,
                                           const Array& lastVal);
             static Array Vector3Generator(const Array& firstVal,

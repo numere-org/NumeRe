@@ -20,6 +20,14 @@
 #include "muParserError.h"
 #include "../utils/stringtools.hpp"
 
+// Reasonable other data types:
+// - Duration (as extension of date-time)
+// - FilePath (as extension of string w/ operator/())
+
+// Reasonable additional methods:
+// - .year, ..., .microsec (for date-time and duration)
+// - .drive, .path, .name, .ext (for FilePath)
+
 namespace mu
 {
     /////////////////////////////////////////////////
@@ -319,7 +327,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
 
@@ -353,7 +361,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
     }
 
 
@@ -375,7 +383,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
     }
 
 
@@ -404,7 +412,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
 
 
@@ -435,7 +443,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val += static_cast<const CatValue&>(other).get().val;
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -455,7 +463,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val -= static_cast<const CatValue&>(other).get().val;
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -475,7 +483,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val /= static_cast<const CatValue&>(other).get().val;
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -495,7 +503,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val *= static_cast<const CatValue&>(other).get().val;
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -515,7 +523,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val = m_val.pow(static_cast<const CatValue&>(other).get().val);
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -551,7 +559,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
 
 
@@ -604,7 +612,7 @@ namespace mu
     bool NumValue::operator<(const BaseValue& other) const
     {
         if (other.m_type != TYPE_NUMERICAL && other.m_type != TYPE_INVALID)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
 
         return m_val < static_cast<const NumValue&>(other).m_val;
     }
@@ -679,7 +687,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
 
@@ -701,7 +709,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
 
 
@@ -719,7 +727,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val += static_cast<const CatValue&>(other).get().name;
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -739,7 +747,7 @@ namespace mu
         else if (other.m_type == TYPE_CATEGORY)
             m_val = strRepeat(m_val, static_cast<const CatValue&>(other).get().val.asI64());
         else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -794,7 +802,7 @@ namespace mu
     bool StrValue::operator<(const BaseValue& other) const
     {
         if (other.m_type != TYPE_STRING)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
 
         return m_val < static_cast<const StrValue&>(other).m_val;
     }
@@ -883,7 +891,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
 
@@ -917,7 +925,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
     }
 
 
@@ -939,7 +947,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
     }
 
 
@@ -971,7 +979,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        throw ParserError(ecTYPE_MISMATCH);
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
 
 
@@ -1036,7 +1044,7 @@ namespace mu
     bool CatValue::operator<(const BaseValue& other) const
     {
         if (other.m_type != TYPE_CATEGORY)
-            throw ParserError(ecTYPE_MISMATCH);
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
 
         return m_val < static_cast<const CatValue&>(other).m_val;
     }

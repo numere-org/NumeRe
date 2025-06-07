@@ -658,7 +658,7 @@ namespace mu
                 {
                     case 0:
                         if (funcName == MU_VECTOR_CREATE)
-                            AddVal((*(multfun_type)a_pFun)(nullptr, 0));
+                            AddVal((*(multfun_type)a_pFun)(MultiArgFuncParams()));
                         else
                             AddVal((*(fun_type0)a_pFun)());
                         break;
@@ -759,7 +759,7 @@ namespace mu
                             vStack.push_back(m_vRPN[s].Val().data2);
                         }
 
-                        m_vRPN[sz-nArg].Val().data2 = (*(multfun_type)a_pFun)(&vStack[0], nArg);
+                        m_vRPN[sz-nArg].Val().data2 = (*(multfun_type)a_pFun)(MultiArgFuncParams(&vStack[0], nArg));
                         m_vRPN.resize(sz-nArg+1);
                     }
                 }

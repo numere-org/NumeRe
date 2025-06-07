@@ -50,7 +50,7 @@ mu::Array strfnc_isupper(const mu::Array& a);
 mu::Array strfnc_isxdigit(const mu::Array& a);
 mu::Array strfnc_isdir(const mu::Array& a);
 mu::Array strfnc_isfile(const mu::Array& a);
-mu::Array strfnc_to_char(const mu::Array* arrs, int n);
+mu::Array strfnc_to_char(const mu::MultiArgFuncParams& arrs);
 mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2); // OPT=1
 mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array& a3); // OPT=1
 mu::Array strfnc_to_time(const mu::Array& a1, const mu::Array& a2);

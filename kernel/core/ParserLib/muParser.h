@@ -72,10 +72,10 @@ namespace mu
             static Array  LogicalNot(const Array&);
 
             // Functions with variable number of arguments
-            static Array Sum(const Array*, int);  // sum
-            static Array Avg(const Array*, int);  // mean value
-            static Array Min(const Array*, int);  // minimum
-            static Array Max(const Array*, int);  // maximum
+            static Array Sum(const MultiArgFuncParams&);  // sum
+            static Array Avg(const MultiArgFuncParams&);  // mean value
+            static Array Min(const MultiArgFuncParams&);  // minimum
+            static Array Max(const MultiArgFuncParams&);  // maximum
 
             static int IsVal(StringView a_szExpr, int* a_iPos, Value* a_fVal);
     };

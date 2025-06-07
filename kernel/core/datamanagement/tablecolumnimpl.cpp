@@ -2105,7 +2105,7 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
     {
         if (vMap[i] < 0)
         {
-            for (int j = 0; j < vMap.size(); j++)
+            for (int j = 0; j < (int)vMap.size(); j++)
             {
                 if (std::find(vMap.begin(), vMap.end(), j) == vMap.end())
                 {
@@ -2437,6 +2437,8 @@ TableColumn::ColumnType to_column_type(const mu::Value& val)
                 return TableColumn::TYPE_VALUE_CF32;
             case mu::CF64:
                 return TableColumn::TYPE_VALUE_CF64;
+            case mu::AUTO:
+                return TableColumn::TYPE_NONE;
         }
     }
 
@@ -2492,6 +2494,8 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
                 return TableColumn::TYPE_VALUE_CF32;
             case mu::CF64:
                 return TableColumn::TYPE_VALUE_CF64;
+            case mu::AUTO:
+                return TableColumn::TYPE_NONE;
         }
     }
 
@@ -2603,6 +2607,8 @@ TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableC
                 return TableColumn::TYPE_VALUE_CF32;
             case mu::CF64:
                 return TableColumn::TYPE_VALUE_CF64;
+            case mu::AUTO:
+                return TableColumn::TYPE_NONE;
         }
     }
 

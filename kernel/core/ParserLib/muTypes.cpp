@@ -43,6 +43,36 @@ namespace mu
 /*CF64*/ CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64, CF64};
 
 
+    /////////////////////////////////////////////////
+    /// \brief Return the type as a std::string.
+    ///
+    /// \param type DataType
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string getTypeAsString(DataType type)
+    {
+        switch (type)
+        {
+            case TYPE_CATEGORY:
+                return "category";
+            case TYPE_NEUTRAL:
+#ifdef PARSERSTANDALONE
+                return "neutral";
+#else
+                return "void";
+#endif
+            case TYPE_NUMERICAL:
+                return "value";
+            case TYPE_STRING:
+                return "string";
+            case TYPE_ARRAY:
+                return "cluster";
+        }
+
+        return "void";
+    }
+
 
     /////////////////////////////////////////////////
     /// \brief Custom implementation for the complex
@@ -258,6 +288,9 @@ namespace mu
                 return "value.f64";
             case CF32:
                 return "value.cf32";
+            case AUTO:
+            case CF64:
+                return "value.cf64";
         }
 
         return "value.cf64";

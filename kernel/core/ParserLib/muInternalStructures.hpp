@@ -512,6 +512,65 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief This class provides an abstract way of
+    /// piping an arbitrary amount of parameters into
+    /// a prepared function without caring, wether
+    /// the data is in a plain Array array or in a
+    /// StackItem array.
+    /// \note Accesses are unchecked. Data is only
+    /// borrowed, not managed.
+    /////////////////////////////////////////////////
+    class MultiArgFuncParams
+    {
+        private:
+            size_t m_len;
+            const StackItem* m_stack;
+            const Array* m_arr;
+
+        public:
+            MultiArgFuncParams() : m_len(0), m_stack(nullptr), m_arr(nullptr)
+            { }
+
+            MultiArgFuncParams(const Array* arr, size_t len = 1) : m_len(len), m_stack(nullptr), m_arr(arr)
+            { }
+
+            MultiArgFuncParams(const StackItem* stck, size_t len) : m_len(len), m_stack(stck), m_arr(nullptr)
+            { }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the number of provided parameters
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t count() const
+            {
+                return m_len;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get access to the i-th parameter.
+            ///
+            /// \param i size_t
+            /// \return const Array&
+            ///
+            /////////////////////////////////////////////////
+            const Array& operator[](size_t i) const
+            {
+                if (i >= m_len)
+                    throw std::out_of_range("MultiArgFuncParams instance provides less parameters than requested.");
+
+                if (m_stack)
+                    return m_stack[i].get();
+                else if (m_arr)
+                    return m_arr[i];
+
+                throw std::runtime_error("MultiArgFuncParams instance is empty.");
+            }
+    };
+
+
+    /////////////////////////////////////////////////
     /// \brief Make a vector from an array of
     /// StackItem instances.
     ///

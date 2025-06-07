@@ -90,13 +90,16 @@ namespace mu
 
         ecTYPE_NO_STR            = 36, ///< Type is not a string (Value does not contain a string type)
         ecTYPE_NO_VAL            = 37, ///< Type is not a value (Value does not contain a numerical type)
-        ecTYPE_MISMATCH          = 38, ///< Something's wrong with the types (Value types do not match or operation not supported)
-        ecTYPE_MISMATCH_OOB      = 39, ///< Something's wrong with the types (Value types do not match or index out of bounds)
-        ecASSIGNED_TYPE_MISMATCH = 40, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
-        ecMETHOD_ERROR           = 41, ///< Such a method does not exist (No such method or too few arguments)
+        ecTYPE_NO_CAT            = 38, ///< Type is not a value (Value does not contain a numerical type)
+        ecTYPE_NO_ARR            = 39, ///< Type is not a value (Value does not contain a numerical type)
+        ecTYPE_MISMATCH          = 40, ///< Something's wrong with the types (Value types do not match or operation not supported)
+        ecTYPE_MISMATCH_OOB      = 41, ///< Something's wrong with the types (Value types do not match or index out of bounds)
+        ecASSIGNED_TYPE_MISMATCH = 42, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
+        ecMETHOD_ERROR           = 43, ///< Such a method does not exist (No such method or too few arguments)
+        ecNOT_IMPLEMENTED        = 44, ///< Operation is not implemented for this data type.
 
         // internal errors
-        ecINTERNAL_ERROR         = 42, ///< Internal error of any kind.
+        ecINTERNAL_ERROR         = 45, ///< Internal error of any kind.
 
         // The last two are special entries
         ecCOUNT,                      ///< This is no error code, It just stores just the total number of error codes
@@ -148,7 +151,7 @@ namespace mu
             explicit ParserError(const string_type& sMsg);
             ParserError( EErrorCodes a_iErrc,
                          const string_type& sTok,
-                         const string_type& sFormula = string_type("(formula is not available)"),
+                         const string_type& sFormula = string_type(),
                          int a_iPos = -1);
             ParserError( EErrorCodes a_iErrc,
                          int a_iPos,

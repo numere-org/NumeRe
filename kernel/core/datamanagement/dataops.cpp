@@ -945,7 +945,7 @@ bool readImage(CommandLineParser& cmdParser)
     Memory* _table = _data.getTable(sTargetCache);
 
     // Write the axes to the target cache
-    for (uint32_t i = 0; i < nWidth; i++)
+    for (int i = 0; i < nWidth; i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;
@@ -953,7 +953,7 @@ bool readImage(CommandLineParser& cmdParser)
         _table->writeData(_idx.row[i], _idx.col.front(), i + 1);
     }
 
-    for (uint32_t i = 0; i < nHeight; i++)
+    for (int i = 0; i < nHeight; i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;
