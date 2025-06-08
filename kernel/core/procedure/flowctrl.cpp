@@ -199,7 +199,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     bPrintedStatus = false;
 
     int nNum = 0;
-    mu::Array* v = 0;
+    const mu::StackItem* v = 0;
 
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
@@ -223,8 +223,8 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
     // Store the left and right boundary of the
     // loop index
-    nFirstVal = v[0].getAsScalarInt();
-    nLastVal = v[1].getAsScalarInt();
+    nFirstVal = v[0].get().getAsScalarInt();
+    nLastVal = v[1].get().getAsScalarInt();
 
     // Depending on the order of the boundaries, we
     // have to consider the incrementation variable
@@ -246,13 +246,8 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
         vVarArray[nVarAdress] = mu::Value(__i);
 
         // Handle the optional third parameter containing a condition
-        if (nNum > 2)
-        {
-            v = evalHeader(nNum, sHead, true, nth_Cmd, "for");
-
-            if (!mu::all(v[2]))
-                return nJumpTable[nth_Cmd][BLOCK_END];
-        }
+        if (nNum > 2 && !mu::all(v[2].get()))
+            return nJumpTable[nth_Cmd][BLOCK_END];
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -389,7 +384,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
         // Update the information from the header
         v = evalHeader(nNum, sHead, true, nth_Cmd, "for");
-        nLastVal = v[1].getAsScalarInt();
+        nLastVal = v[1].get().getAsScalarInt();
     }
 
     return nJumpTable[nth_Cmd][BLOCK_END];
@@ -594,16 +589,16 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 /// conditional values for their logical
 /// trueness.
 ///
-/// \param v mu::Array*
+/// \param v const mu::StackItem*
 /// \param nNum int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool isTrue(mu::Array* v, int nNum)
+static bool isTrue(const mu::StackItem* v, int nNum)
 {
     for (int i = 0; i < nNum; i++)
     {
-        if (!mu::all(v[i]))
+        if (!mu::all(v[i].get()))
             return false;
     }
 
@@ -630,7 +625,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
     std::string sWhile_Condition = vCmdArray[nth_Cmd].sFlowCtrlHeader;
     bPrintedStatus = false;
     int nLoopCount = 0;
-    mu::Array* v = 0;
+    const mu::StackItem* v = 0;
     int nNum = 0;
 
     // Show a working indicator, if it's necessary
@@ -783,7 +778,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     int nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next else/elseif
     int nEndif = nJumpTable[nth_Cmd][BLOCK_END];
     bPrintedStatus = false;
-    mu::Array* v;
+    const mu::StackItem* v;
     int nNum = 0;
     std::string sHeadCommand = "if";
 
@@ -1035,7 +1030,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     int nNextCase = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
     int nSwitchEnd = nJumpTable[nth_Cmd][BLOCK_END];
     bPrintedStatus = false;
-    mu::Array* v;
+    const mu::StackItem* v;
     int nNum = 0;
 
     // Evaluate the header of the current switch statement and its cases
@@ -1044,7 +1039,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     // Search for the correct first(!) case
     for (int i = 0; i < nNum; i++)
     {
-        if (!mu::all(v[i]))
+        if (!mu::all(v[i].get()))
             nNextCase = nJumpTable[nNextCase][BLOCK_MIDDLE];
         else
             break;
@@ -1419,10 +1414,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 /// \param bIsForHead bool
 /// \param nth_Cmd int
 /// \param sHeadCommand const std::string&
-/// \return mu::Array*
+/// \return const mu::StackItem*
 ///
 /////////////////////////////////////////////////
-mu::Array* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
+const mu::StackItem* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
 {
     int nCurrentCalcType = nCalcType[nth_Cmd];
     std::string sCache;
@@ -1494,7 +1489,7 @@ mu::Array* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression, bool bIs
     // If the expression is numerical-only, evaluate it here
     if (nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
-        mu::Array* v;
+        const mu::StackItem* v;
 
         // As long as bytecode parsing is not globally available,
         // this condition has to stay at this place
@@ -2520,7 +2515,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     std::string sCache;
     std::string sCommand;
 
-    mu::Array* v = 0;
+    const mu::StackItem* v = nullptr;
     int nNum = 0;
     Indices _idx;
     bool bCompiling = false;
@@ -2706,8 +2701,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         v = _parserRef->Eval(nNum);
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns.overwrite(v[0]);
-        NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
+        vAns.overwrite(v[0].get());
+        NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
 
         if (!bLoopSupressAnswer)
         {
@@ -3020,8 +3015,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     v = _parserRef->Eval(nNum);
     _assertionHandler.checkAssertion(v, nNum);
 
-    vAns.overwrite(v[0]);
-    NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
+    vAns.overwrite(v[0].get());
+    NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
 
     // Do only add the bytecode flag, if it does not depend on
     // previous operations
@@ -3052,14 +3047,14 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     {
         // Is it a cluster?
         if (bWriteToCluster)
-            _dataRef->getCluster(sCache).assignResults(_idx, v[0]);
+            _dataRef->getCluster(sCache).assignResults(_idx, v[0].get());
         else
-            _dataRef->writeToTable(_idx, sCache, v[0]);
+            _dataRef->writeToTable(_idx, sCache, v[0].get());
     }
 
     if (returnCommand)
     {
-        ReturnVal.valArray.assign(v, v+nNum);
+        ReturnVal.valArray = mu::make_vector(v, nNum);
         bReturnSignal = true;
         return FLOWCTRL_RETURN;
     }
@@ -3082,7 +3077,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 /////////////////////////////////////////////////
 int FlowCtrl::calc(StringView sLine, int nthCmd)
 {
-    mu::Array* v = 0;
+    const mu::StackItem* v = 0;
     int nNum = 0;
     NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
@@ -3242,8 +3237,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         // Check only the last expression
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns.overwrite(v[0]);
-        ans.setValueArray(v[0]);
+        vAns.overwrite(v[0].get());
+        ans.setValueArray(v[0].get());
 
         if (!bLoopSupressAnswer)
             NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
@@ -3561,8 +3556,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     v = _parserRef->Eval(nNum);
     _assertionHandler.checkAssertion(v, nNum);
 
-    vAns.overwrite(v[0]);
-    ans.setValueArray(v[0]);
+    vAns.overwrite(v[0].get());
+    ans.setValueArray(v[0].get());
 
     if (!bLoopSupressAnswer)
         NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
@@ -3574,14 +3569,14 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     {
         // Is it a cluster?
         if (bWriteToCluster)
-            _dataRef->getCluster(sDataObject).assignResults(_idx, v[0]);
+            _dataRef->getCluster(sDataObject).assignResults(_idx, v[0].get());
         else
-            _dataRef->writeToTable(_idx, sDataObject, v[0]);
+            _dataRef->writeToTable(_idx, sDataObject, v[0].get());
     }
 
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
-        ReturnVal.valArray.assign(v, v+nNum);
+        ReturnVal.valArray = mu::make_vector(v, nNum);
         bReturnSignal = true;
         return FLOWCTRL_RETURN;
     }

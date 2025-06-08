@@ -141,6 +141,9 @@
 					<Add option="-DNR_HAVE_GSL2" />
 					<Add option="-DPARSERSTANDALONE" />
 				</Compiler>
+				<Linker>
+					<Add option="-fopenmp" />
+				</Linker>
 			</Target>
 			<Target title="Debug_x64">
 				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -148,9 +151,9 @@
 				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-ggdb" />
 					<Add option="-Og" />
 					<Add option="-g" />
-					<Add option="-ggdb3" />
 					<Add option="-fno-omit-frame-pointer" />
 					<Add option="-D__GNUWIN64__" />
 					<Add option="-DNR_HAVE_GSL2" />
@@ -2530,6 +2533,7 @@
 		<Unit filename="kernel/core/ParserLib/muApply.hpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.cpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.hpp" />
+		<Unit filename="kernel/core/ParserLib/muInternalStructures.hpp" />
 		<Unit filename="kernel/core/ParserLib/muParser.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParser.h" />
 		<Unit filename="kernel/core/ParserLib/muParserBase.cpp" />
@@ -2549,13 +2553,24 @@
 		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />
+		<Unit filename="kernel/core/ParserLib/muStringTypeDefs.hpp" />
 		<Unit filename="kernel/core/ParserLib/muStructures.cpp" />
 		<Unit filename="kernel/core/ParserLib/muStructures.hpp" />
 		<Unit filename="kernel/core/ParserLib/muTypes.cpp" />
 		<Unit filename="kernel/core/ParserLib/muTypes.hpp" />
+		<Unit filename="kernel/core/ParserLib/muValueBase.cpp" />
+		<Unit filename="kernel/core/ParserLib/muValueBase.hpp" />
+		<Unit filename="kernel/core/ParserLib/muValueImpl.cpp" />
+		<Unit filename="kernel/core/ParserLib/muValueImpl.hpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.cpp" />
 		<Unit filename="kernel/core/ParserLib/muVarFactory.hpp" />
 		<Unit filename="kernel/core/ParserLib/parserstandalone.cpp">
+			<Option target="ParserLib_x64" />
+		</Unit>
+		<Unit filename="kernel/core/ParserLib/testTypes.cpp">
+			<Option target="ParserLib_x64" />
+		</Unit>
+		<Unit filename="kernel/core/ParserLib/testTypes.hpp">
 			<Option target="ParserLib_x64" />
 		</Unit>
 		<Unit filename="kernel/core/built-in.cpp">

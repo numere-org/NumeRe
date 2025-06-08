@@ -371,7 +371,7 @@ std::string formatDuration(double dDuration)
     dDuration -= nMinutes * 60.0;
 
     int nSeconds = (int)dDuration;
-    dDuration -= dDuration;
+    dDuration -= nSeconds;
 
     if (isNegative)
         sDuration += "-";
@@ -388,7 +388,20 @@ std::string formatDuration(double dDuration)
     sDuration += toString(nHours) + ":" + strfill(toString(nMinutes), 2, '0') + ":" + strfill(toString(nSeconds), 2, '0');
 
     if (dDuration > 0.0)
-        sDuration += "." + strfill(toString((int)(dDuration*1000)), '0', 3);
+    {
+        auto intCast = [](double dur){ return std::abs(dur - rint(dur)) < 1e-7 ? (int)std::rint(dur) : static_cast<int>(dur);};
+        dDuration *= 1000;
+        int msec = intCast(dDuration);
+        dDuration -= msec;
+
+        sDuration += "." + strfill(toString(msec), 3, '0');
+
+        dDuration *= 1000;
+        int musec = intCast(dDuration);
+
+        if (musec)
+            sDuration += strfill(toString(musec), 3, '0');
+    }
 
     return sDuration;
 }

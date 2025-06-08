@@ -470,7 +470,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != GetText().length())// - countUmlauts(this->GetText().ToStdString()))
+    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != (int64_t)GetText().length())
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -1630,7 +1630,7 @@ void NumeReEditor::HandleFunctionCallTip()
 
     // Adapt the starting position so that the opening braces align
     if (_cTip.sDefinition.find("(", nDotPos) != std::string::npos
-        && _cTip.sDefinition.find("(", nDotPos) <= GetColumn(nStartingBrace))
+        && _cTip.sDefinition.find("(", nDotPos) <= (size_t)GetColumn(nStartingBrace))
         nStartingBrace -= _cTip.sDefinition.find("(", nDotPos);
 
     if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))

@@ -932,16 +932,15 @@ mu::Array strfnc_isfile(const mu::Array& a)
 /// \brief Implementation of the to_char()
 /// function.
 ///
-/// \param arrs const mu::Array*
-/// \param n int
+/// \param arrs const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_to_char(const mu::Array* arrs, int n)
+mu::Array strfnc_to_char(const mu::MultiArgFuncParams& arrs)
 {
     std::string sToChar;
 
-    if (n == 1)
+    if (arrs.count() == 1)
     {
         for (size_t i = 0; i < arrs[0].size(); i++)
         {
@@ -951,7 +950,7 @@ mu::Array strfnc_to_char(const mu::Array* arrs, int n)
     }
     else
     {
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < arrs.count(); i++)
         {
             if (arrs[i].front().isValid())
                 sToChar += char(arrs[i].front().getNum().asI64());
@@ -2937,6 +2936,7 @@ mu::Array strfnc_getuilang()
 mu::Array strfnc_getuserinfo()
 {
     mu::Array userinfo;
+#ifndef PARSERSTANDALONE
     userinfo.push_back("GivenName");
     userinfo.push_back(getUserDisplayName(true));
     userinfo.push_back("FullName");
@@ -2945,7 +2945,7 @@ mu::Array strfnc_getuserinfo()
     userinfo.push_back(wxGetUserId().ToStdString());
     userinfo.push_back("UserProfile");
     userinfo.push_back(replacePathSeparator(getenv("USERPROFILE")));
-
+#endif
     return userinfo;
 }
 
@@ -3148,11 +3148,11 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
         {
             p.SetExpr(sStr[i].getStr());
             int res;
-            mu::Array* vals = p.Eval(res);
+            const mu::StackItem* vals = p.Eval(res);
 
             for (int n = 0; n < res; n++)
             {
-                ret.insert(ret.end(), vals[n].begin(), vals[n].end());
+                ret.insert(ret.end(), vals[n].get().begin(), vals[n].get().end());
             }
         }
         else

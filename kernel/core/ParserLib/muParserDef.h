@@ -25,15 +25,14 @@
 #ifndef MUP_DEF_H
 #define MUP_DEF_H
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <map>
 #include <complex>
 #include <vector>
 
+#include "muStringTypeDefs.hpp"
 #include "muParserFixes.h"
 #include "muStructures.hpp"
+#include "muInternalStructures.hpp"
 
 /** \file
     \brief This file contains standard definitions used by the parser.
@@ -114,43 +113,6 @@ class StringView;
 
 namespace mu
 {
-#if defined(_UNICODE)
-
-    //------------------------------------------------------------------------------
-    /** \brief Encapsulate wcout. */
-    inline std::wostream& console()
-    {
-        return std::wcout;
-    }
-
-    /** \brief Encapsulate cin. */
-    inline std::wistream& console_in()
-    {
-        return std::wcin;
-    }
-
-#else
-
-    /** \brief Encapsulate cout.
-
-      Used for supporting UNICODE more easily.
-    */
-    inline std::ostream& console()
-    {
-        return std::cout;
-    }
-
-    /** \brief Encapsulate cin.
-
-      Used for supporting UNICODE more easily.
-    */
-    inline std::istream& console_in()
-    {
-        return std::cin;
-    }
-
-#endif
-
     //------------------------------------------------------------------------------
     /** \brief Bytecode values.
 
@@ -201,8 +163,11 @@ namespace mu
         cmVARPOW3,
         cmVARPOW4,
         cmVARPOWN,
-        cmVARMUL,
-        cmREVVARMUL,
+        cmVARMUL,              ///< Multiply-add a var
+        cmREVVARMUL,           ///< Reverse multiply-add a var (vor non-commutative operations)
+        cmDIVVAR,              ///< Divide value through a var
+        cmVARCOPY,             ///< Copy the value of one var to another one
+        cmVARINIT,             ///< Assign a constant init value to a variable
         cmVAR_END,             ///< Only for identifying the end of the variable block
 
         // operators and functions
@@ -272,25 +237,9 @@ namespace mu
     */
     //typedef MUP_BASETYPE value_type;
 
-    /** \brief The stringtype used by the parser.
-
-      Depends on wether UNICODE is used or not.
-    */
-    typedef std::string string_type;
-
-    /** \brief The character type used by the parser.
-
-      Depends on wether UNICODE is used or not.
-    */
-    typedef string_type::value_type char_type;
-
-    /** \brief Typedef for easily using stringstream that respect the parser stringtype. */
-    typedef std::basic_stringstream<char_type,
-            std::char_traits<char_type>,
-            std::allocator<char_type> > stringstream_type;
-
     // Data container types
 
+    class Variable;
     /** \brief Type used for storing variables. */
     typedef std::map<string_type, Variable*> varmap_type;
 
@@ -301,7 +250,7 @@ namespace mu
     typedef std::map<string_type, std::size_t> strmap_type;
 
     /** \brief Type used for storing an array of values. */
-    typedef std::vector<Array> valbuf_type;
+    typedef std::vector<StackItem> valbuf_type;
 
     // Parser callbacks
 
@@ -342,7 +291,7 @@ namespace mu
     typedef Array (*fun_type10)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with a variable argument list. */
-    typedef Array (*multfun_type)(const Array*, int);
+    typedef Array (*multfun_type)(const MultiArgFuncParams&);
 
     /** \brief Callback used for functions that identify values in a string. */
     typedef int (*identfun_type)(StringView sExpr, int* nPos, Value* fVal);

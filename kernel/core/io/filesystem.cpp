@@ -696,7 +696,6 @@ std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, co
 /////////////////////////////////////////////////
 std::string FileSystem::resolveLink(const std::string& sLink)
 {
-#warning FIXME (numere#9#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
 #ifdef NR_HAVE_GSL2
     HRESULT hres;
     IShellLink* psl;

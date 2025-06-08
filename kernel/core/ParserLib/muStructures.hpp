@@ -20,9 +20,12 @@
 #define MUSTRUCTURES_HPP
 
 #include <vector>
+#include <memory>
 
 #include "muTypes.hpp"
 #include "muApply.hpp"
+#include "muValueBase.hpp"
+#include "muParserError.h"
 
 namespace mu
 {
@@ -38,13 +41,13 @@ namespace mu
     /// added to this implementation in the future,
     /// e.g. classes).
     /////////////////////////////////////////////////
-    class Value
+    class Value : public std::unique_ptr<BaseValue>
     {
         public:
             Value();
             Value(const Value& data);
             //Value(Value&& data);
-
+            Value(BaseValue* other);
             Value(const Numerical& data);
             Value(const Category& data);
             Value(const Array& data);
@@ -61,10 +64,37 @@ namespace mu
             Value(const char* sData);
             Value(DataType type);
 
-            virtual ~Value();
+            /////////////////////////////////////////////////
+            /// \brief Assign a Value.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& operator=(const Value& other)
+            {
+                if (!other.get())
+                    reset(nullptr);
+                else if (!get() || (get()->m_type != other->m_type))
+                    reset(other->clone());
+                else if (this != &other)
+                    *get() = *other.get();
 
-            Value& operator=(const Value& other);
-            //Value& operator=(Value&& other);
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Move-Assign a Value.
+            ///
+            /// \param other Value&&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            //Value& operator=(Value&& other)
+            //{
+            //    reset(other.release());
+            //    return *this;
+            //}
 
             DataType getType() const;
             std::string getTypeAsString() const;
@@ -90,15 +120,224 @@ namespace mu
 
             std::complex<double> as_cmplx() const;
 
-            Value operator+(const Value& other) const;
-            Value operator-() const;
-            Value operator-(const Value& other) const;
-            Value operator/(const Value& other) const;
-            Value operator*(const Value& other) const;
-            Value& operator+=(const Value& other);
-            Value& operator-=(const Value& other);
-            Value& operator/=(const Value& other);
-            Value& operator*=(const Value& other);
+            /////////////////////////////////////////////////
+            /// \brief Add operator.
+            ///
+            /// \param other const Value&
+            /// \return Value
+            ///
+            /////////////////////////////////////////////////
+            Value operator+(const Value& other) const
+            {
+                // Special case for optimizer
+                if (!other.get())
+                    return *this;
+
+                if (get() && other.get())
+                    return *get() + *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " + " + other.getTypeAsString());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Unary minus operator.
+            ///
+            /// \return Value
+            ///
+            /////////////////////////////////////////////////
+            Value operator-() const
+            {
+                if (get())
+                    return -(*get());
+
+                throw ParserError(ecTYPE_MISMATCH, "-" + getTypeAsString());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Minus operator.
+            ///
+            /// \param other const Value&
+            /// \return Value
+            ///
+            /////////////////////////////////////////////////
+            Value operator-(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() - *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " - " + other.getTypeAsString());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Division operator.
+            ///
+            /// \param other const Value&
+            /// \return Value
+            ///
+            /////////////////////////////////////////////////
+            Value operator/(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() / *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " / " + other.getTypeAsString());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Multiplication operator.
+            ///
+            /// \param other const Value&
+            /// \return Value
+            ///
+            /////////////////////////////////////////////////
+            Value operator*(const Value& other) const
+            {
+                // Special case for optimizer
+                if (!other.get())
+                    return Value();
+
+                if (get() && other.get())
+                    return *get() * *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " * " + other.getTypeAsString());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Power operator.
+            ///
+            /// \param other const Value&
+            /// \return Value
+            ///
+            /////////////////////////////////////////////////
+            Value operator^(const Value& other) const
+            {
+                if (get() && other.get())
+                    return *get() ^ *other.get();
+
+                throw ParserError(ecTYPE_MISMATCH, getTypeAsString() + " ^ " + other.getTypeAsString());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Add-assign operator.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& operator+=(const Value& other)
+            {
+                if (!get())
+                    reset(other->clone());
+                else if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this + other);
+
+                    *get() += *other.get();
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Subtract-assign operator.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& operator-=(const Value& other)
+            {
+                if (!get())
+                    return operator=(-other);
+
+                if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this - other);
+
+                    *get() -= *other.get();
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Divide-assign operator.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& operator/=(const Value& other)
+            {
+                if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this / other);
+
+                    *get() /= *other.get();
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Multiply-assign operator.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& operator*=(const Value& other)
+            {
+                if (get() && other.get())
+                {
+                    DataType thisType = get()->m_type;
+                    DataType otherType = other->m_type;
+
+                    if (nonRecursiveOps(thisType, otherType)
+                        || (thisType == TYPE_NUMERICAL && otherType == TYPE_STRING))
+                        return operator=(*this * other);
+
+                    *get() *= *other.get();
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Power-assign operator.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& operator^=(const Value& other)
+            {
+                if (get() && other.get())
+                {
+                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                        return operator=(*this ^ other);
+
+                    *get() ^= *other.get();
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Flip the sign bit (if any) as fast as
+            /// possible.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void flipSign()
+            {
+                if (get())
+                    get()->flipSign();
+            }
 
             Value pow(const Value& exponent) const;
 
@@ -121,14 +360,17 @@ namespace mu
             size_t getBytes() const;
 
         protected:
-            void* m_data;
-            DataType m_type;
-            static const std::string m_defString;
             static const Numerical m_defVal;
-
-            DataType detectCommonType(const Value& other) const;
+            static const std::string m_defString;
     };
 
+
+    /*
+    class BaseArray {...}
+    class Array : public BaseArray, public std::vector<Value> {...}
+    class NumArray : public BaseArray, public std::vector<Numerical> {...}
+    class StrArray : public BaseArray, public std::vector<string> {...}
+    */
 
     /////////////////////////////////////////////////
     /// \brief This class handles the scalar-vector
@@ -143,10 +385,10 @@ namespace mu
         public:
             Array();
             Array(const Array& other);
-            //Array(Array&& other) = default;
+            Array(Array&& other) = default;
 
             Array(size_t n, const Value& fillVal = Value());
-            Array(const Value& singleton);
+            Array(const Value& scalar);
             Array(const Variable& var);
             Array(const std::vector<std::complex<double>>& other);
             Array(const std::vector<double>& other);
@@ -157,8 +399,56 @@ namespace mu
             Array(const Array& fst, const Array& lst);
             Array(const Array& fst, const Array& inc, const Array& lst);
 
-            Array& operator=(const Array& other);
-            //Array& operator=(Array&& other);
+            /////////////////////////////////////////////////
+            /// \brief Assign an Array.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator=(const Array& other)
+            {
+                if (other.size() == 1)
+                {
+                    if (other.front().isArray())
+                        return operator=(other.front().getArray());
+
+                    if (size() != 1)
+                        resize(1);
+
+                    front() = other.front();
+                }
+                else
+                {
+                    resize(other.size());
+
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) = other[i];
+                    }
+                }
+
+                m_commonType = other.m_commonType;
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Move an Array.
+            ///
+            /// \param other Array&&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator=(Array&& other)
+            {
+                std::swap(_M_impl._M_start, other._M_impl._M_start);
+                std::swap(_M_impl._M_finish, other._M_impl._M_finish);
+                std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
+                std::swap(m_commonType, other.m_commonType);
+
+                return *this;
+            }
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
@@ -167,15 +457,256 @@ namespace mu
             bool isScalar() const;
             bool isDefault() const;
 
-            Array operator+(const Array& other) const;
-            Array operator-() const;
-            Array operator-(const Array& other) const;
-            Array operator/(const Array& other) const;
-            Array operator*(const Array& other) const;
-            Array& operator+=(const Array& other);
-            Array& operator-=(const Array& other);
-            Array& operator/=(const Array& other);
-            Array& operator*=(const Array& other);
+            /////////////////////////////////////////////////
+            /// \brief Add operator.
+            ///
+            /// \param other const Array&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array operator+(const Array& other) const
+            {
+                Array ret;
+                size_t elements = std::max(size(), other.size());
+                ret.reserve(elements);
+
+                for (size_t i = 0; i < elements; i++)
+                {
+                    ret.emplace_back(get(i) + other.get(i));
+                }
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Unary minus operator.
+            ///
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array operator-() const
+            {
+                Array ret;
+                size_t elements = size();
+                ret.reserve(elements);
+
+                for (size_t i = 0; i < elements; i++)
+                {
+                    ret.emplace_back(-get(i));
+                }
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Subtract operator.
+            ///
+            /// \param other const Array&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array operator-(const Array& other) const
+            {
+                Array ret;
+
+                size_t elements = std::max(size(), other.size());
+                ret.reserve(elements);
+
+                for (size_t i = 0; i < elements; i++)
+                {
+                    ret.emplace_back(get(i) - other.get(i));
+                }
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Divide operator.
+            ///
+            /// \param other const Array&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array operator/(const Array& other) const
+            {
+                Array ret;
+                size_t elements = std::max(size(), other.size());
+                ret.reserve(elements);
+
+                for (size_t i = 0; i < elements; i++)
+                {
+                    ret.emplace_back(get(i) / other.get(i));
+                }
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Multiply operator.
+            ///
+            /// \param other const Array&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array operator*(const Array& other) const
+            {
+                Array ret;
+                size_t elements = std::max(size(), other.size());
+                ret.reserve(elements);
+
+                for (size_t i = 0; i < elements; i++)
+                {
+                    ret.emplace_back(get(i) * other.get(i));
+                }
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Power operator.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array operator^(const Array& other) const
+            {
+                Array ret;
+                size_t elements = std::max(size(), other.size());
+                ret.reserve(elements);
+
+                for (size_t i = 0; i < elements; i++)
+                {
+                    ret.emplace_back(get(i) ^ other.get(i));
+                }
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Add-assign operator.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator+=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator+(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) += other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Subtract-assign operator.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator-=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator-(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) -= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Divide-assign operator.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator/=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator/(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) /= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Multiply-assign operator.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator*=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator*(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) *= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Power-assign operator.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& operator^=(const Array& other)
+            {
+                if (size() < other.size())
+                    operator=(operator^(other));
+                else
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) ^= other.get(i);
+                    }
+                }
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Flip the sign bit (if any) as fast as
+            /// possible.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void flipSign()
+            {
+                for (size_t i = 0; i < size(); i++)
+                {
+                    operator[](i).flipSign();
+                }
+            }
 
             Array pow(const Array& exponent) const;
             Array pow(const Numerical& exponent) const;
@@ -209,8 +740,39 @@ namespace mu
             std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
 
-            Value& get(size_t i);
-            const Value& get(size_t i) const;
+            /////////////////////////////////////////////////
+            /// \brief Get the i-th element.
+            ///
+            /// \param i size_t
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& get(size_t i)
+            {
+                if (size() == 1u)
+                    return front();
+                else if (size() <= i)
+                    throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
+
+                return operator[](i);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the i-th element.
+            ///
+            /// \param i size_t
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& get(size_t i) const
+            {
+                if (size() == 1u)
+                    return front();
+                else if (size() <= i)
+                    return m_default;
+
+                return operator[](i);
+            }
 
             void zerosToVoid();
             bool isCommutative() const;
@@ -238,7 +800,26 @@ namespace mu
             //Variable(Variable&& data) = default;
 
             Variable& operator=(const Value& other);
-            Variable& operator=(const Array& other);
+
+            /////////////////////////////////////////////////
+            /// \brief Assign an Array checking for type
+            /// compatibility.
+            ///
+            /// \param other const Array&
+            /// \return Variable&
+            ///
+            /////////////////////////////////////////////////
+            Variable& operator=(const Array& other)
+            {
+                if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
+                {
+                    Array::operator=(other);
+                    return *this;
+                }
+
+                throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+            }
+
             Variable& operator=(const Variable& other);
 
             void overwrite(const Array& other);
@@ -260,7 +841,36 @@ namespace mu
             VarArray(const VarArray& other) = default;
             //VarArray(VarArray&& other) = default;
             VarArray& operator=(const VarArray& other) = default;
-            const Array& operator=(const Array& values);
+
+            /////////////////////////////////////////////////
+            /// \brief Assign the values of an Array.
+            ///
+            /// \param values const Array&
+            /// \return const Array&
+            ///
+            /////////////////////////////////////////////////
+            const Array& operator=(const Array& values)
+            {
+                if (size() == 1)
+                    *front() = values;
+                else if (values.isScalar())
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        *operator[](i) = values;
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < std::min(size(), values.size()); i++)
+                    {
+                        *operator[](i) = values[i];
+                    }
+                }
+
+                return values;
+            }
+
             Array operator+=(const Array& values);
             Array operator-=(const Array& values);
             Array operator*=(const Array& values);
@@ -271,6 +881,19 @@ namespace mu
             bool operator==(const VarArray& other) const;
 
             bool isNull() const;
+
+            /////////////////////////////////////////////////
+            /// \brief Return wether this VarArray is in fact
+            /// a scalar (i.e. a single variable).
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isScalar() const
+            {
+                return size() == 1u;
+            }
+
             std::string print() const;
             Array asArray() const;
     };

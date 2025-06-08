@@ -1096,14 +1096,14 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
         sMethodArguments = "auto";
     else
-        sMethodArguments = v[1].front().getStr();
+        sMethodArguments = v[1].get().front().getStr();
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (!_kernel->getMemoryManager().convertColumns(sTableName, cols, sMethodArguments))
         sMethodArguments.clear();
@@ -1128,8 +1128,8 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     std::vector<std::string> vRet;
 
@@ -1164,9 +1164,9 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
     mu::Array vCategories = _kernel->getMemoryManager().getCategoryList(cols, sTableName);
 
     if (!vCategories.size())
@@ -1193,10 +1193,10 @@ static std::string tableMethod_getunit(const std::string& sTableName, std::strin
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     mu::Array vUnits;
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     for (int i : cols)
     {
@@ -1224,7 +1224,7 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
     {
@@ -1232,14 +1232,14 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
-    for (size_t i = 0; i < std::max(cols.size(), v[1].size()); i++)
+    for (size_t i = 0; i < std::max(cols.size(), v[1].get().size()); i++)
     {
-        _kernel->getMemoryManager().setUnit(cols[i], sTableName, v[1].get(i).getStr());
+        _kernel->getMemoryManager().setUnit(cols[i], sTableName, v[1].get().get(i).getStr());
     }
 
-    _kernel->getParser().SetInternalVar(sResultVectorName, v[1]);
+    _kernel->getParser().SetInternalVar(sResultVectorName, v[1].get());
     return sResultVectorName;
 }
 
@@ -1261,22 +1261,22 @@ static std::string tableMethod_toSiUnits(const std::string& sTableName, std::str
     UnitConversionMode mode = MODE_DIRECT;
 
     int nResults = 0;
-    mu::Array* v = nullptr;
+    const mu::StackItem* v = nullptr;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults > 1)
     {
-        if (v[1].front() == mu::Value("base"))
+        if (v[1].get().front() == mu::Value("base"))
             mode = MODE_BASESI;
-        else if (v[1].front() == mu::Value("simplify"))
+        else if (v[1].get().front() == mu::Value("simplify"))
             mode = MODE_SIMPLIFY;
 
         if (nResults > 2)
         {
-            if (mu::all(v[2]))
+            if (mu::all(v[2].get()))
             {
                 mu::Array vUnits;
 
@@ -1314,15 +1314,15 @@ static std::string tableMethod_asSiUnits(const std::string& sTableName, std::str
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults > 1)
     {
-        if (v[1].front() == mu::Value("base"))
+        if (v[1].get().front() == mu::Value("base"))
             mode = MODE_BASESI;
-        else if (v[1].front() == mu::Value("simplify"))
+        else if (v[1].get().front() == mu::Value("simplify"))
             mode = MODE_SIMPLIFY;
     }
 
@@ -1348,9 +1348,9 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults < 2)
     {
@@ -1370,7 +1370,7 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
         return sResultVectorName;
     }
 
-    vCategories = v[1].as_str_vector();
+    vCategories = v[1].get().as_str_vector();
 
     if (_kernel->getMemoryManager().setCategories(sTableName, cols, vCategories))
     {
@@ -1405,14 +1405,14 @@ static std::string tableMethod_replacevals(const std::string& sTableName, std::s
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 3)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().replacevals()", ".replacevals(", ".replacevals(");
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
     _kernel->getParser().SetInternalVar(sResultVectorName,
-                                        mu::Value(_kernel->getMemoryManager().replaceVals(sTableName, cols, v[1], v[2])));
+                                        mu::Value(_kernel->getMemoryManager().replaceVals(sTableName, cols, v[1].get(), v[2].get())));
     return sResultVectorName;
 }
 
@@ -1434,12 +1434,12 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults > 1)
-        enableRegEx = mu::all(v[1]);
+        enableRegEx = mu::all(v[1].get());
 
-    std::vector<size_t> cols = _kernel->getMemoryManager().findCols(sTableName, v[0].as_str_vector(), enableRegEx);
+    std::vector<size_t> cols = _kernel->getMemoryManager().findCols(sTableName, v[0].get().as_str_vector(), enableRegEx);
 
     if (cols.size())
         _kernel->getParser().SetInternalVar(sResultVectorName, cols);
@@ -1466,8 +1466,8 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults < 2)
     {
@@ -1475,7 +1475,7 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-    std::vector<size_t> count = _kernel->getMemoryManager().countIfEqual(sTableName, cols, v[1]);
+    std::vector<size_t> count = _kernel->getMemoryManager().countIfEqual(sTableName, cols, v[1].get());
 
     if (count.size())
         _kernel->getParser().SetInternalVar(sResultVectorName, count);
@@ -1502,8 +1502,8 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults < 2)
     {
@@ -1511,7 +1511,7 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
         return sResultVectorName;
     }
 
-    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getIndex(sTableName, cols.front(), v[1]));
+    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getIndex(sTableName, cols.front(), v[1].get()));
     return sResultVectorName;
 }
 
@@ -1532,23 +1532,23 @@ static std::string tableMethod_cov(const std::string& sTableName, std::string sM
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().covarof()", ".covarof(", ".covarof(");
 
-    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
-    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1], sTableName);
+    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName);
 
     VectorIndex vIndex1(0, VectorIndex::OPEN_END);
     VectorIndex vIndex2(0, VectorIndex::OPEN_END);
 
     if (nResults > 2)
     {
-        vIndex1 = VectorIndex(v[2]);
+        vIndex1 = VectorIndex(v[2].get());
 
         if (nResults > 3)
-            vIndex2 = VectorIndex(v[3]);
+            vIndex2 = VectorIndex(v[3].get());
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(_kernel->getMemoryManager().getCovariance(sTableName, cols1.front(), vIndex1, cols2.front(), vIndex2)));
@@ -1572,23 +1572,23 @@ static std::string tableMethod_pcorr(const std::string& sTableName, std::string 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().pcorrof()", ".pcorrof(", ".pcorrof(");
 
-    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
-    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1], sTableName);
+    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName);
 
     VectorIndex vIndex1(0, VectorIndex::OPEN_END);
     VectorIndex vIndex2(0, VectorIndex::OPEN_END);
 
     if (nResults > 2)
     {
-        vIndex1 = VectorIndex(v[2]);
+        vIndex1 = VectorIndex(v[2].get());
 
         if (nResults > 3)
-            vIndex2 = VectorIndex(v[3]);
+            vIndex2 = VectorIndex(v[3].get());
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(_kernel->getMemoryManager().getPearsonCorr(sTableName, cols1.front(), vIndex1, cols2.front(), vIndex2)));
@@ -1612,23 +1612,23 @@ static std::string tableMethod_scorr(const std::string& sTableName, std::string 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().scorrof()", ".scorrof(", ".scorrof(");
 
-    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
-    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1], sTableName);
+    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName);
 
     VectorIndex vIndex1(0, VectorIndex::OPEN_END);
     VectorIndex vIndex2(0, VectorIndex::OPEN_END);
 
     if (nResults > 2)
     {
-        vIndex1 = VectorIndex(v[2]);
+        vIndex1 = VectorIndex(v[2].get());
 
         if (nResults > 3)
-            vIndex2 = VectorIndex(v[3]);
+            vIndex2 = VectorIndex(v[3].get());
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(_kernel->getMemoryManager().getSpearmanCorr(sTableName, cols1.front(), vIndex1, cols2.front(), vIndex2)));
@@ -1652,12 +1652,12 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
 
     if (nResults > 1)
-        vIndex = VectorIndex(v[1]);
+        vIndex = VectorIndex(v[1].get());
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getZScore(sTableName, cols.front(), vIndex));
     return sResultVectorName;
@@ -1680,23 +1680,23 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
-    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
-    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1], sTableName);
+    VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName);
 
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
     double significance = 0.05;
 
     if (nResults > 2)
     {
-        significance = v[2].front().getNum().asF64();
+        significance = v[2].get().front().getNum().asF64();
 
         if (nResults > 3)
-            vIndex = VectorIndex(v[3]);
+            vIndex = VectorIndex(v[3].get());
     }
 
     std::vector<AnovaResult> res = _kernel->getMemoryManager().getAnova(sTableName, cols1, cols2.front(), vIndex, significance);
@@ -1749,13 +1749,13 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
-    size_t nClusters = v[1].getAsScalarInt();
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    size_t nClusters = v[1].get().getAsScalarInt();
 
     size_t maxIterations = 100;
     Memory::KmeansInit init_method = Memory::KmeansInit::INIT_RANDOM;
@@ -1763,14 +1763,14 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
 
     if (nResults > 2)
     {
-        maxIterations = v[2].getAsScalarInt();
+        maxIterations = v[2].get().getAsScalarInt();
 
         if (nResults > 3)
         {
-            init_method = Memory::stringToKmeansInit(v[3].front().getStr());
+            init_method = Memory::stringToKmeansInit(v[3].get().front().getStr());
 
             if (nResults > 4)
-                n_init = v[4].getAsScalarInt();
+                n_init = v[4].get().getAsScalarInt();
             else
             {
                 // scikit: When n_init='auto', the number of runs depends on the value
@@ -1812,14 +1812,14 @@ static std::string tableMethod_binsof(const std::string& sTableName, std::string
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     size_t nBins = 0;
 
     if (nResults > 1)
-        nBins = v[1].getAsScalarInt();
+        nBins = v[1].get().getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getBins(sTableName, cols.front(), nBins));
     return sResultVectorName;
@@ -1842,21 +1842,21 @@ static std::string tableMethod_rank(const std::string& sTableName, std::string s
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
     Memory::RankingStrategy _strat = Memory::RANK_COMPETETIVE;
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults > 1)
     {
-        if (v[1].front() == mu::Value("f"))
+        if (v[1].get().front() == mu::Value("f"))
             _strat = Memory::RANK_FRACTIONAL;
-        else if (v[1].front() == mu::Value("d"))
+        else if (v[1].get().front() == mu::Value("d"))
             _strat = Memory::RANK_DENSE;
 
         if (nResults > 2)
-            vIndex = VectorIndex(v[2]);
+            vIndex = VectorIndex(v[2].get());
     }
 
     _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getRank(sTableName, cols.front(), vIndex, _strat));
@@ -1880,10 +1880,10 @@ static std::string tableMethod_annotate(const std::string& sTableName, std::stri
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    _kernel->getMemoryManager().writeComment(sTableName, v[0].front().getStr());
-    _kernel->getParser().SetInternalVar(sResultVectorName, v[0].front());
+    _kernel->getMemoryManager().writeComment(sTableName, v[0].get().front().getStr());
+    _kernel->getParser().SetInternalVar(sResultVectorName, v[0].get().front());
     return sResultVectorName;
 }
 
@@ -1904,9 +1904,9 @@ static std::string tableMethod_insertBlock(const std::string& sTableName, std::s
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    size_t atRow = v[0].getAsScalarInt() - 1;
+    size_t atRow = v[0].get().getAsScalarInt() - 1;
 
     if (nResults < 2)
     {
@@ -1914,16 +1914,16 @@ static std::string tableMethod_insertBlock(const std::string& sTableName, std::s
         return sResultVectorName;
     }
 
-    VectorIndex atCols = _kernel->getMemoryManager().arrayToIndex(v[1], sTableName);
+    VectorIndex atCols = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName);
 
     size_t rows = 1;
     size_t cols = 1;
 
     if (nResults > 2)
-        rows = v[2].getAsScalarInt();
+        rows = v[2].get().getAsScalarInt();
 
     if (nResults > 3)
-        cols = v[3].getAsScalarInt();
+        cols = v[3].get().getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().insertBlock(sTableName, atRow, atCols.front(), rows, cols)));
@@ -1947,13 +1947,13 @@ static std::string tableMethod_insertCols(const std::string& sTableName, std::st
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
     size_t num = 1;
 
     if (nResults > 1)
-        num = v[1].getAsScalarInt();
+        num = v[1].get().getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().insertCols(sTableName, cols.front(), num)));
@@ -1977,13 +1977,13 @@ static std::string tableMethod_insertRows(const std::string& sTableName, std::st
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    size_t row = v[0].getAsScalarInt() - 1;
+    size_t row = v[0].get().getAsScalarInt() - 1;
     size_t num = 1;
 
     if (nResults > 1)
-        num = v[1].getAsScalarInt();
+        num = v[1].get().getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().insertRows(sTableName, row, num)));
@@ -2007,9 +2007,9 @@ static std::string tableMethod_removeBlock(const std::string& sTableName, std::s
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    size_t atRow = v[0].getAsScalarInt() - 1;
+    size_t atRow = v[0].get().getAsScalarInt() - 1;
 
     if (nResults < 2)
     {
@@ -2017,16 +2017,16 @@ static std::string tableMethod_removeBlock(const std::string& sTableName, std::s
         return sResultVectorName;
     }
 
-    VectorIndex atCols = _kernel->getMemoryManager().arrayToIndex(v[1], sTableName);
+    VectorIndex atCols = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName);
 
     size_t rows = 1;
     size_t cols = 1;
 
     if (nResults > 2)
-        rows = v[2].getAsScalarInt();
+        rows = v[2].get().getAsScalarInt();
 
     if (nResults > 3)
-        cols = v[3].getAsScalarInt();
+        cols = v[3].get().getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().removeBlock(sTableName, atRow, atCols.front(), rows, cols)));
@@ -2050,8 +2050,8 @@ static std::string tableMethod_removeCols(const std::string& sTableName, std::st
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().removeCols(sTableName, cols)));
@@ -2075,10 +2075,10 @@ static std::string tableMethod_removeRows(const std::string& sTableName, std::st
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
-                                        mu::Value(_kernel->getMemoryManager().removeRows(sTableName, VectorIndex(v[0]))));
+                                        mu::Value(_kernel->getMemoryManager().removeRows(sTableName, VectorIndex(v[0].get()))));
     return sResultVectorName;
 }
 
@@ -2101,13 +2101,13 @@ static std::string tableMethod_reorderCols(const std::string& sTableName, std::s
 
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0], sTableName);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reordercols()", ".reordercols(", ".reordercols(");
 
-    vNewOrder = VectorIndex(v[1]);
+    vNewOrder = VectorIndex(v[1].get());
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().reorderCols(sTableName, cols, vNewOrder)));
@@ -2134,13 +2134,13 @@ static std::string tableMethod_reorderRows(const std::string& sTableName, std::s
 
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
-    mu::Array* v = _kernel->getParser().Eval(nResults);
-    vIndex = VectorIndex(v[0]);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    vIndex = VectorIndex(v[0].get());
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reorderrows()", ".reorderrows(", ".reorderrows(");
 
-    vNewOrder = VectorIndex(v[1]);
+    vNewOrder = VectorIndex(v[1].get());
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().reorderRows(sTableName, vIndex, vNewOrder)));

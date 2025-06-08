@@ -276,13 +276,13 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
 
             _parser.SetExpr(sArg);
             int nRes = 0;
-            mu::Array* v = _parser.Eval(nRes);
+            const mu::StackItem* v = _parser.Eval(nRes);
 
             // Only use the option value, if it contains two values
             if (nRes == 2)
             {
-                nMultiplots[1] = (size_t)v[0].getAsScalarInt();
-                nMultiplots[0] = (size_t)v[1].getAsScalarInt();
+                nMultiplots[1] = (size_t)v[0].get().getAsScalarInt();
+                nMultiplots[0] = (size_t)v[1].get().getAsScalarInt();
             }
 
             // Remove everything up to the first command in the
@@ -2408,20 +2408,20 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         }
 
         _parser.SetExpr(sDrawExpr);
-        mu::Array* vRes = _parser.Eval(nFunctions);
+        const mu::StackItem* vRes = _parser.Eval(nFunctions);
 
         if (nFunctions > 2
-            && vRes[nFunctions-2].getCommonType() == mu::TYPE_STRING
-            && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+            && vRes[nFunctions-2].get().getCommonType() == mu::TYPE_STRING
+            && vRes[nFunctions-1].get().getCommonType() == mu::TYPE_STRING)
         {
-            sTextString = vRes[nFunctions-2].printVals();
-            sStyle = vRes[nFunctions-1].printVals();
+            sTextString = vRes[nFunctions-2].get().printVals();
+            sStyle = vRes[nFunctions-1].get().printVals();
             nFunctions -= 2;
         }
         else if (nFunctions > 1
-                 && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+                 && vRes[nFunctions-1].get().getCommonType() == mu::TYPE_STRING)
         {
-            sStyle = vRes[nFunctions-1].printVals();
+            sStyle = vRes[nFunctions-1].get().printVals();
             nFunctions -= 1;
         }
 
@@ -2429,7 +2429,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
 
         for (int i = 0; i < nFunctions; i++)
         {
-            vResults.push_back(vRes[i].front().getNum().asF64());
+            vResults.push_back(vRes[i].get().front().getNum().asF64());
         }
 
         if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
@@ -2720,20 +2720,20 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         }
 
         _parser.SetExpr(sDrawExpr);
-        mu::Array* vRes = _parser.Eval(nFunctions);
+        const mu::StackItem* vRes = _parser.Eval(nFunctions);
 
         if (nFunctions > 2
-            && vRes[nFunctions-2].getCommonType() == mu::TYPE_STRING
-            && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+            && vRes[nFunctions-2].get().getCommonType() == mu::TYPE_STRING
+            && vRes[nFunctions-1].get().getCommonType() == mu::TYPE_STRING)
         {
-            sTextString = vRes[nFunctions-2].printVals();
-            sStyle = vRes[nFunctions-1].printVals();
+            sTextString = vRes[nFunctions-2].get().printVals();
+            sStyle = vRes[nFunctions-1].get().printVals();
             nFunctions -= 2;
         }
         else if (nFunctions > 1
-                 && vRes[nFunctions-1].getCommonType() == mu::TYPE_STRING)
+                 && vRes[nFunctions-1].get().getCommonType() == mu::TYPE_STRING)
         {
-            sStyle = vRes[nFunctions-1].printVals();
+            sStyle = vRes[nFunctions-1].get().printVals();
             nFunctions -= 1;
         }
 
@@ -2741,7 +2741,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
 
         for (int i = 0; i < nFunctions; i++)
         {
-            vResults.push_back(vRes[i].front().getNum().asF64());
+            vResults.push_back(vRes[i].get().front().getNum().asF64());
         }
 
         if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
@@ -3713,32 +3713,34 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
-            mu::Array* v = _parser.Eval(nRes);
+            const mu::StackItem* v = _parser.Eval(nRes);
 
             if (nRes == 1)
             {
-                if (v[0].getAsScalarInt() < 1)
-                    v[0] = mu::Array(1);
+                mu::Array plotIdx = v[0].get();
 
-                if ((size_t)v[0].getAsScalarInt() - 1 >= nMultiplots[0]*nMultiplots[1])
+                if (plotIdx.getAsScalarInt() < 1)
+                    plotIdx = mu::Array(1);
+
+                if ((size_t)plotIdx.getAsScalarInt() - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(v[0].getAsScalarInt() - 1), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(plotIdx.getAsScalarInt() - 1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], v[0].getAsScalarInt() - 1, nMultiCols, nMultiLines,
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], plotIdx.getAsScalarInt() - 1, nMultiCols, nMultiLines,
                                   _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }   // cols, lines
             else
             {
-                if ((size_t)(v[1].getAsScalarInt() - 1 + (v[0].getAsScalarInt() - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(v[1].get().getAsScalarInt() - 1 + (v[0].get().getAsScalarInt() - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1)*nMultiplots[0]),
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((v[1].get().getAsScalarInt() - 1) + (v[0].get().getAsScalarInt() - 1)*nMultiplots[0]),
                                          nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1)*nMultiplots[0]),
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((v[1].get().getAsScalarInt() - 1) + (v[0].get().getAsScalarInt() - 1)*nMultiplots[0]),
                                   nMultiCols, nMultiLines, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
         }
@@ -3780,40 +3782,42 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
-            mu::Array* v = _parser.Eval(nRes);
+            const mu::StackItem* v = _parser.Eval(nRes);
 
             if (nRes == 1)
             {
-                if (v[0].getAsScalarInt() < 1)
-                    v[0] = mu::Value(1);
+                mu::Array plotIdx = v[0].get();
 
-                if ((size_t)v[0].getAsScalarInt() - 1 >= nMultiplots[0]*nMultiplots[1])
+                if (plotIdx.getAsScalarInt() < 1)
+                    plotIdx = mu::Value(1);
+
+                if ((size_t)plotIdx.getAsScalarInt() - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
-                if ((size_t)v[0].getAsScalarInt() != 1)
-                    nRes <<= (size_t)(v[0].getAsScalarInt() - 1);
+                if ((size_t)plotIdx.getAsScalarInt() != 1)
+                    nRes <<= (size_t)(plotIdx.getAsScalarInt() - 1);
 
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], v[0].getAsScalarInt() - 1, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], plotIdx.getAsScalarInt() - 1, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
             else
             {
-                if ((size_t)(v[1].getAsScalarInt() - 1 + (v[0].getAsScalarInt() - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(v[1].get().getAsScalarInt() - 1 + (v[0].get().getAsScalarInt() - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
                 nRes = 1;
 
-                if ((size_t)(v[1].getAsScalarInt() + (v[0].getAsScalarInt() - 1)*nMultiplots[0]) != 1)
-                    nRes <<= (size_t)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1) * nMultiplots[0]);
+                if ((size_t)(v[1].get().getAsScalarInt() + (v[0].get().getAsScalarInt() - 1)*nMultiplots[0]) != 1)
+                    nRes <<= (size_t)((v[1].get().getAsScalarInt() - 1) + (v[0].get().getAsScalarInt() - 1) * nMultiplots[0]);
 
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
 
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((v[1].getAsScalarInt() - 1) + (v[0].getAsScalarInt() - 1)*nMultiplots[0]),
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((v[1].get().getAsScalarInt() - 1) + (v[0].get().getAsScalarInt() - 1)*nMultiplots[0]),
                                 _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
         }
@@ -4940,7 +4944,7 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
 /////////////////////////////////////////////////
 void Plot::fillData(double dt_max, int t_animate)
 {
-    mu::Array* vResults = nullptr;
+    const mu::StackItem* vResults = nullptr;
 
     if (!sFunc.length())
         return;
@@ -4979,7 +4983,7 @@ void Plot::fillData(double dt_max, int t_animate)
             for (int i = 0; i < _pInfo.nFunctions; i++)
             {
                 m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
-                m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x);
+                m_manager.assets[vFuncMap[i]].writeData(vResults[i].get().front().getNum().asCF64(), 0, x);
             }
         }
     }
@@ -5000,13 +5004,13 @@ void Plot::fillData(double dt_max, int t_animate)
             vResults = _parser.Eval(_pInfo.nFunctions);
 
             _defVars.vValue[TCOORD][0] = _pInfo.ranges[TRANGE].front();
-            _defVars.vValue[XCOORD][0] = vResults[XCOORD];
+            _defVars.vValue[XCOORD][0] = vResults[XCOORD].get();
 
             if (YCOORD < _pInfo.nFunctions)
-                _defVars.vValue[YCOORD][0] = vResults[YCOORD];
+                _defVars.vValue[YCOORD][0] = vResults[YCOORD].get();
 
             if (ZCOORD < _pInfo.nFunctions)
-                _defVars.vValue[ZCOORD][0] = vResults[ZCOORD];
+                _defVars.vValue[ZCOORD][0] = vResults[ZCOORD].get();
 
             int nRenderSamples = _pInfo.nSamples;
 
@@ -5046,7 +5050,7 @@ void Plot::fillData(double dt_max, int t_animate)
                     if (i >= _pInfo.nFunctions)
                         m_manager.assets[vFuncMap[k]].writeData(0.0, i, t);
                     else
-                        m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, t);
+                        m_manager.assets[vFuncMap[k]].writeData(vResults[i].get().front().getNum().asCF64(), i, t);
                 }
             }
 
@@ -5093,7 +5097,7 @@ void Plot::fillData(double dt_max, int t_animate)
                 {
                     m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
                     m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
-                    m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x, y);
+                    m_manager.assets[vFuncMap[i]].writeData(vResults[i].get().front().getNum().asCF64(), 0, x, y);
                 }
             }
         }
@@ -5140,7 +5144,7 @@ void Plot::fillData(double dt_max, int t_animate)
                         m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
                         m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
                         m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
-                        m_manager.assets[vFuncMap[i]].writeData(vResults[i].front().getNum().asCF64(), 0, x, y, z);
+                        m_manager.assets[vFuncMap[i]].writeData(vResults[i].get().front().getNum().asCF64(), 0, x, y, z);
                     }
                 }
             }
@@ -5174,7 +5178,7 @@ void Plot::fillData(double dt_max, int t_animate)
                         if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
                             m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y);
                         else
-                            m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, x, y);
+                            m_manager.assets[vFuncMap[k]].writeData(vResults[i].get().front().getNum().asCF64(), i, x, y);
                     }
                 }
             }
@@ -5213,7 +5217,7 @@ void Plot::fillData(double dt_max, int t_animate)
                             if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
                                 m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
                             else
-                                m_manager.assets[vFuncMap[k]].writeData(vResults[i].front().getNum().asCF64(), i, x, y, z);
+                                m_manager.assets[vFuncMap[k]].writeData(vResults[i].get().front().getNum().asCF64(), i, x, y, z);
                         }
                     }
                 }

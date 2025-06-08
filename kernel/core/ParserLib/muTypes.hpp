@@ -42,6 +42,7 @@ namespace mu
         TYPE_CATEGORY,
         TYPE_ARRAY,
         TYPE_GENERATOR,
+        TYPE_NEUTRAL,
         TYPE_INVALID,
         TYPE_MIXED
     };
@@ -68,11 +69,14 @@ namespace mu
         I64,
         F32,
         F64,
+        DURATION,
         DATETIME,
         CF32,
         CF64,
         AUTO
     };
+
+    std::string getTypeAsString(DataType type);
 
 
     /////////////////////////////////////////////////
@@ -90,8 +94,9 @@ namespace mu
             TYPE_UINT = 0x1,
             TYPE_INT = 0x2,
             TYPE_FLOAT = 0x4,
-            TYPE_DATETIME = 0x8,
-            TYPE_COMPLEX = 0x10
+            TYPE_DURATION = 0x8,
+            TYPE_DATETIME = 0x10,
+            TYPE_COMPLEX = 0x20
         };
 
         uint8_t m_flags;
@@ -131,9 +136,9 @@ namespace mu
             };
 
             NumericalType m_type;
-            TypeInfo m_info;
 
             InternalType getConversion(NumericalType promotion) const;
+            void resultPromote();
 
         public:
             Numerical(int8_t data);
@@ -163,11 +168,15 @@ namespace mu
             Numerical operator-(const Numerical& other) const;
             Numerical operator/(const Numerical& other) const;
             Numerical operator*(const Numerical& other) const;
+            Numerical operator^(const Numerical& other) const;
 
             Numerical& operator+=(const Numerical& other);
             Numerical& operator-=(const Numerical& other);
             Numerical& operator/=(const Numerical& other);
             Numerical& operator*=(const Numerical& other);
+            Numerical& operator^=(const Numerical& other);
+
+            void flipSign();
 
             Numerical pow(const Numerical& exponent) const;
 

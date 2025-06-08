@@ -108,12 +108,15 @@ namespace mu
 
         m_vErrMsg[ecTYPE_NO_STR]            =   "ERR_MUP_36_TYPE_NO_STR";
         m_vErrMsg[ecTYPE_NO_VAL]            =   "ERR_MUP_37_TYPE_NO_VAL";
-        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_38_TYPE_MISMATCH";
-        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_39_TYPE_MISMATCH_OOB";
-        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_40_ASSIGNED_TYPE_MISMATCH";
-        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_41_METHOD_ERROR";
+        m_vErrMsg[ecTYPE_NO_CAT]            =   "ERR_MUP_38_TYPE_NO_CAT";
+        m_vErrMsg[ecTYPE_NO_ARR]            =   "ERR_MUP_39_TYPE_NO_ARR";
+        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_40_TYPE_MISMATCH";
+        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_41_TYPE_MISMATCH_OOB";
+        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_42_ASSIGNED_TYPE_MISMATCH";
+        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_43_METHOD_ERROR";
+        m_vErrMsg[ecNOT_IMPLEMENTED]        =   "ERR_MUP_44_NOT_IMPLEMENTED";
 
-        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_42_INTERNAL_ERROR";
+        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_45_INTERNAL_ERROR";
 
 
 
@@ -153,7 +156,7 @@ namespace mu
         m_strMsg = m_ErrMsg[m_iErrc];
 
         if (!m_strMsg.length())
-            m_strMsg = _nrT("Generic parser error");
+            m_strMsg = "Generic parser error";
         else
             m_strMsg = ::_lang.get(m_strMsg);
     }
@@ -187,8 +190,8 @@ namespace mu
         m_strMsg = ::_lang.get(m_ErrMsg[m_iErrc]);
         stringstream_type stream;
         stream << (int)m_iPos;
-        ReplaceSubString(m_strMsg, _nrT("$POS$"), stream.str());
-        ReplaceSubString(m_strMsg, _nrT("$TOK$"), m_strTok);
+        ReplaceSubString(m_strMsg, "$POS$", stream.str());
+        ReplaceSubString(m_strMsg, "$TOK$", m_strTok);
     }
 
     //------------------------------------------------------------------------------
@@ -208,8 +211,8 @@ namespace mu
         m_strMsg = m_ErrMsg[m_iErrc];
         stringstream_type stream;
         stream << (int)m_iPos;
-        ReplaceSubString(m_strMsg, _nrT("$POS$"), stream.str());
-        ReplaceSubString(m_strMsg, _nrT("$TOK$"), m_strTok);
+        ReplaceSubString(m_strMsg, "$POS$", stream.str());
+        ReplaceSubString(m_strMsg, "$TOK$", m_strTok);
     }
 
     //------------------------------------------------------------------------------
@@ -228,8 +231,8 @@ namespace mu
     {
         stringstream_type stream;
         stream << (int)m_iPos;
-        ReplaceSubString(m_strMsg, _nrT("$POS$"), stream.str());
-        ReplaceSubString(m_strMsg, _nrT("$TOK$"), m_strTok);
+        ReplaceSubString(m_strMsg, "$POS$", stream.str());
+        ReplaceSubString(m_strMsg, "$TOK$", m_strTok);
     }
 
     //------------------------------------------------------------------------------
@@ -294,9 +297,9 @@ namespace mu
     /** \brief Reset the erro object. */
     void ParserError::Reset()
     {
-        m_strMsg = _nrT("");
-        m_strFormula = _nrT("");
-        m_strTok = _nrT("");
+        m_strMsg.clear();
+        m_strFormula.clear();
+        m_strTok.clear();
         m_iPos = -1;
         m_iErrc = ecUNDEFINED;
     }

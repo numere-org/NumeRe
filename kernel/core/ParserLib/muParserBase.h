@@ -126,8 +126,8 @@ namespace mu
 
 			virtual ~ParserBase();
 
-			Array  Eval();
-			Array* Eval(int& nStackSize);
+			const Array& Eval();
+			const StackItem* Eval(int& nStackSize);
 
 			void SetExpr(StringView a_sExpr);
 
@@ -218,8 +218,6 @@ namespace mu
 			virtual void InitConst() = 0;
 			virtual void InitOprt() = 0;
 
-			virtual void OnDetectVar(string_type* pExpr, int& nStart, int& nEnd);
-
 			static const char_type* c_DefaultOprt[];
 			static std::locale s_locale;  ///< The locale used by the parser
 			static bool g_DbgDumpCmdCode;
@@ -265,7 +263,7 @@ namespace mu
 			static Array evalIfElse(const Array& cond,
                                     const Array& true_case,
                                     const Array& false_case);
-            static Array VectorCreate(const Array*, int);  // vector creation
+            static Array VectorCreate(const MultiArgFuncParams&);  // vector creation
             static Array Vector2Generator(const Array& firstVal,
                                           const Array& lastVal);
             static Array Vector3Generator(const Array& firstVal,
@@ -282,15 +280,11 @@ namespace mu
                                      Array& vResults);
 
 		private:
-			MutableStringView compileVectors(MutableStringView sExpr);
-			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
-			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
-			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
 			string_type getNextTempVarIndex();
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();
 			void ReInit();
-            ExpressionTarget& getTarget() const;
+            //ExpressionTarget& getTarget() const;
 
 			void AddCallback( const string_type& a_strName,
 							  const ParserCallback& a_Callback,
@@ -318,7 +312,6 @@ namespace mu
 
 			void ParseString();
 			void ParseCmdCode();
-			void ParseCmdCodeBulk(int nOffset, int nThreadID);
 			void ParseCmdCodeBulkParallel(size_t nVectorLength);
 
 			void CheckName(const string_type& a_strName, const string_type& a_CharSet) const;
@@ -335,10 +328,9 @@ namespace mu
 			*/
 			mutable ParseFunction  m_pParseFormula;
 			mutable State m_compilingState;
-			mutable ExpressionTarget m_compilingTarget;
+			//mutable ExpressionTarget m_compilingTarget;
 			mutable StateStacks m_stateStacks;
 			State* m_state;
-			mutable valbuf_type m_buffer;
 
 			mutable varmap_type mInternalVars;
 

@@ -47,7 +47,7 @@ class Timer
             auto endTimePoint = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now());
             std::chrono::nanoseconds time_span = endTimePoint - m_StartPoint;
 
-            mu::print("[" + m_ScopeName + "] Measured run time: " + toString(time_span.count() / 1000.0, 14) + " mus.");
+            mu::print("[" + m_ScopeName + "] Measured run time: " + toString(time_span.count() / 1000.0 - (time_span.count() >= 100 ? 0.1 : 0.0), 14) + " mus.");
         }
 };
 

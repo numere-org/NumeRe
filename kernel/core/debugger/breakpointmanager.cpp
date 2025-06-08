@@ -57,13 +57,15 @@ bool Breakpoint::isActive(bool needsLocks)
         _parser.SetExpr(m_condition);
 
     int nNum;
-    mu::Array* v = _parser.Eval(nNum);
+    const mu::StackItem* v = _parser.Eval(nNum);
 
     for (int i = 0; i < nNum; i++)
     {
-        for (size_t j = 0; j < v[i].size(); j++)
+        const mu::Array& val = v[i].get();
+
+        for (size_t j = 0; j < val.size(); j++)
         {
-            if ((bool)!v[i][j] || !v[i][j].isValid())
+            if ((bool)!val[j] || !val[j].isValid())
                 return false;
         }
     }

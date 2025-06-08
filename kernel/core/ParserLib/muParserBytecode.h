@@ -77,6 +77,8 @@ namespace mu
     struct SOprtData
     {
         VarArray var;
+        Variable* src;
+        Array val;
         int offset;
     };
 
@@ -168,7 +170,7 @@ namespace mu
 
 			void AddVar(Variable* a_pVar);
 			void AddVarArray(const VarArray& a_varArray);
-			void AddVal(const Array& a_fVal);
+			void AddVal(Array&& a_fVal);
 			void AddOp(ECmdCode a_Oprt);
 			void AddIfElse(ECmdCode a_Oprt);
 			void AddAssignOp(Variable* a_pVar, ECmdCode assignmentCode);
@@ -187,6 +189,10 @@ namespace mu
 			std::size_t GetSize() const;
 
 			SToken* GetBase();
+			const std::vector<SToken>& GetRPN() const
+			{
+			    return m_vRPN;
+			}
 			void AsciiDump();
 	};
 

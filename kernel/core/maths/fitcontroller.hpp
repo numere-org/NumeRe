@@ -79,7 +79,7 @@ class Fitcontroller
         static int fitfunctionrestricted(const gsl_vector* params, void* data, gsl_vector* fvals);
         static int fitjacobianrestricted(const gsl_vector* params, void* data, gsl_matrix* Jac);
         static int fitfuncjacrestricted(const gsl_vector* params, void* data, gsl_vector* fvals, gsl_matrix* Jac);
-        static double evalRestrictions(const mu::Array* v, int nVals);
+        static double evalRestrictions(const mu::StackItem* v, int nVals);
         int nIterations;
         double dChiSqr;
         std::string sExpr;

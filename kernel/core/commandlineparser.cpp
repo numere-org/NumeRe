@@ -424,12 +424,9 @@ std::vector<mu::Array> CommandLineParser::parseExpr() const
 
     instance->getParser().SetExpr(sValue);
     int nRes;
-    mu::Array* v;
-
+    const mu::StackItem* v;
     v = instance->getParser().Eval(nRes);
-    std::vector<mu::Array> vVals(v, v+nRes);
-
-    return vVals;
+    return mu::make_vector(v, nRes);
 }
 
 

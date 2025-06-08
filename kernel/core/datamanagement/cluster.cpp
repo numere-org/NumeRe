@@ -218,7 +218,7 @@ namespace NumeRe
         // possible
         if (_vLine.size() > 1 && !size())
             vTarget->resize(1, mu::Value());
-        else if (_vLine.size() == 1 && _vLine.front() < size() && mu::Array::get(_vLine.front()).isArray())
+        else if (_vLine.size() == 1 && _vLine.front() < (int)size() && mu::Array::get(_vLine.front()).isArray())
             *vTarget = mu::Array::get(_vLine.front()).getArray();
         else
         {

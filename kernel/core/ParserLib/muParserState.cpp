@@ -32,7 +32,7 @@ namespace mu
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
+    /*void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
     {
         if (m_targets.size())
             m_targets.clear();
@@ -58,12 +58,12 @@ namespace mu
     /// \brief Assign the calculated values to the
     /// target vector components.
     ///
-    /// \param buffer const valbuf_type&
+    /// \param buffer const std::vector<Array>&
     /// \param nResults int
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ExpressionTarget::assign(const valbuf_type& buffer, int nResults)
+    void ExpressionTarget::assign(const std::vector<Array>& buffer, int nResults)
     {
         m_targets = buffer[0];
         //g_logger.debug("Using target. Size = " + toString(m_targets.size()));
@@ -71,7 +71,7 @@ namespace mu
         // and consider also singletons
         //for (size_t i = 0; i < m_targets.size(); i++)
         //    *m_targets[i] = buffer[nResults == 1 ? 0 : std::min((int)i, nResults-1)];
-    }
+    }*/
 }
 
 

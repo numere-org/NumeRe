@@ -20,35 +20,156 @@
 #include <string>
 #include "muParser.h"
 #include "../ui/language.hpp"
-#include "../structures.hpp"
 #include "../maths/functionimplementation.hpp"
 #include "../strings/functionimplementation.hpp"
 
+#include "../utils/timer.hpp"
+#include "testTypes.hpp"
+
 Language _lang;
 
-struct Base
+void testfunc(const std::vector<int>& oplist)
 {
-    virtual void hello() {std::cout << "Base" << std::endl;}
-};
-struct Child : public Base
+    arr testArr;
+
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+
+    {
+        Timer t("arr");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr = testArr + testArr;
+        }
+    }
+}
+
+
+void testfunc2(const std::vector<int>& oplist)
 {
-    virtual void hello() {std::cout << "Child" << std::endl;}
-};
+    mu::Array testArr;
+
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+
+    {
+        Timer t("mu::Array");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr += testArr;
+        }
+    }
+}
+
+void testfunc3(const std::vector<int>& oplist)
+{
+    arr testArr;
+
+    /*testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));*/
+    testArr.push_back(mu::Value(""));
+    /*testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));
+    testArr.push_back(Value(0.0));
+    testArr.push_back(Value(""));*/
+
+    {
+        Timer t("arr-singleton");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr = testArr + testArr;
+        }
+    }
+}
+
+
+void testfunc4(const std::vector<int>& oplist)
+{
+    mu::Array testArr;
+
+    /*testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));*/
+    testArr.push_back(mu::Value(""));
+    /*testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));
+    testArr.push_back(mu::Value(0.0));
+    testArr.push_back(mu::Value(""));*/
+
+    {
+        Timer t("mu::Array-singleton");
+        for (int op : oplist)
+        {
+            if (op == 0)
+                testArr = testArr;
+            else if (op == 1)
+                testArr += testArr;
+        }
+    }
+}
+
+
+void runtests()
+{
+    testfunc({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc2({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc2({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc2({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc3({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc4({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc3({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc4({1,0,1,1,1,0,1,1,0,1,1,0,0});
+    testfunc3({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc4({1,0,0,1,1,0,1,0,1,1,0,1,1});
+    testfunc3({1,0,1,0,1,0,1,1,0,1,0,1,0});
+    testfunc4({1,0,1,0,1,0,1,1,0,1,0,1,0});
+}
 
 
 int main()
 {
-    /*Base b;
-    Child c;
-
-    b.hello();
-    c.hello();
-
-    Base& rb = c;
-    rb.hello(); // "child"
-    Base b2 = c;
-    b2.hello(); // "base"
-    */
 
     mu::Parser _parser;
     _parser.EnableDebugDump(true, false);
@@ -90,6 +211,8 @@ int main()
     _parser.DefineFun("time", timfnc_time, false);
     _parser.DefineFun("date", timfnc_date, true, 2);
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);
+    _parser.DefineFun("seconds", cast_seconds);
+    _parser.DefineFun("weeks", cast_weeks);
 
     _parser.DefineFun("logtoidx", numfnc_logtoidx);
     _parser.DefineFun("idxtolog", numfnc_idxtolog);
@@ -103,6 +226,7 @@ int main()
     _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);
 
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
+    _parser.DefineConst("nan", mu::Value(NAN));
 
     std::string sInput;
     int nResults;
@@ -122,6 +246,14 @@ int main()
     categories.push_back(mu::Value(mu::Category(1, "Hello")));
     categories.push_back(mu::Value(mu::Category(2, "World")));
     categories.push_back(mu::Value(mu::Category(1, "Hello")));
+    mu::Variable pi(mu::Value(3.141593));
+    mu::Variable e(mu::Value(2.718282));
+    mu::Variable cat;
+    cat.push_back(mu::Value(mu::Category(1, "Hello")));
+    cat.push_back(mu::Value(mu::TYPE_INVALID));
+    cat.push_back(mu::Value(mu::Category(2, "World")));
+    cat.push_back(mu::Value(mu::Category(1, "Hello")));
+    cat.push_back(mu::Value(mu::Category(2, "World")));
     _parser.DefineVar("vect", &vectorVar);
     _parser.DefineVar("logicals", &logicalVar);
     _parser.DefineVar("var", &var);
@@ -129,6 +261,11 @@ int main()
     _parser.DefineVar("strvect", &stringVect);
     _parser.DefineVar("mixed", &mixed);
     _parser.DefineVar("categories", &categories);
+    _parser.DefineVar("cats", &cat);
+    _parser.DefineVar("pi", &pi);
+    _parser.DefineVar("e", &e);
+
+    runtests();
 
     while (true)
     {
@@ -137,18 +274,25 @@ int main()
 
         if (sInput == "quit")
             break;
+        else if (sInput == "runtests")
+        {
+            runtests();
+            continue;
+        }
 
         try
         {
-            mu::Array* res;
+            const mu::StackItem* res;
 
             _parser.SetExpr(sInput);
             res = _parser.Eval(nResults);
+            _parser.Eval();
 
             for (int i = 0; i < nResults; i++)
             {
-                std::cout << i+1 << ">> " << res[i].print() << " [" << res[i].printDims() << " " << res[i].getCommonTypeAsString()
-                          << " w/ " << res[i].getBytes() << " byte]" << std::endl;
+                std::cout << i+1 << ">> " << res[i].get().print() << " [" << res[i].get().printDims() << " "
+                          << res[i].get().getCommonTypeAsString()
+                          << " w/ " << res[i].get().getBytes() << " byte]" << std::endl;
             }
         }
         catch (...)

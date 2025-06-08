@@ -166,7 +166,7 @@ class NumeReKernel
         bool evaluateProcedureCalls(std::string& sLine);
         bool executePlugins(std::string& sLine);
         bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
-        void createCalculationAnswer(int nNum, mu::Array* v);
+        void createCalculationAnswer(int nNum, const mu::StackItem* v);
         void printErrorMessage(const std::string& errMsg, const std::string& errDesc, std::string expr, size_t pos);
         void resetAfterError();
         std::string getGreeting();
@@ -224,7 +224,7 @@ class NumeReKernel
         static void flush();
         static void print(const std::string& __sLine, bool printingEnabled = true);
         static void printPreFmt(const std::string& __sLine, bool printingEnabled = true);
-        static std::string formatResultOutput(int nNum, mu::Array* v);
+        static std::string formatResultOutput(int nNum, const mu::StackItem* v);
         static void issueWarning(std::string sWarningMessage);
         static void failMessage(std::string sFailMessage);
         static int numberOfNumbersPerLine();

@@ -223,6 +223,10 @@ mu::Array numfnc_getElements(const mu::Array& a, const mu::Array& idx)
             res.emplace_back(a.get(n-1));
     }
 
+    // Auto-expand a single embedded array
+    if (res.size() == 1 && res.get(0).isArray())
+        return res.get(0).getArray();
+
     return res;
 }
 
@@ -373,16 +377,15 @@ mu::Array numfnc_Binom(const mu::Array& v1, const mu::Array& v2)
 /// \brief This function returns the number of
 /// valid elements in its array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Num(const mu::MultiArgFuncParams& vElements)
 {
     size_t elems;
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         elems = vElements[0].size();
 
@@ -394,9 +397,9 @@ mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
     }
     else
     {
-        elems = nElements;
+        elems = vElements.count();
 
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (!vElements[i].front().isValid())
                 elems--;
@@ -411,14 +414,13 @@ mu::Array numfnc_Num(const mu::Array* vElements, int nElements)
 /// \brief Helper function for quickly detecting
 /// arrays containing only invalid elements.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool containsValidElements(const mu::Array* vElements, int nElements)
+static bool containsValidElements(const mu::MultiArgFuncParams& vElements)
 {
-    return (bool)numfnc_Num(vElements, nElements).front();
+    return (bool)numfnc_Num(vElements).front();
 }
 
 
@@ -427,14 +429,13 @@ static bool containsValidElements(const mu::Array* vElements, int nElements)
 /// number of elements in its array (even the
 /// invalid ones).
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Cnt(const mu::MultiArgFuncParams& vElements)
 {
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         if (vElements[0].getCommonType() == mu::TYPE_VOID)
             return mu::Value(0u);
@@ -442,7 +443,7 @@ mu::Array numfnc_Cnt(const mu::Array* vElements, int nElements)
         return mu::Array(mu::Value(vElements[0].size()));
     }
 
-    return mu::Array(mu::Value(nElements));
+    return mu::Array(mu::Value(vElements.count()));
 }
 
 
@@ -464,21 +465,20 @@ static mu::Value conj(const mu::Value& val)
 /// deviation of the elements in the passed
 /// array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Std(const mu::MultiArgFuncParams& vElements)
 {
     mu::Value vStd = 0.0;
-    mu::Value vMean = numfnc_Avg(vElements, nElements).front();
-    mu::Value vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
+    mu::Value vMean = numfnc_Avg(vElements).front();
+    mu::Value vNum = numfnc_Num(vElements).front().getNum().asF64();
 
     if (!vNum)
         return mu::Value(NAN);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -488,7 +488,7 @@ mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front().isValid())
                 vStd += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean);
@@ -503,19 +503,18 @@ mu::Array numfnc_Std(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the product
 /// of all elements in the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_product(const mu::Array* vElements, int nElements)
+mu::Array numfnc_product(const mu::MultiArgFuncParams& vElements)
 {
     mu::Value vProd = 1.0;
 
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -525,7 +524,7 @@ mu::Array numfnc_product(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front().isValid())
                 vProd *= vElements[i].front();
@@ -540,19 +539,18 @@ mu::Array numfnc_product(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the vector
 /// norm of the elements in the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Norm(const mu::MultiArgFuncParams& vElements)
 {
     mu::Value vNorm = 0.0;
 
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -562,7 +560,7 @@ mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front().isValid())
                 vNorm += vElements[i].front() * conj(vElements[i].front());
@@ -577,14 +575,13 @@ mu::Array numfnc_Norm(const mu::Array* vElements, int nElements)
 /// \brief This function implements the root mean
 /// square functionality.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Rms(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Rms(const mu::MultiArgFuncParams& vElements)
 {
-    return numfnc_Norm(vElements, nElements) / mu::apply(std::sqrt, numfnc_Num(vElements, nElements));
+    return numfnc_Norm(vElements) / mu::apply(std::sqrt, numfnc_Num(vElements));
 }
 
 
@@ -592,14 +589,13 @@ mu::Array numfnc_Rms(const mu::Array* vElements, int nElements)
 /// \brief This function implements the std error
 /// functionality.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_StdErr(const mu::Array* vElements, int nElements)
+mu::Array numfnc_StdErr(const mu::MultiArgFuncParams& vElements)
 {
-    return numfnc_Std(vElements, nElements) / mu::Value(std::sqrt(numfnc_Num(vElements, nElements).front().getNum().asF64()));
+    return numfnc_Std(vElements) / mu::Value(std::sqrt(numfnc_Num(vElements).front().getNum().asF64()));
 }
 
 
@@ -607,21 +603,20 @@ mu::Array numfnc_StdErr(const mu::Array* vElements, int nElements)
 /// \brief This function implements the skewness
 /// functionality.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Skew(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Skew(const mu::MultiArgFuncParams& vElements)
 {
     mu::Value skew = 0.0;
-    mu::Value vMean = numfnc_Avg(vElements, nElements).front();
-    double vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
+    mu::Value vMean = numfnc_Avg(vElements).front();
+    double vNum = numfnc_Num(vElements).front().getNum().asF64();
 
     if (!vNum)
         return mu::Value(NAN);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -631,14 +626,14 @@ mu::Array numfnc_Skew(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front().isValid())
                 skew += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean) * (vElements[i].front() - vMean);
         }
     }
 
-    return skew / mu::Value(vNum * intPower(numfnc_Std(vElements, nElements).get(0).getNum().asF64(), 3));
+    return skew / mu::Value(vNum * intPower(numfnc_Std(vElements).get(0).getNum().asF64(), 3));
 }
 
 
@@ -646,21 +641,20 @@ mu::Array numfnc_Skew(const mu::Array* vElements, int nElements)
 /// \brief This function implements the excess
 /// functionality.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Exc(const mu::MultiArgFuncParams& vElements)
 {
     mu::Value excess = 0.0;
-    mu::Value vMean = numfnc_Avg(vElements, nElements).front();
-    double vNum = numfnc_Num(vElements, nElements).front().getNum().asF64();
+    mu::Value vMean = numfnc_Avg(vElements).front();
+    double vNum = numfnc_Num(vElements).front().getNum().asF64();
 
     if (!vNum)
         return mu::Value(NAN);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -671,7 +665,7 @@ mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front().isValid())
                 excess += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean)
@@ -679,7 +673,7 @@ mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
         }
     }
 
-    return excess / mu::Value(vNum * intPower(numfnc_Std(vElements, nElements).get(0).getNum().asF64(), 4)) - mu::Value(3.0);
+    return excess / mu::Value(vNum * intPower(numfnc_Std(vElements).get(0).getNum().asF64(), 4)) - mu::Value(3.0);
 }
 
 
@@ -687,20 +681,19 @@ mu::Array numfnc_Exc(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the median of
 /// the elements in the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Med(const mu::MultiArgFuncParams& vElements)
 {
 #ifndef PARSERSTANDALONE
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
     Memory _mem;
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -711,13 +704,13 @@ mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             _mem.writeData(i, 0, vElements[i].front());
         }
     }
 
-    return mu::Value(_mem.med(VectorIndex(0, nElements-1), VectorIndex(0)));
+    return mu::Value(_mem.med(VectorIndex(0, vElements.count()-1), VectorIndex(0)));
 #endif // PARSERSTANDALONE
 }
 
@@ -726,20 +719,19 @@ mu::Array numfnc_Med(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the selected
 /// percentile of the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Pct(const mu::MultiArgFuncParams& vElements)
 {
 #ifndef PARSERSTANDALONE
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
     Memory _mem;
 
-    if (nElements == 2)
+    if (vElements.count() == 2)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -756,12 +748,12 @@ mu::Array numfnc_Pct(const mu::Array* vElements, int nElements)
         return ret;
     }
 
-    for (int i = 0; i < nElements-1; i++)
+    for (size_t i = 0; i < vElements.count()-1; i++)
     {
         _mem.writeData(i, 0, vElements[i].front());
     }
 
-    return mu::Value(_mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1].front().getNum().asCF64()));
+    return mu::Value(_mem.pct(VectorIndex(0, vElements.count()-2), VectorIndex(0), vElements[vElements.count()-1].front().getNum().asCF64()));
 
 #endif // PARSERSTANDALONE
 }
@@ -898,21 +890,20 @@ mu::Array numfnc_compare(const mu::Array& vElements, const mu::Array& value, con
 /// AND operation between all elements in the
 /// passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_and(const mu::Array* vElements, int nElements)
+mu::Array numfnc_and(const mu::MultiArgFuncParams& vElements)
 {
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(false);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
         return mu::Value(mu::all(vElements[0]));
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (!vElements[i].front())
                 return mu::Value(false);
@@ -928,21 +919,20 @@ mu::Array numfnc_and(const mu::Array* vElements, int nElements)
 /// OR operation between all elements in the
 /// passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_or(const mu::Array* vElements, int nElements)
+mu::Array numfnc_or(const mu::MultiArgFuncParams& vElements)
 {
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(false);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
         return mu::Value(mu::any(vElements[0]));
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front())
                 return mu::Value(true);
@@ -958,19 +948,18 @@ mu::Array numfnc_or(const mu::Array* vElements, int nElements)
 /// XOR operation between all elements in the
 /// passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
+mu::Array numfnc_xor(const mu::MultiArgFuncParams& vElements)
 {
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(false);
 
     bool isTrue = false;
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -985,7 +974,7 @@ mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front())
             {
@@ -1005,21 +994,20 @@ mu::Array numfnc_xor(const mu::Array* vElements, int nElements)
 /// \brief This function implements an abstract
 /// polynomial of an arbitrary order.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_polynomial(const mu::Array* vElements, int nElements)
+mu::Array numfnc_polynomial(const mu::MultiArgFuncParams& vElements)
 {
-    if (!nElements)
+    if (!vElements.count())
         return mu::Value(NAN);
-    else if (nElements == 1)
+    else if (vElements.count() == 1)
         return mu::Value(0.0);
 
     mu::Array res = vElements[1];
 
-    for (int i = 2; i < nElements; i++)
+    for (size_t i = 2; i < vElements.count(); i++)
         res += vElements[i] * vElements[0].pow(mu::Numerical(i-1));
 
     return res;
@@ -1238,16 +1226,15 @@ mu::Array rndfnc_voronoi(const mu::Array& x, const mu::Array& y, const mu::Array
 /// \brief Adaption of the logtoidx() function
 /// for 1D data arrays.
 ///
-/// \param v const mu::Array*
-/// \param n int
+/// \param v const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_logtoidx(const mu::Array* v, int n)
+mu::Array numfnc_logtoidx(const mu::MultiArgFuncParams& v)
 {
     mu::Array vIdx;
 
-    if (n == 1)
+    if (v.count() == 1)
     {
         for (size_t i = 0; i < v[0].size(); i++)
         {
@@ -1257,7 +1244,7 @@ mu::Array numfnc_logtoidx(const mu::Array* v, int n)
     }
     else
     {
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < v.count(); i++)
         {
             if (v[i].front().isValid() && v[i].front())
                 vIdx.emplace_back(uint64_t(i+1));
@@ -1275,17 +1262,16 @@ mu::Array numfnc_logtoidx(const mu::Array* v, int n)
 /// \brief Adaption of the idxtolog() function
 /// for 1D data arrays.
 ///
-/// \param v const mu::Array*
-/// \param n int
+/// \param v const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_idxtolog(const mu::Array* v, int n)
+mu::Array numfnc_idxtolog(const mu::MultiArgFuncParams& v)
 {
-    if (!n)
+    if (!v.count())
         return mu::Value(false);
 
-    mu::Array maxIdx = numfnc_Max(v, n);
+    mu::Array maxIdx = numfnc_Max(v);
 
     if (mu::isnan(maxIdx.front().getNum().asF64()))
         return mu::Value(false);
@@ -1293,7 +1279,7 @@ mu::Array numfnc_idxtolog(const mu::Array* v, int n)
     mu::Array vLogical;
     vLogical.resize(maxIdx.front().getNum().asF64(), mu::Value(false));
 
-    if (n == 1)
+    if (v.count() == 1)
     {
         for (size_t i = 0; i < v[0].size(); i++)
         {
@@ -1303,7 +1289,7 @@ mu::Array numfnc_idxtolog(const mu::Array* v, int n)
     }
     else
     {
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < v.count(); i++)
         {
             if (v[i].front().isValid() || v[i].front() > mu::Value(0))
                 vLogical[v[i].front().getNum().asI64()-1] = mu::Value(true);
@@ -1318,19 +1304,18 @@ mu::Array numfnc_idxtolog(const mu::Array* v, int n)
 /// \brief Function for getting the order of an
 /// array.
 ///
-/// \param v const mu::Array*
-/// \param n int
+/// \param v const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_order(const mu::Array* v, int n)
+mu::Array numfnc_order(const mu::MultiArgFuncParams& v)
 {
-    if (!n)
+    if (!v.count())
         return mu::Value(false);
 
     mu::Array index;
 
-    if (n == 1)
+    if (v.count() == 1)
     {
         index.reserve(v[0].size());
 
@@ -1351,9 +1336,9 @@ mu::Array numfnc_order(const mu::Array* v, int n)
     }
     else
     {
-        index.reserve(n);
+        index.reserve(v.count());
 
-        for (int i = 1; i <= n; i++)
+        for (size_t i = 1; i <= v.count(); i++)
         {
             index.push_back(i);
         }
@@ -1377,14 +1362,13 @@ mu::Array numfnc_order(const mu::Array* v, int n)
 /// \brief Function for determining, whether all
 /// elements are equal.
 ///
-/// \param arr const mu::Array*
-/// \param n int
+/// \param arr const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_is_equal(const mu::Array* arr, int n)
+mu::Array numfnc_is_equal(const mu::MultiArgFuncParams& arr)
 {
-    if (n == 1)
+    if (arr.count() == 1)
     {
         for (size_t i = 1; i < arr[0].size(); i++)
         {
@@ -1395,7 +1379,7 @@ mu::Array numfnc_is_equal(const mu::Array* arr, int n)
         return mu::Value(true);
     }
 
-    for (int i = 1; i < n; i++)
+    for (size_t i = 1; i < arr.count(); i++)
     {
         if (arr[i].front() != arr[0].front())
             return mu::Value(false);
@@ -1409,14 +1393,13 @@ mu::Array numfnc_is_equal(const mu::Array* arr, int n)
 /// \brief Function or determining, whether the
 /// elements are sorted ascending.
 ///
-/// \param arr const mu::Array*
-/// \param n int
+/// \param arr const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_is_ordered(const mu::Array* arr, int n)
+mu::Array numfnc_is_ordered(const mu::MultiArgFuncParams& arr)
 {
-    if (n == 1)
+    if (arr.count() == 1)
     {
         for (size_t i = 1; i < arr[0].size(); i++)
         {
@@ -1427,7 +1410,7 @@ mu::Array numfnc_is_ordered(const mu::Array* arr, int n)
         return mu::Value(true);
     }
 
-    for (int i = 1; i < n; i++)
+    for (size_t i = 1; i < arr.count(); i++)
     {
         if (arr[i-1].front() > arr[i].front())
             return mu::Value(false);
@@ -1441,16 +1424,15 @@ mu::Array numfnc_is_ordered(const mu::Array* arr, int n)
 /// \brief Function for determining, whether only
 /// unique elements are in an array.
 ///
-/// \param arr const mu::Array*
-/// \param n int
+/// \param arr const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_is_unique(const mu::Array* arr, int n)
+mu::Array numfnc_is_unique(const mu::MultiArgFuncParams& arr)
 {
-    mu::Array order = numfnc_order(arr, n);
+    mu::Array order = numfnc_order(arr);
 
-    if (n == 1)
+    if (arr.count() == 1)
     {
         for (size_t i = 1; i < order.size(); i++)
         {
@@ -1461,7 +1443,7 @@ mu::Array numfnc_is_unique(const mu::Array* arr, int n)
         return mu::Value(true);
     }
 
-    for (int i = 1; i < n; i++)
+    for (size_t i = 1; i < arr.count(); i++)
     {
         if (arr[order[i-1].getNum().asI64()-1].front() == arr[order[i].getNum().asI64()-1].front())
             return mu::Value(false);
@@ -1484,7 +1466,7 @@ mu::Array numfnc_is_unique(const mu::Array* arr, int n)
 /////////////////////////////////////////////////
 mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct)
 {
-    mu::Array order = numfnc_order(&arr, 1);
+    mu::Array order = numfnc_order(&arr);
     mu::Array pctInv;
 
     for (size_t i = 0; i < pct.size(); i++)
@@ -1538,19 +1520,18 @@ mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct)
 /// \brief This function summarizes all elements
 /// in the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Sum(const mu::MultiArgFuncParams& vElements)
 {
     mu::Value fRes; // Uninitialized bc works for strings and numericals
 
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
@@ -1560,7 +1541,7 @@ mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < vElements.count(); i++)
         {
             if (vElements[i].front().isValid())
                 fRes += vElements[i].front();
@@ -1575,14 +1556,13 @@ mu::Array numfnc_Sum(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the average
 /// of all elements in passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Avg(const mu::MultiArgFuncParams& vElements)
 {
-    return numfnc_Sum(vElements, nElements) / mu::Value(numfnc_Num(vElements, nElements).front().getNum().asCF64());
+    return numfnc_Sum(vElements) / mu::Value(numfnc_Num(vElements).front().getNum().asCF64());
 }
 
 
@@ -1590,19 +1570,18 @@ mu::Array numfnc_Avg(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the minimal
 /// value of all elements in the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Min(const mu::MultiArgFuncParams& vElements)
 {
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
     mu::Value res = vElements[0].get(0);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 1; i < vElements[0].size(); i++)
         {
@@ -1612,7 +1591,7 @@ mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 1; i < nElements; i++)
+        for (size_t i = 1; i < vElements.count(); i++)
         {
             if (!res.isValid() || (vElements[i].front().isValid() && vElements[i].front() < res))
                 res = vElements[i].front();
@@ -1627,19 +1606,18 @@ mu::Array numfnc_Min(const mu::Array* vElements, int nElements)
 /// \brief This function calculates the maximal
 /// value of all elements in the passed array.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param vElements const mu::MultiArgFuncParams&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
+mu::Array numfnc_Max(const mu::MultiArgFuncParams& vElements)
 {
-    if (!containsValidElements(vElements, nElements))
+    if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
     mu::Value res = vElements[0].get(0);
 
-    if (nElements == 1)
+    if (vElements.count() == 1)
     {
         for (size_t i = 1; i < vElements[0].size(); i++)
         {
@@ -1649,7 +1627,7 @@ mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
     }
     else
     {
-        for (int i = 1; i < nElements; i++)
+        for (size_t i = 1; i < vElements.count(); i++)
         {
             if (!res.isValid() || (vElements[i].front().isValid() && vElements[i].front() > res))
                 res = vElements[i].front();
@@ -1670,7 +1648,7 @@ mu::Array numfnc_Max(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_MinPos(const mu::Array& vElements)
 {
-    return numfnc_compare(vElements, numfnc_Min(&vElements, 1), mu::Value(0.0));
+    return numfnc_compare(vElements, numfnc_Min(&vElements), mu::Value(0.0));
 }
 
 
@@ -1684,7 +1662,7 @@ mu::Array numfnc_MinPos(const mu::Array& vElements)
 /////////////////////////////////////////////////
 mu::Array numfnc_MaxPos(const mu::Array& vElements)
 {
-    return numfnc_compare(vElements, numfnc_Max(&vElements, 1), mu::Value(0.0));
+    return numfnc_compare(vElements, numfnc_Max(&vElements), mu::Value(0.0));
 }
 
 
@@ -2564,8 +2542,11 @@ mu::Array rndfnc_Random(const mu::Array& vRandMin, const mu::Array& vRandMax, co
 
     nRandCount = std::max({vRandMax.size(), vRandMin.size(), nRandCount});
 
-    if (vRandMin.getCommonType() != mu::TYPE_NUMERICAL || vRandMax.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+    if (vRandMin.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, vRandMin.getCommonTypeAsString());
+
+    if (vRandMax.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, vRandMax.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -2599,8 +2580,11 @@ mu::Array rndfnc_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd, c
 
     nRandCount = std::max({vRandAvg.size(), vRandStd.size(), nRandCount});
 
-    if (vRandAvg.getCommonType() != mu::TYPE_NUMERICAL || vRandStd.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+    if (vRandAvg.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, vRandAvg.getCommonTypeAsString());
+
+    if (vRandStd.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, vRandStd.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -4084,8 +4068,8 @@ mu::Array numfnc_getOverlap(const mu::Array& left, const mu::Array& right)
     if (left.size() < 2 || right.size() < 2)
         return mu::Value();
 
-    mu::Value startPos = numfnc_Max(&left, 1).front();
-    mu::Value endPos = numfnc_Min(&right, 1).front();
+    mu::Value startPos = numfnc_Max(&left).front();
+    mu::Value endPos = numfnc_Min(&right).front();
 
     if (startPos <= endPos)
     {
@@ -5528,7 +5512,7 @@ mu::Array rndfnc_laplace_rd(const mu::Array& a, const mu::Array& n)
     nRandCount = std::max({a.size(), nRandCount});
 
     if (a.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, a.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -5642,7 +5626,7 @@ mu::Array rndfnc_cauchy_rd(const mu::Array& a, const mu::Array& n)
     nRandCount = std::max({a.size(), nRandCount});
 
     if (a.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, a.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -5755,7 +5739,7 @@ mu::Array rndfnc_rayleigh_rd(const mu::Array& sigma, const mu::Array& n)
     nRandCount = std::max({sigma.size(), nRandCount});
 
     if (sigma.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, sigma.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -5910,8 +5894,11 @@ mu::Array rndfnc_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha, 
 
     nRandCount = std::max({c.size(), alpha.size(), nRandCount});
 
-    if (c.getCommonType() != mu::TYPE_NUMERICAL || alpha.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+    if (c.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, c.getCommonTypeAsString());
+
+    if (alpha.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, alpha.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -5944,8 +5931,11 @@ mu::Array rndfnc_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2, const m
 
     nRandCount = std::max({nu1.size(), nu2.size(), nRandCount});
 
-    if (nu1.getCommonType() != mu::TYPE_NUMERICAL || nu2.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+    if (nu1.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, nu1.getCommonTypeAsString());
+
+    if (nu2.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, nu2.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -6063,8 +6053,11 @@ mu::Array rndfnc_weibull_rd(const mu::Array& a, const mu::Array& b, const mu::Ar
 
     nRandCount = std::max({a.size(), b.size(), nRandCount});
 
-    if (b.getCommonType() != mu::TYPE_NUMERICAL || a.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+    if (a.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, a.getCommonTypeAsString());
+
+    if (b.getCommonType() != mu::TYPE_NUMERICAL)
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, b.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -6182,7 +6175,7 @@ mu::Array rndfnc_student_t_rd(const mu::Array& nu, const mu::Array& n)
     nRandCount = std::max({nu.size(), nRandCount});
 
     if (nu.getCommonType() != mu::TYPE_NUMERICAL)
-        throw mu::ParserError(mu::ecTYPE_NO_VAL);
+        throw mu::ParserError(mu::ecTYPE_NO_VAL, nu.getCommonTypeAsString());
 
     mu::Array ret(nRandCount, mu::Value());
 
@@ -6391,6 +6384,138 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
     }
 
     return res;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to seconds.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_seconds(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to minutes.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_minutes(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(60.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to hours.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_hours(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(3600.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to days.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_days(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(86400.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to weeks.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_weeks(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(7*86400.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to years.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_years(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(365.25*86400*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
 }
 
 

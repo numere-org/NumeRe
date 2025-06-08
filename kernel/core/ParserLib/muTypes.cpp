@@ -22,6 +22,60 @@
 namespace mu
 {
     /////////////////////////////////////////////////
+    /// \brief Lookup table for determining the
+    /// promoted type of the operation.
+    /////////////////////////////////////////////////
+    static constexpr NumericalType PROMOTIONTABLE[] = {
+//		 LOGICAL,  UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64
+/*LOG*/	 I8,	   UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
+/*UI8*/	 UI8,	   UI8, 	 UI16,	   UI32,	 UI64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI16*/ UI16,	   UI16, 	 UI16,	   UI32,	 UI64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI32*/ UI32,	   UI32, 	 UI32,	   UI32,	 UI64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI64*/ UI64,	   UI64, 	 UI64,	   UI64,	 UI64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DURATION, DATETIME, CF64, CF64,
+/*I8*/	 I8,	   I8, 	     I16,	   I32,	     I64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I16*/	 I16,	   I16, 	 I16,	   I32,	     I64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I32*/	 I32,	   I32, 	 I32,	   I32,	     I64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I64*/	 I64,	   I64, 	 I64,	   I64,	     I64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DURATION, DATETIME, CF64, CF64,
+/*F32*/	 F32,	   F32,	     F32,	   F32,	     F64,	   F32,	     F32,	   F32,	     F64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
+/*F64*/	 F64,	   F64, 	 F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,      DURATION, DATETIME, CF64, CF64,
+/*DUR*/  DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DATETIME, CF64, CF64,
+/*DTM*/  DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DURATION, CF64, CF64,
+/*CF32*/ CF32,	   CF32,	 CF32,	   CF32,	 CF64,	   CF32,     CF32,	   CF32,	 CF64,	   CF32,	 CF64,	   CF64,     CF64,     CF32, CF64,
+/*CF64*/ CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,     CF64, CF64};
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the type as a std::string.
+    ///
+    /// \param type DataType
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string getTypeAsString(DataType type)
+    {
+        switch (type)
+        {
+            case TYPE_CATEGORY:
+                return "category";
+            case TYPE_NEUTRAL:
+#ifdef PARSERSTANDALONE
+                return "neutral";
+#else
+                return "void";
+#endif
+            case TYPE_NUMERICAL:
+                return "value";
+            case TYPE_STRING:
+                return "string";
+            case TYPE_ARRAY:
+                return "cluster";
+        }
+
+        return "void";
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Custom implementation for the complex
     /// multiplication operator with a scalar
     /// optimization.
@@ -64,7 +118,20 @@ namespace mu
     }
 
 
-
+    /////////////////////////////////////////////////
+    /// \brief Provides a faster way to calculate the
+    /// promotion of two different types than using
+    /// TypeInfo.
+    ///
+    /// \param fst NumericalType
+    /// \param scnd NumericalType
+    /// \return NumericalType
+    ///
+    /////////////////////////////////////////////////
+    static NumericalType fastPromote(NumericalType fst, NumericalType scnd)
+    {
+        return PROMOTIONTABLE[fst * AUTO + scnd];
+    }
 
 
     /////////////////////////////////////////////////
@@ -80,6 +147,11 @@ namespace mu
         {
             m_bits = 8;
             m_flags = TYPE_LOGICAL;
+        }
+        else if (type == DURATION)
+        {
+            m_bits = 64;
+            m_flags = TYPE_FLOAT | TYPE_DURATION;
         }
         else if (type == DATETIME)
         {
@@ -141,6 +213,9 @@ namespace mu
         if (flags & TYPE_COMPLEX)
             return bits == 32 ? CF32 : CF64;
 
+        if (flags & TYPE_DURATION)
+            return DURATION;
+
         if (flags & TYPE_DATETIME)
             return DATETIME;
 
@@ -168,6 +243,9 @@ namespace mu
     {
         if (m_flags & TYPE_COMPLEX)
             return m_bits == 32 ? CF32 : CF64;
+
+        if (m_flags & TYPE_DURATION)
+            return DURATION;
 
         if (m_flags & TYPE_DATETIME)
             return DATETIME;
@@ -214,6 +292,8 @@ namespace mu
                 return "value.ui32";
             case UI64:
                 return "value.ui64";
+            case DURATION:
+                return "duration";
             case DATETIME:
                 return "datetime";
             case F32:
@@ -222,6 +302,9 @@ namespace mu
                 return "value.f64";
             case CF32:
                 return "value.cf32";
+            case AUTO:
+            case CF64:
+                return "value.cf64";
         }
 
         return "value.cf64";
@@ -240,7 +323,6 @@ namespace mu
     Numerical::Numerical(int8_t data) : m_type(I8)
     {
         i64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -253,7 +335,6 @@ namespace mu
     Numerical::Numerical(uint8_t data) : m_type(UI8)
     {
         ui64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -266,7 +347,6 @@ namespace mu
     Numerical::Numerical(int16_t data) : m_type(I16)
     {
         i64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -279,7 +359,6 @@ namespace mu
     Numerical::Numerical(uint16_t data) : m_type(UI16)
     {
         ui64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -292,7 +371,6 @@ namespace mu
     Numerical::Numerical(int32_t data) : m_type(I32)
     {
         i64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -305,7 +383,6 @@ namespace mu
     Numerical::Numerical(uint32_t data) : m_type(UI32)
     {
         ui64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -321,15 +398,7 @@ namespace mu
     Numerical::Numerical(int64_t data, NumericalType type) : m_type(type)
     {
         i64 = data;
-        m_info = TypeInfo(m_type);
-
-        if (m_type != I64)
-        {
-            while ((i64 < -(1LL << (m_info.m_bits-1)) || i64 > (1LL << (m_info.m_bits-1))-1) && m_info.m_bits != 64)
-                m_info.m_bits *= 2;
-
-            m_type = m_info.asType();
-        }
+        resultPromote();
     }
 
 
@@ -345,15 +414,7 @@ namespace mu
     Numerical::Numerical(uint64_t data, NumericalType type) : m_type(type)
     {
         ui64 = data;
-        m_info = TypeInfo(m_type);
-
-        if (m_type != UI64)
-        {
-            while (ui64 > (1ULL << m_info.m_bits)-1 && m_info.m_bits != 64)
-                m_info.m_bits *= 2;
-
-            m_type = m_info.asType();
-        }
+        resultPromote();
     }
 
 
@@ -366,7 +427,6 @@ namespace mu
     Numerical::Numerical(float data) : m_type(F32)
     {
         cf64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -379,7 +439,6 @@ namespace mu
     Numerical::Numerical(double data) : m_type(F64)
     {
         cf64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -391,8 +450,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical::Numerical(bool data) : m_type(LOGICAL)
     {
-        i64 = data;
-        m_info = TypeInfo(m_type);
+        ui64 = data;
     }
 
 
@@ -406,7 +464,6 @@ namespace mu
     Numerical::Numerical(const std::complex<float>& data) : m_type(CF32)
     {
         cf64 = data;
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -433,8 +490,6 @@ namespace mu
         }
         else
             m_type = type;
-
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -448,7 +503,6 @@ namespace mu
     Numerical::Numerical(const sys_time_point& time) : m_type(DATETIME)
     {
         cf64 = to_double(time);
-        m_info = TypeInfo(m_type);
     }
 
 
@@ -515,13 +569,46 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical::InternalType Numerical::getConversion(NumericalType promotion) const
     {
-        if (promotion <= I64)
-            return Numerical::INT;
+        static constexpr Numerical::InternalType CONVERSIONTABLE[] = {
+            Numerical::UINT, Numerical::UINT, Numerical::UINT, Numerical::UINT, Numerical::UINT,
+            Numerical::INT, Numerical::INT, Numerical::INT, Numerical::INT,
+            Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX};
 
-        if (promotion <= UI64)
-            return Numerical::UINT;
+        return CONVERSIONTABLE[promotion];
+    }
 
-        return Numerical::COMPLEX;
+
+    /////////////////////////////////////////////////
+    /// \brief Combining function to promote a type
+    /// based upon its value.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Numerical::resultPromote()
+    {
+        if (m_type >= I8 && m_type <= I32)
+        {
+            if (m_type == I8 && i64 >= INT8_MIN && i64 <= INT8_MAX)
+                m_type = I8;
+            else if (m_type <= I16 && i64 >= INT16_MIN && i64 <= INT16_MAX)
+                m_type = I16;
+            else if (m_type <= I32 && i64 >= INT32_MIN && i64 <= INT32_MAX)
+                m_type = I32;
+            else
+                m_type = I64;
+        }
+        else if (m_type >= UI8 && m_type <= UI32)
+        {
+            if (m_type == UI8 && ui64 <= UINT8_MAX)
+                m_type = UI8;
+            else if (m_type <= UI16 && ui64 <= UINT16_MAX)
+                m_type = UI16;
+            else if (m_type <= UI32 && ui64 <= UINT32_MAX)
+                m_type = UI32;
+            else
+                m_type = UI64;
+        }
     }
 
 
@@ -534,11 +621,11 @@ namespace mu
     /////////////////////////////////////////////////
     int64_t Numerical::asI64() const
     {
-        if (m_type <= I64)
-            return i64;
-
         if (m_type <= UI64)
             return ui64;
+
+        if (m_type <= I64)
+            return i64;
 
         return intCast(cf64);
     }
@@ -553,11 +640,11 @@ namespace mu
     /////////////////////////////////////////////////
     uint64_t Numerical::asUI64() const
     {
-        if (m_type <= I64)
-            return (uint64_t)i64;
-
         if (m_type <= UI64)
             return ui64;
+
+        if (m_type <= I64)
+            return (uint64_t)i64;
 
         return (uint64_t)intCast(cf64);
     }
@@ -572,11 +659,11 @@ namespace mu
     /////////////////////////////////////////////////
     double Numerical::asF64() const
     {
-        if (m_type <= I64)
-            return i64;
-
         if (m_type <= UI64)
             return ui64;
+
+        if (m_type <= I64)
+            return i64;
 
         return cf64.real();
     }
@@ -591,11 +678,11 @@ namespace mu
     /////////////////////////////////////////////////
     std::complex<double> Numerical::asCF64() const
     {
-        if (m_type <= I64)
-            return i64;
-
         if (m_type <= UI64)
             return ui64;
+
+        if (m_type <= I64)
+            return i64;
 
         return cf64;
     }
@@ -610,7 +697,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator+(const Numerical& other) const
     {
-        NumericalType promotion = m_info.getPromotedType(other.m_info);
+        NumericalType promotion = fastPromote(m_type, other.m_type);
 
         if (promotion == LOGICAL && asI64() && other.asI64())
             return Numerical(2LL, I8);
@@ -635,11 +722,11 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator-() const
     {
-        if (m_type <= I64)
-            return Numerical(-i64, m_type);
-
         if (m_type <= UI64)
             return Numerical(-ui64, (NumericalType)(m_type-I64));
+
+        if (m_type <= I64)
+            return Numerical(-i64, m_type);
 
         return Numerical(-cf64, m_type);
     }
@@ -654,7 +741,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator-(const Numerical& other) const
     {
-        NumericalType promotion = m_info.getPromotedType(other.m_info);
+        NumericalType promotion = fastPromote(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -676,11 +763,11 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator/(const Numerical& other) const
     {
-        if (m_type <= I64)
-            return autoType(i64 / other.asCF64());
-
         if (m_type <= UI64)
             return autoType(ui64 / other.asCF64());
+
+        if (m_type <= I64)
+            return autoType(i64 / other.asCF64());
 
         return autoType(cf64 / other.asCF64());
     }
@@ -695,7 +782,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator*(const Numerical& other) const
     {
-        NumericalType promotion = m_info.getPromotedType(other.m_info);
+        NumericalType promotion = fastPromote(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -709,6 +796,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Power operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical
+    ///
+    /////////////////////////////////////////////////
+    Numerical Numerical::operator^(const Numerical& other) const
+    {
+        return pow(other);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Add-assign operator.
     ///
     /// \param other const Numerical&
@@ -717,13 +817,12 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical& Numerical::operator+=(const Numerical& other)
     {
-        NumericalType promotion = m_info.getPromotedType(other.m_info);
+        NumericalType promotion = fastPromote(m_type, other.m_type);
 
         if (promotion == LOGICAL && asI64() && other.asI64())
         {
             i64 = 2;
             m_type = I8;
-            m_info = TypeInfo(m_type);
             return *this;
         }
 
@@ -737,7 +836,7 @@ namespace mu
             cf64 = asCF64() + other.asCF64();
 
         m_type = promotion;
-        m_info = TypeInfo(m_type);
+        resultPromote();
         return *this;
     }
 
@@ -751,7 +850,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical& Numerical::operator-=(const Numerical& other)
     {
-        NumericalType promotion = m_info.getPromotedType(other.m_info);
+        NumericalType promotion = fastPromote(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -762,7 +861,7 @@ namespace mu
             cf64 = asCF64() - other.asCF64();
 
         m_type = promotion;
-        m_info = TypeInfo(m_type);
+        resultPromote();
         return *this;
     }
 
@@ -790,7 +889,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical& Numerical::operator*=(const Numerical& other)
     {
-        NumericalType promotion = m_info.getPromotedType(other.m_info);
+        NumericalType promotion = fastPromote(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -801,8 +900,47 @@ namespace mu
             cf64 = asCF64() * other.asCF64();
 
         m_type = promotion;
-        m_info = TypeInfo(m_type);
+        resultPromote();
         return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Power-assign operator.
+    ///
+    /// \param other const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical& Numerical::operator^=(const Numerical& other)
+    {
+        operator=(pow(other));
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Flip the sign bit as fast as possible.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Numerical::flipSign()
+    {
+        if (m_type == LOGICAL)
+        {
+            m_type = I8;
+            i64 = -ui64;
+        }
+        else if (m_type <= UI64)
+        {
+            m_type = NumericalType(m_type + I8);
+            i64 = -ui64;
+        }
+        else if (m_type <= I64)
+            i64 = -i64;
+        else
+            cf64 = -cf64;
     }
 
 
@@ -816,9 +954,9 @@ namespace mu
     Numerical Numerical::pow(const Numerical& exponent) const
     {
         if (exponent.isInt())
-            return Numerical::autoType(intPower(asCF64(), exponent.asI64()), m_info.m_flags & TypeInfo::TYPE_INT ? I64 : F64);
+            return Numerical::autoType(intPower(asCF64(), exponent.asI64()), (m_type > LOGICAL && m_type <= I64) ? I64 : F64);
 
-        return Numerical::autoType(std::pow(asCF64(), exponent.asCF64()), F64);
+        return Numerical(std::pow(asCF64(), exponent.asCF64()), AUTO);
     }
 
 
@@ -830,11 +968,11 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical::operator bool() const
     {
-        if (m_type <= I64)
-            return i64 != 0;
-
         if (m_type <= UI64)
             return ui64 != 0;
+
+        if (m_type <= I64)
+            return i64 != 0;
 
         return cf64 != 0.0;
     }
@@ -861,7 +999,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Numerical::operator==(const Numerical& other) const
     {
-        Numerical::InternalType conversion = getConversion(m_info.getPromotedType(other.m_info));
+        Numerical::InternalType conversion = getConversion(fastPromote(m_type, other.m_type));
 
         if (conversion == Numerical::INT)
             return asI64() == other.asI64();
@@ -895,7 +1033,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Numerical::operator<(const Numerical& other) const
     {
-        Numerical::InternalType conversion = getConversion(m_info.getPromotedType(other.m_info));
+        Numerical::InternalType conversion = getConversion(fastPromote(m_type, other.m_type));
 
         if (conversion == Numerical::INT)
             return asI64() < other.asI64();
@@ -968,7 +1106,7 @@ namespace mu
     /////////////////////////////////////////////////
     TypeInfo Numerical::getInfo() const
     {
-        return m_info;
+        return TypeInfo(m_type);
     }
 
 
@@ -981,7 +1119,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Numerical::getTypeAsString() const
     {
-        return m_info.printType();
+        return getInfo().printType();
     }
 
 
@@ -996,7 +1134,10 @@ namespace mu
     std::string Numerical::print(size_t digits) const
     {
         if (m_type == LOGICAL)
-            return toString((bool)i64);
+            return toString((bool)ui64);
+
+        if (m_type == DURATION && !isnan(cf64))
+            return formatDuration(cf64.real());
 
         if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);
@@ -1023,16 +1164,19 @@ namespace mu
     std::string Numerical::printVal(size_t digits) const
     {
         if (m_type == LOGICAL)
-            return toString((bool)i64);
+            return toString((bool)ui64);
+
+        if (m_type == DURATION && !isnan(cf64))
+            return formatDuration(cf64.real());
 
         if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);
 
-        if (m_type <= I64)
-            return toString(i64);
-
         if (m_type <= UI64)
             return toString(ui64);
+
+        if (m_type <= I64)
+            return toString(i64);
 
         // Is one of the components zero, then try to find an
         // integer optimisation
@@ -1062,7 +1206,8 @@ namespace mu
     /////////////////////////////////////////////////
     size_t Numerical::getBytes() const
     {
-        return m_info.m_flags & TypeInfo::TYPE_COMPLEX ? m_info.m_bits / 4 : m_info.m_bits / 8;
+        TypeInfo info(m_type);
+        return info.m_flags & TypeInfo::TYPE_COMPLEX ? info.m_bits / 4 : info.m_bits / 8;
     }
 
 
@@ -1075,7 +1220,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Numerical::isInt() const
     {
-        return m_info.m_flags & TypeInfo::TYPE_INT || ::isInt(asCF64());
+        return (m_type > LOGICAL && m_type <= I64) || ::isInt(asCF64());
     }
 
 
@@ -1092,7 +1237,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Category::operator==(const Category& other) const
     {
-        return val == other.val;
+        return val == other.val && name == other.name;
     }
 
 

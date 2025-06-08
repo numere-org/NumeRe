@@ -67,14 +67,14 @@ struct WindowSet
             // Assign and evaluate
             _parser.SetExpr(winDef.subview(1));
             int nRes = 0;
-            mu::Array* a = _parser.Eval(nRes);
+            const mu::StackItem* a = _parser.Eval(nRes);
 
             if (nRes == 2)
             {
-                rowWin.width = a[0][0].getNum().asUI64();
-                colWin.width = a[0][1].getNum().asUI64();
-                rowWin.step = std::max((uint64_t)1, a[1][0].getNum().asUI64());
-                colWin.step = std::max((uint64_t)1, a[1][1].getNum().asUI64());
+                rowWin.width = a[0].get()[0].getNum().asUI64();
+                colWin.width = a[0].get()[1].getNum().asUI64();
+                rowWin.step = std::max((uint64_t)1, a[1].get()[0].getNum().asUI64());
+                colWin.step = std::max((uint64_t)1, a[1].get()[1].getNum().asUI64());
             }
         }
     }
@@ -812,22 +812,22 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             // Definition contains a vector expression
             _parser.SetExpr(sEveryCell);
             int nResults;
-            mu::Array* v = _parser.Eval(nResults);
-            return arrayToIndex(v[0], sTableName);
+            const mu::StackItem* v = _parser.Eval(nResults);
+            return arrayToIndex(v[0].get(), sTableName);
         }
         else
         {
             // Usual expression
             _parser.SetExpr(sEveryCell);
             int nResults;
-            mu::Array* v = _parser.Eval(nResults);
+            const mu::StackItem* v = _parser.Eval(nResults);
 
-            if (nResults == 1 && v[0].size() == 1)
+            if (nResults == 1 && v[0].get().size() == 1)
             {
                 // Single result: usual every=a,a representation
                 std::vector<int> idx;
 
-                for (int i = v[0].getAsScalarInt()-1; i < iterationDimension; i += v[0].getAsScalarInt())
+                for (int i = v[0].get().getAsScalarInt()-1; i < iterationDimension; i += v[0].get().getAsScalarInt())
                 {
                     idx.push_back(i);
                 }
@@ -839,7 +839,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 // Two results: usual every=a,b representation
                 std::vector<int> idx;
 
-                for (int i = v[0].getAsScalarInt()-1; i < iterationDimension; i += v[1].getAsScalarInt())
+                for (int i = v[0].get().getAsScalarInt()-1; i < iterationDimension; i += v[1].get().getAsScalarInt())
                 {
                     idx.push_back(i);
                 }
@@ -847,7 +847,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return arrayToIndex(v[0], sTableName);
+                return arrayToIndex(v[0].get(), sTableName);
         }
     }
 

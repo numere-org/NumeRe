@@ -124,15 +124,16 @@ void Procedure::init()
 /// \param _option Settings&
 /// \param _pData PlotData&
 /// \param _script Script&
+/// \param needReturnValue bool
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script)
+Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script, bool needReturnValue)
 {
     Returnvalue thisReturnVal;
     int nNum = 0;
     int nCurrentByteCode = nByteCode;
-    mu::Array* v = nullptr;
+    const mu::StackItem* v = nullptr;
 
     // Do not clear the vector variables, if we are currently part of a
     // loop, because the loop uses the cached vector variables for
@@ -150,7 +151,9 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     // Ignore empty lines
     if (!sLine.length() || sLine[0] == '@')
     {
-        thisReturnVal.valArray.push_back(mu::Value());
+        if (needReturnValue)
+            thisReturnVal.valArray.push_back(mu::Value());
+
         return thisReturnVal;
     }
 
@@ -304,13 +307,17 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
 
-                    thisReturnVal.valArray.push_back(mu::Value());
+                    if (needReturnValue)
+                        thisReturnVal.valArray.push_back(mu::Value());
+
                     return thisReturnVal;
                 default:
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
 
-                    thisReturnVal.valArray.push_back(mu::Value());
+                    if (needReturnValue)
+                        thisReturnVal.valArray.push_back(mu::Value());
+
                     return thisReturnVal;  // Keywort "mode"
             }
 
@@ -385,7 +392,9 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             addToControlFlowBlock(sLine, nCurrentLine);
 
             // Return now to the calling function
-            thisReturnVal.valArray.push_back(mu::Value());
+            if (needReturnValue)
+                thisReturnVal.valArray.push_back(mu::Value());
+
             return thisReturnVal;
         }
     }
@@ -456,10 +465,11 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     _assertionHandler.checkAssertion(v, nNum);
 
     // Copy the return values
-    thisReturnVal.valArray.assign(v, v+nNum);
+    if (needReturnValue)
+        thisReturnVal.valArray = mu::make_vector(v, nNum);
 
-    vAns.overwrite(v[0]);
-    NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
+    vAns.overwrite(v[0].get());
+    NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
@@ -472,10 +482,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCluster)
         {
             NumeRe::Cluster& cluster = _data.getCluster(sCache);
-            cluster.assignResults(_idx, v[0]);
+            cluster.assignResults(_idx, v[0].get());
         }
         else
-            _data.writeToTable(_idx, sCache, v[0]);
+            _data.writeToTable(_idx, sCache, v[0].get());
     }
 
     // Clear the vector variables after the loop returned
@@ -1120,7 +1130,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
                     }
                     else if (sReturnValue.length())
                         _ReturnVal = ProcCalc(sReturnValue, sCurrentCommand, nCurrentByteCode,
-                                              _parser, _functions, _data, _option, _pData, _script);
+                                              _parser, _functions, _data, _option, _pData, _script, true);
 
                     break;
                 }
@@ -1141,7 +1151,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
         try
         {
             ProcCalc(sProcCommandLine, sCurrentCommand, nCurrentByteCode,
-                     _parser, _functions, _data, _option, _pData, _script);
+                     _parser, _functions, _data, _option, _pData, _script, false);
 
             if (getReturnSignal())
             {

@@ -104,6 +104,19 @@ namespace mu
             }
 
             //------------------------------------------------------------------------------
+            /** \brief Create token from moved one.
+
+                Implemented by calling Move(...)
+                \throw nothrow
+                \post m_iType==cmUNKNOWN
+                \sa #Move
+            */
+            ParserToken(ParserToken&& a_Tok)
+            {
+                Move(std::move(a_Tok));
+            }
+
+            //------------------------------------------------------------------------------
             /** \brief Assignement operator.
 
                 Copy token state from another token and return this.
@@ -113,6 +126,19 @@ namespace mu
             ParserToken& operator=(const ParserToken& a_Tok)
             {
                 Assign(a_Tok);
+                return *this;
+            }
+
+            //------------------------------------------------------------------------------
+            /** \brief Move assignement operator.
+
+                Copy token state from another token and return this.
+                Implemented by calling Assign(...).
+                \throw nothrow
+            */
+            ParserToken& operator=(ParserToken&& a_Tok)
+            {
+                Move(std::move(a_Tok));
                 return *this;
             }
 
@@ -131,9 +157,31 @@ namespace mu
                 m_iType = a_Tok.m_iType;
                 m_fVal = a_Tok.m_fVal;
                 // create new callback object if a_Tok has one
-                m_pCallback.reset(a_Tok.m_pCallback.get() ? a_Tok.m_pCallback->Clone() : 0);
+                m_pCallback.reset(a_Tok.m_pCallback.get() ? a_Tok.m_pCallback->Clone() : nullptr);
                 m_val2StrLen = a_Tok.m_val2StrLen;
                 m_varArray = a_Tok.m_varArray;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Move another instance
+            ///
+            /// \param a_Tok ParserToken&&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void Move(ParserToken&& a_Tok)
+            {
+                m_iCode = a_Tok.m_iCode;
+                m_var = a_Tok.m_var;
+                m_strTok = std::move(a_Tok.m_strTok);
+                m_iIdx = a_Tok.m_iIdx;
+                m_strVal = std::move(a_Tok.m_strVal);
+                m_iType = a_Tok.m_iType;
+                m_fVal = std::move(a_Tok.m_fVal);
+                // create new callback object if a_Tok has one
+                m_pCallback.reset(a_Tok.m_pCallback.release());
+                m_val2StrLen = a_Tok.m_val2StrLen;
+                m_varArray = std::move(a_Tok.m_varArray);
             }
 
             //------------------------------------------------------------------------------
@@ -253,6 +301,26 @@ namespace mu
                 m_iCode = cmVAL;
                 m_iType = tpDBL;
                 m_fVal = a_fVal;
+                m_strTok = a_strTok;
+                m_iIdx = -1;
+
+                m_var = nullptr;
+                m_pCallback.reset(0);
+
+                return *this;
+            }
+
+            //------------------------------------------------------------------------------
+            /** \brief Make this token a value token.
+
+                Member variables not necessary for value tokens will be invalidated.
+                \throw nothrow
+            */
+            ParserToken& MoveVal(Array&& a_fVal, const std::string& a_strTok = std::string())
+            {
+                m_iCode = cmVAL;
+                m_iType = tpDBL;
+                m_fVal = std::move(a_fVal);
                 m_strTok = a_strTok;
                 m_iIdx = -1;
 

@@ -312,13 +312,13 @@ ColumnKeys* Sorter::evaluateKeyList(std::string sKeyList, long long int nColumnC
         {
             _parser.SetExpr(strIndex[i]);
             int ret = 0;
-            mu::Array* res = _parser.Eval(ret);
+            const mu::StackItem* res = _parser.Eval(ret);
 
             for (int n = 0; n < ret; n++)
             {
-                for (size_t i = 0; i < res[n].size(); i++)
+                for (size_t i = 0; i < res[n].get().size(); i++)
                 {
-                    indices.push_back(res[n].get(i).getNum().asI64() - 1);
+                    indices.push_back(res[n].get().get(i).getNum().asI64() - 1);
                 }
             }
         }

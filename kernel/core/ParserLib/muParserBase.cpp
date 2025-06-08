@@ -51,6 +51,20 @@ size_t getMatchingParenthesis(const StringView&);
     \brief This file contains the basic implementation of the muparser engine.
 */
 
+// Supported syntax elements include
+// {} = nD-EXPR
+// {} = {EXPR}
+// X += EXPR (and others)
+// X++ and X--
+// {a:b}, {a:c:b}, {a:b, ..., c}
+// {a, {b, c}}
+// VAR.METHOD (VAR.FIELD)
+
+// Missing syntax elements
+// X[i]
+// X[i] = EXPR
+// X.FIELD = EXPR
+// [X, Y, C] = A, B, C
 
 
 
@@ -287,32 +301,14 @@ namespace mu
     /// \return ExpressionTarget&
     ///
     /////////////////////////////////////////////////
-	ExpressionTarget& ParserBase::getTarget() const
+	/*ExpressionTarget& ParserBase::getTarget() const
 	{
 	    if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return m_stateStacks[nthLoopElement].m_target;
 
         return m_compilingTarget;
-	}
+	}*/
 
-	//---------------------------------------------------------------------------
-	void ParserBase::OnDetectVar(string_type* pExpr, int& nStart, int& nEnd)
-	{
-		/*if (mInternalVars.size())
-		{
-			if (mInternalVars.find(pExpr->substr(nStart, nEnd - nStart)) != mInternalVars.end())
-				return;
-
-			Array vVar;
-
-			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
-				vVar = *(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second);
-			else
-				vVar.push_back(Value(Numerical(0.0)));
-
-			SetVectorVar(pExpr->substr(nStart, nEnd - nStart), vVar);
-		}*/
-	}
 
 	//---------------------------------------------------------------------------
 	/** \brief Returns the version of muparser.
@@ -487,202 +483,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This function pre-evaluates all
-    /// vectors, which are contained in the
-    /// expression passed through sExpr.
-    ///
-    /// \param sExpr MutableStringView containing the
-    /// expression
-    /// \return MutableStringView
-    ///
-    /////////////////////////////////////////////////
-	MutableStringView ParserBase::compileVectors(MutableStringView sExpr)
-	{
-		std::vector<Array> vResults;
-
-		// Resolve vectors, which are part of a multi-argument
-		// function's parentheses
-		for (auto iter = mInternalVars.begin(); iter != mInternalVars.end(); ++iter)
-        {
-            size_t match = 0;
-
-            if (iter->second->size() == 1)
-                continue;
-
-            while ((match = sExpr.find(iter->first, match)) != string::npos)
-            {
-                if (!match || sExpr.is_delimited_sequence(match, iter->first.length(), StringViewBase::PARSER_DELIMITER))
-                    compileVectorsInMultiArgFunc(sExpr, match);
-
-                match++;
-            }
-        }
-
-		// Walk through the whole expression
-		for (size_t i = 0; i < sExpr.length(); i++)
-		{
-		    // search for vector parentheses
-			if (sExpr[i] == '{' && (!i || isDelimiter(sExpr[i-1])) && sExpr.find('}', i) != string::npos)
-			{
-			    if (compileVectorsInMultiArgFunc(sExpr, i))
-                    continue;
-
-                vResults.clear();
-
-                // Find the matching brace for the current vector brace
-				size_t j = getMatchingParenthesis(sExpr.subview(i));
-
-				if (j != std::string::npos)
-					j += i; // if one is found, add the current position
-
-                if (i+1 == j) // This is an empty brace
-                    sExpr.replace(i, 2, "nan");
-			    else if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
-				{
-				    // This is vector expansion: e.g. "{1:10}"
-					// Store the result in a new temporary vector
-                    string sVectorVarName = CreateTempVar(vResults.front());
-
-				    // Get the expression and evaluate the expansion
-					compileVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
-
-					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
-				}
-				else
-				{
-					if (j != std::string::npos)
-					{
-					    // This is a normal vector, e.g. "{1,2,3}"
-					    // Set the sub expression and evaluate it
-						SetExpr(sExpr.subview(i + 1, j - i - 1));
-
-						// Determine, whether the current vector is a target vector or not
-						if (sExpr.find_first_not_of(' ') == i
-								&& sExpr.find('=', j) != std::string::npos
-								&& sExpr.find('=', j) < sExpr.length() - 1
-								&& sExpr.find('!', j) != sExpr.find('=', j) - 1
-								&& sExpr.find('<', j) != sExpr.find('=', j) - 1
-								&& sExpr.find('>', j) != sExpr.find('=', j) - 1
-								&& sExpr[sExpr.find('=', j) + 1] != '=')
-						{
-						    // This is a target vector
-#warning FIXME (numere#3#07/08/24): Target vectors do not work yet -> NEW ISSUE
-                            int nResults;
-                            Array* v = Eval(nResults);
-                            // Store the results in the target vector
-                            vResults.insert(vResults.end(), v, v+nResults);
-						    // Store the variable names
-						    getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
-							SetInternalVar("_~TRGTVCT[~]", vResults.front());
-							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
-						}
-						else
-						{
-						    // This is a usual vector
-						    // Create a new temporary vector name
-                            std::string sVectorVarName = CreateTempVar(vResults.front());
-                            m_compilingState.m_vectEval.create(sVectorVarName);
-                            int nResults;
-                            // Calculate and store the results in the target vector
-                            Eval(nResults);
-						    // Update the expression
-							sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a,b}i
-						}
-					}
-				}
-			}
-
-			if (sExpr.subview(i, 9) == "logtoidx(" || sExpr.subview(i, 9) == "idxtolog(")
-            {
-                i += 8;
-                compileVectorsInMultiArgFunc(sExpr, i);
-            }
-		}
-
-		return sExpr;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function evaluates the vector
-    /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
-    ///
-    /// \param sSubExpr MutableStringView
-    /// \param sVectorVarName const std::string&
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-	void ParserBase::compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName)
-	{
-		int nResults = 0;
-
-		EndlessVector<StringView> args = getAllArguments(sSubExpr);
-		std::vector<int> vComponentType;
-		std::string sCompiledExpression;
-		const int SINGLETON = 1;
-
-		// Determine the type of every part of the vector brace
-		for (size_t n = 0; n < args.size(); n++)
-        {
-            if (args[n].find(':') == std::string::npos)
-            {
-                vComponentType.push_back(SINGLETON);
-
-                if (sCompiledExpression.length())
-                    sCompiledExpression += ",";
-
-                sCompiledExpression += args[n].to_string();
-            }
-            else
-            {
-                int isExpansion = -1;
-                MutableStringView sExpansion = args[n].make_mutable();
-
-                // Replace the colons with commas. But ensure that this is not a conditional statement
-                for (size_t i = 0; i < sExpansion.length(); i++)
-                {
-                    if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
-                        i += getMatchingParenthesis(sSubExpr.subview(i));
-
-                    if (sExpansion[i] == ':')
-                    {
-                        if (isExpansion == -1)
-                            isExpansion = 1;
-
-                        // This is a conditional operator
-                        if (isExpansion == 0)
-                            continue;
-
-                        sExpansion[i] = ',';
-                    }
-
-                    // This is a conditional operator
-                    if (sExpansion[i] == '?')
-                    {
-                        if (isExpansion == -1)
-                            isExpansion = 0;
-
-                        if (isExpansion == 1)
-                            throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
-                    }
-                }
-
-                if (sCompiledExpression.length())
-                    sCompiledExpression += ",";
-
-                sCompiledExpression += sExpansion.to_string();
-                vComponentType.push_back(getAllArguments(sExpansion).size());
-            }
-        }
-
-		// Evaluate
-		SetExpr(sCompiledExpression);
-		m_compilingState.m_vectEval.create(sVectorVarName, vComponentType);
-		Eval(nResults);
-	}
-
-
-    /////////////////////////////////////////////////
     /// \brief Implements the inline conditional
     /// operator.
     ///
@@ -710,21 +510,20 @@ namespace mu
     /// \brief Internal alias function to construct a
     /// vector from a list of elements.
     ///
-    /// \param arrs const mu::Array*
-    /// \param n int
+    /// \param arrs const mu::MultiArgFuncParams&
     /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    Array ParserBase::VectorCreate(const Array* arrs, int n)
+    Array ParserBase::VectorCreate(const MultiArgFuncParams& arrs)
     {
         // If no arguments have been passed, we simply
         // return void
-        if (!n)
+        if (!arrs.count())
             return mu::Value();
 
         mu::Array res;
 
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < arrs.count(); i++)
         {
             if (arrs[i].isScalar())
                 res.push_back(arrs[i].front());
@@ -897,119 +696,6 @@ namespace mu
         }
 	}
 
-
-    /////////////////////////////////////////////////
-    /// \brief This private function will try to find
-    /// a surrounding multi-argument function,
-    /// resolve the arguments, apply the function and
-    /// store the result as a new vector.
-    ///
-    /// \param sExpr MutableStringView&
-    /// \param nPos size_t&
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-	bool ParserBase::compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
-	{
-        string sMultiArgFunc;
-	    // Try to find a multi-argument function. The size_t will store the start position of the function name
-        size_t nMultiArgParens = FindMultiArgFunc(sExpr, nPos, sMultiArgFunc);
-
-        if (nMultiArgParens != std::string::npos)
-        {
-            // This is part of a multi-argument function
-            // Find the matching parenthesis for the multi-argument function
-            size_t nClosingParens = getMatchingParenthesis(sExpr.subview(nMultiArgParens)) + nMultiArgParens;
-
-            // Set the argument of the function as expression and evaluate it recursively
-            std::vector<Array> vResults;
-            int nResults;
-            string sVectorVarName = CreateTempVar(vResults.front());
-            SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
-            m_compilingState.m_vectEval.create(sVectorVarName, sMultiArgFunc);
-            Eval(nResults);
-
-            // Store the result in a new temporary vector
-            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(),
-                          nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(),
-                          sVectorVarName);
-
-            // Set the position to the start of the multi-argument
-            // function to avoid jumping over consecutive vectors
-            nPos = nMultiArgParens-sMultiArgFunc.length();
-
-            return true;
-        }
-
-        return false;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function searches for the first
-    /// multi-argument function found in the passed
-    /// expression.
-    ///
-    /// \param sExpr StringView
-    /// \param nPos size_t
-    /// \param sMultArgFunc std::string& will contain
-    /// the name of the function
-    /// \return size_t the position of the opening
-    /// parenthesis
-    ///
-    /////////////////////////////////////////////////
-	size_t ParserBase::FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc)
-	{
-	    // Walk through the expression
-		for (int i = nPos; i >= 2; i--)
-		{
-		    // If there's a parenthesis and the character before is alphabetic
-			if (sExpr[i] == '(' && isalpha(sExpr[i - 1]))
-			{
-			    // Get the matching parenthesis
-				size_t nParPos = getMatchingParenthesis(sExpr.subview(i));
-
-				if (nParPos == string::npos)
-					return std::string::npos;
-				else
-					nParPos += i;
-
-                // Ignore all results before nPos
-				if (nParPos < nPos)
-					continue;
-
-                // Find the last character before the alphabetic part
-				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^,", i - 1) + 1;
-				// Extract the function
-				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
-
-				// Exclude the following functions
-                if (sFunc == "polynomial"
-                    || sFunc == "perlin"
-                    || sFunc == "as_date"
-                    || sFunc == "as_time")
-                    continue;
-                else if (sFunc == "logtoidx" || sFunc == "idxtolog")
-                {
-                    sMultArgFunc = sFunc;
-                    return i;
-                }
-
-				// Compare the function with the set of known multi-argument functions
-				auto iter = m_FunDef.find(sFunc);
-
-				if (iter != m_FunDef.end() && iter->second.GetArgc() == -1)
-				{
-				    // If the function is a multi-argument function, store it and return the position
-					sMultArgFunc = sFunc;
-					return i;
-				}
-			}
-		}
-
-		// Return string::npos if nothing was found
-		return std::string::npos;
-	}
 
 	//---------------------------------------------------------------------------
 	/** \brief Get the default symbols used for the built in operators.
@@ -1439,7 +1125,7 @@ namespace mu
 
 		for (int i = 0; i < iArgCount+(funTok.GetCode() == cmMETHOD); ++i) // Methods have to remove their root element as well
 		{
-			stArg.push_back(a_stVal.pop());
+			stArg.push_back(std::move(a_stVal.pop()));
 			if (stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR)
 				Error(ecVAL_EXPECTED, m_pTokenReader->GetPos(), funTok.GetAsString());
 		}
@@ -1478,8 +1164,8 @@ namespace mu
 
 		// Push dummy value representing the function result to the stack
 		token_type token;
-		token.SetVal(Array(Value("rv@" + funTok.GetAsString())));
-		a_stVal.push(token);
+		token.MoveVal(Array(Value("rv@" + funTok.GetAsString())));
+		a_stVal.push(std::move(token));
 	}
 
 	//---------------------------------------------------------------------------
@@ -1503,7 +1189,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push(all(vExpr.GetVal() != Array(Value(0.0))) ? vVal1 : vVal2);
+			a_stVal.push(std::move(all(vExpr.GetVal() != Array(Value(0.0))) ? vVal1 : vVal2));
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1545,8 +1231,8 @@ namespace mu
 			else
 				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
 
-			resTok.SetVal(Array(Value(1.0)));
-			a_stVal.push(resTok);
+			resTok.MoveVal(Array(Value(1.0)));
+			a_stVal.push(std::move(resTok));
 		}
 	}
 
@@ -1562,8 +1248,8 @@ namespace mu
         m_compilingState.m_byteCode.AddOp(cmVAL2STR);
 
         // Push a dummy value to the stack
-        resTok.SetVal(Array(Value(1.0)));
-        a_stVal.push(resTok);
+        resTok.MoveVal(Array(Value(1.0)));
+        a_stVal.push(std::move(resTok));
 	}
 
 	//---------------------------------------------------------------------------
@@ -1635,32 +1321,13 @@ namespace mu
 	*/
 	void ParserBase::ParseCmdCode()
 	{
-		ParseCmdCodeBulk(0, 0);
-	}
-
-	//---------------------------------------------------------------------------
-	/** \brief Evaluate the RPN.
-	    \param nOffset The offset added to variable addresses (for bulk mode)
-	    \param nThreadID OpenMP Thread id of the calling thread
-	*/
-	void ParserBase::ParseCmdCodeBulk(int nOffset, int nThreadID)
-	{
-	    //Timer t("ParserBase::ParseCmdCodeBulk");
-		assert(nThreadID <= nMaxThreads);
-
-		// Note: The check for nOffset==0 and nThreadID here is not necessary but
-		//       brings a minor performance gain when not in bulk mode.
-		Array* Stack = nullptr;
-
-		Stack = ((nOffset == 0) && (nThreadID == 0))
-            ? &m_state->m_stackBuffer[0]
-            : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / nMaxThreads)];
-
-		Array buf;
 		int sidx(0);
+		std::vector<StackItem>& Stack = m_state->m_stackBuffer;
+		//return;
 
         for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
         {
+            //continue;
             switch (pTok->Cmd)
             {
                 // built in binary operators
@@ -1690,24 +1357,24 @@ namespace mu
                     continue;
                 case  cmADD:
                     --sidx;
-                    Stack[sidx] += Stack[1 + sidx];
+                    Stack[sidx]  += Stack[1 + sidx];
                     continue;
                 case  cmSUB:
                     --sidx;
-                    Stack[sidx] -= Stack[1 + sidx];
+                    Stack[sidx]  -= Stack[1 + sidx];
                     continue;
                 case  cmMUL:
                     --sidx;
-                    Stack[sidx] *= Stack[1 + sidx];
+                    Stack[sidx]  *= Stack[1 + sidx];
                     continue;
                 case  cmDIV:
                     --sidx;
-                    Stack[sidx] /= Stack[1 + sidx];
+                    Stack[sidx]  /= Stack[1 + sidx];
                     continue;
 
                 case  cmPOW:
                     --sidx;
-                    Stack[sidx] = Stack[sidx].pow(Stack[1+sidx]);
+                    Stack[sidx]  ^= Stack[1 + sidx];
                     continue;
 
                 case  cmLAND:
@@ -1721,51 +1388,73 @@ namespace mu
 
                 case  cmVAL2STR:
                     --sidx;
-                    Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().asUI64());
+                    Stack[sidx]  = val2Str(Stack[sidx].get(), Stack[sidx+1].get().front().getNum().asUI64());
                     continue;
 
                 case  cmASSIGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var = Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1].get();
                     continue;
 
                 case  cmADDASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var += Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1].get();
                     continue;
 
                 case  cmSUBASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var -= Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1].get();
                     continue;
 
                 case  cmMULASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var *= Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1].get();
                     continue;
 
                 case  cmDIVASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1]; // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var /= Stack[sidx + 1].get();
+                    else
+                        Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1].get();
                     continue;
 
                 case  cmPOWASGN:
                     --sidx;
-                    Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]); // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
+                    else
+                        Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
                     continue;
 
                 case  cmINCR:
-                    //--sidx;
-                    Stack[sidx] = pTok->Oprt().var += Value(1); // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var += Value(1);
+                    else
+                        Stack[sidx] = pTok->Oprt().var += Value(1);
                     continue;
 
                 case  cmDECR:
-                    //--sidx;
-                    Stack[sidx] = pTok->Oprt().var -= Value(1); // Potential: copy is avoidable, if vars are stored as refs
+                    if (pTok->Oprt().var.isScalar())
+                        pTok->Oprt().var -= Value(1);
+                    else
+                        Stack[sidx] = pTok->Oprt().var-= Value(1);
                     continue;
 
                 case  cmIF: // Not needed right now, operator converted to a function
-                    if (!all(Stack[sidx--]))
+                    if (!all(Stack[sidx--].get()))
                         pTok += pTok->Oprt().offset;
                     continue;
 
@@ -1778,11 +1467,11 @@ namespace mu
 
                 // value and variable tokens
                 case  cmVAL:
-                    Stack[++sidx] =  pTok->Val().data2; // Potential: this copy could be a ref
+                    Stack[++sidx].aliasOf(&pTok->Val().data2);
                     continue;
 
                 case  cmVAR:
-                    Stack[++sidx] = *pTok->Val().var; // Potential: this copy could be a ref
+                    Stack[++sidx].aliasOf(pTok->Val().var);
                     continue;
 
                 case  cmVARARRAY:
@@ -1790,30 +1479,41 @@ namespace mu
                     continue;
 
                 case  cmVARPOW2:
-                    buf = *pTok->Val().var;
-                    Stack[++sidx] = buf * buf;
+                    Stack[++sidx].varPowN(*pTok->Val().var, 2);
                     continue;
 
                 case  cmVARPOW3:
-                    buf = *pTok->Val().var;
-                    Stack[++sidx] = buf * buf * buf;
+                    Stack[++sidx].varPowN(*pTok->Val().var, 3);
                     continue;
 
                 case  cmVARPOW4:
-                    buf = *pTok->Val().var;
-                    Stack[++sidx] = buf * buf * buf * buf;
+                    Stack[++sidx].varPowN(*pTok->Val().var, 4);
                     continue;
 
                 case  cmVARPOWN:
-                    Stack[++sidx] = Array(*pTok->Val().var).pow(pTok->Val().data);
+                    Stack[++sidx].varPowN(*pTok->Val().var, pTok->Val().data.getAsScalarInt());
                     continue;
 
                 case  cmVARMUL:
-                    Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                    Stack[++sidx].varMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                     continue;
 
                 case  cmREVVARMUL:
-                    Stack[++sidx] = pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                    Stack[++sidx].revVarMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
+                    continue;
+
+                case  cmDIVVAR:
+                    Stack[++sidx].divVar(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
+                    continue;
+
+                case  cmVARCOPY:
+                    Stack[++sidx].aliasOf(pTok->Oprt().var.front());
+                    pTok->Oprt().var = *pTok->Oprt().src;
+                    continue;
+
+                case  cmVARINIT:
+                    Stack[++sidx].aliasOf(pTok->Oprt().var.front());
+                    pTok->Oprt().var = pTok->Oprt().val;
                     continue;
 
                 // Next is treatment of numeric functions
@@ -1829,95 +1529,95 @@ namespace mu
                                 Stack[sidx] = (*(fun_type0)pTok->Fun().ptr)();
                                 continue;
                             case 1:
-                                Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx]);
+                                Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx].get());
                                 continue;
                             case 2:
                                 sidx -= 1;
-                                Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1]);
+                                Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get());
                                 continue;
                             case 3:
                                 sidx -= 2;
-                                Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2]);
+                                Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get());
                                 continue;
                             case 4:
                                 sidx -= 3;
-                                Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3]);
+                                Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get());
                                 continue;
                             case 5:
                                 sidx -= 4;
-                                Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4]);
+                                Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get());
                                 continue;
                             case 6:
                                 sidx -= 5;
-                                Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5]);
+                                Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get());
                                 continue;
                             case 7:
                                 sidx -= 6;
-                                Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5],
-                                                                            Stack[sidx + 6]);
+                                Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get(),
+                                                                            Stack[sidx + 6].get());
                                 continue;
                             case 8:
                                 sidx -= 7;
-                                Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5],
-                                                                            Stack[sidx + 6],
-                                                                            Stack[sidx + 7]);
+                                Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get(),
+                                                                            Stack[sidx + 6].get(),
+                                                                            Stack[sidx + 7].get());
                                 continue;
                             case 9:
                                 sidx -= 8;
-                                Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx],
-                                                                            Stack[sidx + 1],
-                                                                            Stack[sidx + 2],
-                                                                            Stack[sidx + 3],
-                                                                            Stack[sidx + 4],
-                                                                            Stack[sidx + 5],
-                                                                            Stack[sidx + 6],
-                                                                            Stack[sidx + 7],
-                                                                            Stack[sidx + 8]);
+                                Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                            Stack[sidx + 1].get(),
+                                                                            Stack[sidx + 2].get(),
+                                                                            Stack[sidx + 3].get(),
+                                                                            Stack[sidx + 4].get(),
+                                                                            Stack[sidx + 5].get(),
+                                                                            Stack[sidx + 6].get(),
+                                                                            Stack[sidx + 7].get(),
+                                                                            Stack[sidx + 8].get());
                                 continue;
                             case 10:
                                 sidx -= 9;
-                                Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx],
-                                                                             Stack[sidx + 1],
-                                                                             Stack[sidx + 2],
-                                                                             Stack[sidx + 3],
-                                                                             Stack[sidx + 4],
-                                                                             Stack[sidx + 5],
-                                                                             Stack[sidx + 6],
-                                                                             Stack[sidx + 7],
-                                                                             Stack[sidx + 8],
-                                                                             Stack[sidx + 9]);
+                                Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                             Stack[sidx + 1].get(),
+                                                                             Stack[sidx + 2].get(),
+                                                                             Stack[sidx + 3].get(),
+                                                                             Stack[sidx + 4].get(),
+                                                                             Stack[sidx + 5].get(),
+                                                                             Stack[sidx + 6].get(),
+                                                                             Stack[sidx + 7].get(),
+                                                                             Stack[sidx + 8].get(),
+                                                                             Stack[sidx + 9].get());
                                 continue;
                             default:
                                 if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                     Error(ecINTERNAL_ERROR, 1);
 
                                 sidx -= -iArgCount - 1;
-                                Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&Stack[sidx], -iArgCount);
+                                Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(MultiArgFuncParams(&Stack[sidx], -iArgCount));
                                 continue;
                         }
                     }
@@ -1930,18 +1630,18 @@ namespace mu
                         switch (iArgCount)
                         {
                             case 1:
-                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name);
+                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name);
                                 continue;
                             case 2:
                                 sidx -= 1;
-                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                               Stack[sidx + 1]);
+                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                               Stack[sidx + 1].get());
                                 continue;
                             case 3:
                                 sidx -= 2;
-                                Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                               Stack[sidx + 1],
-                                                               Stack[sidx + 2]);
+                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                               Stack[sidx + 1].get(),
+                                                               Stack[sidx + 2].get());
                                 continue;
                             default:
                                 Error(ecINTERNAL_ERROR, 1);
@@ -1966,14 +1666,13 @@ namespace mu
 	void ParserBase::ParseCmdCodeBulkParallel(size_t nVectorLength)
 	{
 	    size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
-	    int nStackSize = m_state->m_numResults;
+	    //int nStackSize = m_state->m_numResults;
 
         #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
         for (size_t nOffset = 1; nOffset < nVectorLength; ++nOffset)
         {
             int nThreadID = omp_get_thread_num();
-            Array* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
-            Array buf;
+            StackItem* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
             int sidx(0);
 
             // Run the bytecode
@@ -2008,24 +1707,24 @@ namespace mu
                         continue;
                     case  cmADD:
                         --sidx;
-                        Stack[sidx] += Stack[1 + sidx];
+                        Stack[sidx]  += Stack[1 + sidx];
                         continue;
                     case  cmSUB:
                         --sidx;
-                        Stack[sidx] -= Stack[1 + sidx];
+                        Stack[sidx]  -= Stack[1 + sidx];
                         continue;
                     case  cmMUL:
                         --sidx;
-                        Stack[sidx] *= Stack[1 + sidx];
+                        Stack[sidx]  *= Stack[1 + sidx];
                         continue;
                     case  cmDIV:
                         --sidx;
-                        Stack[sidx] /= Stack[1 + sidx];
+                        Stack[sidx]  /= Stack[1 + sidx];
                         continue;
 
                     case  cmPOW:
                         --sidx;
-                        Stack[sidx] = Stack[sidx].pow(Stack[1+sidx]);
+                        Stack[sidx]  ^= Stack[1 + sidx];
                         continue;
 
                     case  cmLAND:
@@ -2039,51 +1738,67 @@ namespace mu
 
                     case  cmVAL2STR:
                         --sidx;
-                        Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().asUI64());
+                        Stack[sidx]  = val2Str(Stack[sidx].get(), Stack[sidx+1].get().front().getNum().asUI64());
                         continue;
 
                     case  cmASSIGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var = Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1].get();
                         continue;
 
                     case  cmADDASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var += Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var += Stack[sidx + 1].get();
                         continue;
 
                     case  cmSUBASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var -= Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var -= Stack[sidx + 1].get();
                         continue;
 
                     case  cmMULASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var *= Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var *= Stack[sidx + 1].get();
                         continue;
 
                     case  cmDIVASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1];
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var /= Stack[sidx + 1].get();
+                        else
+                            Stack[sidx] = pTok->Oprt().var /= Stack[sidx + 1].get();
                         continue;
 
                     case  cmPOWASGN:
                         --sidx;
-                        Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1]);
+                        if (pTok->Oprt().var.isScalar())
+                            pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
+                        else
+                            Stack[sidx] = pTok->Oprt().var = pTok->Oprt().var.pow(Stack[sidx + 1].get());
                         continue;
 
                     case  cmINCR:
-                        --sidx;
-                        Stack[sidx] = pTok->Oprt().var += Value(1);
+                        pTok->Oprt().var += Value(1);
                         continue;
 
                     case  cmDECR:
-                        --sidx;
-                        Stack[sidx] = pTok->Oprt().var -= Value(1);
+                        pTok->Oprt().var -= Value(1);
                         continue;
 
                     case  cmIF: // Not needed right now, operator converted to a function
-                        if (!all(Stack[sidx--]))
+                        if (!all(Stack[sidx--].get()))
                             pTok += pTok->Oprt().offset;
                         continue;
 
@@ -2096,12 +1811,11 @@ namespace mu
 
                     // value and variable tokens
                     case  cmVAL:
-                        Stack[++sidx] = pTok->Val().data2;
+                        Stack[++sidx].aliasOf(&pTok->Val().data2);
                         continue;
 
                     case  cmVAR:
-                        Stack[++sidx] = *pTok->Val().var;
-                        //print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
+                        Stack[++sidx].aliasOf(pTok->Val().var);
                         continue;
 
                     case  cmVARARRAY:
@@ -2109,18 +1823,15 @@ namespace mu
                         continue;
 
                     case  cmVARPOW2:
-                        buf = *pTok->Val().var;
-                        Stack[++sidx] = buf * buf;
+                        Stack[++sidx].varPowN(*pTok->Val().var, 2);
                         continue;
 
                     case  cmVARPOW3:
-                        buf = *pTok->Val().var;
-                        Stack[++sidx] = buf * buf * buf;
+                        Stack[++sidx].varPowN(*pTok->Val().var, 3);
                         continue;
 
                     case  cmVARPOW4:
-                        buf = *pTok->Val().var;
-                        Stack[++sidx] = buf * buf * buf * buf;
+                        Stack[++sidx].varPowN(*pTok->Val().var, 4);
                         continue;
 
                     case  cmVARPOWN:
@@ -2128,11 +1839,15 @@ namespace mu
                         continue;
 
                     case  cmVARMUL:
-                        Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                        Stack[++sidx].varMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                         continue;
 
                     case  cmREVVARMUL:
-                        Stack[++sidx] = pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
+                        Stack[++sidx].revVarMul(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
+                        continue;
+
+                    case  cmDIVVAR:
+                        Stack[++sidx].divVar(pTok->Val().data, *pTok->Val().var, pTok->Val().data2);
                         continue;
 
                     // Next is treatment of numeric functions
@@ -2148,95 +1863,95 @@ namespace mu
                                     Stack[sidx] = (*(fun_type0)pTok->Fun().ptr)();
                                     continue;
                                 case 1:
-                                    Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx]);
+                                    Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx].get());
                                     continue;
                                 case 2:
                                     sidx -= 1;
-                                    Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1]);
+                                    Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get());
                                     continue;
                                 case 3:
                                     sidx -= 2;
-                                    Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2]);
+                                    Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get());
                                     continue;
                                 case 4:
                                     sidx -= 3;
-                                    Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3]);
+                                    Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get());
                                     continue;
                                 case 5:
                                     sidx -= 4;
-                                    Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4]);
+                                    Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get());
                                     continue;
                                 case 6:
                                     sidx -= 5;
-                                    Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5]);
+                                    Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get());
                                     continue;
                                 case 7:
                                     sidx -= 6;
-                                    Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5],
-                                                                                Stack[sidx + 6]);
+                                    Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get(),
+                                                                                Stack[sidx + 6].get());
                                     continue;
                                 case 8:
                                     sidx -= 7;
-                                    Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5],
-                                                                                Stack[sidx + 6],
-                                                                                Stack[sidx + 7]);
+                                    Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get(),
+                                                                                Stack[sidx + 6].get(),
+                                                                                Stack[sidx + 7].get());
                                     continue;
                                 case 9:
                                     sidx -= 8;
-                                    Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx],
-                                                                                Stack[sidx + 1],
-                                                                                Stack[sidx + 2],
-                                                                                Stack[sidx + 3],
-                                                                                Stack[sidx + 4],
-                                                                                Stack[sidx + 5],
-                                                                                Stack[sidx + 6],
-                                                                                Stack[sidx + 7],
-                                                                                Stack[sidx + 8]);
+                                    Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                Stack[sidx + 1].get(),
+                                                                                Stack[sidx + 2].get(),
+                                                                                Stack[sidx + 3].get(),
+                                                                                Stack[sidx + 4].get(),
+                                                                                Stack[sidx + 5].get(),
+                                                                                Stack[sidx + 6].get(),
+                                                                                Stack[sidx + 7].get(),
+                                                                                Stack[sidx + 8].get());
                                     continue;
                                 case 10:
                                     sidx -= 9;
-                                    Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx],
-                                                                                 Stack[sidx + 1],
-                                                                                 Stack[sidx + 2],
-                                                                                 Stack[sidx + 3],
-                                                                                 Stack[sidx + 4],
-                                                                                 Stack[sidx + 5],
-                                                                                 Stack[sidx + 6],
-                                                                                 Stack[sidx + 7],
-                                                                                 Stack[sidx + 8],
-                                                                                 Stack[sidx + 9]);
+                                    Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx].get(),
+                                                                                 Stack[sidx + 1].get(),
+                                                                                 Stack[sidx + 2].get(),
+                                                                                 Stack[sidx + 3].get(),
+                                                                                 Stack[sidx + 4].get(),
+                                                                                 Stack[sidx + 5].get(),
+                                                                                 Stack[sidx + 6].get(),
+                                                                                 Stack[sidx + 7].get(),
+                                                                                 Stack[sidx + 8].get(),
+                                                                                 Stack[sidx + 9].get());
                                     continue;
                                 default:
                                     if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                         Error(ecINTERNAL_ERROR, 1);
 
                                     sidx -= -iArgCount - 1;
-                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&Stack[sidx], -iArgCount);
+                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(MultiArgFuncParams(&Stack[sidx], -iArgCount));
                                     continue;
                             }
                         }
@@ -2249,18 +1964,18 @@ namespace mu
                             switch (iArgCount)
                             {
                                 case 1:
-                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name);
+                                    Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name);
                                     continue;
                                 case 2:
                                     sidx -= 1;
-                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                                   Stack[sidx + 1]);
+                                    Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get());
                                     continue;
                                 case 3:
                                     sidx -= 2;
-                                    Stack[sidx] = Stack[sidx].call(pTok->Fun().name,
-                                                                   Stack[sidx + 1],
-                                                                   Stack[sidx + 2]);
+                                    Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get(),
+                                                                   Stack[sidx + 2].get());
                                     continue;
                                 default:
                                     Error(ecINTERNAL_ERROR, 1);
@@ -2273,10 +1988,10 @@ namespace mu
             } // for all bytecode tokens
 
             // Copy the results
-            for (int j = 0; j < nStackSize; j++)
-            {
-                m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
-            }
+            //for (int j = 0; j < nStackSize; j++)
+            //{
+            //    m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1].get();
+            //}
         }
 
 	}
@@ -2321,7 +2036,7 @@ namespace mu
 				case cmVAL:
 				    varArrayCandidate = false;
 					stVal.push(opt);
-					m_compilingState.m_byteCode.AddVal(opt.GetVal());
+					m_compilingState.m_byteCode.AddVal(std::move(opt.GetVal()));
 					break;
 
 				case cmELSE:
@@ -2583,7 +2298,7 @@ namespace mu
                 case cmPATHPLACEHOLDER:
                     m_compilingState.m_byteCode.AddVal(Value(opt.GetAsString()));
                     m_compilingState.m_byteCode.AddFun((generic_fun_type)getPathToken, 1, false, opt.GetAsString());
-                    stVal.push(ParserToken().SetVal(Value(opt.GetAsString()), opt.GetAsString()));
+                    stVal.push(ParserToken().MoveVal(Value(opt.GetAsString()), opt.GetAsString()));
                     break;
 
 				case cmOPRT_INFIX:
@@ -2610,7 +2325,7 @@ namespace mu
                     else
                         Error(ecUNEXPECTED_OPERATOR, -1, ParserBase::c_DefaultOprt[opt.GetCode()]);
 
-                    stVal.push(ParserToken().SetVal(Value(1.0)));
+                    stVal.push(ParserToken().MoveVal(Value(1.0)));
                     break;
                 }
 
@@ -3027,27 +2742,29 @@ namespace mu
     /// \brief Simple helper function to print the
     /// buffer's contents.
     ///
-    /// \param buffer const valbuf_type&
+    /// \param buffer const std::vector<Array>&
     /// \param nElems int
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-	static std::string printVector(const valbuf_type& buffer, int nElems)
+	/*static std::string printVector(const std::vector<Array>& buffer, int nElems)
 	{
 	    std::string s;
 
 	    for (int i = 0; i < nElems; i++)
             s += buffer[i].print() + ",";
 
-        s.pop_back();
+		if (s.length())
+			s.pop_back();
 
         return s;
-	}
+	}*/
 
 
     /////////////////////////////////////////////////
     /// \brief Evaluate an expression containing
-    /// comma seperated subexpressions.
+    /// comma seperated subexpressions avoiding the
+    /// final copy into the internal buffer.
     ///
     /// This member function can be used to retrieve
     /// all results of an expression made up of
@@ -3055,19 +2772,16 @@ namespace mu
     /// "x+y,sin(x),cos(y)").
     ///
     /// \param nStackSize int&
-    /// \return Array*
+    /// \return const StackItem*
     ///
     /////////////////////////////////////////////////
-	Array* ParserBase::Eval(int& nStackSize)
+	const StackItem* ParserBase::Eval(int& nStackSize)
 	{
 	    // Run the evaluation
         (this->*m_pParseFormula)();
 
         nStackSize = m_state->m_numResults;
-
-        // Copy the actual results (ignore the 0-th term)
-        m_buffer.assign(m_state->m_stackBuffer.begin()+1,
-                        m_state->m_stackBuffer.begin()+nStackSize+1);
+        const StackItem* res = &m_state->m_stackBuffer[1];
 
         // assign the results of the calculation to a possible
         // temporary vector
@@ -3078,9 +2792,9 @@ namespace mu
             target.assign(m_buffer, nStackSize);*/
 
         if (g_DbgDumpStack)
-            print("ParserBase::Eval() @ ["
+            print("ParserBase::EvalUnbuffered() @ ["
                                 + toString(nthLoopElement) + "," + toString(nthLoopPartEquation)
-                                + "] m_buffer[:] = {" + printVector(m_buffer, nStackSize) + "}");
+                                + "] res = " + res->get().print());
 
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
         {
@@ -3088,12 +2802,16 @@ namespace mu
             nCurrVectorIndex = 0;
 
             if (m_stateStacks[nthLoopElement].m_states.size() <= nthLoopPartEquation)
+            {
                 m_stateStacks[nthLoopElement].m_states.push_back(State());
+                // Ensure we have the correct buffer even after some copies happened
+                res = &m_stateStacks(nthLoopElement, nthLoopPartEquation-1).m_stackBuffer[1];
+            }
 
             m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
         }
 
-        return &m_buffer[0];
+        return res;
 	}
 
 
@@ -3101,17 +2819,24 @@ namespace mu
     /// \brief Single-value wrapper around the
     /// vectorized overload of this member function.
     ///
-    /// \return Array
+    /// \return const Array&
     ///
     /////////////////////////////////////////////////
-	Array ParserBase::Eval() // declared as deprecated
+	const Array& ParserBase::Eval() // declared as deprecated
 	{
-	    Array* v;
+	    const StackItem* v;
 	    int nResults;
+#ifdef PARSERSTANDALONE
+	    {
+	        Timer t("ParserBase::Eval");
+            for (size_t i = 0; i < 1000; i++)
+#endif
+                v = Eval(nResults);
+#ifdef PARSERSTANDALONE
+	    }
+#endif
 
-	    v = Eval(nResults);
-
-	    return v[0];
+	    return v->get();
 	}
 
 
@@ -3303,7 +3028,7 @@ namespace mu
         if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks[nthLoopElement].m_cache.m_accesses.size() > nthAccess)
             return m_stateStacks[nthLoopElement].m_cache.m_accesses[nthAccess];
 
-        return CachedDataAccess();
+        throw ParserError(ecINTERNAL_ERROR);
     }
 
 
@@ -3606,7 +3331,7 @@ namespace mu
         {
             //g_logger.debug("Clearing vector vars and target.");
 			mInternalVars.clear();
-            m_compilingTarget.clear();
+            //m_compilingTarget.clear();
         }
 	}
 

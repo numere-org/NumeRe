@@ -1635,7 +1635,7 @@ static void parseArg(std::string& sArg, int flags)
 
     int results;
     int nPrec = instance->getSettings().getPrecision();
-    mu::Array* v = instance->getParser().Eval(results);
+    const mu::StackItem* v = instance->getParser().Eval(results);
 
     sArg.clear();
 
@@ -1645,11 +1645,11 @@ static void parseArg(std::string& sArg, int flags)
             sArg += ",";
 
         if (flags & ARGEXTRACT_ASINT)
-            sArg += toString(v[i].getAsScalarInt());
+            sArg += toString(v[i].get().getAsScalarInt());
         else if (flags & ARGEXTRACT_ASSTRING)
-            sArg += v[i].print(nPrec);
+            sArg += v[i].get().print(nPrec);
         else
-            sArg += v[i].printVals(nPrec);
+            sArg += v[i].get().printVals(nPrec);
     }
 }
 
@@ -3510,6 +3510,10 @@ bool fileExists(const std::string& sFilename)
 /////////////////////////////////////////////////
 double intPower(double dNumber, int64_t nExponent)
 {
+    // 0^0 is undefined
+    if (nExponent == 0 && dNumber == 0.0)
+        return NAN;
+
     long double dResult = 1.0L;
 
     // An exponent of zero returns always 1

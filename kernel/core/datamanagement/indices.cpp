@@ -379,12 +379,12 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
 /// expression. This function is used in case of
 /// an exception.
 ///
-/// \param v Array*
-/// \param vIndexNumbers const vector<int>
+/// \param v const StackItem*
+/// \param vIndexNumbers const vector<int>&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string convertToString(Array* v, const vector<int> vIndexNumbers)
+static std::string convertToString(const StackItem* v, const vector<int>& vIndexNumbers)
 {
     std::string sIndexExpression;
 
@@ -398,7 +398,7 @@ static std::string convertToString(Array* v, const vector<int> vIndexNumbers)
                 sIndexExpression += ':';
         }
 
-        sIndexExpression += v[i].print();
+        sIndexExpression += v[i].get().print();
     }
 
     return sIndexExpression;
@@ -441,7 +441,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
     {
         _parser.SetExpr(sIndexExpressions);
 		int nResults;
-        mu::Array* v = _parser.Eval(nResults);
+        const mu::StackItem* v = _parser.Eval(nResults);
 
         // check whether the number of the results is matching
         if ((size_t)nResults != vIndexNumbers.size())
@@ -450,14 +450,16 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
         // map the results to their assignments
         for (int i = 0; i < nResults; i++)
         {
-            if (!v[i].size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v[i].print());
+            if (!v[i].get().size())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v[i].get().print());
 
-            stringToNumIndex(v[i], sTableName, isAssignment);
+            mu::Array idx = v[i].get();
 
-            if (isinf(v[i].front().getNum().asF64())) // infinity => last possible index
-                v[i].front() = mu::Value(-1); // only -1 because it will be decremented in the following lines
-            else if (!v[i].front().isValid() || v[i].getAsScalarInt() <= 0LL)
+            stringToNumIndex(idx, sTableName, isAssignment);
+
+            if (isinf(idx.front().getNum().asF64())) // infinity => last possible index
+                idx.front() = mu::Value(-1); // only -1 because it will be decremented in the following lines
+            else if (!idx.front().isValid() || idx.getAsScalarInt() <= 0LL)
             {
                 std::string sToken;
 
@@ -478,9 +480,9 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
             }
 
             if (vIndexNumbers[i] > 0)
-                _idx.row.setIndex(vIndexNumbers[i] - 1, v[i].getAsScalarInt() - 1);
+                _idx.row.setIndex(vIndexNumbers[i] - 1, idx.getAsScalarInt() - 1);
             else
-                _idx.col.setIndex(abs(vIndexNumbers[i]) - 1, v[i].getAsScalarInt() - 1);
+                _idx.col.setIndex(abs(vIndexNumbers[i]) - 1, idx.getAsScalarInt() - 1);
         }
     }
 }
