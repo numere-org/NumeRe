@@ -77,7 +77,7 @@ class Procedure : public FlowCtrl, public PackageManager
 
         void init();
 
-        Returnvalue ProcCalc(std::string sLine, std::string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script);
+        Returnvalue ProcCalc(std::string sLine, std::string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, PlotData& _pData, Script& _script, bool needReturnValue);
         bool setProcName(StringView sProc, bool bInstallFileName = false);
         void resetProcedure(mu::Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(StringView sProc);

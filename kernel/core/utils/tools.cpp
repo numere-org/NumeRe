@@ -3510,6 +3510,10 @@ bool fileExists(const std::string& sFilename)
 /////////////////////////////////////////////////
 double intPower(double dNumber, int64_t nExponent)
 {
+    // 0^0 is undefined
+    if (nExponent == 0 && dNumber == 0.0)
+        return NAN;
+
     long double dResult = 1.0L;
 
     // An exponent of zero returns always 1

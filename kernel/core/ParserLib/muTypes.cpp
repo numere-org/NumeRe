@@ -26,21 +26,22 @@ namespace mu
     /// promoted type of the operation.
     /////////////////////////////////////////////////
     static constexpr NumericalType PROMOTIONTABLE[] = {
-//		 LOGICAL,  UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DATETIME, CF32, CF64
-/*LOG*/	 I8,	   UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DATETIME, CF32, CF64,
-/*UI8*/	 UI8,	   UI8, 	 UI16,	   UI32,	 UI64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DATETIME, CF32, CF64,
-/*UI16*/ UI16,	   UI16, 	 UI16,	   UI32,	 UI64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DATETIME, CF32, CF64,
-/*UI32*/ UI32,	   UI32, 	 UI32,	   UI32,	 UI64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DATETIME, CF32, CF64,
-/*UI64*/ UI64,	   UI64, 	 UI64,	   UI64,	 UI64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DATETIME, CF64, CF64,
-/*I8*/	 I8,	   I8, 	     I16,	   I32,	     I64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DATETIME, CF32, CF64,
-/*I16*/	 I16,	   I16, 	 I16,	   I32,	     I64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DATETIME, CF32, CF64,
-/*I32*/	 I32,	   I32, 	 I32,	   I32,	     I64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DATETIME, CF32, CF64,
-/*I64*/	 I64,	   I64, 	 I64,	   I64,	     I64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DATETIME, CF64, CF64,
-/*F32*/	 F32,	   F32,	     F32,	   F32,	     F64,	   F32,	     F32,	   F32,	     F64,	   F32,	     F64,      DATETIME, CF32, CF64,
-/*F64*/	 F64,	   F64, 	 F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,      DATETIME, CF64, CF64,
-/*DTM*/  DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, CF64, CF64,
-/*CF32*/ CF32,	   CF32,	 CF32,	   CF32,	 CF64,	   CF32,     CF32,	   CF32,	 CF64,	   CF32,	 CF64,	   CF64,     CF32, CF64,
-/*CF64*/ CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64, CF64};
+//		 LOGICAL,  UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64
+/*LOG*/	 I8,	   UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
+/*UI8*/	 UI8,	   UI8, 	 UI16,	   UI32,	 UI64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI16*/ UI16,	   UI16, 	 UI16,	   UI32,	 UI64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI32*/ UI32,	   UI32, 	 UI32,	   UI32,	 UI64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI64*/ UI64,	   UI64, 	 UI64,	   UI64,	 UI64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DURATION, DATETIME, CF64, CF64,
+/*I8*/	 I8,	   I8, 	     I16,	   I32,	     I64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I16*/	 I16,	   I16, 	 I16,	   I32,	     I64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I32*/	 I32,	   I32, 	 I32,	   I32,	     I64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I64*/	 I64,	   I64, 	 I64,	   I64,	     I64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DURATION, DATETIME, CF64, CF64,
+/*F32*/	 F32,	   F32,	     F32,	   F32,	     F64,	   F32,	     F32,	   F32,	     F64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
+/*F64*/	 F64,	   F64, 	 F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,      DURATION, DATETIME, CF64, CF64,
+/*DUR*/  DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DATETIME, CF64, CF64,
+/*DTM*/  DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DURATION, CF64, CF64,
+/*CF32*/ CF32,	   CF32,	 CF32,	   CF32,	 CF64,	   CF32,     CF32,	   CF32,	 CF64,	   CF32,	 CF64,	   CF64,     CF64,     CF32, CF64,
+/*CF64*/ CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,     CF64, CF64};
 
 
     /////////////////////////////////////////////////
@@ -147,6 +148,11 @@ namespace mu
             m_bits = 8;
             m_flags = TYPE_LOGICAL;
         }
+        else if (type == DURATION)
+        {
+            m_bits = 64;
+            m_flags = TYPE_FLOAT | TYPE_DURATION;
+        }
         else if (type == DATETIME)
         {
             m_bits = 64;
@@ -207,6 +213,9 @@ namespace mu
         if (flags & TYPE_COMPLEX)
             return bits == 32 ? CF32 : CF64;
 
+        if (flags & TYPE_DURATION)
+            return DURATION;
+
         if (flags & TYPE_DATETIME)
             return DATETIME;
 
@@ -234,6 +243,9 @@ namespace mu
     {
         if (m_flags & TYPE_COMPLEX)
             return m_bits == 32 ? CF32 : CF64;
+
+        if (m_flags & TYPE_DURATION)
+            return DURATION;
 
         if (m_flags & TYPE_DATETIME)
             return DATETIME;
@@ -280,6 +292,8 @@ namespace mu
                 return "value.ui32";
             case UI64:
                 return "value.ui64";
+            case DURATION:
+                return "duration";
             case DATETIME:
                 return "datetime";
             case F32:
@@ -558,7 +572,7 @@ namespace mu
         static constexpr Numerical::InternalType CONVERSIONTABLE[] = {
             Numerical::UINT, Numerical::UINT, Numerical::UINT, Numerical::UINT, Numerical::UINT,
             Numerical::INT, Numerical::INT, Numerical::INT, Numerical::INT,
-            Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX};
+            Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX};
 
         return CONVERSIONTABLE[promotion];
     }
@@ -1122,6 +1136,9 @@ namespace mu
         if (m_type == LOGICAL)
             return toString((bool)ui64);
 
+        if (m_type == DURATION && !isnan(cf64))
+            return formatDuration(cf64.real());
+
         if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);
 
@@ -1148,6 +1165,9 @@ namespace mu
     {
         if (m_type == LOGICAL)
             return toString((bool)ui64);
+
+        if (m_type == DURATION && !isnan(cf64))
+            return formatDuration(cf64.real());
 
         if (m_type == DATETIME && !isnan(cf64))
             return toString(to_timePoint(cf64.real()), 0);

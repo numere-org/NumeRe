@@ -69,6 +69,7 @@ namespace mu
         I64,
         F32,
         F64,
+        DURATION,
         DATETIME,
         CF32,
         CF64,
@@ -93,8 +94,9 @@ namespace mu
             TYPE_UINT = 0x1,
             TYPE_INT = 0x2,
             TYPE_FLOAT = 0x4,
-            TYPE_DATETIME = 0x8,
-            TYPE_COMPLEX = 0x10
+            TYPE_DURATION = 0x8,
+            TYPE_DATETIME = 0x10,
+            TYPE_COMPLEX = 0x20
         };
 
         uint8_t m_flags;

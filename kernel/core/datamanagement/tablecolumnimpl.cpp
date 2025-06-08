@@ -2427,6 +2427,7 @@ TableColumn::ColumnType to_column_type(const mu::Value& val)
                 return TableColumn::TYPE_VALUE_UI32;
             case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
+            case mu::DURATION:
             case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
             case mu::F32:
@@ -2484,6 +2485,7 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
                 return TableColumn::TYPE_VALUE_UI32;
             case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
+            case mu::DURATION:
             case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
             case mu::F32:
@@ -2597,6 +2599,7 @@ TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableC
                 return TableColumn::TYPE_VALUE_UI32;
             case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
+            case mu::DURATION:
             case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
             case mu::F32:

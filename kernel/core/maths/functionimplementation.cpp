@@ -6387,3 +6387,135 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Cast to seconds.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_seconds(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to minutes.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_minutes(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(60.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to hours.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_hours(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(3600.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to days.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_days(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(86400.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to weeks.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_weeks(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(7*86400.0*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Cast to years.
+///
+/// \param dur const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_years(const mu::Array& dur)
+{
+    mu::Array ret;
+    size_t elems = dur.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::Numerical(365.25*86400*dur.get(i).getNum().asCF64(), mu::DURATION));
+    }
+
+    return ret;
+}
+
+

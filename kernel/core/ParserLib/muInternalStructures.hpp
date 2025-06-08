@@ -438,6 +438,12 @@ namespace mu
             /////////////////////////////////////////////////
             void varPowN(const Variable& var, int N)
             {
+                if (N < 1)
+                {
+                    operator=(var.pow(Numerical(N)));
+                    return;
+                }
+
                 operator=(var);
 
                 for (int n = 1; n < N; n++)

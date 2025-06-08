@@ -211,6 +211,8 @@ int main()
     _parser.DefineFun("time", timfnc_time, false);
     _parser.DefineFun("date", timfnc_date, true, 2);
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);
+    _parser.DefineFun("seconds", cast_seconds);
+    _parser.DefineFun("weeks", cast_weeks);
 
     _parser.DefineFun("logtoidx", numfnc_logtoidx);
     _parser.DefineFun("idxtolog", numfnc_idxtolog);

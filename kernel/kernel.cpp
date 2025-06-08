@@ -397,11 +397,12 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("'Gs", unit_Gauss);
     _parser.DefinePostfixOprt("'Ps", unit_Poise);
     _parser.DefinePostfixOprt("'mol", unit_mol);
-    _parser.DefinePostfixOprt("'y", unit_year);
-    _parser.DefinePostfixOprt("'wk", unit_week);
-    _parser.DefinePostfixOprt("'d", unit_day);
-    _parser.DefinePostfixOprt("'h", unit_hour);
-    _parser.DefinePostfixOprt("'min", unit_minute);
+    _parser.DefinePostfixOprt("'y", cast_years);
+    _parser.DefinePostfixOprt("'wk", cast_weeks);
+    _parser.DefinePostfixOprt("'d", cast_days);
+    _parser.DefinePostfixOprt("'h", cast_hours);
+    _parser.DefinePostfixOprt("'min", cast_minutes);
+    _parser.DefinePostfixOprt("'s", cast_seconds);
     _parser.DefinePostfixOprt("!", numfnc_Factorial);
     _parser.DefinePostfixOprt("!!", numfnc_doubleFactorial);
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
@@ -727,6 +728,12 @@ void NumeReKernel::defineNumFunctions()
 
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
+    _parser.DefineFun("seconds", cast_seconds);                                  // seconds(val)
+    _parser.DefineFun("minutes", cast_minutes);                                  // minutes(val)
+    _parser.DefineFun("hours", cast_hours);                                      // hours(val)
+    _parser.DefineFun("days", cast_days);                                        // days(val)
+    _parser.DefineFun("weeks", cast_weeks);                                      // weeks(val)
+    _parser.DefineFun("years", cast_years);                                      // years(val)
     _parser.DefineFun("i8", cast_numerical<int8_t>);                             // i8(x)
     _parser.DefineFun("ui8", cast_numerical<uint8_t>);                           // ui8(x)
     _parser.DefineFun("i16", cast_numerical<int16_t>);                           // i16(x)

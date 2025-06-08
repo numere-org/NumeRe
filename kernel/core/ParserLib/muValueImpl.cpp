@@ -61,7 +61,7 @@ namespace mu
     BaseValue& NeutralValue::operator=(const BaseValue& other)
     {
         if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH_OOB);
+            throw ParserError(ecTYPE_MISMATCH_OOB, getTypeAsString(m_type) + " = " + getTypeAsString(other.m_type));
 
         return *this;
     }
@@ -1203,7 +1203,7 @@ namespace mu
         else if (other.m_type == TYPE_NEUTRAL)
             return clone();
 
-        return new ArrValue(m_val * Value(other.clone()));
+        return new ArrValue(m_val ^ Value(other.clone()));
     }
 
 
