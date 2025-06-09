@@ -19,11 +19,13 @@
 #include "stringtools.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
+#include "../../../externals/base-n/include/basen.hpp"
 
 #include <fast_float/fast_float.h>
 #include <cstring>
 #include <sstream>
 #include <iomanip>
+#include <iterator>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -2220,4 +2222,100 @@ std::string removeQuotationMarks(const std::string& sString)
     return sString.substr(1, sString.length() - 2);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Encode a string or some file's
+/// contents into a Base-n-encoded string.
+///
+/// \param sToEncode const std::string&
+/// \param isFile bool
+/// \param n int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string encode_base_n(const std::string& sToEncode, bool isFile, int n)
+{
+    std::string sEncoded;
+
+    if (isFile)
+    {
+        std::ifstream file(sToEncode);
+
+        if (!file.good())
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sToEncode, sToEncode);
+
+        // istreambuf_iterators do not skip whitespaces
+        std::istreambuf_iterator<char> eos;
+        std::istreambuf_iterator<char> f(file);
+
+        switch (n)
+        {
+            case 16:
+                bn::encode_b16(f, eos, std::back_inserter(sEncoded));
+                break;
+            case 32:
+                bn::encode_b32(f, eos, std::back_inserter(sEncoded));
+                break;
+            case 64:
+                bn::encode_b64(f, eos, std::back_inserter(sEncoded));
+                break;
+            default:
+                throw std::runtime_error("Encoding with this n is no supported.");
+        }
+    }
+    else
+    {
+        switch (n)
+        {
+            case 16:
+                bn::encode_b16(sToEncode.begin(), sToEncode.end(), std::back_inserter(sEncoded));
+                break;
+            case 32:
+                bn::encode_b32(sToEncode.begin(), sToEncode.end(), std::back_inserter(sEncoded));
+                break;
+            case 64:
+                bn::encode_b64(sToEncode.begin(), sToEncode.end(), std::back_inserter(sEncoded));
+                break;
+            default:
+                throw std::runtime_error("Encoding with this n is no supported.");
+        }
+    }
+
+    // Append padding
+    if (sEncoded.length() % 4)
+        sEncoded.append(4 - sEncoded.length() % 4, '=');
+
+    return sEncoded;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Decode an Base-n-encoded string.
+///
+/// \param sToDecode const std::string&
+/// \param n int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string decode_base_n(const std::string& sToDecode, int n)
+{
+    std::string sDecoded;
+
+    switch (n)
+    {
+        case 16:
+            bn::decode_b16(sToDecode.begin(), sToDecode.end(), std::back_inserter(sDecoded));
+            break;
+        case 32:
+            bn::decode_b32(sToDecode.begin(), sToDecode.end(), std::back_inserter(sDecoded));
+            break;
+        case 64:
+            bn::decode_b64(sToDecode.begin(), sToDecode.end(), std::back_inserter(sDecoded));
+            break;
+        default:
+            throw std::runtime_error("Decoding with this n is no supported.");
+    }
+
+    return sDecoded;
+}
 

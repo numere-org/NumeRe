@@ -519,6 +519,9 @@ std::string removeQuotationMarks(const std::string& sString);
 
 void strChangeNumberFormat(std::string &sNum, int numFormat);
 
+std::string encode_base_n(const std::string& sToEncode, bool isFile, int n);
+std::string decode_base_n(const std::string& sToDecode, int n);
+
 #endif // STRINGTOOLS_HPP
 
 

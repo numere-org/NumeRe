@@ -3066,8 +3066,87 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
                 std::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
                 ret.emplace_back(sha256(file));
             }
+            else
+                ret.emplace_back(mu::Value());
 #endif // PARSERSTANDALONE
         }
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the encode_base_n()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param isFile const mu::Array&
+/// \param n const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, const mu::Array& n)
+{
+    mu::Array ret;
+    size_t elems = std::max({sStr.size(), isFile.size(), n.size()});
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        bool useFile = false;
+        int encoding = 64;
+
+        if (!isFile.isDefault())
+            useFile = isFile.get(i).getNum().asI64() != 0;
+
+        if (!n.isDefault())
+            encoding = n.get(i).getNum().asI64();
+
+        if (!useFile)
+            ret.emplace_back(encode_base_n(sStr.get(i).getStr(), false, encoding));
+        else
+        {
+#ifndef PARSERSTANDALONE
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
+                                                                                               ".dat", false, true);
+
+            // Ensure that the file actually exist
+            if (fileExists(sFileName))
+                ret.emplace_back(encode_base_n(sFileName, true, encoding));
+            else
+                ret.emplace_back(mu::Value());
+#endif // PARSERSTANDALONE
+        }
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the decode_base_n()
+/// function.
+///
+/// \param sStr const mu::Array&
+/// \param n const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_decode_base_n(const mu::Array& sStr, const mu::Array& n)
+{
+    mu::Array ret;
+    size_t elems = std::max(sStr.size(), n.size());
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        int encoding = 64;
+
+        if (!n.isDefault())
+            encoding = n.get(i).getNum().asI64();
+
+        ret.emplace_back(decode_base_n(sStr.get(i).getStr(), encoding));
     }
 
     return ret;

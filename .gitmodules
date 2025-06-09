@@ -19,3 +19,6 @@
 [submodule "externals/qtl"]
 	path = externals/qtl
 	url = https://github.com/numere-org/qtl.git
+[submodule "externals/base-n"]
+	path = externals/base-n
+	url = https://github.com/azawadzki/base-n.git

@@ -838,6 +838,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("getodbcdrivers", strfnc_getodbcdrivers, false);               // getuuid()
     _parser.DefineFun("getfileinfo", strfnc_getfileinfo, false);                     // getfileinfo(str)
     _parser.DefineFun("sha256", strfnc_sha256, false, 1);                            // sha256(str,n) <- can access a file
+    _parser.DefineFun("encode_base_n", strfnc_encode_base_n, false, 2);              // encode_base_n(str,log,n) <- can access a file
+    _parser.DefineFun("decode_base_n", strfnc_decode_base_n, true, 1);               // decode_base_n(str,n)
     _parser.DefineFun("startswith", strfnc_startswith);                              // startswith(str,str)
     _parser.DefineFun("endswith", strfnc_endswith);                                  // endswith(str,str)
     _parser.DefineFun("to_value", strfnc_to_value);                                  // to_value(str)

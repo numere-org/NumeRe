@@ -6,3 +6,4 @@ New	The command "mail" can be used to send e-mails via SMTP.
 Added	The constant "loremipsum" contains the famous text to be used as example text.
 Applied	The performance of the new parser model was greatly improved and is now at about 70-80% of the previous approach for scalar operations.
 Added	A duration type is now available to increase the date-time logic.
+Added	Functions for base-n encoding "encode_base_n()" and decoding "decode_base_n()" have been added.

@@ -91,6 +91,8 @@ mu::Array strfnc_getuuid();
 mu::Array strfnc_getodbcdrivers();
 mu::Array strfnc_getfileinfo(const mu::Array& file);
 mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts); // OPT=1
+mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, const mu::Array& n); // OPT=2
+mu::Array strfnc_decode_base_n(const mu::Array& sStr, const mu::Array& n); // OPT=1
 mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with);
 mu::Array strfnc_endswith(const mu::Array& sStr, const mu::Array& with);
 mu::Array strfnc_to_value(const mu::Array& sStr);
