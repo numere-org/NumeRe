@@ -7,3 +7,5 @@ Added	The constant "loremipsum" contains the famous text to be used as example t
 Applied	The performance of the new parser model was greatly improved and is now at about 70-80% of the previous approach for scalar operations.
 Added	A duration type is now available to increase the date-time logic.
 Added	Functions for base-n encoding "encode_base_n()" and decoding "decode_base_n()" have been added.
+Cleaned	Histograms can now only be calculated from 32 columns or less or for a whole grid at once using the "asgrid" option.
+Fixed	The editor TAB setting is now applied completely and correctly to all editor instances.

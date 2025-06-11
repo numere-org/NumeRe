@@ -752,6 +752,8 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
             nStyle++;
     }
 
+    sColor += '\0';
+
     // Create the actual bars
     if (_histParams.bBars)
         _histGraph->Bars(_mAxisVals, _histData, sColor.c_str());
@@ -940,6 +942,9 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
                                 _data.min(_histParams.sTable, _idx.row, _idx.col).real(),
                                 _data.max(_histParams.sTable, _idx.row, _idx.col).real());
     }
+
+    if (!_histParams.bGrid && _idx.col.size() > 32)
+        throw SyntaxError(SyntaxError::WRONG_DATA_SIZE, sCmd, _histParams.sTable, _histParams.sTable);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {

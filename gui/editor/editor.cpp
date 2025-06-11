@@ -193,7 +193,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
 
     SetTabWidth(4);
     SetIndent(4);
-    SetUseTabs(true);
+    SetUseTabs(m_options->getSetting(SETTING_B_USETABS).active());
 
     AutoCompSetIgnoreCase(true);
     AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_RESPECTCASE);
