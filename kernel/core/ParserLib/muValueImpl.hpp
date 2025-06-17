@@ -25,26 +25,6 @@
 
 namespace mu
 {
-    /*
-    class VoidValue : public BaseValue
-    {
-        public:
-        VoidValue();
-        VoidValue(const VoidValue& other);
-        BaseValue& operator=(const BaseValue& other) override;
-        BaseValue& operator=(const VoidValue& other) override;
-        BaseValue* clone() const override;
-
-        bool operator==(const BaseValue& other) const override;
-        bool operator<(const BaseValue& other) const override;
-
-        size_t getBytes() const override;
-
-        std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        std::string printVal(size_t digits, size_t chrs) const override;
-    };
-    */
-
     /////////////////////////////////////////////////
     /// \brief This implements the "neutral operand"
     /// i.e. the "do-nothing" value, similar to a
@@ -138,10 +118,10 @@ namespace mu
 
         size_t getBytes() const override;
 
-        virtual bool isMethod(const std::string& sMethod) const override;
-        virtual BaseValue* call(const std::string& sMethod) const override;
-        virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const override;
-        virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const override;
+        bool isMethod(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const override;
+        BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
@@ -209,33 +189,37 @@ namespace mu
 
         size_t getBytes() const override;
 
-        virtual bool isMethod(const std::string& sMethod) const override;
-        virtual BaseValue* call(const std::string& sMethod) const override;
-        virtual BaseValue* call(const std::string& sMethod,
-                                const BaseValue& arg1) const override;
-        virtual BaseValue* call(const std::string& sMethod,
-                                const BaseValue& arg1, const BaseValue& arg2) const override;
-        virtual BaseValue* call(const std::string& sMethod,
-                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
-        virtual BaseValue* call(const std::string& sMethod,
-                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
+        bool isMethod(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1, const BaseValue& arg2) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
 
-        virtual bool isApplyingMethod(const std::string& sMethod) const override;
-        virtual BaseValue* apply(const std::string& sMethod) override;
-        virtual BaseValue* apply(const std::string& sMethod,
-                                 const BaseValue& arg1) override;
-        virtual BaseValue* apply(const std::string& sMethod,
-                                 const BaseValue& arg1, const BaseValue& arg2) override;
-        virtual BaseValue* apply(const std::string& sMethod,
-                                 const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
-        virtual BaseValue* apply(const std::string& sMethod,
-                                 const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
+        bool isApplyingMethod(const std::string& sMethod) const override;
+        BaseValue* apply(const std::string& sMethod) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1, const BaseValue& arg2) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class wraps an DictStruct
+    /// instance into a value.
+    /////////////////////////////////////////////////
     class DictStructValue : public BaseValue
     {
         BASE_VALUE_DECL(DictStructValue, TYPE_DICTSTRUCT, DictStruct, m_val)
@@ -247,22 +231,22 @@ namespace mu
 
         size_t getBytes() const override;
 
-        virtual bool isMethod(const std::string& sMethod) const override;
-        virtual BaseValue* call(const std::string& sMethod) const override; // .FIELD, .fields
-        virtual BaseValue* call(const std::string& sMethod,
-                                const BaseValue& arg1) const override; // .get("FIELD")
+        bool isMethod(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1) const override;
 
-        virtual bool isApplyingMethod(const std::string& sMethod) const override;
-        virtual BaseValue* apply(const std::string& sMethod) override; // .FIELD
-        virtual BaseValue* apply(const std::string& sMethod,
-                                 const BaseValue& arg1) override;  // .FIELD(val)
-        virtual BaseValue* apply(const std::string& sMethod,
-                                 const BaseValue& arg1, const BaseValue& arg2) override; // .wrt("FIELD", val)
+        bool isApplyingMethod(const std::string& sMethod) const override;
+        BaseValue* apply(const std::string& sMethod) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1, const BaseValue& arg2) override;
 
 
-        virtual std::string print(size_t digits, size_t chrs, bool trunc) const override;
-        virtual std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
-        virtual std::string printVal(size_t digits, size_t chrs) const override;
+        std::string print(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
     };
 
 }

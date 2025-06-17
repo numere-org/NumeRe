@@ -281,6 +281,7 @@ namespace mu
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Assign another BaseValue instance.
     ///
@@ -875,6 +876,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool StrValue::isMethod(const std::string& sMethod) const
     {
         return sMethod == "len" || sMethod == "first" || sMethod == "last"
@@ -883,6 +892,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* StrValue::call(const std::string& sMethod) const
     {
         if (sMethod == "len")
@@ -896,6 +912,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* StrValue::call(const std::string& sMethod, const BaseValue& arg1) const
     {
         if (arg1.m_type == TYPE_REFERENCE)
@@ -947,6 +971,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* StrValue::call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
     {
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
@@ -980,6 +1013,7 @@ namespace mu
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Print the contained value into a
@@ -1600,17 +1634,41 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ArrValue::isMethod(const std::string& sMethod) const
     {
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::call(const std::string& sMethod) const
     {
         return new ArrValue(m_val.call(sMethod));
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1) const
     {
@@ -1621,6 +1679,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2) const
     {
@@ -1633,6 +1700,16 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
     {
@@ -1646,6 +1723,17 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \param arg4 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
     {
@@ -1660,16 +1748,41 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to
+    /// an applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ArrValue::isApplyingMethod(const std::string& sMethod) const
     {
         return m_val.isApplyingMethod(sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::apply(const std::string& sMethod)
     {
         return new ArrValue(m_val.apply(sMethod));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1)
     {
@@ -1679,6 +1792,16 @@ namespace mu
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone())));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2)
     {
@@ -1690,6 +1813,17 @@ namespace mu
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone()), Value(arg2.clone())));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
     {
@@ -1702,6 +1836,18 @@ namespace mu
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone())));
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \param arg4 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
     {
@@ -1749,9 +1895,18 @@ namespace mu
     }
 
 
+    //------------------------------------------------------------------------------
 
+    // Basic implementation of the DictStructValue class
     BASE_VALUE_IMPL(DictStructValue, TYPE_DICTSTRUCT, m_val)
 
+
+    /////////////////////////////////////////////////
+    /// \brief Is this DictStruct instance valid?
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool DictStructValue::isValid() const
     {
         std::vector<std::string> fieldNames = m_val.getFields();
@@ -1767,6 +1922,13 @@ namespace mu
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Convert to boolean.
+    ///
+    /// \return DictStructValue::operator
+    ///
+    /////////////////////////////////////////////////
     DictStructValue::operator bool() const
     {
         std::vector<std::string> fieldNames = m_val.getFields();
@@ -1782,6 +1944,14 @@ namespace mu
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Equality comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool DictStructValue::operator==(const BaseValue& other) const
     {
         if (other.m_type == TYPE_REFERENCE)
@@ -1808,6 +1978,14 @@ namespace mu
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return the byte size of this
+    /// DictStruct instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t DictStructValue::getBytes() const
     {
         size_t s = 0;
@@ -1825,11 +2003,28 @@ namespace mu
         return s;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool DictStructValue::isMethod(const std::string& sMethod) const
     {
         return sMethod == "fields" || sMethod == "get" || m_val.isField(sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* DictStructValue::call(const std::string& sMethod) const
     {
         if (sMethod == "fields")
@@ -1843,6 +2038,15 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* DictStructValue::call(const std::string& sMethod, const BaseValue& arg1) const
     {
         if (arg1.m_type == TYPE_REFERENCE)
@@ -1857,11 +2061,28 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to
+    /// an applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool DictStructValue::isApplyingMethod(const std::string& sMethod) const
     {
         return sMethod == "wrt" || m_val.isField(sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod)
     {
         if (m_val.isField(sMethod))
@@ -1870,6 +2091,15 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
         if (arg1.m_type == TYPE_REFERENCE)
@@ -1881,6 +2111,16 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
     {
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
@@ -1894,6 +2134,17 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string
+    /// adding possible quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string DictStructValue::print(size_t digits, size_t chrs, bool trunc) const
     {
         std::vector<std::string> fieldNames = m_val.getFields();
@@ -1916,11 +2167,31 @@ namespace mu
         return "{" + sPrinted + "}";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance as if it was
+    /// embedded.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string DictStructValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
     {
         return "{1 x 1 dict}";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string DictStructValue::printVal(size_t digits, size_t chrs) const
     {
         std::vector<std::string> fieldNames = m_val.getFields();

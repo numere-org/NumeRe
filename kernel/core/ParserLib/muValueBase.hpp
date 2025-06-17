@@ -245,7 +245,7 @@ namespace mu
             /// \return DataType
             ///
             /////////////////////////////////////////////////
-            virtual DataType getType() const override
+            DataType getType() const override
             {
                 return m_ptr ? m_ptr->getType() : TYPE_REFERENCE;
             }
@@ -309,30 +309,30 @@ namespace mu
 
             size_t getBytes() const override;
 
-            virtual bool isMethod(const std::string& sMethod) const override;
-            virtual BaseValue* call(const std::string& sMethod) const override;
-            virtual BaseValue* call(const std::string& sMethod,
-                                    const BaseValue& arg1) const override;
-            virtual BaseValue* call(const std::string& sMethod,
-                                    const BaseValue& arg1, const BaseValue& arg2) const override;
-            virtual BaseValue* call(const std::string& sMethod,
-                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
-            virtual BaseValue* call(const std::string& sMethod,
-                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
+            bool isMethod(const std::string& sMethod) const override;
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* call(const std::string& sMethod,
+                            const BaseValue& arg1) const override;
+            BaseValue* call(const std::string& sMethod,
+                            const BaseValue& arg1, const BaseValue& arg2) const override;
+            BaseValue* call(const std::string& sMethod,
+                            const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
+            BaseValue* call(const std::string& sMethod,
+                            const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
 
-            virtual bool isApplyingMethod(const std::string& sMethod) const override;
-            virtual BaseValue* apply(const std::string& sMethod) override;
-            virtual BaseValue* apply(const std::string& sMethod,
-                                     const BaseValue& arg1) override;
-            virtual BaseValue* apply(const std::string& sMethod,
-                                     const BaseValue& arg1, const BaseValue& arg2) override;
-            virtual BaseValue* apply(const std::string& sMethod,
-                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
-            virtual BaseValue* apply(const std::string& sMethod,
-                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) override;
+            bool isApplyingMethod(const std::string& sMethod) const override;
+            BaseValue* apply(const std::string& sMethod) override;
+            BaseValue* apply(const std::string& sMethod,
+                             const BaseValue& arg1) override;
+            BaseValue* apply(const std::string& sMethod,
+                             const BaseValue& arg1, const BaseValue& arg2) override;
+            BaseValue* apply(const std::string& sMethod,
+                             const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
+            BaseValue* apply(const std::string& sMethod,
+                             const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) override;
 
-            virtual std::string print(size_t digits, size_t chrs, bool trunc) const override;
-            virtual std::string printVal(size_t digits, size_t chrs) const override;
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
     };
 
     /////////////////////////////////////////////////

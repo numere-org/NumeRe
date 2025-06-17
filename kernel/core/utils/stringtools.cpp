@@ -2323,6 +2323,15 @@ std::string decode_base_n(const std::string& sToDecode, int n)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for substr()
+///
+/// \param sString const std::string&
+/// \param p size_t
+/// \param len size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string substr_impl(const std::string& sString, size_t p, size_t len)
 {
     if (!sString.length() || p >= sString.length())
@@ -2332,6 +2341,15 @@ std::string substr_impl(const std::string& sString, size_t p, size_t len)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for split()
+///
+/// \param sString const std::string&
+/// \param c const std::string&
+/// \param keepEmpty bool
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
 std::vector<std::string> split_impl(const std::string& sString, const std::string& c, bool keepEmpty)
 {
     std::vector<std::string> ret;
@@ -2355,6 +2373,15 @@ std::vector<std::string> split_impl(const std::string& sString, const std::strin
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for strfnd()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t p)
 {
     if (!sString.length())
@@ -2367,6 +2394,15 @@ size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for strrfnd()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t strrfnd_impl(const std::string& sString, const std::string& sFind, size_t p)
 {
     if (!sString.length())
@@ -2379,6 +2415,15 @@ size_t strrfnd_impl(const std::string& sString, const std::string& sFind, size_t
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for strmatch()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
 {
     if (!sString.length())
@@ -2391,6 +2436,15 @@ size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for strrmatch()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
 {
     if (!sString.length())
@@ -2403,6 +2457,15 @@ size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for str_not_match()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t str_not_match_impl(const std::string& sString, const std::string& sFind, size_t p)
 {
     if (!sString.length())
@@ -2415,6 +2478,15 @@ size_t str_not_match_impl(const std::string& sString, const std::string& sFind, 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation for str_not_rmatch()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
 {
     if (!sString.length())

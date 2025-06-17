@@ -22,9 +22,19 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Construct an empty DictStruct.
+    /////////////////////////////////////////////////
     DictStruct::DictStruct()
     { }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param other const DictStruct&
+    ///
+    /////////////////////////////////////////////////
     DictStruct::DictStruct(const DictStruct& other)
     {
         for (auto& iter : other.m_fields)
@@ -36,6 +46,13 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor.
+    ///
+    /// \param other DictStruct&&
+    ///
+    /////////////////////////////////////////////////
     DictStruct::DictStruct(DictStruct&& other)
     {
         for (auto& iter : other.m_fields)
@@ -44,6 +61,14 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Create a DictStruct instance from a
+    /// prepared std::map.
+    ///
+    /// \param dictDef const std::map<std::string, std::unique_ptr<BaseValue>>&
+    ///
+    /////////////////////////////////////////////////
     DictStruct::DictStruct(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef)
     {
         for (auto& iter : dictDef)
@@ -55,6 +80,14 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another DictStruct instance.
+    ///
+    /// \param other const DictStruct&
+    /// \return DictStruct&
+    ///
+    /////////////////////////////////////////////////
     DictStruct& DictStruct::operator=(const DictStruct& other)
     {
         m_fields.clear();
@@ -70,6 +103,15 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Move-assign another DictStruct
+    /// instance.
+    ///
+    /// \param other DictStruct&&
+    /// \return DictStruct&
+    ///
+    /////////////////////////////////////////////////
     DictStruct& DictStruct::operator=(DictStruct&& other)
     {
         m_fields.clear();
@@ -82,6 +124,14 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a prepared std::map.
+    ///
+    /// \param dictDef const std::map<std::string,std::unique_ptr<BaseValue>>&
+    /// \return DictStruct&
+    ///
+    /////////////////////////////////////////////////
     DictStruct& DictStruct::operator=(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef)
     {
         m_fields.clear();
@@ -97,11 +147,27 @@ namespace mu
         return *this;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// field of this instance?
+    ///
+    /// \param fieldName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool DictStruct::isField(const std::string& fieldName) const
     {
         return m_fields.find(fieldName) != m_fields.end();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Return a vector of all field names.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
     std::vector<std::string> DictStruct::getFields() const
     {
         std::vector<std::string> fields;
@@ -115,6 +181,16 @@ namespace mu
         return fields;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Read the value at the passed field
+    /// name.
+    ///
+    /// \param fieldName const std::string&
+    /// \return BaseValue*
+    /// \note The returned pointer may only be
+    /// borrowed.
+    /////////////////////////////////////////////////
     BaseValue* DictStruct::read(const std::string& fieldName)
     {
         auto iter = m_fields.find(fieldName);
@@ -125,6 +201,16 @@ namespace mu
         return iter->second.get();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Read the value at the passed field
+    /// name.
+    ///
+    /// \param fieldName const std::string&
+    /// \return const BaseValue*
+    /// \note The returned pointer may only be
+    /// borrowed.
+    /////////////////////////////////////////////////
     const BaseValue* DictStruct::read(const std::string& fieldName) const
     {
         auto iter = m_fields.find(fieldName);
@@ -135,6 +221,16 @@ namespace mu
         return iter->second.get();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Write a new value to the passed field.
+    ///
+    /// \param fieldName const std::string&
+    /// \param value const BaseValue&
+    /// \return BaseValue*
+    /// \note The returned pointer may only be
+    /// borrowed.
+    /////////////////////////////////////////////////
     BaseValue* DictStruct::write(const std::string& fieldName, const BaseValue& value)
     {
         BaseValue* val = value.clone();

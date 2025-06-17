@@ -27,6 +27,12 @@ namespace mu
 {
     class BaseValue;
 
+    /////////////////////////////////////////////////
+    /// \brief This class is a combination of a
+    /// dictionary and a dynamic structure, hence the
+    /// name "DictStruct". It can be used in both
+    /// ways.
+    /////////////////////////////////////////////////
     class DictStruct
     {
         private:
