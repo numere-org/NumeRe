@@ -48,6 +48,22 @@ extern double g_pixelScale;
  * Ende der globalen Variablen
  */
 
+/////////////////////////////////////////////////
+/// \brief Quick wrapper to handle occurences,
+/// where var^0 might appear in a formal
+/// definition, which shall be (symbolically)
+/// evaluated to 1.
+///
+/// \param val const std::complex<double>&
+/// \param exp int
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> intPowerSymbolic(const std::complex<double>& val, int exp)
+{
+    return !exp ? 1.0 : intPower(val, exp);
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Multiplies a number with the imaginary
@@ -1778,13 +1794,15 @@ static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& 
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
         return NAN;
-    int n = intCast(fabs(vn));
 
+    int n = intCast(fabs(vn));
     std::complex<double> dResult = 0.0;
+
     for (int k = 0; k <= n/2; k++)
     {
-        dResult += intPower(-1,k)*binom_impl(n,k)*binom_impl(2*(n-k),n)*intPower(v,n-2*k);
+        dResult += intPower(-1,k)*binom_impl(n,k)*binom_impl(2*(n-k),n) * intPowerSymbolic(v, n-2*k);
     }
+
     dResult *= intPower(2, -n);
     return dResult;
 }
@@ -1949,12 +1967,12 @@ static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<
     {
         if (k % 2)
         {
-            vReturn -= factorial_impl(n-k)*intPower(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+            vReturn -= factorial_impl(n-k)*intPowerSymbolic(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
             vNorm -= factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
         }
         else
         {
-            vReturn += factorial_impl(n-k)*intPower(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+            vReturn += factorial_impl(n-k)*intPowerSymbolic(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
             vNorm += factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
         }
     }
@@ -2217,13 +2235,15 @@ static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& 
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
         return NAN;
-    int n = intCast(fabs(vn));
 
+    int n = intCast(fabs(vn));
     std::complex<double> dResult = 0.0;
+
     for (int k = 0; k <= n; k++)
     {
-        dResult += intPower(-v,k)*binom_impl(n,k)/factorial_impl(k);
+        dResult += intPowerSymbolic(-v,k)*binom_impl(n,k)/factorial_impl(k);
     }
+
     return dResult;
 }
 
@@ -2269,7 +2289,7 @@ static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex
 
     for (int m = 0; m <= n; m++)
     {
-        dResult += binom_above / (factorial_impl(n-m)*factorial_impl(k+m)) * intPower(-x,m) / factorial_impl(m);
+        dResult += binom_above / (factorial_impl(n-m)*factorial_impl(k+m)) * intPowerSymbolic(-x,m) / factorial_impl(m);
     }           // -----------------binom(n+k, n-m) ----------------------
 
     return dResult;

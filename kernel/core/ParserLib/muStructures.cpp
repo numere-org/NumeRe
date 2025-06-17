@@ -55,8 +55,23 @@ namespace mu
     /// \param other BaseValue*
     ///
     /////////////////////////////////////////////////
-    Value::Value(BaseValue* other) : std::unique_ptr<BaseValue>(other)
-    { }
+    Value::Value(BaseValue* other)
+    {
+        if (other && other->m_type == TYPE_ARRAY)
+        {
+            ArrValue* arrVal = static_cast<ArrValue*>(other);
+
+            if (arrVal->get().size() == 1)
+            {
+                operator=(arrVal->get().front());
+                delete other;
+            }
+            else
+                reset(other);
+        }
+        else
+            reset(other);
+    }
 
 
     /////////////////////////////////////////////////
@@ -91,7 +106,13 @@ namespace mu
     /////////////////////////////////////////////////
     Value::Value(const Array& data)
     {
-        reset(new ArrValue(data));
+        if (data.size() == 1)
+        {
+            if (data.front().get())
+                reset(data.front().get()->clone());
+        }
+        else
+            reset(new ArrValue(data));
     }
 
 
@@ -215,6 +236,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct a Value from a DictStruct
+    /// instance.
+    ///
+    /// \param dict const DictStruct&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const DictStruct& dict)
+    {
+        reset(new DictStructValue(dict));
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct a Value from a data type.
     ///
     /// \param type DataType
@@ -286,6 +320,10 @@ namespace mu
                 return "string";
             case TYPE_ARRAY:
                 return "cluster";
+            case TYPE_DICTSTRUCT:
+                return "dict";
+            case TYPE_REFERENCE:
+                return "reference";
         }
 
         return "void";
@@ -698,6 +736,214 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Does this value object have the
+    /// requested method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isMethod(const std::string& sMethod) const
+    {
+        return get() && get()->isMethod(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod) const
+    {
+        if (!get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1) const
+    {
+        if (!get() || !arg1.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2) const
+    {
+        if (!get() || !arg1.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get(), *arg2.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get(), *arg2.get(), *arg3.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \param arg4 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg3.get() || !arg4.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Does this value object have the
+    /// requested applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isApplyingMethod(const std::string& sMethod) const
+    {
+        return get() && get()->isApplyingMethod(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod)
+    {
+        if (!get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1)
+    {
+        if (!get() || !arg1.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2)
+    {
+        if (!get() || !arg1.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get(), *arg2.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3)
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \param arg4 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4)
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg3.get() || !arg4.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Convert the contained value into a
     /// string for printing on the terminal. Will
     /// append quotation marks to string values, if
@@ -785,7 +1031,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Construct an empty Array.
     /////////////////////////////////////////////////
-    Array::Array() : std::vector<Value>(), m_commonType(TYPE_VOID)
+    Array::Array() : std::vector<Value>(), m_commonType(TYPE_VOID), m_isConst(true)
     { }
 
 
@@ -808,7 +1054,7 @@ namespace mu
     /// \param fillVal const Value&
     ///
     /////////////////////////////////////////////////
-    Array::Array(size_t n, const Value& fillVal) : std::vector<Value>(n, fillVal), m_commonType(fillVal.getType())
+    Array::Array(size_t n, const Value& fillVal) : std::vector<Value>(n, fillVal), m_commonType(fillVal.getType()), m_isConst(true)
     { }
 
 
@@ -837,7 +1083,7 @@ namespace mu
     /// \param var const Variable&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType)
+    Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType), m_isConst(true)
     { }
 
 
@@ -848,7 +1094,7 @@ namespace mu
     /// \param other const std::vector<std::complex<double>>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<std::complex<double>>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<std::complex<double>>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -864,7 +1110,7 @@ namespace mu
     /// \param other const std::vector<double>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<double>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<double>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -880,7 +1126,7 @@ namespace mu
     /// \param other const std::vector<size_t>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<size_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<size_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -896,7 +1142,7 @@ namespace mu
     /// \param other const std::vector<int64_t>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<int64_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<int64_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -912,7 +1158,7 @@ namespace mu
     /// \param other const std::vector<Numerical>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -928,7 +1174,7 @@ namespace mu
     /// \param other const std::vector<std::string>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<std::string>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_STRING)
+    Array::Array(const std::vector<std::string>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_STRING), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -945,7 +1191,7 @@ namespace mu
     /// \param lst const Array&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Array& fst, const Array& lst) : std::vector<Value>({fst,lst}), m_commonType(TYPE_GENERATOR)
+    Array::Array(const Array& fst, const Array& lst) : std::vector<Value>({fst,lst}), m_commonType(TYPE_GENERATOR), m_isConst(true)
     { }
 
 
@@ -958,7 +1204,7 @@ namespace mu
     /// \param lst const Array&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Array& fst, const Array& inc, const Array& lst) : std::vector<Value>({fst,inc,lst}), m_commonType(TYPE_GENERATOR)
+    Array::Array(const Array& fst, const Array& inc, const Array& lst) : std::vector<Value>({fst,inc,lst}), m_commonType(TYPE_GENERATOR), m_isConst(true)
     { }
 
 
@@ -1041,7 +1287,12 @@ namespace mu
             case TYPE_STRING:
                 return "string";
             case TYPE_MIXED:
+            case TYPE_ARRAY:
                 return "cluster";
+            case TYPE_DICTSTRUCT:
+                return "dict";
+            case TYPE_REFERENCE:
+                return "reference";
         }
 
         return "void";
@@ -1367,6 +1618,20 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Determine, whether the passed string
+    /// corresponds to a method.
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::isMethod(const std::string& sMethod) const
+    {
+        return sMethod == "std" || sMethod == "avg" || sMethod == "prd" || sMethod == "sum" || sMethod == "min" || sMethod == "max" || sMethod == "norm" || sMethod == "num" || sMethod == "cnt" || sMethod == "med" || sMethod == "and" || sMethod == "or" || sMethod == "xor" || sMethod == "size" || sMethod == "maxpos" || sMethod == "minpos" || sMethod == "exc" || sMethod == "skw" || sMethod == "stderr" || sMethod == "rms" || sMethod == "order" || sMethod == "unwrap" || sMethod == "sel" || front().isMethod(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Call a method with zero arguments.
     ///
     /// \param sMethod const std::string&
@@ -1375,13 +1640,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod) const
     {
-        if (sMethod == "len")
-            return strfnc_strlen(*this);
-        else if (sMethod == "first")
-            return strfnc_firstch(*this);
-        else if (sMethod == "last")
-            return strfnc_lastch(*this);
-        else if (sMethod == "std")
+        if (sMethod == "std")
             return numfnc_Std(this); // Pointer as single-element array
         else if (sMethod == "avg")
             return numfnc_Avg(this);
@@ -1425,6 +1684,18 @@ namespace mu
             return numfnc_order(this);
         else if (sMethod == "unwrap")
             return unWrap();
+        else if (front().isMethod(sMethod))
+        {
+            Array ret;
+            ret.reserve(size());
+
+            for (size_t i = 0; i < size(); i++)
+            {
+                ret.emplace_back(get(i).call(sMethod));
+            }
+
+            return ret;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1440,30 +1711,21 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1) const
     {
-        if (sMethod == "at")
-            return strfnc_char(*this, arg1);
-        else if (sMethod == "startsw")
-            return strfnc_startswith(*this, arg1);
-        else if (sMethod == "endsw")
-            return strfnc_endswith(*this, arg1);
-        else if (sMethod == "sel")
+        if (sMethod == "sel")
             return numfnc_getElements(*this, arg1);
-        else if (sMethod == "sub")
-            return strfnc_substr(*this, arg1, mu::Array());
-        else if (sMethod == "splt")
-            return strfnc_split(*this, arg1, mu::Array());
-        else if (sMethod == "fnd")
-            return strfnc_strfnd(arg1, *this, mu::Array());
-        else if (sMethod == "rfnd")
-            return strfnc_strrfnd(arg1, *this, mu::Array());
-        else if (sMethod == "mtch")
-            return strfnc_strmatch(arg1, *this, mu::Array());
-        else if (sMethod == "rmtch")
-            return strfnc_strrmatch(arg1, *this, mu::Array());
-        else if (sMethod == "nmtch")
-            return strfnc_str_not_match(arg1, *this, mu::Array());
-        else if (sMethod == "nrmtch")
-            return strfnc_str_not_rmatch(arg1, *this, mu::Array());
+        else if (front().isMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max(size(), arg1.size());
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i)));
+            }
+
+            return ret;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1480,22 +1742,275 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
     {
-        if (sMethod == "sub")
-            return strfnc_substr(*this, arg1, arg2);
-        else if (sMethod == "splt")
-            return strfnc_split(*this, arg1, arg2);
-        else if (sMethod == "fnd")
-            return strfnc_strfnd(arg1, *this, arg2);
-        else if (sMethod == "rfnd")
-            return strfnc_strrfnd(arg1, *this, arg2);
-        else if (sMethod == "mtch")
-            return strfnc_strmatch(arg1, *this, arg2);
-        else if (sMethod == "rmtch")
-            return strfnc_strrmatch(arg1, *this, arg2);
-        else if (sMethod == "nmtch")
-            return strfnc_str_not_match(arg1, *this, arg2);
-        else if (sMethod == "nrmtch")
-            return strfnc_str_not_rmatch(arg1, *this, arg2);
+        if (front().isMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size()});
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i), arg2.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const
+    {
+        if (front().isMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i), arg2.get(i), arg3.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \param arg4 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const
+    {
+        if (front().isMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i), arg2.get(i), arg3.get(i), arg4.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the passed string
+    /// corresponds to an applying method.
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::isApplyingMethod(const std::string& sMethod) const
+    {
+        return sMethod == "sel" || front().isApplyingMethod(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (front().isApplyingMethod(sMethod))
+        {
+            Array ret;
+            ret.reserve(size());
+            ret.m_isConst = false;
+
+            for (size_t i = 0; i < size(); i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (sMethod == "sel")
+        {
+            Array ret;
+            size_t elems = arg1.size();
+            ret.reserve(elems);
+            ret.m_isConst = false;
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                int64_t n = arg1.get(i).getNum().asI64();
+
+                if (n > 0 && (size_t)n <= size())
+                    ret.emplace_back(new RefValue(get(n-1).get()));
+            }
+
+            return ret;
+        }
+        else if (front().isApplyingMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max(size(), arg1.size());
+            ret.reserve(elems);
+            ret.m_isConst = false;
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (front().isApplyingMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size()});
+            ret.reserve(elems);
+            ret.m_isConst = false;
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i), arg2.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (front().isApplyingMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
+            ret.reserve(elems);
+            ret.m_isConst = false;
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i), arg2.get(i), arg3.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \param arg4 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (front().isApplyingMethod(sMethod))
+        {
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
+            ret.reserve(elems);
+            ret.m_isConst = false;
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i), arg2.get(i), arg3.get(i), arg4.get(i)));
+            }
+
+            return ret;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1807,7 +2322,9 @@ namespace mu
     /// \brief Construct an empty Variable.
     /////////////////////////////////////////////////
     Variable::Variable() : Array()
-    { }
+    {
+        m_isConst = false;
+    }
 
 
     /////////////////////////////////////////////////
@@ -1817,7 +2334,9 @@ namespace mu
     ///
     /////////////////////////////////////////////////
     Variable::Variable(const Value& data) : Array(data)
-    { }
+    {
+        m_isConst = false;
+    }
 
 
     /////////////////////////////////////////////////
@@ -1827,7 +2346,9 @@ namespace mu
     ///
     /////////////////////////////////////////////////
     Variable::Variable(const Array& data) : Array(data)
-    { }
+    {
+        m_isConst = false;
+    }
 
 
     /////////////////////////////////////////////////
@@ -1837,7 +2358,9 @@ namespace mu
     ///
     /////////////////////////////////////////////////
     Variable::Variable(const Variable& data) : Array(data)
-    { }
+    {
+        m_isConst = false;
+    }
 
 
     /////////////////////////////////////////////////
@@ -1866,6 +2389,7 @@ namespace mu
         if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
         {
             Array::operator=(Array(other));
+            m_isConst = false;
             return *this;
         }
 
@@ -1886,6 +2410,7 @@ namespace mu
         if (getCommonType() == TYPE_VOID || getType() == other.getType())
         {
             Array::operator=(other);
+            m_isConst = false;
             return *this;
         }
 
@@ -1904,9 +2429,8 @@ namespace mu
     void Variable::overwrite(const Array& other)
     {
         Array::operator=(other);
+        m_isConst = false;
     }
-
-
 
 
 

@@ -269,7 +269,7 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
 static void replaceEntityOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityName, const std::string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, mu::Parser& _parser, bool isCluster);
 static std::string createMafDataAccessString(const std::string& sAccessString, mu::Parser& _parser);
 static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser);
-static std::string createMafVectorName(std::string sAccessString);
+static std::pair<std::string, bool> createMafVectorName(std::string sAccessString);
 static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess);
 static std::string getMafFromAccessString(const std::string& sAccessString);
 static std::string getMafAccessString(const std::string& sLine, const std::string& sEntity);
@@ -816,13 +816,13 @@ static void handleMafDataAccess(std::string& sLine, const std::string& sMafAcces
     size_t nPos = 0;
 
     // Replace the access string with its corresponding vector name
-    std::string sMafVectorName = createMafVectorName(sMafAccess);
+    std::pair<std::string, bool> sVectorResult = createMafVectorName(sMafAccess);
 
     // If the return value is not already a numerical vector
-    if (!_parser.ContainsInternalVars(sMafVectorName, false) && sMafVectorName != "true" && sMafVectorName != "false")
+    if (!sVectorResult.second)
     {
         // Set the vector variable with its value for the parser
-        _parser.SetInternalVar(sMafVectorName,
+        _parser.SetInternalVar(sVectorResult.first,
                                MafDataAccess(_data,
                                              getMafFromAccessString(sMafAccess),
                                              sMafAccess.substr(0, sMafAccess.find('(')),
@@ -830,7 +830,7 @@ static void handleMafDataAccess(std::string& sLine, const std::string& sMafAcces
 
         // Create a cached access and store it
         mu::CachedDataAccess _access = {sMafAccess,
-                                        sMafVectorName,
+                                        sVectorResult.first,
                                         sMafAccess.substr(0, sMafAccess.find('(')),
                                         mu::CachedDataAccess::IS_TABLE_METHOD
                                        };
@@ -848,7 +848,7 @@ static void handleMafDataAccess(std::string& sLine, const std::string& sMafAcces
             continue;
         }
 
-        sLine.replace(nPos, sMafAccess.length(), sMafVectorName);
+        sLine.replace(nPos, sMafAccess.length(), sVectorResult.first);
     }
 }
 
@@ -2322,10 +2322,10 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
 /// string.
 ///
 /// \param sAccessString std::string
-/// \return std::string
+/// \return std::pair<std::string, bool>
 ///
 /////////////////////////////////////////////////
-static std::string createMafVectorName(std::string sAccessString)
+static std::pair<std::string, bool> createMafVectorName(std::string sAccessString)
 {
     static std::map<std::string, TableMethod> mMethods = getInplaceTableMethods();
     std::string sTableName = sAccessString.substr(0, sAccessString.find("()."));
@@ -2333,6 +2333,9 @@ static std::string createMafVectorName(std::string sAccessString)
     sResultVectorName.replace(sResultVectorName.find("()"), 2, "[");
     sResultVectorName = replaceToVectorname(sResultVectorName);
     sResultVectorName += "]";
+
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     for (auto& method : mMethods)
     {
@@ -2345,26 +2348,26 @@ static std::string createMafVectorName(std::string sAccessString)
 
             // Might be necessary to resolve the contents of columns and conversions
             getDataElements(sMethodArguments,
-                            NumeReKernel::getInstance()->getParser(),
-                            NumeReKernel::getInstance()->getMemoryManager());
+                            _parser,
+                            _data);
 
-            return method.second(sTableName, sMethodArguments, sResultVectorName);
+            return std::make_pair(method.second(sTableName, sMethodArguments, sResultVectorName), true);
         }
     }
 
     if (sAccessString.find(".name") != std::string::npos)
-        return NumeReKernel::getInstance()->getParser().CreateTempVar(mu::Value(sAccessString.substr(0, sAccessString.find("().") + 2)));
+        return std::make_pair(_parser.CreateTempVar(mu::Value(sAccessString.substr(0, sAccessString.find("().") + 2))), true);
 
     if (sAccessString.find(".description") != std::string::npos)
-        return NumeReKernel::getInstance()->getParser().CreateTempVar(mu::Value(NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("().")))));
+        return std::make_pair(_parser.CreateTempVar(mu::Value(_data.getComment(sAccessString.substr(0, sAccessString.find("()."))))), true);
 
     if (sAccessString.find(".shrink") != std::string::npos)
     {
-        NumeReKernel::getInstance()->getMemoryManager().shrink(sTableName);
-        return "true";
+        _data.shrink(sTableName);
+        return std::make_pair("true", true);
     }
 
-    return sResultVectorName;
+    return std::make_pair(sResultVectorName, false);
 }
 
 

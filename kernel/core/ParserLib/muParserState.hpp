@@ -180,7 +180,7 @@ namespace mu
                     for (size_t j = 0; j < m_stackBuffer.size(); j++)
                     {
                         if (m_stackBuffer[j].isAliasOf(oldAddr))
-                            m_stackBuffer[j].aliasOf(newAddr);
+                            m_stackBuffer[j].aliasOf(const_cast<Array*>(newAddr));
                     }
                 }
             }

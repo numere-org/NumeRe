@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "muTypes.hpp"
+#include "muCompositeStructures.hpp"
 #include "muApply.hpp"
 #include "muValueBase.hpp"
 #include "muParserError.h"
@@ -32,6 +33,7 @@ namespace mu
     // Forward declaration of the Variable class
     class Variable;
     class Array;
+    class RefArray;
 
 
     /////////////////////////////////////////////////
@@ -62,6 +64,7 @@ namespace mu
             Value(const std::complex<double>& value, bool autoType = true);
             Value(const std::string& sData);
             Value(const char* sData);
+            Value(const DictStruct& dict);
             Value(DataType type);
 
             /////////////////////////////////////////////////
@@ -230,7 +233,7 @@ namespace mu
                     reset(other->clone());
                 else if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->getType(), other->getType()))
                         return operator=(*this + other);
 
                     *get() += *other.get();
@@ -253,7 +256,7 @@ namespace mu
 
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->getType(), other->getType()))
                         return operator=(*this - other);
 
                     *get() -= *other.get();
@@ -273,7 +276,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->getType(), other->getType()))
                         return operator=(*this / other);
 
                     *get() /= *other.get();
@@ -293,8 +296,8 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    DataType thisType = get()->m_type;
-                    DataType otherType = other->m_type;
+                    DataType thisType = get()->getType();
+                    DataType otherType = other->getType();
 
                     if (nonRecursiveOps(thisType, otherType)
                         || (thisType == TYPE_NUMERICAL && otherType == TYPE_STRING))
@@ -317,7 +320,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->getType(), other->getType()))
                         return operator=(*this ^ other);
 
                     *get() ^= *other.get();
@@ -353,6 +356,22 @@ namespace mu
 
             Value operator&&(const Value& other) const;
             Value operator||(const Value& other) const;
+
+            bool isMethod(const std::string& sMethod) const;
+
+            Value call(const std::string& sMethod) const;
+            Value call(const std::string& sMethod, const Value& arg1) const;
+            Value call(const std::string& sMethod, const Value& arg1, const Value& arg2) const;
+            Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const;
+            Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const;
+
+            bool isApplyingMethod(const std::string& sMethod) const;
+
+            Value apply(const std::string& sMethod);
+            Value apply(const std::string& sMethod, const Value& arg1);
+            Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2);
+            Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3);
+            Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4);
 
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVal(size_t digits = 0, size_t chrs = 0) const;
@@ -429,6 +448,7 @@ namespace mu
                 }
 
                 m_commonType = other.m_commonType;
+                m_isConst = other.m_isConst;
 
                 return *this;
             }
@@ -442,10 +462,23 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                std::swap(_M_impl._M_start, other._M_impl._M_start);
-                std::swap(_M_impl._M_finish, other._M_impl._M_finish);
-                std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
-                std::swap(m_commonType, other.m_commonType);
+                if (other.size() == 1 && other.front().isArray())
+                {
+                    Array& fst = other.front().getArray();
+                    std::swap(_M_impl._M_start, fst._M_impl._M_start);
+                    std::swap(_M_impl._M_finish, fst._M_impl._M_finish);
+                    std::swap(_M_impl._M_end_of_storage, fst._M_impl._M_end_of_storage);
+                    std::swap(m_commonType, fst.m_commonType);
+                    std::swap(m_isConst, fst.m_isConst);
+                }
+                else
+                {
+                    std::swap(_M_impl._M_start, other._M_impl._M_start);
+                    std::swap(_M_impl._M_finish, other._M_impl._M_finish);
+                    std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
+                    std::swap(m_commonType, other.m_commonType);
+                    std::swap(m_isConst, other.m_isConst);
+                }
 
                 return *this;
             }
@@ -456,6 +489,17 @@ namespace mu
             NumericalType getCommonNumericalType() const;
             bool isScalar() const;
             bool isDefault() const;
+
+            /////////////////////////////////////////////////
+            /// \brief Is this a constant instance?
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isConst() const
+            {
+                return m_isConst;
+            }
 
             /////////////////////////////////////////////////
             /// \brief Add operator.
@@ -724,9 +768,21 @@ namespace mu
 
             Array unWrap() const;
 
+            bool isMethod(const std::string& sMethod) const;
+
             Array call(const std::string& sMethod) const;
             Array call(const std::string& sMethod, const Array& arg1) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2) const;
+            Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const;
+            Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const;
+
+            bool isApplyingMethod(const std::string& sMethod) const;
+
+            Array apply(const std::string& sMethod);
+            Array apply(const std::string& sMethod, const Array& arg1);
+            Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2);
+            Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3);
+            Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4);
 
             int64_t getAsScalarInt() const;
 
@@ -780,6 +836,7 @@ namespace mu
         protected:
             mutable DataType m_commonType;
             static const Value m_default;
+            bool m_isConst;
     };
 
 
@@ -813,7 +870,9 @@ namespace mu
             {
                 if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
                 {
+#warning FIXME (numere#1#06/17/25): Variables must not contain references
                     Array::operator=(other);
+                    m_isConst = false;
                     return *this;
                 }
 

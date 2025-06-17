@@ -7005,9 +7005,9 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
 
             // Append the needed opening parentheses, if the completed
             // objects are data objects or functions
-            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos))
+            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos+sMatch.length()) == '('))
                 sFillUp = "(?" + toString((int)NumeReSyntax::SYNTAX_TABLE);
-            else if (isStyleType(STYLE_DATAOBJECT, nPos))
+            else if (isStyleType(STYLE_DATAOBJECT, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos+sMatch.length()) == '{'))
                 sFillUp = "{?" + toString((int)NumeReSyntax::SYNTAX_CLUSTER);
             else if (isStyleType(STYLE_IDENTIFIER, nPos))
                 sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);

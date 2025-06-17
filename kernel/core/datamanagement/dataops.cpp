@@ -201,7 +201,7 @@ void append_data(CommandLineParser& cmdParser)
         info = _data.openFile(sFileList, false, false, 0, "", sFileFormat);
 
     // Inform the user
-    if (!_data.isEmpty("data") && _option.systemPrints())
+    if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
         NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
 }
 

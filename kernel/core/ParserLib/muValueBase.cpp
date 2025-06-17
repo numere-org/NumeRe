@@ -310,7 +310,8 @@ namespace mu
     /// \return BaseValue*
     ///
     /////////////////////////////////////////////////
-    BaseValue* BaseValue::call(const std::string& sMethod, const BaseValue& arg1) const
+    BaseValue* BaseValue::call(const std::string& sMethod,
+                               const BaseValue& arg1) const
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -325,9 +326,665 @@ namespace mu
     /// \return BaseValue*
     ///
     /////////////////////////////////////////////////
-    BaseValue* BaseValue::call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
+    BaseValue* BaseValue::call(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2) const
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Call an instance specific method with
+    /// three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::call(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Call an instance specific method with
+    /// four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \param arg4 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::call(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Method to detect, whether an applying
+    /// (non-const) method with the passed name is
+    /// implemented in this instance. Can also be
+    /// used to detect possible fields.
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool BaseValue::isApplyingMethod(const std::string& sMethod) const
+    {
+        return false;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply an instance specific method with
+    /// zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /// \note Must return this instance if
+    /// implemented.
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::apply(const std::string& sMethod)
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply an instance specific method with
+    /// one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /// \note Must return this instance if
+    /// implemented.
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1)
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply an instance specific method with
+    /// two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /// \note Must return this instance if
+    /// implemented.
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2)
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply an instance specific method with
+    /// three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /// \note Must return this instance if
+    /// implemented.
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply an instance specific method with
+    /// four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \param arg4 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /// \note Must return this instance if
+    /// implemented.
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Print as if embedded into another
+    /// structure. Defaults to the standard printing
+    /// function.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string BaseValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        return print(digits, chrs, trunc);
+    }
+
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    RefValue::RefValue(const BaseValue& other) : BaseValue()
+    {
+        m_type = TYPE_REFERENCE;
+
+        if (other.m_type == TYPE_REFERENCE)
+            m_ptr = static_cast<const RefValue&>(other).m_ptr;
+        else
+            m_ptr = const_cast<BaseValue*>(&other);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a value to the referanced value.
+    ///
+    /// \param other const BaseValue&
+    /// \return RefValue&
+    ///
+    /////////////////////////////////////////////////
+    RefValue& RefValue::operator=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_REFERENCE)
+            *m_ptr = *static_cast<const RefValue&>(other).m_ptr;
+        else
+            *m_ptr = other;
+
+        return *this;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Addition operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::operator+(const BaseValue& other) const
+    {
+        return *m_ptr + other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Unary minus operator.
+    ///
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::operator-() const
+    {
+        return -*m_ptr;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Subtraction operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::operator-(const BaseValue& other) const
+    {
+        return *m_ptr - other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Division operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::operator/(const BaseValue& other) const
+    {
+        return *m_ptr / other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Multiplication operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::operator*(const BaseValue& other) const
+    {
+        return *m_ptr * other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Power operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::operator^(const BaseValue& other) const
+    {
+        return *m_ptr ^ other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Add-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& RefValue::operator+=(const BaseValue& other)
+    {
+        *m_ptr += other;
+        return *this;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Subtract-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& RefValue::operator-=(const BaseValue& other)
+    {
+        *m_ptr -= other;
+        return *this;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Divide-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& RefValue::operator/=(const BaseValue& other)
+    {
+        *m_ptr /= other;
+        return *this;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Multiply-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& RefValue::operator*=(const BaseValue& other)
+    {
+        *m_ptr *= other;
+        return *this;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Power-assign operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& RefValue::operator^=(const BaseValue& other)
+    {
+        *m_ptr ^= other;
+        return *this;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Flip the sign bit as fast as possible.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void RefValue::flipSign()
+    {
+        m_ptr->flipSign();
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Power function.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::pow(const BaseValue& other) const
+    {
+        return m_ptr->pow(other);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Is this instance valid?
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool RefValue::isValid() const
+    {
+        return m_ptr && m_ptr->isValid();
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return RefValue::operator
+    ///
+    /////////////////////////////////////////////////
+    RefValue::operator bool() const
+    {
+        return m_ptr && bool(*m_ptr);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Operator-equal
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool RefValue::operator==(const BaseValue& other) const
+    {
+        return *m_ptr == other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Less-than operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool RefValue::operator<(const BaseValue& other) const
+    {
+        return *m_ptr < other;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Return the bytesize of the contained
+    /// type.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t RefValue::getBytes() const
+    {
+        return m_ptr->getBytes();
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool RefValue::isMethod(const std::string& sMethod) const
+    {
+        return m_ptr->isMethod(sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::call(const std::string& sMethod) const
+    {
+        return m_ptr->call(sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::call(const std::string& sMethod,
+                              const BaseValue& arg1) const
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return m_ptr->call(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        return m_ptr->call(sMethod, arg1);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::call(const std::string& sMethod,
+                              const BaseValue& arg1, const BaseValue& arg2) const
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+            return m_ptr->call(sMethod,
+                               arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                               arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        return m_ptr->call(sMethod, arg1, arg2);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::call(const std::string& sMethod,
+                              const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
+            return m_ptr->call(sMethod,
+                               arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                               arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                               arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
+
+        return m_ptr->call(sMethod, arg1, arg2, arg3);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \param arg4 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::call(const std::string& sMethod,
+                              const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
+            return m_ptr->call(sMethod,
+                               arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                               arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                               arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                               arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+
+        return m_ptr->call(sMethod, arg1, arg2, arg3, arg4);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to
+    /// an applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool RefValue::isApplyingMethod(const std::string& sMethod) const
+    {
+        return m_ptr->isApplyingMethod(sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::apply(const std::string& sMethod)
+    {
+        return m_ptr->apply(sMethod);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1)
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return m_ptr->apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        return m_ptr->apply(sMethod, arg1);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+            return m_ptr->apply(sMethod,
+                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        return m_ptr->apply(sMethod, arg1, arg2);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
+            return m_ptr->apply(sMethod,
+                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                                arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
+
+        return m_ptr->apply(sMethod, arg1, arg2, arg3);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \param arg3 const BaseValue&
+    /// \param arg4 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::apply(const std::string& sMethod,
+                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
+            return m_ptr->apply(sMethod,
+                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                                arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                                arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+
+        return m_ptr->apply(sMethod, arg1, arg2, arg3, arg4);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contained type as string
+    /// including additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string RefValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return m_ptr->print(digits, chrs, trunc);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contained type as string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string RefValue::printVal(size_t digits, size_t chrs) const
+    {
+        return m_ptr->printVal(digits, chrs);
+    }
+
+
 }
 

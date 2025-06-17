@@ -34,7 +34,7 @@ namespace mu
     class StackItem : protected Array
     {
         private:
-            const Array* m_alias;
+            Array* m_alias;
 
             /////////////////////////////////////////////////
             /// \brief Can the calculation be optimized by
@@ -89,11 +89,11 @@ namespace mu
             /// \brief Reference another Array instance
             /// within this StackItem instance.
             ///
-            /// \param var const Array*
+            /// \param var Array*
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void aliasOf(const Array* var)
+            void aliasOf(Array* var)
             {
                 m_alias = var;
             }
@@ -120,6 +120,22 @@ namespace mu
             ///
             /////////////////////////////////////////////////
             const Array& get() const
+            {
+                if (m_alias)
+                    return *m_alias;
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a non-const reference to the
+            /// contained array. Can be the internal buffer
+            /// or the referenced one.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& getMutable()
             {
                 if (m_alias)
                     return *m_alias;

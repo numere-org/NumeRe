@@ -3465,6 +3465,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     if (nCurrentCalcType & CALCTYPE_DATAACCESS)
     {
         sBuffer = sLine.to_string();
+
         // --> Datafile/Cache! <--
         if (_dataRef->containsTablesOrClusters(sBuffer))
         {

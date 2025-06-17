@@ -26,6 +26,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iterator>
+#include <boost/tokenizer.hpp>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -2241,8 +2242,10 @@ std::string encode_base_n(const std::string& sToEncode, bool isFile, int n)
     {
         std::ifstream file(sToEncode);
 
+#ifndef PARSERSTANDALONE
         if (!file.good())
             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sToEncode, sToEncode);
+#endif
 
         // istreambuf_iterators do not skip whitespaces
         std::istreambuf_iterator<char> eos;
@@ -2318,4 +2321,109 @@ std::string decode_base_n(const std::string& sToDecode, int n)
 
     return sDecoded;
 }
+
+
+std::string substr_impl(const std::string& sString, size_t p, size_t len)
+{
+    if (!sString.length() || p >= sString.length())
+        return "";
+
+    return sString.substr(std::max(0ULL, p), len);
+}
+
+
+std::vector<std::string> split_impl(const std::string& sString, const std::string& c, bool keepEmpty)
+{
+    std::vector<std::string> ret;
+
+    if (!c.length())
+    {
+        ret.emplace_back("");
+        return ret;
+    }
+
+    boost::char_separator<char> cSep(c.c_str(), nullptr,
+                                     (keepEmpty ? boost::keep_empty_tokens : boost::drop_empty_tokens));
+    boost::tokenizer<boost::char_separator<char>> tok(sString, cSep);
+
+    for (boost::tokenizer<boost::char_separator<char>>::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    {
+        ret.emplace_back(std::string(*iter));
+    }
+
+    return ret;
+}
+
+
+size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = 0;
+
+    return sString.find(sFind, p)+1;
+}
+
+
+size_t strrfnd_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = sString.length();
+
+    return sString.rfind(sFind, p)+1;
+}
+
+
+size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = 0;
+
+    return sString.find_first_of(sFind, p)+1;
+}
+
+
+size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = sString.length();
+
+    return sString.find_last_of(sFind, p)+1;
+}
+
+
+size_t str_not_match_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = 0;
+
+    return sString.find_first_not_of(sFind, p)+1;
+}
+
+
+size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = sString.length();
+
+    return sString.find_last_not_of(sFind, p)+1;
+}
+
 

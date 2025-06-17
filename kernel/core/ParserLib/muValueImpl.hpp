@@ -21,6 +21,7 @@
 
 #include "muValueBase.hpp"
 #include "muStructures.hpp"
+#include "muCompositeStructures.hpp"
 
 namespace mu
 {
@@ -137,6 +138,11 @@ namespace mu
 
         size_t getBytes() const override;
 
+        virtual bool isMethod(const std::string& sMethod) const override;
+        virtual BaseValue* call(const std::string& sMethod) const override;
+        virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const override;
+        virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const override;
+
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
     };
@@ -203,9 +209,62 @@ namespace mu
 
         size_t getBytes() const override;
 
+        virtual bool isMethod(const std::string& sMethod) const override;
+        virtual BaseValue* call(const std::string& sMethod) const override;
+        virtual BaseValue* call(const std::string& sMethod,
+                                const BaseValue& arg1) const override;
+        virtual BaseValue* call(const std::string& sMethod,
+                                const BaseValue& arg1, const BaseValue& arg2) const override;
+        virtual BaseValue* call(const std::string& sMethod,
+                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
+        virtual BaseValue* call(const std::string& sMethod,
+                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
+
+        virtual bool isApplyingMethod(const std::string& sMethod) const override;
+        virtual BaseValue* apply(const std::string& sMethod) override;
+        virtual BaseValue* apply(const std::string& sMethod,
+                                 const BaseValue& arg1) override;
+        virtual BaseValue* apply(const std::string& sMethod,
+                                 const BaseValue& arg1, const BaseValue& arg2) override;
+        virtual BaseValue* apply(const std::string& sMethod,
+                                 const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
+        virtual BaseValue* apply(const std::string& sMethod,
+                                 const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
+
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
     };
+
+
+    class DictStructValue : public BaseValue
+    {
+        BASE_VALUE_DECL(DictStructValue, TYPE_DICTSTRUCT, DictStruct, m_val)
+
+        bool isValid() const override;
+
+        operator bool() const override;
+        bool operator==(const BaseValue& other) const override;
+
+        size_t getBytes() const override;
+
+        virtual bool isMethod(const std::string& sMethod) const override;
+        virtual BaseValue* call(const std::string& sMethod) const override; // .FIELD, .fields
+        virtual BaseValue* call(const std::string& sMethod,
+                                const BaseValue& arg1) const override; // .get("FIELD")
+
+        virtual bool isApplyingMethod(const std::string& sMethod) const override;
+        virtual BaseValue* apply(const std::string& sMethod) override; // .FIELD
+        virtual BaseValue* apply(const std::string& sMethod,
+                                 const BaseValue& arg1) override;  // .FIELD(val)
+        virtual BaseValue* apply(const std::string& sMethod,
+                                 const BaseValue& arg1, const BaseValue& arg2) override; // .wrt("FIELD", val)
+
+
+        virtual std::string print(size_t digits, size_t chrs, bool trunc) const override;
+        virtual std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
+        virtual std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
 }
 
 #endif // MUVALUEIMPL_HPP

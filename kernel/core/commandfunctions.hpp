@@ -4752,7 +4752,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty(info.sTableName))
                 {
-                    if (_option.systemPrints())
+                    if (_option.systemPrints() && !cmdParser.hasParam("mask"))
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
@@ -4780,7 +4780,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument,
                                                   getTargetTable(cmdParser.getParameterList()), sFileFormat).sTableName;
 
-                if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
+                if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints() && !cmdParser.hasParam("mask"))
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString(vFilelist.size()), sFileName));
 
                 // Returning of indices not possible due to multiple
@@ -4811,7 +4811,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         _data.openFile(vFilelist[i], false, false, nArgument, "", sFileFormat);
                     }
 
-                    if (!_data.isEmpty("data") && _option.systemPrints())
+                    if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
@@ -4839,7 +4839,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty("data"))
                 {
-                    if (_option.systemPrints())
+                    if (_option.systemPrints() && !cmdParser.hasParam("mask"))
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
@@ -5002,7 +5002,6 @@ static CommandReturnValues cmd_print(string& sCmd)
     }
 
     std::vector<mu::Array> res = cmdParser.parseExpr();
-
     NumeReKernel::toggleTableStatus();
 
     for (size_t i = 0; i < res.size(); i++)

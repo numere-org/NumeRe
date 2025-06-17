@@ -1630,18 +1630,76 @@ namespace mu
                         switch (iArgCount)
                         {
                             case 1:
-                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name);
+                                {
+                                    const mu::Array& currArr = Stack[sidx].get();
+
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                        Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name);
+                                    else
+                                        Stack[sidx] = currArr.call(pTok->Fun().name);
+                                }
                                 continue;
                             case 2:
-                                sidx -= 1;
-                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
-                                                               Stack[sidx + 1].get());
+                                {
+                                    sidx -= 1;
+                                    const mu::Array& currArr = Stack[sidx].get();
+
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                        Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
+                                                                                     Stack[sidx + 1].get());
+                                    else
+                                        Stack[sidx] = currArr.call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get());
+                                }
                                 continue;
                             case 3:
-                                sidx -= 2;
-                                Stack[sidx] = Stack[sidx].get().call(pTok->Fun().name,
-                                                               Stack[sidx + 1].get(),
-                                                               Stack[sidx + 2].get());
+                                {
+                                    sidx -= 2;
+                                    const mu::Array& currArr = Stack[sidx].get();
+
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                        Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
+                                                                                     Stack[sidx + 1].get(),
+                                                                                     Stack[sidx + 2].get());
+                                    else
+                                        Stack[sidx] = currArr.call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get(),
+                                                                   Stack[sidx + 2].get());
+                                }
+                            case 4:
+                                {
+                                    sidx -= 3;
+                                    const mu::Array& currArr = Stack[sidx].get();
+
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                        Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
+                                                                                     Stack[sidx + 1].get(),
+                                                                                     Stack[sidx + 2].get(),
+                                                                                     Stack[sidx + 3].get());
+                                    else
+                                        Stack[sidx] = currArr.call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get(),
+                                                                   Stack[sidx + 2].get(),
+                                                                   Stack[sidx + 3].get());
+                                }
+                            case 5:
+                                {
+                                    sidx -= 4;
+                                    const mu::Array& currArr = Stack[sidx].get();
+
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                        Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
+                                                                                     Stack[sidx + 1].get(),
+                                                                                     Stack[sidx + 2].get(),
+                                                                                     Stack[sidx + 3].get(),
+                                                                                     Stack[sidx + 4].get());
+                                    else
+                                        Stack[sidx] = currArr.call(pTok->Fun().name,
+                                                                   Stack[sidx + 1].get(),
+                                                                   Stack[sidx + 2].get(),
+                                                                   Stack[sidx + 3].get(),
+                                                                   Stack[sidx + 4].get());
+                                }
                                 continue;
                             default:
                                 Error(ecINTERNAL_ERROR, 1);
@@ -2829,7 +2887,7 @@ namespace mu
 #ifdef PARSERSTANDALONE
 	    {
 	        Timer t("ParserBase::Eval");
-            for (size_t i = 0; i < 1000; i++)
+            //for (size_t i = 0; i < 1000; i++)
 #endif
                 v = Eval(nResults);
 #ifdef PARSERSTANDALONE

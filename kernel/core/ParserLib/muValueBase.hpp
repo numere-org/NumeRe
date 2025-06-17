@@ -40,6 +40,17 @@ namespace mu
             virtual ~BaseValue() {}
 
             /////////////////////////////////////////////////
+            /// \brief Get the contained data type.
+            ///
+            /// \return DataType
+            ///
+            /////////////////////////////////////////////////
+            virtual DataType getType() const
+            {
+                return m_type;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Assignment operator. Will be
             /// auto-implemented by the macro below.
             ///
@@ -105,8 +116,27 @@ namespace mu
 
             virtual bool isMethod(const std::string& sMethod) const;
             virtual BaseValue* call(const std::string& sMethod) const;
-            virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const;
-            virtual BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1) const;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2) const;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const;
+
+            virtual bool isApplyingMethod(const std::string& sMethod) const;
+            virtual BaseValue* apply(const std::string& sMethod);
+            virtual BaseValue* apply(const std::string& sMethod,
+                                    const BaseValue& arg1);
+            virtual BaseValue* apply(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2);
+            virtual BaseValue* apply(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3);
+            virtual BaseValue* apply(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
+
+            virtual std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const;
 
             /////////////////////////////////////////////////
             /// \brief Print the contained value into a
@@ -132,6 +162,177 @@ namespace mu
             ///
             /////////////////////////////////////////////////
             virtual std::string printVal(size_t digits, size_t chrs) const = 0;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class represents a reference to
+    /// another value. The referenced value is only
+    /// borrowed and not managed.
+    /////////////////////////////////////////////////
+    class RefValue : public BaseValue
+    {
+        private:
+            BaseValue* m_ptr;
+
+        public:
+            /////////////////////////////////////////////////
+            /// \brief Construct an empty reference.
+            /////////////////////////////////////////////////
+            RefValue() : BaseValue(), m_ptr(nullptr)
+            {
+                m_type = TYPE_REFERENCE;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Construct a reference to another value.
+            ///
+            /// \param val BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            RefValue(BaseValue* val) : BaseValue(), m_ptr(val)
+            {
+                m_type = TYPE_REFERENCE;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor
+            ///
+            /// \return other const RefValue&
+            ///
+            /////////////////////////////////////////////////
+            RefValue(const RefValue& other): BaseValue()
+            {
+                m_type = other.m_type;
+                m_ptr = other.m_ptr;
+            }
+
+            RefValue(RefValue&& other) = default;
+            RefValue(const BaseValue& other);
+            RefValue& operator=(const BaseValue& other) override;
+
+            /////////////////////////////////////////////////
+            /// \brief Assign another value.
+            ///
+            /// \param val BaseValue*
+            /// \return RefValue&
+            ///
+            /////////////////////////////////////////////////
+            RefValue& operator=(BaseValue* val)
+            {
+                m_ptr = val;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Assign another reference.
+            ///
+            /// \param other const RefValue&
+            /// \return RefValue&
+            ///
+            /////////////////////////////////////////////////
+            RefValue& operator=(const RefValue& other)
+            {
+                m_ptr = other.m_ptr;
+                return *this;
+            }
+
+            RefValue& operator=(RefValue&& other) = default;
+
+            /////////////////////////////////////////////////
+            /// \brief Return the embedded data type.
+            ///
+            /// \return DataType
+            ///
+            /////////////////////////////////////////////////
+            virtual DataType getType() const override
+            {
+                return m_ptr ? m_ptr->getType() : TYPE_REFERENCE;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Clone this reference.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            BaseValue* clone() const override
+            {
+                return new RefValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the embedded value.
+            ///
+            /// \return BaseValue&
+            ///
+            /////////////////////////////////////////////////
+            BaseValue& get()
+            {
+                return *m_ptr;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the embedded
+            /// value.
+            ///
+            /// \return const BaseValue&
+            ///
+            /////////////////////////////////////////////////
+            const BaseValue& get() const
+            {
+                return *m_ptr;
+            }
+
+            BaseValue* operator+(const BaseValue& other) const override;
+            BaseValue* operator-() const override;
+            BaseValue* operator-(const BaseValue& other) const override;
+            BaseValue* operator/(const BaseValue& other) const override;
+            BaseValue* operator*(const BaseValue& other) const override;
+            BaseValue* operator^(const BaseValue& other) const override;
+
+            BaseValue& operator+=(const BaseValue& other) override;
+            BaseValue& operator-=(const BaseValue& other) override;
+            BaseValue& operator/=(const BaseValue& other) override;
+            BaseValue& operator*=(const BaseValue& other) override;
+            BaseValue& operator^=(const BaseValue& other) override;
+
+            void flipSign() override;
+
+            BaseValue* pow(const BaseValue& other) const override;
+
+            bool isValid() const override;
+
+            operator bool() const override;
+            bool operator==(const BaseValue& other) const override;
+            bool operator<(const BaseValue& other) const override;
+
+            size_t getBytes() const override;
+
+            virtual bool isMethod(const std::string& sMethod) const override;
+            virtual BaseValue* call(const std::string& sMethod) const override;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1) const override;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2) const override;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
+
+            virtual bool isApplyingMethod(const std::string& sMethod) const override;
+            virtual BaseValue* apply(const std::string& sMethod) override;
+            virtual BaseValue* apply(const std::string& sMethod,
+                                     const BaseValue& arg1) override;
+            virtual BaseValue* apply(const std::string& sMethod,
+                                     const BaseValue& arg1, const BaseValue& arg2) override;
+            virtual BaseValue* apply(const std::string& sMethod,
+                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
+            virtual BaseValue* apply(const std::string& sMethod,
+                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) override;
+
+            virtual std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            virtual std::string printVal(size_t digits, size_t chrs) const override;
     };
 
     /////////////////////////////////////////////////
@@ -195,23 +396,29 @@ public:                                                       \
         return ATTR;                                          \
     }
 
-#define BASE_VALUE_IMPL(CLASS, ID, ATTR)                      \
-CLASS::CLASS(const BaseValue& other) : BaseValue()            \
-{                                                             \
-    m_type = ID;                                              \
-    if (other.m_type == ID)                                   \
-        ATTR = static_cast<const CLASS&>(other).ATTR;         \
-    else                                                      \
-        throw ParserError(ecASSIGNED_TYPE_MISMATCH);          \
-}                                                             \
-CLASS& CLASS::operator=(const BaseValue& other)               \
-{                                                             \
-    if (other.m_type == ID)                                   \
-        ATTR = static_cast<const CLASS&>(other).ATTR;         \
-    else                                                      \
-        throw ParserError(ecASSIGNED_TYPE_MISMATCH);          \
-    return *this;                                             \
+#define BASE_VALUE_IMPL(CLASS, ID, ATTR)                        \
+CLASS::CLASS(const BaseValue& other) : BaseValue()              \
+{                                                               \
+    m_type = ID;                                                \
+    if (other.m_type == ID)                                     \
+        ATTR = static_cast<const CLASS&>(other).ATTR;           \
+    else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == ID)  \
+        ATTR = static_cast<const CLASS&>(static_cast<const RefValue&>(other).get()).ATTR;               \
+    else                                                        \
+        throw ParserError(ecASSIGNED_TYPE_MISMATCH);            \
+}                                                               \
+CLASS& CLASS::operator=(const BaseValue& other)                 \
+{                                                               \
+    if (other.m_type == ID)                                     \
+        ATTR = static_cast<const CLASS&>(other).ATTR;           \
+    else if (other.m_type == TYPE_REFERENCE)                    \
+        return operator=(static_cast<const RefValue&>(other).get());  \
+    else                                                        \
+        throw ParserError(ecASSIGNED_TYPE_MISMATCH);            \
+    return *this;                                               \
 }
+
+
 
 #endif // MUVALUEBASE_HPP
 

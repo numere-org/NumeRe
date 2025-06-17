@@ -833,7 +833,32 @@ namespace NumeRe
                 if (!sString.length())
                     return false;
 
-                return isConvertible(sString, CONVTYPE_VALUE);// || isConvertible(sString, CONVTYPE_DATE_TIME);
+                // Apply the simplest heuristic: mostly every numerical valid character
+                // and ignore characters, which cannot represent a value by themselves
+                if (sString.find_first_not_of(" 0123456789.,eianfEIANF+-*/\t") != std::string::npos
+                    || (sString.find_first_not_of("+-* .,\teE") == std::string::npos && sString.find("---") == std::string::npos))
+                    return false;
+
+                // Eliminate invalid character positions
+                if (tolower(sString.front()) == 'e'
+                    || tolower(sString.front()) == 'a'
+                    || tolower(sString.front()) == 'f'
+                    || tolower(sString.back()) == 'e')
+                    return false;
+
+                // Regression fix introduced because NA is accepted as NaN
+                for (size_t i = 1; i < sString.length()-1; i++)
+                {
+                    if (sString[i] == '-' || sString[i] == '+')
+                    {
+                        if (tolower(sString[i-1]) != 'e'
+                            && (isdigit(sString[i-1]) && sString.find_first_of("iI", i+1) == std::string::npos)
+                            && sString[i-1] != ' ')
+                            return false;
+                    }
+                }
+
+                return true;
             }
 
             /////////////////////////////////////////////////
