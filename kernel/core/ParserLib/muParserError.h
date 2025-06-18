@@ -90,16 +90,20 @@ namespace mu
 
         ecTYPE_NO_STR            = 36, ///< Type is not a string (Value does not contain a string type)
         ecTYPE_NO_VAL            = 37, ///< Type is not a value (Value does not contain a numerical type)
-        ecTYPE_NO_CAT            = 38, ///< Type is not a value (Value does not contain a numerical type)
-        ecTYPE_NO_ARR            = 39, ///< Type is not a value (Value does not contain a numerical type)
-        ecTYPE_MISMATCH          = 40, ///< Something's wrong with the types (Value types do not match or operation not supported)
-        ecTYPE_MISMATCH_OOB      = 41, ///< Something's wrong with the types (Value types do not match or index out of bounds)
-        ecASSIGNED_TYPE_MISMATCH = 42, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
-        ecMETHOD_ERROR           = 43, ///< Such a method does not exist (No such method or too few arguments)
-        ecNOT_IMPLEMENTED        = 44, ///< Operation is not implemented for this data type.
+        ecTYPE_NO_CAT            = 38, ///< Type is not a category (Value does not contain a category)
+        ecTYPE_NO_ARR            = 39, ///< Type is not an array (Value does not contain an array)
+        ecTYPE_NO_DICT           = 40, ///< Type is not a dictstruct (Value does not contain a dictstruct)
+        ecTYPE_NO_OBJ            = 41, ///< Type is not an object (Value does not contain an object)
+        ecTYPE_NO_REF            = 42, ///< Type is not a reference (Value does not contain a reference)
+        ecTYPE_MISMATCH          = 43, ///< Something's wrong with the types (Value types do not match or operation not supported)
+        ecTYPE_MISMATCH_OOB      = 44, ///< Something's wrong with the types (Value types do not match or index out of bounds)
+        ecASSIGNED_TYPE_MISMATCH = 45, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
+        ecMETHOD_ERROR           = 46, ///< Such a method does not exist (No such method or too few arguments)
+        ecNOT_IMPLEMENTED        = 47, ///< Operation is not implemented for this data type.
+        ecDEREFERENCE_VOID       = 48, ///< Cannot dereference void
 
         // internal errors
-        ecINTERNAL_ERROR         = 45, ///< Internal error of any kind.
+        ecINTERNAL_ERROR         = 49, ///< Internal error of any kind.
 
         // The last two are special entries
         ecCOUNT,                      ///< This is no error code, It just stores just the total number of error codes

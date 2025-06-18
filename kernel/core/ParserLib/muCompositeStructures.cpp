@@ -20,6 +20,7 @@
 #include "muCompositeStructures.hpp"
 #include "muValueBase.hpp"
 #include "muValueImpl.hpp"
+#include "../../../externals/tinyxml2/tinyxml2.h"
 
 namespace mu
 {
@@ -201,18 +202,18 @@ namespace mu
     /// name.
     ///
     /// \param fieldName const std::string&
-    /// \return BaseValue*
+    /// \return BaseValuePtr*
     /// \note The returned pointer may only be
     /// borrowed.
     /////////////////////////////////////////////////
-    BaseValue* DictStruct::read(const std::string& fieldName)
+    BaseValuePtr* DictStruct::read(const std::string& fieldName)
     {
         auto iter = m_fields.find(fieldName);
 
         if (iter == m_fields.end())
             throw std::out_of_range("Field " + fieldName + " does not exist.");
 
-        return iter->second.get();
+        return &iter->second;
     }
 
 
@@ -241,15 +242,15 @@ namespace mu
     ///
     /// \param fieldName const std::string&
     /// \param value const BaseValue&
-    /// \return BaseValue*
+    /// \return BaseValuePtr*
     /// \note The returned pointer may only be
     /// borrowed.
     /////////////////////////////////////////////////
-    BaseValue* DictStruct::write(const std::string& fieldName, const BaseValue& value)
+    BaseValuePtr* DictStruct::write(const std::string& fieldName, const BaseValue& value)
     {
         BaseValue* val = value.clone();
         m_fields[fieldName].reset(val);
-        return val;
+        return &m_fields[fieldName];
     }
 
 
@@ -272,17 +273,77 @@ namespace mu
         return val;
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Remove all elements.
     ///
-    /// \return BaseValue*
+    /// \return size_t
     ///
     /////////////////////////////////////////////////
-    BaseValue* DictStruct::clear()
+    size_t DictStruct::clear()
     {
         size_t count = m_fields.size();
         m_fields.clear();
-        return new NumValue(Numerical(count));
+        return count;
+    }
+
+    using DictStructMap = std::map<std::string, std::unique_ptr<BaseValue>>;
+
+    /////////////////////////////////////////////////
+    /// \brief Import the current children of the
+    /// parent node.
+    ///
+    /// \param child tinyxml2::XMLElement*
+    /// \param parentMap DictStructMap&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    static void importXmlChildren(tinyxml2::XMLElement* child, DictStructMap& parentMap)
+    {
+        while (child)
+        {
+            const tinyxml2::XMLAttribute* attr = child->FirstAttribute();
+            DictStructMap attributes;
+            DictStructMap contents;
+
+            while (attr)
+            {
+                attributes[attr->Name()].reset(new StrValue(std::string(attr->Value())));
+                attr = attr->Next();
+            }
+
+            if (!attributes.empty())
+                contents["*attrs"].reset(new DictStructValue(attributes));
+
+            importXmlChildren(child->FirstChildElement(), contents);
+
+            parentMap[child->Name()].reset(new DictStructValue(contents));
+
+            child = child->NextSiblingElement();
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import the contents of an XML file
+    /// into this DictStruct instance.
+    ///
+    /// \param fileName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::importXml(const std::string& fileName)
+    {
+        tinyxml2::XMLDocument doc;
+
+        if (doc.LoadFile(fileName.c_str()) != tinyxml2::XML_SUCCESS)
+            return false;
+
+        m_fields.clear();
+
+        importXmlChildren(doc.FirstChildElement(), m_fields);
+
+        return true;
     }
 }
 

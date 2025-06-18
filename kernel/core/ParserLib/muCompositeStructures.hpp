@@ -26,6 +26,7 @@
 namespace mu
 {
     class BaseValue;
+    using BaseValuePtr = std::unique_ptr<BaseValue>;
 
     /////////////////////////////////////////////////
     /// \brief This class is a combination of a
@@ -51,11 +52,12 @@ namespace mu
             size_t size() const;
             bool isField(const std::string& fieldName) const;
             std::vector<std::string> getFields() const;
-            BaseValue* read(const std::string& fieldName);
+            BaseValuePtr* read(const std::string& fieldName);
             const BaseValue* read(const std::string& fieldName) const;
-            BaseValue* write(const std::string& fieldName, const BaseValue& value);
+            BaseValuePtr* write(const std::string& fieldName, const BaseValue& value);
             BaseValue* remove(const std::string& fieldName);
-            BaseValue* clear();
+            size_t clear();
+            bool importXml(const std::string& fileName);
     };
 }
 

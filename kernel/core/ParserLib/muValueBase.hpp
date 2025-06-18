@@ -20,6 +20,7 @@
 #define MUVALUEBASE_HPP
 
 #include "muTypes.hpp"
+#include <memory>
 
 
 namespace mu
@@ -164,6 +165,7 @@ namespace mu
             virtual std::string printVal(size_t digits, size_t chrs) const = 0;
     };
 
+    using BaseValuePtr = std::unique_ptr<BaseValue>;
 
     /////////////////////////////////////////////////
     /// \brief This class represents a reference to
@@ -173,7 +175,7 @@ namespace mu
     class RefValue : public BaseValue
     {
         private:
-            BaseValue* m_ptr;
+            BaseValuePtr* m_ptr;
 
         public:
             /////////////////////////////////////////////////
@@ -187,10 +189,10 @@ namespace mu
             /////////////////////////////////////////////////
             /// \brief Construct a reference to another value.
             ///
-            /// \param val BaseValue*
+            /// \param val BaseValuePtr*
             ///
             /////////////////////////////////////////////////
-            RefValue(BaseValue* val) : BaseValue(), m_ptr(val)
+            RefValue(BaseValuePtr* val) : BaseValue(), m_ptr(val)
             {
                 m_type = TYPE_REFERENCE;
             }
@@ -214,11 +216,11 @@ namespace mu
             /////////////////////////////////////////////////
             /// \brief Assign another value.
             ///
-            /// \param val BaseValue*
+            /// \param val BaseValuePtr*
             /// \return RefValue&
             ///
             /////////////////////////////////////////////////
-            RefValue& operator=(BaseValue* val)
+            RefValue& operator=(BaseValuePtr* val)
             {
                 m_ptr = val;
                 return *this;
@@ -247,7 +249,7 @@ namespace mu
             /////////////////////////////////////////////////
             DataType getType() const override
             {
-                return m_ptr ? m_ptr->getType() : TYPE_REFERENCE;
+                return !isNull() ? get().getType() : TYPE_REFERENCE;
             }
 
             /////////////////////////////////////////////////
@@ -261,28 +263,8 @@ namespace mu
                 return new RefValue(*this);
             }
 
-            /////////////////////////////////////////////////
-            /// \brief Get a reference to the embedded value.
-            ///
-            /// \return BaseValue&
-            ///
-            /////////////////////////////////////////////////
-            BaseValue& get()
-            {
-                return *m_ptr;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Get a const reference to the embedded
-            /// value.
-            ///
-            /// \return const BaseValue&
-            ///
-            /////////////////////////////////////////////////
-            const BaseValue& get() const
-            {
-                return *m_ptr;
-            }
+            BaseValue& get();
+            const BaseValue& get() const;
 
             BaseValue* operator+(const BaseValue& other) const override;
             BaseValue* operator-() const override;
@@ -301,6 +283,7 @@ namespace mu
 
             BaseValue* pow(const BaseValue& other) const override;
 
+            bool isNull() const;
             bool isValid() const override;
 
             operator bool() const override;

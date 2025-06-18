@@ -503,9 +503,8 @@ namespace mu
 
         if (other.m_type == TYPE_REFERENCE)
             m_ptr = static_cast<const RefValue&>(other).m_ptr;
-        else
-            m_ptr = const_cast<BaseValue*>(&other);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Assign a value to the referanced value.
@@ -516,17 +515,47 @@ namespace mu
     /////////////////////////////////////////////////
     RefValue& RefValue::operator=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_REFERENCE && m_ptr)
-            *m_ptr = *static_cast<const RefValue&>(other).m_ptr;
-        else if (other.m_type == TYPE_REFERENCE && !m_ptr)
+        if (other.m_type == TYPE_REFERENCE && !isNull() && !static_cast<const RefValue&>(other).isNull())
+            m_ptr->reset(static_cast<const RefValue&>(other).get().clone());
+        else if (other.m_type == TYPE_REFERENCE && isNull())
             m_ptr = static_cast<const RefValue&>(other).m_ptr;
-        else if (m_ptr)
-            *m_ptr = other;
-        else
-            m_ptr = const_cast<BaseValue*>(&other);
+        else if (!isNull())
+            m_ptr->reset(other.clone());
 
         return *this;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get a reference to the embedded value.
+    ///
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& RefValue::get()
+    {
+        if (isNull())
+            throw ParserError(ecDEREFERENCE_VOID);
+
+        return *m_ptr->get();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get a const reference to the embedded
+    /// value.
+    ///
+    /// \return const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    const BaseValue& RefValue::get() const
+    {
+        if (isNull())
+            throw ParserError(ecDEREFERENCE_VOID);
+
+        return *m_ptr->get();
+    }
+
 
     /////////////////////////////////////////////////
     /// \brief Addition operator.
@@ -537,8 +566,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::operator+(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr + other : nullptr;
+        return get() + other;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Unary minus operator.
@@ -548,8 +578,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::operator-() const
     {
-        return m_ptr ? -*m_ptr : nullptr;
+        return -get();
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Subtraction operator.
@@ -560,8 +591,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::operator-(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr - other : nullptr;
+        return get() - other;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Division operator.
@@ -572,8 +604,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::operator/(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr / other : nullptr;
+        return get() / other;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Multiplication operator.
@@ -584,7 +617,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::operator*(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr * other : nullptr;
+        return get() * other;
     }
 
     /////////////////////////////////////////////////
@@ -596,8 +629,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::operator^(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr ^ other : nullptr;
+        return get() ^ other;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Add-assign operator.
@@ -608,11 +642,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& RefValue::operator+=(const BaseValue& other)
     {
-        if (m_ptr)
-            *m_ptr += other;
-
+        get() += other;
         return *this;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Subtract-assign operator.
@@ -623,11 +656,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& RefValue::operator-=(const BaseValue& other)
     {
-        if (m_ptr)
-            *m_ptr -= other;
-
+        get() -= other;
         return *this;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Divide-assign operator.
@@ -638,11 +670,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& RefValue::operator/=(const BaseValue& other)
     {
-        if (m_ptr)
-            *m_ptr /= other;
-
+        get() /= other;
         return *this;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Multiply-assign operator.
@@ -653,11 +684,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& RefValue::operator*=(const BaseValue& other)
     {
-        if (m_ptr)
-            *m_ptr *= other;
-
+        get() *= other;
         return *this;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Power-assign operator.
@@ -668,11 +698,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& RefValue::operator^=(const BaseValue& other)
     {
-        if (m_ptr)
-            *m_ptr ^= other;
-
+        get() ^= other;
         return *this;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Flip the sign bit as fast as possible.
@@ -682,9 +711,10 @@ namespace mu
     /////////////////////////////////////////////////
     void RefValue::flipSign()
     {
-        if (m_ptr)
-            m_ptr->flipSign();
+        if (!isNull())
+            get().flipSign();
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Power function.
@@ -695,8 +725,22 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::pow(const BaseValue& other) const
     {
-        return m_ptr ? m_ptr->pow(other) : nullptr;
+        return !isNull() ? get().pow(other) : nullptr;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return, whether the reference points
+    /// to null.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool RefValue::isNull() const
+    {
+        return !m_ptr || !m_ptr->get();
+    }
+
 
     /////////////////////////////////////////////////
     /// \brief Is this instance valid?
@@ -706,8 +750,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool RefValue::isValid() const
     {
-        return m_ptr && m_ptr->isValid();
+        return !isNull() && m_ptr->get()->isValid();
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Cast to bool.
@@ -717,8 +762,9 @@ namespace mu
     /////////////////////////////////////////////////
     RefValue::operator bool() const
     {
-        return m_ptr && bool(*m_ptr);
+        return !isNull() && bool(get());
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Operator-equal
@@ -729,8 +775,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool RefValue::operator==(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr == other : false;
+        return !isNull() ? get() == other : false;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Less-than operator.
@@ -741,8 +788,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool RefValue::operator<(const BaseValue& other) const
     {
-        return m_ptr ? *m_ptr < other : false;
+        return get() < other;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Return the bytesize of the contained
@@ -753,8 +801,9 @@ namespace mu
     /////////////////////////////////////////////////
     size_t RefValue::getBytes() const
     {
-        return m_ptr ? m_ptr->getBytes() : 0u;
+        return !isNull() ? get().getBytes() : 0u;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Does the passed string correspond to a
@@ -766,8 +815,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool RefValue::isMethod(const std::string& sMethod) const
     {
-        return m_ptr ? m_ptr->isMethod(sMethod) : false;
+        return !isNull() ? get().isMethod(sMethod) : false;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call a method with no arguments.
@@ -778,8 +828,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::call(const std::string& sMethod) const
     {
-        return m_ptr ? m_ptr->call(sMethod) : nullptr;
+        return get().call(sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call a method with one argument.
@@ -792,14 +843,12 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1) const
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE)
-            return m_ptr->call(sMethod, static_cast<const RefValue&>(arg1).get());
+            return get().call(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        return m_ptr->call(sMethod, arg1);
+        return get().call(sMethod, arg1);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call a method with two arguments.
@@ -813,16 +862,14 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2) const
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
-            return m_ptr->call(sMethod,
+            return get().call(sMethod,
                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        return m_ptr->call(sMethod, arg1, arg2);
+        return get().call(sMethod, arg1, arg2);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call a method with three arguments.
@@ -837,17 +884,15 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
-            return m_ptr->call(sMethod,
+            return get().call(sMethod,
                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
                                arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
 
-        return m_ptr->call(sMethod, arg1, arg2, arg3);
+        return get().call(sMethod, arg1, arg2, arg3);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call a method with four arguments.
@@ -863,18 +908,16 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
-            return m_ptr->call(sMethod,
+            return get().call(sMethod,
                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
                                arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
                                arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
-        return m_ptr->call(sMethod, arg1, arg2, arg3, arg4);
+        return get().call(sMethod, arg1, arg2, arg3, arg4);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Does the passed string correspond to
@@ -886,8 +929,9 @@ namespace mu
     /////////////////////////////////////////////////
     bool RefValue::isApplyingMethod(const std::string& sMethod) const
     {
-        return m_ptr ? m_ptr->isApplyingMethod(sMethod) : false;
+        return !isNull() ? get().isApplyingMethod(sMethod) : false;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply a method with no arguments.
@@ -898,8 +942,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* RefValue::apply(const std::string& sMethod)
     {
-        return m_ptr ? m_ptr->apply(sMethod) : nullptr;
+        return get().apply(sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply a method with one argument.
@@ -912,14 +957,12 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1)
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE)
-            return m_ptr->apply(sMethod, static_cast<const RefValue&>(arg1).get());
+            return get().apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        return m_ptr->apply(sMethod, arg1);
+        return get().apply(sMethod, arg1);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply a method with two arguments.
@@ -933,16 +976,14 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2)
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
-            return m_ptr->apply(sMethod,
+            return get().apply(sMethod,
                                 arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                                 arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        return m_ptr->apply(sMethod, arg1, arg2);
+        return get().apply(sMethod, arg1, arg2);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply a method with three arguments.
@@ -957,17 +998,15 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
-            return m_ptr->apply(sMethod,
+            return get().apply(sMethod,
                                 arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                                 arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
                                 arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
 
-        return m_ptr->apply(sMethod, arg1, arg2, arg3);
+        return get().apply(sMethod, arg1, arg2, arg3);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply a method with four arguments.
@@ -983,18 +1022,16 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
     {
-        if (!m_ptr)
-            return nullptr;
-
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
-            return m_ptr->apply(sMethod,
+            return get().apply(sMethod,
                                 arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                                 arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
                                 arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
                                 arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
-        return m_ptr->apply(sMethod, arg1, arg2, arg3, arg4);
+        return get().apply(sMethod, arg1, arg2, arg3, arg4);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Print the contained type as string
@@ -1008,8 +1045,9 @@ namespace mu
     /////////////////////////////////////////////////
     std::string RefValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return m_ptr ? m_ptr->print(digits, chrs, trunc) : "void";
+        return !isNull() ? get().print(digits, chrs, trunc) : "void";
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Print the contained type as string.
@@ -1021,7 +1059,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string RefValue::printVal(size_t digits, size_t chrs) const
     {
-        return m_ptr ? m_ptr->printVal(digits, chrs) : "void";
+        return !isNull() ? get().printVal(digits, chrs) : "void";
     }
 
 

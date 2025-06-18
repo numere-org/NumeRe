@@ -110,13 +110,17 @@ namespace mu
         m_vErrMsg[ecTYPE_NO_VAL]            =   "ERR_MUP_37_TYPE_NO_VAL";
         m_vErrMsg[ecTYPE_NO_CAT]            =   "ERR_MUP_38_TYPE_NO_CAT";
         m_vErrMsg[ecTYPE_NO_ARR]            =   "ERR_MUP_39_TYPE_NO_ARR";
-        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_40_TYPE_MISMATCH";
-        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_41_TYPE_MISMATCH_OOB";
-        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_42_ASSIGNED_TYPE_MISMATCH";
-        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_43_METHOD_ERROR";
-        m_vErrMsg[ecNOT_IMPLEMENTED]        =   "ERR_MUP_44_NOT_IMPLEMENTED";
+        m_vErrMsg[ecTYPE_NO_DICT]           =   "ERR_MUP_40_TYPE_NO_DICT";
+        m_vErrMsg[ecTYPE_NO_OBJ]            =   "ERR_MUP_41_TYPE_NO_OBJ";
+        m_vErrMsg[ecTYPE_NO_REF]            =   "ERR_MUP_42_TYPE_NO_REF";
+        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_43_TYPE_MISMATCH";
+        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_44_TYPE_MISMATCH_OOB";
+        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_45_ASSIGNED_TYPE_MISMATCH";
+        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_46_METHOD_ERROR";
+        m_vErrMsg[ecNOT_IMPLEMENTED]        =   "ERR_MUP_47_NOT_IMPLEMENTED";
+        m_vErrMsg[ecDEREFERENCE_VOID]       =   "ERR_MUP_48_DEREFERENCE_VOID";
 
-        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_45_INTERNAL_ERROR";
+        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_49_INTERNAL_ERROR";
 
 
 

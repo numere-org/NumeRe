@@ -20,6 +20,8 @@
 #include "muParserError.h"
 #include "../utils/stringtools.hpp"
 
+#include <set>
+
 // Reasonable other data types:
 // - Duration (as extension of date-time)
 // - FilePath (as extension of string w/ operator/())
@@ -886,9 +888,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool StrValue::isMethod(const std::string& sMethod) const
     {
-        return sMethod == "len" || sMethod == "first" || sMethod == "last"
-            || sMethod == "at" || sMethod == "startsw" || sMethod == "endsw"
-            || sMethod == "sub" || sMethod == "splt" || sMethod == "fnd" || sMethod == "rfnd" || sMethod == "mtch" || sMethod == "rmtch" || sMethod == "nmtch" || sMethod == "nrmtch";
+        static const std::set<std::string> methods({"len", "first", "last", "at",
+                                                    "startsw", "endsw", "sub", "splt",
+                                                    "fnd", "rfnd", "mtch", "rmtch", "nmtch", "nrmtch"});
+        return methods.contains(sMethod);
     }
 
 
@@ -2031,7 +2034,8 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isMethod(const std::string& sMethod) const
     {
-        return sMethod == "fields"|| sMethod == "keys" || sMethod == "values" || sMethod == "at" || sMethod == "len" || m_val.isField(sMethod);
+        static const std::set<std::string> methods({"fields", "keys", "values", "at", "len"});
+        return methods.contains(sMethod) || m_val.isField(sMethod);
     }
 
 
@@ -2105,7 +2109,8 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isApplyingMethod(const std::string& sMethod) const
     {
-        return sMethod == "wrt" || sMethod == "ins" || sMethod == "clr" || sMethod == "rem" || m_val.isField(sMethod);
+        static const std::set<std::string> methods({"wrt", "ins", "clr", "rem", "readXml"});
+        return methods.contains(sMethod) || m_val.isField(sMethod);
     }
 
 
@@ -2122,7 +2127,7 @@ namespace mu
             return new RefValue(m_val.read(sMethod));
 
         if (sMethod == "clr")
-            return m_val.clear();
+            return new NumValue(Numerical(m_val.clear()));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2146,6 +2151,9 @@ namespace mu
 
         if (sMethod == "rem" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return m_val.remove(static_cast<const StrValue&>(arg1).get());
+
+        if (sMethod == "readXml" && arg1.m_type == TYPE_STRING)
+            return new NumValue(Numerical(m_val.importXml(static_cast<const StrValue&>(arg1).get())));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2206,7 +2214,7 @@ namespace mu
                 sPrinted += "void";
         }
 
-        return "{" + sPrinted + "}";
+        return "dictstruct[" + sPrinted + "]";
     }
 
 

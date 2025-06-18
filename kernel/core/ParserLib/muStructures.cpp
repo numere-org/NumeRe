@@ -613,7 +613,7 @@ namespace mu
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<DictStructValue&>(getRef().get()).get();
 
-        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
     }
 
 
@@ -630,7 +630,7 @@ namespace mu
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<const DictStructValue&>(getRef().get()).get();
 
-        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
     }
 
 
@@ -645,7 +645,7 @@ namespace mu
         if (get() && get()->m_type == TYPE_REFERENCE)
             return *static_cast<RefValue*>(get());
 
-        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+        throw ParserError(ecTYPE_NO_REF, getTypeAsString());
     }
 
 
@@ -660,7 +660,7 @@ namespace mu
         if (get() && get()->m_type == TYPE_REFERENCE)
             return *static_cast<const RefValue*>(get());
 
-        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+        throw ParserError(ecTYPE_NO_REF, getTypeAsString());
     }
 
 
@@ -1768,7 +1768,11 @@ namespace mu
     /////////////////////////////////////////////////
     bool Array::isMethod(const std::string& sMethod) const
     {
-        return sMethod == "std" || sMethod == "avg" || sMethod == "prd" || sMethod == "sum" || sMethod == "min" || sMethod == "max" || sMethod == "norm" || sMethod == "num" || sMethod == "cnt" || sMethod == "med" || sMethod == "and" || sMethod == "or" || sMethod == "xor" || sMethod == "size" || sMethod == "maxpos" || sMethod == "minpos" || sMethod == "exc" || sMethod == "skw" || sMethod == "stderr" || sMethod == "rms" || sMethod == "order" || sMethod == "unwrap" || sMethod == "sel" || front().isMethod(sMethod);
+        static const std::set<std::string> methods({"std", "avg", "prd", "sum", "min", "max", "norm",
+                                                    "num", "cnt", "med", "and", "or", "xor", "size",
+                                                    "maxpos", "minpos", "exc", "skw", "stderr", "rms",
+                                                    "order", "unwrap", "sel"});
+        return methods.contains(sMethod) || front().isMethod(sMethod);
     }
 
 
@@ -2031,7 +2035,7 @@ namespace mu
                 int64_t n = arg1.get(i).getNum().asI64();
 
                 if (n > 0 && (size_t)n <= size())
-                    ret.emplace_back(new RefValue(get(n-1).get()));
+                    ret.emplace_back(new RefValue(&get(n-1)));
             }
 
             return ret;

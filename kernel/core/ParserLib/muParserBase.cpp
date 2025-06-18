@@ -2889,7 +2889,7 @@ namespace mu
 #ifdef PARSERSTANDALONE
 	    {
 	        Timer t("ParserBase::Eval");
-            for (size_t i = 0; i < 1000; i++)
+            //for (size_t i = 0; i < 1000; i++)
 #endif
                 v = Eval(nResults);
 #ifdef PARSERSTANDALONE
