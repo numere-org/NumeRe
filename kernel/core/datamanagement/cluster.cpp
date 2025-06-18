@@ -68,6 +68,7 @@ namespace NumeRe
                 resize(_idx.row.front()+1, mu::Value(NAN));
 
             mu::Array::get(_idx.row.front()) = mu::Value(data);
+            dereference();
             return;
         }
 
@@ -83,6 +84,8 @@ namespace NumeRe
 
             mu::Array::get(_idx.row[i]) = data.mu::Array::get(i);
         }
+
+        dereference();
     }
 
 
@@ -173,6 +176,7 @@ namespace NumeRe
             resize(i+1, mu::Value(NAN));
 
         mu::Array::get(i) = v;
+        dereference();
 
         if (getCommonType() != v.getType())
             m_commonType = mu::TYPE_VOID;
@@ -257,6 +261,7 @@ namespace NumeRe
         }
 
         mu::Array::operator=(a);
+        dereference();
     }
 
 

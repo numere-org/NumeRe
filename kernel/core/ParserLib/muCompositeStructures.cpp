@@ -19,6 +19,7 @@
 
 #include "muCompositeStructures.hpp"
 #include "muValueBase.hpp"
+#include "muValueImpl.hpp"
 
 namespace mu
 {
@@ -149,6 +150,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Return the number of fields stored in
+    /// this structure.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t DictStruct::size() const
+    {
+        return m_fields.size();
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Does the passed string correspond to a
     /// field of this instance?
     ///
@@ -236,6 +250,39 @@ namespace mu
         BaseValue* val = value.clone();
         m_fields[fieldName].reset(val);
         return val;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Remove a single element.
+    ///
+    /// \param fieldName const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictStruct::remove(const std::string& fieldName)
+    {
+        auto iter = m_fields.find(fieldName);
+
+        if (iter == m_fields.end())
+            throw std::out_of_range("Field " + fieldName + " does not exist.");
+
+        BaseValue* val = iter->second.release();
+        m_fields.erase(iter);
+        return val;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Remove all elements.
+    ///
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictStruct::clear()
+    {
+        size_t count = m_fields.size();
+        m_fields.clear();
+        return new NumValue(Numerical(count));
     }
 }
 

@@ -240,10 +240,16 @@ mu::Array create_dictstruct(const mu::Array& fields, const mu::Array& vals)
     for (size_t i = 0; i < elems; i++)
     {
         std::string fieldName = fields.get(i).getStr();
-        dict[fieldName];
 
         if (!vals.isDefault())
-            dict[fieldName].reset(vals.get(i).get()->clone());
+        {
+            if (vals.get(i).getType() == mu::TYPE_REFERENCE)
+                dict[fieldName].reset(static_cast<const mu::RefValue*>(vals.get(i).get())->get().clone());
+            else
+                dict[fieldName].reset(vals.get(i).get()->clone());
+        }
+        else
+            dict[fieldName].reset(mu::Value("").release());
     }
 
     return mu::Value(mu::DictStruct(dict));
@@ -308,7 +314,7 @@ int main()
     _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);
     _parser.DefineFun("textparse", strfnc_textparse, true, 2);
     _parser.DefineFun("bswap", bswap);
-    _parser.DefineFun("dict", create_dictstruct, true, 1);
+    _parser.DefineFun("dict", create_dictstruct, true, 2);
 
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
     _parser.DefineConst("nan", mu::Value(NAN));

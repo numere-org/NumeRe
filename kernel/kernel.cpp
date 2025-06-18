@@ -3124,7 +3124,7 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
             // compose the result
             for (size_t i = 0; i < v[n].get().size(); ++i)
             {
-                sAns += strfill(v[n].get()[i].print(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                sAns += strfill(v[n].get()[i].printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
                                 prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
                 if (i < v[n].get().size() - 1)

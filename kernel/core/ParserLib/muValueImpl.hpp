@@ -212,6 +212,7 @@ namespace mu
                          const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
     };
 

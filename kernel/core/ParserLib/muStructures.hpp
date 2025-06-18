@@ -108,6 +108,8 @@ namespace mu
             bool isString() const;
             bool isCategory() const;
             bool isArray() const;
+            bool isDictStruct() const;
+            bool isRef() const;
 
             std::string& getStr();
             const std::string& getStr() const;
@@ -120,6 +122,12 @@ namespace mu
 
             Array& getArray();
             const Array& getArray() const;
+
+            DictStruct& getDictStruct();
+            const DictStruct& getDictStruct() const;
+
+            RefValue& getRef();
+            const RefValue& getRef() const;
 
             std::complex<double> as_cmplx() const;
 
@@ -374,6 +382,7 @@ namespace mu
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4);
 
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
+            std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVal(size_t digits = 0, size_t chrs = 0) const;
             void clear();
             size_t getBytes() const;
@@ -832,6 +841,7 @@ namespace mu
 
             void zerosToVoid();
             bool isCommutative() const;
+            void dereference();
 
         protected:
             mutable DataType m_commonType;
@@ -870,8 +880,8 @@ namespace mu
             {
                 if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
                 {
-#warning FIXME (numere#1#06/17/25): Variables must not contain references
                     Array::operator=(other);
+                    dereference();
                     m_isConst = false;
                     return *this;
                 }

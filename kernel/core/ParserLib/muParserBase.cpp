@@ -1666,6 +1666,7 @@ namespace mu
                                                                    Stack[sidx + 1].get(),
                                                                    Stack[sidx + 2].get());
                                 }
+                                continue;
                             case 4:
                                 {
                                     sidx -= 3;
@@ -1682,6 +1683,7 @@ namespace mu
                                                                    Stack[sidx + 2].get(),
                                                                    Stack[sidx + 3].get());
                                 }
+                                continue;
                             case 5:
                                 {
                                     sidx -= 4;
@@ -2887,7 +2889,7 @@ namespace mu
 #ifdef PARSERSTANDALONE
 	    {
 	        Timer t("ParserBase::Eval");
-            //for (size_t i = 0; i < 1000; i++)
+            for (size_t i = 0; i < 1000; i++)
 #endif
                 v = Eval(nResults);
 #ifdef PARSERSTANDALONE

@@ -1875,6 +1875,23 @@ namespace mu
     /////////////////////////////////////////////////
     std::string ArrValue::print(size_t digits, size_t chrs, bool trunc) const
     {
+        return "{" + m_val.print(digits, chrs, trunc) + "}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contained value into a
+    /// std::string (possibly adding quotation
+    /// marks). Will shorten the representation.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string ArrValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
         return "{" + m_val.printDims() + " " + m_val.getCommonTypeAsString() + "}";
     }
 
@@ -2014,7 +2031,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isMethod(const std::string& sMethod) const
     {
-        return sMethod == "fields" || sMethod == "get" || m_val.isField(sMethod);
+        return sMethod == "fields"|| sMethod == "keys" || sMethod == "values" || sMethod == "at" || sMethod == "len" || m_val.isField(sMethod);
     }
 
 
@@ -2027,13 +2044,29 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::call(const std::string& sMethod) const
     {
-        if (sMethod == "fields")
+        if (sMethod == "fields" || sMethod == "keys")
             return new ArrValue(m_val.getFields());
         else if (m_val.isField(sMethod))
         {
             const BaseValue* v = m_val.read(sMethod);
             return v ? v->clone() : nullptr;
         }
+        else if (sMethod == "values")
+        {
+            std::vector<std::string> fieldNames = m_val.getFields();
+            Array vals;
+            vals.reserve(fieldNames.size());
+
+            for (const std::string& field : fieldNames)
+            {
+                const BaseValue* val = m_val.read(field);
+                vals.emplace_back(val ? val->clone() : nullptr);
+            }
+
+            return new ArrValue(vals);
+        }
+        else if (sMethod == "len")
+            return new NumValue(Numerical(m_val.size()));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2052,7 +2085,7 @@ namespace mu
         if (arg1.m_type == TYPE_REFERENCE)
             return call(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "get" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+        if (sMethod == "at" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
         {
             const BaseValue* v = m_val.read(static_cast<const StrValue&>(arg1).get());
             return v ? v->clone() : nullptr;
@@ -2072,7 +2105,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isApplyingMethod(const std::string& sMethod) const
     {
-        return sMethod == "wrt" || m_val.isField(sMethod);
+        return sMethod == "wrt" || sMethod == "ins" || sMethod == "clr" || sMethod == "rem" || m_val.isField(sMethod);
     }
 
 
@@ -2087,6 +2120,9 @@ namespace mu
     {
         if (m_val.isField(sMethod))
             return new RefValue(m_val.read(sMethod));
+
+        if (sMethod == "clr")
+            return m_val.clear();
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2107,6 +2143,9 @@ namespace mu
 
         if (m_val.isField(sMethod))
             return new RefValue(m_val.write(sMethod, arg1));
+
+        if (sMethod == "rem" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+            return m_val.remove(static_cast<const StrValue&>(arg1).get());
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2129,6 +2168,9 @@ namespace mu
                          arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
         if (sMethod == "wrt" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+            return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
+
+        if (sMethod == "ins" && arg1.m_type == TYPE_STRING)
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
@@ -2180,7 +2222,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string DictStructValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
     {
-        return "{1 x 1 dict}";
+        return "{1 x 1 dictstruct}";
     }
 
 

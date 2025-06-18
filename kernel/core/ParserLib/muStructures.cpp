@@ -289,7 +289,7 @@ namespace mu
     DataType Value::getType() const
     {
         if (get())
-            return get()->m_type;
+            return get()->getType();
 
         return TYPE_VOID;
     }
@@ -321,7 +321,7 @@ namespace mu
             case TYPE_ARRAY:
                 return "cluster";
             case TYPE_DICTSTRUCT:
-                return "dict";
+                return "dictstruct";
             case TYPE_REFERENCE:
                 return "reference";
         }
@@ -363,7 +363,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isNumerical() const
     {
-        return get() && (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID || get()->m_type == TYPE_CATEGORY);
+        return get() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID || get()->getType() == TYPE_CATEGORY);
     }
 
 
@@ -376,7 +376,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isString() const
     {
-        return get() && (get()->m_type == TYPE_STRING || get()->m_type == TYPE_CATEGORY);
+        return get() && (get()->getType() == TYPE_STRING || get()->getType() == TYPE_CATEGORY);
     }
 
 
@@ -389,7 +389,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isCategory() const
     {
-        return get() && get()->m_type == TYPE_CATEGORY;
+        return get() && get()->getType() == TYPE_CATEGORY;
     }
 
 
@@ -402,7 +402,33 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isArray() const
     {
-        return get() && get()->m_type == TYPE_ARRAY;
+        return get() && get()->getType() == TYPE_ARRAY;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// DictStruct.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isDictStruct() const
+    {
+        return get() && get()->getType() == TYPE_DICTSTRUCT;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// reference.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isRef() const
+    {
+        return get() && get()->m_type == TYPE_REFERENCE;
     }
 
 
@@ -420,6 +446,10 @@ namespace mu
                 return static_cast<StrValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().name;
+            else if (isRef() && get()->getType() == TYPE_STRING)
+                return static_cast<StrValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<CatValue&>(getRef().get()).get().name;
         }
 
         throw ParserError(ecTYPE_NO_STR, getTypeAsString());
@@ -440,6 +470,10 @@ namespace mu
                 return static_cast<const StrValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().name;
+            else if (isRef() && get()->getType() == TYPE_STRING)
+                return static_cast<const StrValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<const CatValue&>(getRef().get()).get().name;
         }
         else
             return m_defString;
@@ -462,6 +496,10 @@ namespace mu
                 return static_cast<NumValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().val;
+            else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
+                return static_cast<NumValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<CatValue&>(getRef().get()).get().val;
         }
 
         throw ParserError(ecTYPE_NO_VAL, getTypeAsString());
@@ -482,6 +520,10 @@ namespace mu
                 return static_cast<const NumValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val;
+            else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
+                return static_cast<const NumValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<const CatValue&>(getRef().get()).get().val;
         }
         else
             return m_defVal;
@@ -500,6 +542,8 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_CATEGORY)
             return static_cast<CatValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_CATEGORY)
+            return static_cast<CatValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_CAT, getTypeAsString());
     }
@@ -515,6 +559,8 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_CATEGORY)
             return static_cast<const CatValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_CATEGORY)
+            return static_cast<const CatValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_CAT, getTypeAsString());
     }
@@ -530,6 +576,8 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_ARRAY)
             return static_cast<ArrValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_ARRAY)
+            return static_cast<ArrValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
     }
@@ -545,6 +593,72 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_ARRAY)
             return static_cast<const ArrValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_ARRAY)
+            return static_cast<const ArrValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained DictStruct.
+    ///
+    /// \return DictStruct&
+    ///
+    /////////////////////////////////////////////////
+    DictStruct& Value::getDictStruct()
+    {
+        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+            return static_cast<DictStructValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
+            return static_cast<DictStructValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained DictStruct.
+    ///
+    /// \return const DictStruct&
+    ///
+    /////////////////////////////////////////////////
+    const DictStruct& Value::getDictStruct() const
+    {
+        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+            return static_cast<const DictStructValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
+            return static_cast<const DictStructValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained RefValue.
+    ///
+    /// \return RefValue&
+    ///
+    /////////////////////////////////////////////////
+    RefValue& Value::getRef()
+    {
+        if (get() && get()->m_type == TYPE_REFERENCE)
+            return *static_cast<RefValue*>(get());
+
+        throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained RefValue.
+    ///
+    /// \return const RefValue&
+    ///
+    /////////////////////////////////////////////////
+    const RefValue& Value::getRef() const
+    {
+        if (get() && get()->m_type == TYPE_REFERENCE)
+            return *static_cast<const RefValue*>(get());
 
         throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
     }
@@ -971,6 +1085,33 @@ namespace mu
 
     /////////////////////////////////////////////////
     /// \brief Convert the contained value into a
+    /// string for printing on the terminal. Will
+    /// append quotation marks to string values, if
+    /// necessary, and can truncate the value to a
+    /// number of characters. Structures and arrays
+    /// are shortened in this variant.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Value::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (get())
+            return get()->printEmbedded(digits, chrs, trunc);
+
+#ifdef PARSERSTANDALONE
+        return "0x0";
+#else
+        return "void";
+#endif
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the contained value into a
     /// string for printing on the terminal. Won't
     /// append quotation marks to string values and
     /// can truncate the value to a number of
@@ -1290,7 +1431,7 @@ namespace mu
             case TYPE_ARRAY:
                 return "cluster";
             case TYPE_DICTSTRUCT:
-                return "dict";
+                return "dictstruct";
             case TYPE_REFERENCE:
                 return "reference";
         }
@@ -2122,7 +2263,10 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).print(digits, chrs, trunc);
+            if (size() > 1)
+                ret += operator[](i).printEmbedded(digits, chrs, trunc);
+            else
+                ret += operator[](i).print(digits, chrs, trunc);
         }
 
         if (size() > 1)
@@ -2313,6 +2457,29 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Remove all instances of RefValue in
+    /// this array and replace them by clones of
+    /// their referenced-to values.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::dereference()
+    {
+        for (size_t i = 0; i < size(); i++)
+        {
+            Value& v = get(i);
+
+            if (v.isRef())
+                v = Value(v.getRef().get().clone());
+
+            if (v.isArray())
+                v.getArray().dereference();
+        }
+    }
+
+
 
 
 
@@ -2336,6 +2503,7 @@ namespace mu
     Variable::Variable(const Value& data) : Array(data)
     {
         m_isConst = false;
+        dereference();
     }
 
 
@@ -2348,6 +2516,7 @@ namespace mu
     Variable::Variable(const Array& data) : Array(data)
     {
         m_isConst = false;
+        dereference();
     }
 
 
@@ -2390,6 +2559,7 @@ namespace mu
         {
             Array::operator=(Array(other));
             m_isConst = false;
+            dereference();
             return *this;
         }
 
@@ -2429,6 +2599,7 @@ namespace mu
     void Variable::overwrite(const Array& other)
     {
         Array::operator=(other);
+        dereference();
         m_isConst = false;
     }
 

@@ -48,11 +48,14 @@ namespace mu
             DictStruct& operator=(DictStruct&& other);
             DictStruct& operator=(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef);
 
+            size_t size() const;
             bool isField(const std::string& fieldName) const;
             std::vector<std::string> getFields() const;
             BaseValue* read(const std::string& fieldName);
             const BaseValue* read(const std::string& fieldName) const;
             BaseValue* write(const std::string& fieldName, const BaseValue& value);
+            BaseValue* remove(const std::string& fieldName);
+            BaseValue* clear();
     };
 }
 
