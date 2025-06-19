@@ -58,6 +58,7 @@ namespace mu
             BaseValue* remove(const std::string& fieldName);
             size_t clear();
             bool importXml(const std::string& fileName);
+            bool importJson(const std::string& fileName);
     };
 }
 

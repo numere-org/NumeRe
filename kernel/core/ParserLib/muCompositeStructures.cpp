@@ -21,6 +21,8 @@
 #include "muValueBase.hpp"
 #include "muValueImpl.hpp"
 #include "../../../externals/tinyxml2/tinyxml2.h"
+#include <json/json.h>
+#include <fstream>
 
 namespace mu
 {
@@ -342,6 +344,109 @@ namespace mu
         m_fields.clear();
 
         importXmlChildren(doc.FirstChildElement(), m_fields);
+
+        return true;
+    }
+
+    static Array importJsonArray(const Json::Value& json);
+
+    static DictStructMap importJsonObject(const Json::Value& json)
+    {
+        Json::Value::Members members = json.getMemberNames();
+        DictStructMap dict;
+
+        for (const std::string& member : members)
+        {
+            switch (json[member].type())
+            {
+                case Json::intValue:
+                    dict[member].reset(new NumValue(Numerical(json[member].asInt())));
+                    break;
+                case Json::uintValue:
+                    dict[member].reset(new NumValue(Numerical(json[member].asUInt())));
+                    break;
+                case Json::realValue:
+                    dict[member].reset(new NumValue(Numerical(json[member].asDouble())));
+                    break;
+                case Json::stringValue:
+                    dict[member].reset(new StrValue(json[member].asString()));
+                    break;
+                case Json::booleanValue:
+                    dict[member].reset(new NumValue(Numerical(json[member].asBool())));
+                    break;
+                case Json::arrayValue:
+                    dict[member].reset(new ArrValue(importJsonArray(json[member])));
+                    break;
+                case Json::objectValue:
+                    dict[member].reset(new DictStructValue(DictStruct(importJsonObject(json[member]))));
+                    break;
+            }
+        }
+
+        return dict;
+    }
+
+    static Array importJsonArray(const Json::Value& json)
+    {
+        Array arr;
+
+        for (Json::ArrayIndex i = 0; i < json.size(); i++)
+        {
+            switch (json[i].type())
+            {
+                case Json::intValue:
+                    arr.emplace_back(json[i].asInt());
+                    break;
+                case Json::uintValue:
+                    arr.emplace_back(json[i].asUInt());
+                    break;
+                case Json::realValue:
+                    arr.emplace_back(json[i].asDouble());
+                    break;
+                case Json::stringValue:
+                    arr.emplace_back(json[i].asString());
+                    break;
+                case Json::booleanValue:
+                    arr.emplace_back(json[i].asBool());
+                    break;
+                case Json::arrayValue:
+                    arr.emplace_back(importJsonArray(json[i]));
+                    break;
+                case Json::objectValue:
+                    arr.emplace_back(DictStruct(importJsonObject(json[i])));
+                    break;
+            }
+        }
+
+        return arr;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import the contents of a JSON file
+    /// into this DictStruct instance.
+    ///
+    /// \param fileName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::importJson(const std::string& fileName)
+    {
+        std::ifstream jsonFile(fileName);
+
+        if (!jsonFile.good())
+            return false;
+
+        Json::Value root;
+        jsonFile >> root;
+
+        if (root.isArray())
+        {
+            m_fields.clear();
+            m_fields["ROOT"].reset(new ArrValue(importJsonArray(root)));
+        }
+        else
+            m_fields = importJsonObject(root);
 
         return true;
     }

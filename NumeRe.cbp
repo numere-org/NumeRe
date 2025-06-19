@@ -134,7 +134,6 @@
 				<Option compiler="gcc" />
 				<Option use_console_runner="0" />
 				<Compiler>
-					<Add option="-Og" />
 					<Add option="-g" />
 					<Add option="-fopenmp" />
 					<Add option="-D__GNUWIN64__" />

@@ -2109,7 +2109,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isApplyingMethod(const std::string& sMethod) const
     {
-        static const std::set<std::string> methods({"wrt", "ins", "clr", "rem", "readXml"});
+        static const std::set<std::string> methods({"wrt", "ins", "clr", "rem", "loadxml", "loadjson"});
         return methods.contains(sMethod) || m_val.isField(sMethod);
     }
 
@@ -2152,8 +2152,11 @@ namespace mu
         if (sMethod == "rem" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return m_val.remove(static_cast<const StrValue&>(arg1).get());
 
-        if (sMethod == "readXml" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "loadxml" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.importXml(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "loadjson" && arg1.m_type == TYPE_STRING)
+            return new NumValue(Numerical(m_val.importJson(static_cast<const StrValue&>(arg1).get())));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }

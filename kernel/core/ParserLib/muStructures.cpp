@@ -319,7 +319,7 @@ namespace mu
             case TYPE_STRING:
                 return "string";
             case TYPE_ARRAY:
-                return "cluster";
+                return getArray().getCommonTypeAsString();
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_REFERENCE:
@@ -1359,6 +1359,14 @@ namespace mu
     std::vector<DataType> Array::getType() const
     {
         std::vector<DataType> types;
+
+        if (size() == 1 && front().isRef() && front().isArray())
+        {
+            types = front().getArray().getType();
+            m_commonType = front().getArray().m_commonType;
+            return types;
+        }
+
         size_t elems = size();
         types.reserve(elems);
 
@@ -1785,6 +1793,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod) const
     {
+        if (size() == 1 && front().isArray())
+            return front().getArray().call(sMethod);
+
         if (sMethod == "std")
             return numfnc_Std(this); // Pointer as single-element array
         else if (sMethod == "avg")
@@ -1856,6 +1867,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1) const
     {
+        if (size() == 1 && front().isArray())
+            return front().getArray().call(sMethod, arg1);
+
         if (sMethod == "sel")
             return numfnc_getElements(*this, arg1);
         else if (front().isMethod(sMethod))
@@ -2025,6 +2039,13 @@ namespace mu
 
         if (sMethod == "sel")
         {
+            if (size() == 1 && front().isArray())
+            {
+                Array& frnt = front().getArray();
+                frnt.m_isConst = false;
+                return frnt.apply(sMethod, arg1);
+            }
+
             Array ret;
             size_t elems = arg1.size();
             ret.reserve(elems);
@@ -2259,6 +2280,8 @@ namespace mu
 #else
             return "void";
 #endif
+        if (size() == 1 && front().isRef() && front().isArray())
+            return front().getArray().print(digits, chrs, trunc);
 
         std::string ret;
 
@@ -2294,6 +2317,9 @@ namespace mu
         if (isDefault())
             return "void";
 
+        if (size() == 1 && front().isRef() && front().isArray())
+            return front().getArray().printVals(digits, chrs);
+
         std::string ret;
 
         for (size_t i = 0; i < size(); i++)
@@ -2316,6 +2342,9 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printDims() const
     {
+        if (size() == 1 && front().isRef() && front().isArray())
+            return front().getArray().printDims();
+
         return toString(size()) + " x 1";
     }
 
@@ -2362,6 +2391,9 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printOverview(size_t digits, size_t chrs, size_t maxElems, bool alwaysBraces) const
     {
+        if (size() == 1 && front().isRef() && front().isArray())
+            return front().getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
+
         // Return an empty brace pair, if no data is
         // available
         if (!size())

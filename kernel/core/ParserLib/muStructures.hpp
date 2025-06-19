@@ -471,8 +471,12 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                if (other.size() == 1 && other.front().isArray())
+                if (other.size() == 1 && other.front().isArray() && !other.front().isRef())
                 {
+                    // Copy dereferenced instead of move
+                    //if (other.front().isRef())
+                    //    return operator=(other.front().getArray());
+
                     Array& fst = other.front().getArray();
                     std::swap(_M_impl._M_start, fst._M_impl._M_start);
                     std::swap(_M_impl._M_finish, fst._M_impl._M_finish);
