@@ -79,6 +79,7 @@ struct NumeReVariables
     size_t nStrings;
     size_t nTables;
     size_t nClusters;
+    size_t nClasses;
 };
 
 

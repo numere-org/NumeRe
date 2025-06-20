@@ -728,6 +728,7 @@ void NumeReKernel::defineNumFunctions()
 
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
+    _parser.DefineFun("dictstruct", cast_dictstruct, true, 2);                   // dictstruct(fields,vals)
     _parser.DefineFun("seconds", cast_seconds);                                  // seconds(val)
     _parser.DefineFun("minutes", cast_minutes);                                  // minutes(val)
     _parser.DefineFun("hours", cast_hours);                                      // hours(val)
@@ -851,6 +852,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
+    _parser.DefineFun("readxml", strfnc_readxml);                                    // readxml(file)
+    _parser.DefineFun("readjson", strfnc_readjson);                                  // readjson(file)
 }
 
 
@@ -2729,7 +2732,7 @@ NumeReVariables NumeReKernel::getVariableList()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() == mu::TYPE_STRING
+            || iter->second->getCommonType() != mu::TYPE_NUMERICAL
             || isDimensionVar(iter->first))
             continue;
 
@@ -2794,6 +2797,25 @@ NumeReVariables NumeReKernel::getVariableList()
     }
 
     vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
+
+    // Gather all (global) class variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() == mu::TYPE_NUMERICAL
+            || iter->second->getCommonType() == mu::TYPE_STRING
+            || isDimensionVar(iter->first))
+            continue;
+
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
+            + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->first + "\t" + formatByteSize(iter->second->getBytes());
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nClasses = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables - vars.nClusters;
 
     return vars;
 }
@@ -2874,6 +2896,23 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     }
 
     vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
+
+    // Gather all (global) class variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() == mu::TYPE_NUMERICAL
+            || iter->second->getCommonType() == mu::TYPE_STRING
+            || isDimensionVar(iter->first))
+            continue;
+
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nClasses = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables - vars.nClusters;
 
     return vars;
 }

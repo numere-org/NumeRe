@@ -856,6 +856,10 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     }
     else if (varType == SYNTAX_STRING)
         methodSelector = ".str";
+    else if (varType == SYNTAX_DICTSTRUCT)
+        methodSelector = ".dict";
+    else if (varType == SYNTAX_CATEGORY)
+        methodSelector = ".cat";
 
     // Try to find the correspondig elements in the map
     for (const auto& iter : mAutoCompList)

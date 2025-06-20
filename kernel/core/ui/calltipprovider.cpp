@@ -794,6 +794,10 @@ namespace NumeRe
             sToken = "VECT." + _lang.get(pref + toUpperCase(sToken) + "_[VECT]");
         else if (_lang.get(pref + toUpperCase(sToken) + "_[STRING]") != pref + toUpperCase(sToken) + "_[STRING]")
             sToken = "STRING." + _lang.get(pref + toUpperCase(sToken) + "_[STRING]");
+        else if (_lang.get(pref + toUpperCase(sToken) + "_[DICT]") != pref + toUpperCase(sToken) + "_[DICT]")
+            sToken = "DICTSTRUCT." + _lang.get(pref + toUpperCase(sToken) + "_[DICT]");
+        else if (_lang.get(pref + toUpperCase(sToken) + "_[CAT]") != pref + toUpperCase(sToken) + "_[CAT]")
+            sToken = "CATEGORY." + _lang.get(pref + toUpperCase(sToken) + "_[CAT]");
         else
             sToken = "TABLE()." + _lang.get(pref + toUpperCase(sToken) + "_[DATA]");
 

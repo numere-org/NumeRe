@@ -854,12 +854,13 @@ namespace mu
     /// requested method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Value::isMethod(const std::string& sMethod) const
+    bool Value::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return get() && get()->isMethod(sMethod);
+        return get() && get()->isMethod(sMethod, argc);
     }
 
 
@@ -958,12 +959,13 @@ namespace mu
     /// requested applying method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Value::isApplyingMethod(const std::string& sMethod) const
+    bool Value::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return get() && get()->isApplyingMethod(sMethod);
+        return get() && get()->isApplyingMethod(sMethod, argc);
     }
 
 
@@ -1771,16 +1773,17 @@ namespace mu
     /// corresponds to a method.
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Array::isMethod(const std::string& sMethod) const
+    bool Array::isMethod(const std::string& sMethod, size_t argc) const
     {
         static const std::set<std::string> methods({"std", "avg", "prd", "sum", "min", "max", "norm",
                                                     "num", "cnt", "med", "and", "or", "xor", "size",
                                                     "maxpos", "minpos", "exc", "skw", "stderr", "rms",
-                                                    "order", "unwrap", "sel"});
-        return methods.contains(sMethod) || front().isMethod(sMethod);
+                                                    "order", "unwrap"});
+        return (methods.contains(sMethod) && argc == 0) || (sMethod == "sel" && argc == 1) || front().isMethod(sMethod, argc);
     }
 
 
@@ -1840,7 +1843,7 @@ namespace mu
             return numfnc_order(this);
         else if (sMethod == "unwrap")
             return unWrap();
-        else if (front().isMethod(sMethod))
+        else if (front().isMethod(sMethod, 0))
         {
             Array ret;
             ret.reserve(size());
@@ -1872,7 +1875,7 @@ namespace mu
 
         if (sMethod == "sel")
             return numfnc_getElements(*this, arg1);
-        else if (front().isMethod(sMethod))
+        else if (front().isMethod(sMethod, 1))
         {
             Array ret;
             size_t elems = std::max(size(), arg1.size());
@@ -1901,7 +1904,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
     {
-        if (front().isMethod(sMethod))
+        if (front().isMethod(sMethod, 1))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size()});
@@ -1931,7 +1934,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const
     {
-        if (front().isMethod(sMethod))
+        if (front().isMethod(sMethod, 3))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
@@ -1962,7 +1965,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const
     {
-        if (front().isMethod(sMethod))
+        if (front().isMethod(sMethod, 4))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
@@ -1985,12 +1988,13 @@ namespace mu
     /// corresponds to an applying method.
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Array::isApplyingMethod(const std::string& sMethod) const
+    bool Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return sMethod == "sel" || front().isApplyingMethod(sMethod);
+        return (sMethod == "sel" && argc == 1) || front().isApplyingMethod(sMethod, argc);
     }
 
 
@@ -2006,11 +2010,11 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod))
+        if (front().isApplyingMethod(sMethod, 0))
         {
             Array ret;
             ret.reserve(size());
-            ret.m_isConst = false;
+            ret.makeMutable();
 
             for (size_t i = 0; i < size(); i++)
             {
@@ -2040,16 +2044,12 @@ namespace mu
         if (sMethod == "sel")
         {
             if (size() == 1 && front().isArray())
-            {
-                Array& frnt = front().getArray();
-                frnt.m_isConst = false;
-                return frnt.apply(sMethod, arg1);
-            }
+                return front().getArray().makeMutable().apply(sMethod, arg1);
 
             Array ret;
             size_t elems = arg1.size();
             ret.reserve(elems);
-            ret.m_isConst = false;
+            ret.makeMutable();
 
             for (size_t i = 0; i < elems; i++)
             {
@@ -2061,12 +2061,12 @@ namespace mu
 
             return ret;
         }
-        else if (front().isApplyingMethod(sMethod))
+        else if (front().isApplyingMethod(sMethod, 1))
         {
             Array ret;
             size_t elems = std::max(size(), arg1.size());
             ret.reserve(elems);
-            ret.m_isConst = false;
+            ret.makeMutable();
 
             for (size_t i = 0; i < elems; i++)
             {
@@ -2094,12 +2094,12 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod))
+        if (front().isApplyingMethod(sMethod, 2))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size()});
             ret.reserve(elems);
-            ret.m_isConst = false;
+            ret.makeMutable();
 
             for (size_t i = 0; i < elems; i++)
             {
@@ -2128,12 +2128,12 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod))
+        if (front().isApplyingMethod(sMethod, 3))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
             ret.reserve(elems);
-            ret.m_isConst = false;
+            ret.makeMutable();
 
             for (size_t i = 0; i < elems; i++)
             {
@@ -2163,12 +2163,12 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod))
+        if (front().isApplyingMethod(sMethod, 4))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
             ret.reserve(elems);
-            ret.m_isConst = false;
+            ret.makeMutable();
 
             for (size_t i = 0; i < elems; i++)
             {
@@ -2526,7 +2526,7 @@ namespace mu
     /////////////////////////////////////////////////
     Variable::Variable() : Array()
     {
-        m_isConst = false;
+        makeMutable();
     }
 
 
@@ -2538,7 +2538,7 @@ namespace mu
     /////////////////////////////////////////////////
     Variable::Variable(const Value& data) : Array(data)
     {
-        m_isConst = false;
+        makeMutable();
         dereference();
     }
 
@@ -2551,7 +2551,7 @@ namespace mu
     /////////////////////////////////////////////////
     Variable::Variable(const Array& data) : Array(data)
     {
-        m_isConst = false;
+        makeMutable();
         dereference();
     }
 
@@ -2564,7 +2564,7 @@ namespace mu
     /////////////////////////////////////////////////
     Variable::Variable(const Variable& data) : Array(data)
     {
-        m_isConst = false;
+        makeMutable();
     }
 
 
@@ -2594,7 +2594,7 @@ namespace mu
         if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
         {
             Array::operator=(Array(other));
-            m_isConst = false;
+            makeMutable();
             dereference();
             return *this;
         }
@@ -2616,7 +2616,7 @@ namespace mu
         if (getCommonType() == TYPE_VOID || getType() == other.getType())
         {
             Array::operator=(other);
-            m_isConst = false;
+            makeMutable();
             return *this;
         }
 
@@ -2636,7 +2636,7 @@ namespace mu
     {
         Array::operator=(other);
         dereference();
-        m_isConst = false;
+        makeMutable();
     }
 
 

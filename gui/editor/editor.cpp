@@ -976,7 +976,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         int c_pos = WordStartPosition(wordstartpos-2, true);
                         varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
                             || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
-                            ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                            ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_DICTSTRUCT;
                         isVect = true;
                     }
                     else if (style == wxSTC_NSCR_STRING || style == wxSTC_NSCR_STRING_PARSER)
@@ -994,9 +994,15 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         }
                         else
                         {
-                            varType = sReturnValue.find("STR") != std::string::npos
-                                || sReturnValue.find("ARG") != std::string::npos
-                                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                            if (sReturnValue.find("STR") != std::string::npos)
+                                varType = NumeReSyntax::SYNTAX_STRING;
+                            else if (sReturnValue.find("CST") != std::string::npos)
+                                varType = NumeReSyntax::SYNTAX_CATEGORY;
+                            else if (sReturnValue.find("DCT") != std::string::npos)
+                                varType = NumeReSyntax::SYNTAX_DICTSTRUCT;
+                            else
+                                varType = NumeReSyntax::SYNTAX_STD;
+
                             isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
                         }
                     }
@@ -1034,9 +1040,15 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                             }
                             else
                             {
-                                varType = sReturnValue.find("STR") != std::string::npos
-                                    || sReturnValue.find("ARG") != std::string::npos
-                                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                                if (sReturnValue.find("STR") != std::string::npos)
+                                    varType = NumeReSyntax::SYNTAX_STRING;
+                                else if (sReturnValue.find("CST") != std::string::npos)
+                                    varType = NumeReSyntax::SYNTAX_CATEGORY;
+                                else if (sReturnValue.find("DCT") != std::string::npos)
+                                    varType = NumeReSyntax::SYNTAX_DICTSTRUCT;
+                                else
+                                    varType = NumeReSyntax::SYNTAX_STD;
+
                                 isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
                             }
                         }
@@ -1053,9 +1065,15 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                                 if (sReturnValue.find("::") != std::string::npos)
                                     sReturnValue.erase(sReturnValue.find("::"));
 
-                                varType = sReturnValue.find("STR") != std::string::npos
-                                    || sReturnValue.find("ARG") != std::string::npos
-                                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                                if (sReturnValue.find("STR") != std::string::npos)
+                                    varType = NumeReSyntax::SYNTAX_STRING;
+                                else if (sReturnValue.find("CST") != std::string::npos)
+                                    varType = NumeReSyntax::SYNTAX_CATEGORY;
+                                else if (sReturnValue.find("DCT") != std::string::npos)
+                                    varType = NumeReSyntax::SYNTAX_DICTSTRUCT;
+                                else
+                                    varType = NumeReSyntax::SYNTAX_STD;
+
                                 isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
                             }
 
@@ -1630,7 +1648,7 @@ void NumeReEditor::HandleFunctionCallTip()
 
     // Adapt the starting position so that the opening braces align
     if (_cTip.sDefinition.find("(", nDotPos) != std::string::npos
-        && _cTip.sDefinition.find("(", nDotPos) <= (size_t)GetColumn(nStartingBrace))
+        && _cTip.sDefinition.find("(", nDotPos) <= (size_t)(nStartingBrace-PositionFromLine(LineFromPosition(nStartingBrace))))
         nStartingBrace -= _cTip.sDefinition.find("(", nDotPos);
 
     if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))
@@ -4155,6 +4173,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                 case wxSTC_NSCR_METHOD:
                     _style = m_options->GetSyntaxStyle(Options::METHODS);
                     break;
+                case wxSTC_NSCR_CUSTOM_METHOD:
+                    _style = m_options->GetSyntaxStyle(Options::CUSTOM_METHOD);
+                    break;
                 case wxSTC_NSCR_PREDEFS:
                     _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
                     break;
@@ -4261,6 +4282,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
                 case wxSTC_NPRC_METHOD:
                     _style = m_options->GetSyntaxStyle(Options::METHODS);
+                    break;
+                case wxSTC_NPRC_CUSTOM_METHOD:
+                    _style = m_options->GetSyntaxStyle(Options::CUSTOM_METHOD);
                     break;
                 case wxSTC_NPRC_PREDEFS:
                     _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
@@ -5348,6 +5372,7 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
     markLocalVariableOfType("cst", bForceRefresh);
     markLocalVariableOfType("tab", bForceRefresh);
     markLocalVariableOfType("str", bForceRefresh);
+    markLocalVariableOfType("obj", bForceRefresh);
 }
 
 

@@ -883,15 +883,20 @@ namespace mu
     /// method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StrValue::isMethod(const std::string& sMethod) const
+    bool StrValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const std::set<std::string> methods({"len", "first", "last", "at",
-                                                    "startsw", "endsw", "sub", "splt",
-                                                    "fnd", "rfnd", "mtch", "rmtch", "nmtch", "nrmtch"});
-        return methods.contains(sMethod);
+        static const MethodSet methods({{"len", 0}, {"first", 0}, {"last", 0},
+                                        {"at", 1}, {"startsw", 1}, {"endsw", 1},
+                                        {"sub", 1}, {"sub", 2}, {"splt", 1}, {"splt", 2},
+                                        {"fnd", 1}, {"fnd", 2}, {"rfnd", 1}, {"rfnd", 2},
+                                        {"mtch", 1}, {"mtch", 2}, {"rmtch", 1}, {"rmtch", 2},
+                                        {"nmtch", 1}, {"nmtch", 2}, {"nrmtch", 1}, {"nrmtch", 2}});
+
+        return methods.contains(MethodDefinition(sMethod, argc));
     }
 
 
@@ -1275,6 +1280,40 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Is the passed string a method for this
+    /// instance?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool CatValue::isMethod(const std::string& sMethod, size_t argc) const
+    {
+        return argc == 0 && (sMethod == "key" || sMethod == "val");
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a zero-argument method on this
+    /// instance.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* CatValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "key")
+            return new StrValue(m_val.name);
+        else if (sMethod == "val")
+            return new NumValue(m_val.val);
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Print the contained value into a
     /// std::string (possibly adding quotation
     /// marks).
@@ -1642,10 +1681,11 @@ namespace mu
     /// method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool ArrValue::isMethod(const std::string& sMethod) const
+    bool ArrValue::isMethod(const std::string& sMethod, size_t argc) const
     {
         return true;
     }
@@ -1756,12 +1796,13 @@ namespace mu
     /// an applying method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool ArrValue::isApplyingMethod(const std::string& sMethod) const
+    bool ArrValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return m_val.isApplyingMethod(sMethod);
+        return m_val.isApplyingMethod(sMethod, argc);
     }
 
 
@@ -2029,13 +2070,14 @@ namespace mu
     /// method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool DictStructValue::isMethod(const std::string& sMethod) const
+    bool DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const std::set<std::string> methods({"fields", "keys", "values", "at", "len"});
-        return methods.contains(sMethod) || m_val.isField(sMethod);
+        static const MethodSet methods({{"fields", 0}, {"keys", 0}, {"values", 0}, {"at", 1}, {"len", 1}});
+        return (m_val.isField(sMethod) && argc == 0) || methods.contains(MethodDefinition(sMethod, argc));
     }
 
 
@@ -2104,13 +2146,14 @@ namespace mu
     /// an applying method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool DictStructValue::isApplyingMethod(const std::string& sMethod) const
+    bool DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        static const std::set<std::string> methods({"wrt", "ins", "clr", "rem", "loadxml", "loadjson"});
-        return methods.contains(sMethod) || m_val.isField(sMethod);
+        static const MethodSet methods({{"clr", 0}, {"rem", 1}, {"loadxml", 1}, {"loadjson", 1}, {"wrt", 2}, {"ins", 2}});
+        return (m_val.isField(sMethod) && argc <= 1) || methods.contains(MethodDefinition(sMethod, argc));
     }
 
 
@@ -2217,7 +2260,7 @@ namespace mu
                 sPrinted += "void";
         }
 
-        return "dictstruct[" + sPrinted + "]";
+        return "[" + sPrinted + "]";
     }
 
 
@@ -2264,7 +2307,7 @@ namespace mu
                 sPrinted += "void";
         }
 
-        return "{" + sPrinted + "}";
+        return "[" + sPrinted + "]";
     }
 
 

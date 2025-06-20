@@ -103,7 +103,9 @@ class NumeReSyntax
             SYNTAX_METHODS,
             SYNTAX_COMMENT,
             SYNTAX_CLUSTER,
-            SYNTAX_TABLE
+            SYNTAX_TABLE,
+            SYNTAX_DICTSTRUCT,
+            SYNTAX_CATEGORY
         };
 
         NumeReSyntax();

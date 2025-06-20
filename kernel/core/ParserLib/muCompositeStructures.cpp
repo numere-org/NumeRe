@@ -70,10 +70,10 @@ namespace mu
     /// \brief Create a DictStruct instance from a
     /// prepared std::map.
     ///
-    /// \param dictDef const std::map<std::string, std::unique_ptr<BaseValue>>&
+    /// \param dictDef const DictStructMap&
     ///
     /////////////////////////////////////////////////
-    DictStruct::DictStruct(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef)
+    DictStruct::DictStruct(const DictStructMap& dictDef)
     {
         for (auto& iter : dictDef)
         {
@@ -132,11 +132,11 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Assign a prepared std::map.
     ///
-    /// \param dictDef const std::map<std::string,std::unique_ptr<BaseValue>>&
+    /// \param dictDef const DictStructMap&
     /// \return DictStruct&
     ///
     /////////////////////////////////////////////////
-    DictStruct& DictStruct::operator=(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef)
+    DictStruct& DictStruct::operator=(const DictStructMap& dictDef)
     {
         m_fields.clear();
 
@@ -289,24 +289,26 @@ namespace mu
         return count;
     }
 
-    using DictStructMap = std::map<std::string, std::unique_ptr<BaseValue>>;
 
     /////////////////////////////////////////////////
     /// \brief Import the current children of the
     /// parent node.
     ///
     /// \param child tinyxml2::XMLElement*
-    /// \param parentMap DictStructMap&
-    /// \return void
+    /// \return Array
     ///
     /////////////////////////////////////////////////
-    static void importXmlChildren(tinyxml2::XMLElement* child, DictStructMap& parentMap)
+    static Array importXmlChildren(tinyxml2::XMLElement* child)
     {
+        Array siblings;
+        siblings.makeMutable();
+
         while (child)
         {
             const tinyxml2::XMLAttribute* attr = child->FirstAttribute();
             DictStructMap attributes;
-            DictStructMap contents;
+            DictStructMap node;
+            node["name"].reset(new StrValue(child->Name()));
 
             while (attr)
             {
@@ -315,14 +317,20 @@ namespace mu
             }
 
             if (!attributes.empty())
-                contents["*attrs"].reset(new DictStructValue(attributes));
+                node["attrs"].reset(new DictStructValue(attributes));
 
-            importXmlChildren(child->FirstChildElement(), contents);
+            Array children = importXmlChildren(child->FirstChildElement());
 
-            parentMap[child->Name()].reset(new DictStructValue(contents));
+            if (children.size() == 1)
+                node["nodes"].reset(children.front().release());
+            else if (children.size() > 1)
+                node["nodes"].reset(new ArrValue(children));
 
+            siblings.emplace_back(DictStruct(node));
             child = child->NextSiblingElement();
         }
+
+        return siblings;
     }
 
 
@@ -342,14 +350,30 @@ namespace mu
             return false;
 
         m_fields.clear();
+        Array nodes = importXmlChildren(doc.FirstChildElement());
 
-        importXmlChildren(doc.FirstChildElement(), m_fields);
+        if (nodes.size() == 1)
+            m_fields["DOM"].reset(nodes.front().release());
+        else
+            m_fields["DOM"].reset(new ArrValue(nodes));
 
         return true;
     }
 
+
+    // Forward declaration due to interdependence of the two
+    // importer functions for JSON
     static Array importJsonArray(const Json::Value& json);
 
+
+    /////////////////////////////////////////////////
+    /// \brief Import an object structure from a JSON
+    /// file.
+    ///
+    /// \param json const Json::Value&
+    /// \return DictStructMap
+    ///
+    /////////////////////////////////////////////////
     static DictStructMap importJsonObject(const Json::Value& json)
     {
         Json::Value::Members members = json.getMemberNames();
@@ -386,9 +410,19 @@ namespace mu
         return dict;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Import an array structure from a JSON
+    /// file.
+    ///
+    /// \param json const Json::Value&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     static Array importJsonArray(const Json::Value& json)
     {
         Array arr;
+        arr.makeMutable();
 
         for (Json::ArrayIndex i = 0; i < json.size(); i++)
         {
@@ -440,13 +474,12 @@ namespace mu
         Json::Value root;
         jsonFile >> root;
 
+        m_fields.clear();
+
         if (root.isArray())
-        {
-            m_fields.clear();
-            m_fields["ROOT"].reset(new ArrValue(importJsonArray(root)));
-        }
+            m_fields["DOM"].reset(new ArrValue(importJsonArray(root)));
         else
-            m_fields = importJsonObject(root);
+            m_fields["DOM"].reset(new DictStructValue(importJsonObject(root)));
 
         return true;
     }

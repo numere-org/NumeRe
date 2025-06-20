@@ -1982,6 +1982,10 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_OPTION);
 					}
+					else if (possibleMethod)
+					{
+						sc.ChangeState(SCE_NSCR_CUSTOM_METHOD);
+					}
 					possibleMethod = false;
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
@@ -2626,6 +2630,10 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					else if (optionWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_OPTION);
+					}
+					else if (possibleMethod)
+					{
+						sc.ChangeState(SCE_NPRC_CUSTOM_METHOD);
 					}
 					sc.SetState(SCE_NPRC_DEFAULT);
 					possibleMethod = false;

@@ -16,3 +16,6 @@ Fixed	Table methods were not handled correctly, if they are combined with "print
 Added	It is now possible to suppress the success messages of "load" using the option "mask" to reduce the noise within scripts.
 Applied	String functions, which convert one input into an array, do now return arrays of clusters (one for each input element). Notable candidates: "textparse()", "to_value()", "split()" and all character classifier functions like "is_alnum()".
 Cleaned	Method resolution is now more precise. This is a preparing step for supporting structures and classes.
+New	Experimental: "dictstruct" is now available as a dictionary/dynamic structure hybrid.
+Added	Experimental: "obj" can be used to declare procedure-local objects and structures
+Added	Experimental: "readxml()" and "readjson()" can be used to load the corresponding file types to DictStruct instances.

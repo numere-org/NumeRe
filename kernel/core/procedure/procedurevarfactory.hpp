@@ -104,6 +104,10 @@ class ProcedureVarFactory
         {
             return createLocalVars(sStringList, mu::Value(""));
         }
+        void createLocalClasses(std::string sClassList)
+        {
+            return createLocalVars(sClassList, mu::Value());
+        }
         void createLocalTables(std::string sTableList);
         void createLocalClusters(std::string sClusterList);
         std::string createTestStatsCluster();

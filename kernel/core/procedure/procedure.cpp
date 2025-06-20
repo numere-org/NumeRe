@@ -710,6 +710,12 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "cst");
     }
 
+    if (findCommand(sVarList, "obj").sString == "obj")
+    {
+        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "obj");
+    }
+
     StripSpaces(sVarDeclarationList);
     StripSpaces(sVarList);
 
@@ -1472,7 +1478,7 @@ int Procedure::procedureCmdInterface(StringView sLine, bool compiling)
     string sCommand = findCommand(sLine).sString;
 
     // Try to identify the command
-    if (sCommand == "var" || sCommand == "str" || sCommand == "tab" || sCommand == "cst")
+    if (sCommand == "var" || sCommand == "str" || sCommand == "tab" || sCommand == "cst" || sCommand == "obj")
     {
         if (compiling && NumeReKernel::getInstance()->getDebugger().getStackSize())
         {
@@ -2913,6 +2919,15 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
     if (sCommand == "cst" && sProcCommandLine.length() > 6)
     {
         _varFactory->createLocalClusters(sProcCommandLine.substr(sProcCommandLine.find("cst") + 3));
+
+        sProcCommandLine = "";
+        return true;
+    }
+
+    // Is it a class declaration?
+    if (sCommand == "obj" && sProcCommandLine.length() > 6)
+    {
+        _varFactory->createLocalClasses(sProcCommandLine.substr(sProcCommandLine.find("obj") + 3));
 
         sProcCommandLine = "";
         return true;

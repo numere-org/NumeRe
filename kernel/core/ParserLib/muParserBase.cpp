@@ -1633,7 +1633,7 @@ namespace mu
                                 {
                                     const mu::Array& currArr = Stack[sidx].get();
 
-                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 0))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name);
                                     else
                                         Stack[sidx] = currArr.call(pTok->Fun().name);
@@ -1644,7 +1644,7 @@ namespace mu
                                     sidx -= 1;
                                     const mu::Array& currArr = Stack[sidx].get();
 
-                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 1))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
                                                                                      Stack[sidx + 1].get());
                                     else
@@ -1657,7 +1657,7 @@ namespace mu
                                     sidx -= 2;
                                     const mu::Array& currArr = Stack[sidx].get();
 
-                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 2))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
                                                                                      Stack[sidx + 1].get(),
                                                                                      Stack[sidx + 2].get());
@@ -1672,7 +1672,7 @@ namespace mu
                                     sidx -= 3;
                                     const mu::Array& currArr = Stack[sidx].get();
 
-                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 3))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
                                                                                      Stack[sidx + 1].get(),
                                                                                      Stack[sidx + 2].get(),
@@ -1689,7 +1689,7 @@ namespace mu
                                     sidx -= 4;
                                     const mu::Array& currArr = Stack[sidx].get();
 
-                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name))
+                                    if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 4))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
                                                                                      Stack[sidx + 1].get(),
                                                                                      Stack[sidx + 2].get(),

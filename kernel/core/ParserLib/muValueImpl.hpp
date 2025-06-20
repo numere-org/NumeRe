@@ -118,7 +118,7 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod) const override;
+        bool isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
         BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const override;
         BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const override;
@@ -150,6 +150,9 @@ namespace mu
         bool operator<(const BaseValue& other) const override;
 
         size_t getBytes() const override;
+
+        bool isMethod(const std::string& sMethod, size_t argc) const override;
+        BaseValue* call(const std::string& sMethod) const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
@@ -189,7 +192,7 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod) const override;
+        bool isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
         BaseValue* call(const std::string& sMethod,
                         const BaseValue& arg1) const override;
@@ -200,7 +203,7 @@ namespace mu
         BaseValue* call(const std::string& sMethod,
                         const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
 
-        bool isApplyingMethod(const std::string& sMethod) const override;
+        bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* apply(const std::string& sMethod) override;
         BaseValue* apply(const std::string& sMethod,
                          const BaseValue& arg1) override;
@@ -232,12 +235,12 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod) const override;
+        bool isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
         BaseValue* call(const std::string& sMethod,
                         const BaseValue& arg1) const override;
 
-        bool isApplyingMethod(const std::string& sMethod) const override;
+        bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* apply(const std::string& sMethod) override;
         BaseValue* apply(const std::string& sMethod,
                          const BaseValue& arg1) override;

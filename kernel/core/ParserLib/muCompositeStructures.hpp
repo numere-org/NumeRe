@@ -27,6 +27,7 @@ namespace mu
 {
     class BaseValue;
     using BaseValuePtr = std::unique_ptr<BaseValue>;
+    using DictStructMap = std::map<std::string, BaseValuePtr>;
 
     /////////////////////////////////////////////////
     /// \brief This class is a combination of a
@@ -37,17 +38,17 @@ namespace mu
     class DictStruct
     {
         private:
-            std::map<std::string, std::unique_ptr<BaseValue>> m_fields;
+            DictStructMap m_fields;
 
         public:
             DictStruct();
             DictStruct(const DictStruct& other);
             DictStruct(DictStruct&& other);
-            DictStruct(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef);
+            DictStruct(const DictStructMap& dictDef);
 
             DictStruct& operator=(const DictStruct& other);
             DictStruct& operator=(DictStruct&& other);
-            DictStruct& operator=(const std::map<std::string, std::unique_ptr<BaseValue>>& dictDef);
+            DictStruct& operator=(const DictStructMap& dictDef);
 
             size_t size() const;
             bool isField(const std::string& fieldName) const;

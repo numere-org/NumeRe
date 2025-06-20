@@ -21,6 +21,7 @@
 
 #include "muTypes.hpp"
 #include <memory>
+#include <set>
 
 
 namespace mu
@@ -115,7 +116,7 @@ namespace mu
             /////////////////////////////////////////////////
             virtual size_t getBytes() const = 0;
 
-            virtual bool isMethod(const std::string& sMethod) const;
+            virtual bool isMethod(const std::string& sMethod, size_t argc) const;
             virtual BaseValue* call(const std::string& sMethod) const;
             virtual BaseValue* call(const std::string& sMethod,
                                     const BaseValue& arg1) const;
@@ -126,7 +127,7 @@ namespace mu
             virtual BaseValue* call(const std::string& sMethod,
                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const;
 
-            virtual bool isApplyingMethod(const std::string& sMethod) const;
+            virtual bool isApplyingMethod(const std::string& sMethod, size_t argc) const;
             virtual BaseValue* apply(const std::string& sMethod);
             virtual BaseValue* apply(const std::string& sMethod,
                                     const BaseValue& arg1);
@@ -292,7 +293,7 @@ namespace mu
 
             size_t getBytes() const override;
 
-            bool isMethod(const std::string& sMethod) const override;
+            bool isMethod(const std::string& sMethod, size_t argc) const override;
             BaseValue* call(const std::string& sMethod) const override;
             BaseValue* call(const std::string& sMethod,
                             const BaseValue& arg1) const override;
@@ -303,7 +304,7 @@ namespace mu
             BaseValue* call(const std::string& sMethod,
                             const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
 
-            bool isApplyingMethod(const std::string& sMethod) const override;
+            bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
             BaseValue* apply(const std::string& sMethod) override;
             BaseValue* apply(const std::string& sMethod,
                              const BaseValue& arg1) override;
@@ -318,6 +319,34 @@ namespace mu
             std::string printVal(size_t digits, size_t chrs) const override;
     };
 
+
+    /////////////////////////////////////////////////
+    /// \brief Defines a single method combined with
+    /// (one of) the possible argument counts.
+    /////////////////////////////////////////////////
+    struct MethodDefinition
+    {
+        std::string name;
+        size_t argc;
+
+        MethodDefinition(const std::string& _name, size_t _argc) : name(_name), argc(_argc)
+        { }
+
+        bool operator==(const MethodDefinition& def) const
+        {
+            return name == def.name && argc == def.argc;
+        }
+
+        bool operator<(const MethodDefinition& def) const
+        {
+            return name < def.name || (name == def.name && argc < def.argc);
+        }
+    };
+
+
+    using MethodSet = std::set<MethodDefinition>;
+
+
     /////////////////////////////////////////////////
     /// \brief This is a simple function to detect,
     /// which combinations of operands cannot make
@@ -330,7 +359,7 @@ namespace mu
     /////////////////////////////////////////////////
     inline bool nonRecursiveOps(DataType lhs, DataType rhs)
     {
-        return lhs == TYPE_CATEGORY || (rhs == TYPE_ARRAY && lhs != rhs);
+        return lhs == TYPE_CATEGORY || lhs == TYPE_REFERENCE || (rhs == TYPE_ARRAY && lhs != rhs);
     }
 }
 

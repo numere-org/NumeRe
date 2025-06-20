@@ -255,6 +255,7 @@ void DebugViewer::getInformationByStackId(size_t id)
     std::vector<std::string> vStringVars;
     std::vector<std::string> vTables;
     std::vector<std::string> vClusters;
+    std::vector<std::string> vClasses;
     std::vector<std::string> vArguments;
     std::vector<std::string> vGlobals;
 
@@ -273,6 +274,7 @@ void DebugViewer::getInformationByStackId(size_t id)
         vStringVars = _debugger.getStringVars();
         vTables = _debugger.getTables();
         vClusters = _debugger.getClusters();
+        vClasses = _debugger.getClasses();
 
         if (m_options->GetShowProcedureArguments())
             vArguments = _debugger.getArguments();
@@ -326,6 +328,7 @@ void DebugViewer::getInformationByStackId(size_t id)
     size_t s_num = vStringVars.size();
     size_t t_num = vTables.size();
     size_t c_num = vClusters.size();
+    size_t class_num = vClasses.size();
     size_t a_num = vArguments.size();
     size_t g_num = vGlobals.size();
 
@@ -334,11 +337,12 @@ void DebugViewer::getInformationByStackId(size_t id)
     vNumVars.insert(vNumVars.end(), vStringVars.begin(), vStringVars.end());
     vNumVars.insert(vNumVars.end(), vTables.begin(), vTables.end());
     vNumVars.insert(vNumVars.end(), vClusters.begin(), vClusters.end());
+    vNumVars.insert(vNumVars.end(), vClasses.begin(), vClasses.end());
     vNumVars.insert(vNumVars.end(), vArguments.begin(), vArguments.end());
     vNumVars.insert(vNumVars.end(), vGlobals.begin(), vGlobals.end());
 
     // Update the variable viewer
-    m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num, c_num, a_num, g_num);
+    m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num, c_num, class_num, a_num, g_num);
 }
 
 

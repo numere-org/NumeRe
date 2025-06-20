@@ -280,10 +280,11 @@ namespace mu
     /// fields.
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool BaseValue::isMethod(const std::string& sMethod) const
+    bool BaseValue::isMethod(const std::string& sMethod, size_t argc) const
     {
         return false;
     }
@@ -374,10 +375,11 @@ namespace mu
     /// used to detect possible fields.
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool BaseValue::isApplyingMethod(const std::string& sMethod) const
+    bool BaseValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
         return false;
     }
@@ -810,12 +812,13 @@ namespace mu
     /// method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool RefValue::isMethod(const std::string& sMethod) const
+    bool RefValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return !isNull() ? get().isMethod(sMethod) : false;
+        return !isNull() ? get().isMethod(sMethod, argc) : false;
     }
 
 
@@ -924,12 +927,13 @@ namespace mu
     /// an applying method?
     ///
     /// \param sMethod const std::string&
+    /// \param argc size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool RefValue::isApplyingMethod(const std::string& sMethod) const
+    bool RefValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return !isNull() ? get().isApplyingMethod(sMethod) : false;
+        return !isNull() ? get().isApplyingMethod(sMethod, argc) : false;
     }
 
 

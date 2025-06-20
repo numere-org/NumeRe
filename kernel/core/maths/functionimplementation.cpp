@@ -6408,6 +6408,38 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
 
 
 /////////////////////////////////////////////////
+/// \brief Implements the dictstruct cast.
+///
+/// \param fields const mu::Array&
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals)
+{
+    size_t elems = fields.size();
+    mu::DictStructMap dict;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::string fieldName = fields.get(i).getStr();
+
+        if (!vals.isDefault())
+        {
+            if (vals.get(i).getType() == mu::TYPE_REFERENCE)
+                dict[fieldName].reset(static_cast<const mu::RefValue*>(vals.get(i).get())->get().clone());
+            else
+                dict[fieldName].reset(vals.get(i).get()->clone());
+        }
+        else
+            dict[fieldName].reset(mu::Value("").release());
+    }
+
+    return mu::Value(mu::DictStruct(dict));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Cast to seconds.
 ///
 /// \param dur const mu::Array&

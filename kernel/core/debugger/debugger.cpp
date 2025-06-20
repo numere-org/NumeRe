@@ -774,11 +774,11 @@ vector<string> NumeReDebugger::getStackTrace()
 /// \brief This member function returns the
 /// variables of the selected type as a vector.
 ///
-/// \param dt mu::DataType
+/// \param dt const std::vector<mu::DataType>&
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
+std::vector<std::string> NumeReDebugger::getVars(const std::vector<mu::DataType>& dt)
 {
     std::vector<std::string> vVars;
 
@@ -786,8 +786,8 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
     {
         char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
 
-        if (iter->second.getCommonType() != dt
-            && !(dt == mu::TYPE_NUMERICAL && iter->second.getCommonType() == mu::TYPE_VOID))
+        if (std::find(dt.begin(), dt.end(), iter->second.getCommonType()) == dt.end()
+            && !(std::find(dt.begin(), dt.end(), mu::TYPE_NUMERICAL) != dt.end() && iter->second.getCommonType() == mu::TYPE_VOID))
             continue;
 
         vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()
@@ -810,7 +810,7 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getNumVars()
 {
-    return getVars(mu::TYPE_NUMERICAL);
+    return getVars({mu::TYPE_NUMERICAL});
 }
 
 
@@ -823,7 +823,7 @@ vector<string> NumeReDebugger::getNumVars()
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getStringVars()
 {
-    return getVars(mu::TYPE_STRING);
+    return getVars({mu::TYPE_STRING});
 }
 
 
@@ -864,6 +864,19 @@ vector<string> NumeReDebugger::getClusters()
     }
 
     return vClusters;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// class variables as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> NumeReDebugger::getClasses()
+{
+    return getVars({mu::TYPE_DICTSTRUCT, mu::TYPE_CATEGORY});
 }
 
 

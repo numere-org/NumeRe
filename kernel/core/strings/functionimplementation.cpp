@@ -3513,6 +3513,65 @@ mu::Array strfnc_gettypeof(const mu::Array& vals)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implements the readxml() function.
+///
+/// \param xmlFiles const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_readxml(const mu::Array& xmlFiles)
+{
+    mu::Array ret;
+    ret.reserve(xmlFiles.size());
+#ifndef PARSERSTANDALONE
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+
+    for (const mu::Value& file : xmlFiles)
+    {
+        std::string validFile = _fSys.ValidFileName(file.getStr(), ".xml", false, true);
+
+        if (!fileExists(validFile))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
+
+        ret.emplace_back(mu::DictStruct());
+        ret.back().getDictStruct().importXml(validFile);
+    }
+#endif
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the readjson() function.
+///
+/// \param jsonFiles const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_readjson(const mu::Array& jsonFiles)
+{
+    mu::Array ret;
+    ret.reserve(jsonFiles.size());
+#ifndef PARSERSTANDALONE
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+
+    for (const mu::Value& file : jsonFiles)
+    {
+        std::string validFile = _fSys.ValidFileName(file.getStr(), ".json", false, true);
+
+        if (!fileExists(validFile))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);
+
+        ret.emplace_back(mu::DictStruct());
+        ret.back().getDictStruct().importJson(validFile);
+    }
+#endif
+
+    return ret;
+}
+
 
 
 

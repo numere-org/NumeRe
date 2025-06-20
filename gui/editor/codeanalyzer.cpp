@@ -854,7 +854,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     // Examine the current usage of the local variable declarators
     // Esp. ensure that the declared variables are used
     if (m_editor->m_fileType == FILE_NPRC
-        && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab" || sSyntaxElement == "cst"))
+        && (sSyntaxElement == "var"
+            || sSyntaxElement == "str"
+            || sSyntaxElement == "tab"
+            || sSyntaxElement == "cst"
+            || sSyntaxElement == "obj"))
     {
         // Handle the special case "list -var"
         if (sSyntaxElement == "var"
@@ -985,6 +989,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                  || sSyntaxElement == "str"
                  || sSyntaxElement == "tab"
                  || sSyntaxElement == "cst"
+                 || sSyntaxElement == "obj"
                  || sSyntaxElement == "procedure"
                  || sSyntaxElement == "endprocedure"))
     {

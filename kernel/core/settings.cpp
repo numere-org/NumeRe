@@ -169,6 +169,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_S_ST_PROCEDURE] = SettingsValue(DEFAULT_ST_PROCEDURE, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_S_ST_NUMBER] = SettingsValue(DEFAULT_ST_NUMBER, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_S_ST_METHODS] = SettingsValue(DEFAULT_ST_METHODS, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CUSTOMMETHOD] = SettingsValue(DEFAULT_ST_CUSTOMMETHOD, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_S_ST_INSTALL] = SettingsValue(DEFAULT_ST_INSTALL, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_S_ST_DEFVARS] = SettingsValue(DEFAULT_ST_DEFVARS, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_S_ST_ACTIVELINE] = SettingsValue(DEFAULT_ST_ACTIVELINE, SettingsValue::SAVE | SettingsValue::HIDDEN);

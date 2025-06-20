@@ -62,7 +62,7 @@ class NumeReDebugger
         void resetBP();
         void formatMessage();
         std::string decodeType(std::string& sArgumentValue, const std::string& sArgumentName = "");
-        std::vector<std::string> getVars(mu::DataType dt);
+        std::vector<std::string> getVars(const std::vector<mu::DataType>& dt);
 
     public:
         NumeReDebugger();
@@ -140,6 +140,7 @@ class NumeReDebugger
         std::vector<std::string> getStringVars();
         std::vector<std::string> getTables();
         std::vector<std::string> getClusters();
+        std::vector<std::string> getClasses();
         std::vector<std::string> getArguments();
         std::vector<std::string> getGlobals();
 

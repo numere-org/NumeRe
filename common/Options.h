@@ -295,6 +295,7 @@ class Options : public Settings
             NUMBER,
             PROCEDURE_COMMAND,
             METHODS,
+            CUSTOM_METHOD,
             INSTALL,
             DEFAULT_VARS,
             ACTIVE_LINE,

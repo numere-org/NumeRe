@@ -225,6 +225,7 @@ mu::Array oprt_BinAND(const mu::Array&, const mu::Array&);
 
 // Cast functions
 mu::Array cast_category(const mu::Array& cats, const mu::Array& ids); // OPT=1
+mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals); // OPT=2
 mu::Array cast_seconds(const mu::Array&);
 mu::Array cast_minutes(const mu::Array&);
 mu::Array cast_hours(const mu::Array&);

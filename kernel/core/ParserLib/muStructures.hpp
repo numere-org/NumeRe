@@ -241,7 +241,7 @@ namespace mu
                     reset(other->clone());
                 else if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->getType(), other->getType()))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this + other);
 
                     *get() += *other.get();
@@ -264,7 +264,7 @@ namespace mu
 
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->getType(), other->getType()))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this - other);
 
                     *get() -= *other.get();
@@ -284,7 +284,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->getType(), other->getType()))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this / other);
 
                     *get() /= *other.get();
@@ -304,7 +304,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    DataType thisType = get()->getType();
+                    DataType thisType = get()->m_type;
                     DataType otherType = other->getType();
 
                     if (nonRecursiveOps(thisType, otherType)
@@ -328,7 +328,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->getType(), other->getType()))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this ^ other);
 
                     *get() ^= *other.get();
@@ -365,7 +365,7 @@ namespace mu
             Value operator&&(const Value& other) const;
             Value operator||(const Value& other) const;
 
-            bool isMethod(const std::string& sMethod) const;
+            bool isMethod(const std::string& sMethod, size_t argc) const;
 
             Value call(const std::string& sMethod) const;
             Value call(const std::string& sMethod, const Value& arg1) const;
@@ -373,7 +373,7 @@ namespace mu
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const;
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const;
 
-            bool isApplyingMethod(const std::string& sMethod) const;
+            bool isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
             Value apply(const std::string& sMethod);
             Value apply(const std::string& sMethod, const Value& arg1);
@@ -512,6 +512,18 @@ namespace mu
             bool isConst() const
             {
                 return m_isConst;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Make this instance mutable.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& makeMutable()
+            {
+                m_isConst = false;
+                return *this;
             }
 
             /////////////////////////////////////////////////
@@ -781,7 +793,7 @@ namespace mu
 
             Array unWrap() const;
 
-            bool isMethod(const std::string& sMethod) const;
+            bool isMethod(const std::string& sMethod, size_t argc) const;
 
             Array call(const std::string& sMethod) const;
             Array call(const std::string& sMethod, const Array& arg1) const;
@@ -789,7 +801,7 @@ namespace mu
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const;
 
-            bool isApplyingMethod(const std::string& sMethod) const;
+            bool isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
             Array apply(const std::string& sMethod);
             Array apply(const std::string& sMethod, const Array& arg1);
@@ -886,7 +898,7 @@ namespace mu
                 {
                     Array::operator=(other);
                     dereference();
-                    m_isConst = false;
+                    makeMutable();
                     return *this;
                 }
 
