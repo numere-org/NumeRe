@@ -327,8 +327,11 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
         std::string sVarType = getVariableType(sLine.substr(posStart, x - posStart));
 
         // Examine the variable types
-        varType = sVarType.find("STR") != std::string::npos
-            || sVarType.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+        if (sVarType.find("STR") != std::string::npos || sVarType.find("CST") != std::string::npos)
+            varType = NumeReSyntax::SYNTAX_STRING;
+        else if (sVarType.find("DCT") != std::string::npos)
+            varType = NumeReSyntax::SYNTAX_DICTSTRUCT;
+
         isVect = sVarType.find('{') != std::string::npos || sVarType.find("CST") != std::string::npos;
     }
     else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STRING)
@@ -346,9 +349,13 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
         }
         else
         {
-            varType = sReturnValue.find("STR") != std::string::npos
-                || sReturnValue.find("ARG") != std::string::npos
-                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+            if (sReturnValue.find("STR") != std::string::npos
+                || sReturnValue.find("CST") != std::string::npos
+                || sReturnValue.find("ARG") != std::string::npos)
+                varType = NumeReSyntax::SYNTAX_STRING;
+            else if (sReturnValue.find("DCT") != std::string::npos)
+                varType = NumeReSyntax::SYNTAX_DICTSTRUCT;
+
             isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
         }
     }
@@ -440,9 +447,13 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
                 }
                 else
                 {
-                    varType = sReturnValue.find("STR") != std::string::npos
-                        || sReturnValue.find("ARG") != std::string::npos
-                        || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                    if (sReturnValue.find("STR") != std::string::npos
+                        || sReturnValue.find("CST") != std::string::npos
+                        || sReturnValue.find("ARG") != std::string::npos)
+                        varType = NumeReSyntax::SYNTAX_STRING;
+                    else if (sReturnValue.find("DCT") != std::string::npos)
+                        varType = NumeReSyntax::SYNTAX_DICTSTRUCT;
+
                     isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
                 }
             }

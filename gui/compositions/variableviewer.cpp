@@ -19,6 +19,7 @@
 #include "variableviewer.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
+#include "../../kernel/core/structures.hpp"
 #include "../../common/datastructures.h"
 #include "../../common/Options.h"
 #include "../NumeReWindow.h"
@@ -83,7 +84,7 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     // Create variable class nodes
     numRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_VARS"));
     stringRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_STRINGS"));
-    classesRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_CLASSES"));
+    objectRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_CLASSES"));
     clusterRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_CLUSTERS"));
     tableRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_TABLES"));
     SetItemText(tableRoot, VALUECOLUMN, " {min, ..., max}");
@@ -92,7 +93,7 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     // Make the variable class nodes bold
     SetItemBold(numRoot, true);
     SetItemBold(stringRoot, true);
-    SetItemBold(classesRoot, true);
+    SetItemBold(objectRoot, true);
     SetItemBold(tableRoot, true);
     SetItemBold(clusterRoot, true);
 
@@ -165,6 +166,40 @@ bool VariableViewer::checkSpecialVals(const std::string& sVar)
 
 
 /////////////////////////////////////////////////
+/// \brief Insert a set of variables below the
+/// passed root node.
+///
+/// \param rootNode wxTreeItemId
+/// \param varList const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void VariableViewer::insertVars(wxTreeItemId rootNode, const std::vector<std::string>& varList)
+{
+    if (!rootNode.IsOk())
+        return;
+
+    // Show the numbers of variables in the current group
+    SetItemText(rootNode, DIMCOLUMN, "[" + toString(varList.size()) + "] ");
+
+    wxTreeItemId currentItem;
+
+    // Go through the list of all passed variables
+    for (const std::string& var : varList)
+    {
+        currentItem = AppendVariable(rootNode, var);
+
+        // Perform all necessary highlighting options
+        if (debuggerMode && !checkPresence(var))
+            SetItemTextColour(currentItem, *wxRED);
+
+        if (!debuggerMode && checkSpecialVals(var))
+            SetItemTextColour(currentItem, wxColour(0, 0, 192));
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function splits the passed
 /// variable at tabulator characters and adds its
 /// contents to the current tree item. It will
@@ -233,8 +268,8 @@ void VariableViewer::ClearTree()
     if (HasChildren(stringRoot))
         bExpandedState[1] = IsExpanded(stringRoot);
 
-    if (HasChildren(classesRoot))
-        bExpandedState[2] = IsExpanded(classesRoot);
+    if (HasChildren(objectRoot))
+        bExpandedState[2] = IsExpanded(objectRoot);
 
     if (HasChildren(tableRoot))
         bExpandedState[3] = IsExpanded(tableRoot);
@@ -246,7 +281,7 @@ void VariableViewer::ClearTree()
     DeleteChildren(stringRoot);
     DeleteChildren(tableRoot);
     DeleteChildren(clusterRoot);
-    DeleteChildren(classesRoot);
+    DeleteChildren(objectRoot);
 
     if (argumentRoot.IsOk())
     {
@@ -271,16 +306,22 @@ void VariableViewer::ClearTree()
 /// task, which is specific to the debug mode
 /// after a variable update.
 ///
-/// \param vVarList const std::vector<std::string>&
+/// \param vars const NumeReVariables&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void VariableViewer::HandleDebugActions(const std::vector<std::string>& vVarList)
+void VariableViewer::HandleDebugActions(const NumeReVariables& vars)
 {
     if (!debuggerMode)
         return;
 
-    vLastVarSet = vVarList;
+    vLastVarSet = vars.vNumVars;
+    vLastVarSet.insert(vLastVarSet.end(), vars.vStrVars.begin(), vars.vStrVars.end());
+    vLastVarSet.insert(vLastVarSet.end(), vars.vObjects.begin(), vars.vObjects.end());
+    vLastVarSet.insert(vLastVarSet.end(), vars.vTables.begin(), vars.vTables.end());
+    vLastVarSet.insert(vLastVarSet.end(), vars.vClusters.begin(), vars.vClusters.end());
+    vLastVarSet.insert(vLastVarSet.end(), vars.vArguments.begin(), vars.vArguments.end());
+    vLastVarSet.insert(vLastVarSet.end(), vars.vGlobals.begin(), vars.vGlobals.end());
 }
 
 
@@ -531,8 +572,8 @@ void VariableViewer::ExpandAll()
     if (HasChildren(stringRoot) && bExpandedState[1])
         Expand(stringRoot);
 
-    if (HasChildren(classesRoot) && bExpandedState[2])
-        Expand(classesRoot);
+    if (HasChildren(objectRoot) && bExpandedState[2])
+        Expand(objectRoot);
 
     if (HasChildren(tableRoot) && bExpandedState[3])
         Expand(tableRoot);
@@ -703,91 +744,28 @@ void VariableViewer::setDebuggerMode(bool mode)
 /// the variable list, which is displayed by this
 /// control.
 ///
-/// \param vVarList const std::vector<std::string>&
-/// \param nNumerics size_t
-/// \param nStrings size_t
-/// \param nTables size_t
-/// \param nClusters size_t
-/// \param nClasses size_t
-/// \param nArguments size_t
-/// \param nGlobals size_t
+/// \param vars const NumeReVariables&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nClusters, size_t nClasses, size_t nArguments, size_t nGlobals)
+void VariableViewer::UpdateVariables(const NumeReVariables& vars)
 {
     // Clear the tree first
     ClearTree();
 
-    // Show the numbers of variables in the current group
-    SetItemText(numRoot, DIMCOLUMN, "[" + toString(nNumerics) + "] ");
-    SetItemText(stringRoot, DIMCOLUMN, "[" + toString(nStrings) + "] ");
-    SetItemText(classesRoot, DIMCOLUMN, "[" + toString(nClasses) + "] ");
-    SetItemText(tableRoot, DIMCOLUMN, "[" + toString(nTables) + "] ");
-    SetItemText(clusterRoot, DIMCOLUMN, "[" + toString(nClusters) + "] ");
-
-    if (argumentRoot.IsOk())
-    {
-        SetItemText(argumentRoot, DIMCOLUMN, "[" + toString(nArguments) + "] ");
-    }
-
-    if (globalRoot.IsOk())
-    {
-        SetItemText(globalRoot, DIMCOLUMN, "[" + toString(nGlobals) + "] ");
-    }
-
-    wxTreeItemId currentItem;
-
-    // Go through the list of all passed variables
-    for (size_t i = 0; i < vVarList.size(); i++)
-    {
-        if (i < nNumerics)
-        {
-            // Append a variable to the numerics list
-            currentItem = AppendVariable(numRoot, vVarList[i]);
-        }
-        else if (i < nStrings+nNumerics)
-        {
-            // Append a variable to the string list
-            currentItem = AppendVariable(stringRoot, vVarList[i]);
-        }
-        else if (i < nStrings+nNumerics+nTables)
-        {
-            // Append a variable to the tables list
-            currentItem = AppendVariable(tableRoot, vVarList[i]);
-        }
-        else if (i < nStrings+nNumerics+nTables+nClusters)
-        {
-            // Append a variable to the tables list
-            currentItem = AppendVariable(clusterRoot, vVarList[i]);
-        }
-        else if (i < nStrings+nNumerics+nTables+nClusters+nClasses)
-        {
-            // Append a variable to the tables list
-            currentItem = AppendVariable(classesRoot, vVarList[i]);
-        }
-        else if (argumentRoot.IsOk() && i < nStrings+nNumerics+nTables+nClusters+nClasses+nArguments)
-        {
-            // Append a variable to the tables list
-            currentItem = AppendVariable(argumentRoot, vVarList[i]);
-        }
-        else if (globalRoot.IsOk() && i < nStrings+nNumerics+nTables+nClusters+nClasses+nArguments+nGlobals)
-        {
-            // Append a variable to the tables list
-            currentItem = AppendVariable(globalRoot, vVarList[i]);
-        }
-
-        // Perform all necessary highlighting options
-        if (debuggerMode && !checkPresence(vVarList[i]))
-            SetItemTextColour(currentItem, *wxRED);
-        if (!debuggerMode && checkSpecialVals(vVarList[i]))
-            SetItemTextColour(currentItem, wxColour(0, 0, 192));
-    }
+    // Insert all passed variables
+    insertVars(numRoot, vars.vNumVars);
+    insertVars(stringRoot, vars.vStrVars);
+    insertVars(objectRoot, vars.vObjects);
+    insertVars(tableRoot, vars.vTables);
+    insertVars(clusterRoot, vars.vClusters);
+    insertVars(argumentRoot, vars.vArguments);
+    insertVars(globalRoot, vars.vGlobals);
 
     // Expand the tree
     ExpandAll();
 
     // Handle debug mode specific tasks
-    HandleDebugActions(vVarList);
+    HandleDebugActions(vars);
 }
 

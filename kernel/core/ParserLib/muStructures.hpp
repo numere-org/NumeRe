@@ -815,6 +815,7 @@ namespace mu
             std::vector<std::complex<double>> as_cmplx_vector() const;
             std::vector<std::string> to_string() const;
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
+            std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVals(size_t digits = 0, size_t chrs = 0) const;
             std::string printDims() const;
             std::string printJoined(const std::string& sSep = "", bool keepEmpty = false) const;

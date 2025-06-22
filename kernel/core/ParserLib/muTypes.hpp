@@ -42,6 +42,7 @@ namespace mu
         TYPE_CATEGORY,
         TYPE_ARRAY,
         TYPE_DICTSTRUCT,
+        TYPE_OBJECT,
         TYPE_GENERATOR,
         TYPE_NEUTRAL,
         TYPE_INVALID,

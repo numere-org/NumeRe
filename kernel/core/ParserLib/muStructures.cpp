@@ -1783,7 +1783,10 @@ namespace mu
                                                     "num", "cnt", "med", "and", "or", "xor", "size",
                                                     "maxpos", "minpos", "exc", "skw", "stderr", "rms",
                                                     "order", "unwrap"});
-        return (methods.contains(sMethod) && argc == 0) || (sMethod == "sel" && argc == 1) || front().isMethod(sMethod, argc);
+        return (methods.contains(sMethod) && argc == 0)
+            || (sMethod == "sel" && argc == 1)
+            || (sMethod == "delegate" && argc <= 2)
+            || front().isMethod(sMethod, argc);
     }
 
 
@@ -1875,6 +1878,19 @@ namespace mu
 
         if (sMethod == "sel")
             return numfnc_getElements(*this, arg1);
+        else if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
+        {
+            Array ret;
+            size_t elems = size();
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(arg1.front().getStr()));
+            }
+
+            return ret;
+        }
         else if (front().isMethod(sMethod, 1))
         {
             Array ret;
@@ -1904,7 +1920,23 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
     {
-        if (front().isMethod(sMethod, 1))
+        if (size() == 1 && front().isArray())
+            return front().getArray().call(sMethod, arg1, arg2);
+
+        if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
+        {
+            Array ret;
+            size_t elems = size();
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(arg1.front().getStr(), arg2));
+            }
+
+            return ret;
+        }
+        else if (front().isMethod(sMethod, 1))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size()});
@@ -2300,6 +2332,31 @@ namespace mu
             return "{" + ret + "}";
 
         return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contents as if they are
+    /// embedded.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Array::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (isDefault())
+#ifdef PARSERSTANDALONE
+            return "default";
+#else
+            return "void";
+#endif
+        if (size() == 1 && front().isArray())
+            return front().getArray().printEmbedded(digits, chrs, trunc);
+
+        return "{" + printDims() + " " + getCommonTypeAsString() + "}";
     }
 
 

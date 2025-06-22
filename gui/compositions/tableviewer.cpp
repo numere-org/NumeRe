@@ -179,16 +179,19 @@ void TableViewer::layoutGrid()
     }
     else
     {
+        static const std::string ALIGN_LEFT_CHARS = "\".[{";
         // Search the boundaries and color the frame correspondingly
         for (int i = 0; i < GetNumberRows(); i++)
         {
             for (int j = 0; j < GetNumberCols(); j++)
             {
-                if (i >= (int)nFirstNumRow && GetCellValue(i, j)[0] == '"')
+                if (i >= (int)nFirstNumRow && ALIGN_LEFT_CHARS.find(GetCellValue(i, j)[0]) != std::string::npos)
                     SetCellAlignment(wxALIGN_LEFT, i, j);
             }
         }
 
+        if (GetRows() <= 1000)
+            AutoSize();
     }
 
     // temporary test for header grouping
@@ -2177,10 +2180,16 @@ void TableViewer::OnCellDoubleClick(wxGridEvent& event)
 
     wxString cellValue = GetCellValue(event.GetRow(), event.GetCol());
 
-    if (cellValue.length() && cellValue.Matches("{* x * *}"))
+    if (cellValue.length() && (cellValue.Matches("{* x * *}") || cellValue.Matches("[.*: *]")))
     {
         m_numereWindow->showTable(m_intName + ".sel(" + toString(event.GetRow()+1) + ")",
                                   m_displayName + ".sel(" + toString(event.GetRow()+1) + ")");
+    }
+    else if (cellValue.length() && cellValue.Matches(".*: {* x * *}"))
+    {
+        cellValue = cellValue.substr(0, cellValue.find(':'));
+        m_numereWindow->showTable(m_intName + cellValue,
+                                  m_displayName + cellValue);
     }
 
     event.Skip();

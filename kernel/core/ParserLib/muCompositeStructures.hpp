@@ -58,8 +58,8 @@ namespace mu
             BaseValuePtr* write(const std::string& fieldName, const BaseValue& value);
             BaseValue* remove(const std::string& fieldName);
             size_t clear();
-            bool importXml(const std::string& fileName);
-            bool importJson(const std::string& fileName);
+            bool importXml(std::string fileName);
+            bool importJson(std::string fileName);
     };
 }
 

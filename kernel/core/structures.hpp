@@ -35,6 +35,26 @@ std::string toString(long long int);
 
 
 /////////////////////////////////////////////////
+/// \brief This structure combines a vector of
+/// declared variables including their values and
+/// respective sizes with a set of variable type
+/// counts, which can be used to separate the
+/// single vector in multiple vectors containing
+/// only a single type of variables.
+/////////////////////////////////////////////////
+struct NumeReVariables
+{
+    std::vector<std::string> vNumVars;
+    std::vector<std::string> vStrVars;
+    std::vector<std::string> vTables;
+    std::vector<std::string> vClusters;
+    std::vector<std::string> vObjects;
+    std::vector<std::string> vArguments;
+    std::vector<std::string> vGlobals;
+};
+
+
+/////////////////////////////////////////////////
 /// \brief This class abstracts all the index
 /// logics, i.e. the logical differences between
 /// single indices and indices described by a

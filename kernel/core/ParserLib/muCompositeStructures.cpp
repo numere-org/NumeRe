@@ -21,6 +21,11 @@
 #include "muValueBase.hpp"
 #include "muValueImpl.hpp"
 #include "../../../externals/tinyxml2/tinyxml2.h"
+
+#ifndef PARSERSTANDALONE
+#include "../../kernel.hpp"
+#endif // PARSERSTANDALONE
+
 #include <json/json.h>
 #include <fstream>
 
@@ -338,13 +343,21 @@ namespace mu
     /// \brief Import the contents of an XML file
     /// into this DictStruct instance.
     ///
-    /// \param fileName const std::string&
+    /// \param fileName std::string
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool DictStruct::importXml(const std::string& fileName)
+    bool DictStruct::importXml(std::string fileName)
     {
         tinyxml2::XMLDocument doc;
+
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        fileName = _fSys.ValidFileName(fileName, ".xml", false, true);
+
+        if (!fileExists(fileName))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "loadxml(\"" + fileName + "\")", fileName);
+#endif
 
         if (doc.LoadFile(fileName.c_str()) != tinyxml2::XML_SUCCESS)
             return false;
@@ -460,12 +473,20 @@ namespace mu
     /// \brief Import the contents of a JSON file
     /// into this DictStruct instance.
     ///
-    /// \param fileName const std::string&
+    /// \param fileName std::string
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool DictStruct::importJson(const std::string& fileName)
+    bool DictStruct::importJson(std::string fileName)
     {
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        fileName = _fSys.ValidFileName(fileName, ".json", false, true);
+
+        if (!fileExists(fileName))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "loadjson(\"" + fileName + "\")", fileName);
+#endif
+
         std::ifstream jsonFile(fileName);
 
         if (!jsonFile.good())

@@ -5776,10 +5776,7 @@ void NumeReWindow::UpdateTerminalNotebook()
 void NumeReWindow::UpdateVarViewer()
 {
     if (m_varViewer)
-    {
-        NumeReVariables vars = m_terminal->getVariableList();
-        m_varViewer->UpdateVariables(vars.vVariables, vars.nNumerics, vars.nStrings, vars.nTables, vars.nClusters, vars.nClasses);
-    }
+        m_varViewer->UpdateVariables(m_terminal->getVariableList());
 }
 
 

@@ -250,14 +250,8 @@ void DebugViewer::OnStackItemActivate(wxListEvent& event)
 /////////////////////////////////////////////////
 void DebugViewer::getInformationByStackId(size_t id)
 {
+    NumeReVariables vars;
     std::vector<std::string> vModuleInfo;
-    std::vector<std::string> vNumVars;
-    std::vector<std::string> vStringVars;
-    std::vector<std::string> vTables;
-    std::vector<std::string> vClusters;
-    std::vector<std::string> vClasses;
-    std::vector<std::string> vArguments;
-    std::vector<std::string> vGlobals;
 
     // Read the information from the kernel by locking
     // the critical section
@@ -270,17 +264,17 @@ void DebugViewer::getInformationByStackId(size_t id)
 
         // Read the information from the debugger
         vModuleInfo = _debugger.getModuleInformations();
-        vNumVars = _debugger.getNumVars();
-        vStringVars = _debugger.getStringVars();
-        vTables = _debugger.getTables();
-        vClusters = _debugger.getClusters();
-        vClasses = _debugger.getClasses();
+        vars.vNumVars = _debugger.getNumVars();
+        vars.vStrVars = _debugger.getStringVars();
+        vars.vTables = _debugger.getTables();
+        vars.vClusters = _debugger.getClusters();
+        vars.vObjects = _debugger.getObjects();
 
         if (m_options->GetShowProcedureArguments())
-            vArguments = _debugger.getArguments();
+            vars.vArguments = _debugger.getArguments();
 
         if (m_options->GetShowGlobalVariables())
-            vGlobals = _debugger.getGlobals();
+            vars.vGlobals = _debugger.getGlobals();
     }
 
     // Mark the current selected stack item in the stack
@@ -323,26 +317,8 @@ void DebugViewer::getInformationByStackId(size_t id)
     // Set the error message
     m_errorMessage->SetValue(vModuleInfo[3]);
 
-    // Store the sizes of the vectors
-    size_t n_num = vNumVars.size();
-    size_t s_num = vStringVars.size();
-    size_t t_num = vTables.size();
-    size_t c_num = vClusters.size();
-    size_t class_num = vClasses.size();
-    size_t a_num = vArguments.size();
-    size_t g_num = vGlobals.size();
-
-    // Create the variable vector for the
-    // variable viewer
-    vNumVars.insert(vNumVars.end(), vStringVars.begin(), vStringVars.end());
-    vNumVars.insert(vNumVars.end(), vTables.begin(), vTables.end());
-    vNumVars.insert(vNumVars.end(), vClusters.begin(), vClusters.end());
-    vNumVars.insert(vNumVars.end(), vClasses.begin(), vClasses.end());
-    vNumVars.insert(vNumVars.end(), vArguments.begin(), vArguments.end());
-    vNumVars.insert(vNumVars.end(), vGlobals.begin(), vGlobals.end());
-
     // Update the variable viewer
-    m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num, c_num, class_num, a_num, g_num);
+    m_varViewer->UpdateVariables(vars);
 }
 
 

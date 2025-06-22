@@ -1936,7 +1936,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string ArrValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
     {
-        return "{" + m_val.printDims() + " " + m_val.getCommonTypeAsString() + "}";
+        return m_val.printEmbedded();
     }
 
 
@@ -2076,7 +2076,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"fields", 0}, {"keys", 0}, {"values", 0}, {"at", 1}, {"len", 1}});
+        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"at", 1}, {"len", 1}});
         return (m_val.isField(sMethod) && argc == 0) || methods.contains(MethodDefinition(sMethod, argc));
     }
 
@@ -2090,13 +2090,8 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::call(const std::string& sMethod) const
     {
-        if (sMethod == "fields" || sMethod == "keys")
+        if (sMethod == "keys")
             return new ArrValue(m_val.getFields());
-        else if (m_val.isField(sMethod))
-        {
-            const BaseValue* v = m_val.read(sMethod);
-            return v ? v->clone() : nullptr;
-        }
         else if (sMethod == "values")
         {
             std::vector<std::string> fieldNames = m_val.getFields();
@@ -2113,6 +2108,11 @@ namespace mu
         }
         else if (sMethod == "len")
             return new NumValue(Numerical(m_val.size()));
+        else if (m_val.isField(sMethod))
+        {
+            const BaseValue* v = m_val.read(sMethod);
+            return v ? v->clone() : nullptr;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2166,11 +2166,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod)
     {
-        if (m_val.isField(sMethod))
-            return new RefValue(m_val.read(sMethod));
-
         if (sMethod == "clr")
             return new NumValue(Numerical(m_val.clear()));
+
+        if (m_val.isField(sMethod))
+            return new RefValue(m_val.read(sMethod));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2189,9 +2189,6 @@ namespace mu
         if (arg1.m_type == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (m_val.isField(sMethod))
-            return new RefValue(m_val.write(sMethod, arg1));
-
         if (sMethod == "rem" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return m_val.remove(static_cast<const StrValue&>(arg1).get());
 
@@ -2200,6 +2197,9 @@ namespace mu
 
         if (sMethod == "loadjson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.importJson(static_cast<const StrValue&>(arg1).get())));
+
+        if (m_val.isField(sMethod))
+            return new RefValue(m_val.write(sMethod, arg1));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }

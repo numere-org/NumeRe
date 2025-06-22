@@ -27,6 +27,7 @@
 #include <string>
 
 class NumeReWindow;
+class NumeReVariables;
 
 class VariableViewer : public wxcode::wxTreeListCtrl
 {
@@ -39,7 +40,7 @@ class VariableViewer : public wxcode::wxTreeListCtrl
         wxTreeItemId stringRoot;
         wxTreeItemId tableRoot;
         wxTreeItemId clusterRoot;
-        wxTreeItemId classesRoot;
+        wxTreeItemId objectRoot;
         wxTreeItemId argumentRoot;
         wxTreeItemId globalRoot;
         wxTreeItemId selectedID;
@@ -48,9 +49,10 @@ class VariableViewer : public wxcode::wxTreeListCtrl
 
         bool checkPresence(const std::string& sVar);
         bool checkSpecialVals(const std::string& sVar);
+        void insertVars(wxTreeItemId rootNode, const std::vector<std::string>& varList);
         wxTreeItemId AppendVariable(wxTreeItemId rootNode, std::string sVar);
         void ClearTree();
-        void HandleDebugActions(const std::vector<std::string>& vVarList);
+        void HandleDebugActions(const NumeReVariables& vars);
         wxString GetInternalName(wxTreeItemId id);
 
         void OnMenuEvent(wxCommandEvent& event);
@@ -73,7 +75,7 @@ class VariableViewer : public wxcode::wxTreeListCtrl
         void OnDoubleClick(wxTreeEvent& event);
 
         void setDebuggerMode(bool mode = true);
-        void UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nClusters, size_t nClasses, size_t nArguments = 0, size_t nGlobals = 0);
+        void UpdateVariables(const NumeReVariables& vars);
 
         DECLARE_EVENT_TABLE();
 };

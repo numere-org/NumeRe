@@ -2740,10 +2740,8 @@ NumeReVariables NumeReKernel::getVariableList()
             + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vNumVars.push_back(sCurrentLine);
     }
-
-    vars.nNumerics = vars.vVariables.size();
 
     // Gather all (global) string variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2758,10 +2756,8 @@ NumeReVariables NumeReKernel::getVariableList()
             + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vStrVars.push_back(sCurrentLine);
     }
-
-    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
     // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
@@ -2778,10 +2774,8 @@ NumeReVariables NumeReKernel::getVariableList()
             + toString(stats.second, DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
             + formatByteSize(_memoryManager.getBytes(iter->first));
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vTables.push_back(sCurrentLine);
     }
-
-    vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
 
     // Gather all (global) clusters
     for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
@@ -2793,10 +2787,8 @@ NumeReVariables NumeReKernel::getVariableList()
         sCurrentLine += "\tcluster\t" + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true)
             + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vClusters.push_back(sCurrentLine);
     }
-
-    vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
 
     // Gather all (global) class variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2812,10 +2804,8 @@ NumeReVariables NumeReKernel::getVariableList()
             + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vObjects.push_back(sCurrentLine);
     }
-
-    vars.nClasses = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables - vars.nClusters;
 
     return vars;
 }
@@ -2843,16 +2833,14 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() == mu::TYPE_STRING
+            || iter->second->getCommonType() != mu::TYPE_NUMERICAL
             || isDimensionVar(iter->first))
             continue;
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vNumVars.push_back(sCurrentLine);
     }
-
-    vars.nNumerics = vars.vVariables.size();
 
     // Gather all (global) string variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2865,10 +2853,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vStrVars.push_back(sCurrentLine);
     }
-
-    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
     // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
@@ -2879,10 +2865,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
         sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
             + toString(_memoryManager.getCols(iter->first, false)) + "\ttable";
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vTables.push_back(sCurrentLine);
     }
-
-    vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
 
     // Gather all (global) clusters
     for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
@@ -2892,10 +2876,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1\tcluster";
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vClusters.push_back(sCurrentLine);
     }
-
-    vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
 
     // Gather all (global) class variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2909,10 +2891,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vObjects.push_back(sCurrentLine);
     }
-
-    vars.nClasses = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables - vars.nClusters;
 
     return vars;
 }
@@ -3148,7 +3128,14 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
 
     for (int n = 0; n < nNum; n++)
     {
-        if (v[n].get().size() > 1)
+        const mu::Array* arr;
+
+        if (v[n].get().size() == 1 && v[n].get().front().isArray())
+            arr = &v[n].get().front().getArray();
+        else
+            arr = &v[n].get();
+
+        if (arr->size() > 1)
         {
             // More than one result
             //
@@ -3161,15 +3148,15 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
                 sAns = "ans = {";
 
             // compose the result
-            for (size_t i = 0; i < v[n].get().size(); ++i)
+            for (size_t i = 0; i < arr->size(); ++i)
             {
-                sAns += strfill(v[n].get()[i].printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                sAns += strfill(arr->get(i).printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
                                 prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
-                if (i < v[n].get().size() - 1)
+                if (i < arr->size() - 1)
                     sAns += ", ";
 
-                if (v[n].get().size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < v[n].get().size() - 1)
+                if (arr->size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < arr->size() - 1)
                     sAns += "...\n|          ";
             }
 
@@ -3179,9 +3166,9 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
         {
             // Only one result
             if (n)
-                sAns += "\n|-> ans = " + v[n].get().print(prec, 0);
+                sAns += "\n|-> ans = " + arr->print(prec, 0);
             else
-                sAns = "ans = " + v[n].get().print(prec, 0);
+                sAns = "ans = " + arr->print(prec, 0);
         }
     }
 
@@ -3738,6 +3725,85 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 
 
 /////////////////////////////////////////////////
+/// \brief Convert an Array into a string table
+/// handling possible special cases.
+///
+/// \param arr const mu::Array&
+/// \return NumeRe::Container<std::string>
+///
+/////////////////////////////////////////////////
+static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
+{
+    constexpr size_t MAXSTRINGLENGTH = 1024;
+
+    if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
+    {
+        const mu::DictStruct& dict = arr.front().getDictStruct();
+        NumeRe::Container<std::string> stringTable(dict.size(), 1);
+        std::vector<std::string> fields = dict.getFields();
+
+        for (size_t i = 0; i < fields.size(); i++)
+        {
+            stringTable.set(i, 0, "." + fields[i] + ": " + dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+        }
+
+        return stringTable;
+    }
+
+    NumeRe::Container<std::string> stringTable(arr.size(), 1);
+
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        const mu::Value& val = arr.get(i);
+
+        if (val.getType() == mu::TYPE_ARRAY)
+            stringTable.set(i, 0, val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
+        else
+            stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+    }
+
+    return stringTable;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Select a subelement of the array by a
+/// selection string containing methods.
+///
+/// \param arr mu::Array
+/// \param sSelectionString StringView
+/// \return NumeRe::Container<std::string>
+///
+/////////////////////////////////////////////////
+static NumeRe::Container<std::string> selectByMethod(mu::Array arr, StringView sSelectionString)
+{
+    size_t p = 0;
+
+    while ((p = sSelectionString.find(".", p)) != std::string::npos)
+    {
+        StringView sMethod = sSelectionString.subview(p+1, sSelectionString.find_first_of(". (", p+1)-p-1);
+
+        if (sMethod == "sel")
+        {
+            std::string element = sSelectionString.subview(p+5, getMatchingParenthesis(sSelectionString.subview(p+4))-1).to_string();
+            size_t el = StrToInt(element)-1;
+
+            if (el >= arr.size())
+                return NumeRe::Container<std::string>();
+
+            arr = arr.get(el);
+        }
+        else
+            arr = arr.call(sMethod.to_string());
+
+        p++;
+    }
+
+    return arrayToStringTable(arr);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function creates the table
 /// container for the string table or the clusters.
 ///
@@ -3748,77 +3814,26 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& sStringTableName)
 {
     g_logger.info("Requested variable: " + sStringTableName);
-    constexpr size_t MAXSTRINGLENGTH = 1024;
 
     if (_memoryManager.isCluster(sStringTableName))
     {
         // Create the container for the selected cluster
         NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
 
-        if (sStringTableName.find(".sel(") == std::string::npos)
-        {
-            NumeRe::Container<std::string> stringTable(clust.size(), 1);
+        if (sStringTableName.find(".") == std::string::npos)
+            return arrayToStringTable(clust);
 
-            for (size_t i = 0; i < clust.size(); i++)
-            {
-                const mu::Value& val = clust.get(i);
-
-                if (val.getType() == mu::TYPE_STRING)
-                    stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
-                else
-                    stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-            }
-
-            return stringTable;
-        }
-
-        size_t p = 0;
-        mu::Array selected = clust;
-
-        while ((p = sStringTableName.find(".sel(", p)) != std::string::npos)
-        {
-            std::string element = sStringTableName.substr(p+5, getMatchingParenthesis(StringView(sStringTableName, p+4))-1);
-            size_t el = StrToInt(element)-1;
-
-            if (el >= selected.size())
-                return NumeRe::Container<std::string>();
-
-            selected = selected.get(el);
-            p++;
-        }
-
-        NumeRe::Container<std::string> stringTable(selected.size(), 1);
-
-        for (size_t i = 0; i < selected.size(); i++)
-        {
-            const mu::Value& val = selected.get(i);
-
-            if (val.getType() == mu::TYPE_STRING)
-                stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
-            else
-                stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-        }
-
-        return stringTable;
+        return selectByMethod(clust, sStringTableName);
     }
-    else if (_parser.GetVar().find(sStringTableName) != _parser.GetVar().end())
+    else if (_parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find('.'))) != _parser.GetVar().end())
     {
-        auto iter = _parser.GetVar().find(sStringTableName);
+        auto iter = _parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find('.')));
         const mu::Array& arr = *(iter->second);
 
-        NumeRe::Container<std::string> stringTable(arr.size(), 1);
+        if (sStringTableName.find(".") == std::string::npos)
+            arrayToStringTable(arr);
 
-        for (size_t i = 0; i < arr.size(); i++)
-        {
-            const mu::Value& val = arr.get(i);
-
-            if (val.getType() == mu::TYPE_STRING)
-                stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
-            else
-                stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-        }
-
-        return stringTable;
+        return selectByMethod(arr, sStringTableName);
     }
 
     return NumeRe::Container<std::string>();

@@ -140,7 +140,7 @@ class NumeReDebugger
         std::vector<std::string> getStringVars();
         std::vector<std::string> getTables();
         std::vector<std::string> getClusters();
-        std::vector<std::string> getClasses();
+        std::vector<std::string> getObjects();
         std::vector<std::string> getArguments();
         std::vector<std::string> getGlobals();
 
