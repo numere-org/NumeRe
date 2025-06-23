@@ -151,6 +151,7 @@ namespace mu
         cmIF,                  ///< For use in the ternary if-then-else operator
         cmELSE,                ///< For use in the ternary if-then-else operator
         cmENDIF,               ///< For use in the ternary if-then-else operator
+        cmIDX,                 ///< Operator item:  opening vector brace/index
         cmEXP2,                ///< The two-value expansion operator
         cmEXP3,                ///< The three-value expansion operator
         cmARG_SEP,             ///< function argument separator
@@ -179,6 +180,7 @@ namespace mu
         cmOPRT_INFIX,          ///< code for infix operators
         cmVAL2STR,             ///< code for special var2str operator
         cmPATHPLACEHOLDER,     ///< code for path placeholder-operator
+        cmDIMVAR,              ///< code for an automatic dimension variable
         cmEND,                 ///< end of formula
         cmUNKNOWN              ///< uninitialized item
     };

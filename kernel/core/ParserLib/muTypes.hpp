@@ -41,13 +41,13 @@ namespace mu
         TYPE_STRING,
         TYPE_CATEGORY,
         TYPE_ARRAY,
+        TYPE_CLUSTER,
         TYPE_DICTSTRUCT,
         TYPE_OBJECT,
         TYPE_GENERATOR,
         TYPE_NEUTRAL,
         TYPE_INVALID,
-        TYPE_REFERENCE,
-        TYPE_MIXED
+        TYPE_REFERENCE
     };
 
 

@@ -59,6 +59,7 @@ namespace mu
         private:
 
             typedef ParserToken token_type;
+            std::stack<Variable*> m_indexedVars;
 
         public:
 

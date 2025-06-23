@@ -238,6 +238,9 @@ namespace mu
 		m_iBrackets = 0;
 		m_UsedVar.clear();
 		m_lastTok = token_type();
+
+		while (m_indexedVars.size())
+            m_indexedVars.pop();
 	}
 
 	//---------------------------------------------------------------------------
@@ -474,12 +477,16 @@ namespace mu
 
 					case cmVO:
 						if (m_iSynFlags & noVO)
-							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
 
-						/*if (m_lastTok.GetCode() == cmFUNC)
-							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
-						else*/
-							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
+						m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
+
+                        // Convert this to an index
+                        if (m_lastTok.GetCode() == cmVAR)
+                        {
+                            m_indexedVars.push(m_lastTok.GetVar());
+                            i = cmIDX;
+                        }
 
 						++m_iVBrackets;
 						break;
@@ -492,6 +499,10 @@ namespace mu
 
 						if (--m_iVBrackets < 0)
 							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
+
+                        while (m_iVBrackets < m_indexedVars.size())
+                            m_indexedVars.pop();
+
 						break;
 
 					case cmELSE:
@@ -556,7 +567,7 @@ namespace mu
 		// check for EOF
 		if (m_iPos >= (int)m_strFormula.length() || m_strFormula[m_iPos] == 0)
 		{
-			if (m_iSynFlags & noEND)
+			if (m_iSynFlags & noEND || m_indexedVars.size())
 				Error(ecUNEXPECTED_EOF, m_iPos);
 
 			if (m_iBrackets > 0)
@@ -838,6 +849,22 @@ namespace mu
 				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
 				return true;
 			}
+
+			if (strTok == "nlen")
+            {
+                if (m_indexedVars.empty())
+                    Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
+
+                m_iPos = iEnd;
+				a_Tok.SetVar(m_indexedVars.top(), strTok);
+				a_Tok.ChangeCode(cmDIMVAR);
+
+				if (m_iSynFlags & noVAL)
+					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
+
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
+				return true;
+            }
 		}
 
 		// 3.call the value recognition functions provided by the user
@@ -894,7 +921,13 @@ namespace mu
 		a_Tok.SetVar(var, strTok);
 		m_UsedVar[strTok] = var;  // Add variable to used-var-list
 
-		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+        if (m_iPos < m_strFormula.length()+1 &&  m_strFormula.subview(m_iPos, 2) == "{}")
+        {
+            m_iPos += 2;
+            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+        }
+        else
+            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR;
 
 //  Zur Info hier die SynFlags von IsVal():
 //    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR | noASSIGN;
@@ -928,7 +961,13 @@ namespace mu
 		// If a factory is available implicitely create new variables
 		if (m_factory)
 		{
-			Variable* fVar = m_factory->Create(strTok);
+		    Variable* fVar;
+
+		    if (iEnd < m_strFormula.length() && m_strFormula[iEnd] == '{')
+                fVar = m_factory->Create(strTok, TYPE_CLUSTER);
+		    else
+                fVar = m_factory->Create(strTok);
+
 			a_Tok.SetVar(fVar, strTok);
 			m_UsedVar[strTok] = fVar;  // Add variable to used-var-list
 		}
@@ -940,8 +979,14 @@ namespace mu
 
 		m_iPos = iEnd;
 
-		// Call the variable factory in order to let it define a new parser variable
-		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noPOSTOP | noINFIXOP | noSTR;
+        if (m_strFormula.subview(m_iPos, 2) == "{}")
+        {
+            m_iPos += 2;
+            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+        }
+        else
+            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR;
+
 		return true;
 	}
 

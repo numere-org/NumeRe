@@ -37,6 +37,7 @@ namespace mu
             ~VarFactory();
 
             Variable* Create(const std::string& sVarSymbol);
+            Variable* Create(const std::string& sVarSymbol, DataType type);
             bool Add(const std::string& sVarSymbol, Variable* var);
             bool Remove(const std::string& sVarSymbol);
 

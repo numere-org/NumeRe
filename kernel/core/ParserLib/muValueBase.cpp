@@ -521,7 +521,7 @@ namespace mu
             m_ptr->reset(static_cast<const RefValue&>(other).get().clone());
         else if (other.m_type == TYPE_REFERENCE && isNull())
             m_ptr = static_cast<const RefValue&>(other).m_ptr;
-        else if (!isNull())
+        else
             m_ptr->reset(other.clone());
 
         return *this;

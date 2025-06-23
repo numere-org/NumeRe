@@ -1155,6 +1155,17 @@ namespace mu
                                                    funTok.IsOptimizable(),
                                                    funTok.GetAsString());
 				break;
+			case  cmIDX:
+			    // Check, whether enough arguments are available (with some special exceptions)
+				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
+					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
+
+                m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(),
+                                                   (funTok.GetArgCount() == -1) ? -iArgCount : iArgRequired,
+                                                   funTok.IsOptimizable(),
+                                                   funTok.GetAsString());
+                m_compilingState.m_byteCode.AddOp(cmIDX);
+				break;
             case  cmMETHOD:
                 m_compilingState.m_byteCode.AddMethod(funTok.GetAsString(), iArgCount+1);
             default:
@@ -1163,9 +1174,20 @@ namespace mu
 		}
 
 		// Push dummy value representing the function result to the stack
-		token_type token;
-		token.MoveVal(Array(Value("rv@" + funTok.GetAsString())));
-		a_stVal.push(std::move(token));
+		if (funTok.GetCode() == cmIDX)
+        {
+            a_stVal.pop();
+            token_type token;
+            token.MoveVal(Array(Value("rv@" + funTok.GetAsString())));
+            token.ChangeCode(cmVAR);
+            a_stVal.push(std::move(token));
+        }
+        else
+        {
+            token_type token;
+            token.MoveVal(Array(Value("rv@" + funTok.GetAsString())));
+            a_stVal.push(std::move(token));
+        }
 	}
 
 	//---------------------------------------------------------------------------
@@ -1263,6 +1285,7 @@ namespace mu
 		while (stOpt.size() &&
 				stOpt.top().GetCode() != cmBO &&
 				stOpt.top().GetCode() != cmVO &&
+				stOpt.top().GetCode() != cmIDX &&
 				stOpt.top().GetCode() != cmEXP2 &&
 				stOpt.top().GetCode() != cmEXP3 &&
 				stOpt.top().GetCode() != cmIF)
@@ -1393,7 +1416,9 @@ namespace mu
 
                 case  cmASSIGN:
                     --sidx;
-                    if (pTok->Oprt().var.isScalar())
+                    if (pTok->Oprt().var.isNull())
+                        Stack[sidx].getMutable().assign(Stack[sidx + 1].get()); // This is a reference
+                    else if (pTok->Oprt().var.isScalar())
                         pTok->Oprt().var = Stack[sidx + 1].get();
                     else
                         Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1].get();
@@ -1474,6 +1499,10 @@ namespace mu
                     Stack[++sidx].aliasOf(pTok->Val().var);
                     continue;
 
+                case  cmDIMVAR:
+                    Stack[++sidx] = Value(pTok->Val().var->size());
+                    continue;
+
                 case  cmVARARRAY:
                     Stack[++sidx] = pTok->Oprt().var.asArray();
                     continue;
@@ -1514,6 +1543,18 @@ namespace mu
                 case  cmVARINIT:
                     Stack[++sidx].aliasOf(pTok->Oprt().var.front());
                     pTok->Oprt().var = pTok->Oprt().val;
+                    continue;
+
+                case  cmIDX:
+                    sidx--;
+
+                    // If the variable is not the very first element, we
+                    // might better use the constant index function
+                    if (sidx > 1+m_state->m_numResults || m_state->m_byteCode.isConst())
+                        Stack[sidx] = Stack[sidx].get().index(Stack[sidx+1].get());
+                    else
+                        Stack[sidx] = Stack[sidx].getMutable().index(Stack[sidx+1].get());
+
                     continue;
 
                 // Next is treatment of numeric functions
@@ -2093,6 +2134,11 @@ namespace mu
 					m_compilingState.m_byteCode.AddVar(opt.GetVar());
 					break;
 
+				case cmDIMVAR:
+					stVal.push(opt);
+					m_compilingState.m_byteCode.AddDimVar(opt.GetVar());
+					break;
+
 				case cmVAL:
 				    varArrayCandidate = false;
 					stVal.push(opt);
@@ -2109,7 +2155,7 @@ namespace mu
 						{
 						    ApplyRemainingOprt(stOpt, stVal);
 
-						    if (stOpt.top().GetCode() == cmVO && stVal.size() > 0)
+						    if ((stOpt.top().GetCode() == cmVO || stOpt.top().GetCode() == cmIDX) && stVal.size() > 0)
                             {
                                 ParserToken tok;
                                 tok.Set(cmEXP2, MU_VECTOR_EXP2);
@@ -2209,7 +2255,7 @@ namespace mu
 
 						// Check if the bracket content has been evaluated completely
 						if (stOpt.size() && ((stOpt.top().GetCode() == cmBO && opt.GetCode() == cmBC)
-                                             || (stOpt.top().GetCode() == cmVO && opt.GetCode() == cmVC)))
+                                             || ((stOpt.top().GetCode() == cmVO || stOpt.top().GetCode() == cmIDX) && opt.GetCode() == cmVC)))
 						{
 							// if opt is ")" and opta is "(" the bracket has been evaluated, now its time to check
 							// if there is either a function or a sign pending
@@ -2249,7 +2295,9 @@ namespace mu
                             varArrayCandidate = false;
 
 							if (iArgCount > 1
-                                && (stOpt.size() == 0 || (stOpt.top().GetCode() != cmFUNC && stOpt.top().GetCode() != cmMETHOD)))
+                                && (stOpt.size() == 0 || (stOpt.top().GetCode() != cmFUNC
+                                                          && stOpt.top().GetCode() != cmIDX
+                                                          && stOpt.top().GetCode() != cmMETHOD)))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
 							// The opening bracket was popped from the stack now check if there
@@ -2301,6 +2349,7 @@ namespace mu
 					while ( stOpt.size() &&
 							stOpt.top().GetCode() != cmBO &&
 							stOpt.top().GetCode() != cmVO &&
+							stOpt.top().GetCode() != cmIDX &&
 							stOpt.top().GetCode() != cmIF)
 					{
 						int nPrec1 = GetOprtPrecedence(stOpt.top()),
@@ -2340,12 +2389,19 @@ namespace mu
 				// Last section contains functions and operators implicitely mapped to functions
 				//
 				case cmVO:
+				case cmIDX:
                 {
                     ParserToken tok;
                     tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
+
+                    if (opt.GetCode() == cmIDX)
+                        tok.ChangeCode(cmIDX);
+
 				    stOpt.push(tok);
 				    vectorCreateMode++;
-				    varArrayCandidate = vectorCreateMode == 1;
+
+				    if (opt.GetCode() == cmVO)
+                        varArrayCandidate = vectorCreateMode == 1;
                 }
                 // fallthrough intended
 				case cmBO:
@@ -2711,6 +2767,9 @@ namespace mu
 					case cmVAR:
 					    printFormatted("|   VAR\n");
 						break;
+					case cmDIMVAR:
+					    printFormatted("|   DIMVAR\n");
+						break;
 					case cmVAL:
 						printFormatted("|   VAL\n");
 						break;
@@ -2737,6 +2796,9 @@ namespace mu
 						break;
 					case cmBC:
 						printFormatted("|   BRACKET \")\"\n");
+						break;
+					case cmIDX:
+						printFormatted("|   INDEX \"{\"\n");
 						break;
 					case cmVO:
 						printFormatted("|   VECTOR \"{\"\n");

@@ -2461,7 +2461,7 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
     if (arr.getCommonType() == mu::TYPE_CATEGORY)
         return TableColumn::TYPE_CATEGORICAL;
     else if (arr.getCommonType() == mu::TYPE_STRING
-             || arr.getCommonType() == mu::TYPE_MIXED)
+             || arr.getCommonType() == mu::TYPE_CLUSTER)
         return TableColumn::TYPE_STRING;
     else if (arr.getCommonType() == TYPE_NUMERICAL)
     {

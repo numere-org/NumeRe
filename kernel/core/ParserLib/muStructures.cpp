@@ -265,8 +265,9 @@ namespace mu
                 reset(new NeutralValue);
                 break;
             case TYPE_NUMERICAL:
-                reset(new NumValue);
+                reset(new NumValue(NAN, false));
                 break;
+            case TYPE_CLUSTER:
             case TYPE_INVALID:
                 reset(new NumValue(NAN, true));
                 break;
@@ -275,6 +276,9 @@ namespace mu
                 break;
             case TYPE_ARRAY:
                 reset(new ArrValue);
+                break;
+            case TYPE_DICTSTRUCT:
+                reset(new DictStructValue);
                 break;
         }
     }
@@ -1384,7 +1388,7 @@ namespace mu
                 && types.back() != TYPE_NEUTRAL
                 && types.back() != TYPE_INVALID
                 && m_commonType != types.back())
-                m_commonType = TYPE_MIXED;
+                m_commonType = TYPE_CLUSTER;
         }
 
         if (m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID)
@@ -1437,7 +1441,7 @@ namespace mu
             }
             case TYPE_STRING:
                 return "string";
-            case TYPE_MIXED:
+            case TYPE_CLUSTER:
             case TYPE_ARRAY:
                 return "cluster";
             case TYPE_DICTSTRUCT:
@@ -2215,6 +2219,71 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Get references to individual elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::index(const Array& idx)
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(elems);
+        ret.makeMutable();
+
+        reserve(idx.call("max").getAsScalarInt());
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(new RefValue(&get(p-1)));
+            else if (p > 0)
+            {
+                resize(p, Value(getCommonType()));
+                ret.emplace_back(new RefValue(&get(p-1)));
+            }
+            else
+                throw ParserError(ecTYPE_MISMATCH_OOB);
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get constant references to individual
+    /// elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::index(const Array& idx) const
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(new RefValue((BaseValuePtr*)(&get(p-1))));
+            else if (p > 0)
+                ret.emplace_back(Value(getCommonType()));
+            else
+                throw ParserError(ecTYPE_MISMATCH_OOB);
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Interpret the Array as a scalar
     /// (ignoring all other values) and return the
     /// first value as an int64_t.
@@ -2588,6 +2657,20 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct an empty Variable with a
+    /// dedicated data type.
+    ///
+    /// \param type DataType
+    ///
+    /////////////////////////////////////////////////
+    Variable::Variable(DataType type) : Array()
+    {
+        makeMutable();
+        m_commonType = type;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct a Variable from a Value.
     ///
     /// \param data const Value&
@@ -2706,9 +2789,10 @@ namespace mu
     /// \param var Variable*
     ///
     /////////////////////////////////////////////////
-    VarArray::VarArray(Variable* var) : std::vector<Variable*>(1, var)
+    VarArray::VarArray(Variable* var) : VarArray()
     {
-        //
+        if (var)
+            push_back(var);
     }
 
 

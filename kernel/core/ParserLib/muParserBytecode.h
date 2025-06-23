@@ -169,13 +169,14 @@ namespace mu
 			void Assign(const ParserByteCode& a_ByteCode);
 
 			void AddVar(Variable* a_pVar);
+			void AddDimVar(Variable* a_pVar);
 			void AddVarArray(const VarArray& a_varArray);
 			void AddVal(Array&& a_fVal);
 			void AddOp(ECmdCode a_Oprt);
 			void AddIfElse(ECmdCode a_Oprt);
 			void AddAssignOp(Variable* a_pVar, ECmdCode assignmentCode);
 			void AddAssignOp(const VarArray& a_varArray, ECmdCode assignmentCode);
-			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway, const std::string& funcName);
+			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway, const std::string& funcName, ECmdCode code = cmFUNC);
 			void AddMethod(const std::string& a_method, int a_iArgc);
 
 			void pop();
@@ -194,6 +195,7 @@ namespace mu
 			    return m_vRPN;
 			}
 			void AsciiDump();
+			bool isConst() const;
 	};
 
 } // namespace mu

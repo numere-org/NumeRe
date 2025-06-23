@@ -184,6 +184,19 @@ namespace mu
                 m_varArray = std::move(a_Tok.m_varArray);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Change the command code (use with
+            /// care!)
+            ///
+            /// \param code ECmdCode
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void ChangeCode(ECmdCode code)
+            {
+                m_iCode = code;
+            }
+
             //------------------------------------------------------------------------------
             /** \brief Assign a token type.
 
@@ -406,14 +419,10 @@ namespace mu
             */
             ECmdCode GetCode() const
             {
-                if (m_pCallback.get())
-                {
+                if (m_pCallback.get() && m_iCode != cmIDX)
                     return m_pCallback->GetCode();
-                }
-                else
-                {
-                    return m_iCode;
-                }
+
+                return m_iCode;
             }
 
             /////////////////////////////////////////////////
@@ -425,13 +434,9 @@ namespace mu
             ETypeCode GetType() const
             {
                 if (m_pCallback.get())
-                {
                     return m_pCallback->GetType();
-                }
-                else
-                {
-                    return m_iType;
-                }
+
+                return m_iType;
             }
 
             /////////////////////////////////////////////////
@@ -513,7 +518,7 @@ namespace mu
                     case cmVAL:
                         return m_fVal;
                     case cmVAR:
-                        return *m_var;
+                        return m_var ? *m_var : mu::Array();
                     default:
                         throw ParserError(ecVAL_EXPECTED);
                 }
@@ -527,7 +532,7 @@ namespace mu
             */
             Variable* GetVar() const
             {
-                if (m_iCode != cmVAR)
+                if (m_iCode != cmVAR && m_iCode != cmDIMVAR)
                     throw ParserError(ecINTERNAL_ERROR);
 
                 return m_var;

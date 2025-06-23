@@ -56,6 +56,33 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Create a new variable with the passed
+    /// symbol name and the selected type. Checks for
+    /// existence and will return the pointer to
+    /// existing variable, if found.
+    ///
+    /// \param sVarSymbol const std::string&
+    /// \param type DataType
+    /// \return Variable*
+    ///
+    /////////////////////////////////////////////////
+    Variable* VarFactory::Create(const std::string& sVarSymbol, DataType type)
+    {
+        // Ensure that the symbol is not already defined
+        if (m_VarDef.find(sVarSymbol) != m_VarDef.end())
+            return m_VarDef[sVarSymbol];
+
+        // Create the storage for a new variable initialized to void
+        m_varStorage.push_back(new Variable(type));
+
+        m_VarDef[sVarSymbol] = m_varStorage.back();
+
+        // Return the address of the newly created storage
+        return m_varStorage.back();
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Add an external variable to the
     /// variable map. Returns true, if the variable
     /// existing previously and a re-init is

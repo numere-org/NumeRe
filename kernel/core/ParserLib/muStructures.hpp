@@ -74,6 +74,27 @@ namespace mu
             /// \return Value&
             ///
             /////////////////////////////////////////////////
+            Value& assign(const Value& other)
+            {
+                if (!other.get())
+                    reset(nullptr);
+                else if (isRef())
+                    getRef() = *other.get();
+                else if (!get() || (get()->m_type != other->m_type))
+                    reset(other->clone());
+                else if (this != &other)
+                    *get() = *other.get();
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Assign a Value.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
             Value& operator=(const Value& other)
             {
                 if (!other.get())
@@ -434,6 +455,53 @@ namespace mu
             /// \return Array&
             ///
             /////////////////////////////////////////////////
+            Array& assign(const Array& other)
+            {
+                if (other.size() == 1)
+                {
+                    if (other.front().isArray())
+                        return assign(other.front().getArray());
+
+                    if (size() && front().isRef())
+                    {
+                        size_t elems = size();
+                        for (size_t i = 0; i < elems; i++)
+                        {
+                            get(i).assign(other.get(i));
+                        }
+
+                        m_commonType = other.m_commonType;
+                        return *this;
+                    }
+
+                    if (size() != 1)
+                        resize(1);
+
+                    front().assign(other.front());
+                }
+                else
+                {
+                    resize(other.size());
+
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        get(i).assign(other.get(i));
+                    }
+                }
+
+                m_commonType = other.m_commonType;
+                m_isConst = other.m_isConst;
+
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Assign an Array.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
             Array& operator=(const Array& other)
             {
                 if (other.size() == 1)
@@ -452,7 +520,7 @@ namespace mu
 
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) = other[i];
+                        get(i) = other.get(i);
                     }
                 }
 
@@ -809,6 +877,9 @@ namespace mu
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3);
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4);
 
+            Array index(const Array& idx);
+            Array index(const Array& idx) const;
+
             int64_t getAsScalarInt() const;
 
             std::vector<std::string> as_str_vector() const;
@@ -877,6 +948,7 @@ namespace mu
     {
         public:
             Variable();
+            Variable(DataType type);
             Variable(const Value& data);
             Variable(const Array& data);
             Variable(const Variable& data);
@@ -895,11 +967,19 @@ namespace mu
             /////////////////////////////////////////////////
             Variable& operator=(const Array& other)
             {
-                if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
+                DataType common = getCommonType();
+
+                if (common == TYPE_VOID
+                    || common == TYPE_CLUSTER
+                    || common == other.getCommonType())
                 {
-                    Array::operator=(other);
+                    Array::assign(other);
                     dereference();
                     makeMutable();
+
+                    if (common == TYPE_CLUSTER)
+                        m_commonType = TYPE_CLUSTER;
+
                     return *this;
                 }
 
