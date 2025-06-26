@@ -50,7 +50,6 @@ class NumeReDebugger
         std::string sErrorMessage;
         std::map<std::string,mu::Array> mLocalVars;
         std::map<std::string,std::string> mLocalTables;
-        std::map<std::string,std::string> mLocalClusters;
         std::map<std::string,std::string> mArguments;
         bool bAlreadyThrown;
         bool bExceptionHandled;
@@ -128,7 +127,6 @@ class NumeReDebugger
 
         void gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
                                 const std::map<std::string, std::string>& _mLocalTables,
-                                const std::map<std::string, std::string>& _mLocalClusters,
                                 const std::map<std::string, std::string>& _mArguments,
                                 const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 

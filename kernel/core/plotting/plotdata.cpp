@@ -45,7 +45,7 @@ static const mu::StackItem* evaluate(int& nResults, std::string sExpression)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-    if (_data.containsTablesOrClusters(sExpression))
+    if (_data.containsTables(sExpression))
         getDataElements(sExpression, _parser, _data);
 
     _parser.SetExpr(sExpression);
@@ -69,7 +69,7 @@ static mu::Array parseOpt(const std::string& sCmd, size_t pos)
 
     std::string sVal = getArgAtPos(sCmd, pos, ARGEXTRACT_NONE);
 
-    if (_data.containsTablesOrClusters(sVal))
+    if (_data.containsTables(sVal))
         getDataElements(sVal, _parser, _data);
 
     _parser.SetExpr(sVal);

@@ -1919,7 +1919,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string ArrValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return "{" + m_val.print(digits, chrs, trunc) + "}";
+        return m_val.print(digits, chrs, trunc);
     }
 
 
@@ -2152,7 +2152,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"clr", 0}, {"rem", 1}, {"loadxml", 1}, {"loadjson", 1}, {"wrt", 2}, {"ins", 2}});
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"write", 2}, {"insertkey", 2}});
         return (m_val.isField(sMethod) && argc <= 1) || methods.contains(MethodDefinition(sMethod, argc));
     }
 
@@ -2166,7 +2166,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod)
     {
-        if (sMethod == "clr")
+        if (sMethod == "clear")
             return new NumValue(Numerical(m_val.clear()));
 
         if (m_val.isField(sMethod))
@@ -2189,7 +2189,7 @@ namespace mu
         if (arg1.m_type == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "rem" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+        if (sMethod == "removekey" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return m_val.remove(static_cast<const StrValue&>(arg1).get());
 
         if (sMethod == "loadxml" && arg1.m_type == TYPE_STRING)
@@ -2221,10 +2221,10 @@ namespace mu
                          arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
                          arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        if (sMethod == "wrt" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+        if (sMethod == "write" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
 
-        if (sMethod == "ins" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
@@ -2311,7 +2311,146 @@ namespace mu
     }
 
 
+    //------------------------------------------------------------------------------
+
+    FileValue::FileValue() : Object("file")
+    {
+        declareMethod(MethodDefinition("isopen", 0));
+        declareMethod(MethodDefinition("wpos", 0));
+        declareMethod(MethodDefinition("rpos", 0));
+        declareMethod(MethodDefinition("len", 0));
+        declareMethod(MethodDefinition("fname", 0));
+        declareMethod(MethodDefinition("mode", 0));
+
+        declareApplyingMethod(MethodDefinition("readline", 0));
+        declareApplyingMethod(MethodDefinition("close", 0));
+        declareApplyingMethod(MethodDefinition("flush", 0));
+        declareApplyingMethod(MethodDefinition("wpos", 1));
+        declareApplyingMethod(MethodDefinition("rpos", 1));
+        declareApplyingMethod(MethodDefinition("read", 1));
+        declareApplyingMethod(MethodDefinition("read", 2));
+        declareApplyingMethod(MethodDefinition("write", 1));
+        declareApplyingMethod(MethodDefinition("write", 2));
+        declareApplyingMethod(MethodDefinition("open", 1));
+        declareApplyingMethod(MethodDefinition("open", 2));
+    }
 
 
+    FileValue::FileValue(const BaseValue& other) : FileValue()
+    {
+        if (operator==(other))
+            m_val = static_cast<const FileValue&>(other).m_val;
+        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const FileValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    FileValue& FileValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_val = static_cast<const FileValue&>(other).m_val;
+        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const FileValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    bool FileValue::isValid() const
+    {
+        return true;
+    }
+
+
+    size_t FileValue::getBytes() const
+    {
+        return m_val.length();
+    }
+
+
+    BaseValue* FileValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "isopen")
+            return new NumValue(m_val.is_open());
+        else if (sMethod == "wpos")
+            return new NumValue(m_val.get_write_pos());
+        else if (sMethod == "rpos")
+            return new NumValue(m_val.get_read_pos());
+        else if (sMethod == "len")
+            return new NumValue(m_val.length());
+        else if (sMethod == "fname")
+            return new StrValue(m_val.getFileName());
+        else if (sMethod == "mode")
+            return new StrValue(m_val.getOpenMode());
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* FileValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "readline")
+            return new StrValue(m_val.read_line());
+        else if (sMethod == "close")
+            return new NumValue(m_val.close());
+        else if (sMethod == "flush")
+            return new NumValue(m_val.flush());
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* FileValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "wpos" && arg1.m_type == TYPE_NUMERICAL)
+            return new NumValue(m_val.set_write_pos(static_cast<const NumValue&>(arg1).get().asUI64()));
+        else if (sMethod == "rpos" && arg1.m_type == TYPE_NUMERICAL)
+            return new NumValue(m_val.set_read_pos(static_cast<const NumValue&>(arg1).get().asUI64()));
+        else if (sMethod == "open" && arg1.m_type == TYPE_STRING)
+            return new NumValue(m_val.open(static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "read" && arg1.m_type == TYPE_STRING)
+            return m_val.read(static_cast<const StrValue&>(arg1).get());
+        else if (sMethod == "write")
+            return new NumValue(m_val.write(arg1));
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* FileValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+            return apply(sMethod,
+                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "open" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_STRING)
+            return new NumValue(m_val.open(static_cast<const StrValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
+        else if (sMethod == "read" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+            return m_val.read(static_cast<const StrValue&>(arg1).get(), static_cast<const NumValue&>(arg2).get().asUI64());
+        else if (sMethod == "write" && arg2.m_type == TYPE_STRING)
+            return new NumValue(m_val.write(arg1, static_cast<const StrValue&>(arg2).get()));
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    std::string FileValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{.fname: \"" + m_val.getFileName() + "\", .mode: \"" + m_val.getOpenMode() + "\", .len: " + toString(m_val.length()) + "}";
+    }
+
+
+    std::string FileValue::printVal(size_t digits, size_t chrs) const
+    {
+        return "{.fname: " + m_val.getFileName() + ", .mode: " + m_val.getOpenMode() + ", .len: " + toString(m_val.length()) + "}";
+    }
 }
 

@@ -848,7 +848,7 @@ namespace mu
     /// \return Variable*
     ///
     /////////////////////////////////////////////////
-	Variable* ParserBase::CreateVar(const string_type& a_sName)
+	Variable* ParserBase::CreateVar(const string_type& a_sName, DataType defaultType)
 	{
 	    // Test if a constant with that names already exists
 		if (m_ConstDef.find(a_sName) != m_ConstDef.end())
@@ -858,12 +858,36 @@ namespace mu
 
 		bool needsReInit = m_factory->m_VarDef.find(a_sName) != m_factory->m_VarDef.end();
 
-	    Variable* var = m_factory->Create(a_sName);
+        Variable* var;
 
-	    if (needsReInit)
+        if (defaultType != TYPE_VOID)
+            var = m_factory->Create(a_sName, defaultType);
+        else
+            var = m_factory->Create(a_sName);
+
+        if (needsReInit)
             ReInit();
 
-	    return var;
+        return var;
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief Read a variable from the internal
+    /// storage, if it exists.
+    ///
+    /// \param a_sName const string_type&
+    /// \return Variable*
+    ///
+    /////////////////////////////////////////////////
+	Variable* ParserBase::ReadVar(const string_type& a_sName)
+	{
+	    auto iter = m_factory->m_VarDef.find(a_sName);
+
+	    if (iter != m_factory->m_VarDef.end())
+            return iter->second;
+
+        return nullptr;
 	}
 
 
@@ -1550,9 +1574,9 @@ namespace mu
 
                     // If the variable is not the very first element, we
                     // might better use the constant index function
-                    if (sidx > 1+m_state->m_numResults || m_state->m_byteCode.isConst())
-                        Stack[sidx] = Stack[sidx].get().index(Stack[sidx+1].get());
-                    else
+                    //if (sidx > 1+m_state->m_numResults || m_state->m_byteCode.isConst())
+                    //    Stack[sidx] = Stack[sidx].get().index(Stack[sidx+1].get());
+                    //else
                         Stack[sidx] = Stack[sidx].getMutable().index(Stack[sidx+1].get());
 
                     continue;

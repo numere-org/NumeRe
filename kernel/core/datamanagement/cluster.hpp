@@ -63,8 +63,6 @@ namespace NumeRe
                 return *this;
             }
 
-            void set(size_t i, const mu::Value& v);
-            mu::Value get(size_t i) const;
             void insertDataInArray(mu::Variable* vTarget, const VectorIndex& _vLine);
             void setValueArray(const mu::Array& a);
             void assignResults(Indices _idx, const mu::Array& data);
@@ -81,37 +79,18 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class ClusterManager
     {
-        protected:
-            std::map<std::string, Cluster> mClusterMap;
-
-            std::string validateClusterName(const std::string& sCluster);
-            std::map<std::string, Cluster>::iterator mapStringViewFind(StringView view);
-            std::map<std::string, Cluster>::const_iterator mapStringViewFind(StringView view) const;
-
         public:
-            ClusterManager() {dClusterElementsCount = mu::Value(0.0);}
-            ~ClusterManager() {}
-
-            mu::Variable dClusterElementsCount;
-
             bool containsClusters(const std::string& sCmdLine) const;
             bool isCluster(StringView sCluster) const;
             bool isCluster(const std::string& sCluster) const;
-            Cluster& getCluster(StringView sCluster);
-            Cluster& getCluster(const std::string& sCluster);
-            const Cluster& getCluster(const std::string& sCluster) const;
-            Cluster& newCluster(const std::string& sCluster);
-            void appendCluster(const std::string& sCluster, const Cluster& cluster);
+            mu::Variable& getCluster(StringView sCluster);
+            mu::Variable& getCluster(const std::string& sCluster);
+            const mu::Variable& getCluster(const std::string& sCluster) const;
+            mu::Variable& newCluster(const std::string& sCluster);
             void removeCluster(const std::string& sCluster);
             std::string createTemporaryCluster(const std::string& suffix = "");
             void removeTemporaryClusters();
             void clearAllClusters();
-            bool updateClusterSizeVariables(StringView sCluster);
-
-            const std::map<std::string, Cluster>& getClusterMap() const
-            {
-                return mClusterMap;
-            }
     };
 
 }

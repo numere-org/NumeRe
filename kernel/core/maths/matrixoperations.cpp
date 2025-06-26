@@ -145,9 +145,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
         else if (sTargetName[parens] == '{')
         {
             // Create a new cluster
-            if (!_data.isCluster(sTargetName))
-                _data.newCluster(sTargetName);
-
+            _parser.CreateVar(sTargetName.substr(0, sTargetName.find('{')));
             isCluster = true;
 
             if (sTargetName.substr(sTargetName.find('{'),2) == "{}")
@@ -233,10 +231,10 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
     else
     {
         // This target is a cluster, get a reference to it
-        NumeRe::Cluster& cluster = _data.getCluster(sTargetName);
+        mu::Variable* cluster = _parser.ReadVar(sTargetName);
 
         if (bAllowMatrixClearing)
-            cluster.clear();
+            cluster->clear();
 
         // Assign either the first column or the first line
         if (_mResult.rows() == 1)
@@ -247,7 +245,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.set(_idx.row[i], _mResult(0, i));
+                cluster->set(_idx.row[i], _mResult(0, i));
             }
         }
         else
@@ -258,7 +256,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.set(_idx.row[i], _mResult(i));
+                cluster->set(_idx.row[i], _mResult(i));
             }
         }
     }
@@ -717,45 +715,6 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
         }
     }
 
-    // now all clusters
-    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-    {
-        nPos = 0;
-
-        while ((nPos = __sCmd.find(iter->first+"{", nPos)) != string::npos)
-        {
-            // Check the delimiters
-            if (nPos && !isDelimiter(__sCmd[nPos-1]))
-            {
-                nPos++;
-                continue;
-            }
-
-            // Get the indices
-            Indices _idx = getIndicesForMatrix(StringView(__sCmd, nPos), _cache, _parser, _data);
-
-            if (_idx.row.isOpenEnd())
-                _idx.row.setRange(0, iter->second.size()-1);
-
-            // Prepare a target matrix
-            Matrix _mClusterMatrix = createZeroesMatrix(_idx.row.size(), 1);
-
-            // Write the contents to the matrix
-            for (size_t i = 0; i < _idx.row.size(); i++)
-            {
-                _mClusterMatrix(i) = iter->second.get(_idx.row[i]).getNum().asCF64();
-            }
-
-            // Declare the cluster as a returned matrix (simplifies the
-            // access logic further down)
-            _cache.vReturnedMatrices.push_back(_mClusterMatrix);
-
-            // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))+(iter->first).length()+1,
-                           "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]");
-        }
-    }
-
     pos_back = sCmd.length();
 
     // Apply the matrix multiplication
@@ -1076,7 +1035,7 @@ static Matrix createMatFromLines(std::string& sCmd, mu::Parser& _parser, MemoryM
     if (!sCmd.length())
         _matfl.push_back(vector<std::complex<double>>(1,NAN));
 
-    if (_data.containsTablesOrClusters(sCmd))
+    if (_data.containsTables(sCmd))
         getDataElements(sCmd, _parser, _data);
 
     while (sCmd.length())
@@ -1130,7 +1089,7 @@ static Matrix createMatFromLinesFilled(std::string& sCmd, mu::Parser& _parser, M
     if (!sCmd.length())
         _matfl.push_back(vector<std::complex<double>>(1, NAN));
 
-    if (_data.containsTablesOrClusters(sCmd))
+    if (_data.containsTables(sCmd))
         getDataElements(sCmd, _parser, _data);
 
     while (sCmd.length())
@@ -1416,7 +1375,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 
     StripSpaces(sArgument);
 
-    if (_data.containsTablesOrClusters(sArgument))
+    if (_data.containsTables(sArgument))
         getDataElements(sArgument, _parser, _data);
 
     // --> Kurzschreibweise!
@@ -1681,7 +1640,7 @@ static Indices getIndicesForMatrix(StringView sCmd, const MatOpCache& _cache, Pa
 /////////////////////////////////////////////////
 static bool containsMatrices(const string& sExpr, MemoryManager& _data)
 {
-    if (_data.containsTablesOrClusters(sExpr) || sExpr.find('{') != string::npos)
+    if (_data.containsTables(sExpr) || sExpr.find('{') != string::npos)
         return true;
 
     static map<string, MatFuncDef> mMatrixFunctionsMap = getMatrixFunctions();

@@ -43,6 +43,7 @@ extern double g_pixelScale;
 #endif
 #include "../utils/tools.hpp"
 #include "../../versioninformation.hpp"
+#include "../ParserLib/muValueImpl.hpp"
 
 /*
  * Ende der globalen Variablen
@@ -6436,6 +6437,40 @@ mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals)
     }
 
     return mu::Value(mu::DictStruct(dict));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a file object instance.
+///
+/// \param files const mu::Array&
+/// \param openmode const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_file(const mu::Array& files, const mu::Array& openmode)
+{
+    size_t elems = std::max(files.size(), openmode.size());
+
+    if (!elems)
+        return mu::Value(new mu::FileValue);
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        mu::FileValue* file = new mu::FileValue;
+
+        if (openmode.isDefault())
+            file->get().open(files.get(i).getStr(), "r");
+        else
+            file->get().open(files.get(i).getStr(), openmode.get(i).getStr());
+
+        ret.emplace_back(file);
+    }
+
+    return ret;
 }
 
 

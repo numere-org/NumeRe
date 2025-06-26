@@ -298,7 +298,7 @@ std::string CommandLineParser::getExprForFileOperation() const
     if (!NumeReKernel::getInstance()->getDefinitions().call(sFilePath))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sFilePath, SyntaxError::invalid_position);
 
-    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sFilePath))
+    if (NumeReKernel::getInstance()->getMemoryManager().containsTables(sFilePath))
         getDataElements(sFilePath, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
 
     // Strip the spaces and ensure that there's something left
@@ -370,11 +370,8 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
     if (sExpr.find("??") != std::string::npos)
         sExpr = promptForUserInput(sExpr);
 
-    if (parseDataObjects && instance->getMemoryManager().containsTablesOrClusters(sExpr))
+    if (parseDataObjects && instance->getMemoryManager().containsTables(sExpr))
         getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
-
-    //if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
-    //    convertVectorToExpression(sExpr);
 
     StripSpaces(sExpr);
 
@@ -414,7 +411,7 @@ std::vector<mu::Array> CommandLineParser::parseExpr() const
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sValue, SyntaxError::invalid_position);
 
     // Resolve table accesses
-    if (instance->getMemoryManager().containsTablesOrClusters(sValue))
+    if (instance->getMemoryManager().containsTables(sValue))
         getDataElements(sValue, instance->getParser(), instance->getMemoryManager());
 
     StripSpaces(sValue);
@@ -542,7 +539,7 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
     if (!instance->getDefinitions().call(sParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sParams, SyntaxError::invalid_position);
 
-    if (instance->getMemoryManager().containsTablesOrClusters(sParams))
+    if (instance->getMemoryManager().containsTables(sParams))
         getDataElements(sParams, instance->getParser(), instance->getMemoryManager());
 
     int nParPos = findParameter(sParams, "file", '=');
@@ -646,7 +643,7 @@ mu::Array CommandLineParser::getParsedParameterValue(const std::string& sParamet
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
 
     // Read data
-    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
+    if (instance->getMemoryManager().containsTables(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
     StripSpaces(sArg);

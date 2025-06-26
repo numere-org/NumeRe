@@ -241,7 +241,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
 
                 // Get the data from the used data object
-                if (_data.containsTablesOrClusters(sErrorToken))
+                if (_data.containsTables(sErrorToken))
                     getDataElements(sErrorToken, _parser, _data);
 
                 _parser.SetExpr(sErrorToken);
@@ -403,14 +403,13 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     // following sections
     std::string sCache;
     bool bWriteToCache = false;
-    bool bWriteToCluster = false;
 
     // Get elements from data access
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_DATAACCESS
         || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
     {
-        if (_data.containsTablesOrClusters(sLine))
+        if (_data.containsTables(sLine))
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
@@ -419,13 +418,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             if (sCache.length())
                 bWriteToCache = true;
-        }
-        else if (isClusterCandidate(sLine, sCache))
-        {
-            bWriteToCache = true;
-
-            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
         }
     }
 
@@ -443,13 +435,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // Get the indices from the corresponding function
             getIndices(sCache, _idx, _parser, _data, true);
 
-            if (sCache[sCache.find_first_of("({")] == '{')
-                bWriteToCluster = true;
-
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             sCache.erase(sCache.find_first_of("({"));
@@ -468,8 +457,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (needReturnValue)
         thisReturnVal.valArray = mu::make_vector(v, nNum);
 
-    vAns.overwrite(v[0].get());
-    NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
+    vAns = v[0].get();
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
@@ -477,16 +465,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Write the return values to cache
     if (bWriteToCache)
-    {
-        // Is it a cluster?
-        if (bWriteToCluster)
-        {
-            NumeRe::Cluster& cluster = _data.getCluster(sCache);
-            cluster.assignResults(_idx, v[0].get());
-        }
-        else
-            _data.writeToTable(_idx, sCache, v[0].get());
-    }
+        _data.writeToTable(_idx, sCache, v[0].get());
 
     // Clear the vector variables after the loop returned
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))

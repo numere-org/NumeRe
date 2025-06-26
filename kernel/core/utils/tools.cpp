@@ -1623,7 +1623,7 @@ static void parseArg(std::string& sArg, int flags)
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
 
     // Read data
-    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
+    if (instance->getMemoryManager().containsTables(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
     // Ensure that a string evaluation is necessary (buggy fix, hard to derive a more general one)
@@ -2274,15 +2274,15 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 /////////////////////////////////////////////////
 static bool containsStringClusters(StringView sLine)
 {
-    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
+    const mu::varmap_type vars = NumeReKernel::getInstance()->getParser().GetVar();
 
-    for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+    for (auto iter = vars.begin(); iter != vars.end(); ++iter)
     {
-        if (iter->second.getCommonType() == mu::TYPE_STRING)
+        if (iter->second->getCommonType() == mu::TYPE_STRING || iter->second->getCommonType() == mu::TYPE_CLUSTER)
         {
-            size_t pos = sLine.find(iter->first + "{");
+            size_t pos = sLine.find(iter->first);
 
-            if (pos != std::string::npos && (!pos || isDelimiter(sLine[pos-1])))
+            if (pos != std::string::npos && sLine.is_delimited_sequence(pos, iter->first.length()))
                 return true;
         }
     }

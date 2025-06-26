@@ -80,7 +80,6 @@ NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _function
     sAnswer.clear();
     sPlotCompose.clear();
     kernelInstance = this;
-    _ans = nullptr;
 }
 
 
@@ -336,7 +335,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
     _parser.DefineVar("nrows", &_memoryManager.tableLinesCount);
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
-    _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
     // Define the operators
     g_logger.debug("Defining operators.");
@@ -729,6 +727,7 @@ void NumeReKernel::defineNumFunctions()
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
     _parser.DefineFun("dictstruct", cast_dictstruct, true, 2);                   // dictstruct(fields,vals)
+    _parser.DefineFun("file", cast_file, false, 2);                               // file(file,mode)
     _parser.DefineFun("seconds", cast_seconds);                                  // seconds(val)
     _parser.DefineFun("minutes", cast_minutes);                                  // minutes(val)
     _parser.DefineFun("hours", cast_hours);                                      // hours(val)
@@ -1254,20 +1253,17 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 sLine = promptForUserInput(sLine);
 
 			bool bWriteToCache = false;
-			bool bWriteToCluster = false;
 
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
             // for a cluster
-            if (_memoryManager.containsTablesOrClusters(sLine))
+            if (_memoryManager.containsTables(sLine))
             {
                 sCache = getDataElements(sLine, _parser, _memoryManager);
 
                 if (sCache.length())
                     bWriteToCache = true;
             }
-            else if (isClusterCandidate(sLine, sCache))
-                bWriteToCache = true;
 
             // Remove the definition operator
             while (sLine.find(":=") != std::string::npos)
@@ -1283,15 +1279,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 // Get the indices from the corresponding function
                 getIndices(sCache, _idx, _parser, _memoryManager, true);
 
-                if (sCache[sCache.find_first_of("({")] == '{')
-                {
-                    bWriteToCluster = true;
-                }
-
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + "," + _idx.col.to_string());
 
-                if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                     throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
                 sCache.erase(sCache.find_first_of("({"));
@@ -1311,16 +1302,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             createCalculationAnswer(nNum, v);
 
             if (bWriteToCache)
-            {
-                // Is it a cluster?
-                if (bWriteToCluster)
-                {
-                    NumeRe::Cluster& cluster = _memoryManager.getCluster(sCache);
-                    cluster.assignResults(_idx, v[0].get());
-                }
-                else
-                    _memoryManager.writeToTable(_idx, sCache, v[0].get());
-            }
+                _memoryManager.writeToTable(_idx, sCache, v[0].get());
         }
         // This section starts the error handling
         catch (mu::Parser::exception_type& e)
@@ -2342,8 +2324,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, const mu::StackItem* v)
 {
-    vAns.overwrite(v[0].get());
-    getAns().setValueArray(v[0].get());
+    vAns = v[0].get();
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
@@ -2724,7 +2705,6 @@ NumeReVariables NumeReKernel::getVariableList()
 
     mu::varmap_type varmap = _parser.GetVar();
     std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
-    const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2732,7 +2712,8 @@ NumeReVariables NumeReKernel::getVariableList()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() != mu::TYPE_NUMERICAL
+            || (iter->second->getCommonType() != mu::TYPE_NUMERICAL
+                && iter->second->getCommonType() != mu::TYPE_VOID)
             || isDimensionVar(iter->first))
             continue;
 
@@ -2778,14 +2759,16 @@ NumeReVariables NumeReKernel::getVariableList()
     }
 
     // Gather all (global) clusters
-    for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).starts_with("_~"))
+        if ((iter->first).starts_with("_~")
+            || iter->second->getCommonType() != mu::TYPE_CLUSTER
+            || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
-        sCurrentLine += "\tcluster\t" + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true)
-            + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
+        sCurrentLine = iter->first + "{}\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
+            + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->first + "{}\t" + formatByteSize(iter->second->getBytes());
 
         vars.vClusters.push_back(sCurrentLine);
     }
@@ -2795,8 +2778,8 @@ NumeReVariables NumeReKernel::getVariableList()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() == mu::TYPE_NUMERICAL
-            || iter->second->getCommonType() == mu::TYPE_STRING
+            || iter->second->getCommonType() < mu::TYPE_CATEGORY
+            || iter->second->getCommonType() > mu::TYPE_OBJECT
             || isDimensionVar(iter->first))
             continue;
 
@@ -2825,7 +2808,6 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
     mu::varmap_type varmap = _parser.GetVar();
     std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
-    const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2833,7 +2815,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() != mu::TYPE_NUMERICAL
+            || (iter->second->getCommonType() != mu::TYPE_NUMERICAL
+                && iter->second->getCommonType() != mu::TYPE_VOID)
             || isDimensionVar(iter->first))
             continue;
 
@@ -2869,12 +2852,14 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     }
 
     // Gather all (global) clusters
-    for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).starts_with("_~"))
+        if ((iter->first).starts_with("_~")
+            || iter->second->getCommonType() != mu::TYPE_CLUSTER
+            || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1\tcluster";
+        sCurrentLine = iter->first + "{}\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
         vars.vClusters.push_back(sCurrentLine);
     }
@@ -2884,8 +2869,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() == mu::TYPE_NUMERICAL
-            || iter->second->getCommonType() == mu::TYPE_STRING
+            || iter->second->getCommonType() < mu::TYPE_CATEGORY
+            || iter->second->getCommonType() > mu::TYPE_OBJECT
             || isDimensionVar(iter->first))
             continue;
 
@@ -3815,19 +3800,9 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
 {
     g_logger.info("Requested variable: " + sStringTableName);
 
-    if (_memoryManager.isCluster(sStringTableName))
+    if (_parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find_first_of("{."))) != _parser.GetVar().end())
     {
-        // Create the container for the selected cluster
-        NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
-
-        if (sStringTableName.find(".") == std::string::npos)
-            return arrayToStringTable(clust);
-
-        return selectByMethod(clust, sStringTableName);
-    }
-    else if (_parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find('.'))) != _parser.GetVar().end())
-    {
-        auto iter = _parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find('.')));
+        auto iter = _parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find_first_of("{.")));
         const mu::Array& arr = *(iter->second);
 
         if (sStringTableName.find(".") == std::string::npos)
@@ -3928,7 +3903,6 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     std::map<std::string, std::pair<std::string, mu::Variable*>> mLocalVars;
     std::map<std::string, std::string> mLocalTables;
-    std::map<std::string, std::string> mLocalClusters;
     std::map<std::string, std::string> mArguments;
 
     // Obtain references to the debugger and the parser
@@ -3952,18 +3926,9 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     for (const auto& iter : tableMap)
         mLocalTables[iter.first] = iter.first;
 
-    // Get the cluster mao
-    const std::map<std::string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
-
-    for (const auto& iter : clusterMap)
-    {
-        if (!iter.first.starts_with("_~"))
-            mLocalClusters[iter.first] = iter.first;
-    }
-
 
     // Pass the created information to the debugger
-    _debugger.gatherInformations(mLocalVars, mLocalTables, mLocalClusters, mArguments,
+    _debugger.gatherInformations(mLocalVars, mLocalTables, mArguments,
                                  sCurrentCommand, getInstance()->getScript().getScriptFileName(),
                                  getInstance()->getScript().getCurrentLine()-1);
 

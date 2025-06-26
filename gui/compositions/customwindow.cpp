@@ -1676,36 +1676,36 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
             }
 
             static NumeReKernel& _kernel = mainWindow->getTerminal()->getKernel();
-            NumeRe::Cluster& kvl_event = _kernel.getMemoryManager().newCluster("_~event");
-            kvl_event.clear();
-            kvl_event.push_back("event");
-            kvl_event.push_back(sEventType.ToStdString());
-            kvl_event.push_back("object");
-            kvl_event.push_back(params.type);
-            kvl_event.push_back("value");
+            mu::Variable* kvl_event = _kernel.getParser().CreateVar("_~event", mu::TYPE_CLUSTER);
+            kvl_event->clear();
+            kvl_event->push_back("event");
+            kvl_event->push_back(sEventType.ToStdString());
+            kvl_event->push_back("object");
+            kvl_event->push_back(params.type);
+            kvl_event->push_back("value");
 
             if (params.value.size() > 1)
-                kvl_event.push_back(params.value);
+                kvl_event->push_back(params.value);
             else
-                kvl_event.push_back(params.value.front());
+                kvl_event->push_back(params.value.front());
 
-            kvl_event.push_back("state");
-            kvl_event.push_back(params.state);
+            kvl_event->push_back("state");
+            kvl_event->push_back(params.state);
 
             wxString p = pos.serialize();
 
             if (p.length())
             {
-                kvl_event.push_back("position");
+                kvl_event->push_back("position");
 
                 if (pos.y > -2)
                 {
                     mu::Array posVal(mu::Value(pos.x+1));
                     posVal.push_back(mu::Value(pos.y+1));
-                    kvl_event.push_back(posVal);
+                    kvl_event->push_back(posVal);
                 }
                 else
-                    kvl_event.push_back(mu::Value(pos.x+1));
+                    kvl_event->push_back(mu::Value(pos.x+1));
             }
 
             // Call the procedure with the following syntax:

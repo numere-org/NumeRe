@@ -136,7 +136,6 @@ class NumeReKernel
         Procedure _procedure;
         NumeReDebugger _debugger;
         NumeRe::WindowManager _manager;
-        NumeRe::Cluster* _ans;
 
         // private member functions for special tasks
         void printResult(const std::string& sLine, bool bScriptRunning);
@@ -244,19 +243,6 @@ class NumeReKernel
         MemoryManager& getMemoryManager()
         {
             return _memoryManager;
-        }
-
-        NumeRe::Cluster& getAns()
-        {
-            if (!_ans)
-                _ans = &_memoryManager.getCluster("ans");
-
-            return *_ans;
-        }
-
-        void setAns(NumeRe::Cluster* ans)
-        {
-            _ans = ans;
         }
 
         mu::Parser& getParser()

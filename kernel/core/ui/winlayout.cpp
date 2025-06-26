@@ -111,7 +111,7 @@ static void evaluateExpression(std::string& sExpr)
     if (!instance->getDefinitions().call(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, "");
 
-    if (instance->getMemoryManager().containsTablesOrClusters(sExpr))
+    if (instance->getMemoryManager().containsTables(sExpr))
         getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
 
     // Numerical evaluation

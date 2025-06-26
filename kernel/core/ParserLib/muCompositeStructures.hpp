@@ -22,6 +22,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 namespace mu
 {
@@ -60,6 +61,44 @@ namespace mu
             size_t clear();
             bool importXml(std::string fileName);
             bool importJson(std::string fileName);
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class allows for arbitrary file
+    /// accesses using test and binary modes.
+    /////////////////////////////////////////////////
+    class File
+    {
+        private:
+            mutable std::fstream m_stream;
+            std::string m_fileName;
+            std::string m_openMode;
+
+        public:
+            File();
+            File(const File& other);
+            File(File&& other) = default;
+
+            File& operator=(const File& other);
+            File& operator=(File&& other) = default;
+
+            size_t set_read_pos(size_t p);
+            size_t set_write_pos(size_t p);
+            size_t get_read_pos() const;
+            size_t get_write_pos() const;
+            size_t length() const;
+            bool is_open() const;
+            bool open(const std::string& sFileName, const std::string& sOpenMode = "r");
+            bool close();
+            bool flush();
+
+            std::string getFileName() const;
+            std::string getOpenMode() const;
+
+            BaseValue* read(const std::string& type, size_t n = 1);
+            std::string read_line();
+            bool write(const BaseValue& val, const std::string& sSeparator = "");
     };
 }
 

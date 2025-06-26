@@ -249,6 +249,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct a Value from an Object
+    /// instance.
+    ///
+    /// \param obj const Object&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const Object& obj)
+    {
+        reset(obj.clone());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct a Value from a data type.
     ///
     /// \param type DataType
@@ -326,6 +339,12 @@ namespace mu
                 return getArray().getCommonTypeAsString();
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
+            case TYPE_OBJECT:
+                if (isVoid())
+                    return "object.void";
+                return "object." + getObject().getObjectType();
+            case TYPE_CLUSTER:
+                return "cluster";
             case TYPE_REFERENCE:
                 return "reference";
         }
@@ -635,6 +654,40 @@ namespace mu
             return static_cast<const DictStructValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Object.
+    ///
+    /// \return Object&
+    ///
+    /////////////////////////////////////////////////
+    Object& Value::getObject()
+    {
+        if (get() && get()->m_type == TYPE_OBJECT)
+            return *static_cast<Object*>(get());
+        else if (isRef() && get()->getType() == TYPE_OBJECT)
+            return static_cast<Object&>(getRef().get());
+
+        throw ParserError(ecTYPE_NO_OBJ, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Object.
+    ///
+    /// \return const Object&
+    ///
+    /////////////////////////////////////////////////
+    const Object& Value::getObject() const
+    {
+        if (get() && get()->m_type == TYPE_OBJECT)
+            return *static_cast<const Object*>(get());
+        else if (isRef() && get()->getType() == TYPE_OBJECT)
+            return static_cast<const Object&>(getRef().get());
+
+        throw ParserError(ecTYPE_NO_OBJ, getTypeAsString());
     }
 
 
@@ -1284,6 +1337,22 @@ namespace mu
 
     /////////////////////////////////////////////////
     /// \brief Construct an Array from a std::vector
+    /// of int values.
+    ///
+    /// \param other const std::vector<int>&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const std::vector<int>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
+    {
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = Numerical(other[i]);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
     /// of int64_t values.
     ///
     /// \param other const std::vector<int64_t>&
@@ -1369,7 +1438,7 @@ namespace mu
         if (size() == 1 && front().isRef() && front().isArray())
         {
             types = front().getArray().getType();
-            m_commonType = front().getArray().m_commonType;
+            m_commonType = front().getArray().getCommonType();
             return types;
         }
 
@@ -1393,6 +1462,9 @@ namespace mu
 
         if (m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID)
             m_commonType = TYPE_NUMERICAL;
+
+        if (m_commonType == TYPE_ARRAY)
+            m_commonType = TYPE_CLUSTER;
 
         return types;
     }
@@ -1446,6 +1518,28 @@ namespace mu
                 return "cluster";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
+            case TYPE_OBJECT:
+            {
+                if (!size())
+                    return "object.void";
+
+                std::string sType = front().getObject().getObjectType();
+
+                for (size_t i = 1; i < size(); i++)
+                {
+                    const Object& obj = get(i).getObject();
+
+                    if (sType == "void")
+                        sType = obj.getObjectType();
+                    else if (sType != obj.getObjectType())
+                    {
+                        sType = "*";
+                        break;
+                    }
+                }
+
+                return "object." + sType;
+            }
             case TYPE_REFERENCE:
                 return "reference";
         }
@@ -1786,10 +1880,11 @@ namespace mu
         static const std::set<std::string> methods({"std", "avg", "prd", "sum", "min", "max", "norm",
                                                     "num", "cnt", "med", "and", "or", "xor", "size",
                                                     "maxpos", "minpos", "exc", "skw", "stderr", "rms",
-                                                    "order", "unwrap"});
+                                                    "unwrap"});
         return (methods.contains(sMethod) && argc == 0)
             || (sMethod == "sel" && argc == 1)
             || (sMethod == "delegate" && argc <= 2)
+            || (sMethod == "order" && argc <= 1)
             || front().isMethod(sMethod, argc);
     }
 
@@ -1847,7 +1942,7 @@ namespace mu
         else if (sMethod == "rms")
             return numfnc_Rms(this);
         else if (sMethod == "order")
-            return numfnc_order(this);
+            return order();
         else if (sMethod == "unwrap")
             return unWrap();
         else if (front().isMethod(sMethod, 0))
@@ -1895,6 +1990,8 @@ namespace mu
 
             return ret;
         }
+        else if (sMethod == "order")
+            return order(arg1);
         else if (front().isMethod(sMethod, 1))
         {
             Array ret;
@@ -2030,7 +2127,8 @@ namespace mu
     /////////////////////////////////////////////////
     bool Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return (sMethod == "sel" && argc == 1) || front().isApplyingMethod(sMethod, argc);
+        const static MethodSet methods = {{"sel", 1}, {"rem", 1}, {"ins", 1}, {"ins", 2}};
+        return methods.contains(MethodDefinition(sMethod, argc)) || front().isApplyingMethod(sMethod, argc);
     }
 
 
@@ -2097,6 +2195,10 @@ namespace mu
 
             return ret;
         }
+        else if (sMethod == "rem" && arg1.getCommonType() == TYPE_NUMERICAL)
+            return deleteItems(arg1);
+        else if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
+            return insertItems(arg1);
         else if (front().isApplyingMethod(sMethod, 1))
         {
             Array ret;
@@ -2130,7 +2232,9 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod, 2))
+        if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
+            return insertItems(arg1, arg2);
+        else if (front().isApplyingMethod(sMethod, 2))
         {
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size()});
@@ -2281,6 +2385,157 @@ namespace mu
 
         return ret;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Insert the selected elements.
+    ///
+    /// \param idx const Array&
+    /// \param vals const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::insertItems(const Array& idx, const Array& vals)
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.resize(elems);
+        DataType commonType = getCommonType();
+
+        // Ordering the accessing index is reasonable
+        Array order = idx.order();
+
+        // Insert the elements
+        for (int i = elems-1; i >= 0; i--)
+        {
+            int64_t item = order.get(i).getNum().asI64();
+            int64_t p = idx.get(item-1).getNum().asI64();
+
+            // Construct and insert the element
+            if (p > 0 && p <= (int64_t)size())
+            {
+                if (vals.isDefault())
+                    ret.get(item-1) = Value(commonType);
+                else
+                    ret.get(item-1) = vals.get(item-1);
+
+                insert(begin()+p-1, ret.get(item-1));
+            }
+        }
+
+        if (m_commonType != TYPE_CLUSTER)
+            m_commonType = TYPE_VOID;
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Delete the selected elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::deleteItems(const Array& idx)
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(elems);
+
+        // Ordering the accessing index is reasonable
+        Array order = idx.order();
+
+        // Move the elements to the returning array
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(get(p-1).release());
+        }
+
+        // Erase the remaining stubs
+        for (int i = elems-1; i >= 0; i--)
+        {
+            int64_t item = order.get(i).getNum().asI64();
+            int64_t p = idx.get(item-1).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                erase(begin()+p-1);
+        }
+
+        if (m_commonType != TYPE_CLUSTER)
+            m_commonType = TYPE_VOID;
+
+        // If only one element is remaining, unwrap it automatically
+        if (size() == 1 && front().isArray() && !front().isRef())
+        {
+            // Assigning a child of this array is amazingly complex
+            // Release the pointer first, move the contents and delete
+            // it afterwards
+            ArrValue* arr = static_cast<ArrValue*>(front().release());
+            operator=(std::move(arr->get()));
+            delete arr;
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the order of this array.
+    ///
+    /// \param opts const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::order(const Array& opts) const
+    {
+        if (!size())
+            return mu::Value(false);
+
+        bool desc = false;
+        bool ignoreCase = false;
+
+        if (!opts.isDefault())
+        {
+            for (size_t i = 0; i < opts.size(); i++)
+            {
+                if (opts.get(i) == "desc")
+                    desc = true;
+
+                if (opts.get(i) == "ignorecase")
+                    ignoreCase = true;
+            }
+        }
+
+        mu::Array index;
+        index.reserve(size());
+
+        for (size_t i = 1; i <= size(); i++)
+        {
+            index.push_back(i);
+        }
+
+        auto sorter = [=, this](const mu::Value& v1, const mu::Value& v2)
+            {
+                int64_t p1 = desc ? v2.getNum().asI64()-1 : v1.getNum().asI64()-1;
+                int64_t p2 = desc ? v1.getNum().asI64()-1 : v2.getNum().asI64()-1;
+
+                if (!get(p1).isValid())
+                    return false;
+
+                if (ignoreCase && get(p1).isString() && get(p2).isString())
+                    return toLowerCase(get(p1).getStr()) < toLowerCase(get(p2).getStr());
+
+                return bool(get(p1) < get(p2)) || !get(p2).isValid();
+            };
+        std::sort(index.begin(), index.end(), sorter);
+
+        return index;
+    }
+
 
 
     /////////////////////////////////////////////////
@@ -2471,6 +2726,9 @@ namespace mu
         if (size() == 1 && front().isRef() && front().isArray())
             return front().getArray().printDims();
 
+        if (!size())
+            return "0 x 0";
+
         return toString(size()) + " x 1";
     }
 
@@ -2571,6 +2829,29 @@ namespace mu
         }
 
         return bytes;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Set a value at some place in the array.
+    ///
+    /// \param i size_t
+    /// \param v const Value&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::set(size_t i, const Value& v)
+    {
+        DataType common = getCommonType();
+
+        if (i >= size())
+            resize(i+1, Value(NAN));
+
+        get(i) = v;
+        dereference();
+
+        if (common != v.getType() && common != TYPE_CLUSTER)
+            m_commonType = TYPE_VOID;
     }
 
 
@@ -2731,11 +3012,20 @@ namespace mu
         if (other.getType() == TYPE_ARRAY)
             return Variable::operator=(other.getArray());
 
-        if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
+        DataType common = getCommonType();
+
+        if (common == TYPE_VOID
+            || common == TYPE_CLUSTER
+            || (common == TYPE_OBJECT && !size())
+            || common == other.getType())
         {
             Array::operator=(Array(other));
             makeMutable();
             dereference();
+
+            if (common == TYPE_CLUSTER)
+                m_commonType = TYPE_CLUSTER;
+
             return *this;
         }
 
@@ -2753,10 +3043,19 @@ namespace mu
     /////////////////////////////////////////////////
     Variable& Variable::operator=(const Variable& other)
     {
-        if (getCommonType() == TYPE_VOID || getType() == other.getType())
+        DataType common = getCommonType();
+
+        if (common == TYPE_VOID
+            || common == TYPE_CLUSTER
+            || (common == TYPE_OBJECT && !size())
+            || common == other.getCommonType())
         {
             Array::operator=(other);
             makeMutable();
+
+            if (common == TYPE_CLUSTER)
+                m_commonType = TYPE_CLUSTER;
+
             return *this;
         }
 

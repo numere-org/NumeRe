@@ -272,23 +272,6 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         return "\t" + sDim + "\t" + isRef + "table\t";
     }
 
-    // Is the current argument value a cluster?
-    if (_data.isCluster(sArgumentValue))
-    {
-        NumeRe::Cluster& cluster = _data.getCluster(sArgumentValue.substr(0, sArgumentValue.find('{')));
-
-        // Replace the value with its actual value and mark the
-        // argument type as reference
-        sArgumentValue = cluster.printOverview(DEFAULT_MINMAX_PRECISION, MAXSTRINGLENGTH, 5, true);
-
-        // Determine whether this is a reference or a templated
-        // variable
-        if (sArgumentName.length() && sArgumentName.find("{}") == std::string::npos)
-            isRef = isRef.length() ? "(&@) " : "(@) ";
-
-        return "\t" + toString(cluster.size()) + " x 1\t" + isRef + "cluster\t";
-    }
-
     // Is the current value surrounded from braces?
     if (sArgumentValue.front() == '{' && sArgumentValue.back() == '}')
     {
@@ -309,10 +292,10 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
-        mu::Variable* address = _parser.GetVar().find(sArgumentValue)->second;
+        mu::Variable* address = _parser.ReadVar(sArgumentValue);
         sArgumentValue = address->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
 
-        return "\t1 x 1\t" + isRef + address->getCommonTypeAsString() + "\t";
+        return "\t" + address->printDims() + "\t" + isRef + address->getCommonTypeAsString() + "\t";
     }
 
     // Is it a constant numerical expression or value?
@@ -367,11 +350,17 @@ bool NumeReDebugger::select(size_t nStackElement)
     // statement, obtain the corresponding information here
     if (_curProcedure->bEvaluatingFlowControlStatements)
     {
-        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(), _curProcedure->getCurrentLineNumber(), _curProcedure->mVarMap, _curProcedure->vVarArray, _curProcedure->sVarArray);
+        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(),
+                                    _curProcedure->getCurrentLineNumber(),
+                                    _curProcedure->mVarMap, _curProcedure->vVarArray,
+                                    _curProcedure->sVarArray);
     }
 
     // Obtain the remaining information here
-    gatherInformations(_curProcedure->_varFactory, _curProcedure->sProcCommandLine, _curProcedure->sCurrentProcedureName, _curProcedure->GetCurrentLine());
+    gatherInformations(_curProcedure->_varFactory,
+                       _curProcedure->sProcCommandLine,
+                       _curProcedure->sCurrentProcedureName,
+                       _curProcedure->GetCurrentLine());
 
     // Jump to the selected file and the selected line number
     NumeReKernel::gotoLine(sErraticModule, nLineNumber);
@@ -411,7 +400,6 @@ void NumeReDebugger::resetBP()
     sErraticModule = "";
     mLocalVars.clear();
     mLocalTables.clear();
-    mLocalClusters.clear();
     mArguments.clear();
     bAlreadyThrown = false;
     return;
@@ -515,7 +503,7 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
         return;
     }
 
-    gatherInformations(_varFactory->mLocalVars, _varFactory->mLocalTables, _varFactory->mLocalClusters, _varFactory->mArguments,
+    gatherInformations(_varFactory->mLocalVars, _varFactory->mLocalTables, _varFactory->mArguments,
                        _sErraticCommand, _sErraticModule, _nLineNumber);
 }
 
@@ -528,7 +516,6 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 ///
 /// \param _mLocalVars const std::map<std::string, std::pair<std::string, mu::Variable*>>&
 /// \param _mLocalTables const std::map<std::string, std::string>&
-/// \param _mLocalClusters const std::map<std::string, std::string>&
 /// \param _mArguments const std::map<std::string, std::string>&
 /// \param _sErraticCommand const string&
 /// \param _sErraticModule const string&
@@ -538,7 +525,6 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 /////////////////////////////////////////////////
 void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
                                          const std::map<std::string, std::string>& _mLocalTables,
-                                         const std::map<std::string, std::string>& _mLocalClusters,
                                          const std::map<std::string, std::string>& _mArguments,
                                          const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
 {
@@ -598,26 +584,6 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
             + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
 
         mLocalTables[iter.first + "()"] = sTableData;
-    }
-
-    // Store the local clusters and replace their
-    // occurence with their definition in the command lines
-    for (const auto& iter : _mLocalClusters)
-    {
-        // Replace the occurences
-        if (iter.first != iter.second)
-            replaceAll(sErraticCommand, (iter.second + (iter.second.back() == '{' ? "" : "{")).c_str(), (iter.first + (iter.first.back() == '{' ? "" : "{")).c_str());
-
-        string sTableData;
-
-        // Extract the minimal and maximal values of the tables
-        // to display them in the variable viewer panel
-        sTableData = toString(instance->getMemoryManager().getCluster(iter.second).size()) + " x 1";
-        sTableData += "\tcluster\t"
-            + instance->getMemoryManager().getCluster(iter.second).printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true) + "\t"
-            + iter.second + "{}";
-
-        mLocalClusters[iter.first + "{}"] = sTableData;
     }
 
     // Is this procedure a macro?
@@ -699,7 +665,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
                 // Store the variables
                 if (nBracePos != std::string::npos)
                 {
-                    NumeRe::Cluster& iterData = instance->getMemoryManager().getCluster(sVarArray[i]);
+                    mu::Variable& iterData = instance->getMemoryManager().getCluster(sVarArray[i]);
                     size_t nItem = 0;
 
                     if (nBracePos < sVarArray[i].length()-2)
@@ -856,14 +822,7 @@ vector<string> NumeReDebugger::getTables()
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getClusters()
 {
-    vector<string> vClusters;
-
-    for (auto iter = mLocalClusters.begin(); iter != mLocalClusters.end(); ++iter)
-    {
-        vClusters.push_back(iter->first + "\t" + iter->second);
-    }
-
-    return vClusters;
+    return getVars({mu::TYPE_CLUSTER});
 }
 
 
@@ -928,16 +887,6 @@ vector<string> NumeReDebugger::getGlobals()
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
                 + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
                 + toString(_data.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
-        }
-    }
-
-    // List all relevant clusters
-    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-    {
-        if (!iter->first.starts_with("_~"))
-        {
-            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t"
-                + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true);
         }
     }
 

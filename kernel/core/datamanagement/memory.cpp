@@ -756,10 +756,10 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vTarget->assign(1, mu::Value());
+        vTarget->std::vector<mu::Value>::assign(1, mu::Value());
     else
     {
-        vTarget->assign(_vLine.size()*_vCol.size(), mu::Value());
+        vTarget->std::vector<mu::Value>::assign(_vLine.size()*_vCol.size(), mu::Value());
 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)

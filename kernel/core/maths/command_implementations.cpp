@@ -758,7 +758,7 @@ bool differentiate(CommandLineParser& cmdParser)
     }
 
     // Numerical expressions and data sets are handled differently
-    if (!_data.containsTablesOrClusters(sExpr) && cmdParser.getParameterList().length())
+    if (!_data.containsTables(sExpr) && cmdParser.getParameterList().length())
     {
         // Is the "eps" parameter available?
         paramVal = cmdParser.getParsedParameterValue("eps");
@@ -812,7 +812,7 @@ bool differentiate(CommandLineParser& cmdParser)
             // Evaluate the position/range expression
             if (isNotEmptyExpression(sPos))
             {
-                if (_data.containsTablesOrClusters(sPos))
+                if (_data.containsTables(sPos))
                     getDataElements(sPos, _parser, _data);
 
                 if (sPos.front() != '{'
@@ -863,7 +863,7 @@ bool differentiate(CommandLineParser& cmdParser)
             }
         }
     }
-    else if (_data.containsTablesOrClusters(sExpr))
+    else if (_data.containsTables(sExpr))
     {
         // This is a data set
         //
@@ -1486,7 +1486,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     std::string sInterval = "";
     std::string sVar = "";
 
-    if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
+    if (!_data.containsTables(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Isolate the expression
@@ -1509,10 +1509,10 @@ bool findExtrema(CommandLineParser& cmdParser)
 
     // If the expression or the parameter list contains
     // data elements, get their values here
-    if (_data.containsTablesOrClusters(sExpr))
+    if (_data.containsTables(sExpr))
         getDataElements(sExpr, _parser, _data, false);
 
-    if (_data.containsTablesOrClusters(sParams))
+    if (_data.containsTables(sParams))
         getDataElements(sParams, _parser, _data, false);
 
     // Evaluate the parameters
@@ -2079,7 +2079,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     std::string sInterval = "";
     std::string sVar = "";
 
-    if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
+    if (!_data.containsTables(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Ensure that the expression is not empty
@@ -2098,10 +2098,10 @@ bool findZeroes(CommandLineParser& cmdParser)
 
     // If the expression or the parameter list contains
     // data elements, get their values here
-    if (_data.containsTablesOrClusters(sExpr))
+    if (_data.containsTables(sExpr))
         getDataElements(sExpr, _parser, _data, false);
 
-    if (_data.containsTablesOrClusters(sParams))
+    if (_data.containsTables(sParams))
         getDataElements(sParams, _parser, _data, false);
 
     // Evaluate the parameter list
@@ -3201,7 +3201,7 @@ bool evalPoints(CommandLineParser& cmdParser)
 
     // Evaluate calls in the expression
     // to any table or cluster
-    if (_data.containsTablesOrClusters(sExpr))
+    if (_data.containsTables(sExpr))
     {
         getDataElements(sExpr, _parser, _data);
 

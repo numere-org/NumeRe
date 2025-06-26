@@ -253,6 +253,70 @@ namespace mu
         std::string printVal(size_t digits, size_t chrs) const override;
     };
 
+
+    class FileValue : public Object
+    {
+        private:
+            File m_val;
+
+        public:
+            FileValue();
+
+            FileValue(const File& file) : FileValue()
+            {
+                m_val = file;
+            }
+
+            FileValue(const FileValue& other) : FileValue()
+            {
+                m_val = other.m_val;
+            }
+
+            FileValue(FileValue&& other) = default;
+            FileValue(const BaseValue& other);
+            FileValue& operator=(const BaseValue& other) override;
+
+            FileValue& operator=(const File& val)
+            {
+                m_val = val;
+                return *this;
+            }
+
+            FileValue& operator=(const FileValue& other)
+            {
+                m_val = other.m_val;
+                return *this;
+            }
+
+            FileValue& operator=(FileValue&& other) = default;
+
+            BaseValue* clone() const override
+            {
+                return new FileValue(*this);
+            }
+
+            File& get()
+            {
+                return m_val;
+            }
+
+            const File& get() const
+            {
+                return m_val;
+            }
+
+            bool isValid() const override;
+            size_t getBytes() const override;
+
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* apply(const std::string& sMethod) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) override;
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
 }
 
 #endif // MUVALUEIMPL_HPP

@@ -1250,7 +1250,6 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 
     // Get the current defined data tables
     const map<string, std::pair<size_t, size_t>>& CacheMap = _data.getTableMap();
-    const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
     NumeReKernel::toggleTableStatus();
     make_hline();
@@ -1275,25 +1274,6 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 
     NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
 
-    // Print all defined cluster
-    for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
-    {
-        string sClusterSize = toString(iter->second.size()) + " x 1";
-        NumeReKernel::printPreFmt("|   " + iter->first + "{}" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sClusterSize, (_option.getWindow(0) - 50) / 2) + strfill("[cluster]", 19));
-
-        if (iter->second.getBytes() >= 1024 * 1024)
-            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-        else if (iter->second.getBytes() >= 1024)
-            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0), 4), 9) + " KBytes\n");
-        else
-            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes()), 9) + "  Bytes\n");
-
-        nBytesSum += iter->second.getBytes();
-    }
-
-    if (mClusterMap.size())
-        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
-
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
     {
@@ -1309,7 +1289,6 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 
         NumeReKernel::printPreFmt(strfill("[" + item->second->getCommonTypeAsString() + "]", 19) + strfill(toString(bytes), 9) + "  Bytes\n");
         nBytesSum += bytes;
-
     }
 
     // Create now the footer of the list:
@@ -3063,8 +3042,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         // Clear also the clusters
         _data.clearAllClusters();
-        NumeRe::Cluster& ans = _data.newCluster("ans");
-        NumeReKernel::getInstance()->setAns(&ans);
     }
 
     return COMMAND_PROCESSED;
@@ -3776,39 +3753,20 @@ static CommandReturnValues cmd_show(string& sCmd)
 {
     // Get references to the main objects
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
-
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-    _accessParser.evalIndices();
 
     if (_accessParser.getDataObject().length())
     {
         if (_accessParser.isCluster())
         {
-            NumeRe::Cluster& cluster = _data.getCluster(_accessParser.getDataObject());
-
-            // Create the target container
-            NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), 1);
-
-            // Copy the data to the new container
-            for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
-            {
-                const mu::Value& val = cluster.get(_accessParser.getIndices().row[i]);
-
-                if (val.getType() == mu::TYPE_STRING)
-                    _stringTable.set(i, 0, val.print());
-                else
-                    _stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-            }
-
             // Redirect control
-            NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
-
-            return COMMAND_PROCESSED;
+            NumeReKernel::showStringTable(NumeReKernel::getInstance()->getStringTable(_accessParser.getDataObject()),
+                                          _accessParser.getDataObject() + "{}");
         }
         else
         {
+            _accessParser.evalIndices();
             MemoryManager _cache;
 
             // Validize the obtained index sets
@@ -3821,12 +3779,15 @@ static CommandReturnValues cmd_show(string& sCmd)
                 NumeReKernel::showTable(_data.extractTable(_accessParser.getDataObject()), _accessParser.getDataObject());
             else
                 throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-
-            return COMMAND_PROCESSED;
         }
     }
     else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+    {
+        const std::string& sExpr = cmdParser.getExpr();
+
+        // Redirect control
+        NumeReKernel::showStringTable(NumeReKernel::getInstance()->getStringTable(sExpr), sExpr);
+    }
 
     return COMMAND_PROCESSED;
 }
@@ -4423,7 +4384,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (!_data.containsTablesOrClusters(sCmd))
+    if (!_data.containsTables(sCmd))
         return COMMAND_PROCESSED;
 
     // DEPRECATED: Declared at v1.1.2rc1

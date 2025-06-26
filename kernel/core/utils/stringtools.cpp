@@ -1042,6 +1042,10 @@ std::string toInternalString(std::string sStr)
             && sStr.compare(i, 4, "\\neq") != 0)
             sStr.replace(i, 2, "\n");
 
+        if (sStr.compare(i, 2, "\\r") == 0
+            && sStr.compare(i, 4, "\\rho") != 0)
+            sStr.replace(i, 2, "\r");
+
         if (sStr.compare(i, 2, "\\\"") == 0)
             sStr.replace(i, 2, "\"");
 
@@ -2099,6 +2103,7 @@ std::string replaceControlCharacters(std::string sToModify)
 {
     replaceAll(sToModify, "\n", "\\n");
     replaceAll(sToModify, "\t", "\\t");
+    replaceAll(sToModify, "\r", "\\r");
 
     return sToModify;
 }

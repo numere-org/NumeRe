@@ -49,7 +49,7 @@ bool Breakpoint::isActive(bool needsLocks)
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_condition, SyntaxError::invalid_position);
 
     // Catch and evaluate all data and cache calls
-    if (instance->getMemoryManager().containsTablesOrClusters(m_condition))
+    if (instance->getMemoryManager().containsTables(m_condition))
         getDataElements(m_condition, _parser, instance->getMemoryManager());
 
     // Evalute the already prepared equation

@@ -28,6 +28,7 @@
 
 #include <json/json.h>
 #include <fstream>
+#include <filesystem>
 
 namespace mu
 {
@@ -501,6 +502,679 @@ namespace mu
             m_fields["DOM"].reset(new ArrValue(importJsonArray(root)));
         else
             m_fields["DOM"].reset(new DictStructValue(importJsonObject(root)));
+
+        return true;
+    }
+
+
+    //------------------------------------------------------------------------
+
+
+    File::File()
+    { }
+
+
+    File::File(const File& other)
+    {
+        if (other.is_open())
+            open(other.m_fileName, other.m_openMode);
+    }
+
+
+    File& File::operator=(const File& other)
+    {
+        if (other.is_open())
+            open(other.m_fileName, other.m_openMode);
+
+        return *this;
+    }
+
+
+    size_t File::set_read_pos(size_t p)
+    {
+        if (!is_open())
+            return 0;
+
+        m_stream.seekg(p-1, std::ios_base::beg);
+        return p;
+    }
+
+
+    size_t File::get_read_pos() const
+    {
+        if (!is_open())
+            return 0;
+
+        return m_stream.tellg()+std::streamoff(1u);
+    }
+
+
+    size_t File::set_write_pos(size_t p)
+    {
+        if (!is_open())
+            return 0;
+
+        m_stream.seekp(p-1, std::ios_base::beg);
+        return p;
+    }
+
+
+    size_t File::get_write_pos() const
+    {
+        if (!is_open())
+            return 0;
+
+        return m_stream.tellp()+std::streamoff(1u);
+    }
+
+
+    size_t File::length() const
+    {
+        if (!is_open())
+            return 0;
+
+        return std::filesystem::file_size(std::filesystem::path(m_fileName));
+    }
+
+
+    bool File::is_open() const
+    {
+        return m_stream.is_open() && m_stream.good();
+    }
+
+
+    bool File::open(const std::string& sFileName, const std::string& sOpenMode)
+    {
+        if (m_stream.is_open())
+            m_stream.close();
+
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        m_fileName = _fSys.ValidFileName(sFileName, "", false, true);
+
+        if (sOpenMode.find('r') != std::string::npos && !fileExists(m_fileName))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "object.file.open(\"" + sFileName + "\")", sFileName);
+#else
+        m_fileName = sFileName;
+#endif
+        m_openMode = sOpenMode;
+
+        std::ios_base::openmode mode;
+
+        if (m_openMode.find('b') != std::string::npos)
+            mode |= std::ios_base::binary;
+
+        if (m_openMode.find("w+") != std::string::npos)
+            mode |= std::ios_base::in | std::ios_base::out | std::ios_base::trunc;
+        else if (m_openMode.find('w') != std::string::npos)
+            mode |= std::ios_base::out | std::ios_base::trunc;
+
+        if (m_openMode.find("r+") != std::string::npos)
+            mode |= std::ios_base::in | std::ios_base::out;
+        else if (m_openMode.find('r') != std::string::npos)
+            mode |= std::ios_base::in;
+
+        if (m_openMode.find("a+") != std::string::npos)
+            mode |= std::ios_base::in | std::ios_base::out | std::ios_base::app;
+        else if (m_openMode.find('a') != std::string::npos)
+            mode |= std::ios_base::out | std::ios_base::app;
+
+        m_stream.open(m_fileName, mode);
+
+        if (!m_stream)
+        {
+            close();
+            return false;
+        }
+
+        return true;
+    }
+
+
+    bool File::close()
+    {
+        if (m_stream.is_open())
+        {
+            m_stream.close();
+            m_fileName.clear();
+            m_openMode.clear();
+        }
+
+        return true;
+    }
+
+
+    bool File::flush()
+    {
+        if (m_stream.is_open())
+        {
+            m_stream.flush();
+            return true;
+        }
+
+        return false;
+    }
+
+
+    std::string File::getFileName() const
+    {
+        if (!is_open())
+            return "";
+
+        return m_fileName;
+    }
+
+
+    std::string File::getOpenMode() const
+    {
+        if (!is_open())
+            return "";
+
+        return m_openMode;
+    }
+
+
+    template<class T>
+    static std::unique_ptr<T[]> readBytes(std::fstream& stream, size_t& n)
+    {
+        std::unique_ptr<T[]> data(new T[n]);
+        stream.read((char*)data.get(), sizeof(T)*n);
+        n = stream.gcount() / sizeof(T);
+
+        return data;
+    }
+
+
+    template<class T>
+    static ArrValue* convertToArray(const std::unique_ptr<T[]>& data, size_t n)
+    {
+        Array arr;
+
+        for (size_t i = 0; i < n; i++)
+        {
+            arr.emplace_back(data[i]);
+        }
+
+        return new ArrValue(arr);
+    }
+
+
+    static BaseValue* readBinary(std::fstream& stream, const std::string& type, size_t n)
+    {
+        size_t numTypes = n;
+
+        if (type == "value.i8")
+        {
+            auto data = readBytes<int8_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui8")
+        {
+            auto data = readBytes<uint8_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.i16")
+        {
+            auto data = readBytes<int16_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui16")
+        {
+            auto data = readBytes<uint16_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.i32")
+        {
+            auto data = readBytes<int32_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui32")
+        {
+            auto data = readBytes<uint32_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.i64")
+        {
+            auto data = readBytes<int64_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui64")
+        {
+            auto data = readBytes<uint64_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.f32")
+        {
+            auto data = readBytes<float>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.f64")
+        {
+            auto data = readBytes<double>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.cf32")
+        {
+            auto data = readBytes<std::complex<float>>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.cf64")
+        {
+            auto data = readBytes<std::complex<double>>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "char" || type == "string")
+        {
+            auto data = readBytes<char>(stream, numTypes);
+            std::string sStr;
+
+            for (size_t i = 0; i < numTypes; i++)
+            {
+                sStr += data[i];
+            }
+
+            return new StrValue(sStr);
+        }
+
+        return nullptr;
+    }
+
+
+    template<class T>
+    static std::unique_ptr<T[]> readSegments(std::fstream& stream, size_t& n)
+    {
+        std::unique_ptr<T[]> data(new T[n]);
+
+        for (size_t i = 0; i < n; i++)
+        {
+            stream >> data[i];
+
+            if (!stream)
+            {
+                n = i+1;
+                return data;
+            }
+        }
+
+        return data;
+    }
+
+
+    static BaseValue* readText(std::fstream& stream, const std::string& type, size_t n)
+    {
+        size_t numTypes = n;
+
+        if (type == "value.i8")
+        {
+            auto data = readSegments<int8_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui8")
+        {
+            auto data = readSegments<uint8_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.i16")
+        {
+            auto data = readSegments<int16_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui16")
+        {
+            auto data = readSegments<uint16_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.i32")
+        {
+            auto data = readSegments<int32_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui32")
+        {
+            auto data = readSegments<uint32_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.i64")
+        {
+            auto data = readSegments<int64_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.ui64")
+        {
+            auto data = readSegments<uint64_t>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.f32")
+        {
+            auto data = readSegments<float>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.f64")
+        {
+            auto data = readSegments<double>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new NumValue(data[0]);
+        }
+        else if (type == "value.cf32")
+        {
+            auto data = readSegments<std::string>(stream, numTypes);
+
+            if (numTypes > 1)
+            {
+                Array arr;
+
+                for (size_t i = 0; i < numTypes; i++)
+                {
+                    arr.emplace_back(std::complex<float>(StrToCmplx(data[i])));
+                }
+
+                return new ArrValue(arr);
+            }
+            else
+                return new NumValue(std::complex<float>(StrToCmplx(data[0])));
+        }
+        else if (type == "value.cf64")
+        {
+            auto data = readSegments<std::string>(stream, numTypes);
+
+            if (numTypes > 1)
+            {
+                Array arr;
+
+                for (size_t i = 0; i < numTypes; i++)
+                {
+                    arr.emplace_back(StrToCmplx(data[i]));
+                }
+
+                return new ArrValue(arr);
+            }
+            else
+                return new NumValue(StrToCmplx(data[0]));
+        }
+        else if (type == "string")
+        {
+            auto data = readSegments<std::string>(stream, numTypes);
+
+            if (numTypes > 1)
+                return convertToArray(data, numTypes);
+            else
+                return new StrValue(data[0]);
+        }
+        else if (type == "char")
+        {
+            auto data = readSegments<char>(stream, numTypes);
+
+            if (numTypes > 1)
+            {
+                Array arr;
+
+                for (size_t i = 0; i < numTypes; i++)
+                {
+                    arr.emplace_back(std::string(1u, data[i]));
+                }
+
+                return new ArrValue(arr);
+            }
+            else
+                return new StrValue(std::string(1u, data[0]));
+        }
+
+        return nullptr;
+    }
+
+
+    BaseValue* File::read(const std::string& type, size_t n)
+    {
+        if (!is_open() || m_openMode.find_first_of("r+") == std::string::npos)
+            return nullptr;
+
+        if (m_openMode.find("b") != std::string::npos)
+            return readBinary(m_stream, type, n);
+
+        return readText(m_stream, type, n);
+    }
+
+
+    std::string File::read_line()
+    {
+        if (!is_open() || m_openMode.find_first_of("r+b") == std::string::npos)
+            return nullptr;
+
+        std::string sLine;
+        std::getline(m_stream, sLine);
+        return sLine;
+    }
+
+
+    template<class T>
+    static bool writeBinaryImpl(std::fstream& stream, const T& val)
+    {
+        stream.write((char*)&val, sizeof(T));
+        return true;
+    }
+
+    template<>
+    bool writeBinaryImpl(std::fstream& stream, const std::string& val)
+    {
+        stream.write(val.c_str(), val.length());
+        return true;
+    }
+
+
+    static bool writeBinary(std::fstream& stream, const BaseValue& val)
+    {
+        if (val.m_type == TYPE_ARRAY)
+        {
+            const Array& arr = static_cast<const ArrValue&>(val).get();
+
+            for (size_t i = 0; i < arr.size(); i++)
+            {
+                if (!writeBinary(stream, *arr.get(i).get()))
+                    return false;
+            }
+        }
+        else if (val.m_type == TYPE_CATEGORY)
+        {
+            const Category& cat = static_cast<const CatValue&>(val).get();
+            NumValue value(cat.val);
+
+            return writeBinaryImpl(stream, cat.name) && writeBinary(stream, value);
+        }
+        else if (val.m_type == TYPE_DICTSTRUCT)
+        {
+            const DictStruct& dict = static_cast<const DictStructValue&>(val).get();
+
+            std::vector<std::string> fields = dict.getFields();
+
+            for (const std::string& field : fields)
+            {
+                if (!writeBinaryImpl(stream, field) || !writeBinary(stream, *dict.read(field)))
+                    return false;
+            }
+
+            return true;
+        }
+        else if (val.m_type == TYPE_STRING)
+        {
+            const std::string& sStr = static_cast<const StrValue&>(val).get();
+            return writeBinaryImpl(stream, sStr);
+        }
+        else if (val.m_type == TYPE_NUMERICAL)
+        {
+            const Numerical& num = static_cast<const NumValue&>(val).get();
+
+            switch (num.getType())
+            {
+                case I8:
+                {
+                    int8_t val = num.asI64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case LOGICAL:
+                case UI8:
+                {
+                    uint8_t val = num.asUI64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case I16:
+                {
+                    int16_t val = num.asI64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case UI16:
+                {
+                    uint16_t val = num.asUI64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case I32:
+                {
+                    int32_t val = num.asI64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case UI32:
+                {
+                    uint32_t val = num.asUI64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case I64:
+                    return writeBinaryImpl(stream, num.asI64());
+                case UI64:
+                    return writeBinaryImpl(stream, num.asUI64());
+                case F32:
+                {
+                    float val = num.asF64();
+                    return writeBinaryImpl(stream, val);
+                }
+                case F64:
+                    return writeBinaryImpl(stream, num.asF64());
+                case CF32:
+                {
+                    std::complex<float> val;
+                    val.real(num.asCF64().real());
+                    val.imag(num.asCF64().imag());
+                    return writeBinaryImpl(stream, val);
+                }
+                case CF64:
+                    return writeBinaryImpl(stream, num.asCF64());
+            }
+        }
+
+        return false;
+    }
+
+
+    bool File::write(const BaseValue& val, const std::string& sSeparator)
+    {
+        if (!is_open() || m_openMode.find_first_of("aw+") == std::string::npos)
+            return false;
+
+        if (val.m_type == TYPE_REFERENCE)
+            return write(static_cast<const RefValue&>(val).get());
+
+        if (m_openMode.find("b") != std::string::npos)
+            return writeBinary(m_stream, val);
+
+        if (val.m_type == TYPE_ARRAY)
+        {
+            const Array& arr = static_cast<const ArrValue&>(val).get();
+
+            for (size_t i = 0; i < arr.size(); i++)
+            {
+                m_stream << arr.get(i).printVal();
+
+                if (i+1 < arr.size() && sSeparator.length())
+                    m_stream << sSeparator;
+            }
+        }
+        else
+            m_stream << val.printVal(0, 0);
 
         return true;
     }

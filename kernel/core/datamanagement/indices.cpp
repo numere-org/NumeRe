@@ -119,15 +119,13 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     _idx.sCompiledAccessEquation.assign(sIndices.begin(), sIndices.end());
 // 510
     // If the argument contains tables, get their values. This leads to a recursion!
-    if (_data.containsTablesOrClusters(_idx.sCompiledAccessEquation))
+    if (_data.containsTables(_idx.sCompiledAccessEquation))
         getDataElements(_idx.sCompiledAccessEquation, _parser, _data);
 // 1000
 
     // update the dimension variables
     if (sCmd[nPos] == '(')
         _data.updateDimensionVariables(sTableName);
-    else
-        _data.updateClusterSizeVariables(sTableName);
 
         //_idx.row.setIndex(0,0);
         //_idx.col.setIndex(0,0);

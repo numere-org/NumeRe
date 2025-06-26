@@ -65,6 +65,7 @@ namespace mu
             Value(const std::string& sData);
             Value(const char* sData);
             Value(const DictStruct& dict);
+            Value(const Object& obj);
             Value(DataType type);
 
             /////////////////////////////////////////////////
@@ -130,6 +131,7 @@ namespace mu
             bool isCategory() const;
             bool isArray() const;
             bool isDictStruct() const;
+            bool isObject() const;
             bool isRef() const;
 
             std::string& getStr();
@@ -146,6 +148,9 @@ namespace mu
 
             DictStruct& getDictStruct();
             const DictStruct& getDictStruct() const;
+
+            Object& getObject();
+            const Object& getObject() const;
 
             RefValue& getRef();
             const RefValue& getRef() const;
@@ -442,6 +447,7 @@ namespace mu
             Array(const std::vector<std::complex<double>>& other);
             Array(const std::vector<double>& other);
             Array(const std::vector<size_t>& other);
+            Array(const std::vector<int>& other);
             Array(const std::vector<int64_t>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
@@ -541,10 +547,6 @@ namespace mu
             {
                 if (other.size() == 1 && other.front().isArray() && !other.front().isRef())
                 {
-                    // Copy dereferenced instead of move
-                    //if (other.front().isRef())
-                    //    return operator=(other.front().getArray());
-
                     Array& fst = other.front().getArray();
                     std::swap(_M_impl._M_start, fst._M_impl._M_start);
                     std::swap(_M_impl._M_finish, fst._M_impl._M_finish);
@@ -880,6 +882,11 @@ namespace mu
             Array index(const Array& idx);
             Array index(const Array& idx) const;
 
+            Array insertItems(const Array& idx, const Array& vals = Array());
+            Array deleteItems(const Array& idx);
+
+            Array order(const Array& opts = Array()) const;
+
             int64_t getAsScalarInt() const;
 
             std::vector<std::string> as_str_vector() const;
@@ -927,6 +934,8 @@ namespace mu
                 return operator[](i);
             }
 
+            void set(size_t i, const Value& v);
+
             void zerosToVoid();
             bool isCommutative() const;
             void dereference();
@@ -971,6 +980,7 @@ namespace mu
 
                 if (common == TYPE_VOID
                     || common == TYPE_CLUSTER
+                    || (common == TYPE_OBJECT && !size())
                     || common == other.getCommonType())
                 {
                     Array::assign(other);

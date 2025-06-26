@@ -6135,12 +6135,12 @@ void NumeReWindow::prepareFunctionTree()
 
         if (vKeyList[i] == "data")
             sPrefix = "TABLE()";
-        else if (vKeyList[i] == "string")
-            sPrefix = "STRING";
         else if (vKeyList[i] == "cat")
             sPrefix = "CATEGORY";
         else if (vKeyList[i] == "dict")
             sPrefix = "DICTSTRUCT";
+        else
+            sPrefix = toUpperCase(vKeyList[i]);
 
         for (size_t j = 0; j < vDirList.size(); j++)
         {

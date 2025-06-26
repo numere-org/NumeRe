@@ -1217,7 +1217,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
             }
 
             // Try to find the candidate in the internal map
-            if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
+            if (isCluster(sCmdLine.substr(nStartPos, i - nStartPos)))
                 return true;
         }
     }

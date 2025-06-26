@@ -490,7 +490,139 @@ namespace mu
     }
 
 
+    //------------------------------------------------------------------------------
 
+
+    /////////////////////////////////////////////////
+    /// \brief Declare a method of this class
+    ///
+    /// \param def const MethodDefinition&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Object::declareMethod(const MethodDefinition& def)
+    {
+        m_methods.insert(def);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Declare an applying method of this
+    /// class
+    ///
+    /// \param def const MethodDefinition&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Object::declareApplyingMethod(const MethodDefinition& def)
+    {
+        m_applyingMethods.insert(def);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Constructor for an abstract object.
+    ///
+    /// \param objectType const std::string&
+    ///
+    /////////////////////////////////////////////////
+    Object::Object(const std::string& objectType) : m_objectType(objectType)
+    {
+        m_type = TYPE_OBJECT;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy an instance.
+    ///
+    /// \param other const Object&
+    ///
+    /////////////////////////////////////////////////
+    Object::Object(const Object& other)
+    {
+        m_type = TYPE_OBJECT;
+        m_objectType = other.m_objectType;
+        m_methods = other.m_methods;
+        m_applyingMethods = other.m_applyingMethods;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the object type of this object
+    /// instance.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Object::getObjectType() const
+    {
+        return m_objectType;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Equality operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Object::operator==(const BaseValue& other) const
+    {
+        if (m_type == other.m_type)
+            return m_objectType == static_cast<const Object&>(other).m_objectType;
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Is the passed method a method of this
+    /// class?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Object::isMethod(const std::string& sMethod, size_t argc) const
+    {
+        return m_methods.contains(MethodDefinition(sMethod, argc));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Is the passed method an applying
+    /// method of this class?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Object::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    {
+        return m_applyingMethods.contains(MethodDefinition(sMethod, argc));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this object as if it is embedded
+    /// into an arry.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Object::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{1 x 1 object." + m_objectType + "}";
+    }
+
+
+    //------------------------------------------------------------------------------
 
 
     /////////////////////////////////////////////////

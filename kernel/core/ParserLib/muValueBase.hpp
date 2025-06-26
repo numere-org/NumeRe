@@ -27,6 +27,32 @@
 namespace mu
 {
     /////////////////////////////////////////////////
+    /// \brief Defines a single method combined with
+    /// (one of) the possible argument counts.
+    /////////////////////////////////////////////////
+    struct MethodDefinition
+    {
+        std::string name;
+        size_t argc;
+
+        MethodDefinition(const std::string& _name, size_t _argc) : name(_name), argc(_argc)
+        { }
+
+        bool operator==(const MethodDefinition& def) const
+        {
+            return name == def.name && argc == def.argc;
+        }
+
+        bool operator<(const MethodDefinition& def) const
+        {
+            return name < def.name || (name == def.name && argc < def.argc);
+        }
+    };
+
+    using MethodSet = std::set<MethodDefinition>;
+
+
+    /////////////////////////////////////////////////
     /// \brief This class is an abstract base class
     /// with some default implementations (i.e.
     /// throws errors) to signal missing
@@ -167,6 +193,42 @@ namespace mu
     };
 
     using BaseValuePtr = std::unique_ptr<BaseValue>;
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class is an abstract base for any
+    /// advanced object.
+    /////////////////////////////////////////////////
+    class Object : public BaseValue
+    {
+        protected:
+            std::string m_objectType;
+            MethodSet m_methods;
+            MethodSet m_applyingMethods;
+
+            void declareMethod(const MethodDefinition& def);
+            void declareApplyingMethod(const MethodDefinition& def);
+
+        public:
+            Object(const std::string& objectType = "void");
+            Object(const Object& other);
+            std::string getObjectType() const;
+
+            bool operator==(const BaseValue& other) const;
+
+            bool isMethod(const std::string& sMethod, size_t argc) const override;
+            bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+
+            std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
+
+            // virtual BaseValue& operator=(const BaseValue& other)
+            // virtual BaseValue* clone() const = 0;
+            // virtual bool isValid() const = 0;
+            // virtual size_t getBytes() const = 0;
+            // virtual std::string print(size_t digits, size_t chrs, bool trunc) const
+            // virtual std::string printVal(size_t digits, size_t chrs) const
+    };
+
 
     /////////////////////////////////////////////////
     /// \brief This class represents a reference to
@@ -318,33 +380,6 @@ namespace mu
             std::string print(size_t digits, size_t chrs, bool trunc) const override;
             std::string printVal(size_t digits, size_t chrs) const override;
     };
-
-
-    /////////////////////////////////////////////////
-    /// \brief Defines a single method combined with
-    /// (one of) the possible argument counts.
-    /////////////////////////////////////////////////
-    struct MethodDefinition
-    {
-        std::string name;
-        size_t argc;
-
-        MethodDefinition(const std::string& _name, size_t _argc) : name(_name), argc(_argc)
-        { }
-
-        bool operator==(const MethodDefinition& def) const
-        {
-            return name == def.name && argc == def.argc;
-        }
-
-        bool operator<(const MethodDefinition& def) const
-        {
-            return name < def.name || (name == def.name && argc < def.argc);
-        }
-    };
-
-
-    using MethodSet = std::set<MethodDefinition>;
 
 
     /////////////////////////////////////////////////

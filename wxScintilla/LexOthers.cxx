@@ -1938,11 +1938,11 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					"Operator keywords",
 					0,
 					*/
-					if (commandWords.InList(s) && nInstallStart == -1)
+					if (commandWords.InList(s) && nInstallStart == -1 && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_COMMAND);
 					}
-					else if (functionWords.InList(s) && sc.ch == '(')
+					else if (functionWords.InList(s) && sc.ch == '(' && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_FUNCTION);
 					}
@@ -1950,15 +1950,15 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_METHOD);
 					}
-					else if (defVarWords.InList(s))
+					else if (defVarWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_DEFAULT_VARS);
 					}
-					else if (constantWords.InList(s))
+					else if (constantWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_CONSTANTS);
 					}
-					else if (preDefWords.InList(s))
+					else if (preDefWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_PREDEFS);
 					}
@@ -1966,11 +1966,11 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_OPERATOR_KEYWORDS);
 					}
-					else if (procedureCommandWords.InList(s))
+					else if (procedureCommandWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_PROCEDURE_COMMANDS);
 					}
-					else if (sc.ch == '(')
+					else if (sc.ch == '(' && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_CUSTOM_FUNCTION);
 					}
@@ -1978,7 +1978,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_CLUSTER);
 					}
-					else if (optionWords.InList(s))
+					else if (optionWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_OPTION);
 					}
@@ -2591,11 +2591,11 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					"Operator keywords",
 					0,
 					*/
-					if (commandWords.InList(s))
+					if (commandWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_COMMAND);
 					}
-					else if (functionWords.InList(s) && sc.ch == '(')
+					else if (functionWords.InList(s) && sc.ch == '(' && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_FUNCTION);
 					}
@@ -2603,15 +2603,15 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NPRC_METHOD);
 					}
-					else if (defVarWords.InList(s))
+					else if (defVarWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_DEFAULT_VARS);
 					}
-					else if (constantWords.InList(s))
+					else if (constantWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_CONSTANTS);
 					}
-					else if (preDefWords.InList(s))
+					else if (preDefWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_PREDEFS);
 					}
@@ -2619,7 +2619,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NPRC_OPERATOR_KEYWORDS);
 					}
-					else if (sc.ch == '(')
+					else if (sc.ch == '(' && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_CUSTOM_FUNCTION);
 					}
@@ -2627,7 +2627,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NPRC_CLUSTER);
 					}
-					else if (optionWords.InList(s))
+					else if (optionWords.InList(s) && !possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_OPTION);
 					}

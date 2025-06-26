@@ -3706,10 +3706,8 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 
-            if (_data.containsTablesOrClusters(sSubPlotIDX))
-            {
+            if (_data.containsTables(sSubPlotIDX))
                 getDataElements(sSubPlotIDX, _parser, _data);
-            }
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
@@ -3777,7 +3775,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 
-            if (_data.containsTablesOrClusters(sSubPlotIDX))
+            if (_data.containsTables(sSubPlotIDX))
                 getDataElements(sSubPlotIDX, _parser, _data);
 
             _parser.SetExpr(sSubPlotIDX);
