@@ -29,6 +29,7 @@
 #include <json/json.h>
 #include <fstream>
 #include <filesystem>
+#include <sstream>
 
 namespace mu
 {
@@ -506,9 +507,111 @@ namespace mu
         return true;
     }
 
+    static std::string encodeJson(const DictStruct& dict);
+
+    static std::string encodeJson(const Array& arr)
+    {
+        std::string sJsonString;
+
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            if (sJsonString.length())
+                sJsonString += ", ";
+
+            const Value& val = arr.get(i);
+
+            if (val.isArray())
+                sJsonString += encodeJson(val.getArray());
+            else if (val.isDictStruct())
+                sJsonString += encodeJson(val.getDictStruct());
+            else
+                sJsonString += val.print();
+        }
+
+        return "[" + sJsonString + "]";
+    }
+
+
+    static std::string encodeJson(const DictStruct& dict)
+    {
+        std::vector<std::string> fields = dict.getFields();
+        std::string sJsonString;
+
+        for (const std::string& field : fields)
+        {
+            if (sJsonString.length())
+                sJsonString += ", ";
+
+            const BaseValue* val = dict.read(field);
+
+            if (val->m_type == TYPE_ARRAY)
+                sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const ArrValue*>(val)->get());
+            else if (val->m_type == TYPE_DICTSTRUCT)
+                sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const DictStructValue*>(val)->get());
+            else
+                sJsonString += "\"" + field + "\": " + val->print(0, 0, false);
+        }
+
+        return "{" + sJsonString + "}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode the contents as a
+    /// string-encoded json.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictStruct::encodeJson() const
+    {
+        if (!size())
+            return "";
+
+        std::vector<std::string> fields = getFields();
+
+        if (fields.size() == 1 && fields.front() == "DOM")
+        {
+            // Ignore that
+            const BaseValue* val = read("DOM");
+
+            if (val->m_type == TYPE_ARRAY)
+                return mu::encodeJson(static_cast<const ArrValue*>(val)->get());
+
+            return mu::encodeJson(static_cast<const DictStructValue*>(val)->get());
+        }
+
+        // Create an object
+        return mu::encodeJson(*this);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Decode the string-encoded JSON.
+    ///
+    /// \param jsonString const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::decodeJson(const std::string& jsonString)
+    {
+        std::istringstream jsonStream(jsonString);
+
+        Json::Value root;
+        jsonStream >> root;
+
+        m_fields.clear();
+
+        if (root.isArray())
+            m_fields["DOM"].reset(new ArrValue(importJsonArray(root)));
+        else
+            m_fields["DOM"].reset(new DictStructValue(importJsonObject(root)));
+
+        return true;
+    }
+
 
     //------------------------------------------------------------------------
-
 
     File::File()
     { }
@@ -521,10 +624,36 @@ namespace mu
     }
 
 
-    File& File::operator=(const File& other)
+    File::File(File&& other)
     {
         if (other.is_open())
+        {
+            other.m_stream.close();
             open(other.m_fileName, other.m_openMode);
+        }
+    }
+
+
+    File& File::operator=(const File& other)
+    {
+        close();
+
+        if (other.is_open())
+            open(other.m_fileName, other.m_openMode);
+
+        return *this;
+    }
+
+
+    File& File::operator=(File&& other)
+    {
+        close();
+
+        if (other.is_open())
+        {
+            other.m_stream.close();
+            open(other.m_fileName, other.m_openMode);
+        }
 
         return *this;
     }
@@ -599,7 +728,7 @@ namespace mu
 #endif
         m_openMode = sOpenMode;
 
-        std::ios_base::openmode mode;
+        int mode = 0;
 
         if (m_openMode.find('b') != std::string::npos)
             mode |= std::ios_base::binary;
@@ -619,7 +748,7 @@ namespace mu
         else if (m_openMode.find('a') != std::string::npos)
             mode |= std::ios_base::out | std::ios_base::app;
 
-        m_stream.open(m_fileName, mode);
+        m_stream.open(m_fileName, (std::ios_base::openmode)mode);
 
         if (!m_stream)
         {
@@ -942,10 +1071,10 @@ namespace mu
             else
                 return new NumValue(data[0]);
         }
+#ifndef PARSERSTANDALONE
         else if (type == "value.cf32")
         {
             auto data = readSegments<std::string>(stream, numTypes);
-
             if (numTypes > 1)
             {
                 Array arr;
@@ -978,6 +1107,7 @@ namespace mu
             else
                 return new NumValue(StrToCmplx(data[0]));
         }
+#endif
         else if (type == "string")
         {
             auto data = readSegments<std::string>(stream, numTypes);
@@ -1024,8 +1154,8 @@ namespace mu
 
     std::string File::read_line()
     {
-        if (!is_open() || m_openMode.find_first_of("r+b") == std::string::npos)
-            return nullptr;
+        if (!is_open() || m_openMode.find_first_of("r+") == std::string::npos)
+            return "";
 
         std::string sLine;
         std::getline(m_stream, sLine);

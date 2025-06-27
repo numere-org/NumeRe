@@ -33,19 +33,29 @@ namespace mu
     struct MethodDefinition
     {
         std::string name;
-        size_t argc;
+        int argc; // positive for scalars, negative for arrays
 
-        MethodDefinition(const std::string& _name, size_t _argc) : name(_name), argc(_argc)
+        MethodDefinition(const std::string& _name = "", int _argc = 0) : name(_name), argc(_argc)
         { }
 
         bool operator==(const MethodDefinition& def) const
         {
-            return name == def.name && argc == def.argc;
+            return name == def.name && std::abs(argc) == std::abs(def.argc);
         }
 
         bool operator<(const MethodDefinition& def) const
         {
-            return name < def.name || (name == def.name && argc < def.argc);
+            return name < def.name || (name == def.name && std::abs(argc) < std::abs(def.argc));
+        }
+
+        operator bool() const
+        {
+            return name.length();
+        }
+
+        bool receiveArray() const
+        {
+            return argc < 0;
         }
     };
 
@@ -142,7 +152,7 @@ namespace mu
             /////////////////////////////////////////////////
             virtual size_t getBytes() const = 0;
 
-            virtual bool isMethod(const std::string& sMethod, size_t argc) const;
+            virtual MethodDefinition isMethod(const std::string& sMethod, size_t argc) const;
             virtual BaseValue* call(const std::string& sMethod) const;
             virtual BaseValue* call(const std::string& sMethod,
                                     const BaseValue& arg1) const;
@@ -153,7 +163,7 @@ namespace mu
             virtual BaseValue* call(const std::string& sMethod,
                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const;
 
-            virtual bool isApplyingMethod(const std::string& sMethod, size_t argc) const;
+            virtual MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
             virtual BaseValue* apply(const std::string& sMethod);
             virtual BaseValue* apply(const std::string& sMethod,
                                     const BaseValue& arg1);
@@ -216,8 +226,8 @@ namespace mu
 
             bool operator==(const BaseValue& other) const;
 
-            bool isMethod(const std::string& sMethod, size_t argc) const override;
-            bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+            MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
+            MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
 
             std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
 
@@ -355,7 +365,7 @@ namespace mu
 
             size_t getBytes() const override;
 
-            bool isMethod(const std::string& sMethod, size_t argc) const override;
+            MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
             BaseValue* call(const std::string& sMethod) const override;
             BaseValue* call(const std::string& sMethod,
                             const BaseValue& arg1) const override;
@@ -366,7 +376,7 @@ namespace mu
             BaseValue* call(const std::string& sMethod,
                             const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
 
-            bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+            MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
             BaseValue* apply(const std::string& sMethod) override;
             BaseValue* apply(const std::string& sMethod,
                              const BaseValue& arg1) override;

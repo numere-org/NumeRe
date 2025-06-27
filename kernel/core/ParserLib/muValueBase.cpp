@@ -281,12 +281,12 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool BaseValue::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition BaseValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return false;
+        return MethodDefinition();
     }
 
     /////////////////////////////////////////////////
@@ -376,12 +376,12 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool BaseValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition BaseValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return false;
+        return MethodDefinition();
     }
 
     /////////////////////////////////////////////////
@@ -582,12 +582,17 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool Object::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition Object::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return m_methods.contains(MethodDefinition(sMethod, argc));
+        auto iter = m_methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != m_methods.end())
+            return *iter;
+
+        return MethodDefinition();
     }
 
 
@@ -597,12 +602,17 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool Object::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition Object::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return m_applyingMethods.contains(MethodDefinition(sMethod, argc));
+        auto iter = m_applyingMethods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != m_applyingMethods.end())
+            return *iter;
+
+        return MethodDefinition();
     }
 
 
@@ -945,12 +955,12 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool RefValue::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition RefValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return !isNull() ? get().isMethod(sMethod, argc) : false;
+        return !isNull() ? get().isMethod(sMethod, argc) : MethodDefinition();
     }
 
 
@@ -1060,12 +1070,12 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool RefValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition RefValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return !isNull() ? get().isApplyingMethod(sMethod, argc) : false;
+        return !isNull() ? get().isApplyingMethod(sMethod, argc) : MethodDefinition();
     }
 
 

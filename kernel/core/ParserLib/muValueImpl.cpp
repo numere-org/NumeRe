@@ -884,10 +884,10 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool StrValue::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition StrValue::isMethod(const std::string& sMethod, size_t argc) const
     {
         static const MethodSet methods({{"len", 0}, {"first", 0}, {"last", 0},
                                         {"at", 1}, {"startsw", 1}, {"endsw", 1},
@@ -896,7 +896,12 @@ namespace mu
                                         {"mtch", 1}, {"mtch", 2}, {"rmtch", 1}, {"rmtch", 2},
                                         {"nmtch", 1}, {"nmtch", 2}, {"nrmtch", 1}, {"nrmtch", 2}});
 
-        return methods.contains(MethodDefinition(sMethod, argc));
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
     }
 
 
@@ -1285,12 +1290,15 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool CatValue::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition CatValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return argc == 0 && (sMethod == "key" || sMethod == "val");
+        if (argc == 0 && (sMethod == "key" || sMethod == "val"))
+            return MethodDefinition(sMethod);
+
+        return MethodDefinition();
     }
 
 
@@ -1682,12 +1690,12 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool ArrValue::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition ArrValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return true;
+        return MethodDefinition(sMethod);
     }
 
 
@@ -1797,10 +1805,10 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool ArrValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition ArrValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
         return m_val.isApplyingMethod(sMethod, argc);
     }
@@ -2071,13 +2079,22 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"at", 1}, {"len", 1}});
-        return (m_val.isField(sMethod) && argc == 0) || methods.contains(MethodDefinition(sMethod, argc));
+        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"at", 1}, {"len", 0}});
+
+        if (m_val.isField(sMethod) && argc == 0)
+            return MethodDefinition(sMethod);
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
     }
 
 
@@ -2106,6 +2123,8 @@ namespace mu
 
             return new ArrValue(vals);
         }
+        else if (sMethod == "encodejson")
+            return new StrValue(m_val.encodeJson());
         else if (sMethod == "len")
             return new NumValue(Numerical(m_val.size()));
         else if (m_val.isField(sMethod))
@@ -2147,13 +2166,22 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"write", 2}, {"insertkey", 2}});
-        return (m_val.isField(sMethod) && argc <= 1) || methods.contains(MethodDefinition(sMethod, argc));
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"decodejson", 1}, {"write", -2}, {"insertkey", -2}});
+
+        if (m_val.isField(sMethod) && argc <= 1)
+            return MethodDefinition(sMethod, -argc);
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
     }
 
 
@@ -2198,6 +2226,9 @@ namespace mu
         if (sMethod == "loadjson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.importJson(static_cast<const StrValue&>(arg1).get())));
 
+        if (sMethod == "decodejson" && arg1.m_type == TYPE_STRING)
+            return new NumValue(Numerical(m_val.decodeJson(static_cast<const StrValue&>(arg1).get())));
+
         if (m_val.isField(sMethod))
             return new RefValue(m_val.write(sMethod, arg1));
 
@@ -2223,9 +2254,77 @@ namespace mu
 
         if (sMethod == "write" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
+        else if (sMethod == "write" && arg1.m_type == TYPE_ARRAY)
+        {
+            const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
+            size_t elems;
+            Array ret;
+
+            if (arg2.m_type == TYPE_ARRAY)
+            {
+                const Array& arr2 = static_cast<const ArrValue&>(arg2).get();
+                elems = std::max(arr1.size(), arr2.size());
+
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    if (!m_val.isField(arr1.get(i).getStr()))
+                        throw ParserError(ecMETHOD_ERROR, sMethod);
+
+                    ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), *arr2.get(i).get())));
+                }
+            }
+            else
+            {
+                elems = arr1.size();
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    if (!m_val.isField(arr1.get(i).getStr()))
+                        throw ParserError(ecMETHOD_ERROR, sMethod);
+
+                    ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), arg2)));
+                }
+            }
+
+            return new ArrValue(ret);
+        }
 
         if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
+        else if (sMethod == "insertkey" && arg1.m_type == TYPE_ARRAY)
+        {
+            const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
+            size_t elems;
+            Array ret;
+
+            if (arg2.m_type == TYPE_ARRAY)
+            {
+                const Array& arr2 = static_cast<const ArrValue&>(arg2).get();
+                elems = std::max(arr1.size(), arr2.size());
+
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), *arr2.get(i).get())));
+                }
+            }
+            else
+            {
+                elems = arr1.size();
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), arg2)));
+                }
+            }
+
+            return new ArrValue(ret);
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2329,8 +2428,8 @@ namespace mu
         declareApplyingMethod(MethodDefinition("rpos", 1));
         declareApplyingMethod(MethodDefinition("read", 1));
         declareApplyingMethod(MethodDefinition("read", 2));
-        declareApplyingMethod(MethodDefinition("write", 1));
-        declareApplyingMethod(MethodDefinition("write", 2));
+        declareApplyingMethod(MethodDefinition("write", -1));
+        declareApplyingMethod(MethodDefinition("write", -2));
         declareApplyingMethod(MethodDefinition("open", 1));
         declareApplyingMethod(MethodDefinition("open", 2));
     }
@@ -2444,13 +2543,357 @@ namespace mu
 
     std::string FileValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return "{.fname: \"" + m_val.getFileName() + "\", .mode: \"" + m_val.getOpenMode() + "\", .len: " + toString(m_val.length()) + "}";
+        return "{.isopen: " + toString(m_val.is_open()) + ", .len: " + toString(m_val.length())
+            + ", .fname: \"" + m_val.getFileName() + "\", .mode: \"" + m_val.getOpenMode() + "\"}";
     }
 
 
     std::string FileValue::printVal(size_t digits, size_t chrs) const
     {
-        return "{.fname: " + m_val.getFileName() + ", .mode: " + m_val.getOpenMode() + ", .len: " + toString(m_val.length()) + "}";
+        return "{.isopen: " + toString(m_val.is_open()) + ", .len: " + toString(m_val.length())
+            + ", .fname: " + m_val.getFileName() + ", .mode: " + m_val.getOpenMode() + "}";
+    }
+
+
+
+    //------------------------------------------------------------------------------
+
+    StackValue::StackValue() : Object("stack")
+    {
+        declareMethod(MethodDefinition("top", 0));
+        declareMethod(MethodDefinition("len", 0));
+        declareMethod(MethodDefinition("values", 0));
+
+        declareApplyingMethod(MethodDefinition("pop", 0));
+        declareApplyingMethod(MethodDefinition("clear", 0));
+        declareApplyingMethod(MethodDefinition("push", -1));
+    }
+
+
+    StackValue::StackValue(const BaseValue& other) : StackValue()
+    {
+        if (operator==(other))
+            m_stack = static_cast<const StackValue&>(other).m_stack;
+        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_stack = static_cast<const StackValue&>(static_cast<const RefValue&>(other).get()).m_stack;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    StackValue& StackValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_stack = static_cast<const StackValue&>(other).m_stack;
+        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_stack = static_cast<const StackValue&>(static_cast<const RefValue&>(other).get()).m_stack;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    bool StackValue::isValid() const
+    {
+        return m_stack.size();
+    }
+
+
+    size_t StackValue::getBytes() const
+    {
+        size_t s = 0;
+
+        for (size_t i = 0; i < m_stack.size(); i++)
+        {
+            s += m_stack[i].getBytes();
+        }
+
+        return s;
+    }
+
+
+    BaseValue* StackValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "top")
+        {
+            if (m_stack.size())
+                return m_stack.back()->clone();
+
+            return nullptr;
+        }
+        else if (sMethod == "values")
+        {
+            if (!m_stack.size())
+                return nullptr;
+
+            Array vals;
+            vals.reserve(m_stack.size());
+
+            for (int i = m_stack.size()-1; i >= 0; i--)
+            {
+                vals.emplace_back(m_stack[i]);
+            }
+
+            return new ArrValue(vals);
+        }
+        else if (sMethod == "len")
+            return new NumValue(m_stack.size());
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* StackValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "pop")
+        {
+            if (m_stack.size())
+            {
+                BaseValue* val = m_stack.back().release();
+                m_stack.pop_back();
+                return val;
+            }
+
+            return nullptr;
+        }
+        else if (sMethod == "clear")
+        {
+            if (m_stack.size())
+            {
+                m_stack.clear();
+                return new NumValue(true);
+            }
+
+            return new NumValue(false);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* StackValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "push")
+        {
+            m_stack.emplace_back(arg1.clone());
+            return new RefValue(&m_stack.back());
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    std::string StackValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        std::string top = "void";
+
+        if (m_stack.size())
+            top = m_stack.back().printEmbedded(digits, chrs, trunc);
+
+        return "{.len: " + toString(m_stack.size()) + ", .top: " + top +"}";
+    }
+
+
+    std::string StackValue::printVal(size_t digits, size_t chrs) const
+    {
+        std::string top = "void";
+
+        if (m_stack.size())
+            top = m_stack.back().printVal(digits, chrs);
+
+        return "{.len: " + toString(m_stack.size()) + ", .top: " + top +"}";
+    }
+
+
+
+    //------------------------------------------------------------------------------
+
+    QueueValue::QueueValue() : Object("queue")
+    {
+        declareMethod(MethodDefinition("front", 0));
+        declareMethod(MethodDefinition("back", 0));
+        declareMethod(MethodDefinition("len", 0));
+        declareMethod(MethodDefinition("values", 0));
+
+        declareApplyingMethod(MethodDefinition("clear", 0));
+        declareApplyingMethod(MethodDefinition("pop", 0));
+        declareApplyingMethod(MethodDefinition("popback", 0));
+        declareApplyingMethod(MethodDefinition("push", -1));
+        declareApplyingMethod(MethodDefinition("pushfront", -1));
+    }
+
+
+    QueueValue::QueueValue(const BaseValue& other) : QueueValue()
+    {
+        if (operator==(other))
+            m_queue = static_cast<const QueueValue&>(other).m_queue;
+        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_queue = static_cast<const QueueValue&>(static_cast<const RefValue&>(other).get()).m_queue;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    QueueValue& QueueValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_queue = static_cast<const QueueValue&>(other).m_queue;
+        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_queue = static_cast<const QueueValue&>(static_cast<const RefValue&>(other).get()).m_queue;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    bool QueueValue::isValid() const
+    {
+        return m_queue.size();
+    }
+
+
+    size_t QueueValue::getBytes() const
+    {
+        size_t s = 0;
+
+        for (size_t i = 0; i < m_queue.size(); i++)
+        {
+            s += m_queue[i].getBytes();
+        }
+
+        return s;
+    }
+
+
+    BaseValue* QueueValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "len")
+            return new NumValue(m_queue.size());
+        else if (sMethod == "front")
+        {
+            if (m_queue.size())
+                return m_queue.front()->clone();
+
+            return nullptr;
+        }
+        else if (sMethod == "back")
+        {
+            if (m_queue.size())
+                return m_queue.back()->clone();
+
+            return nullptr;
+        }
+        else if (sMethod == "values")
+        {
+            if (!m_queue.size())
+                return nullptr;
+
+            Array vals;
+            vals.reserve(m_queue.size());
+
+            for (size_t i = 0; i < m_queue.size();  i++)
+            {
+                vals.emplace_back(m_queue[i]);
+            }
+
+            return new ArrValue(vals);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* QueueValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "pop")
+        {
+            if (m_queue.size())
+            {
+                BaseValue* val = m_queue.front().release();
+                m_queue.pop_front();
+                return val;
+            }
+
+            return nullptr;
+        }
+        else if (sMethod == "popback")
+        {
+            if (m_queue.size())
+            {
+                BaseValue* val = m_queue.back().release();
+                m_queue.pop_back();
+                return val;
+            }
+
+            return nullptr;
+        }
+        else if (sMethod == "clear")
+        {
+            if (m_queue.size())
+            {
+                m_queue.clear();
+                return new NumValue(true);
+            }
+
+            return new NumValue(false);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    BaseValue* QueueValue::apply(const std::string& sMethod, const BaseValue& arg1) // push push_front
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "push")
+        {
+            m_queue.emplace_back(arg1.clone());
+            return new RefValue(&m_queue.back());
+        }
+        else if (sMethod == "pushfront")
+        {
+            m_queue.emplace_front(arg1.clone());
+            return new RefValue(&m_queue.front());
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    std::string QueueValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        std::string sFront = "void";
+        std::string sBack = "void";
+
+        if (m_queue.size())
+        {
+            sFront = m_queue.front().printEmbedded(digits, chrs, trunc);
+            sBack = m_queue.back().printEmbedded(digits, chrs, trunc);
+        }
+
+        return "{.len: " + toString(m_queue.size()) + ", .front: " + sFront + ", .back: " + sBack + "}";
+    }
+
+
+    std::string QueueValue::printVal(size_t digits, size_t chrs) const
+    {
+        std::string sFront = "void";
+        std::string sBack = "void";
+
+        if (m_queue.size())
+        {
+            sFront = m_queue.front().printVal(digits, chrs);
+            sBack = m_queue.back().printVal(digits, chrs);
+        }
+
+        return "{.len: " + toString(m_queue.size()) + ", .front: " + sFront + ", .back: " + sBack + "}";
     }
 }
 

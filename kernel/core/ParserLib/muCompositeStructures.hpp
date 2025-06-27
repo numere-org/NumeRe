@@ -61,6 +61,8 @@ namespace mu
             size_t clear();
             bool importXml(std::string fileName);
             bool importJson(std::string fileName);
+            std::string encodeJson() const;
+            bool decodeJson(const std::string& jsonString);
     };
 
 
@@ -78,10 +80,10 @@ namespace mu
         public:
             File();
             File(const File& other);
-            File(File&& other) = default;
+            File(File&& other);
 
             File& operator=(const File& other);
-            File& operator=(File&& other) = default;
+            File& operator=(File&& other);
 
             size_t set_read_pos(size_t p);
             size_t set_write_pos(size_t p);

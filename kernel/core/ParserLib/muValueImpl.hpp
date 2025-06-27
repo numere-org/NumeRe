@@ -19,6 +19,8 @@
 #ifndef MUVALUEIMPL_HPP
 #define MUVALUEIMPL_HPP
 
+#include <deque>
+
 #include "muValueBase.hpp"
 #include "muStructures.hpp"
 #include "muCompositeStructures.hpp"
@@ -118,7 +120,7 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod, size_t argc) const override;
+        MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
         BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const override;
         BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const override;
@@ -151,7 +153,7 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod, size_t argc) const override;
+        MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
 
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
@@ -192,7 +194,7 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod, size_t argc) const override;
+        MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
         BaseValue* call(const std::string& sMethod,
                         const BaseValue& arg1) const override;
@@ -203,7 +205,7 @@ namespace mu
         BaseValue* call(const std::string& sMethod,
                         const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
 
-        bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+        MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* apply(const std::string& sMethod) override;
         BaseValue* apply(const std::string& sMethod,
                          const BaseValue& arg1) override;
@@ -235,12 +237,12 @@ namespace mu
 
         size_t getBytes() const override;
 
-        bool isMethod(const std::string& sMethod, size_t argc) const override;
+        MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* call(const std::string& sMethod) const override;
         BaseValue* call(const std::string& sMethod,
                         const BaseValue& arg1) const override;
 
-        bool isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+        MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
         BaseValue* apply(const std::string& sMethod) override;
         BaseValue* apply(const std::string& sMethod,
                          const BaseValue& arg1) override;
@@ -312,6 +314,135 @@ namespace mu
             BaseValue* apply(const std::string& sMethod) override;
             BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
             BaseValue* apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) override;
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    using Stack = std::deque<Value>;
+    using Queue = std::deque<Value>;
+
+    class StackValue : public Object
+    {
+        private:
+            Stack m_stack;
+
+        public:
+            StackValue();
+
+            StackValue(const Stack& stck) : StackValue()
+            {
+                m_stack = stck;
+            }
+
+            StackValue(const StackValue& other) : StackValue()
+            {
+                m_stack = other.m_stack;
+            }
+
+            StackValue(StackValue&& other) = default;
+            StackValue(const BaseValue& other);
+            StackValue& operator=(const BaseValue& other) override;
+
+            StackValue& operator=(const Stack& stck)
+            {
+                m_stack = stck;
+                return *this;
+            }
+
+            StackValue& operator=(const StackValue& other)
+            {
+                m_stack = other.m_stack;
+                return *this;
+            }
+
+            StackValue& operator=(StackValue&& other) = default;
+
+            BaseValue* clone() const override
+            {
+                return new StackValue(*this);
+            }
+
+            Stack& get()
+            {
+                return m_stack;
+            }
+
+            const Stack& get() const
+            {
+                return m_stack;
+            }
+
+            bool isValid() const override;
+            size_t getBytes() const override;
+
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* apply(const std::string& sMethod) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    class QueueValue : public Object
+    {
+        private:
+            Queue m_queue;
+
+        public:
+            QueueValue();
+
+            QueueValue(const Queue& que) : QueueValue()
+            {
+                m_queue = que;
+            }
+
+            QueueValue(const QueueValue& other) : QueueValue()
+            {
+                m_queue = other.m_queue;
+            }
+
+            QueueValue(QueueValue&& other) = default;
+            QueueValue(const BaseValue& other);
+            QueueValue& operator=(const BaseValue& other) override;
+
+            QueueValue& operator=(const Queue& que)
+            {
+                m_queue = que;
+                return *this;
+            }
+
+            QueueValue& operator=(const QueueValue& other)
+            {
+                m_queue = other.m_queue;
+                return *this;
+            }
+
+            QueueValue& operator=(QueueValue&& other) = default;
+
+            BaseValue* clone() const override
+            {
+                return new QueueValue(*this);
+            }
+
+            Queue& get()
+            {
+                return m_queue;
+            }
+
+            const Queue& get() const
+            {
+                return m_queue;
+            }
+
+            bool isValid() const override;
+            size_t getBytes() const override;
+
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* apply(const std::string& sMethod) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
 
             std::string print(size_t digits, size_t chrs, bool trunc) const override;
             std::string printVal(size_t digits, size_t chrs) const override;

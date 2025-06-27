@@ -443,6 +443,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief True, if the contained value is an
+    /// Object.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isObject() const
+    {
+        return get() && get()->getType() == TYPE_OBJECT;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief True, if the contained value is a
     /// reference.
     ///
@@ -912,12 +925,15 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool Value::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition Value::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return get() && get()->isMethod(sMethod, argc);
+        if (get())
+            return get()->isMethod(sMethod, argc);
+
+        return MethodDefinition();
     }
 
 
@@ -1017,12 +1033,15 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool Value::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition Value::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        return get() && get()->isApplyingMethod(sMethod, argc);
+        if (get())
+            return get()->isApplyingMethod(sMethod, argc);
+
+        return MethodDefinition();
     }
 
 
@@ -1496,6 +1515,9 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::getCommonTypeAsString() const
     {
+        if (size() == 1 && front().isRef() && front().isArray())
+            return front().getArray().getCommonTypeAsString();
+
         switch (getCommonType())
         {
             case TYPE_CATEGORY:
@@ -1514,8 +1536,9 @@ namespace mu
             case TYPE_STRING:
                 return "string";
             case TYPE_CLUSTER:
-            case TYPE_ARRAY:
                 return "cluster";
+            case TYPE_ARRAY:
+                return "cluster*";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_OBJECT:
@@ -1872,20 +1895,23 @@ namespace mu
     ///
     /// \param sMethod const std::string&
     /// \param argc size_t
-    /// \return bool
+    /// \return MethodDefinition
     ///
     /////////////////////////////////////////////////
-    bool Array::isMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition Array::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const std::set<std::string> methods({"std", "avg", "prd", "sum", "min", "max", "norm",
-                                                    "num", "cnt", "med", "and", "or", "xor", "size",
-                                                    "maxpos", "minpos", "exc", "skw", "stderr", "rms",
-                                                    "unwrap"});
-        return (methods.contains(sMethod) && argc == 0)
-            || (sMethod == "sel" && argc == 1)
-            || (sMethod == "delegate" && argc <= 2)
-            || (sMethod == "order" && argc <= 1)
-            || front().isMethod(sMethod, argc);
+        static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
+                                        {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
+                                        {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
+                                        {"unwrap", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
+                                        {"order", 0}, {"order", -1}});
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return front().isMethod(sMethod, argc);
     }
 
 
@@ -1992,8 +2018,14 @@ namespace mu
         }
         else if (sMethod == "order")
             return order(arg1);
-        else if (front().isMethod(sMethod, 1))
+
+        MethodDefinition def = front().isMethod(sMethod, 1);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1);
+
             Array ret;
             size_t elems = std::max(size(), arg1.size());
             ret.reserve(elems);
@@ -2037,8 +2069,14 @@ namespace mu
 
             return ret;
         }
-        else if (front().isMethod(sMethod, 1))
+
+        MethodDefinition def = front().isMethod(sMethod, 2);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1, arg2);
+
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size()});
             ret.reserve(elems);
@@ -2067,8 +2105,13 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const
     {
-        if (front().isMethod(sMethod, 3))
+        MethodDefinition def = front().isMethod(sMethod, 3);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1, arg2, arg3);
+
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
             ret.reserve(elems);
@@ -2098,8 +2141,13 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const
     {
-        if (front().isMethod(sMethod, 4))
+        MethodDefinition def = front().isMethod(sMethod, 4);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1, arg2, arg3, arg4);
+
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
             ret.reserve(elems);
@@ -2125,10 +2173,16 @@ namespace mu
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    MethodDefinition Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        const static MethodSet methods = {{"sel", 1}, {"rem", 1}, {"ins", 1}, {"ins", 2}};
-        return methods.contains(MethodDefinition(sMethod, argc)) || front().isApplyingMethod(sMethod, argc);
+        const static MethodSet methods = {{"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return front().isApplyingMethod(sMethod, argc);
     }
 
 
@@ -2199,8 +2253,14 @@ namespace mu
             return deleteItems(arg1);
         else if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
             return insertItems(arg1);
-        else if (front().isApplyingMethod(sMethod, 1))
+
+        MethodDefinition def = front().isApplyingMethod(sMethod, 1);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1);
+
             Array ret;
             size_t elems = std::max(size(), arg1.size());
             ret.reserve(elems);
@@ -2234,8 +2294,14 @@ namespace mu
 
         if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
             return insertItems(arg1, arg2);
-        else if (front().isApplyingMethod(sMethod, 2))
+
+        MethodDefinition def = front().isApplyingMethod(sMethod, 2);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1, arg2);
+
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size()});
             ret.reserve(elems);
@@ -2268,8 +2334,13 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod, 3))
+        MethodDefinition def = front().isApplyingMethod(sMethod, 3);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1, arg2, arg3);
+
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
             ret.reserve(elems);
@@ -2303,8 +2374,13 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod, 4))
+        MethodDefinition def = front().isApplyingMethod(sMethod, 4);
+
+        if (def)
         {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1, arg2, arg3, arg4);
+
             Array ret;
             size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
             ret.reserve(elems);

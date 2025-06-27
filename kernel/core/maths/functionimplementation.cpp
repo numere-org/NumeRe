@@ -6460,17 +6460,59 @@ mu::Array cast_file(const mu::Array& files, const mu::Array& openmode)
 
     for (size_t i = 0; i < elems; i++)
     {
-        mu::FileValue* file = new mu::FileValue;
+        std::unique_ptr<mu::FileValue> file(new mu::FileValue);
 
         if (openmode.isDefault())
             file->get().open(files.get(i).getStr(), "r");
         else
             file->get().open(files.get(i).getStr(), openmode.get(i).getStr());
 
-        ret.emplace_back(file);
+        ret.emplace_back(file.release());
     }
 
     return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a stack object instance.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_stack(const mu::Array& vals)
+{
+    size_t elems = vals.size();
+    std::unique_ptr<mu::StackValue> mustack(new mu::StackValue);
+
+    for (int i = elems-1; i >= 0; i--)
+    {
+        mustack->apply("push", *vals.get(i).get());
+    }
+
+    return mu::Value(mustack.release());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a queue object instance.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_queue(const mu::Array& vals)
+{
+    size_t elems = vals.size();
+    std::unique_ptr<mu::QueueValue> muqueue(new mu::QueueValue);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        muqueue->apply("push", *vals.get(i).get());
+    }
+
+    return mu::Value(muqueue.release());
 }
 
 

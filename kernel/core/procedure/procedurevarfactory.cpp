@@ -809,16 +809,10 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             // Create a local variable
             std::string sNewArgName = createMangledArgName(currentArg);
             mu::Variable* newCluster = _parserRef->CreateVar(sNewArgName, mu::TYPE_CLUSTER);
-            g_logger.info("newCluster = " + newCluster->print() + " type = " + newCluster->getCommonTypeAsString());
 
             // Copy, if it is already a (complete!) cluster
             if (isCompleteCluster(currentValue, _dataRef))
-            {
-                mu::Variable* passedCluster = _parserRef->ReadVar(currentValue.substr(0, currentValue.find('{')));
-                g_logger.info("passedCluster = " + passedCluster->print() + " type = " + toString(passedCluster->getCommonType() == newCluster->getCommonType()));
-                *newCluster = *passedCluster;
-                g_logger.info("Copied");
-            }
+                *newCluster = *_parserRef->ReadVar(currentValue.substr(0, currentValue.find('{')));
             else
             {
                 // Evaluate the expression and create a new

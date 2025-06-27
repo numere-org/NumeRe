@@ -83,6 +83,8 @@ namespace mu
                     getRef() = *other.get();
                 else if (!get() || (get()->m_type != other->m_type))
                     reset(other->clone());
+                else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
+                    reset(other->clone());
                 else if (this != &other)
                     *get() = *other.get();
 
@@ -101,6 +103,8 @@ namespace mu
                 if (!other.get())
                     reset(nullptr);
                 else if (!get() || (get()->m_type != other->m_type))
+                    reset(other->clone());
+                else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
                     reset(other->clone());
                 else if (this != &other)
                     *get() = *other.get();
@@ -391,7 +395,7 @@ namespace mu
             Value operator&&(const Value& other) const;
             Value operator||(const Value& other) const;
 
-            bool isMethod(const std::string& sMethod, size_t argc) const;
+            MethodDefinition isMethod(const std::string& sMethod, size_t argc) const;
 
             Value call(const std::string& sMethod) const;
             Value call(const std::string& sMethod, const Value& arg1) const;
@@ -399,7 +403,7 @@ namespace mu
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const;
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const;
 
-            bool isApplyingMethod(const std::string& sMethod, size_t argc) const;
+            MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
             Value apply(const std::string& sMethod);
             Value apply(const std::string& sMethod, const Value& arg1);
@@ -484,6 +488,13 @@ namespace mu
                         resize(1);
 
                     front().assign(other.front());
+                }
+                else if (size() == 1 && front().isRef())
+                {
+                    // Insert a complete array into a single reference
+                    front().assign(other);
+                    m_commonType = TYPE_ARRAY;
+                    return *this;
                 }
                 else
                 {
@@ -863,7 +874,7 @@ namespace mu
 
             Array unWrap() const;
 
-            bool isMethod(const std::string& sMethod, size_t argc) const;
+            MethodDefinition isMethod(const std::string& sMethod, size_t argc) const;
 
             Array call(const std::string& sMethod) const;
             Array call(const std::string& sMethod, const Array& arg1) const;
@@ -871,7 +882,7 @@ namespace mu
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const;
 
-            bool isApplyingMethod(const std::string& sMethod, size_t argc) const;
+            MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
             Array apply(const std::string& sMethod);
             Array apply(const std::string& sMethod, const Array& arg1);
