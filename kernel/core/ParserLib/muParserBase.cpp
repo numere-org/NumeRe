@@ -110,7 +110,8 @@ namespace mu
 		"-",  "*",  "/",
 		"^",  "&&", "||",
 		"(",  ")",  "{",
-        "}",  "?",  ":", 0
+        "}",  "[",  "]",
+        "?",  ":",   0
 	};
 
 	//------------------------------------------------------------------------------
@@ -1180,6 +1181,7 @@ namespace mu
                                                    funTok.GetAsString());
 				break;
 			case  cmIDX:
+			case  cmSQIDX:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
@@ -1198,7 +1200,7 @@ namespace mu
 		}
 
 		// Push dummy value representing the function result to the stack
-		if (funTok.GetCode() == cmIDX)
+		if (funTok.GetCode() == cmIDX || funTok.GetCode() == cmSQIDX)
         {
             a_stVal.pop();
             token_type token;
@@ -1310,6 +1312,7 @@ namespace mu
 				stOpt.top().GetCode() != cmBO &&
 				stOpt.top().GetCode() != cmVO &&
 				stOpt.top().GetCode() != cmIDX &&
+				stOpt.top().GetCode() != cmSQIDX &&
 				stOpt.top().GetCode() != cmEXP2 &&
 				stOpt.top().GetCode() != cmEXP3 &&
 				stOpt.top().GetCode() != cmIF)
@@ -2179,7 +2182,9 @@ namespace mu
 						{
 						    ApplyRemainingOprt(stOpt, stVal);
 
-						    if ((stOpt.top().GetCode() == cmVO || stOpt.top().GetCode() == cmIDX) && stVal.size() > 0)
+						    if ((stOpt.top().GetCode() == cmVO
+                                 || stOpt.top().GetCode() == cmIDX
+                                 || stOpt.top().GetCode() == cmSQIDX) && stVal.size() > 0)
                             {
                                 ParserToken tok;
                                 tok.Set(cmEXP2, MU_VECTOR_EXP2);
@@ -2236,6 +2241,7 @@ namespace mu
 					break;
 
 				case cmVC:
+				case cmSQC:
 				    vectorCreateMode--;
 				    // fallthrough intended
 				case cmBC:
@@ -2279,7 +2285,8 @@ namespace mu
 
 						// Check if the bracket content has been evaluated completely
 						if (stOpt.size() && ((stOpt.top().GetCode() == cmBO && opt.GetCode() == cmBC)
-                                             || ((stOpt.top().GetCode() == cmVO || stOpt.top().GetCode() == cmIDX) && opt.GetCode() == cmVC)))
+                                             || ((stOpt.top().GetCode() == cmVO || stOpt.top().GetCode() == cmIDX) && opt.GetCode() == cmVC)
+                                             || (stOpt.top().GetCode() == cmSQIDX && opt.GetCode() == cmSQC)))
 						{
 							// if opt is ")" and opta is "(" the bracket has been evaluated, now its time to check
 							// if there is either a function or a sign pending
@@ -2321,6 +2328,7 @@ namespace mu
 							if (iArgCount > 1
                                 && (stOpt.size() == 0 || (stOpt.top().GetCode() != cmFUNC
                                                           && stOpt.top().GetCode() != cmIDX
+                                                          && stOpt.top().GetCode() != cmSQIDX
                                                           && stOpt.top().GetCode() != cmMETHOD)))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
@@ -2374,6 +2382,7 @@ namespace mu
 							stOpt.top().GetCode() != cmBO &&
 							stOpt.top().GetCode() != cmVO &&
 							stOpt.top().GetCode() != cmIDX &&
+							stOpt.top().GetCode() != cmSQIDX &&
 							stOpt.top().GetCode() != cmIF)
 					{
 						int nPrec1 = GetOprtPrecedence(stOpt.top()),
@@ -2414,12 +2423,15 @@ namespace mu
 				//
 				case cmVO:
 				case cmIDX:
+				case cmSQIDX:
                 {
                     ParserToken tok;
                     tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 
                     if (opt.GetCode() == cmIDX)
                         tok.ChangeCode(cmIDX);
+                    else if (opt.GetCode() == cmSQIDX)
+                        tok.ChangeCode(cmSQIDX);
 
 				    stOpt.push(tok);
 				    vectorCreateMode++;
@@ -2823,6 +2835,12 @@ namespace mu
 						break;
 					case cmIDX:
 						printFormatted("|   INDEX \"{\"\n");
+						break;
+					case cmSQIDX:
+						printFormatted("|   INDEX \"[\"\n");
+						break;
+					case cmSQC:
+						printFormatted("|   INDEX \"]\"\n");
 						break;
 					case cmVO:
 						printFormatted("|   VECTOR \"{\"\n");

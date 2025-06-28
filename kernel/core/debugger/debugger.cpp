@@ -563,7 +563,10 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         if (iter.first != iter.second.first)
             replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
 
-        mLocalVars[iter.first + "\t" + iter.second.first] = *iter.second.second;
+        if (iter.second.second->getCommonType() == mu::TYPE_CLUSTER)
+            mLocalVars[iter.first + "{}\t" + iter.second.first + "{}"] = *iter.second.second;
+        else
+            mLocalVars[iter.first + "\t" + iter.second.first] = *iter.second.second;
     }
 
     // Store the local tables and replace their
@@ -894,10 +897,11 @@ vector<string> NumeReDebugger::getGlobals()
     for (auto iter = _parser.GetVar().begin(); iter != _parser.GetVar().end(); ++iter)
     {
         if (!iter->first.starts_with("_~")
-            && iter->first != "ans"
             && !isDimensionVar(iter->first))
         {
-            mGlobals[iter->first] = iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
+            mu::DataType common = iter->second->getCommonType();
+            mGlobals[iter->first + (common == mu::TYPE_CLUSTER ? "{}" : "")] = iter->second->printDims() + "\t"
+                + iter->second->getCommonTypeAsString() + "\t"
                 + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
         }
     }

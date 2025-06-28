@@ -467,7 +467,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& assign(const Array& other)
             {
-                if (other.size() == 1)
+                if (other.std::vector<Value>::size() == 1)
                 {
                     if (other.front().isArray())
                         return assign(other.front().getArray());
@@ -489,7 +489,7 @@ namespace mu
 
                     front().assign(other.front());
                 }
-                else if (size() == 1 && front().isRef())
+                else if (std::vector<Value>::size() == 1 && front().isRef())
                 {
                     // Insert a complete array into a single reference
                     front().assign(other);
@@ -556,7 +556,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                if (other.size() == 1 && other.front().isArray() && !other.front().isRef())
+                if (other.std::vector<Value>::size() == 1 && other.front().isArray() && !other.front().isRef())
                 {
                     Array& fst = other.front().getArray();
                     std::swap(_M_impl._M_start, fst._M_impl._M_start);
@@ -583,6 +583,7 @@ namespace mu
             NumericalType getCommonNumericalType() const;
             bool isScalar() const;
             bool isDefault() const;
+            bool isVoid() const;
 
             /////////////////////////////////////////////////
             /// \brief Is this a constant instance?
@@ -748,7 +749,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) += other.get(i);
+                        get(i) += other.get(i);
                     }
                 }
 
@@ -770,7 +771,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) -= other.get(i);
+                       get(i) -= other.get(i);
                     }
                 }
 
@@ -792,7 +793,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) /= other.get(i);
+                        get(i) /= other.get(i);
                     }
                 }
 
@@ -814,7 +815,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) *= other.get(i);
+                        get(i) *= other.get(i);
                     }
                 }
 
@@ -836,7 +837,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) ^= other.get(i);
+                        get(i) ^= other.get(i);
                     }
                 }
 
@@ -854,7 +855,7 @@ namespace mu
             {
                 for (size_t i = 0; i < size(); i++)
                 {
-                    operator[](i).flipSign();
+                    get(i).flipSign();
                 }
             }
 
@@ -910,6 +911,7 @@ namespace mu
             std::string printJoined(const std::string& sSep = "", bool keepEmpty = false) const;
             std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
+            size_t size() const;
 
             /////////////////////////////////////////////////
             /// \brief Get the i-th element.
@@ -920,9 +922,16 @@ namespace mu
             /////////////////////////////////////////////////
             Value& get(size_t i)
             {
-                if (size() == 1u)
+                size_t vectSize = std::vector<Value>::size();
+
+                if (vectSize == 1u)
+                {
+                    if (front().isRef() && front().isArray())
+                        return front().getArray().get(i);
+
                     return front();
-                else if (size() <= i)
+                }
+                else if (vectSize <= i)
                     throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
 
                 return operator[](i);
@@ -937,9 +946,16 @@ namespace mu
             /////////////////////////////////////////////////
             const Value& get(size_t i) const
             {
-                if (size() == 1u)
+                size_t vectSize = std::vector<Value>::size();
+
+                if (vectSize == 1u)
+                {
+                    if (front().isRef() && front().isArray())
+                        return front().getArray().get(i);
+
                     return front();
-                else if (size() <= i)
+                }
+                else if (vectSize <= i)
                     return m_default;
 
                 return operator[](i);

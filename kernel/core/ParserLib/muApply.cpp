@@ -38,7 +38,7 @@ namespace mu
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a[i].getNum().asCF64()));
+            ret.emplace_back(func(a.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -62,7 +62,7 @@ namespace mu
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a[i]));
+            ret.emplace_back(func(a.get(i)));
         }
 
         return ret;
@@ -86,7 +86,7 @@ namespace mu
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a[i].getStr()));
+            ret.emplace_back(func(a.get(i).getStr()));
         }
 
         return ret;

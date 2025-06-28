@@ -105,8 +105,10 @@ namespace mu
                 noELSE    = 1 << 13,
                 noVO      = 1 << 14,
                 noVC      = 1 << 15,
-                noMETHOD  = 1 << 16,
-                sfSTART_OF_LINE = noOPT | noBC | noVC | noPOSTOP | noASSIGN | noIF | noELSE | noARG_SEP | noMETHOD,
+                noSqO     = 1 << 16,
+                noSqC     = 1 << 17,
+                noMETHOD  = 1 << 18,
+                sfSTART_OF_LINE = noOPT | noBC | noVC | noSqO | noSqC | noPOSTOP | noASSIGN | noIF | noELSE | noARG_SEP | noMETHOD,
                 noANY     = ~0       ///< All of he above flags set
             };
 
@@ -155,6 +157,7 @@ namespace mu
             Variable m_fZero;      ///< Dummy value of zero, referenced by undefined variables
             int m_iBrackets;
             int m_iVBrackets;
+            int m_iSqBrackets;
             token_type m_lastTok;
             char_type m_cArgSep;     ///< The character used for separating function arguments
     };

@@ -144,14 +144,17 @@ namespace mu
         cmPOW,                 ///< Operator item:  y to the power of ...
         cmLAND,                ///< Operator item:  logical and
         cmLOR,                 ///< Operator item:  logical or
-        cmBO,                  ///< Operator item:  opening bracket
-        cmBC,                  ///< Operator item:  closing bracket
+        cmBO,                  ///< Operator item:  opening brace
+        cmBC,                  ///< Operator item:  closing brace
         cmVO,                  ///< Operator item:  opening vector brace
         cmVC,                  ///< Operator item:  closing vector brace
+        cmSQO,                 ///< Operator item:  opening square bracket
+        cmSQC,                 ///< Operator item:  closing square bracket
         cmIF,                  ///< For use in the ternary if-then-else operator
         cmELSE,                ///< For use in the ternary if-then-else operator
         cmENDIF,               ///< For use in the ternary if-then-else operator
         cmIDX,                 ///< Operator item:  opening vector brace/index
+        cmSQIDX,               ///< Operator item:  opening square bracket index
         cmEXP2,                ///< The two-value expansion operator
         cmEXP3,                ///< The three-value expansion operator
         cmARG_SEP,             ///< function argument separator

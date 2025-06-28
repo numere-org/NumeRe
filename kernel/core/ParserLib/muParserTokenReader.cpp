@@ -95,6 +95,7 @@ namespace mu
 		m_vIdentFun       = a_Reader.m_vIdentFun;
 		m_iBrackets       = a_Reader.m_iBrackets;
 		m_iVBrackets      = a_Reader.m_iVBrackets;
+		m_iSqBrackets      = a_Reader.m_iSqBrackets;
 		m_cArgSep         = a_Reader.m_cArgSep;
 		m_lastTok         = a_Reader.m_lastTok;
 		m_fZero           = a_Reader.m_fZero;
@@ -125,6 +126,7 @@ namespace mu
 		, m_fZero(mu::Value(0.0))
 		, m_iBrackets(0)
 		, m_iVBrackets(0)
+		, m_iSqBrackets(0)
 		, m_lastTok()
 		, m_cArgSep(',')
 	{
@@ -382,6 +384,8 @@ namespace mu
 
 			if (m_strFormula.match(pOprtDef[i], m_iPos))
 			{
+			    const char* oprt = pOprtDef[i];
+
 				switch (i)
 				{
 					//case cmAND:
@@ -411,7 +415,7 @@ namespace mu
 
 						// The assignement operator need special treatment
 						if (i >= cmASSIGN && i <= cmPOWASGN && m_iSynFlags & noASSIGN)
-							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_OPERATOR, m_iPos, oprt);
 
 						if (!m_pParser->HasBuiltInOprt())
 							continue;
@@ -424,17 +428,17 @@ namespace mu
 							if ( IsInfixOpTok(a_Tok) )
 								return true;
 
-							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_OPERATOR, m_iPos, oprt);
 						}
 
-						m_iSynFlags  = noBC | noVC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
+						m_iSynFlags  = noBC | noVC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD | noSqO | noSqC;
 						m_iSynFlags |= ( (i != cmEND) && ( i != cmBC) ) ? noEND : 0;
 						break;
                     case cmINCR:
                     case cmDECR:
 						// The assignement operator need special treatment
 						if (m_iSynFlags & noASSIGN)
-							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_OPERATOR, m_iPos, oprt);
 
 						if (!m_pParser->HasBuiltInOprt())
 							continue;
@@ -447,43 +451,47 @@ namespace mu
 							if ( IsInfixOpTok(a_Tok) )
 								return true;
 
-							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_OPERATOR, m_iPos, oprt);
 						}
 
-                        m_iSynFlags = noVAL | noVAR | noFUN | noMETHOD | noBO | noVO | noPOSTOP | noSTR | noASSIGN;
+                        m_iSynFlags = noVAL | noVAR | noFUN | noMETHOD | noBO | noVO | noPOSTOP | noSTR | noASSIGN | noSqO;
 						break;
 
 					case cmBO:
 						if (m_iSynFlags & noBO)
-							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
 
 						if (m_lastTok.GetCode() == cmFUNC || m_lastTok.GetCode() == cmMETHOD)
-							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD;
+							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD | noSqO | noSqC;
 						else
-							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD;
+							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD | noSqO | noSqC;
 
 						++m_iBrackets;
 						break;
 
 					case cmBC:
 						if (m_iSynFlags & noBC)
-							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
 
-						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN | noVO;
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN | noVO | noSqO;
 
 						if (--m_iBrackets < 0)
-							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
 						break;
 
 					case cmVO:
 						if (m_iSynFlags & noVO)
-							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
 
-						m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD;
+						m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD | noSqC | noSqO;
 
                         // Convert this to an index
                         if (m_lastTok.GetCode() == cmVAR)
                         {
+                            // Only clusters are allowed here
+                            if (m_lastTok.GetVar()->getCommonType() != TYPE_CLUSTER)
+                                Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
+
                             m_indexedVars.push(m_lastTok.GetVar());
                             i = cmIDX;
                         }
@@ -493,30 +501,66 @@ namespace mu
 
 					case cmVC:
 						if (m_iSynFlags & noVC)
-							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
 
-						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO;
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
 						if (--m_iVBrackets < 0)
-							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
 
                         while (m_iVBrackets < m_indexedVars.size())
                             m_indexedVars.pop();
 
 						break;
 
+					case cmSQO:
+						if (m_iSynFlags & noSqO)
+							Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
+
+						m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noMETHOD | noVC | noSqO;
+
+                        // Convert this to an index
+                        if (m_lastTok.GetCode() == cmVAR)
+                        {
+                            // No clusters are allowed here
+                            if (m_lastTok.GetVar()->getCommonType() == TYPE_CLUSTER)
+                                Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
+
+                            m_indexedVars.push(m_lastTok.GetVar());
+                            i = cmSQIDX;
+                        }
+                        else
+                            Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
+
+						++m_iSqBrackets;
+						break;
+
+					case cmSQC:
+						if (m_iSynFlags & noSqC)
+							Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
+
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
+
+						if (--m_iSqBrackets < 0)
+							Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
+
+                        while (m_iSqBrackets < m_indexedVars.size())
+                            m_indexedVars.pop();
+
+						break;
+
 					case cmELSE:
 						if (m_iSynFlags & noELSE)
-							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, oprt);
 
-						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD;
+						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD | noSqO | noSqC;
 						break;
 
 					case cmIF:
 						if (m_iSynFlags & noIF)
-							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, pOprtDef[i]);
+							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, oprt);
 
-						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD;
+						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD | noSqO | noSqC;
 						break;
 
 					default:      // The operator is listed in c_DefaultOprt, but not here. This is a bad thing...
@@ -524,7 +568,7 @@ namespace mu
 				} // switch operator id
 
 				m_iPos += (int)len;
-				a_Tok.Set( (ECmdCode)i, pOprtDef[i] );
+				a_Tok.Set((ECmdCode)i, oprt);
 				return true;
 			} // if operator string found
 		} // end of for all operator strings
@@ -545,7 +589,7 @@ namespace mu
 			if (m_iSynFlags & noARG_SEP)
 				Error(ecUNEXPECTED_ARG_SEP, m_iPos, szSep);
 
-			m_iSynFlags  = noBC | noVC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noMETHOD;
+			m_iSynFlags  = noBC | noVC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noMETHOD | noSqO | noSqC;
 			m_iPos++;
 			a_Tok.Set(cmARG_SEP, szSep);
 			return true;
@@ -604,7 +648,7 @@ namespace mu
                 if (m_iSynFlags & noINFIXOP)
                     Error(ecUNEXPECTED_OPERATOR, m_iPos, "#<" + a_Tok.GetAsString() + ">");
 
-                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noSqO | noSqC;
                 m_iPos = m_strFormula.find('>', m_iPos+1)+1;
                 return true;
             }
@@ -617,7 +661,7 @@ namespace mu
             if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noASSIGN | noMETHOD;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noASSIGN | noMETHOD | noSqO | noSqC;
 			return true;
         }
 
@@ -634,7 +678,7 @@ namespace mu
 			if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noASSIGN | noMETHOD;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noASSIGN | noMETHOD | noSqO | noSqC;
 			return true;
 		}
 
@@ -704,7 +748,7 @@ namespace mu
 		if (m_iSynFlags & noMETHOD)
 			Error(ecUNEXPECTED_METHOD, m_iPos - (int)a_Tok.GetAsString().length(), a_Tok.GetAsString());
 
-		m_iSynFlags = noargs ? (noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN) : noANY ^ noBO;
+		m_iSynFlags = noargs ? (noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO) : noANY ^ noBO;
 		return true;
 	}
 
@@ -761,7 +805,7 @@ namespace mu
 				}
 
 				m_iPos += (int)(it->first.length());
-				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noVC | noASSIGN | noMETHOD;
+				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noVC | noASSIGN | noMETHOD | noSqO | noSqC;
 				return true;
 			}
 		}
@@ -808,7 +852,7 @@ namespace mu
 			a_Tok.Set(it->second, sTok);
 			m_iPos += (int)it->first.length();
 
-			m_iSynFlags = noVAL | noVAR | noFUN | noMETHOD | noBO | noVO | noPOSTOP | noSTR | noASSIGN;
+			m_iSynFlags = noVAL | noVAR | noFUN | noMETHOD | noBO | noVO | noPOSTOP | noSTR | noASSIGN | noSqO;
 			return true;
 		}
 
@@ -846,7 +890,7 @@ namespace mu
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
-				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
 				return true;
 			}
 
@@ -862,7 +906,7 @@ namespace mu
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
-				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN | noSqO;
 				return true;
             }
 		}
@@ -881,7 +925,7 @@ namespace mu
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
 				a_Tok.MoveVal(fVal, strTok);
-				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
 				return true;
 			}
 		}
@@ -921,10 +965,10 @@ namespace mu
 		a_Tok.SetVar(var, strTok);
 		m_UsedVar[strTok] = var;  // Add variable to used-var-list
 
-        if (m_iPos < m_strFormula.length()+1 &&  m_strFormula.subview(m_iPos, 2) == "{}")
+        if (m_iPos < m_strFormula.length()+1 && (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]"))
         {
             m_iPos += 2;
-            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR;
         }
         else
             m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR;
@@ -979,7 +1023,7 @@ namespace mu
 
 		m_iPos = iEnd;
 
-        if (m_strFormula.subview(m_iPos, 2) == "{}")
+        if (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]")
         {
             m_iPos += 2;
             m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
@@ -1028,7 +1072,7 @@ namespace mu
 
 		// Replace all other known escaped characters and remove the surrounding quotation marks
 		a_Tok.MoveVal(mu::Value(toInternalString("\"" + strTok + "\"")), strTok);
-		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
+		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
 
 		return true;
 	}

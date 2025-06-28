@@ -1454,14 +1454,14 @@ namespace mu
     {
         std::vector<DataType> types;
 
-        if (size() == 1 && front().isRef() && front().isArray())
+        if (std::vector<Value>::size() == 1 && front().isRef() && front().isArray())
         {
             types = front().getArray().getType();
             m_commonType = front().getArray().getCommonType();
             return types;
         }
 
-        size_t elems = size();
+        size_t elems = std::vector<Value>::size();
         types.reserve(elems);
 
         for (size_t i = 0; i < elems; i++)
@@ -1515,7 +1515,7 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::getCommonTypeAsString() const
     {
-        if (size() == 1 && front().isRef() && front().isArray())
+        if (std::vector<Value>::size() == 1 && front().isRef() && front().isArray())
             return front().getArray().getCommonTypeAsString();
 
         switch (getCommonType())
@@ -1528,7 +1528,7 @@ namespace mu
 
                 for (size_t i = 1; i < size(); i++)
                 {
-                    info.promote(operator[](i).getNum().getInfo());
+                    info.promote(get(i).getNum().getInfo());
                 }
 
                 return info.printType();
@@ -1585,7 +1585,7 @@ namespace mu
 
         for (size_t i = 1; i < size(); i++)
         {
-            info.promote(operator[](i).getNum().getInfo());
+            info.promote(get(i).getNum().getInfo());
         }
 
         return info.asType();
@@ -1616,6 +1616,24 @@ namespace mu
     bool Array::isDefault() const
     {
         return !size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether this Array is void
+    /// as a whole.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::isVoid() const
+    {
+        if (isDefault())
+            return true;
+
+        std::vector<DataType> types = getType();
+
+        return std::find_if(types.begin(), types.end(), [](DataType type){return type != TYPE_VOID;}) == types.end();
     }
 
 
@@ -1677,7 +1695,7 @@ namespace mu
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(operator[](i).operator!());
+            ret.emplace_back(get(i).operator!());
         }
 
         return ret;
@@ -2545,7 +2563,7 @@ namespace mu
             m_commonType = TYPE_VOID;
 
         // If only one element is remaining, unwrap it automatically
-        if (size() == 1 && front().isArray() && !front().isRef())
+        if (std::vector<Value>::size() == 1 && front().isArray() && !front().isRef())
         {
             // Assigning a child of this array is amazingly complex
             // Release the pointer first, move the contents and delete
@@ -2643,7 +2661,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            ret.push_back(operator[](i).getStr());
+            ret.push_back(get(i).getStr());
         }
 
         return ret;
@@ -2665,7 +2683,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            ret.push_back(operator[](i).as_cmplx());
+            ret.push_back(get(i).as_cmplx());
         }
 
         return ret;
@@ -2686,7 +2704,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            ret.push_back(operator[](i).print());
+            ret.push_back(get(i).print());
         }
 
         return ret;
@@ -2712,8 +2730,8 @@ namespace mu
 #else
             return "void";
 #endif
-        if (size() == 1 && front().isRef() && front().isArray())
-            return front().getArray().print(digits, chrs, trunc);
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().print(digits, chrs, trunc);
 
         std::string ret;
 
@@ -2723,9 +2741,9 @@ namespace mu
                 ret += ", ";
 
             if (size() > 1)
-                ret += operator[](i).printEmbedded(digits, chrs, trunc);
+                ret += get(i).printEmbedded(digits, chrs, trunc);
             else
-                ret += operator[](i).print(digits, chrs, trunc);
+                ret += get(i).print(digits, chrs, trunc);
         }
 
         if (size() > 1)
@@ -2774,8 +2792,8 @@ namespace mu
         if (isDefault())
             return "void";
 
-        if (size() == 1 && front().isRef() && front().isArray())
-            return front().getArray().printVals(digits, chrs);
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().printVals(digits, chrs);
 
         std::string ret;
 
@@ -2784,7 +2802,7 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).printVal(digits, chrs);
+            ret += get(i).printVal(digits, chrs);
         }
 
         return ret;
@@ -2799,8 +2817,8 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printDims() const
     {
-        if (size() == 1 && front().isRef() && front().isArray())
-            return front().getArray().printDims();
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().printDims();
 
         if (!size())
             return "0 x 0";
@@ -2824,7 +2842,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            std::string sVal = operator[](i).printVal();
+            std::string sVal = get(i).printVal();
 
             if ((sRet.length() && sVal.length())
                 || (i && keepEmpty))
@@ -2851,8 +2869,8 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printOverview(size_t digits, size_t chrs, size_t maxElems, bool alwaysBraces) const
     {
-        if (size() == 1 && front().isRef() && front().isArray())
-            return front().getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
 
         // Return an empty brace pair, if no data is
         // available
@@ -2901,10 +2919,29 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            bytes += operator[](i).getBytes();
+            bytes += get(i).getBytes();
         }
 
         return bytes;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Custom size function. Will default to
+    /// the parent size function except when this
+    /// array contains a reference to another array.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Array::size() const
+    {
+        size_t vectSize = std::vector<Value>::size();
+
+        if (vectSize == 1 && front().isRef() && front().isArray())
+            return front().getArray().size();
+
+        return vectSize;
     }
 
 
@@ -2948,8 +2985,8 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            if (operator[](i).getNum().asCF64() == 0.0)
-                operator[](i).clear();
+            if (get(i).getNum().asCF64() == 0.0)
+                get(i).clear();
             else
                 canBeDefaulted = false;
         }

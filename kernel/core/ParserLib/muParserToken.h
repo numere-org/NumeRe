@@ -419,7 +419,7 @@ namespace mu
             */
             ECmdCode GetCode() const
             {
-                if (m_pCallback.get() && m_iCode != cmIDX)
+                if (m_pCallback.get() && m_iCode != cmIDX && m_iCode != cmSQIDX)
                     return m_pCallback->GetCode();
 
                 return m_iCode;
