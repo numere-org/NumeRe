@@ -3400,7 +3400,7 @@ namespace mu
     /////////////////////////////////////////////////
 	std::string ParserBase::CreateTempVar(const Array& vVar)
 	{
-	    std::string sTempVarName = "_~TV[" + getNextTempVarIndex() + "]";
+	    std::string sTempVarName = "_~TV`" + getNextTempVarIndex() + "`";
 
         if (!vVar.size())
             SetInternalVar(sTempVarName, Value());
@@ -3476,9 +3476,9 @@ namespace mu
 		{
 			string siter = iter->first;
 
-			if (siter.find('[') != string::npos && siter.find(']') != string::npos)
+			if (siter.find('`') != string::npos)
 			{
-				if (bIgnoreProcedureVects && siter.starts_with("_~PROC~["))
+				if (bIgnoreProcedureVects && siter.starts_with("_~PROC`"))
 				{
 					iter++;
 					continue;

@@ -503,7 +503,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                     i = pos_back-1;
 
                     // append the returned matrix
-                    __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                    __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 }
             }
 
@@ -515,7 +515,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data));
                 pos_back = i+nMatchingParens+6;
-                __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 i = pos_back-1;
             }
 
@@ -527,7 +527,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromLines(sSubExpr, _parser, _data));
                 pos_back = i+nMatchingParens+6;
-                __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 i = pos_back-1;
             }
 
@@ -539,7 +539,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromColsFilled(sSubExpr, _parser, _data));
                 pos_back = i+nMatchingParens+7;
-                __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 i = pos_back-1;
             }
 
@@ -551,7 +551,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromLinesFilled(sSubExpr, _parser, _data));
                 pos_back = i+nMatchingParens+7;
-                __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 i = pos_back-1;
             }
 
@@ -563,7 +563,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data));
                 pos_back = i+nMatchingParens+1;
-                __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 i = pos_back-1;
             }
 
@@ -575,7 +575,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data));
                 pos_back = i+nMatchingParens+1;
-                __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 i = pos_back-1;
             }
         }
@@ -585,11 +585,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             && sCmd[i] == '('
             && i == pos_back // only true, if the last iteration evaluated a subexpression
             && sCmd.find_last_not_of(' ',i-1) != string::npos
-            && (__sCmd.back() == ']' || __sCmd.back() == ')')) //...returnedMatrix[N](:,:)
+            && (__sCmd.back() == '`' || __sCmd.back() == ')')) //...returnedMatrix[N](:,:)
         {
             int nMatrix = 0;
-            nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[')+1, __sCmd.rfind(']')-__sCmd.rfind('[')-1));
-            if (__sCmd.substr(__sCmd.rfind('[')-16,17) == "_~returnedMatrix[")
+            nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('`')+1, __sCmd.rfind('`')-__sCmd.rfind('`')-1));
+            if (__sCmd.substr(__sCmd.rfind('`')-16,17) == "_~returnedMatrix`")
             {
                 nMatchingParens = getMatchingParenthesis(cmd.subview(i));
                 string sSubExpr = sCmd.substr(i, nMatchingParens+1);
@@ -633,7 +633,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                         __sCmd.append(sCmd, pos_back, i-pos_back);
 
                     _cache.vReturnedMatrices.push_back(evalMatOp(sSubExpr, _parser, _data, _cache));
-                    __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                    __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                 }
                 else
                 {
@@ -650,7 +650,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                         if (containsMatrices(sExpr, _data))
                         {
                             _cache.vReturnedMatrices.push_back(evalMatOp(sExpr, _parser, _data, _cache));
-                            __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
+                            __sCmd += "_~returnedMatrix`"+toString(_cache.vReturnedMatrices.size()-1)+"`";
                         }
                         else
                             __sCmd += sExpr;
@@ -711,7 +711,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             _cache.vDataAccesses.push_back(_access);
 
             // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))+(iter->first).length()+1, "_~matrix["+toString(_cache.vDataAccesses.size()-1)+"]");
+            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))+(iter->first).length()+1, "_~matrix`"+toString(_cache.vDataAccesses.size()-1)+"`");
         }
     }
 
@@ -790,7 +790,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
 
                 // Replace the current multiplication with its return value
                 __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0],
-                               "_~returnedMatrix[" + toString(_cache.vReturnedMatrices.size()-1)+"]");
+                               "_~returnedMatrix`" + toString(_cache.vReturnedMatrices.size()-1)+"`");
                 n = nPositions[0];
             }
         }
@@ -810,7 +810,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     // in the expression
     for (size_t i = 0; i < _cache.vDataAccesses.size(); i++)
     {
-        std::string sMatrixName = "_~matrix["+toString(i)+"]";
+        std::string sMatrixName = "_~matrix`"+toString(i)+"`";
 
         if (sCmd.find(sMatrixName) == string::npos)
             continue;
@@ -825,7 +825,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     // Examine now the return values available in the expression
     for (size_t i = 0; i < _cache.vReturnedMatrices.size(); i++)
     {
-        std::string sMatrixName = "_~returnedMatrix["+toString(i)+"]";
+        std::string sMatrixName = "_~returnedMatrix`"+toString(i)+"`";
 
         if (sCmd.find(sMatrixName) == string::npos)
             continue;
@@ -1559,8 +1559,8 @@ static void parser_declareMatrixReturnValuesForIndices(StringView _sCmd, const s
         }
 
         // Declare the corresponding vector variable
-        if (_sCmd.find("_~returnedMatrix["+toString(j)+"]") != std::string::npos)
-            _parser.SetInternalVar("_~returnedMatrix["+toString(j)+"]", v);
+        if (_sCmd.find("_~returnedMatrix`"+toString(j)+"`") != std::string::npos)
+            _parser.SetInternalVar("_~returnedMatrix`"+toString(j)+"`", v);
     }
 }
 
@@ -1592,8 +1592,8 @@ static void parser_declareDataMatrixValuesForIndices(StringView _sCmd, const Mat
             v = _data.getElement(VectorIndex(_access.idx.row[0]), _access.idx.col, _access.sName);
 
         // Declare the corresponding vector variable
-        if (_sCmd.find("_~matrix["+toString(j)+"]") != std::string::npos)
-            _parser.SetInternalVar("_~matrix["+toString(j)+"]", v);
+        if (_sCmd.find("_~matrix`"+toString(j)+"`") != std::string::npos)
+            _parser.SetInternalVar("_~matrix`"+toString(j)+"`", v);
     }
 }
 

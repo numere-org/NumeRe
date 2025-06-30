@@ -1293,9 +1293,9 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 else
                 {
                     nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1,
-                                             "_~PROC~[" + mangleName(__sName) + "~"
+                                             "_~PROC`" + mangleName(__sName) + "~"
                                                 + toString(nProc) + "_" + toString(nthRecursion) + "_"
-                                                + toString(nth_command + nthRecursion) + "]");
+                                                + toString(nth_command + nthRecursion) + "`");
                     nProc++;
                 }
 

@@ -2066,7 +2066,7 @@ bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
                 else
                 {
                     _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1,
-                                                "_~PROC~[" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "]");
+                                                "_~PROC`" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "`");
                     nProc++;
                 }
             }

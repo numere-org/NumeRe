@@ -1524,6 +1524,9 @@ namespace mu
                 return "category";
             case TYPE_NUMERICAL:
             {
+                if (empty())
+                    return "value.void";
+
                 TypeInfo info = front().getNum().getInfo();
 
                 for (size_t i = 1; i < size(); i++)
@@ -1543,7 +1546,7 @@ namespace mu
                 return "dictstruct";
             case TYPE_OBJECT:
             {
-                if (!size())
+                if (empty())
                     return "object.void";
 
                 std::string sType = front().getObject().getObjectType();
