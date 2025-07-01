@@ -2465,6 +2465,12 @@ namespace mu
     }
 
 
+    FileValue::operator bool() const
+    {
+        return m_val.is_open();
+    }
+
+
     size_t FileValue::getBytes() const
     {
         return m_val.length();
@@ -2595,6 +2601,12 @@ namespace mu
 
 
     bool StackValue::isValid() const
+    {
+        return m_stack.size();
+    }
+
+
+    StackValue::operator bool() const
     {
         return m_stack.size();
     }
@@ -2752,6 +2764,12 @@ namespace mu
 
 
     bool QueueValue::isValid() const
+    {
+        return m_queue.size();
+    }
+
+
+    QueueValue::operator bool() const
     {
         return m_queue.size();
     }

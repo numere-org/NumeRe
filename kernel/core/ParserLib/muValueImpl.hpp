@@ -256,6 +256,10 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a file instance into
+    /// an object.
+    /////////////////////////////////////////////////
     class FileValue : public Object
     {
         private:
@@ -264,11 +268,17 @@ namespace mu
         public:
             FileValue();
 
+            /////////////////////////////////////////////////
+            /// \brief Create from a file instance.
+            /////////////////////////////////////////////////
             FileValue(const File& file) : FileValue()
             {
                 m_val = file;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            /////////////////////////////////////////////////
             FileValue(const FileValue& other) : FileValue()
             {
                 m_val = other.m_val;
@@ -278,12 +288,26 @@ namespace mu
             FileValue(const BaseValue& other);
             FileValue& operator=(const BaseValue& other) override;
 
+            /////////////////////////////////////////////////
+            /// \brief Assign a file instance.
+            ///
+            /// \param val const File&
+            /// \return FileValue&
+            ///
+            /////////////////////////////////////////////////
             FileValue& operator=(const File& val)
             {
                 m_val = val;
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Assign another FileValue instance.
+            ///
+            /// \param other const FileValue&
+            /// \return FileValue&
+            ///
+            /////////////////////////////////////////////////
             FileValue& operator=(const FileValue& other)
             {
                 m_val = other.m_val;
@@ -292,22 +316,42 @@ namespace mu
 
             FileValue& operator=(FileValue&& other) = default;
 
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
             BaseValue* clone() const override
             {
                 return new FileValue(*this);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the file instance.
+            ///
+            /// \return File&
+            ///
+            /////////////////////////////////////////////////
             File& get()
             {
                 return m_val;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the file
+            /// instance.
+            ///
+            /// \return const File&
+            ///
+            /////////////////////////////////////////////////
             const File& get() const
             {
                 return m_val;
             }
 
             bool isValid() const override;
+            operator bool() const override;
             size_t getBytes() const override;
 
             BaseValue* call(const std::string& sMethod) const override;
@@ -323,6 +367,10 @@ namespace mu
     using Stack = std::deque<Value>;
     using Queue = std::deque<Value>;
 
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a stack into an
+    /// object.
+    /////////////////////////////////////////////////
     class StackValue : public Object
     {
         private:
@@ -331,11 +379,17 @@ namespace mu
         public:
             StackValue();
 
+            /////////////////////////////////////////////////
+            /// \brief Create from a stack instance.
+            /////////////////////////////////////////////////
             StackValue(const Stack& stck) : StackValue()
             {
                 m_stack = stck;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            /////////////////////////////////////////////////
             StackValue(const StackValue& other) : StackValue()
             {
                 m_stack = other.m_stack;
@@ -345,12 +399,26 @@ namespace mu
             StackValue(const BaseValue& other);
             StackValue& operator=(const BaseValue& other) override;
 
+            /////////////////////////////////////////////////
+            /// \brief Assign a stack instance.
+            ///
+            /// \param stck const Stack&
+            /// \return StackValue&
+            ///
+            /////////////////////////////////////////////////
             StackValue& operator=(const Stack& stck)
             {
                 m_stack = stck;
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Assign another StackValue instance.
+            ///
+            /// \param other const StackValue&
+            /// \return StackValue&
+            ///
+            /////////////////////////////////////////////////
             StackValue& operator=(const StackValue& other)
             {
                 m_stack = other.m_stack;
@@ -359,22 +427,42 @@ namespace mu
 
             StackValue& operator=(StackValue&& other) = default;
 
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
             BaseValue* clone() const override
             {
                 return new StackValue(*this);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the Stack instance.
+            ///
+            /// \return Stack&
+            ///
+            /////////////////////////////////////////////////
             Stack& get()
             {
                 return m_stack;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the Stack
+            /// instance.
+            ///
+            /// \return const Stack&
+            ///
+            /////////////////////////////////////////////////
             const Stack& get() const
             {
                 return m_stack;
             }
 
             bool isValid() const override;
+            operator bool() const override;
             size_t getBytes() const override;
 
             BaseValue* call(const std::string& sMethod) const override;
@@ -386,6 +474,10 @@ namespace mu
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a queue into an
+    /// object.
+    /////////////////////////////////////////////////
     class QueueValue : public Object
     {
         private:
@@ -394,11 +486,17 @@ namespace mu
         public:
             QueueValue();
 
+            /////////////////////////////////////////////////
+            /// \brief Create from a queue instance.
+            /////////////////////////////////////////////////
             QueueValue(const Queue& que) : QueueValue()
             {
                 m_queue = que;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            /////////////////////////////////////////////////
             QueueValue(const QueueValue& other) : QueueValue()
             {
                 m_queue = other.m_queue;
@@ -408,12 +506,26 @@ namespace mu
             QueueValue(const BaseValue& other);
             QueueValue& operator=(const BaseValue& other) override;
 
+            /////////////////////////////////////////////////
+            /// \brief Assign a Queue instance.
+            ///
+            /// \param que const Queue&
+            /// \return QueueValue&
+            ///
+            /////////////////////////////////////////////////
             QueueValue& operator=(const Queue& que)
             {
                 m_queue = que;
                 return *this;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Assign another QueueValue instance.
+            ///
+            /// \param other const QueueValue&
+            /// \return QueueValue&
+            ///
+            /////////////////////////////////////////////////
             QueueValue& operator=(const QueueValue& other)
             {
                 m_queue = other.m_queue;
@@ -422,22 +534,42 @@ namespace mu
 
             QueueValue& operator=(QueueValue&& other) = default;
 
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
             BaseValue* clone() const override
             {
                 return new QueueValue(*this);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the Queue instance.
+            ///
+            /// \return Queue&
+            ///
+            /////////////////////////////////////////////////
             Queue& get()
             {
                 return m_queue;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the Queue
+            /// instance.
+            ///
+            /// \return const Queue&
+            ///
+            /////////////////////////////////////////////////
             const Queue& get() const
             {
                 return m_queue;
             }
 
             bool isValid() const override;
+            operator bool() const override;
             size_t getBytes() const override;
 
             BaseValue* call(const std::string& sMethod) const override;

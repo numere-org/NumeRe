@@ -3476,7 +3476,7 @@ namespace mu
 		{
 			string siter = iter->first;
 
-			if (siter.find('`') != string::npos)
+			if (siter.find('`') != std::string::npos)
 			{
 				if (bIgnoreProcedureVects && siter.starts_with("_~PROC`"))
 				{

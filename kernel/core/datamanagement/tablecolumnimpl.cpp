@@ -2458,12 +2458,21 @@ TableColumn::ColumnType to_column_type(const mu::Value& val)
 /////////////////////////////////////////////////
 TableColumn::ColumnType to_column_type(const mu::Array& arr)
 {
-    if (arr.getCommonType() == mu::TYPE_CATEGORY)
+    mu::DataType common = arr.getCommonType();
+
+    // Clusters do mask their data types
+    if (common == TYPE_CLUSTER)
+    {
+        common = TYPE_VOID;
+        arr.getType(common);
+    }
+
+    if (common == mu::TYPE_CATEGORY)
         return TableColumn::TYPE_CATEGORICAL;
-    else if (arr.getCommonType() == mu::TYPE_STRING
-             || arr.getCommonType() == mu::TYPE_CLUSTER)
+    else if (common == mu::TYPE_STRING
+             || common == mu::TYPE_CLUSTER)
         return TableColumn::TYPE_STRING;
-    else if (arr.getCommonType() == TYPE_NUMERICAL)
+    else if (common == TYPE_NUMERICAL)
     {
         switch (arr.getCommonNumericalType())
         {

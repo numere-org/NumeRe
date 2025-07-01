@@ -419,6 +419,9 @@ namespace mu
                 case Json::objectValue:
                     dict[member].reset(new DictStructValue(DictStruct(importJsonObject(json[member]))));
                     break;
+                case Json::nullValue:
+                    dict[member];
+                    break;
             }
         }
 
@@ -464,6 +467,9 @@ namespace mu
                 case Json::objectValue:
                     arr.emplace_back(DictStruct(importJsonObject(json[i])));
                     break;
+                case Json::nullValue:
+                    arr.emplace_back(Value());
+                    break;
             }
         }
 
@@ -507,8 +513,18 @@ namespace mu
         return true;
     }
 
+    // Forward declaration due to interdependence of the two
+    // encoder functions for JSON
     static std::string encodeJson(const DictStruct& dict);
 
+    /////////////////////////////////////////////////
+    /// \brief Encode an Array into a JSON-formatted
+    /// string.
+    ///
+    /// \param arr const Array&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     static std::string encodeJson(const Array& arr)
     {
         std::string sJsonString;
@@ -532,6 +548,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Encode a DictStruct into a
+    /// JSON-formatted string.
+    ///
+    /// \param dict const DictStruct&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     static std::string encodeJson(const DictStruct& dict)
     {
         std::vector<std::string> fields = dict.getFields();
@@ -613,10 +637,19 @@ namespace mu
 
     //------------------------------------------------------------------------
 
+    /////////////////////////////////////////////////
+    /// \brief Empty default constructor.
+    /////////////////////////////////////////////////
     File::File()
     { }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor.
+    ///
+    /// \param other const File&
+    ///
+    /////////////////////////////////////////////////
     File::File(const File& other)
     {
         if (other.is_open())
@@ -624,6 +657,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Move constructor. Closes the
+    /// moved-from file and re-opens the stream in
+    /// this instance.
+    ///
+    /// \param other File&&
+    ///
+    /////////////////////////////////////////////////
     File::File(File&& other)
     {
         if (other.is_open())
@@ -634,6 +675,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Copy assignment operator.
+    ///
+    /// \param other const File&
+    /// \return File&
+    ///
+    /////////////////////////////////////////////////
     File& File::operator=(const File& other)
     {
         close();
@@ -645,6 +693,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Move assignment operator.
+    ///
+    /// \param other File&&
+    /// \return File&
+    ///
+    /////////////////////////////////////////////////
     File& File::operator=(File&& other)
     {
         close();
@@ -659,6 +714,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Set the reading position of the
+    /// underlying stream.
+    ///
+    /// \param p size_t
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t File::set_read_pos(size_t p)
     {
         if (!is_open())
@@ -669,6 +732,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Get the reading position of the
+    /// underlying stream.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t File::get_read_pos() const
     {
         if (!is_open())
@@ -678,6 +748,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Set the writing position of the
+    /// underlying stream.
+    ///
+    /// \param p size_t
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t File::set_write_pos(size_t p)
     {
         if (!is_open())
@@ -688,6 +766,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Get the writing position of the
+    /// underlying stream.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t File::get_write_pos() const
     {
         if (!is_open())
@@ -697,6 +782,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Return the file length in characters
+    /// or bytes.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t File::length() const
     {
         if (!is_open())
@@ -706,12 +798,31 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the underlying
+    /// filestream is open.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool File::is_open() const
     {
         return m_stream.is_open() && m_stream.good();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Open the underlying filestream for the
+    /// selected file name using the open mode. The
+    /// supported open modes resemble the C interface:
+    /// "r", "r+", "w", "w+", "a", "a+" and "b" for
+    /// binary mode.
+    ///
+    /// \param sFileName const std::string&
+    /// \param sOpenMode const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool File::open(const std::string& sFileName, const std::string& sOpenMode)
     {
         if (m_stream.is_open())
@@ -760,6 +871,12 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Close the stream if it is open.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool File::close()
     {
         if (m_stream.is_open())
@@ -773,6 +890,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Flush the stream's buffer and write to
+    /// file.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool File::flush()
     {
         if (m_stream.is_open())
@@ -785,6 +909,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Return the filename of the currently
+    /// opened file.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string File::getFileName() const
     {
         if (!is_open())
@@ -794,6 +925,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Get the open mode of the currently
+    /// opened file.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string File::getOpenMode() const
     {
         if (!is_open())
@@ -803,6 +941,16 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Template function to read an array of
+    /// objects of type T from the stream in binary
+    /// mode.
+    ///
+    /// \param stream std::fstream&
+    /// \param n size_t&
+    /// \return std::unique_ptr<T[]>
+    ///
+    /////////////////////////////////////////////////
     template<class T>
     static std::unique_ptr<T[]> readBytes(std::fstream& stream, size_t& n)
     {
@@ -814,6 +962,16 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Template function to convert an array
+    /// of objects of type T into a mu::Array
+    /// instance.
+    ///
+    /// \param data const std::unique_ptr<T[]>&
+    /// \param n size_t
+    /// \return ArrValue*
+    ///
+    /////////////////////////////////////////////////
     template<class T>
     static ArrValue* convertToArray(const std::unique_ptr<T[]>& data, size_t n)
     {
@@ -828,6 +986,18 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Read something from the stream in
+    /// binary mode. The object type is string
+    /// encoded. Allows for reading of whole arrays
+    /// at once.
+    ///
+    /// \param stream std::fstream&
+    /// \param type const std::string&
+    /// \param n size_t
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     static BaseValue* readBinary(std::fstream& stream, const std::string& type, size_t n)
     {
         size_t numTypes = n;
@@ -957,6 +1127,16 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Template function to read an array of
+    /// objects of type T from the stream in text
+    /// mode.
+    ///
+    /// \param stream std::fstream&
+    /// \param n size_t&
+    /// \return std::unique_ptr<T[]>
+    ///
+    /////////////////////////////////////////////////
     template<class T>
     static std::unique_ptr<T[]> readSegments(std::fstream& stream, size_t& n)
     {
@@ -977,6 +1157,17 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Read something from the stream in
+    /// text mode. The object type is string encoded.
+    /// Allows for reading of whole arrays at once.
+    ///
+    /// \param stream std::fstream&
+    /// \param type const std::string&
+    /// \param n size_t
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     static BaseValue* readText(std::fstream& stream, const std::string& type, size_t n)
     {
         size_t numTypes = n;
@@ -1140,6 +1331,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Read n objects of the selected type
+    /// from the file.
+    ///
+    /// \param type const std::string&
+    /// \param n size_t
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* File::read(const std::string& type, size_t n)
     {
         if (!is_open() || m_openMode.find_first_of("r+") == std::string::npos)
@@ -1152,6 +1352,12 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Read a full line in text mode.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string File::read_line()
     {
         if (!is_open() || m_openMode.find_first_of("r+") == std::string::npos)
@@ -1163,6 +1369,16 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Template function to write an object
+    /// of type T in the file stream using binary
+    /// mode.
+    ///
+    /// \param stream std::fstream&
+    /// \param val const T&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     template<class T>
     static bool writeBinaryImpl(std::fstream& stream, const T& val)
     {
@@ -1170,6 +1386,15 @@ namespace mu
         return true;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Template specialisation for strings.
+    ///
+    /// \param stream std::fstream&
+    /// \param val const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     template<>
     bool writeBinaryImpl(std::fstream& stream, const std::string& val)
     {
@@ -1178,6 +1403,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Write the passed value to the stream
+    /// in binary mode.
+    ///
+    /// \param stream std::fstream&
+    /// \param val const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     static bool writeBinary(std::fstream& stream, const BaseValue& val)
     {
         if (val.m_type == TYPE_ARRAY)
@@ -1273,6 +1507,10 @@ namespace mu
                 }
                 case CF64:
                     return writeBinaryImpl(stream, num.asCF64());
+                case DURATION:
+                case DATETIME:
+                case AUTO:
+                    break;
             }
         }
 
@@ -1280,6 +1518,17 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Write something to the stream. The
+    /// separator is only used for cases, when the
+    /// value contains an array and the file is
+    /// opened in text mode.
+    ///
+    /// \param val const BaseValue&
+    /// \param sSeparator const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool File::write(const BaseValue& val, const std::string& sSeparator)
     {
         if (!is_open() || m_openMode.find_first_of("aw+") == std::string::npos)

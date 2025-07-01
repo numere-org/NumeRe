@@ -382,7 +382,7 @@ void ProcedureVarFactory::checkArgumentValue(const std::string& sArgument, const
     std::string sCommand = findCommand(sArgument).sString;
 
     // Was a keyword used as a argument?
-    if (sCommand == "var" || sCommand == "tab" || sCommand == "str")
+    if (sCommand == "var" || sCommand == "tab" || sCommand == "str" || sCommand == "cst" || sCommand == "obj")
     {
         // Free up memory
         mArguments.clear();
@@ -1096,9 +1096,7 @@ void ProcedureVarFactory::createLocalTables(std::string sTableList)
                 if (sCurrentValue.find('$') != std::string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
                 {
                     if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
-                    {
                         throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sTableList, SyntaxError::invalid_position);
-                    }
 
                     sCurrentValue.insert(0, currentVar + "() = ");
 

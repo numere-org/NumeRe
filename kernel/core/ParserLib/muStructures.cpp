@@ -293,6 +293,11 @@ namespace mu
             case TYPE_DICTSTRUCT:
                 reset(new DictStructValue);
                 break;
+            case TYPE_VOID:
+            case TYPE_OBJECT:
+            case TYPE_GENERATOR:
+            case TYPE_REFERENCE:
+                break;
         }
     }
 
@@ -347,6 +352,10 @@ namespace mu
                 return "cluster";
             case TYPE_REFERENCE:
                 return "reference";
+            case TYPE_VOID:
+            case TYPE_GENERATOR:
+            case TYPE_INVALID:
+                break;
         }
 
         return "void";
@@ -1447,19 +1456,16 @@ namespace mu
     /// \brief Get the (general) data types of every
     /// contained Value.
     ///
+    /// \param common& DataType
     /// \return std::vector<DataType>
     ///
     /////////////////////////////////////////////////
-    std::vector<DataType> Array::getType() const
+    std::vector<DataType> Array::getType(DataType& common) const
     {
         std::vector<DataType> types;
 
         if (std::vector<Value>::size() == 1 && front().isRef() && front().isArray())
-        {
-            types = front().getArray().getType();
-            m_commonType = front().getArray().getCommonType();
-            return types;
-        }
+            return front().getArray().getType(common);
 
         size_t elems = std::vector<Value>::size();
         types.reserve(elems);
@@ -1468,22 +1474,22 @@ namespace mu
         {
             types.push_back(operator[](i).getType());
 
-            if (m_commonType == TYPE_VOID
-                || ((m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID) && types.back() != TYPE_VOID))
-                m_commonType = types.back();
+            if (common == TYPE_VOID
+                || ((common == TYPE_NEUTRAL || common == TYPE_INVALID) && types.back() != TYPE_VOID))
+                common = types.back();
 
             if (types.back() != TYPE_VOID
                 && types.back() != TYPE_NEUTRAL
                 && types.back() != TYPE_INVALID
-                && m_commonType != types.back())
-                m_commonType = TYPE_CLUSTER;
+                && common != types.back())
+                common = TYPE_CLUSTER;
         }
 
-        if (m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID)
-            m_commonType = TYPE_NUMERICAL;
+        if (common == TYPE_NEUTRAL || common == TYPE_INVALID)
+            common = TYPE_NUMERICAL;
 
-        if (m_commonType == TYPE_ARRAY)
-            m_commonType = TYPE_CLUSTER;
+        if (common == TYPE_ARRAY)
+            common = TYPE_CLUSTER;
 
         return types;
     }
@@ -1499,7 +1505,7 @@ namespace mu
     DataType Array::getCommonType() const
     {
         if (m_commonType == TYPE_VOID && size())
-            getType();
+            getType(m_commonType);
 
         return m_commonType;
     }
@@ -1568,6 +1574,11 @@ namespace mu
             }
             case TYPE_REFERENCE:
                 return "reference";
+            case TYPE_VOID:
+            case TYPE_GENERATOR:
+            case TYPE_NEUTRAL:
+            case TYPE_INVALID:
+                break;
         }
 
         return "void";
@@ -1634,7 +1645,7 @@ namespace mu
         if (isDefault())
             return true;
 
-        std::vector<DataType> types = getType();
+        std::vector<DataType> types = getType(m_commonType);
 
         return std::find_if(types.begin(), types.end(), [](DataType type){return type != TYPE_VOID;}) == types.end();
     }

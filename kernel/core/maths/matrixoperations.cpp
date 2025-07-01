@@ -588,8 +588,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             && (__sCmd.back() == '`' || __sCmd.back() == ')')) //...returnedMatrix[N](:,:)
         {
             int nMatrix = 0;
-            nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('`')+1, __sCmd.rfind('`')-__sCmd.rfind('`')-1));
-            if (__sCmd.substr(__sCmd.rfind('`')-16,17) == "_~returnedMatrix`")
+            size_t terminalAccent = __sCmd.rfind('`');
+            size_t startingAccent = __sCmd.rfind('`', terminalAccent-1);
+            nMatrix = StrToInt(__sCmd.substr(startingAccent+1, terminalAccent-startingAccent-1));
+
+            if (__sCmd.substr(startingAccent-16,17) == "_~returnedMatrix`")
             {
                 nMatchingParens = getMatchingParenthesis(cmd.subview(i));
                 string sSubExpr = sCmd.substr(i, nMatchingParens+1);
@@ -702,7 +705,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             _access.sName = iter->first;
 
             // Identify, which value to use for a missing value
-            if (addMissingVectorComponent("", __sCmd.substr(0,nPos), __sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))),false) == "0")
+            if (addMissingVectorComponent("", __sCmd.substr(0,nPos),
+                                          __sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))),false) == "0")
                 _access.missingValues = 0;
             else
                 _access.missingValues = 1;
@@ -711,7 +715,9 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             _cache.vDataAccesses.push_back(_access);
 
             // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))+(iter->first).length()+1, "_~matrix`"+toString(_cache.vDataAccesses.size()-1)+"`");
+            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd,
+                                                                   nPos+(iter->first).length()))+(iter->first).length()+1,
+                           "_~matrix`"+toString(_cache.vDataAccesses.size()-1)+"`");
         }
     }
 
@@ -732,7 +738,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                 Matrix _mLeft;
                 Matrix _mRight;
                 size_t nPositions[2];
-                nPositions[1] = __sCmd.find(']',n)+1;
+                nPositions[1] = __sCmd.find('`', __sCmd.find('`',n)+1)+1;
                 string sElement = __sCmd.substr(__sCmd.find_first_not_of(' ', n+2));
 
                 // Right handed matrix expression
@@ -744,10 +750,10 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                          && (p = getMatchingParenthesis(StringView(sElement, i))) != std::string::npos)
                         i += p+1;
 
-                    if (!isalnum(sElement[i]) && sElement[i] != '_' && sElement[i] != '~')
+                    if (!isalnum(sElement[i]) && sElement[i] != '_' && sElement[i] != '~' && (sElement[i] != '`' || i+1 == sElement.length()))
                     {
-                        std::string sSubExpr = sElement.substr(0, i);
-                        nPositions[1] = i+__sCmd.find_first_not_of(' ', n+2);
+                        std::string sSubExpr = sElement.substr(0, i + (i+1 == sElement.length() ? 1 : 0));
+                        nPositions[1] = i+__sCmd.find_first_not_of(' ', n+2) + (i+1 == sElement.length() ? 1 : 0);
                         g_logger.debug("sSubExpr = " + sSubExpr);
                         _mRight = evalMatOp(sSubExpr, _parser, _data, _cache);
                         g_logger.debug("_mRight.size() = " + _mRight.printDims());
@@ -764,14 +770,14 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
 
                 for (int i = p; i >= 0; i--)
                 {
-                    if (__sCmd[i] == ')' || __sCmd[i] == '}' || __sCmd[i] == ']')
+                    if (__sCmd[i] == ')' || __sCmd[i] == '}')
                         nBraces++;
 
-                    if (__sCmd[i] == '(' || __sCmd[i] == '{' || __sCmd[i] == '[')
+                    if (__sCmd[i] == '(' || __sCmd[i] == '{')
                         nBraces--;
 
                     if (!nBraces
-                        && (!i || (!isalnum(__sCmd[i-1]) && __sCmd[i-1] != '_' && __sCmd[i-1] != '~')))
+                        && (!i || (!isalnum(__sCmd[i-1]) && __sCmd[i-1] != '_' && __sCmd[i-1] != '~' && __sCmd[i-1] != '`')))
                     {
                         std::string sSubExpr = __sCmd.substr(i, p - i+1);
                         nPositions[0] = i;

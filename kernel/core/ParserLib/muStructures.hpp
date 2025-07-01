@@ -577,7 +577,7 @@ namespace mu
                 return *this;
             }
 
-            std::vector<DataType> getType() const;
+            std::vector<DataType> getType(DataType& common) const;
             DataType getCommonType() const;
             std::string getCommonTypeAsString() const;
             NumericalType getCommonNumericalType() const;

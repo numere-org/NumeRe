@@ -344,6 +344,10 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Memo
         if (_iDeleteIndex.row.isOpenEnd())
             _iDeleteIndex.row.setRange(0, cluster->size() - 1);
 
+        // The cluster function for deleting items expects
+        // 1-based indices
+        _iDeleteIndex.row.apply_offset(1);
+
         // Delete the section identified by the cache expression
         // The indices are vectors
         cluster->deleteItems(_iDeleteIndex.row.getVector());

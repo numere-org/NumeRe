@@ -1049,7 +1049,9 @@ std::string toInternalString(std::string sStr)
         if (sStr.compare(i, 2, "\\\"") == 0)
             sStr.replace(i, 2, "\"");
 
-        if (sStr.compare(i, 2, "\\ ") == 0)
+        if (sStr.compare(i, 2, "\\\\") == 0)
+            sStr.replace(i, 2, "\\");
+        else if (sStr.compare(i, 2, "\\ ") == 0)
             sStr.replace(i, 2, "\\");
     }
 
@@ -2101,6 +2103,7 @@ std::string strRepeat(const std::string& sStr, int nCount)
 /////////////////////////////////////////////////
 std::string replaceControlCharacters(std::string sToModify)
 {
+    replaceAll(sToModify, "\\", "\\\\");
     replaceAll(sToModify, "\n", "\\n");
     replaceAll(sToModify, "\t", "\\t");
     replaceAll(sToModify, "\r", "\\r");
@@ -2359,9 +2362,9 @@ std::vector<std::string> split_impl(const std::string& sString, const std::strin
 {
     std::vector<std::string> ret;
 
-    if (!c.length())
+    if (!sString.length() || !c.length())
     {
-        ret.emplace_back("");
+        ret.emplace_back(sString);
         return ret;
     }
 

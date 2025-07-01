@@ -611,8 +611,10 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
     else if (cmdParser.hasParam("color"))
     {
         mu::Array color = cmdParser.getParsedParameterValue("color");
+        mu::DataType common = mu::TYPE_VOID;
+        color.getType(common);
 
-        if (color.size() < 3 || color.getCommonType() != mu::TYPE_NUMERICAL)
+        if (color.size() < 3 || common != mu::TYPE_NUMERICAL)
         {
             cmdParser.setReturnValue(mu::Value(false));
             return;

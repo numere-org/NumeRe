@@ -249,6 +249,9 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
+        if (!iter->second->size())
+            iter->second->push_back(mu::Value(0.0));
+
         vInitialVals.push_back(iter->second->front().getNum().asF64());
     }
 

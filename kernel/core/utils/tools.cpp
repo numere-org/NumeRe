@@ -2497,8 +2497,8 @@ void reduceLogFilesize(const string& sFileName)
 /////////////////////////////////////////////////
 static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
-    mOprtRplc["("] = "\\";
-    mOprtRplc[")"] = "\\";
+    mOprtRplc["("] = "`";
+    mOprtRplc[")"] = "`";
     mOprtRplc[":"] = "~c~";
     mOprtRplc[","] = "_";
     mOprtRplc["."] = "_";
@@ -2540,7 +2540,7 @@ string replaceToVectorname(const string& sExpression)
         OprtRplc_setup(mOprtRplc);
 
     if (sVectorName.find_first_of("\"#") != std::string::npos)
-        return "_~" + sha256(sVectorName) + "\\_\\";
+        return "_~" + sha256(sVectorName) + "`_`";
 
     // Remove whitespaces
     while (sVectorName.find(' ') != string::npos)
@@ -2553,8 +2553,8 @@ string replaceToVectorname(const string& sExpression)
             sVectorName.replace(sVectorName.find(iter->first), (iter->first).length(), iter->second);
     }
 
-    if (sVectorName.find('[') == string::npos)
-        sVectorName += "\\_\\";
+    if (sVectorName.find('`') == std::string::npos)
+        sVectorName += "`_`";
 
     // return the new vector name
     return "_~" + sVectorName;

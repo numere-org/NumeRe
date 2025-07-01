@@ -2272,8 +2272,8 @@ static std::pair<std::string, bool> createMafVectorName(std::string sAccessStrin
     static std::map<std::string, TableMethod> mMethods = getInplaceTableMethods();
     std::string sTableName = sAccessString.substr(0, sAccessString.find("()."));
     std::string sResultVectorName = sAccessString;
-    sResultVectorName.replace(sResultVectorName.find("()"), 2, "\\");
-    sResultVectorName += "\\";
+    sResultVectorName.replace(sResultVectorName.find("()"), 2, "`");
+    sResultVectorName += "`";
     sResultVectorName = replaceToVectorname(sResultVectorName);
 
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();

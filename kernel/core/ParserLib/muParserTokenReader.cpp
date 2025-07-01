@@ -238,6 +238,8 @@ namespace mu
 		m_iPos = 0;
 		m_iSynFlags = sfSTART_OF_LINE;
 		m_iBrackets = 0;
+		m_iVBrackets = 0;
+		m_iSqBrackets = 0;
 		m_UsedVar.clear();
 		m_lastTok = token_type();
 
@@ -501,14 +503,25 @@ namespace mu
 
 					case cmVC:
 						if (m_iSynFlags & noVC)
+						{
+						    // Slicing with open boundaries
+                            if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size())
+                            {
+                                a_Tok.SetVar(m_indexedVars.top(), "nlen");
+                                a_Tok.ChangeCode(cmDIMVAR);
+                                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                return true;
+                            }
+
 							Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
+                        }
 
 						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
 						if (--m_iVBrackets < 0)
 							Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
 
-                        while (m_iVBrackets < m_indexedVars.size())
+                        while (m_iVBrackets < (int)m_indexedVars.size())
                             m_indexedVars.pop();
 
 						break;
@@ -537,21 +550,42 @@ namespace mu
 
 					case cmSQC:
 						if (m_iSynFlags & noSqC)
+                        {
+                            // Slicing with open boundaries
+                            if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size())
+                            {
+                                a_Tok.SetVar(m_indexedVars.top(), "nlen");
+                                a_Tok.ChangeCode(cmDIMVAR);
+                                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                return true;
+                            }
+
 							Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
+                        }
 
 						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
 						if (--m_iSqBrackets < 0)
 							Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
 
-                        while (m_iSqBrackets < m_indexedVars.size())
+                        while (m_iSqBrackets < (int)m_indexedVars.size())
                             m_indexedVars.pop();
 
 						break;
 
 					case cmELSE:
 						if (m_iSynFlags & noELSE)
+                        {
+                            // Slicing with open boundaries
+                            if (m_lastTok.GetCode() == cmIDX || m_lastTok.GetCode() == cmSQIDX)
+                            {
+                                a_Tok.SetVal(mu::Value(1.0), "1");
+                                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
+                                return true;
+                            }
+
 							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, oprt);
+                        }
 
 						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE | noMETHOD | noSqO | noSqC;
 						break;
@@ -906,7 +940,7 @@ namespace mu
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
-				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN | noSqO;
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
 				return true;
             }
 		}
@@ -965,7 +999,7 @@ namespace mu
 		a_Tok.SetVar(var, strTok);
 		m_UsedVar[strTok] = var;  // Add variable to used-var-list
 
-        if (m_iPos < m_strFormula.length()+1 && (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]"))
+        if (m_iPos < (int)m_strFormula.length()+1 && (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]"))
         {
             m_iPos += 2;
             m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR;
@@ -1007,7 +1041,7 @@ namespace mu
 		{
 		    Variable* fVar;
 
-		    if (iEnd < m_strFormula.length() && m_strFormula[iEnd] == '{')
+		    if (iEnd < (int)m_strFormula.length() && m_strFormula[iEnd] == '{')
                 fVar = m_factory->Create(strTok, TYPE_CLUSTER);
 		    else
                 fVar = m_factory->Create(strTok);

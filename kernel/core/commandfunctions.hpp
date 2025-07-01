@@ -1247,20 +1247,24 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     //
     // Get the numerical variables
     const mu::varmap_type& variables = _parser.GetVar();
+    size_t nWinWidth = _option.getWindow(0);
+    size_t nPrec = _option.getPrecision();
+
 
     // Get the current defined data tables
-    const map<string, std::pair<size_t, size_t>>& CacheMap = _data.getTableMap();
+    const map<string, std::pair<size_t, size_t>>& tableMap = _data.getTableMap();
 
     NumeReKernel::toggleTableStatus();
     make_hline();
     NumeReKernel::print("NUMERE: " + toUpperCase(toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_HEADLINE"))));
     make_hline();
 
-    // Print all defined caches first
-    for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
+    // Print all defined tables first
+    for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
     {
         string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
-        NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[table]", 19));
+        NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (nWinWidth - 32) / 2 - (iter->first).length() + nWinWidth % 2)
+                                  + strfill(sCacheSize, (nWinWidth - 50) / 2) + strfill("[table]", 19));
 
         if (_data.getSize(iter->second.second) >= 1024 * 1024)
             NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
@@ -1272,20 +1276,27 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
         nBytesSum += _data.getSize(iter->second.second);
     }
 
-    NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+    NumeReKernel::printPreFmt("|   " + strfill("-", nWinWidth - 4, '-') + "\n");
 
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
     {
-        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
+        std::string sVarName = item->first;
+
+        if (item->second->getCommonType() == mu::TYPE_CLUSTER)
+            sVarName += "{}";
+
+        NumeReKernel::printPreFmt("|   " + sVarName + strfill(" = ", (nWinWidth - 20) / 2 + 1
+                                                              - nPrec - sVarName.length() + nWinWidth % 2));
 
         std::string printed = item->second->print();
         size_t bytes = item->second->getBytes();
 
-        if (printed.length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
-            NumeReKernel::printPreFmt(strfill(printed.substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 9) + "...", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+        if (printed.length() > nPrec + (nWinWidth - 60) / 2 - 4)
+            NumeReKernel::printPreFmt(strfill(printed.substr(0, nPrec + (nWinWidth - 60) / 2 - 9) + "...",
+                                              (nWinWidth - 60) / 2 + nPrec));
         else
-            NumeReKernel::printPreFmt(strfill(printed, (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+            NumeReKernel::printPreFmt(strfill(printed, (nWinWidth - 60) / 2 + nPrec));
 
         NumeReKernel::printPreFmt(strfill("[" + item->second->getCommonTypeAsString() + "]", 19) + strfill(toString(bytes), 9) + "  Bytes\n");
         nBytesSum += bytes;
@@ -1295,10 +1306,11 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     // Combine the number of variables and data
     // tables first
     NumeReKernel::printPreFmt("|   -- " + toString(variables.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
+
     if (_data.isValid())
     {
-        NumeReKernel::printPreFmt(toString(CacheMap.size()));
-        nDataSetNum = CacheMap.size();
+        NumeReKernel::printPreFmt(toString(tableMap.size()));
+        nDataSetNum = tableMap.size();
     }
     else
         NumeReKernel::printPreFmt("0");
@@ -1308,20 +1320,23 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     // Calculate now the needed memory for the stored values and print it at the
     // end of the footer line
     if (variables.size() > 9 && nDataSetNum > 9)
-        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+        NumeReKernel::printPreFmt(strfill("Total: ", (nWinWidth - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()
+                                                      - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     else if (variables.size() > 9 || nDataSetNum > 9)
-        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+        NumeReKernel::printPreFmt(strfill("Total: ", (nWinWidth - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()
+                                                      - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     else
-        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+        NumeReKernel::printPreFmt(strfill("Total: ", (nWinWidth - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()
+                                                      - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     if (nBytesSum >= 1024 * 1024)
         NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0 * 1024.0), 4), 8) + " MBytes\n");
     else if (nBytesSum >= 1024)
         NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0), 4), 8) + " KBytes\n");
     else
         NumeReKernel::printPreFmt(strfill(toString(nBytesSum), 8) + "  Bytes\n");
+
     NumeReKernel::toggleTableStatus();
     make_hline();
-    return;
 }
 
 

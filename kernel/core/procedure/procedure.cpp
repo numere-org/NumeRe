@@ -2001,9 +2001,7 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
 
                     // Insert the returned list, if it is non-empty
                     if (vExpandedArgList.size())
-                    {
                         vExpandedProcedures.insert(vExpandedProcedures.end(), vExpandedArgList.begin(), vExpandedArgList.end());
-                    }
                 }
 
                 // Ensure that the current procedure is inlinable
@@ -2084,7 +2082,9 @@ int Procedure::isInlineable(const string& sProc, const string& sFileName, int* n
 
             // If the procedure either is not inlinable or we've reached
             // the end of the procedure, break the loop
-            if (!nInlineable || currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT || findCommand(currentline.second.getCommandLine()).sString == "return")
+            if (!nInlineable
+                || currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT
+                || findCommand(currentline.second.getCommandLine()).sString == "return")
             {
                 break;
             }
@@ -2250,15 +2250,47 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
 
         // Local variables and strings are allowed and will be redirected
         // into temporary cluster elements
+        std::string sCommand = findCommand(sCommandLine).sString;
+
+        /*if (sCommand == "var" || sCommand == "str" || sCommand == "cst" || sCommand == "tab" || sCommand == "obj")
+        {
+            // Create the vars
+            if (sCommand == "var")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_NUMERICAL);
+            else if (sCommand == "str")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_STRING);
+            else if (sCommand == "cst")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_CLUSTER);
+            else if (sCommand == "tab")
+                varFactory.createLocalTables(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            else if (sCommand == "obj")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_OBJECT);
+
+            // Apply name mangling
+            sCommandLine = varFactory.resolveVariables(" " + sCommandLine + " ");
+
+            // Push the definition
+            vProcCommandLines.push_back(sCommandLine);
+
+            // Use the extracted assignments (TODO) as secondary line
+            sCommandLine = varFactory.sInlineVarDef + ";";
+        }*/
+
         if (findCommand(sCommandLine).sString == "var")
         {
-            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_NUMERICAL);
             sCommandLine = varFactory.sInlineVarDef + ";";
             inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
         else if (findCommand(sCommandLine).sString == "str")
         {
-            varFactory.createLocalStrings(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_STRING);
+            sCommandLine = varFactory.sInlineVarDef + ";";
+            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
+        }
+        else if (findCommand(sCommandLine).sString == "obj")
+        {
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_OBJECT);
             sCommandLine = varFactory.sInlineVarDef + ";";
             inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
