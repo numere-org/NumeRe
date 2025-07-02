@@ -530,14 +530,8 @@ namespace mu
                 res.push_back(arrs[i].front());
             else if (arrs[i].getCommonType() == TYPE_GENERATOR)
             {
-                Array ret;
-
-                if (arrs[i].size() == 2)
-                    ret = expandVector2(arrs[i].get(0), arrs[i].get(1));
-                else if (arrs[i].size() == 3)
-                    ret = expandVector3(arrs[i].get(0), arrs[i].get(1), arrs[i].get(2));
-
-                res.insert(res.end(), ret.begin(), ret.end());
+                res.makeGenerator();
+                res.insert(res.end(), arrs[i].begin(), arrs[i].end());
             }
             else
                 res.push_back(arrs[i]);
@@ -545,26 +539,6 @@ namespace mu
 
         return res;
     }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Determines, whether the passed step is
-    /// still in valid range and therefore can be
-    /// done to expand the vector.
-    ///
-    /// \param current const std::complex<double>&
-    /// \param last const std::complex<double>&
-    /// \param d const std::complex<double>&
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    static bool stepIsStillPossible(const std::complex<double>& current, const std::complex<double>& last, const std::complex<double>& d)
-	{
-	    std::complex<double> fact(d.real() >= 0.0 ? 1.0 : -1.0, d.imag() >= 0.0 ? 1.0 : -1.0);
-
-	    return (current.real() * fact.real()) <= (last.real() * fact.real())
-            && (current.imag() * fact.imag()) <= (last.imag() * fact.imag());
-	}
 
 
     /////////////////////////////////////////////////
@@ -578,7 +552,7 @@ namespace mu
     /////////////////////////////////////////////////
 	Array ParserBase::Vector2Generator(const Array& firstVal, const Array& lastVal)
 	{
-	    return Array(firstVal, lastVal);
+	    return Value(new GeneratorValue(firstVal.front().getNum(), lastVal.front().getNum()));
 	}
 
 
@@ -594,107 +568,7 @@ namespace mu
     /////////////////////////////////////////////////
 	Array ParserBase::Vector3Generator(const Array& firstVal, const Array& incr, const Array& lastVal)
 	{
-	    return Array(firstVal, incr, lastVal);
-	}
-
-
-   /////////////////////////////////////////////////
-    /// \brief This function expands the vector from
-    /// two indices.
-    ///
-    /// \param firstVal const Array&
-    /// \param lastVal const Array&
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-	Array ParserBase::expandVector2(const Array& firstVal, const Array& lastVal)
-	{
-	    Array ret;
-        Array diff = lastVal - firstVal;
-
-        for (size_t v = 0; v < diff.size(); v++)
-        {
-            std::complex<double> d = diff[v].getNum().asCF64();
-            d.real(d.real() > 0.0 ? 1.0 : (d.real() < 0.0 ? -1.0 : 0.0));
-            d.imag(d.imag() > 0.0 ? 1.0 : (d.imag() < 0.0 ? -1.0 : 0.0));
-            expandVector(firstVal.get(v).getNum().asCF64(),
-                         lastVal.get(v).getNum().asCF64(),
-                         d,
-                         ret);
-        }
-
-        return ret;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function expands the vector from
-    /// three indices.
-    ///
-    /// \param firstVal const Array&
-    /// \param incr const Array&
-    /// \param lastVal const Array&
-    /// \return Array
-    ///
-    /////////////////////////////////////////////////
-	Array ParserBase::expandVector3(const Array& firstVal, const Array& incr, const Array& lastVal)
-	{
-	    Array ret;
-
-        for (size_t v = 0; v < std::max({firstVal.size(), lastVal.size(), incr.size()}); v++)
-        {
-            expandVector(firstVal.get(v).getNum().asCF64(),
-                         lastVal.get(v).getNum().asCF64(),
-                         incr[v].getNum().asCF64(),
-                         ret);
-        }
-
-        return ret;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This function expands the vector.
-    /// Private member used by
-    /// ParserBase::compileVectorExpansion().
-    ///
-    /// \param dFirst std::complex<double>
-    /// \param dLast const std::complex<double>&
-    /// \param dIncrement const std::complex<double>&
-    /// \param vResults vector<std::complex<double>>&
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-	void ParserBase::expandVector(std::complex<double> dFirst, const std::complex<double>& dLast, const std::complex<double>& dIncrement, Array& vResults)
-	{
-		// ignore impossible combinations. Store only
-		// the accessible value
-		if ((dFirst.real() < dLast.real() && dIncrement.real() < 0)
-            || (dFirst.imag() < dLast.imag() && dIncrement.imag() < 0)
-            || (dFirst.real() > dLast.real() && dIncrement.real() > 0)
-            || (dFirst.imag() > dLast.imag() && dIncrement.imag() > 0)
-            || dIncrement == 0.0)
-		{
-			vResults.push_back(Numerical::autoType(dFirst));
-			return;
-		}
-
-		// Store the first value
-		vResults.push_back(Numerical::autoType(dFirst));
-
-		// As long as the next step is possible, add the increment
-		while (stepIsStillPossible(dFirst+dIncrement, dLast+1e-10*dIncrement, dIncrement))
-        {
-            dFirst += dIncrement;
-
-            if (dFirst.real()*dIncrement.real() > dLast.real()*dIncrement.real())
-                dFirst.real(dLast.real());
-
-            if (dFirst.imag()*dIncrement.real() > dLast.imag()*dIncrement.real())
-                dFirst.imag(dLast.imag());
-
-            vResults.push_back(Numerical::autoType(dFirst));
-        }
+	    return Value(new GeneratorValue(firstVal.front().getNum(), incr.front().getNum(), lastVal.front().getNum()));
 	}
 
 

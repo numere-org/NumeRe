@@ -270,15 +270,6 @@ namespace mu
             static Array Vector3Generator(const Array& firstVal,
                                           const Array& incr,
                                           const Array& lastVal);
-            static Array expandVector2(const Array& firstVal,
-                                       const Array& lastVal);
-            static Array expandVector3(const Array& firstVal,
-                                       const Array& incr,
-                                       const Array& lastVal);
-            static void expandVector(std::complex<double> dFirst,
-                                     const std::complex<double>& dLast,
-                                     const std::complex<double>& dIncrement,
-                                     Array& vResults);
 
 		private:
 			string_type getNextTempVarIndex();

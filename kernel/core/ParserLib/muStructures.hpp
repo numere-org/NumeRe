@@ -137,6 +137,7 @@ namespace mu
             bool isDictStruct() const;
             bool isObject() const;
             bool isRef() const;
+            bool isGenerator() const;
 
             std::string& getStr();
             const std::string& getStr() const;
@@ -158,6 +159,8 @@ namespace mu
 
             RefValue& getRef();
             const RefValue& getRef() const;
+
+            const GeneratorValue& getGenerator() const;
 
             std::complex<double> as_cmplx() const;
 
@@ -455,8 +458,6 @@ namespace mu
             Array(const std::vector<int64_t>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
-            Array(const Array& fst, const Array& lst);
-            Array(const Array& fst, const Array& inc, const Array& lst);
 
             /////////////////////////////////////////////////
             /// \brief Assign an Array.
@@ -467,7 +468,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& assign(const Array& other)
             {
-                if (other.std::vector<Value>::size() == 1)
+                if (other.std::vector<Value>::size() == 1 && other.m_commonType != TYPE_GENERATOR)
                 {
                     if (other.front().isArray())
                         return assign(other.front().getArray());
@@ -506,7 +507,11 @@ namespace mu
                     }
                 }
 
-                m_commonType = other.m_commonType;
+                if (other.m_commonType == TYPE_GENERATOR)
+                    m_commonType = TYPE_NUMERICAL;
+                else
+                    m_commonType = other.m_commonType;
+
                 m_isConst = other.m_isConst;
 
                 return *this;
@@ -541,7 +546,11 @@ namespace mu
                     }
                 }
 
-                m_commonType = other.m_commonType;
+                if (other.m_commonType == TYPE_GENERATOR)
+                    m_commonType = TYPE_NUMERICAL;
+                else
+                    m_commonType = other.m_commonType;
+
                 m_isConst = other.m_isConst;
 
                 return *this;
@@ -605,6 +614,18 @@ namespace mu
             Array& makeMutable()
             {
                 m_isConst = false;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Make this instance a generator.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& makeGenerator()
+            {
+                m_commonType = TYPE_GENERATOR;
                 return *this;
             }
 
@@ -874,6 +895,7 @@ namespace mu
             Array operator||(const Array& other) const;
 
             Array unWrap() const;
+            Array expandGenerators() const;
 
             MethodDefinition isMethod(const std::string& sMethod, size_t argc) const;
 
@@ -948,7 +970,33 @@ namespace mu
             {
                 size_t vectSize = std::vector<Value>::size();
 
-                if (vectSize == 1u)
+                if (m_commonType == TYPE_GENERATOR)
+                {
+                    if (i < size())
+                    {
+                        for (size_t n = 0; n < vectSize; n++)
+                        {
+                            const Value& val = operator[](n);
+
+                            if (val.isGenerator())
+                            {
+                                if (val.getGenerator().size() <= i)
+                                    i -= val.getGenerator().size();
+                                else
+                                {
+                                    static Value generated;
+                                    generated = val.getGenerator().at(i);
+                                    return generated;
+                                }
+                            }
+                            else if (i)
+                                i--;
+                            else if (!i)
+                                return val;
+                        }
+                    }
+                }
+                else if (vectSize == 1u)
                 {
                     if (front().isRef() && front().isArray())
                         return front().getArray().get(i);
@@ -1008,7 +1056,8 @@ namespace mu
                 if (common == TYPE_VOID
                     || common == TYPE_CLUSTER
                     || (common == TYPE_OBJECT && !size())
-                    || common == other.getCommonType())
+                    || common == other.getCommonType()
+                    || (common == TYPE_NUMERICAL && other.getCommonType() == TYPE_GENERATOR))
                 {
                     Array::assign(other);
                     dereference();

@@ -393,6 +393,248 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief This class is a Generator for Array
+    /// expansion.
+    /////////////////////////////////////////////////
+    class GeneratorValue : public BaseValue
+    {
+        private:
+            std::complex<double> m_firstVal;
+            std::complex<double> m_step;
+            std::complex<double> m_lastVal;
+            size_t m_size;
+
+            /////////////////////////////////////////////////
+            /// \brief Determines, whether the passed step is
+            /// still in valid range and therefore can be
+            /// done to expand the vector.
+            ///
+            /// \param current const std::complex<double>&
+            /// \param last const std::complex<double>&
+            /// \param d const std::complex<double>&
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool stepIsStillPossible(const std::complex<double>& current, const std::complex<double>& last, const std::complex<double>& d) const
+            {
+                std::complex<double> fact(d.real() >= 0.0 ? 1.0 : -1.0, d.imag() >= 0.0 ? 1.0 : -1.0);
+
+                return (current.real() * fact.real()) <= (last.real() * fact.real())
+                    && (current.imag() * fact.imag()) <= (last.imag() * fact.imag());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Calculate the size of the zipped Array.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void calculateSize()
+            {
+                if (std::isinf(m_lastVal.real()) || std::isinf(m_lastVal.imag()))
+                {
+                    m_size = -1;
+                    return;
+                }
+                else if (std::isnan(m_firstVal.real()) || std::isnan(m_firstVal.imag())
+                         || std::isnan(m_lastVal.real()) || std::isnan(m_lastVal.imag()))
+                {
+                    m_size = 0;
+                    return;
+                }
+
+                std::complex<double> current = m_firstVal;
+                m_size = 1;
+
+                // As long as the next step is possible, add the increment
+                while (stepIsStillPossible(current+m_step, m_lastVal+1e-10*m_step, m_step))
+                {
+                    m_size++;
+                    current += m_step;
+                }
+            }
+
+        public:
+            /////////////////////////////////////////////////
+            /// \brief Default constructor.
+            /////////////////////////////////////////////////
+            GeneratorValue() : BaseValue(), m_firstVal(NAN), m_step(NAN), m_lastVal(NAN), m_size(0)
+            {
+                m_type = TYPE_GENERATOR;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Construct a Generator from the first
+            /// and the last value of the zipped Array.
+            ///
+            /// \param fstVal const Numerical&
+            /// \param lstVal const Numerical&
+            ///
+            /////////////////////////////////////////////////
+            GeneratorValue(const Numerical& fstVal, const Numerical& lstVal)
+                : BaseValue(), m_firstVal(fstVal.asCF64()), m_lastVal(lstVal.asCF64()), m_size(0)
+            {
+                m_type = TYPE_GENERATOR;
+                m_step = m_lastVal - m_firstVal;
+                m_step.real(m_step.real() > 0.0 ? 1.0 : (m_step.real() < 0.0 ? -1.0 : 0.0));
+                m_step.imag(m_step.imag() > 0.0 ? 1.0 : (m_step.imag() < 0.0 ? -1.0 : 0.0));
+                calculateSize();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Construct a Generator from the first,
+            /// the last and the increment value of the
+            /// zipped Array.
+            ///
+            /// \param fstVal const Numerical&
+            /// \param increment const Numerical&
+            /// \param lstVal const Numerical&
+            ///
+            /////////////////////////////////////////////////
+            GeneratorValue(const Numerical& fstVal, const Numerical& increment, const Numerical& lstVal)
+                : BaseValue(), m_firstVal(fstVal.asCF64()), m_step(increment.asCF64()), m_lastVal(lstVal.asCF64()), m_size(0)
+            {
+                m_type = TYPE_GENERATOR;
+                calculateSize();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            ///
+            /// \param other const GeneratorValue&
+            ///
+            /////////////////////////////////////////////////
+            GeneratorValue(const GeneratorValue& other) : BaseValue()
+            {
+                m_type = other.m_type;
+                m_firstVal = other.m_firstVal;
+                m_step = other.m_step;
+                m_lastVal = other.m_lastVal;
+                m_size = other.m_size;
+            }
+
+            GeneratorValue(GeneratorValue&& other) = default;
+            GeneratorValue(const BaseValue& other);
+
+            /////////////////////////////////////////////////
+            /// \brief Assign another Generator.
+            ///
+            /// \param other const GeneratorValue&
+            /// \return GeneratorValue&
+            ///
+            /////////////////////////////////////////////////
+            GeneratorValue& operator=(const GeneratorValue& other)
+            {
+                m_firstVal = other.m_firstVal;
+                m_step = other.m_step;
+                m_lastVal = other.m_lastVal;
+                m_size = other.m_size;
+                return *this;
+            }
+
+            GeneratorValue& operator=(GeneratorValue&& other) = default;
+            GeneratorValue& operator=(const BaseValue& other);
+
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            BaseValue* clone() const override
+            {
+                return new GeneratorValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the i-th value of the zipped Array.
+            ///
+            /// \param i size_t
+            /// \return Numerical
+            ///
+            /////////////////////////////////////////////////
+            Numerical at(size_t i) const
+            {
+                if (i < m_size)
+                    return Numerical::autoType(m_firstVal + double(i)*m_step);
+
+                return NAN;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the first value of the
+            /// Generator.
+            ///
+            /// \return Numerical
+            ///
+            /////////////////////////////////////////////////
+            Numerical first() const
+            {
+                return Numerical::autoType(m_firstVal);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the last value of the Generator.
+            ///
+            /// \return Numerical
+            ///
+            /////////////////////////////////////////////////
+            Numerical last() const
+            {
+                return Numerical::autoType(m_lastVal);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the step value of the Generator.
+            ///
+            /// \return Numerical
+            ///
+            /////////////////////////////////////////////////
+            Numerical step() const
+            {
+                return Numerical::autoType(m_step);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Is this Generator valid?
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isValid() const override
+            {
+                return m_size;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the necessary storage amount
+            /// for this Generator.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t getBytes() const override
+            {
+                return (m_size > 0) * 48;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the size of the zipped Array.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t size() const
+            {
+                return m_size;
+            }
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    /////////////////////////////////////////////////
     /// \brief This is a simple function to detect,
     /// which combinations of operands cannot make
     /// use of the faster recursive operations.
@@ -404,7 +646,7 @@ namespace mu
     /////////////////////////////////////////////////
     inline bool nonRecursiveOps(DataType lhs, DataType rhs)
     {
-        return lhs == TYPE_CATEGORY || lhs == TYPE_REFERENCE || (rhs == TYPE_ARRAY && lhs != rhs);
+        return lhs == TYPE_CATEGORY || lhs == TYPE_REFERENCE || lhs == TYPE_GENERATOR || (rhs == TYPE_ARRAY && lhs != rhs);
     }
 }
 

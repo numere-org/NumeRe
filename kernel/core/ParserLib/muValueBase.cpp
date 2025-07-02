@@ -18,6 +18,7 @@
 
 #include "muValueBase.hpp"
 #include "muParserError.h"
+#include "../utils/stringtools.hpp"
 
 namespace mu
 {
@@ -33,6 +34,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Unary minus operator.
     ///
@@ -43,6 +45,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Subtraction operator.
@@ -56,6 +59,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Division operator.
     ///
@@ -67,6 +71,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Multiplication operator.
@@ -80,6 +85,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Power operator.
     ///
@@ -91,6 +97,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Add-assign operator.
@@ -104,6 +111,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Subtract-assign operator.
     ///
@@ -115,6 +123,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Divide-assign operator.
@@ -128,6 +137,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Multiply-assign operator.
     ///
@@ -139,6 +149,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Power-assign operator.
@@ -152,6 +163,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Flip the sign bit as fast as possible.
     ///
@@ -162,6 +174,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Power function.
@@ -174,6 +187,7 @@ namespace mu
     {
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Convert this instance to a logical
@@ -188,6 +202,7 @@ namespace mu
         return false;
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Operator NOT.
     ///
@@ -198,6 +213,7 @@ namespace mu
     {
         return !bool(*this);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Equal comparison operator. Has to be
@@ -212,6 +228,7 @@ namespace mu
         throw m_type == other.m_type;
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Not-equal comparison operator.
     ///
@@ -223,6 +240,7 @@ namespace mu
     {
         return !operator==(other);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Less-than comparison operator. Has to
@@ -237,6 +255,7 @@ namespace mu
         throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Less-or-equal comparison operator.
     ///
@@ -248,6 +267,7 @@ namespace mu
     {
         return operator<(other) || operator==(other);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Greater-than comparison operator.
@@ -261,6 +281,7 @@ namespace mu
         return !operator<(other) && !operator==(other);
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Greater-or-equal comparison operator.
     ///
@@ -272,6 +293,7 @@ namespace mu
     {
         return !operator<(other);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Method to detect, whether a method
@@ -289,6 +311,7 @@ namespace mu
         return MethodDefinition();
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Call an instance specific method with
     /// zero arguments.
@@ -301,6 +324,7 @@ namespace mu
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call an instance specific method with
@@ -316,6 +340,7 @@ namespace mu
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call an instance specific method with
@@ -333,6 +358,7 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Call an instance specific method with
     /// three arguments.
@@ -349,6 +375,7 @@ namespace mu
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Call an instance specific method with
@@ -368,6 +395,7 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Method to detect, whether an applying
     /// (non-const) method with the passed name is
@@ -384,6 +412,7 @@ namespace mu
         return MethodDefinition();
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Apply an instance specific method with
     /// zero arguments.
@@ -398,6 +427,7 @@ namespace mu
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply an instance specific method with
@@ -416,6 +446,7 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Apply an instance specific method with
     /// two arguments.
@@ -433,6 +464,7 @@ namespace mu
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply an instance specific method with
@@ -453,6 +485,7 @@ namespace mu
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
 
+
     /////////////////////////////////////////////////
     /// \brief Apply an instance specific method with
     /// four arguments.
@@ -472,6 +505,7 @@ namespace mu
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Print as if embedded into another
@@ -1209,5 +1243,98 @@ namespace mu
     }
 
 
+    //------------------------------------------------------------------------------
+
+
+    /////////////////////////////////////////////////
+    /// \brief Create a generator from a BaseValue.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    GeneratorValue::GeneratorValue(const BaseValue& other)
+    {
+        m_type = TYPE_GENERATOR;
+
+        if (other.m_type == TYPE_GENERATOR)
+        {
+            const GeneratorValue& generator = static_cast<const GeneratorValue&>(other);
+            m_firstVal = generator.m_firstVal;
+            m_lastVal = generator.m_lastVal;
+            m_step = generator.m_step;
+            m_size = generator.m_size;
+        }
+        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_GENERATOR)
+        {
+            const GeneratorValue& generator = static_cast<const GeneratorValue&>(static_cast<const RefValue&>(other).get());
+            m_firstVal = generator.m_firstVal;
+            m_lastVal = generator.m_lastVal;
+            m_step = generator.m_step;
+            m_size = generator.m_size;
+        }
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assign a BaseValue.
+    ///
+    /// \param other const BaseValue&
+    /// \return GeneratorValue&
+    ///
+    /////////////////////////////////////////////////
+    GeneratorValue& GeneratorValue::operator=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_GENERATOR)
+        {
+            const GeneratorValue& generator = static_cast<const GeneratorValue&>(other);
+            m_firstVal = generator.m_firstVal;
+            m_lastVal = generator.m_lastVal;
+            m_step = generator.m_step;
+            m_size = generator.m_size;
+        }
+        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_GENERATOR)
+            return operator=(static_cast<const RefValue&>(other).get());
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Format this Generator into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string GeneratorValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (!digits)
+            digits = 3;
+
+        return "{" + toString(m_firstVal, digits) + ":" + toString(m_step, digits) + ":" + toString(m_lastVal, digits) + "}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Format this Generator into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string GeneratorValue::printVal(size_t digits, size_t chrs) const
+    {
+        if (!digits)
+            digits = 3;
+
+        return "{" + toString(m_firstVal, digits) + ":" + toString(m_step, digits) + ":" + toString(m_lastVal, digits) + "}";
+    }
 }
 

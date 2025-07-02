@@ -352,8 +352,9 @@ namespace mu
                 return "cluster";
             case TYPE_REFERENCE:
                 return "reference";
-            case TYPE_VOID:
             case TYPE_GENERATOR:
+                return "generator";
+            case TYPE_VOID:
             case TYPE_INVALID:
                 break;
         }
@@ -474,6 +475,19 @@ namespace mu
     bool Value::isRef() const
     {
         return get() && get()->m_type == TYPE_REFERENCE;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// Generator.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isGenerator() const
+    {
+        return get() && get()->m_type == TYPE_GENERATOR;
     }
 
 
@@ -738,6 +752,21 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_REFERENCE)
             return *static_cast<const RefValue*>(get());
+
+        throw ParserError(ecTYPE_NO_REF, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained GeneratorValue.
+    ///
+    /// \return const GeneratorValue&
+    ///
+    /////////////////////////////////////////////////
+    const GeneratorValue& Value::getGenerator() const
+    {
+        if (get() && get()->m_type == TYPE_GENERATOR)
+            return *static_cast<const GeneratorValue*>(get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
     }
@@ -1428,31 +1457,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Make this array a 2-val generator
-    /// array.
-    ///
-    /// \param fst const Array&
-    /// \param lst const Array&
-    ///
-    /////////////////////////////////////////////////
-    Array::Array(const Array& fst, const Array& lst) : std::vector<Value>({fst,lst}), m_commonType(TYPE_GENERATOR), m_isConst(true)
-    { }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Make this array a 3-val generator
-    /// array.
-    ///
-    /// \param fst const Array&
-    /// \param inc const Array&
-    /// \param lst const Array&
-    ///
-    /////////////////////////////////////////////////
-    Array::Array(const Array& fst, const Array& inc, const Array& lst) : std::vector<Value>({fst,inc,lst}), m_commonType(TYPE_GENERATOR), m_isConst(true)
-    { }
-
-
-    /////////////////////////////////////////////////
     /// \brief Get the (general) data types of every
     /// contained Value.
     ///
@@ -1574,8 +1578,9 @@ namespace mu
             }
             case TYPE_REFERENCE:
                 return "reference";
-            case TYPE_VOID:
             case TYPE_GENERATOR:
+                return "generator";
+            case TYPE_VOID:
             case TYPE_NEUTRAL:
             case TYPE_INVALID:
                 break;
@@ -1918,6 +1923,29 @@ namespace mu
         }
 
         return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return this Array with any generators
+    /// expanded.
+    ///
+    /// \return Array
+    ///
+    /// \warning That might not fit into memory!
+    /////////////////////////////////////////////////
+    Array Array::expandGenerators() const
+    {
+        Array expanded;
+        size_t elems = size();
+        expanded.reserve(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            expanded.push_back(get(i));
+        }
+
+        return expanded;
     }
 
 
@@ -2931,9 +2959,9 @@ namespace mu
     {
         size_t bytes = 0;
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < std::vector<Value>::size(); i++)
         {
-            bytes += get(i).getBytes();
+            bytes += operator[](i).getBytes();
         }
 
         return bytes;
@@ -2954,6 +2982,28 @@ namespace mu
 
         if (vectSize == 1 && front().isRef() && front().isArray())
             return front().getArray().size();
+
+        if (m_commonType == TYPE_GENERATOR)
+        {
+            size_t totalSize = 0;
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                if (operator[](i).isGenerator())
+                {
+                    size_t genSize = operator[](i).getGenerator().size();
+
+                    if (genSize == UINT64_MAX)
+                        return genSize;
+
+                    totalSize += genSize;
+                }
+                else
+                    totalSize++;
+            }
+
+            return totalSize;
+        }
 
         return vectSize;
     }
