@@ -134,6 +134,7 @@ namespace mu
             bool IsVarTok(token_type& a_Tok);
             bool IsUndefVarTok(token_type& a_Tok);
             bool IsString(token_type& a_Tok);
+            bool IsLeftHandSide(int pos) const;
             void Error(EErrorCodes a_iErrc,
                        int a_iPos = -1,
                        const string_type& a_sTok = string_type() ) const;

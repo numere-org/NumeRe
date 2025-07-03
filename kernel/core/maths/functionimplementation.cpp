@@ -1341,7 +1341,7 @@ mu::Array numfnc_order(const mu::MultiArgFuncParams& v)
             index.push_back(i);
         }
 
-        auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
+        auto sorter = [&](const mu::Value& v1, const mu::Value& v2)
             {
                 if (!v[0].get(v1.getNum().asI64()-1).isValid())
                     return false;
@@ -1360,7 +1360,7 @@ mu::Array numfnc_order(const mu::MultiArgFuncParams& v)
             index.push_back(i);
         }
 
-        auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
+        auto sorter = [&](const mu::Value& v1, const mu::Value& v2)
             {
                 if (!v[v1.getNum().asI64()-1].front().isValid())
                     return false;

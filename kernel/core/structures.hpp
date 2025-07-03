@@ -280,8 +280,8 @@ class VectorIndex
             // using the intCast() function
             for (size_t i = 0; i < indices.size(); i++)
             {
-                if (!std::isnan(indices[i].getNum().asF64()) && !std::isinf(indices[i].getNum().asF64()))
-                    vStorage[i] = indices[i].getNum().asI64() - 1;
+                if (!std::isnan(indices.get(i).getNum().asF64()) && !std::isinf(indices.get(i).getNum().asF64()))
+                    vStorage[i] = indices.get(i).getNum().asI64() - 1;
             }
 
             expand = false;

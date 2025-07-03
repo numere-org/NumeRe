@@ -45,6 +45,7 @@ namespace mu
         TYPE_DICTSTRUCT,
         TYPE_OBJECT,
         TYPE_GENERATOR,
+        TYPE_GENERATOR_CONSTRUCTOR,
         TYPE_NEUTRAL,
         TYPE_INVALID,
         TYPE_REFERENCE

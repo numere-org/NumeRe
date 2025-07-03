@@ -35,6 +35,7 @@ namespace mu
     {
         private:
             Array* m_alias;
+            bool m_isIndex;
 
             /////////////////////////////////////////////////
             /// \brief Can the calculation be optimized by
@@ -55,7 +56,7 @@ namespace mu
             /// internal array and sets the reference to a
             /// nullptr.
             /////////////////////////////////////////////////
-            StackItem() : Array(), m_alias(nullptr) {}
+            StackItem() : Array(), m_alias(nullptr), m_isIndex(false) {}
 
             /////////////////////////////////////////////////
             /// \brief Copy constructor
@@ -69,6 +70,8 @@ namespace mu
                     m_alias = other.m_alias;
                 else
                     Array::operator=(other);
+
+                m_isIndex = false;
             }
 
             /////////////////////////////////////////////////
@@ -83,6 +86,8 @@ namespace mu
                     m_alias = other.m_alias;
                 else
                     Array::operator=(std::move(other));
+
+                m_isIndex = other.m_isIndex;
             }
 
             /////////////////////////////////////////////////
@@ -109,6 +114,28 @@ namespace mu
             bool isAliasOf(const Array* var)
             {
                 return m_alias == var;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Mark this stack item as an index.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void makeIndex()
+            {
+                m_isIndex = true;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Is this stack item an index?
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isIndex() const
+            {
+                return m_isIndex;
             }
 
             /////////////////////////////////////////////////
@@ -157,6 +184,7 @@ namespace mu
             StackItem& operator=(const StackItem& other)
             {
                 m_alias = nullptr;
+                m_isIndex = false;
 
                 if (other.m_alias)
                     m_alias = other.m_alias;
@@ -182,6 +210,8 @@ namespace mu
                 else
                     Array::operator=(std::move(other));
 
+                m_isIndex = other.m_isIndex;
+
                 return *this;
             }
 
@@ -199,6 +229,7 @@ namespace mu
             {
                 Array::operator=(other);
                 m_alias = nullptr;
+                m_isIndex = false;
                 return *this;
             }
 
@@ -216,6 +247,7 @@ namespace mu
             {
                 Array::operator=(std::move(other));
                 m_alias = nullptr;
+                m_isIndex = false;
                 return *this;
             }
 

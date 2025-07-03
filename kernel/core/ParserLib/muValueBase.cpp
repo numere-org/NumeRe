@@ -225,7 +225,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool BaseValue::operator==(const BaseValue& other) const
     {
-        throw m_type == other.m_type;
+        return m_type == other.m_type;
     }
 
 

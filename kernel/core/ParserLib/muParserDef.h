@@ -154,7 +154,9 @@ namespace mu
         cmELSE,                ///< For use in the ternary if-then-else operator
         cmENDIF,               ///< For use in the ternary if-then-else operator
         cmIDX,                 ///< Operator item:  opening vector brace/index
+        cmIDXASGN,             ///< Operator item:  opening vector brace/index for assignment
         cmSQIDX,               ///< Operator item:  opening square bracket index
+        cmSQIDXASGN,           ///< Operator item:  opening square bracket index for assignment
         cmEXP2,                ///< The two-value expansion operator
         cmEXP3,                ///< The three-value expansion operator
         cmARG_SEP,             ///< function argument separator

@@ -33,6 +33,8 @@
 #include "muParserBase.h"
 #include "../utils/tools.hpp"
 
+size_t getMatchingParenthesis(const StringView&);
+
 /** \file
     \brief This file contains the parser token reader implementation.
 */
@@ -495,7 +497,12 @@ namespace mu
                                 Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
 
                             m_indexedVars.push(m_lastTok.GetVar());
-                            i = cmIDX;
+
+                            // Figure out, whether this is part of an assignment
+                            if (IsLeftHandSide(m_iPos))
+                                i = cmIDXASGN;
+                            else
+                                i = cmIDX;
                         }
 
 						++m_iVBrackets;
@@ -507,9 +514,18 @@ namespace mu
 						    // Slicing with open boundaries
                             if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size())
                             {
-                                a_Tok.SetVar(m_indexedVars.top(), "nlen");
-                                a_Tok.ChangeCode(cmDIMVAR);
-                                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                if (IsLeftHandSide(m_iPos))
+                                {
+                                    a_Tok.SetVal(m_pConstDef->at("inf"), "inf");
+                                    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
+                                }
+                                else
+                                {
+                                    a_Tok.SetVar(m_indexedVars.top(), "nlen");
+                                    a_Tok.ChangeCode(cmDIMVAR);
+                                    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                }
+
                                 return true;
                             }
 
@@ -540,7 +556,12 @@ namespace mu
                                 Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
 
                             m_indexedVars.push(m_lastTok.GetVar());
-                            i = cmSQIDX;
+
+                            // Figure out, whether this is part of an assignment
+                            if (IsLeftHandSide(m_iPos))
+                                i = cmSQIDXASGN;
+                            else
+                                i = cmSQIDX;
                         }
                         else
                             Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
@@ -554,9 +575,18 @@ namespace mu
                             // Slicing with open boundaries
                             if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size())
                             {
-                                a_Tok.SetVar(m_indexedVars.top(), "nlen");
-                                a_Tok.ChangeCode(cmDIMVAR);
-                                m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                if (IsLeftHandSide(m_iPos))
+                                {
+                                    a_Tok.SetVal(m_pConstDef->at("inf"), "inf");
+                                    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
+                                }
+                                else
+                                {
+                                    a_Tok.SetVar(m_indexedVars.top(), "nlen");
+                                    a_Tok.ChangeCode(cmDIMVAR);
+                                    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                }
+
                                 return true;
                             }
 
@@ -577,7 +607,10 @@ namespace mu
 						if (m_iSynFlags & noELSE)
                         {
                             // Slicing with open boundaries
-                            if (m_lastTok.GetCode() == cmIDX || m_lastTok.GetCode() == cmSQIDX)
+                            if (m_lastTok.GetCode() == cmIDX
+                                || m_lastTok.GetCode() == cmSQIDX
+                                || m_lastTok.GetCode() == cmIDXASGN
+                                || m_lastTok.GetCode() == cmSQIDXASGN)
                             {
                                 a_Tok.SetVal(mu::Value(1.0), "1");
                                 m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
@@ -1109,6 +1142,35 @@ namespace mu
 		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
 
 		return true;
+	}
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the current
+    /// position is part of an assignment target
+    /// (i.e. left of the assignment operator).
+    /// Expects an opening or closing brace at the
+    /// selected position.
+    ///
+    /// \param pos int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+	bool ParserTokenReader::IsLeftHandSide(int pos) const
+	{
+	    // Figure out, whether this is part of an assignment
+        size_t p = 0;
+
+        if (m_strFormula[pos] == '(' || m_strFormula[pos] == '[' || m_strFormula[pos] == '{')
+            p = getMatchingParenthesis(m_strFormula.subview(pos));
+
+        if (p == std::string::npos || pos+p+2 >= m_strFormula.length())
+            return false;
+
+        size_t next = m_strFormula.find_first_not_of(' ', p+1+pos);
+
+        return next != std::string::npos
+            && m_strFormula[next] == '='
+            && m_strFormula[next+1] != '=';
 	}
 
 	//---------------------------------------------------------------------------

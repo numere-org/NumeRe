@@ -526,13 +526,16 @@ namespace mu
 
         for (size_t i = 0; i < arrs.count(); i++)
         {
-            if (arrs[i].isScalar())
-                res.push_back(arrs[i].front());
-            else if (arrs[i].getCommonType() == TYPE_GENERATOR)
+            if (arrs[i].getCommonType() == TYPE_GENERATOR_CONSTRUCTOR)
             {
-                res.makeGenerator();
                 res.insert(res.end(), arrs[i].begin(), arrs[i].end());
+                res.makeGenerator();
             }
+            else if (arrs[i].getCommonType() == TYPE_GENERATOR)
+                // Expand the embedded array if it is a generator
+                res.push_back(Array().assign(arrs[i]));
+            else if (arrs[i].isScalar())
+                res.push_back(arrs[i].front());
             else
                 res.push_back(arrs[i]);
         }
@@ -552,7 +555,7 @@ namespace mu
     /////////////////////////////////////////////////
 	Array ParserBase::Vector2Generator(const Array& firstVal, const Array& lastVal)
 	{
-	    return Value(new GeneratorValue(firstVal.front().getNum(), lastVal.front().getNum()));
+	    return new GeneratorValue(firstVal.front().getNum(), lastVal.front().getNum());
 	}
 
 
@@ -568,7 +571,7 @@ namespace mu
     /////////////////////////////////////////////////
 	Array ParserBase::Vector3Generator(const Array& firstVal, const Array& incr, const Array& lastVal)
 	{
-	    return Value(new GeneratorValue(firstVal.front().getNum(), incr.front().getNum(), lastVal.front().getNum()));
+	    return new GeneratorValue(firstVal.front().getNum(), incr.front().getNum(), lastVal.front().getNum());
 	}
 
 
@@ -1066,6 +1069,18 @@ namespace mu
                                                    funTok.GetAsString());
                 m_compilingState.m_byteCode.AddOp(cmIDX);
 				break;
+			case  cmIDXASGN:
+			case  cmSQIDXASGN:
+			    // Check, whether enough arguments are available (with some special exceptions)
+				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
+					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
+
+                m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(),
+                                                   (funTok.GetArgCount() == -1) ? -iArgCount : iArgRequired,
+                                                   funTok.IsOptimizable(),
+                                                   funTok.GetAsString());
+                m_compilingState.m_byteCode.AddOp(cmIDXASGN);
+				break;
             case  cmMETHOD:
                 m_compilingState.m_byteCode.AddMethod(funTok.GetAsString(), iArgCount+1);
             default:
@@ -1080,6 +1095,18 @@ namespace mu
             token_type token;
             token.MoveVal(Array(Value("rv@" + funTok.GetAsString())));
             token.ChangeCode(cmVAR);
+            a_stVal.push(std::move(token));
+        }
+		else if (funTok.GetCode() == cmIDXASGN || funTok.GetCode() == cmSQIDXASGN)
+        {
+            token_type top = a_stVal.top();
+
+            if (top.GetCode() != cmVAR)
+                Error(funTok.GetCode() == cmIDXASGN ? ecUNEXPECTED_VPARENS : ecUNEXPECTED_SQPARENS,
+                      m_pTokenReader->GetExpr().to_string(), m_pTokenReader->GetPos());
+
+            token_type token;
+            token.SetVar(top.GetVar(), top.GetAsString());
             a_stVal.push(std::move(token));
         }
         else
@@ -1186,7 +1213,9 @@ namespace mu
 				stOpt.top().GetCode() != cmBO &&
 				stOpt.top().GetCode() != cmVO &&
 				stOpt.top().GetCode() != cmIDX &&
+				stOpt.top().GetCode() != cmIDXASGN &&
 				stOpt.top().GetCode() != cmSQIDX &&
+				stOpt.top().GetCode() != cmSQIDXASGN &&
 				stOpt.top().GetCode() != cmEXP2 &&
 				stOpt.top().GetCode() != cmEXP3 &&
 				stOpt.top().GetCode() != cmIF)
@@ -1320,7 +1349,21 @@ namespace mu
                     if (pTok->Oprt().var.isNull())
                         Stack[sidx].getMutable().assign(Stack[sidx + 1].get()); // This is a reference
                     else if (pTok->Oprt().var.isScalar())
-                        pTok->Oprt().var = Stack[sidx + 1].get();
+                    {
+                        Variable* var = pTok->Oprt().var.front();
+
+                        // Is this a indexed assign operation?
+                        if (sidx > 0 && Stack[sidx].isIndex() && Stack[sidx-1].isAliasOf(var))
+                        {
+                            --sidx;
+                            var->indexedAssign(Stack[sidx+1].get(), Stack[sidx+2].get());
+                            Stack[sidx] = Stack[sidx+2];
+
+                            continue;
+                        }
+
+                        *var = Stack[sidx + 1].get();
+                    }
                     else
                         Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1].get();
                     continue;
@@ -1456,6 +1499,15 @@ namespace mu
                     //else
                         Stack[sidx] = Stack[sidx].getMutable().index(Stack[sidx+1].get());
 
+                    continue;
+                case  cmIDXASGN:
+                    // If the variable is not the very first element, we
+                    // might better use the constant index function
+                    //if (sidx > 1+m_state->m_numResults || m_state->m_byteCode.isConst())
+                    //    Stack[sidx] = Stack[sidx].get().index(Stack[sidx+1].get());
+                    //else
+                        //Stack[sidx] = Stack[sidx].getMutable().index(Stack[sidx+1].get());
+                    Stack[sidx].makeIndex();
                     continue;
 
                 // Next is treatment of numeric functions
@@ -2058,7 +2110,9 @@ namespace mu
 
 						    if ((stOpt.top().GetCode() == cmVO
                                  || stOpt.top().GetCode() == cmIDX
-                                 || stOpt.top().GetCode() == cmSQIDX) && stVal.size() > 0)
+                                 || stOpt.top().GetCode() == cmIDXASGN
+                                 || stOpt.top().GetCode() == cmSQIDX
+                                 || stOpt.top().GetCode() == cmSQIDXASGN) && stVal.size() > 0)
                             {
                                 ParserToken tok;
                                 tok.Set(cmEXP2, MU_VECTOR_EXP2);
@@ -2157,10 +2211,13 @@ namespace mu
                             ApplyFunc(stOpt, stVal, 3);
                         }
 
+                        ECmdCode topCode = stOpt.top().GetCode();
+                        ECmdCode optCode = opt.GetCode();
+
 						// Check if the bracket content has been evaluated completely
-						if (stOpt.size() && ((stOpt.top().GetCode() == cmBO && opt.GetCode() == cmBC)
-                                             || ((stOpt.top().GetCode() == cmVO || stOpt.top().GetCode() == cmIDX) && opt.GetCode() == cmVC)
-                                             || (stOpt.top().GetCode() == cmSQIDX && opt.GetCode() == cmSQC)))
+						if (stOpt.size() && ((topCode == cmBO && optCode == cmBC)
+                                             || ((topCode == cmVO || topCode == cmIDX || topCode == cmIDXASGN) && optCode == cmVC)
+                                             || ((topCode == cmSQIDX || topCode == cmSQIDXASGN) && optCode == cmSQC)))
 						{
 							// if opt is ")" and opta is "(" the bracket has been evaluated, now its time to check
 							// if there is either a function or a sign pending
@@ -2202,7 +2259,9 @@ namespace mu
 							if (iArgCount > 1
                                 && (stOpt.size() == 0 || (stOpt.top().GetCode() != cmFUNC
                                                           && stOpt.top().GetCode() != cmIDX
+                                                          && stOpt.top().GetCode() != cmIDXASGN
                                                           && stOpt.top().GetCode() != cmSQIDX
+                                                          && stOpt.top().GetCode() != cmSQIDXASGN
                                                           && stOpt.top().GetCode() != cmMETHOD)))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
@@ -2256,7 +2315,9 @@ namespace mu
 							stOpt.top().GetCode() != cmBO &&
 							stOpt.top().GetCode() != cmVO &&
 							stOpt.top().GetCode() != cmIDX &&
+							stOpt.top().GetCode() != cmIDXASGN &&
 							stOpt.top().GetCode() != cmSQIDX &&
+							stOpt.top().GetCode() != cmSQIDXASGN &&
 							stOpt.top().GetCode() != cmIF)
 					{
 						int nPrec1 = GetOprtPrecedence(stOpt.top()),
@@ -2297,15 +2358,15 @@ namespace mu
 				//
 				case cmVO:
 				case cmIDX:
+ 				case cmIDXASGN:
 				case cmSQIDX:
+				case cmSQIDXASGN:
                 {
                     ParserToken tok;
                     tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 
-                    if (opt.GetCode() == cmIDX)
-                        tok.ChangeCode(cmIDX);
-                    else if (opt.GetCode() == cmSQIDX)
-                        tok.ChangeCode(cmSQIDX);
+                    if (opt.GetCode() != cmVO)
+                        tok.ChangeCode(opt.GetCode());
 
 				    stOpt.push(tok);
 				    vectorCreateMode++;
@@ -2710,8 +2771,14 @@ namespace mu
 					case cmIDX:
 						printFormatted("|   INDEX \"{\"\n");
 						break;
+					case cmIDXASGN:
+						printFormatted("|   INDEX/ASSIGN \"{\"\n");
+						break;
 					case cmSQIDX:
 						printFormatted("|   INDEX \"[\"\n");
+						break;
+					case cmSQIDXASGN:
+						printFormatted("|   INDEX/ASSIGN \"[\"\n");
 						break;
 					case cmSQC:
 						printFormatted("|   INDEX \"]\"\n");

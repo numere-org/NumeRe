@@ -547,6 +547,19 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Flip the sign of the generator result.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void flipSign() override
+            {
+                m_firstVal *= -1.0;
+                m_lastVal *= -1.0;
+                m_step *= -1.0;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Get the i-th value of the zipped Array.
             ///
             /// \param i size_t

@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <memory>
+#include <list>
 
 #include "muTypes.hpp"
 #include "muCompositeStructures.hpp"
@@ -458,6 +459,7 @@ namespace mu
             Array(const std::vector<int64_t>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
+            Array(GeneratorValue* generator);
 
             /////////////////////////////////////////////////
             /// \brief Assign an Array.
@@ -536,6 +538,15 @@ namespace mu
 
                     front() = other.front();
                 }
+                else if (other.m_commonType == TYPE_GENERATOR)
+                {
+                    resize(other.std::vector<Value>::size());
+
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        operator[](i) = other[i];
+                    }
+                }
                 else
                 {
                     resize(other.size());
@@ -546,11 +557,7 @@ namespace mu
                     }
                 }
 
-                if (other.m_commonType == TYPE_GENERATOR)
-                    m_commonType = TYPE_NUMERICAL;
-                else
-                    m_commonType = other.m_commonType;
-
+                m_commonType = other.m_commonType;
                 m_isConst = other.m_isConst;
 
                 return *this;
@@ -764,7 +771,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator+=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator+(other));
                 else
                 {
@@ -786,7 +793,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator-=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator-(other));
                 else
                 {
@@ -808,7 +815,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator/=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator/(other));
                 else
                 {
@@ -830,7 +837,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator*=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator*(other));
                 else
                 {
@@ -852,7 +859,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator^=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator^(other));
                 else
                 {
@@ -874,9 +881,9 @@ namespace mu
             /////////////////////////////////////////////////
             void flipSign()
             {
-                for (size_t i = 0; i < size(); i++)
+                for (size_t i = 0; i < std::vector<Value>::size(); i++)
                 {
-                    get(i).flipSign();
+                    operator[](i).flipSign();
                 }
             }
 
@@ -971,31 +978,7 @@ namespace mu
                 size_t vectSize = std::vector<Value>::size();
 
                 if (m_commonType == TYPE_GENERATOR)
-                {
-                    if (i < size())
-                    {
-                        for (size_t n = 0; n < vectSize; n++)
-                        {
-                            const Value& val = operator[](n);
-
-                            if (val.isGenerator())
-                            {
-                                if (val.getGenerator().size() <= i)
-                                    i -= val.getGenerator().size();
-                                else
-                                {
-                                    static Value generated;
-                                    generated = val.getGenerator().at(i);
-                                    return generated;
-                                }
-                            }
-                            else if (i)
-                                i--;
-                            else if (!i)
-                                return val;
-                        }
-                    }
-                }
+                    return getGenerated(i);
                 else if (vectSize == 1u)
                 {
                     if (front().isRef() && front().isArray())
@@ -1009,6 +992,7 @@ namespace mu
                 return operator[](i);
             }
 
+            const Value& getGenerated(size_t i) const;
             void set(size_t i, const Value& v);
 
             void zerosToVoid();
@@ -1019,6 +1003,7 @@ namespace mu
             mutable DataType m_commonType;
             static const Value m_default;
             bool m_isConst;
+            mutable std::list<Value> m_buffer;
     };
 
 
@@ -1074,6 +1059,7 @@ namespace mu
 
             Variable& operator=(const Variable& other);
 
+            void indexedAssign(const Array& idx, const Array& vals);
             void overwrite(const Array& other);
     };
 

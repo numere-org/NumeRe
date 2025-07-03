@@ -318,6 +318,7 @@ int main()
 
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
     _parser.DefineConst("nan", mu::Value(NAN));
+    _parser.DefineConst("inf", mu::Value(INFINITY));
 
     std::string sInput;
     int nResults;

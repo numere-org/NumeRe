@@ -1457,6 +1457,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct an Array from a
+    /// GeneratorValue.
+    ///
+    /// \param generator GeneratorValue*
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(GeneratorValue* generator) : std::vector<Value>(1u), m_commonType(TYPE_GENERATOR_CONSTRUCTOR), m_isConst(true)
+    {
+        front().reset(generator);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get the (general) data types of every
     /// contained Value.
     ///
@@ -1600,7 +1613,7 @@ namespace mu
     /////////////////////////////////////////////////
     NumericalType Array::getCommonNumericalType() const
     {
-        TypeInfo info = front().getNum().getInfo();
+        TypeInfo info = get(0).getNum().getInfo();
 
         for (size_t i = 1; i < size(); i++)
         {
@@ -2469,10 +2482,9 @@ namespace mu
     {
         Array ret;
         size_t elems = idx.size();
-        ret.reserve(elems);
+        ret.reserve(std::min(size(), elems));
         ret.makeMutable();
-
-        reserve(idx.call("max").getAsScalarInt());
+        DataType common = getCommonType();
 
         for (size_t i = 0; i < elems; i++)
         {
@@ -2480,11 +2492,10 @@ namespace mu
 
             if (p > 0 && p <= (int64_t)size())
                 ret.emplace_back(new RefValue(&get(p-1)));
+            else if (p > 0 && idx.m_commonType == TYPE_GENERATOR && idx.size() == UINT64_MAX)
+                return ret;
             else if (p > 0)
-            {
-                resize(p, Value(getCommonType()));
-                ret.emplace_back(new RefValue(&get(p-1)));
-            }
+                ret.emplace_back(Value(common));
             else
                 throw ParserError(ecTYPE_MISMATCH_OOB);
         }
@@ -2512,7 +2523,7 @@ namespace mu
             int64_t p = idx.get(i).getNum().asI64();
 
             if (p > 0 && p <= (int64_t)size())
-                ret.emplace_back(new RefValue((BaseValuePtr*)(&get(p-1))));
+                ret.emplace_back(get(p-1));
             else if (p > 0)
                 ret.emplace_back(Value(getCommonType()));
             else
@@ -2925,24 +2936,46 @@ namespace mu
 
         std::string sVector;
 
-        // Append the contained data depending on its type but
-        // restrict the number to maximal five values (use the first
-        // and the last ones) and insert an ellipsis in the middle
-        for (size_t i = 0; i < size(); i++)
+        if (m_commonType == TYPE_GENERATOR)
         {
-            if (sVector.size())
+            for (size_t i = 0; i < std::vector<Value>::size(); i++)
+            {
+                if (sVector.size())
                 sVector += ", ";
 
-            sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+                sVector += operator[](i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
 
-            // Insert the ellipsis in the middle. The additional -1 is to
-            // handle the zero-based indices
-            if (i == maxElems / 2 - 1 && size() > maxElems)
-            {
-                sVector += ", ...";
-                i = size()-maxElems / 2 - 1;
+                // Insert the ellipsis in the middle. The additional -1 is to
+                // handle the zero-based indices
+                if (i == maxElems / 2 - 1 && std::vector<Value>::size() > maxElems)
+                {
+                    sVector += ", ...";
+                    i = size()-maxElems / 2 - 1;
+                }
             }
         }
+        else
+        {
+            // Append the contained data depending on its type but
+            // restrict the number to maximal five values (use the first
+            // and the last ones) and insert an ellipsis in the middle
+            for (size_t i = 0; i < size(); i++)
+            {
+                if (sVector.size())
+                    sVector += ", ";
+
+                sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+
+                // Insert the ellipsis in the middle. The additional -1 is to
+                // handle the zero-based indices
+                if (i == maxElems / 2 - 1 && size() > maxElems)
+                {
+                    sVector += ", ...";
+                    i = size()-maxElems / 2 - 1;
+                }
+            }
+        }
+
 
         return "{" + sVector + "}";
     }
@@ -3006,6 +3039,49 @@ namespace mu
         }
 
         return vectSize;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Generate the i-th value and return a
+    /// reference to its buffered value.
+    ///
+    /// \param i size_t
+    /// \return const Value&
+    ///
+    /////////////////////////////////////////////////
+    const Value& Array::getGenerated(size_t i) const
+    {
+        if (i >= size())
+            throw ParserError(ecTYPE_MISMATCH_OOB);
+
+        size_t vectSize = std::vector<Value>::size();
+
+        for (size_t n = 0; n < vectSize; n++)
+        {
+            const Value& val = operator[](n);
+
+            if (val.isGenerator())
+            {
+                if (val.getGenerator().size() <= i)
+                    i -= val.getGenerator().size();
+                else
+                {
+                    m_buffer.push_back(val.getGenerator().at(i));
+
+                    if (m_buffer.size() > 10)
+                        m_buffer.pop_front();
+
+                    return m_buffer.back();
+                }
+            }
+            else if (i)
+                i--;
+            else if (!i)
+                return val;
+        }
+
+        throw ParserError(ecTYPE_MISMATCH_OOB);
     }
 
 
@@ -3237,6 +3313,57 @@ namespace mu
         }
 
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Perform an indexed assign.
+    ///
+    /// \param idx const Array&
+    /// \param vals const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Variable::indexedAssign(const Array& idx, const Array& vals)
+    {
+        DataType common = getCommonType();
+
+        if (common == TYPE_VOID
+            || common == TYPE_CLUSTER
+            || (common == TYPE_OBJECT && !size())
+            || common == vals.getCommonType()
+            || (common == TYPE_NUMERICAL && vals.getCommonType() == TYPE_GENERATOR))
+        {
+            size_t elems = idx.size();
+            size_t valSize = vals.size();
+
+            // Assign the whole array directly
+            if (elems == 1)
+            {
+                set(idx.get(0).getNum().asI64()-1, vals);
+                return;
+            }
+
+            // Assign individual elements
+            for (size_t i = 0; i < elems; i++)
+            {
+                // Ensure that we have enough values
+                if (valSize > 1 && valSize <= i)
+                    break;
+
+                int64_t p = idx.get(i).getNum().asI64()-1;
+
+                // A scalar value is only written until the last
+                // already available value (or exceeds once for the first
+                // element)
+                if (elems == UINT64_MAX && valSize == 1 && i && p >= (int64_t)size())
+                    break;
+
+                set(p, vals.get(i));
+            }
+        }
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
 
@@ -3579,7 +3706,7 @@ namespace mu
 
         for (size_t i = 0; i < arr.size(); i++)
         {
-            if (!arr[i])
+            if (!arr.get(i))
                 return false;
         }
 
@@ -3599,7 +3726,7 @@ namespace mu
     {
         for (size_t i = 0; i < arr.size(); i++)
         {
-            if (arr[i])
+            if (arr.get(i))
                 return true;
         }
 
@@ -3621,9 +3748,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a+v);
+            ret.push_back(arr.get(i)+v);
         }
 
         return ret;
@@ -3642,9 +3769,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a-v);
+            ret.push_back(arr.get(i)-v);
         }
 
         return ret;
@@ -3663,9 +3790,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a*v);
+            ret.push_back(arr.get(i)*v);
         }
 
         return ret;
@@ -3684,9 +3811,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a/v);
+            ret.push_back(arr.get(i)/v);
         }
 
         return ret;
@@ -3705,9 +3832,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(v+a);
+            ret.push_back(v+arr.get(i));
         }
 
         return ret;
@@ -3726,9 +3853,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(v-a);
+            ret.push_back(v-arr.get(i));
         }
 
         return ret;
@@ -3761,9 +3888,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(v/a);
+            ret.push_back(v/arr.get(i));
         }
 
         return ret;

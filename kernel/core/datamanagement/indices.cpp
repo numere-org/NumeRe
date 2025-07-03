@@ -276,10 +276,10 @@ static void stringToNumIndex(mu::Array& a, StringView sTableName, bool isAssignm
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (a[i].isString())
+        if (a.get(i).isString())
         {
             // Find the columns if any
-            std::vector<size_t> cols = _data.findCols(sTableName.to_string(), {a[i].getStr()}, false, isAssignment);
+            std::vector<size_t> cols = _data.findCols(sTableName.to_string(), {a.get(i).getStr()}, false, isAssignment);
 
             // Remove the string and insert the found columns
             a.erase(a.begin()+i);

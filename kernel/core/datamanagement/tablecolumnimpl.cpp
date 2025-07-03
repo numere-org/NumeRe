@@ -2405,7 +2405,7 @@ TableColumn::ColumnType to_column_type(const mu::Value& val)
         return TableColumn::TYPE_CATEGORICAL;
     else if (val.isString())
         return TableColumn::TYPE_STRING;
-    else if (val.isNumerical())
+    else if (val.isNumerical() || val.isGenerator())
     {
         switch (val.getNum().getType())
         {
@@ -2472,7 +2472,7 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
     else if (common == mu::TYPE_STRING
              || common == mu::TYPE_CLUSTER)
         return TableColumn::TYPE_STRING;
-    else if (common == TYPE_NUMERICAL)
+    else if (common == TYPE_NUMERICAL || common == TYPE_GENERATOR)
     {
         switch (arr.getCommonNumericalType())
         {
