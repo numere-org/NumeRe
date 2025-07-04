@@ -1465,7 +1465,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array::Array(GeneratorValue* generator) : std::vector<Value>(1u), m_commonType(TYPE_GENERATOR_CONSTRUCTOR), m_isConst(true)
     {
-        front().reset(generator);
+        first().reset(generator);
     }
 
 
@@ -1481,10 +1481,10 @@ namespace mu
     {
         std::vector<DataType> types;
 
-        if (std::vector<Value>::size() == 1 && front().isRef() && front().isArray())
-            return front().getArray().getType(common);
+        if (count() == 1 && first().isRef() && first().isArray())
+            return first().getArray().getType(common);
 
-        size_t elems = std::vector<Value>::size();
+        size_t elems = count();
         types.reserve(elems);
 
         for (size_t i = 0; i < elems; i++)
@@ -1538,8 +1538,8 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::getCommonTypeAsString() const
     {
-        if (std::vector<Value>::size() == 1 && front().isRef() && front().isArray())
-            return front().getArray().getCommonTypeAsString();
+        if (count() == 1 && first().isRef() && first().isArray())
+            return first().getArray().getCommonTypeAsString();
 
         switch (getCommonType())
         {
@@ -1550,7 +1550,7 @@ namespace mu
                 if (empty())
                     return "value.void";
 
-                TypeInfo info = front().getNum().getInfo();
+                TypeInfo info = first().getNum().getInfo();
 
                 for (size_t i = 1; i < size(); i++)
                 {
@@ -1572,7 +1572,7 @@ namespace mu
                 if (empty())
                     return "object.void";
 
-                std::string sType = front().getObject().getObjectType();
+                std::string sType = first().getObject().getObjectType();
 
                 for (size_t i = 1; i < size(); i++)
                 {
@@ -1997,8 +1997,8 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod) const
     {
-        if (size() == 1 && front().isArray())
-            return front().getArray().call(sMethod);
+        if (size() == 1 && first().isArray())
+            return first().getArray().call(sMethod);
 
         if (sMethod == "std")
             return numfnc_Std(this); // Pointer as single-element array
@@ -2071,8 +2071,8 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1) const
     {
-        if (size() == 1 && front().isArray())
-            return front().getArray().call(sMethod, arg1);
+        if (size() == 1 && first().isArray())
+            return first().getArray().call(sMethod, arg1);
 
         if (sMethod == "sel")
             return numfnc_getElements(*this, arg1);
@@ -2126,8 +2126,8 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
     {
-        if (size() == 1 && front().isArray())
-            return front().getArray().call(sMethod, arg1, arg2);
+        if (size() == 1 && first().isArray())
+            return first().getArray().call(sMethod, arg1, arg2);
 
         if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
         {
@@ -2304,8 +2304,8 @@ namespace mu
 
         if (sMethod == "sel")
         {
-            if (size() == 1 && front().isArray())
-                return front().getArray().makeMutable().apply(sMethod, arg1);
+            if (size() == 1 && first().isArray())
+                return first().getArray().makeMutable().apply(sMethod, arg1);
 
             Array ret;
             size_t elems = arg1.size();
@@ -2616,12 +2616,12 @@ namespace mu
             m_commonType = TYPE_VOID;
 
         // If only one element is remaining, unwrap it automatically
-        if (std::vector<Value>::size() == 1 && front().isArray() && !front().isRef())
+        if (count() == 1 && first().isArray() && !first().isRef())
         {
             // Assigning a child of this array is amazingly complex
             // Release the pointer first, move the contents and delete
             // it afterwards
-            ArrValue* arr = static_cast<ArrValue*>(front().release());
+            ArrValue* arr = static_cast<ArrValue*>(first().release());
             operator=(std::move(arr->get()));
             delete arr;
         }
@@ -2824,8 +2824,8 @@ namespace mu
 #else
             return "void";
 #endif
-        if (size() == 1 && front().isArray())
-            return front().getArray().printEmbedded(digits, chrs, trunc);
+        if (size() == 1 && first().isArray())
+            return first().getArray().printEmbedded(digits, chrs, trunc);
 
         return "{" + printDims() + " " + getCommonTypeAsString() + "}";
     }
@@ -2938,7 +2938,7 @@ namespace mu
 
         if (m_commonType == TYPE_GENERATOR)
         {
-            for (size_t i = 0; i < std::vector<Value>::size(); i++)
+            for (size_t i = 0; i < count(); i++)
             {
                 if (sVector.size())
                 sVector += ", ";
@@ -2947,7 +2947,7 @@ namespace mu
 
                 // Insert the ellipsis in the middle. The additional -1 is to
                 // handle the zero-based indices
-                if (i == maxElems / 2 - 1 && std::vector<Value>::size() > maxElems)
+                if (i == maxElems / 2 - 1 && count() > maxElems)
                 {
                     sVector += ", ...";
                     i = size()-maxElems / 2 - 1;
@@ -2992,7 +2992,7 @@ namespace mu
     {
         size_t bytes = 0;
 
-        for (size_t i = 0; i < std::vector<Value>::size(); i++)
+        for (size_t i = 0; i < count(); i++)
         {
             bytes += operator[](i).getBytes();
         }
@@ -3011,10 +3011,10 @@ namespace mu
     /////////////////////////////////////////////////
     size_t Array::size() const
     {
-        size_t vectSize = std::vector<Value>::size();
+        size_t vectSize = count();
 
-        if (vectSize == 1 && front().isRef() && front().isArray())
-            return front().getArray().size();
+        if (vectSize == 1 && first().isRef() && first().isArray())
+            return first().getArray().size();
 
         if (m_commonType == TYPE_GENERATOR)
         {
@@ -3043,6 +3043,88 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Get the number of elements stored in
+    /// the array. Does not correspond to its size.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Array::count() const
+    {
+        return std::vector<Value>::size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief The the first element stored in the
+    /// array. Does not correspond to calling front().
+    ///
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
+    Value& Array::first()
+    {
+        return std::vector<Value>::front();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief The the first element stored in the
+    /// array. Does not correspond to calling front().
+    ///
+    /// \return const Value&
+    ///
+    /////////////////////////////////////////////////
+    const Value& Array::first() const
+    {
+        return std::vector<Value>::front();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Generate the i-th value and return a
+    /// reference to its buffered value.
+    ///
+    /// \param i size_t
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
+    Value& Array::getGenerated(size_t i)
+    {
+        if (i >= size())
+            throw ParserError(ecTYPE_MISMATCH_OOB);
+
+        size_t vectSize = count();
+
+        for (size_t n = 0; n < vectSize; n++)
+        {
+            Value& val = operator[](n);
+
+            if (val.isGenerator())
+            {
+                if (val.getGenerator().size() <= i)
+                    i -= val.getGenerator().size();
+                else
+                {
+                    m_buffer.push_back(val.getGenerator().at(i));
+
+                    if (m_buffer.size() > 10)
+                        m_buffer.pop_front();
+
+                    return m_buffer.back();
+                }
+            }
+            else if (i)
+                i--;
+            else if (!i)
+                return val;
+        }
+
+        throw ParserError(ecTYPE_MISMATCH_OOB);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Generate the i-th value and return a
     /// reference to its buffered value.
     ///
@@ -3055,7 +3137,7 @@ namespace mu
         if (i >= size())
             throw ParserError(ecTYPE_MISMATCH_OOB);
 
-        size_t vectSize = std::vector<Value>::size();
+        size_t vectSize = count();
 
         for (size_t n = 0; n < vectSize; n++)
         {
@@ -3161,14 +3243,14 @@ namespace mu
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Array::dereference()
+    void Array::dereference() const
     {
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < count(); i++)
         {
-            Value& v = get(i);
+            Value& v = const_cast<Value&>(operator[](i));
 
             if (v.isRef())
-                v = Value(v.getRef().get().clone());
+                v.reset(v.getRef().get().clone());
 
             if (v.isArray())
                 v.getArray().dereference();
@@ -3334,6 +3416,7 @@ namespace mu
             || common == vals.getCommonType()
             || (common == TYPE_NUMERICAL && vals.getCommonType() == TYPE_GENERATOR))
         {
+            vals.dereference();
             size_t elems = idx.size();
             size_t valSize = vals.size();
 
@@ -3377,8 +3460,8 @@ namespace mu
     /////////////////////////////////////////////////
     void Variable::overwrite(const Array& other)
     {
-        Array::operator=(other);
-        dereference();
+        other.dereference();
+        assign(other);
         makeMutable();
     }
 

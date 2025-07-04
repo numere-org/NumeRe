@@ -1050,13 +1050,15 @@ static Matrix createMatFromLines(std::string& sCmd, mu::Parser& _parser, MemoryM
             break;
 
         _parser.SetExpr(getNextArgument(sCmd, true));
-        mu::Array v = _parser.Eval();
+        const mu::Array& v = _parser.Eval();
 
         if (v.size() > nLineLength)
             nLineLength = v.size();
 
         for (size_t n = 0; n < v.size(); n++)
-            vLine.push_back(v[n].getNum().asCF64());
+        {
+            vLine.push_back(v.get(n).getNum().asCF64());
+        }
 
         _matfl.push_back(vLine);
         vLine.clear();
@@ -1104,13 +1106,13 @@ static Matrix createMatFromLinesFilled(std::string& sCmd, mu::Parser& _parser, M
             break;
 
         _parser.SetExpr(getNextArgument(sCmd, true));
-        mu::Array v = _parser.Eval();
+        const mu::Array& v = _parser.Eval();
 
         if (v.size() > nLineLength)
             nLineLength = v.size();
 
         for (size_t n = 0; n < v.size(); n++)
-            vLine.push_back(v[n].getNum().asCF64());
+            vLine.push_back(v.get(n).getNum().asCF64());
 
         _matfl.push_back(vLine);
         vLine.clear();

@@ -699,7 +699,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
 
             // Create a local variable
-            std::string sNewArgName = "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
+            std::string sNewArgName = createMangledArgName(currentArg.substr(0, currentArg.length()-1));
 
             // Evaluate procedure calls first
             if (currentValue.find('$') != std::string::npos

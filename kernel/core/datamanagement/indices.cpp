@@ -264,15 +264,17 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
 /// \brief Converts possible string indices into
 /// column indices for the respective table.
 ///
-/// \param a mu::Array&
+/// \param a const mu::Array&
 /// \param sTableName StringView
 /// \param isAssignment bool
-/// \return void
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-static void stringToNumIndex(mu::Array& a, StringView sTableName, bool isAssignment)
+static mu::Array stringToNumIndex(const mu::Array& a, StringView sTableName, bool isAssignment)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    mu::Array ret;
+    ret.reserve(a.count());
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -281,11 +283,14 @@ static void stringToNumIndex(mu::Array& a, StringView sTableName, bool isAssignm
             // Find the columns if any
             std::vector<size_t> cols = _data.findCols(sTableName.to_string(), {a.get(i).getStr()}, false, isAssignment);
 
-            // Remove the string and insert the found columns
-            a.erase(a.begin()+i);
-            a.insert(a.begin()+i, cols.begin(), cols.end());
+            // insert the found columns
+            ret.insert(ret.end(), cols.begin(), cols.end());
         }
+        else
+            ret.emplace_back(a.get(i));
     }
+
+    return ret;
 }
 
 
@@ -313,12 +318,10 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
     else
     {
         _parser.SetExpr(sIndex);
-        v = _parser.Eval();
+        mu::Array v = stringToNumIndex(_parser.Eval(), sTableName, isAssignment);
 
         if (!v.size())
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v.print());
-
-        stringToNumIndex(v, sTableName, isAssignment);
 
         if (v.size() > 1) // vector
             _vIdx = VectorIndex(v);
@@ -451,9 +454,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
             if (!v[i].get().size())
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v[i].get().print());
 
-            mu::Array idx = v[i].get();
-
-            stringToNumIndex(idx, sTableName, isAssignment);
+            mu::Array idx = stringToNumIndex(v[i].get(), sTableName, isAssignment);
 
             if (isinf(idx.front().getNum().asF64())) // infinity => last possible index
                 idx.front() = mu::Value(-1); // only -1 because it will be decremented in the following lines

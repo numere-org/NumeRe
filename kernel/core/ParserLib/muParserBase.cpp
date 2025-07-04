@@ -2373,6 +2373,8 @@ namespace mu
 
 				    if (opt.GetCode() == cmVO)
                         varArrayCandidate = vectorCreateMode == 1;
+                    else
+                        varArrayCandidate = false;
                 }
                 // fallthrough intended
 				case cmBO:

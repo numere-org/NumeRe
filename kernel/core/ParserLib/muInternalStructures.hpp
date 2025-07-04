@@ -640,6 +640,7 @@ namespace mu
         for (size_t i = 0; i < ret.size(); i++)
         {
             ret[i] = beg[i].get();
+            ret[i].dereference();
         }
 
         return ret;

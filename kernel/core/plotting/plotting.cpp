@@ -22,6 +22,7 @@
 #include "plotasset.hpp"
 #include "../maths/parser_functions.hpp"
 #include "../../kernel.hpp"
+#include "../procedure/mangler.hpp"
 
 
 extern DefaultVariables _defVars;
@@ -4553,7 +4554,7 @@ void Plot::createDataLegends()
                 && sTemp.find(')') != std::string::npos)
         {
             // Ensure that the referenced data object contains valid data
-            if (_data.containsTablesOrClusters(sTemp) && !_data.isValid())
+            if (_data.containsTables(sTemp) && !_data.isValid())
                 throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCurrentExpr, sTemp, sTemp);
 
             // Strip all spaces and extract the table name
@@ -4657,7 +4658,25 @@ void Plot::createDataLegends()
                 }
             }
             else
-                sTemp = toExternalString(sTemp);
+                sTemp = toExternalString(Mangler::demangleExpression(sTemp));
+
+            // Prepend backslashes before opening and closing
+            // braces
+            for (size_t i = 0; i < sTemp.size(); i++)
+            {
+                if (sTemp[i] == '{' || sTemp[i] == '}')
+                {
+                    sTemp.insert(i, 1, '\\');
+                    i++;
+                }
+            }
+
+            // Replace the data expression with the parsed headlines
+            m_manager.assets[i].legend = sTemp;
+        }
+        else if (_data.containsClusters(sTemp))
+        {
+            sTemp = toExternalString(Mangler::demangleExpression(sTemp));
 
             // Prepend backslashes before opening and closing
             // braces

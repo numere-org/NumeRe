@@ -470,7 +470,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& assign(const Array& other)
             {
-                if (other.std::vector<Value>::size() == 1 && other.m_commonType != TYPE_GENERATOR)
+                if (other.count() == 1 && other.m_commonType != TYPE_GENERATOR)
                 {
                     if (other.front().isArray())
                         return assign(other.front().getArray());
@@ -492,7 +492,7 @@ namespace mu
 
                     front().assign(other.front());
                 }
-                else if (std::vector<Value>::size() == 1 && front().isRef())
+                else if (count() == 1 && front().isRef())
                 {
                     // Insert a complete array into a single reference
                     front().assign(other);
@@ -530,28 +530,30 @@ namespace mu
             {
                 if (other.size() == 1)
                 {
-                    if (other.front().isArray())
-                        return operator=(other.front().getArray());
+                    if (other.first().isArray())
+                        return operator=(other.first().getArray());
 
                     if (size() != 1)
                         resize(1);
 
-                    front() = other.front();
+                    first() = other.first();
                 }
                 else if (other.m_commonType == TYPE_GENERATOR)
                 {
-                    resize(other.std::vector<Value>::size());
+                    size_t elems = other.count();
+                    resize(elems);
 
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elems; i++)
                     {
                         operator[](i) = other[i];
                     }
                 }
                 else
                 {
-                    resize(other.size());
+                    size_t elems = other.size();
+                    resize(elems);
 
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elems; i++)
                     {
                         get(i) = other.get(i);
                     }
@@ -572,7 +574,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                if (other.std::vector<Value>::size() == 1 && other.front().isArray() && !other.front().isRef())
+                if (other.count() == 1 && other.front().isArray() && !other.front().isRef())
                 {
                     Array& fst = other.front().getArray();
                     std::swap(_M_impl._M_start, fst._M_impl._M_start);
@@ -881,7 +883,7 @@ namespace mu
             /////////////////////////////////////////////////
             void flipSign()
             {
-                for (size_t i = 0; i < std::vector<Value>::size(); i++)
+                for (size_t i = 0; i < count(); i++)
                 {
                     operator[](i).flipSign();
                 }
@@ -941,6 +943,9 @@ namespace mu
             std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
             size_t size() const;
+            size_t count() const;
+            Value& first();
+            const Value& first() const;
 
             /////////////////////////////////////////////////
             /// \brief Get the i-th element.
@@ -951,14 +956,16 @@ namespace mu
             /////////////////////////////////////////////////
             Value& get(size_t i)
             {
-                size_t vectSize = std::vector<Value>::size();
+                size_t vectSize = count();
 
-                if (vectSize == 1u)
+                if (m_commonType == TYPE_GENERATOR)
+                    return getGenerated(i);
+                else if (vectSize == 1u)
                 {
-                    if (front().isRef() && front().isArray())
-                        return front().getArray().get(i);
+                    if (first().isRef() && first().isArray())
+                        return first().getArray().get(i);
 
-                    return front();
+                    return operator[](0);
                 }
                 else if (vectSize <= i)
                     throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
@@ -975,16 +982,16 @@ namespace mu
             /////////////////////////////////////////////////
             const Value& get(size_t i) const
             {
-                size_t vectSize = std::vector<Value>::size();
+                size_t vectSize = count();
 
                 if (m_commonType == TYPE_GENERATOR)
                     return getGenerated(i);
                 else if (vectSize == 1u)
                 {
-                    if (front().isRef() && front().isArray())
-                        return front().getArray().get(i);
+                    if (first().isRef() && first().isArray())
+                        return first().getArray().get(i);
 
-                    return front();
+                    return operator[](0);
                 }
                 else if (vectSize <= i)
                     return m_default;
@@ -992,12 +999,69 @@ namespace mu
                 return operator[](i);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a ref to the first element.
+            ///
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& front()
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(0);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const ref to the first element.
+            ///
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& front() const
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(0);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a ref to the last element.
+            ///
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& back()
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(size()-1);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const ref to the last element.
+            ///
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& back() const
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(size()-1);
+            }
+
+            Value& getGenerated(size_t i);
             const Value& getGenerated(size_t i) const;
             void set(size_t i, const Value& v);
 
             void zerosToVoid();
             bool isCommutative() const;
-            void dereference();
+            void dereference() const;
 
         protected:
             mutable DataType m_commonType;
@@ -1044,8 +1108,12 @@ namespace mu
                     || common == other.getCommonType()
                     || (common == TYPE_NUMERICAL && other.getCommonType() == TYPE_GENERATOR))
                 {
-                    Array::assign(other);
-                    dereference();
+                    // It might be possible that this Array is the
+                    // data source for references in the passed array.
+                    // Therefore, we assign the data to a buffer,
+                    // dereference it and move the result later.
+                    other.dereference();
+                    assign(other);
                     makeMutable();
 
                     if (common == TYPE_CLUSTER)

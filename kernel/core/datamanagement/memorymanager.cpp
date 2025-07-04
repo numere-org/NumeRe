@@ -196,13 +196,13 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
 
     VectorIndex idx;
 
-    for (const mu::Value& val : arr)
+    for (size_t i = 0; i < arr.size(); i++)
     {
-        if (val.getType() == mu::TYPE_NUMERICAL)
-            idx.push_back(val.getNum().asI64()-1);
-        else if (val.getType() == mu::TYPE_STRING)
+        if (arr.get(i).getType() == mu::TYPE_NUMERICAL)
+            idx.push_back(arr.get(i).getNum().asI64()-1);
+        else if (arr.get(i).getType() == mu::TYPE_STRING)
         {
-            std::vector<size_t> cols = vMemory[findTable(sTable)]->findCols({val.getStr()}, false, false);
+            std::vector<size_t> cols = vMemory[findTable(sTable)]->findCols({arr.get(i).getStr()}, false, false);
 
             for (size_t c : cols)
             {
@@ -210,6 +210,9 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
             }
         }
     }
+
+    if (!idx.isValid())
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR", SyntaxError::invalid_position, idx.to_string());
 
     return idx;
 }
