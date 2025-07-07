@@ -782,15 +782,10 @@ namespace mu
     /////////////////////////////////////////////////
     std::complex<double> Value::as_cmplx() const
     {
-        if (get())
-        {
-            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
-                return static_cast<const NumValue*>(get())->get().asCF64();
-            else if (get()->m_type == TYPE_CATEGORY)
-                return static_cast<const CatValue*>(get())->get().val.asCF64();
-        }
+        if (!get() || !isNumerical())
+            return NAN;
 
-        return NAN;
+        return getNum().asCF64();
     }
 
 
@@ -2711,8 +2706,10 @@ namespace mu
     std::vector<std::string> Array::as_str_vector() const
     {
         std::vector<std::string> ret;
+        size_t elems = size();
+        ret.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
             ret.push_back(get(i).getStr());
         }
@@ -2733,8 +2730,10 @@ namespace mu
     std::vector<std::complex<double>> Array::as_cmplx_vector() const
     {
         std::vector<std::complex<double>> ret;
+        size_t elems = size();
+        ret.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
             ret.push_back(get(i).as_cmplx());
         }
@@ -2754,8 +2753,10 @@ namespace mu
     std::vector<std::string> Array::to_string() const
     {
         std::vector<std::string> ret;
+        size_t elems = size();
+        ret.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
             ret.push_back(get(i).print());
         }
@@ -3281,6 +3282,12 @@ namespace mu
     /////////////////////////////////////////////////
     Variable::Variable(DataType type) : Array()
     {
+        // Pre-initialize default variable types
+        if (type == TYPE_NUMERICAL)
+            emplace_back(0.0);
+        else if (type == TYPE_STRING)
+            emplace_back("");
+
         makeMutable();
         m_commonType = type;
     }

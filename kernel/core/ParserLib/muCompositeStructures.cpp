@@ -301,40 +301,59 @@ namespace mu
     /// \brief Import the current children of the
     /// parent node.
     ///
-    /// \param child tinyxml2::XMLElement*
+    /// \param child const tinyxml2::XMLNode*
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    static Array importXmlChildren(tinyxml2::XMLElement* child)
+    static Array importXmlChildren(const tinyxml2::XMLNode* child)
     {
         Array siblings;
         siblings.makeMutable();
 
         while (child)
         {
-            const tinyxml2::XMLAttribute* attr = child->FirstAttribute();
-            DictStructMap attributes;
+            const tinyxml2::XMLElement* element = child->ToElement();
+            const tinyxml2::XMLText* text = child->ToText();
             DictStructMap node;
-            node["name"].reset(new StrValue(child->Name()));
 
-            while (attr)
+            if (element)
             {
-                attributes[attr->Name()].reset(new StrValue(std::string(attr->Value())));
-                attr = attr->Next();
+                const tinyxml2::XMLAttribute* attr = element->FirstAttribute();
+                DictStructMap attributes;
+                node["name"].reset(new StrValue(element->Name()));
+
+                while (attr)
+                {
+                    attributes[attr->Name()].reset(new StrValue(std::string(attr->Value())));
+                    attr = attr->Next();
+                }
+
+                if (!attributes.empty())
+                    node["attrs"].reset(new DictStructValue(attributes));
             }
 
-            if (!attributes.empty())
-                node["attrs"].reset(new DictStructValue(attributes));
+            if (text)
+                node["text"].reset(new StrValue(text->Value()));
 
-            Array children = importXmlChildren(child->FirstChildElement());
+            Array children = importXmlChildren(child->FirstChild());
 
             if (children.size() == 1)
-                node["nodes"].reset(children.front().release());
+            {
+                DictStruct& dict = children.front().getDictStruct();
+
+                // If it is a single text leaf, just copy it to the element
+                if (dict.size() == 1 && dict.isField("text"))
+                    node["text"].reset(dict.remove("text"));
+                else
+                    node["nodes"].reset(children.front().release());
+            }
             else if (children.size() > 1)
                 node["nodes"].reset(new ArrValue(children));
 
-            siblings.emplace_back(DictStruct(node));
-            child = child->NextSiblingElement();
+            if (node.size())
+                siblings.emplace_back(DictStruct(node));
+
+            child = child->NextSibling();
         }
 
         return siblings;
@@ -365,7 +384,7 @@ namespace mu
             return false;
 
         m_fields.clear();
-        Array nodes = importXmlChildren(doc.FirstChildElement());
+        Array nodes = importXmlChildren(doc.FirstChild());
 
         if (nodes.size() == 1)
             m_fields["DOM"].reset(nodes.front().release());
@@ -1423,6 +1442,20 @@ namespace mu
                 if (!writeBinary(stream, *arr.get(i).get()))
                     return false;
             }
+
+            return true;
+        }
+        else if (val.m_type == TYPE_GENERATOR)
+        {
+            const GeneratorValue& gen = static_cast<const GeneratorValue&>(val);
+
+            for (size_t i = 0; i < gen.size(); i++)
+            {
+                if (!writeBinary(stream, NumValue(gen.at(i))))
+                    return false;
+            }
+
+            return true;
         }
         else if (val.m_type == TYPE_CATEGORY)
         {
@@ -1549,6 +1582,18 @@ namespace mu
                 m_stream << arr.get(i).printVal();
 
                 if (i+1 < arr.size() && sSeparator.length())
+                    m_stream << sSeparator;
+            }
+        }
+        else if (val.m_type == TYPE_GENERATOR)
+        {
+            const GeneratorValue& gen = static_cast<const GeneratorValue&>(val);
+
+            for (size_t i = 0; i < gen.size(); i++)
+            {
+                m_stream << gen.at(i).printVal();
+
+                if (i+1 < gen.size() && sSeparator.length())
                     m_stream << sSeparator;
             }
         }

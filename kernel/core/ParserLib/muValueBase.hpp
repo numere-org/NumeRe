@@ -443,8 +443,18 @@ namespace mu
                     return;
                 }
 
-                std::complex<double> current = m_firstVal;
+                // Calculate diff and convert into signum combinations
+                std::complex<double> diff = m_lastVal - m_firstVal;
+                diff.real(diff.real() * m_step.real());
+                diff.imag(diff.imag() * m_step.imag());
                 m_size = 1;
+
+                // Validate the stepping
+                // Ensure that we do not result in an endless loop
+                if (diff.real() <= 0 && diff.imag() <= 0)
+                    return;
+
+                std::complex<double> current = m_firstVal;
 
                 // As long as the next step is possible, add the increment
                 while (stepIsStillPossible(current+m_step, m_lastVal+1e-10*m_step, m_step))
