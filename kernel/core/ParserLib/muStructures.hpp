@@ -1102,11 +1102,7 @@ namespace mu
             {
                 DataType common = getCommonType();
 
-                if (common == TYPE_VOID
-                    || common == TYPE_CLUSTER
-                    || (common == TYPE_OBJECT && !size())
-                    || common == other.getCommonType()
-                    || (common == TYPE_NUMERICAL && other.getCommonType() == TYPE_GENERATOR))
+                if (accepts(other))
                 {
                     // It might be possible that this Array is the
                     // data source for references in the passed array.
@@ -1129,6 +1125,7 @@ namespace mu
 
             void indexedAssign(const Array& idx, const Array& vals);
             void overwrite(const Array& other);
+            bool accepts(const Array& other) const;
     };
 
 
@@ -1170,7 +1167,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < std::min(size(), values.size()); i++)
                     {
-                        *operator[](i) = values[i];
+                        *operator[](i) = values.get(i);
                     }
                 }
 

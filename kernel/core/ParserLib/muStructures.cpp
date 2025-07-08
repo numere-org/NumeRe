@@ -296,6 +296,7 @@ namespace mu
             case TYPE_VOID:
             case TYPE_OBJECT:
             case TYPE_GENERATOR:
+            case TYPE_GENERATOR_CONSTRUCTOR:
             case TYPE_REFERENCE:
                 break;
         }
@@ -353,6 +354,7 @@ namespace mu
             case TYPE_REFERENCE:
                 return "reference";
             case TYPE_GENERATOR:
+            case TYPE_GENERATOR_CONSTRUCTOR:
                 return "generator";
             case TYPE_VOID:
             case TYPE_INVALID:
@@ -1587,6 +1589,7 @@ namespace mu
             case TYPE_REFERENCE:
                 return "reference";
             case TYPE_GENERATOR:
+            case TYPE_GENERATOR_CONSTRUCTOR:
                 return "generator";
             case TYPE_VOID:
             case TYPE_NEUTRAL:
@@ -3356,10 +3359,7 @@ namespace mu
 
         DataType common = getCommonType();
 
-        if (common == TYPE_VOID
-            || common == TYPE_CLUSTER
-            || (common == TYPE_OBJECT && !size())
-            || common == other.getType())
+        if (accepts(other))
         {
             Array::operator=(Array(other));
             makeMutable();
@@ -3387,10 +3387,7 @@ namespace mu
     {
         DataType common = getCommonType();
 
-        if (common == TYPE_VOID
-            || common == TYPE_CLUSTER
-            || (common == TYPE_OBJECT && !size())
-            || common == other.getCommonType())
+        if (accepts(other))
         {
             Array::operator=(other);
             makeMutable();
@@ -3415,13 +3412,7 @@ namespace mu
     /////////////////////////////////////////////////
     void Variable::indexedAssign(const Array& idx, const Array& vals)
     {
-        DataType common = getCommonType();
-
-        if (common == TYPE_VOID
-            || common == TYPE_CLUSTER
-            || (common == TYPE_OBJECT && !size())
-            || common == vals.getCommonType()
-            || (common == TYPE_NUMERICAL && vals.getCommonType() == TYPE_GENERATOR))
+        if (accepts(vals))
         {
             vals.dereference();
             size_t elems = idx.size();
@@ -3470,6 +3461,49 @@ namespace mu
         other.dereference();
         assign(other);
         makeMutable();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the current
+    /// variable accepts the passed value types.
+    ///
+    /// \param other const Array&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Variable::accepts(const Array& other) const
+    {
+        DataType common = getCommonType();
+
+        // Empty vars or clusters consume everything
+        if (common == TYPE_VOID || common == TYPE_CLUSTER)
+            return true;
+
+        DataType otherCommon = other.getCommonType();
+
+        // Objects consume other objects or categories, identical types work
+        // always and numericals consume generators as well
+        if (common == otherCommon
+            || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT && otherCommon >= TYPE_CATEGORY && otherCommon <= TYPE_OBJECT)
+            || (common == TYPE_NUMERICAL && otherCommon == TYPE_GENERATOR))
+            return true;
+
+        // Clusters do hide their internal data type. Let's extract it
+        if (otherCommon == TYPE_CLUSTER)
+        {
+            DataType otherInternal = TYPE_VOID;
+            other.getType(otherInternal);
+
+            // Objects consume other objects or categories, identical types work
+            // always and numericals consume generators as well
+            if (common == otherInternal
+                || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT && otherInternal >= TYPE_CATEGORY && otherInternal <= TYPE_OBJECT)
+                || (common == TYPE_NUMERICAL && otherInternal == TYPE_GENERATOR))
+                return true;
+        }
+
+        return false;
     }
 
 

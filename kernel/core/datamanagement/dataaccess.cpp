@@ -368,13 +368,16 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
         // Try to handle the assignment operator shortcut
         if (eq_pos != std::string::npos)
         {
-            sCache = sLine.substr(0, eq_pos);
-            StripSpaces(sCache);
+            StringView target(sLine, 0, eq_pos);
+            target.strip();
 
             // Direct assignment shortcut
-            if (sCache.find('(') != std::string::npos
-                && getMatchingParenthesis(sCache) == sCache.length() - 1)
+            if (target.find('(') != std::string::npos
+                && target.subview(0, target.find('(')).find_first_of("+-*/^#.:?&%|<>{}[]=!\",") == std::string::npos
+                && getMatchingParenthesis(target) == target.length() - 1)
             {
+                sCache = target.to_string();
+
                 StringView source(sLine, eq_pos + 1);
                 source.strip();
 
@@ -414,7 +417,7 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
         }
 
         if (eq_pos == std::string::npos              // gar kein "="?
-            || !_data.containsTables(sCache))   // nur links von "cache("?
+            || !_data.isTable(StringView(sLine, 0, eq_pos)))   // nur links von "cache("?
         {
             resolveTables(sLine, _parser, _data, options);
             sCache.clear();

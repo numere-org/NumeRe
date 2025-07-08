@@ -653,8 +653,6 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
     if (!bDebuggerActive)
         return;
 
-    NumeReKernel* instance = NumeReKernel::getInstance();
-
     // store variable names and replace their occurences with
     // their definitions
     for (size_t i = 0; i < sVarArray.size(); i++)
@@ -663,8 +661,6 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         {
             if (iter->second == sVarArray[i])
             {
-                size_t nBracePos = sVarArray[i].find('{');
-
                 // Store the variables
                 mLocalVars[iter->first + "\t" + iter->second] = &vVarArray[i];
 

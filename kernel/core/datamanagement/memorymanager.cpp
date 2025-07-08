@@ -1271,6 +1271,7 @@ bool MemoryManager::isTable(StringView sTable, bool only) const
         return false;
 
     sTable = sTable.subview(0, sTable.find('('));
+    sTable.strip();
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
