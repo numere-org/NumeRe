@@ -1456,7 +1456,8 @@ const mu::StackItem* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -2416,8 +2417,7 @@ void FlowCtrl::reset()
 
     for (size_t i = 0; i < sVarArray.size(); i++)
     {
-        if (sVarArray[i].find('{') == std::string::npos && sVarArray[i].find("->") == std::string::npos)
-            _parserRef->RemoveVar(sVarArray[i]);
+        _parserRef->RemoveVar(sVarArray[i]);
     }
 
     if (mVarMap.size())
@@ -2440,9 +2440,7 @@ void FlowCtrl::reset()
 
     if (!vVars.empty())
     {
-        varmap_type::const_iterator item = vVars.begin();
-
-        for (; item != vVars.end(); ++item)
+        for (auto item = vVars.begin(); item != vVars.end(); ++item)
         {
             _parserRef->DefineVar(item->first, item->second);
         }
@@ -2570,7 +2568,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }

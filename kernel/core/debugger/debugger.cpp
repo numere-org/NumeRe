@@ -564,9 +564,9 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
             replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
 
         if (iter.second.second->getCommonType() == mu::TYPE_CLUSTER)
-            mLocalVars[iter.first + "{}\t" + iter.second.first + "{}"] = *iter.second.second;
+            mLocalVars[iter.first + "{}\t" + iter.second.first + "{}"] = iter.second.second;
         else
-            mLocalVars[iter.first + "\t" + iter.second.first] = *iter.second.second;
+            mLocalVars[iter.first + "\t" + iter.second.first] = iter.second.second;
     }
 
     // Store the local tables and replace their
@@ -666,18 +666,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
                 size_t nBracePos = sVarArray[i].find('{');
 
                 // Store the variables
-                if (nBracePos != std::string::npos)
-                {
-                    mu::Variable& iterData = instance->getMemoryManager().getCluster(sVarArray[i]);
-                    size_t nItem = 0;
-
-                    if (nBracePos < sVarArray[i].length()-2)
-                        nItem = StrToInt(sVarArray[i].substr(nBracePos+1, sVarArray[i].length()-1-nBracePos-1))-1;
-
-                    mLocalVars[iter->first + "@" + iter->second] = iterData.get(nItem);
-                }
-                else
-                    mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
+                mLocalVars[iter->first + "\t" + iter->second] = &vVarArray[i];
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)
@@ -755,14 +744,14 @@ std::vector<std::string> NumeReDebugger::getVars(const std::vector<mu::DataType>
     {
         char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
 
-        if (std::find(dt.begin(), dt.end(), iter->second.getCommonType()) == dt.end()
-            && !(std::find(dt.begin(), dt.end(), mu::TYPE_NUMERICAL) != dt.end() && iter->second.getCommonType() == mu::TYPE_VOID))
+        if (std::find(dt.begin(), dt.end(), iter->second->getCommonType()) == dt.end()
+            && !(std::find(dt.begin(), dt.end(), mu::TYPE_NUMERICAL) != dt.end() && iter->second->getCommonType() == mu::TYPE_VOID))
             continue;
 
-        vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()
+        vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second->printDims()
                         + (sepChar == '@' ? "\t(@) " : "\t")
-                        + iter->second.getCommonTypeAsString() + "\t"
-                        + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+                        + iter->second->getCommonTypeAsString() + "\t"
+                        + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
                         + iter->first.substr((iter->first).find(sepChar)+1));
     }
 

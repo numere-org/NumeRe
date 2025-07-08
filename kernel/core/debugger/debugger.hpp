@@ -48,7 +48,7 @@ class NumeReDebugger
         std::string sErraticCommand;
         std::string sErraticModule;
         std::string sErrorMessage;
-        std::map<std::string,mu::Array> mLocalVars;
+        std::map<std::string,const mu::Variable*> mLocalVars;
         std::map<std::string,std::string> mLocalTables;
         std::map<std::string,std::string> mArguments;
         bool bAlreadyThrown;

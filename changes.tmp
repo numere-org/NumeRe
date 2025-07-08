@@ -19,5 +19,7 @@ Cleaned	Method resolution is now more precise. This is a preparing step for supp
 New	Experimental: "dictstruct" is now available as a dictionary/dynamic structure hybrid.
 Added	Experimental: "obj" can be used to declare procedure-local objects and structures
 Added	Experimental: "readxml()" and "readjson()" can be used to load the corresponding file types to DictStruct instances.
-Added	Experimental: the index operators "{}" now also work on usual vectors as well as the dimension variable "nlen".
+Added	Experimental: the index operator "[]" can now be used on usual vectors as well as the dimension variable "nlen".
 Added	Experimental: the "file" object can be used for arbitrary file reads and writes.
+Added	Experimental: the "stack" object provides standard stack functionalities.
+Added	Experimental: the "queue" object provides standard queue (deque) functionalities.
