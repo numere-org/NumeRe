@@ -104,7 +104,6 @@ class NumeReSyntax
             SYNTAX_COMMENT,
             SYNTAX_CLUSTER,
             SYNTAX_TABLE,
-            SYNTAX_DICTSTRUCT,
             SYNTAX_CATEGORY
         };
 
@@ -145,7 +144,7 @@ class NumeReSyntax
             {return constructString(vCppKeyWords);}
         std::string getCppFunctions() const
             {return constructString(vCppFunctions);}
-        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense, SyntaxColors varType = SYNTAX_STD, bool isVect = false) const;
+        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense, const std::string& varType = "", bool isVect = false) const;
         std::string getAutoCompListMATLAB(std::string sFirstChars) const;
         std::string getAutoCompListCPP(std::string sFirstChars) const;
         std::string getAutoCompListTeX(std::string sFirstChars) const;

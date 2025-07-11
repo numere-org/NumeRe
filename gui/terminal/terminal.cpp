@@ -1022,31 +1022,31 @@ std::string NumeReTerminal::getVariableType(const std::string& sVarName)
     for (const std::string& var : globalVars.vNumVars)
     {
         if (var.starts_with(sVarName + "\t"))
-            return var.find("\t1 x 1\t") != std::string::npos ? "VAR" : "{VAR}";
+            return var.find("\t1 x 1\t") != std::string::npos ? "value" : "{value}";
     }
 
     for (const std::string& var : globalVars.vStrVars)
     {
         if (var.starts_with(sVarName + "\t"))
-            return var.find("\t1 x 1\t") != std::string::npos ? "STR" : "{STR}";
+            return var.find("\t1 x 1\t") != std::string::npos ? "string" : "{string}";
     }
 
     for (const std::string& var : globalVars.vObjects)
     {
         if (var.starts_with(sVarName + "\t"))
-            return var.find("\t1 x 1\t") != std::string::npos ? "DCT" : "{DCT}";
+            return var.find("\t1 x 1\t") != std::string::npos ? var.substr(var.rfind('\t')+1) : "{" + var.substr(var.rfind('\t')+1) + "}";
     }
 
     for (const std::string& var : globalVars.vTables)
     {
         if (var.starts_with(sVarName + "\t"))
-            return "TAB";
+            return "table";
     }
 
     for (const std::string& var : globalVars.vClusters)
     {
         if (var.starts_with(sVarName + "\t"))
-            return "CST";
+            return "cluster";
     }
 
     return "N/A";

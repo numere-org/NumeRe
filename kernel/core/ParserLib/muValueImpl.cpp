@@ -1978,17 +1978,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::isValid() const
     {
-        std::vector<std::string> fieldNames = m_val.getFields();
-
-        for (const auto& field : fieldNames)
-        {
-            const BaseValue* f = m_val.read(field);
-
-            if (!f || !f->isValid())
-                return false;
-        }
-
-        return true;
+        return m_val.size();
     }
 
 
@@ -2412,6 +2402,9 @@ namespace mu
 
     //------------------------------------------------------------------------------
 
+    /////////////////////////////////////////////////
+    /// \brief FileValue constructor.
+    /////////////////////////////////////////////////
     FileValue::FileValue() : Object("file")
     {
         declareMethod(MethodDefinition("isopen", 0));
@@ -2435,6 +2428,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Construct a FileValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
     FileValue::FileValue(const BaseValue& other) : FileValue()
     {
         if (operator==(other))
@@ -2446,6 +2446,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return FileValue&
+    ///
+    /////////////////////////////////////////////////
     FileValue& FileValue::operator=(const BaseValue& other)
     {
         if (operator==(other))
@@ -2459,24 +2466,50 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool FileValue::isValid() const
     {
         return true;
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     FileValue::operator bool() const
     {
         return m_val.is_open();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Return the bytes size of this
+    /// instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t FileValue::getBytes() const
     {
         return m_val.length();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* FileValue::call(const std::string& sMethod) const
     {
         if (sMethod == "isopen")
@@ -2496,6 +2529,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* FileValue::apply(const std::string& sMethod)
     {
         if (sMethod == "readline")
@@ -2509,6 +2549,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* FileValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
         if (arg1.m_type == TYPE_REFERENCE)
@@ -2529,6 +2577,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* FileValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
     {
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
@@ -2547,6 +2604,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string FileValue::print(size_t digits, size_t chrs, bool trunc) const
     {
         return "{.isopen: " + toString(m_val.is_open()) + ", .len: " + toString(m_val.length())
@@ -2554,6 +2620,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string FileValue::printVal(size_t digits, size_t chrs) const
     {
         return "{.isopen: " + toString(m_val.is_open()) + ", .len: " + toString(m_val.length())
@@ -2564,6 +2639,9 @@ namespace mu
 
     //------------------------------------------------------------------------------
 
+    /////////////////////////////////////////////////
+    /// \brief StackValue constructor.
+    /////////////////////////////////////////////////
     StackValue::StackValue() : Object("stack")
     {
         declareMethod(MethodDefinition("top", 0));
@@ -2576,6 +2654,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Construct a StackValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
     StackValue::StackValue(const BaseValue& other) : StackValue()
     {
         if (operator==(other))
@@ -2587,6 +2672,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return StackValue&
+    ///
+    /////////////////////////////////////////////////
     StackValue& StackValue::operator=(const BaseValue& other)
     {
         if (operator==(other))
@@ -2600,18 +2692,36 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool StackValue::isValid() const
     {
         return m_stack.size();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return StackValue::operator
+    ///
+    /////////////////////////////////////////////////
     StackValue::operator bool() const
     {
         return m_stack.size();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Return the byte size of this instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t StackValue::getBytes() const
     {
         size_t s = 0;
@@ -2625,6 +2735,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* StackValue::call(const std::string& sMethod) const
     {
         if (sMethod == "top")
@@ -2656,6 +2773,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* StackValue::apply(const std::string& sMethod)
     {
         if (sMethod == "pop")
@@ -2684,6 +2808,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* StackValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
         if (arg1.m_type == TYPE_REFERENCE)
@@ -2699,6 +2831,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string StackValue::print(size_t digits, size_t chrs, bool trunc) const
     {
         std::string top = "void";
@@ -2710,6 +2851,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string StackValue::printVal(size_t digits, size_t chrs) const
     {
         std::string top = "void";
@@ -2724,6 +2874,9 @@ namespace mu
 
     //------------------------------------------------------------------------------
 
+    /////////////////////////////////////////////////
+    /// \brief QueueValue constructor.
+    /////////////////////////////////////////////////
     QueueValue::QueueValue() : Object("queue")
     {
         declareMethod(MethodDefinition("front", 0));
@@ -2739,6 +2892,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Construct a QueueValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
     QueueValue::QueueValue(const BaseValue& other) : QueueValue()
     {
         if (operator==(other))
@@ -2750,6 +2910,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return QueueValue&
+    ///
+    /////////////////////////////////////////////////
     QueueValue& QueueValue::operator=(const BaseValue& other)
     {
         if (operator==(other))
@@ -2763,18 +2930,36 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool QueueValue::isValid() const
     {
         return m_queue.size();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return QueueValue::operator
+    ///
+    /////////////////////////////////////////////////
     QueueValue::operator bool() const
     {
         return m_queue.size();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Return the byte size of this instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t QueueValue::getBytes() const
     {
         size_t s = 0;
@@ -2788,6 +2973,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* QueueValue::call(const std::string& sMethod) const
     {
         if (sMethod == "len")
@@ -2826,6 +3018,13 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* QueueValue::apply(const std::string& sMethod)
     {
         if (sMethod == "pop")
@@ -2865,6 +3064,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
     BaseValue* QueueValue::apply(const std::string& sMethod, const BaseValue& arg1) // push push_front
     {
         if (arg1.m_type == TYPE_REFERENCE)
@@ -2885,6 +3092,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string QueueValue::print(size_t digits, size_t chrs, bool trunc) const
     {
         std::string sFront = "void";
@@ -2900,6 +3116,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string QueueValue::printVal(size_t digits, size_t chrs) const
     {
         std::string sFront = "void";

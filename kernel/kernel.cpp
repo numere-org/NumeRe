@@ -3726,12 +3726,13 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
     if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
     {
         const mu::DictStruct& dict = arr.front().getDictStruct();
-        NumeRe::Container<std::string> stringTable(dict.size(), 1);
+        NumeRe::Container<std::string> stringTable(dict.size(), 2);
         std::vector<std::string> fields = dict.getFields();
 
         for (size_t i = 0; i < fields.size(); i++)
         {
-            stringTable.set(i, 0, "." + fields[i] + ": " + dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+            stringTable.set(i, 0, "." + fields[i] + ":");
+            stringTable.set(i, 1, dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
         }
 
         return stringTable;

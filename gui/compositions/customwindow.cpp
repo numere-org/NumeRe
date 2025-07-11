@@ -3419,6 +3419,7 @@ bool CustomWindow::setPropValue(const mu::Array& _value, const std::string& varN
     if (iter != m_varTable.end())
     {
         iter->second = _value;
+        iter->second.dereference();
         return true;
     }
 

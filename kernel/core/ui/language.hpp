@@ -49,6 +49,7 @@ class Language : public FileSystem
         Language(const Language& _lang);
         void loadStrings(bool bloadUserFiles = true);
         void addToLanguage(const std::map<std::string,std::string>& _langstrings);
+        bool containsString(const std::string& sId) const;
         std::string getKey(const std::string& sMessage) const;
         std::string get(const std::string& sMessage, const std::vector<std::string>& vTokens) const; //_lang.get("GREETING",vTokens);
 

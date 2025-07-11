@@ -829,12 +829,12 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 ///
 /// \param sFirstChars std::string
 /// \param useSmartSense bool
-/// \param varType NumeReSyntax::SyntaxColors
+/// \param varType const std::string&
 /// \param isVect bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType, bool isVect) const
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, const std::string& varType, bool isVect) const
 {
     std::string sAutoCompList;
 
@@ -849,17 +849,21 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     bool selectAllMethods = selectMethods && !sFirstChars.length();
     std::string methodSelector = ".unknown";
 
-    if (varType == SYNTAX_TABLE)
+    if (varType == "table")
     {
         methodSelector = ".tab";
         isVect = true;
     }
-    else if (varType == SYNTAX_STRING)
+    else if (varType == "string")
         methodSelector = ".str";
-    else if (varType == SYNTAX_DICTSTRUCT)
+    else if (varType == "dictstruct")
         methodSelector = ".dict";
-    else if (varType == SYNTAX_CATEGORY)
+    else if (varType == "category")
         methodSelector = ".cat";
+    else if (varType.starts_with("object."))
+        methodSelector = varType.substr(6);
+    else if (varType == "*" || varType == "cluster")
+        methodSelector = ".";
 
     // Try to find the correspondig elements in the map
     for (const auto& iter : mAutoCompList)

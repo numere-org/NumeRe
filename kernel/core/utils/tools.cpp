@@ -213,8 +213,8 @@ std::string getUserDisplayName(bool informal)
     // comma is used for the inverted NAME, GIVEN-NAME order
     if (informal)
     {
-        if (sUserName.find(',') == std::string::npos)
-            sUserName.erase(0, sUserName.find(',')+1);
+        if (sUserName.find(',') != std::string::npos)
+            sUserName.erase(sUserName.find(',')+1);
 
         StripSpaces(sUserName);
 
