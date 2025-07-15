@@ -1100,6 +1100,9 @@ namespace mu
             /////////////////////////////////////////////////
             Variable& operator=(const Array& other)
             {
+                if (this == &other)
+                    return *this;
+
                 DataType common = getCommonType();
 
                 if (accepts(other))

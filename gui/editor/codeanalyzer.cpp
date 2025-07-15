@@ -953,7 +953,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 if (sSyntaxElement == "str")
                     sChars = "s";
                 else if (sSyntaxElement == "var")
-                    sChars = "nfdbxyzt";
+                    sChars = "ndfbxyzt";
+                else if (sSyntaxElement == "obj")
+                    sChars = "o";
 
                 if (m_options->GetAnalyzerOption(Options::MISLEADING_TYPE)
                     && cType != '\0'
@@ -1350,6 +1352,10 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "evt_close()"
              && sSyntaxElement != "get_utc_offset()"
              && sSyntaxElement != "today()"
+             && sSyntaxElement != "dictstruct()"
+             && sSyntaxElement != "file()"
+             && sSyntaxElement != "stack()"
+             && sSyntaxElement != "queue()"
              && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments
@@ -2093,7 +2099,7 @@ char CodeAnalyzer::getVariableType(const std::string& sVarName)
         shift++;
 
     // numerical/int string float standard vars (x,y,z,t)
-    static std::string sFirstChars = "nsfbdxyzt";
+    static std::string sFirstChars = "onsfbdxyzt";
 
     if (sVarName.length() > shift+1
         && (std::isupper(sVarName[shift+1]) || sVarName[shift+1] == '_')

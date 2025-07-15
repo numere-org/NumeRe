@@ -264,6 +264,27 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Add a key with the selected name. Does
+    /// not modify already values located with this
+    /// key.
+    ///
+    /// \param fieldName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::addKey(const std::string& fieldName)
+    {
+        if (m_fields.find(fieldName) == m_fields.end())
+        {
+            m_fields[fieldName];
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Remove a single element.
     ///
     /// \param fieldName const std::string&

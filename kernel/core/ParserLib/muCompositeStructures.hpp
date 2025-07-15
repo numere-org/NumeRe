@@ -57,6 +57,7 @@ namespace mu
             BaseValuePtr* read(const std::string& fieldName);
             const BaseValue* read(const std::string& fieldName) const;
             BaseValuePtr* write(const std::string& fieldName, const BaseValue& value);
+            bool addKey(const std::string& fieldName);
             BaseValue* remove(const std::string& fieldName);
             size_t clear();
             bool importXml(std::string fileName);

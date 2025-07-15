@@ -6427,8 +6427,8 @@ mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals)
 
         if (!vals.isDefault())
         {
-            if (vals.get(i).getType() == mu::TYPE_REFERENCE)
-                dict[fieldName].reset(static_cast<const mu::RefValue*>(vals.get(i).get())->get().clone());
+            if (vals.get(i).isRef())
+                dict[fieldName].reset(vals.get(i).getRef().get().clone());
             else
                 dict[fieldName].reset(vals.get(i).get()->clone());
         }

@@ -34,6 +34,7 @@
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
 #include "../../database/database.hpp"
+#include "ParserLib/muValueImpl.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -4982,9 +4983,90 @@ static CommandReturnValues cmd_print(string& sCmd)
 
     for (size_t i = 0; i < res.size(); i++)
     {
-        std::string sArgument = res[i].printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
-        replaceAll(sArgument, "\n", "\n|   ");
-        NumeReKernel::printPreFmt("\r|-> " + sArgument + "\n");
+        std::string sPrinted;
+
+        if (res[i].getCommonType() == mu::TYPE_DICTSTRUCT && res[i].size() == 1)
+        {
+            const mu::DictStruct& dict = res[i].get(0).getDictStruct();
+            std::vector<std::string> vKeys = dict.getFields();
+            make_hline();
+            NumeReKernel::print("NUMERE: " + toUpperCase(cmdParser.getExpr()));
+            make_hline();
+
+            if (vKeys.size())
+            {
+                size_t len = std::max_element(vKeys.begin(), vKeys.end(),
+                                              [](const std::string& a, const std::string& b){return a.length() < b.length();})->length();
+
+                for (size_t i = 0; i < vKeys.size(); i++)
+                {
+                    if (sPrinted.length())
+                        sPrinted += "\n";
+
+                    sPrinted += strfill(vKeys[i], len, ' ') + ":  "
+                        + dict.read(vKeys[i])->printEmbedded(NumeReKernel::getInstance()->getSettings().getPrecision(), 0, false);
+                }
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+            make_hline();
+        }
+        else if (res[i].getCommonType() == mu::TYPE_OBJECT && res[i].size() == 1)
+        {
+            const mu::Object& object = res[i].get(0).getObject();
+            std::string sObjectType = object.getObjectType();
+
+            make_hline();
+            NumeReKernel::print("NUMERE: " + toUpperCase(cmdParser.getExpr()));
+            make_hline();
+
+            if (sObjectType == "file")
+            {
+                const mu::File& f = static_cast<const mu::FileValue&>(object).get();
+                sPrinted += "isopen:  " + toString(f.is_open());
+                sPrinted += "\n   len:  " + toString(f.length());
+                sPrinted += "\n fname:  " + f.getFileName();
+                sPrinted += "\n  mode:  " + f.getOpenMode();
+            }
+            else if (sObjectType == "stack")
+            {
+                const mu::Stack& s = static_cast<const mu::StackValue&>(object).get();
+                sPrinted += "len:  " + toString(s.size());
+
+                if (s.size())
+                    sPrinted += "\ntop:  " + s.back().printEmbedded();
+                else
+                    sPrinted += "\ntop:  void";
+            }
+            else if (sObjectType == "queue")
+            {
+                const mu::Queue& q = static_cast<const mu::QueueValue&>(object).get();
+                sPrinted += "  len:  " + toString(q.size());
+
+                if (q.size())
+                {
+                    sPrinted += "\nfront:  " + q.front().printEmbedded();
+                    sPrinted += "\n back:  " + q.back().printEmbedded();
+                }
+                else
+                {
+                    sPrinted += "\nfront:  void";
+                    sPrinted += "\n back:  void";
+                }
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+            make_hline();
+        }
+        else
+        {
+            sPrinted = res[i].printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|-> " + sPrinted + "\n");
+        }
+
     }
 
     NumeReKernel::toggleTableStatus();

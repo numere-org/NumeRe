@@ -2495,7 +2495,7 @@ namespace mu
             else if (p > 0)
                 ret.emplace_back(Value(common));
             else
-                throw ParserError(ecTYPE_MISMATCH_OOB);
+                throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
         }
 
         return ret;
@@ -2525,7 +2525,7 @@ namespace mu
             else if (p > 0)
                 ret.emplace_back(Value(getCommonType()));
             else
-                throw ParserError(ecTYPE_MISMATCH_OOB);
+                throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
         }
 
         return ret;
@@ -3096,7 +3096,7 @@ namespace mu
     Value& Array::getGenerated(size_t i)
     {
         if (i >= size())
-            throw ParserError(ecTYPE_MISMATCH_OOB);
+            throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
 
         size_t vectSize = count();
 
@@ -3124,7 +3124,7 @@ namespace mu
                 return val;
         }
 
-        throw ParserError(ecTYPE_MISMATCH_OOB);
+        throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
     }
 
 
@@ -3139,7 +3139,7 @@ namespace mu
     const Value& Array::getGenerated(size_t i) const
     {
         if (i >= size())
-            throw ParserError(ecTYPE_MISMATCH_OOB);
+            throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
 
         size_t vectSize = count();
 
@@ -3167,7 +3167,7 @@ namespace mu
                 return val;
         }
 
-        throw ParserError(ecTYPE_MISMATCH_OOB);
+        throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
     }
 
 
@@ -3385,6 +3385,9 @@ namespace mu
     /////////////////////////////////////////////////
     Variable& Variable::operator=(const Variable& other)
     {
+        if (this == &other)
+            return *this;
+
         DataType common = getCommonType();
 
         if (accepts(other))
@@ -3412,6 +3415,14 @@ namespace mu
     /////////////////////////////////////////////////
     void Variable::indexedAssign(const Array& idx, const Array& vals)
     {
+        // Is this an assignment to the original var but with a new order?
+        if (this == &vals)
+        {
+            // We need to buffer the values before assignment
+            Array buffer(vals);
+            return indexedAssign(idx, buffer);
+        }
+
         if (accepts(vals))
         {
             vals.dereference();

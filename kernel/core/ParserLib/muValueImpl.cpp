@@ -2161,7 +2161,7 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"decodejson", 1}, {"write", -2}, {"insertkey", -2}});
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"decodejson", 1}, {"write", -2}, {"insertkey", -1}, {"insertkey", -2}});
 
         if (m_val.isField(sMethod) && argc <= 1)
             return MethodDefinition(sMethod, -argc);
@@ -2218,6 +2218,23 @@ namespace mu
 
         if (sMethod == "decodejson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.decodeJson(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
+            return new NumValue(m_val.addKey(static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "insertkey" && arg1.m_type == TYPE_ARRAY)
+        {
+            const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
+            size_t elems = arr1.size();
+            Array ret;
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(new NumValue(m_val.addKey(arr1.get(i).getStr())));
+            }
+
+            return new ArrValue(ret);
+        }
 
         if (m_val.isField(sMethod))
             return new RefValue(m_val.write(sMethod, arg1));
