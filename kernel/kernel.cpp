@@ -2789,6 +2789,9 @@ NumeReVariables NumeReKernel::getVariableList()
             + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
+        // Shorten the "kind of" obsolete "object." prefix before the type
+        replaceAll(sCurrentLine, "\tobject.", "\tobj.");
+
         vars.vObjects.push_back(sCurrentLine);
     }
 

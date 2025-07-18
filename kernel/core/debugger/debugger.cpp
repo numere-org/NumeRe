@@ -749,6 +749,9 @@ std::vector<std::string> NumeReDebugger::getVars(const std::vector<mu::DataType>
                         + iter->second->getCommonTypeAsString() + "\t"
                         + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
                         + iter->first.substr((iter->first).find(sepChar)+1));
+
+        // Shorten the "kind of" obsolete "object." prefix before the type
+        replaceAll(vVars.back(), "\tobject.", "\tobj.");
     }
 
     return vVars;

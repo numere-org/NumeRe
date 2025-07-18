@@ -472,10 +472,10 @@ namespace mu
             {
                 if (other.count() == 1 && other.m_commonType != TYPE_GENERATOR)
                 {
-                    if (other.front().isArray())
-                        return assign(other.front().getArray());
+                    if (other.first().isArray()) // was front()
+                        return assign(other.first().getArray()); // was front()
 
-                    if (size() && front().isRef())
+                    if (size() && first().isRef()) // was front()
                     {
                         size_t elems = size();
                         for (size_t i = 0; i < elems; i++)
@@ -490,12 +490,12 @@ namespace mu
                     if (size() != 1)
                         resize(1);
 
-                    front().assign(other.front());
+                    first().assign(other.first()); // was front()
                 }
-                else if (count() == 1 && front().isRef())
+                else if (count() == 1 && first().isRef()) // was front()
                 {
                     // Insert a complete array into a single reference
-                    front().assign(other);
+                    first().assign(other); // was front()
                     m_commonType = TYPE_ARRAY;
                     return *this;
                 }
@@ -574,9 +574,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                if (other.count() == 1 && other.front().isArray() && !other.front().isRef())
+                if (other.count() == 1 && other.first().isArray() && !other.first().isRef()) // was front()
                 {
-                    Array& fst = other.front().getArray();
+                    Array& fst = other.first().getArray(); // was front()
                     std::swap(_M_impl._M_start, fst._M_impl._M_start);
                     std::swap(_M_impl._M_finish, fst._M_impl._M_finish);
                     std::swap(_M_impl._M_end_of_storage, fst._M_impl._M_end_of_storage);

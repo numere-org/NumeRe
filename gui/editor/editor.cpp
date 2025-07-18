@@ -1206,6 +1206,25 @@ static bool isFloat(StringView viewedArg, StringView defaultValue)
 
 /////////////////////////////////////////////////
 /// \brief Static function to detect, whether an
+/// argument is an object.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isObject(StringView viewedArg, StringView defaultValue)
+{
+    return defaultValue.starts_with("file(")
+        || defaultValue.starts_with("dictstruct(")
+        || defaultValue.starts_with("queue(")
+        || defaultValue.starts_with("stack(")
+        || (viewedArg.front() == 'o' && viewedArg.length() > 1 && isupper(viewedArg[1]));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
 /// argument is an integer.
 ///
 /// \param viewedArg StringView
@@ -1452,6 +1471,8 @@ void NumeReEditor::HandleFunctionCallTip()
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_INTEGER", viewedArg.to_string());
         else if (isFloat(viewedArg, defaultValue))
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_FLOAT", viewedArg.to_string());
+        else if (isObject(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_OBJECT", viewedArg.to_string());
         else if (isDateTime(viewedArg, defaultValue))
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_TIME", viewedArg.to_string());
         else if (isBool(viewedArg, defaultValue))
