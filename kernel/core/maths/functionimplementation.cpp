@@ -6463,9 +6463,9 @@ mu::Array cast_file(const mu::Array& files, const mu::Array& openmode)
         std::unique_ptr<mu::FileValue> file(new mu::FileValue);
 
         if (openmode.isDefault())
-            file->get().open(files.get(i).getStr(), "r");
+            file->get().open(files.get(i).getPath(), "r");
         else
-            file->get().open(files.get(i).getStr(), openmode.get(i).getStr());
+            file->get().open(files.get(i).getPath(), openmode.get(i).getStr());
 
         ret.emplace_back(file.release());
     }

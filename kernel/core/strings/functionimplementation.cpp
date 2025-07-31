@@ -1047,7 +1047,7 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
         if (!a2.isDefault())
-            _fSys.setPath(a2.get(i).getStr(), false, sExePath);
+            _fSys.setPath(a2.get(i).getPath(), false, sExePath);
         else
             _fSys.setPath(sExePath, false, sExePath);
 
@@ -3060,7 +3060,7 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
         else
         {
 #ifndef PARSERSTANDALONE
-            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getPath(),
                                                                                                ".dat", false, true);
 
             // Ensure that the file actually exist

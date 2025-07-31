@@ -183,6 +183,7 @@ namespace mu
 
             Path getTrunkPart(const Path& other) const;
             Path getBranchPart(const Path& trunk) const;
+            Path getRevBranchPart(const Path& other) const;
             Path getSegment(size_t start = 0, size_t depth = std::string::npos) const;
             std::string to_string(char separator) const;
     };

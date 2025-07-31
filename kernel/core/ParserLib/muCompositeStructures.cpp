@@ -518,6 +518,42 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Get the reverse branch part of this
+    /// instance with respect to the passed other
+    /// path, i.e. the unique trunk if the branches
+    /// are equal. If the other path is not found
+    /// completely in this instance, only the common
+    /// part is considered as common branch and the
+    /// remaining elements belong to the returned
+    /// trunk branch.
+    ///
+    /// \param other const Path&
+    /// \return Path
+    ///
+    /////////////////////////////////////////////////
+    Path Path::getRevBranchPart(const Path& other) const
+    {
+        if (!m_pathElements.size() || !other.m_pathElements.size())
+            return Path();
+
+        auto iter = m_pathElements.rbegin();
+        auto otherIter = other.m_pathElements.rbegin();
+
+        while (iter != m_pathElements.rend()
+               && otherIter != other.m_pathElements.rend()
+               && *iter == *otherIter)
+        {
+            ++iter;
+            ++otherIter;
+        }
+
+        Path path;
+        path.m_pathElements.assign(m_pathElements.begin(), iter.base());
+        return path;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get a segment of the stored path.
     ///
     /// \param start size_t
@@ -759,7 +795,7 @@ namespace mu
             {
                 const Array& arr = static_cast<const ArrValue*>(element)->get();
 
-                if (pathElement.minSize() >= arr.size())
+                if (pathElement.minSize() > arr.size())
                     return false;
 
                 element = arr.get(pathElement.pos(arr.size())).get();
@@ -855,7 +891,7 @@ namespace mu
             {
                 Array& arr = static_cast<ArrValue*>(element->get())->get();
 
-                if (pathElement.minSize() >= arr.size())
+                if (pathElement.minSize() > arr.size())
                     throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " has not a sufficient number of elements.");
 
                 element = &arr.get(pathElement.pos(arr.size()));
@@ -1219,7 +1255,7 @@ namespace mu
             {
                 Array& arr = static_cast<ArrValue*>(element->get())->get();
 
-                if (pathElement.minSize() >= arr.size())
+                if (pathElement.minSize() > arr.size())
                     throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " has not a sufficient number of elements.");
 
                 element = &arr.get(pathElement.pos(arr.size()));

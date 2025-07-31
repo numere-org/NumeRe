@@ -5029,6 +5029,21 @@ static CommandReturnValues cmd_print(string& sCmd)
                 sPrinted += "\n fname:  " + f.getFileName();
                 sPrinted += "\n  mode:  " + f.getOpenMode();
             }
+            else if (sObjectType == "path")
+            {
+                const mu::Path& s = static_cast<const mu::PathValue&>(object).get();
+                sPrinted += "depth:  " + toString(s.depth());
+
+                if (s.depth())
+                {
+                    sPrinted += "\n path:  " + s.root();
+
+                    for (size_t i = 1; i < s.depth(); i++)
+                    {
+                        sPrinted += " / " + s[i];
+                    }
+                }
+            }
             else if (sObjectType == "stack")
             {
                 const mu::Stack& s = static_cast<const mu::StackValue&>(object).get();
