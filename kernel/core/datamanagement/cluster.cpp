@@ -381,7 +381,7 @@ namespace NumeRe
         for (size_t i = 1; i < sCmdLine.length(); i++)
         {
             // Consider quotation marks
-            if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
+            if (isQuotationMark(sCmdLine, i))
                 nQuotes++;
 
             if (nQuotes % 2)

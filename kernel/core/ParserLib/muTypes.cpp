@@ -69,6 +69,8 @@ namespace mu
                 return "string";
             case TYPE_ARRAY:
                 return "cluster";
+            case TYPE_OBJECT:
+                return "object";
         }
 
         return "void";

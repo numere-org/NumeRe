@@ -294,7 +294,7 @@ size_t findAssignmentOperator(StringView sCmd)
 
     for (size_t i = 0; i < sCmd.length(); i++)
     {
-        if (sCmd[i] == '"' && (!i || sCmd[i - 1] != '\\'))
+        if (isQuotationMark(sCmd, i))
             nQuotes++;
 
         if (!nQuotes)

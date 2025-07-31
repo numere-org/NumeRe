@@ -1666,7 +1666,7 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
         }
 
         // Count and consider quotation marks
-        if (sArgList[i] == '"' && sArgList[i-1] != '\\')
+        if (isQuotationMark(sArgList, i))
             nQuotationMarks++;
 
         // If a parenthesis or a brace was found,

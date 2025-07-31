@@ -107,6 +107,7 @@ namespace mu
         BASE_VALUE_DECL(StrValue, TYPE_STRING, std::string, m_val)
 
         BaseValue* operator+(const BaseValue& other) const override;
+        BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
 
         BaseValue& operator+=(const BaseValue& other) override;
@@ -253,6 +254,121 @@ namespace mu
         std::string print(size_t digits, size_t chrs, bool trunc) const override;
         std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
         std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a Path instance into
+    /// a value.
+    /////////////////////////////////////////////////
+    class PathValue : public Object
+    {
+        private:
+            Path m_val;
+
+        public:
+            PathValue();
+
+            /////////////////////////////////////////////////
+            /// \brief Create an instance from a Path.
+            /////////////////////////////////////////////////
+            PathValue(const Path& path) : PathValue()
+            {
+                m_val = path;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            /////////////////////////////////////////////////
+            PathValue(const PathValue& other) : PathValue()
+            {
+                m_val = other.m_val;
+            }
+
+            PathValue(PathValue&& other) = default;
+            PathValue(const BaseValue& other);
+            PathValue& operator=(const BaseValue& other) override;
+
+            /////////////////////////////////////////////////
+            /// \brief Assign a Path instance.
+            ///
+            /// \param val const Path&
+            /// \return PathValue&
+            ///
+            /////////////////////////////////////////////////
+            PathValue& operator=(const Path& val)
+            {
+                m_val = val;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Assign a PathValue instance.
+            ///
+            /// \param other const PathValue&
+            /// \return PathValue&
+            ///
+            /////////////////////////////////////////////////
+            PathValue& operator=(const PathValue& other)
+            {
+                m_val = other.m_val;
+                return *this;
+            }
+
+            PathValue& operator=(PathValue&& other) = default;
+
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            BaseValue* clone() const override
+            {
+                return new PathValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the internal Path.
+            ///
+            /// \return Path&
+            ///
+            /////////////////////////////////////////////////
+            Path& get()
+            {
+                return m_val;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the internal
+            /// Path.
+            ///
+            /// \return const Path&
+            ///
+            /////////////////////////////////////////////////
+            const Path& get() const
+            {
+                return m_val;
+            }
+
+            bool isValid() const override;
+            size_t getBytes() const override;
+
+            BaseValue* operator+(const BaseValue& other) const override;
+            BaseValue* operator/(const BaseValue& other) const override;
+            BaseValue& operator+=(const BaseValue& other) override;
+            BaseValue& operator/=(const BaseValue& other) override;
+            bool operator==(const BaseValue& other) const override;
+
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* call(const std::string& sMethod, const BaseValue& arg1) const override;
+            BaseValue* call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const override;
+            BaseValue* apply(const std::string& sMethod) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) override;
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
     };
 
 

@@ -544,6 +544,30 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Get the contained string or the
+    /// contained Path formatted as string.
+    ///
+    /// \param separator char
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Value::getPath(char separator) const
+    {
+        if (get())
+        {
+            if (isString())
+                return getStr();
+            else if (isObject() && getObject().getObjectType() == "path")
+                return static_cast<const PathValue*>(get())->get().to_string(separator);
+        }
+        else
+            return m_defString;
+
+        throw ParserError(ecTYPE_NO_STR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get the contained Numerical.
     ///
     /// \return Numerical&

@@ -41,7 +41,7 @@ static bool containsFreeOperators(const std::string& sString)
 
     for (size_t i = 0; i < sString.length(); i++)
     {
-        if (sString[i] == '"' && (!i || sString[i-1] != '\\'))
+        if (isQuotationMark(sString, i))
             nQuotes++;
 
         if (nQuotes % 2)

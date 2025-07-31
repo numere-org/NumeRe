@@ -669,7 +669,7 @@ namespace mu
     /////////////////////////////////////////////////
     inline bool nonRecursiveOps(DataType lhs, DataType rhs)
     {
-        return lhs == TYPE_CATEGORY || lhs == TYPE_REFERENCE || lhs == TYPE_GENERATOR || (rhs == TYPE_ARRAY && lhs != rhs);
+        return lhs == TYPE_CATEGORY || lhs == TYPE_REFERENCE || lhs == TYPE_GENERATOR || (rhs == TYPE_ARRAY && lhs != rhs) || rhs == TYPE_OBJECT;
     }
 }
 

@@ -1162,7 +1162,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
     for (size_t i = 1; i < sCmdLine.length(); i++)
     {
         // Consider quotation marks
-        if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
+        if (isQuotationMark(sCmdLine, i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -1306,7 +1306,7 @@ bool MemoryManager::containsTables(const std::string& sExpression)
     for (size_t i = 1; i < sExpression.length(); i++)
     {
         // Consider quotation marks
-        if (sExpression[i] == '"' && sExpression[i-1] != '\\')
+        if (isQuotationMark(sExpression, i))
             nQuotes++;
 
         if (nQuotes % 2)

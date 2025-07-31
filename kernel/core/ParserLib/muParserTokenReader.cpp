@@ -1120,7 +1120,7 @@ namespace mu
 		// parser over escaped '\"' end replace them with '"'
 		for (iEnd = (int)strBuf.find( _nrT("\"") ); iEnd != 0 && iEnd != string_type::npos; iEnd = (int)strBuf.find( _nrT("\""), iEnd))
 		{
-			if (strBuf[iEnd - 1] != '\\')
+			if (strBuf[iEnd - 1] != '\\' || (iEnd > 1 && strBuf[iEnd - 2] == '\\'))
 				break;
 
 			strBuf.replace(iEnd - 1, 2, _nrT("\"") );

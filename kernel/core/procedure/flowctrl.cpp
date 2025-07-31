@@ -1889,7 +1889,7 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
 
             for (size_t i = __sCmd.find('(')+1; i < nTermPos; i++)
             {
-                if (__sCmd[i] == '"' && __sCmd[i-1] != '\\')
+                if (isQuotationMark(__sCmd, i))
                     nQuotes++;
 
                 if (!(nQuotes % 2))
@@ -2146,7 +2146,7 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
 
         for (size_t n = 0; n < __sCmd.length(); n++)
         {
-            if (__sCmd[n] == '"' && (!n || __sCmd[n-1] != '\\'))
+            if (isQuotationMark(__sCmd, n))
                 nQuotes++;
 
             if (__sCmd[n] == ' ' && !(nQuotes % 2))

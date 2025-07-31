@@ -34,6 +34,537 @@
 namespace mu
 {
     /////////////////////////////////////////////////
+    /// \brief Create an empty Path instance.
+    /////////////////////////////////////////////////
+    Path::Path()
+    { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Create a Path instance from a
+    /// string-encoded path and the corresponding
+    /// separators (default to path separators).
+    ///
+    /// \param sPath const std::string&
+    /// \param sSeparators const std::string&
+    ///
+    /////////////////////////////////////////////////
+    Path::Path(const std::string& sPath, const std::string& sSeparators)
+    {
+        size_t p = 0;
+        size_t sep = 0;
+
+        // Jump over UNC network host markers
+        if ((sSeparators == "/\\" || sSeparators == "\\/")
+            && (sPath.starts_with("//") || sPath.starts_with("\\\\")))
+        {
+            sep = sPath.find_first_of(sSeparators, 2);
+            m_pathElements.push_back(sPath.substr(0, sep));
+
+            if (sep == std::string::npos)
+            {
+                clean();
+                return;
+            }
+
+            p = sep+1;
+
+            // Double path separators. Does not work with relative namespaces
+            while (sSeparators.find(sPath[p]) != std::string::npos && p < sPath.length())
+                p++;
+        }
+
+        while ((sep = sPath.find_first_of(sSeparators, p)) != std::string::npos)
+        {
+            m_pathElements.push_back(sPath.substr(p, sep-p));
+            p = sep+1;
+
+            // Double path separators. Does not work with relative namespaces
+            while (sSeparators.find(sPath[p]) != std::string::npos && p < sPath.length())
+                p++;
+        }
+
+        m_pathElements.push_back(sPath.substr(p));
+        clean();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Create a Path instance from an already
+    /// tokenized set of path elements.
+    ///
+    /// \param pathTokens const std::vector<std::string>&
+    ///
+    /////////////////////////////////////////////////
+    Path::Path(const std::vector<std::string>& pathTokens)
+    {
+        m_pathElements = pathTokens;
+        clean();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Compare two Path instances.
+    ///
+    /// \param other const Path&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Path::operator==(const Path& other) const
+    {
+        return m_pathElements == other.m_pathElements;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Append another path element to this
+    /// instance.
+    ///
+    /// \param element const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Path::append(const std::string& element)
+    {
+        m_pathElements.push_back(element);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Append another Path instance to this
+    /// instance.
+    ///
+    /// \param other const Path&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Path::append(const Path& other)
+    {
+        m_pathElements.insert(m_pathElements.end(), other.m_pathElements.begin(), other.m_pathElements.end());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Append some string to the current leaf
+    /// element of this instance or create a new leaf
+    /// element, if this Path instance is empty.
+    ///
+    /// \param element const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Path::cat(const std::string& element)
+    {
+        if (m_pathElements.size())
+            m_pathElements.back() += element;
+        else
+            m_pathElements.push_back(element);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the current leaf value and
+    /// remove it from the Path instance.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Path::pop()
+    {
+        std::string sPopped;
+
+        if (m_pathElements.size())
+        {
+            sPopped = m_pathElements.back();
+            m_pathElements.pop_back();
+        }
+
+        return sPopped;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the i-th path element.
+    ///
+    /// \param i size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Path::at(size_t i) const
+    {
+        if (i < m_pathElements.size())
+            return m_pathElements[i];
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Remove the i-th element and return its
+    /// value.
+    ///
+    /// \param i size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Path::remove(size_t i)
+    {
+        if (i >= m_pathElements.size())
+            return "";
+
+        std::string element = m_pathElements[i];
+        m_pathElements.erase(m_pathElements.begin()+i);
+        return element;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Remove a path segment and return it.
+    ///
+    /// \param i size_t
+    /// \param depth size_t
+    /// \return Path
+    ///
+    /////////////////////////////////////////////////
+    Path Path::remove(size_t i, size_t depth)
+    {
+        if (i >= m_pathElements.size())
+            return Path();
+
+        Path path = getSegment(i, depth);
+        m_pathElements.erase(m_pathElements.begin()+i, m_pathElements.begin()+i+depth);
+        return path;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Write the string to the i-th path
+    /// element.
+    ///
+    /// \param i size_t
+    /// \param element const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Path::write(size_t i, const std::string& element)
+    {
+        if (i < m_pathElements.size())
+        {
+            m_pathElements[i] = element;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Insert a path element into the path.
+    ///
+    /// \param i size_t
+    /// \param element const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Path::insert(size_t i, const std::string& element)
+    {
+        if (i > m_pathElements.size())
+            return false;
+
+        m_pathElements.insert(m_pathElements.begin()+i, element);
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Insert a complete path into this path.
+    ///
+    /// \param i size_t
+    /// \param path const Path&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Path::insert(size_t i, const Path& path)
+    {
+        if (i > m_pathElements.size())
+            return false;
+
+        m_pathElements.insert(m_pathElements.begin()+i, path.m_pathElements.begin(), path.m_pathElements.end());
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Clean this Path instance by removing
+    /// internal relative paths.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Path::clean()
+    {
+        if (m_pathElements.size() < 2)
+            return;
+
+        auto iter = m_pathElements.begin()+1;
+
+        while (iter != m_pathElements.end())
+        {
+            if (*iter == ".")
+                iter = m_pathElements.erase(iter);
+            else if (*iter == ".." && *(iter-1) != "..")
+                iter = m_pathElements.erase(iter-1, iter+1);
+            else
+                iter++;
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Clear the object's contents and return
+    /// true, if anything was cleared.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Path::clear()
+    {
+        if (m_pathElements.size())
+        {
+            m_pathElements.clear();
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the current path depth (i.e.
+    /// the number of path elements)
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Path::depth() const
+    {
+        return m_pathElements.size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Access the i-th path element.
+    ///
+    /// \param i size_t
+    /// \return std::string&
+    ///
+    /////////////////////////////////////////////////
+    std::string& Path::operator[](size_t i)
+    {
+        return m_pathElements[i];
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Const access to the i-th path element.
+    ///
+    /// \param i size_t
+    /// \return const std::string&
+    ///
+    /////////////////////////////////////////////////
+    const std::string& Path::operator[](size_t i) const
+    {
+        return m_pathElements[i];
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the i-th path element as XPath
+    /// element with an optional selector.
+    ///
+    /// \param i size_t
+    /// \return xPathElement
+    ///
+    /////////////////////////////////////////////////
+    xPathElement Path::getXPathElement(size_t i) const
+    {
+        std::string element = m_pathElements[i];
+        int p = 0;
+
+        if (element.find('[') != std::string::npos && element.ends_with(']'))
+        {
+            std::string sSelector = element.substr(element.find('['));
+            sSelector.pop_back();
+            sSelector.erase(0, 1);
+            element.erase(element.find('['));
+
+            if (sSelector.starts_with("last()"))
+            {
+                p = -1;
+                sSelector.erase(0, 6);
+            }
+
+            if (sSelector.length())
+                p += std::stoi(sSelector);
+
+            // Because last()-x has to be equal to -x-1 and
+            // x shall be equal to x-1, we only adapt positive
+            // values
+            if (p > 0)
+                p--;
+        }
+
+        return xPathElement{element, p};
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the first path element in this
+    /// instance, which is likely to be the drive.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Path::root() const
+    {
+        if (m_pathElements.size())
+            return m_pathElements.front();
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the last path element in this
+    /// instance, which is likely to be the filename.
+    /// If the path ended with a separator, the leaf
+    /// will return an empty string.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Path::leaf() const
+    {
+        if (m_pathElements.size())
+            return m_pathElements.back();
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the common trunk of the passed
+    /// instance and this instance (i.e. the common
+    /// part of the paths).
+    ///
+    /// \param other const Path&
+    /// \return Path
+    ///
+    /////////////////////////////////////////////////
+    Path Path::getTrunkPart(const Path& other) const
+    {
+        if (!m_pathElements.size() || !other.m_pathElements.size())
+            return Path();
+
+        auto iter = m_pathElements.begin();
+        auto otherIter = other.m_pathElements.begin();
+
+        while (iter != m_pathElements.end()
+               && otherIter != other.m_pathElements.end()
+               && *iter == *otherIter)
+        {
+            ++iter;
+            ++otherIter;
+        }
+
+        Path path;
+        path.m_pathElements.assign(m_pathElements.begin(), iter);
+        return path;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the branch part of this instance
+    /// with respect to the passed trunk. If the
+    /// trunk is not found completely in this
+    /// instance, only the common part is considered
+    /// as trunk and the remaining elements belong to
+    /// this branch.
+    ///
+    /// \param trunk const Path&
+    /// \return Path
+    ///
+    /////////////////////////////////////////////////
+    Path Path::getBranchPart(const Path& trunk) const
+    {
+        if (!m_pathElements.size() || !trunk.m_pathElements.size())
+            return Path();
+
+        auto iter = m_pathElements.begin();
+        auto trunkIter = trunk.m_pathElements.begin();
+
+        while (iter != m_pathElements.end()
+               && trunkIter != trunk.m_pathElements.end()
+               && *iter == *trunkIter)
+        {
+            ++iter;
+            ++trunkIter;
+        }
+
+        Path path;
+        path.m_pathElements.assign(iter, m_pathElements.end());
+        return path;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get a segment of the stored path.
+    ///
+    /// \param start size_t
+    /// \param depth size_t
+    /// \return Path
+    ///
+    /////////////////////////////////////////////////
+    Path Path::getSegment(size_t start, size_t depth) const
+    {
+        Path path;
+
+        if (start >= m_pathElements.size())
+            return path;
+
+        depth = std::min(m_pathElements.size()-start, depth);
+        path.m_pathElements.assign(m_pathElements.begin()+start, m_pathElements.begin()+start+depth);
+        return path;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Serialize this instance into a string.
+    ///
+    /// \param separator char
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Path::to_string(char separator) const
+    {
+        std::string sFormatted;
+
+        for (const std::string& sElement : m_pathElements)
+        {
+            if (sFormatted.length())
+                sFormatted += separator;
+
+            sFormatted += sElement;
+        }
+
+        return sFormatted;
+    }
+
+
+
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct an empty DictStruct.
     /////////////////////////////////////////////////
     DictStruct::DictStruct()
@@ -187,6 +718,62 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Does the passed Path correspond to a
+    /// field of this instance?
+    ///
+    /// \param xPath const Path&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::isField(const Path& xPath) const
+    {
+        if (!xPath.depth())
+            throw std::out_of_range("Path is empty.");
+
+        const BaseValue* element = nullptr;
+
+        for (size_t i = 0; i < xPath.depth(); i++)
+        {
+            xPathElement pathElement = xPath.getXPathElement(i);
+
+            if (!i)
+                element = read(pathElement.name);
+            else
+            {
+                if (element->m_type != TYPE_DICTSTRUCT)
+                    return false;
+
+                element = static_cast<const DictStructValue*>(element)->get().read(pathElement.name);
+            }
+
+            if (!element)
+                return false;
+
+            // First and last element are identical in the scalar case and do not need an
+            // array. All others do
+            if (pathElement.needArray() && element->m_type != TYPE_ARRAY)
+                return false;
+
+            // If the element is an array, select the correct element
+            if (element->m_type == TYPE_ARRAY)
+            {
+                const Array& arr = static_cast<const ArrValue*>(element)->get();
+
+                if (pathElement.minSize() >= arr.size())
+                    return false;
+
+                element = arr.get(pathElement.pos(arr.size())).get();
+
+                if (!element && i+1 < xPath.depth())
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Return a vector of all field names.
     ///
     /// \return std::vector<std::string>
@@ -227,6 +814,62 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Read the value at the passed Path.
+    ///
+    /// \param xPath const Path&
+    /// \return BaseValuePtr*
+    /// \note The returned pointer may only be
+    /// borrowed.
+    /////////////////////////////////////////////////
+    BaseValuePtr* DictStruct::read(const Path& xPath)
+    {
+        if (!xPath.depth())
+            throw std::out_of_range("Path is empty.");
+
+        BaseValuePtr* element = nullptr;
+
+        for (size_t i = 0; i < xPath.depth(); i++)
+        {
+            xPathElement pathElement = xPath.getXPathElement(i);
+
+            if (!i)
+                element = read(pathElement.name);
+            else
+            {
+                if (element->get()->m_type != TYPE_DICTSTRUCT)
+                    throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
+
+                element = static_cast<DictStructValue*>(element->get())->get().read(pathElement.name);
+            }
+
+            if (!element->get())
+                throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " does not exist.");
+
+            // First and last element are identical in the scalar case and do not need an
+            // array. All others do
+            if (pathElement.needArray() && element->get()->m_type != TYPE_ARRAY)
+                throw std::runtime_error("Field " + xPath.getSegment(0, i+1).to_string('.') + " is not a cluster.");
+
+            // If the element is an array, select the correct element
+            if (element->get()->m_type == TYPE_ARRAY)
+            {
+                Array& arr = static_cast<ArrValue*>(element->get())->get();
+
+                if (pathElement.minSize() >= arr.size())
+                    throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " has not a sufficient number of elements.");
+
+                element = &arr.get(pathElement.pos(arr.size()));
+
+                if (!element->get() && i+1 < xPath.depth())
+                    throw std::out_of_range("Selected element " + xPath[i] + " at " + xPath.getSegment(0, i+1).to_string('.') + " is empty.");
+            }
+        }
+
+        return element;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Read the value at the passed field
     /// name.
     ///
@@ -247,6 +890,25 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Read the value at the passed path.
+    ///
+    /// \param xPath const Path&
+    /// \return const BaseValue*
+    /// \note The returned pointer may only be
+    /// borrowed.
+    /////////////////////////////////////////////////
+    const BaseValue* DictStruct::read(const Path& xPath) const
+    {
+        if (!xPath.depth())
+            throw std::out_of_range("Path is empty.");
+
+        // To avoid code duplication, we're just casting the
+        // const avay and use the non-const implementation
+        return const_cast<DictStruct*>(this)->read(xPath)->get();
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Write a new value to the passed field.
     ///
     /// \param fieldName const std::string&
@@ -260,6 +922,116 @@ namespace mu
         BaseValue* val = value.clone();
         m_fields[fieldName].reset(val);
         return &m_fields[fieldName];
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Write a new value to the passed path.
+    ///
+    /// \param xPath const Path&
+    /// \param value const BaseValue&
+    /// \return BaseValuePtr*
+    /// \note The returned pointer may only be
+    /// borrowed.
+    /////////////////////////////////////////////////
+    BaseValuePtr* DictStruct::write(const Path& xPath, const BaseValue& value)
+    {
+        if (!xPath.depth())
+            throw std::out_of_range("Path is empty.");
+
+        BaseValuePtr* element = nullptr;
+
+        for (size_t i = 0; i < xPath.depth(); i++)
+        {
+            xPathElement pathElement = xPath.getXPathElement(i);
+
+            if (!i)
+            {
+                addKey(pathElement.name);
+                element = read(pathElement.name);
+            }
+            else
+            {
+                DictStruct& dict = static_cast<DictStructValue*>(element->get())->get();
+                dict.addKey(pathElement.name);
+                element = dict.read(pathElement.name);
+            }
+
+            if (pathElement.index != 0)
+            {
+                // Create, if missing
+                if (!element->get())
+                    element->reset(new ArrValue());
+
+                // Ensure correct typeness
+                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                    throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
+                else if (element->get()->m_type == TYPE_ARRAY)
+                {
+                    // If we have an array, we want to have the correct element as a dictstruct
+                    Array& arr = static_cast<ArrValue*>(element->get())->get();
+
+                    if (arr.size() < pathElement.minSize())
+                        arr.resize(pathElement.minSize());
+
+                    element = &arr.get(pathElement.pos(arr.size()));
+
+                    if (xPath.depth() > i+1)
+                    {
+                        if (!element->get())
+                            element->reset(new DictStructValue());
+                        else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                            throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
+                    }
+                    else
+                    {
+                        BaseValue* val = value.clone();
+                        element->reset(val);
+                        return element;
+                    }
+                }
+                else if (element->get()->m_type == TYPE_DICTSTRUCT)
+                {
+                    BaseValue* dict = element->release();
+                    Array arr{Value(dict)};
+                    arr.resize(pathElement.minSize());
+
+                    if (xPath.depth() > i+1)
+                        arr.get(pathElement.pos(arr.size())).reset(new DictStructValue());
+
+                    element->reset(new ArrValue(arr));
+                    element = &(static_cast<ArrValue*>(element->get())->get().get(pathElement.pos(arr.size())));
+                }
+            }
+            else if (xPath.depth() > i+1)
+            {
+                // Create, if missing
+                if (!element->get())
+                    element->reset(new DictStructValue());
+
+                // Ensure correct typeness
+                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                    throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
+                else if (element->get()->m_type == TYPE_ARRAY)
+                {
+                    // If we have an array, we want to have the first element as a dictstruct
+                    element = &(static_cast<ArrValue*>(element->get())->get().get(0));
+
+                    if (!element->get())
+                        element->reset(new DictStructValue());
+                    else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                        throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
+                }
+            }
+            else
+            {
+                BaseValue* val = value.clone();
+                element->reset(val);
+                return element;
+            }
+        }
+
+        return nullptr;
     }
 
 
@@ -285,6 +1057,104 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Add a key with the selected path. Does
+    /// not modify already values located with this
+    /// key.
+    ///
+    /// \param xPath const Path&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::addKey(const Path& xPath)
+    {
+        if (!xPath.depth())
+            return false;
+
+        BaseValuePtr* element = nullptr;
+
+        for (size_t i = 0; i < xPath.depth(); i++)
+        {
+            xPathElement pathElement = xPath.getXPathElement(i);
+
+            if (!i)
+            {
+                addKey(pathElement.name);
+                element = read(pathElement.name);
+            }
+            else
+            {
+                DictStruct& dict = static_cast<DictStructValue*>(element->get())->get();
+                dict.addKey(pathElement.name);
+                element = dict.read(pathElement.name);
+            }
+
+            if (pathElement.index != 0)
+            {
+                // Create, if missing
+                if (!element->get())
+                    element->reset(new ArrValue());
+
+                // Ensure correct typeness
+                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                    throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
+                else if (element->get()->m_type == TYPE_ARRAY)
+                {
+                    // If we have an array, we want to have the correct element as a dictstruct
+                    Array& arr = static_cast<ArrValue*>(element->get())->get();
+
+                    if (arr.size() < pathElement.minSize())
+                        arr.resize(pathElement.minSize());
+
+                    element = &arr.get(pathElement.pos(arr.size()));
+
+                    if (xPath.depth() > i+1)
+                    {
+                        if (!element->get())
+                            element->reset(new DictStructValue());
+                        else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                            throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
+                    }
+                }
+                else if (element->get()->m_type == TYPE_DICTSTRUCT)
+                {
+                    BaseValue* dict = element->release();
+                    Array arr{Value(dict)};
+                    arr.resize(pathElement.minSize());
+
+                    if (xPath.depth() > i+1)
+                        arr.get(pathElement.pos(arr.size())).reset(new DictStructValue());
+
+                    element->reset(new ArrValue(arr));
+                    element = &(static_cast<ArrValue*>(element->get())->get().get(pathElement.pos(arr.size())));
+                }
+            }
+            else if (xPath.depth() > i+1)
+            {
+                // Create, if missing
+                if (!element->get())
+                    element->reset(new DictStructValue());
+
+                // Ensure correct typeness
+                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                    throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
+                else if (element->get()->m_type == TYPE_ARRAY)
+                {
+                    // If we have an array, we want to have the first element as a dictstruct
+                    element = &(static_cast<ArrValue*>(element->get())->get().get(0));
+
+                    if (!element->get())
+                        element->reset(new DictStructValue());
+                    else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                        throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Remove a single element.
     ///
     /// \param fieldName const std::string&
@@ -301,6 +1171,68 @@ namespace mu
         BaseValue* val = iter->second.release();
         m_fields.erase(iter);
         return val;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Remove a single element located at the
+    /// selected path.
+    ///
+    /// \param xPath const Path&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictStruct::remove(const Path& xPath)
+    {
+        if (!xPath.depth())
+            throw std::out_of_range("Path is empty.");
+
+        if (xPath.depth() == 1)
+            return remove(xPath.root());
+
+        BaseValuePtr* element = nullptr;
+
+        for (size_t i = 0; i < xPath.depth()-1; i++)
+        {
+            xPathElement pathElement = xPath.getXPathElement(i);
+
+            if (!i)
+                element = read(pathElement.name);
+            else
+            {
+                if (element->get()->m_type != TYPE_DICTSTRUCT)
+                    throw std::out_of_range("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
+
+                element = static_cast<DictStructValue*>(element->get())->get().read(pathElement.name);
+            }
+
+            if (!element->get())
+                throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " does not exist.");
+
+            // First and last element are identical in the scalar case and do not need an
+            // array. All others do
+            if (pathElement.needArray() && element->get()->m_type != TYPE_ARRAY)
+                throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " is not a cluster.");
+
+            // If the element is an array, select the correct element
+            if (element->get()->m_type == TYPE_ARRAY)
+            {
+                Array& arr = static_cast<ArrValue*>(element->get())->get();
+
+                if (pathElement.minSize() >= arr.size())
+                    throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " has not a sufficient number of elements.");
+
+                element = &arr.get(pathElement.pos(arr.size()));
+
+                if (!element->get() && i+1 < xPath.depth())
+                    throw std::out_of_range("Selected element " + xPath[i] + " at " + xPath.getSegment(0, i+1).to_string('.') + " is empty.");
+            }
+        }
+
+        if (element->get()->m_type != TYPE_DICTSTRUCT)
+            throw std::out_of_range("Field " + xPath.to_string('.') + " is not a dictstruct instance.");
+
+        return static_cast<DictStructValue*>(element->get())->get().remove(xPath.leaf());
     }
 
 
@@ -848,6 +1780,20 @@ namespace mu
     bool File::is_open() const
     {
         return m_stream.is_open() && m_stream.good();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Overload to make use of the Path class.
+    ///
+    /// \param path const Path&
+    /// \param sOpenMode const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool File::open(const Path& path, const std::string& sOpenMode)
+    {
+        return open(path.to_string('/'), sOpenMode);
     }
 
 

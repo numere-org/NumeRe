@@ -1323,7 +1323,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
         // Ensure that this is no "wrong" procedure call
         for (size_t i = 0; i < sLine.length(); i++)
         {
-            if (sLine[i] == '"' && (!i || sLine[i - 1] != '\\'))
+            if (isQuotationMark(sLine, i))
                 nQuotes++;
 
             if (sLine[i] == '$' && !(nQuotes % 2))
@@ -2137,7 +2137,7 @@ int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sA
         // while considering the quotation marks
         for (size_t i = 0; i < sCommandLine.length(); i++)
         {
-            if (sCommandLine[i] == '"' && (!i || sCommandLine[i-1] != '\\'))
+            if (isQuotationMark(sCommandLine, i))
                 nQuotes++;
 
             if (sCommandLine[i] == '$' && !(nQuotes % 2))

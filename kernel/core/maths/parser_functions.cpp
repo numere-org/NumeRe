@@ -121,11 +121,8 @@ void convertVectorToExpression(string& sLine)
 	{
 		// Count the quotation marks to ensure that
 		// we're only focussing on actual operators
-		if (sTemp[nPos] == '"')
-		{
-			if (!nPos || (nPos && sTemp[nPos - 1] != '\\'))
-				nQuotes++;
-		}
+		if (isQuotationMark(sTemp, nPos))
+            nQuotes++;
 
 		// If we're in quotation marks, then continue
 		if (sTemp[nPos] != '{' || (nQuotes % 2))

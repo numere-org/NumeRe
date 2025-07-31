@@ -478,6 +478,7 @@ namespace mu
 					case cmDIV:
                         if (m_vRPN[curr].Cmd == cmVAL
                             && m_vRPN[prev].Cmd == cmVARMUL
+                            && m_vRPN[curr].Val().data2.getCommonType() != TYPE_STRING
                             && all(m_vRPN[curr].Val().data2 != Array(Value(0))))
 						{
 							// Optimization: 4*a/2 -> 2*a
@@ -491,7 +492,8 @@ namespace mu
 							bOptimized = true;
 						}
                         else if (m_vRPN[curr].Cmd == cmVAL
-                                 && m_vRPN[prev].Cmd == cmVAR)
+                                 && m_vRPN[prev].Cmd == cmVAR
+                                 && m_vRPN[curr].Val().data2.getCommonType() != TYPE_STRING)
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[prev].Val().data /= m_vRPN[curr].Val().data2;
@@ -513,7 +515,8 @@ namespace mu
 							bOptimized = true;
 						}
                         else if (m_vRPN[prev].Cmd == cmVAL
-                                 && m_vRPN[curr].Cmd == cmVAR)
+                                 && m_vRPN[curr].Cmd == cmVAR
+                                 && m_vRPN[prev].Val().data2.getCommonType() != TYPE_STRING)
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[prev].Val().data = std::move(m_vRPN[prev].Val().data2);

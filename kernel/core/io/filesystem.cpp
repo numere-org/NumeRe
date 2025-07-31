@@ -1133,6 +1133,11 @@ std::vector<std::string> FileSystem::getFileParts(const std::string& sFilePath) 
         if (sValidName.length() > 2)
             vFileParts.push_back(sValidName.substr(3, sValidName.rfind('/') - 3));
     }
+    else if (sValidName.starts_with("//"))
+    {
+        vFileParts.push_back(sValidName.substr(0, sValidName.find('/', 2)));
+        vFileParts.push_back(sValidName.substr(vFileParts.front().length()+1, sValidName.rfind('/')-vFileParts.front().length()-1));
+    }
     else
     {
         vFileParts.push_back("");

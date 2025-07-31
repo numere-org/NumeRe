@@ -2507,3 +2507,33 @@ size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind,
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Return true, if the selected character
+/// is an unescaped quotation mark.
+///
+/// \param sString const std::string&
+/// \param pos size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isQuotationMark(const std::string& sString, size_t pos)
+{
+    return sString[pos] == '"' && (!pos || sString[pos-1] != '\\' || (pos > 1 && sString[pos-2] == '\\'));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return true, if the selected character
+/// is an unescaped quotation mark.
+///
+/// \param sString StringView
+/// \param pos size_t
+/// \return bool
+/// \overload
+/////////////////////////////////////////////////
+bool isQuotationMark(StringView sString, size_t pos)
+{
+    return sString[pos] == '"' && (!pos || sString[pos-1] != '\\' || (pos > 1 && sString[pos-2] == '\\'));
+}
+
+

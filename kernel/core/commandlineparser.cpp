@@ -111,7 +111,7 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
 
             for (size_t i = 0; i < m_expr.length(); i++)
             {
-                if (m_expr[i] == '"' && (!i || m_expr[i-1] != '\\'))
+                if (isQuotationMark(m_expr, i))
                 {
                     nQuotes++;
                     continue;
@@ -158,7 +158,7 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
 
             for (size_t i = 0; i < m_expr.length(); i++)
             {
-                if (m_expr[i] == '"' && (!i || m_expr[i-1] != '\\'))
+                if (isQuotationMark(m_expr, i))
                     nQuotes++;
 
                 // Are we not in a string literal?

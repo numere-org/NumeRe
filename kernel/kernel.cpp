@@ -730,6 +730,7 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("file", cast_file, false, 2);                              // file(file,mode)
     _parser.DefineFun("queue", cast_queue, true, 1);                             // queue(vals)
     _parser.DefineFun("stack", cast_stack, true, 1);                             // stack(vals)
+    _parser.DefineFun("path", cast_path, true, 2);                               // path(paths,separator)
     _parser.DefineFun("seconds", cast_seconds);                                  // seconds(val)
     _parser.DefineFun("minutes", cast_minutes);                                  // minutes(val)
     _parser.DefineFun("hours", cast_hours);                                      // hours(val)
@@ -975,7 +976,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
     for (size_t i = 0; i < sCommandLine.length(); i++)
     {
-        if (sCommandLine[i] == '"' && (!i || sCommandLine[i-1] != '\\'))
+        if (isQuotationMark(sCommandLine, i))
             nQuotes++;
 
         if (nQuotes % 2)

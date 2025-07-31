@@ -569,11 +569,12 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         char c_string = '0'+SYNTAX_STRING;
         char c_normal = '0'+SYNTAX_STD;
         c = c_string;
+        size_t firstQ = sCommandLine.find('"');
 
         // Simply alternate the colors
-        for (size_t k = sCommandLine.find('"'); k < sCommandLine.length(); k++)
+        for (size_t k = firstQ; k < sCommandLine.length(); k++)
         {
-            if (c == c_normal && sCommandLine[k] == '"' && (!k || sCommandLine[k-1] != '\\'))
+            if (c == c_normal && isQuotationMark(sCommandLine, k))
             {
                 c = c_string;
                 colors[k] = c;
@@ -582,10 +583,8 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
 
             colors[k] = c;
 
-            if (c == c_string && sCommandLine[k] == '"' && k > sCommandLine.find('"') && sCommandLine[k-1] != '\\')
-            {
+            if (c == c_string && k > firstQ && isQuotationMark(sCommandLine, k))
                 c = c_normal;
-            }
         }
     }
 

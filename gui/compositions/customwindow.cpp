@@ -178,7 +178,7 @@ static wxArrayString getChoices(wxString& choices, bool keepQuotationMarks = fal
 
     for (int i = 0; i < (int)choices.length(); i++)
     {
-        if (choices[i] == '"' && !nChildBraces && (!i || choices[i-1] != '\\'))
+        if (choices[i] == '"' && !nChildBraces && (!i || choices[i-1] != '\\' || (i > 1 && choices[i-2] == '\\')))
             nQuotes++;
 
         if (!(nQuotes % 2))

@@ -6517,6 +6517,38 @@ mu::Array cast_queue(const mu::Array& vals)
 
 
 /////////////////////////////////////////////////
+/// \brief Create a path object instance.
+///
+/// \param paths const mu::Array&
+/// \param separator const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_path(const mu::Array& paths, const mu::Array& separator)
+{
+    size_t elems = paths.size();
+
+    if (!elems)
+        return mu::Value(new mu::PathValue);
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::unique_ptr<mu::PathValue> path(new mu::PathValue);
+
+        if (separator.isDefault())
+            ret.emplace_back(new mu::PathValue(mu::Path(paths.get(i).getStr(), "/\\")));
+        else
+            ret.emplace_back(new mu::PathValue(mu::Path(paths.get(i).getStr(), separator.get(i).getStr())));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Cast to seconds.
 ///
 /// \param dur const mu::Array&

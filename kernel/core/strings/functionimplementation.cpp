@@ -223,10 +223,10 @@ mu::Array strfnc_getFileParts(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a.get(i).getStr().length())
+        if (!a.get(i).getPath().length())
             ret.emplace_back("");
 
-        ret.emplace_back(_fSys.getFileParts(a.get(i).getStr()));
+        ret.emplace_back(_fSys.getFileParts(a.get(i).getPath()));
     }
 
     return ret;
@@ -251,11 +251,11 @@ mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        if (!a1.get(i).getStr().length() || !a2.get(i).getStr().length())
+        if (!a1.get(i).getPath().length() || !a2.get(i).getPath().length())
             ret.emplace_back("");
 
-        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getStr(), "", false, false),
-                                          _fSys.ValidFileName(a2.get(i).getStr(), "", false, false));
+        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getPath(), "", false, false),
+                                          _fSys.ValidFileName(a2.get(i).getPath(), "", false, false));
         replaceAll(sDiffs, "\r\n", "\n");
         ret.emplace_back(split(sDiffs, '\n'));
     }
@@ -279,7 +279,8 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 #ifndef PARSERSTANDALONE
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
+        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getPath(),
+                                                                                                      a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
 
         if (!vFileList.size())
             ret.emplace_back("");
@@ -309,7 +310,8 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 #ifndef PARSERSTANDALONE
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
+        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getPath(),
+                                                                                                          a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
 
         if (!vFolderList.size())
             ret.emplace_back("");
@@ -960,7 +962,7 @@ mu::Array strfnc_isdir(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        ret.emplace_back(is_dir(a.get(i).getStr()));
+        ret.emplace_back(is_dir(a.get(i).getPath()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -983,7 +985,7 @@ mu::Array strfnc_isfile(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        ret.emplace_back(is_file(a.get(i).getStr()));
+        ret.emplace_back(is_file(a.get(i).getPath()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -1050,10 +1052,11 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
             _fSys.setPath(sExePath, false, sExePath);
 
         std::string sExtension = ".dat";
+        std::string sPath = a1.get(i).getPath();
 
-        if (a1.get(i).getStr().rfind('.') != std::string::npos)
+        if (sPath.rfind('.') != std::string::npos)
         {
-            sExtension = a1.get(i).getStr().substr(a1.get(i).getStr().rfind('.'));
+            sExtension = sPath.substr(sPath.rfind('.'));
 
             if (sExtension.find('*') != std::string::npos || sExtension.find('?') != std::string::npos)
                 sExtension = ".dat";
@@ -1061,7 +1064,7 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
                 _fSys.declareFileType(sExtension);
         }
 
-        std::string sFile = _fSys.ValidFileName(a1.get(i).getStr(), sExtension);
+        std::string sFile = _fSys.ValidFileName(sPath, sExtension);
 
         ret.emplace_back(fileExists(sFile));
     }
@@ -2991,7 +2994,7 @@ mu::Array strfnc_getfileinfo(const mu::Array& file)
 
     for (size_t i = 0; i < file.size(); i++)
     {
-        FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(file.get(i).getStr());
+        FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(file.get(i).getPath());
         mu::Array currentFile;
         currentFile.reserve(16); // 8 key-value pairs
 
@@ -3108,7 +3111,7 @@ mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, c
         else
         {
 #ifndef PARSERSTANDALONE
-            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getPath(),
                                                                                                ".dat", false, true);
 
             // Ensure that the file actually exist
@@ -3529,7 +3532,7 @@ mu::Array strfnc_readxml(const mu::Array& xmlFiles)
 
     for (const mu::Value& file : xmlFiles)
     {
-        std::string validFile = _fSys.ValidFileName(file.getStr(), ".xml", false, true);
+        std::string validFile = _fSys.ValidFileName(file.getPath(), ".xml", false, true);
 
         if (!fileExists(validFile))
             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
@@ -3559,7 +3562,7 @@ mu::Array strfnc_readjson(const mu::Array& jsonFiles)
 
     for (const mu::Value& file : jsonFiles)
     {
-        std::string validFile = _fSys.ValidFileName(file.getStr(), ".json", false, true);
+        std::string validFile = _fSys.ValidFileName(file.getPath(), ".json", false, true);
 
         if (!fileExists(validFile))
             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);

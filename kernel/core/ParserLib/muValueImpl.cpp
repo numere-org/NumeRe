@@ -737,6 +737,32 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Division operator -> Path operator
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* StrValue::operator/(const BaseValue& other) const
+    {
+        if (other.m_type == TYPE_STRING)
+            return new PathValue(Path(m_val) / static_cast<const StrValue&>(other).m_val);
+        else if (other.m_type == TYPE_CATEGORY)
+            return new PathValue(Path(m_val) / static_cast<const CatValue&>(other).get().name);
+        else if (other.m_type == TYPE_OBJECT && static_cast<const Object&>(other).getObjectType() == "path")
+            return new PathValue(Path(m_val) / static_cast<const PathValue&>(other).get());
+        else if (other.m_type == TYPE_ARRAY)
+            return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
+        else if (other.m_type == TYPE_NEUTRAL)
+            return clone();
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator/(static_cast<const RefValue&>(other).get());
+
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Multiplication operator -> Repeats.
     ///
     /// \param other const BaseValue&
@@ -2145,6 +2171,13 @@ namespace mu
             const BaseValue* v = m_val.read(static_cast<const StrValue&>(arg1).get());
             return v ? v->clone() : nullptr;
         }
+        else if (sMethod == "at"
+                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && m_val.isField(static_cast<const PathValue&>(arg1).get()))
+        {
+            const BaseValue* v = m_val.read(static_cast<const PathValue&>(arg1).get());
+            return v ? v->clone() : nullptr;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2210,17 +2243,32 @@ namespace mu
         if (sMethod == "removekey" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return m_val.remove(static_cast<const StrValue&>(arg1).get());
 
+        if (sMethod == "removekey"
+            && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+            && m_val.isField(static_cast<const PathValue&>(arg1).get()))
+            return m_val.remove(static_cast<const PathValue&>(arg1).get());
+
         if (sMethod == "loadxml" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.importXml(static_cast<const StrValue&>(arg1).get())));
 
+        if (sMethod == "loadxml" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new NumValue(Numerical(m_val.importXml(static_cast<const PathValue&>(arg1).get().to_string('/'))));
+
         if (sMethod == "loadjson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.importJson(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "loadjson" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new NumValue(Numerical(m_val.importJson(static_cast<const PathValue&>(arg1).get().to_string('/'))));
 
         if (sMethod == "decodejson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.decodeJson(static_cast<const StrValue&>(arg1).get())));
 
         if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
             return new NumValue(m_val.addKey(static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "insertkey"
+                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && m_val.isField(static_cast<const PathValue&>(arg1).get()))
+            return new NumValue(m_val.addKey(static_cast<const PathValue&>(arg1).get()));
         else if (sMethod == "insertkey" && arg1.m_type == TYPE_ARRAY)
         {
             const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
@@ -2261,6 +2309,10 @@ namespace mu
 
         if (sMethod == "write" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
+        else if (sMethod == "write"
+                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && m_val.isField(static_cast<const PathValue&>(arg1).get()))
+            return new RefValue(m_val.write(static_cast<const PathValue&>(arg1).get(), arg2));
         else if (sMethod == "write" && arg1.m_type == TYPE_ARRAY)
         {
             const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
@@ -2301,6 +2353,9 @@ namespace mu
 
         if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
+        else if (sMethod == "insertkey"
+                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new RefValue(m_val.write(static_cast<const PathValue&>(arg1).get(), arg2));
         else if (sMethod == "insertkey" && arg1.m_type == TYPE_ARRAY)
         {
             const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
@@ -2414,6 +2469,449 @@ namespace mu
         }
 
         return "[" + sPrinted + "]";
+    }
+
+
+    //------------------------------------------------------------------------------
+
+    /////////////////////////////////////////////////
+    /// \brief PathValue constructor.
+    /////////////////////////////////////////////////
+    PathValue::PathValue() : Object("path")
+    {
+        declareMethod(MethodDefinition("root", 0));
+        declareMethod(MethodDefinition("leaf", 0));
+        declareMethod(MethodDefinition("depth", 0));
+        declareMethod(MethodDefinition("trunk", 1));
+        declareMethod(MethodDefinition("branch", 1));
+        declareMethod(MethodDefinition("format", 1));
+        declareMethod(MethodDefinition("at", 1));
+        declareMethod(MethodDefinition("sub", 1));
+        declareMethod(MethodDefinition("sub", 2));
+
+        declareApplyingMethod(MethodDefinition("pop", 0));
+        declareApplyingMethod(MethodDefinition("clean", 0));
+        declareApplyingMethod(MethodDefinition("clear", 0));
+        declareApplyingMethod(MethodDefinition("remove", 1));
+        declareApplyingMethod(MethodDefinition("remove", 2));
+        declareApplyingMethod(MethodDefinition("insert", 2));
+        declareApplyingMethod(MethodDefinition("write", 2));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a PathValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    PathValue::PathValue(const BaseValue& other) : PathValue()
+    {
+        if (Object::operator==(other))
+            m_val = static_cast<const PathValue&>(other).m_val;
+        else if (other.m_type == TYPE_REFERENCE && Object::operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const PathValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else if (other.m_type == TYPE_STRING)
+            m_val = Path(static_cast<const StrValue&>(other).get());
+        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_STRING)
+            m_val = Path(static_cast<const StrValue&>(static_cast<const RefValue&>(other).get()).get());
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return PathValue&
+    ///
+    /////////////////////////////////////////////////
+    PathValue& PathValue::operator=(const BaseValue& other)
+    {
+        if (Object::operator==(other))
+            m_val = static_cast<const PathValue&>(other).m_val;
+        else if (other.m_type == TYPE_REFERENCE && Object::operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const PathValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else if (other.m_type == TYPE_STRING)
+            m_val = Path(static_cast<const StrValue&>(other).get());
+        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_STRING)
+            m_val = Path(static_cast<const StrValue&>(static_cast<const RefValue&>(other).get()).get());
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Is this path instance valid?
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool PathValue::isValid() const
+    {
+        return m_val.depth();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the byte size of this instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t PathValue::getBytes() const
+    {
+        size_t bytes = 0;
+
+        for (size_t i = 0; i < m_val.depth(); i++)
+        {
+            bytes += m_val[i].length();
+        }
+
+        return bytes;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Leaf concatenation operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::operator+(const BaseValue& other) const
+    {
+        if (other.m_type == TYPE_STRING)
+            return new PathValue(m_val + static_cast<const StrValue&>(other).get());
+        else if (other.m_type == TYPE_CATEGORY)
+            return new PathValue(m_val + static_cast<const CatValue&>(other).get().name);
+        else if (other.m_type == TYPE_ARRAY)
+        {
+            const Array& otherArr = static_cast<const ArrValue&>(other).get();
+            Array ret;
+            ret.reserve(otherArr.size());
+
+            for (size_t i = 0; i < otherArr.size(); i++)
+            {
+                ret.emplace_back(new PathValue(m_val + otherArr.get(i).getStr()));
+            }
+
+            return new ArrValue(ret);
+        }
+        else if (other.m_type == TYPE_NEUTRAL)
+            return clone();
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+(static_cast<const RefValue&>(other).get());
+
+        throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.m_type));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Path combination operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::operator/(const BaseValue& other) const
+    {
+        if (other.m_type == TYPE_STRING)
+            return new PathValue(m_val / static_cast<const StrValue&>(other).get());
+        else if (other.m_type == TYPE_CATEGORY)
+            return new PathValue(m_val / static_cast<const CatValue&>(other).get().name);
+        else if (Object::operator==(other))
+            return new PathValue(m_val / static_cast<const PathValue&>(other).get());
+        else if (other.m_type == TYPE_ARRAY)
+        {
+            const Array& otherArr = static_cast<const ArrValue&>(other).get();
+            Array ret;
+            ret.reserve(otherArr.size());
+
+            for (size_t i = 0; i < otherArr.size(); i++)
+            {
+                if (otherArr.get(i).isObject() && otherArr.get(i).getObject().getObjectType() == "path")
+                    ret.emplace_back(new PathValue(m_val / static_cast<const PathValue&>(otherArr.get(i).getObject()).get()));
+                else
+                    ret.emplace_back(new PathValue(m_val / otherArr.get(i).getStr()));
+            }
+
+            return new ArrValue(ret);
+        }
+        else if (other.m_type == TYPE_NEUTRAL)
+            return clone();
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+(static_cast<const RefValue&>(other).get());
+
+        throw ParserError(ecTYPE_MISMATCH, "object.path / " + getTypeAsString(other.m_type));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Concat this leaf with another string.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& PathValue::operator+=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_STRING)
+            m_val += static_cast<const StrValue&>(other).get();
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val += static_cast<const CatValue&>(other).get().name;
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+=(static_cast<const RefValue&>(other).get());
+        else if (other.m_type != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.m_type));
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Append a path to this path instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& PathValue::operator/=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_STRING)
+            m_val /= static_cast<const StrValue&>(other).get();
+        else if (other.m_type == TYPE_CATEGORY)
+            m_val /= static_cast<const CatValue&>(other).get().name;
+        else if (Object::operator==(other))
+            m_val /= static_cast<const PathValue&>(other).get();
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator/=(static_cast<const RefValue&>(other).get());
+        else if (other.m_type != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path / " + getTypeAsString(other.m_type));
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Equal comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool PathValue::operator==(const BaseValue& other) const
+    {
+        return Object::operator==(other) && static_cast<const PathValue&>(other).m_val == m_val;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "root")
+            return new StrValue(m_val.root());
+        else if (sMethod == "leaf")
+            return new StrValue(m_val.leaf());
+        else if (sMethod == "depth")
+            return new NumValue(m_val.depth());
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::call(const std::string& sMethod, const BaseValue& arg1) const
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return call(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "trunk" && Object::operator==(arg1))
+            return new PathValue(m_val.getTrunkPart(static_cast<const PathValue&>(arg1).get()));
+        else if (sMethod == "branch" && Object::operator==(arg1))
+            return new PathValue(m_val.getBranchPart(static_cast<const PathValue&>(arg1).get()));
+        else if (sMethod == "format" && arg1.m_type == TYPE_STRING)
+            return new StrValue(m_val.to_string(static_cast<const StrValue&>(arg1).get().front()));
+        else if (sMethod == "at" && arg1.m_type == TYPE_NUMERICAL)
+            return new StrValue(m_val.at(static_cast<const NumValue&>(arg1).get().asUI64()-1));
+        else if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL)
+            return new PathValue(m_val.getSegment(static_cast<const NumValue&>(arg1).get().asUI64()-1));
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+            return call(sMethod,
+                        arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                        arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_NUMERICAL)
+            return new PathValue(m_val.getSegment(static_cast<const NumValue&>(arg1).get().asUI64()-1,
+                                                  static_cast<const NumValue&>(arg2).get().asUI64()));
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "clean")
+        {
+            m_val.clean();
+            return new NumValue(true);
+        }
+        else if (sMethod == "pop")
+            return new StrValue(m_val.pop());
+        else if (sMethod == "clear")
+            return new NumValue(m_val.clear());
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.m_type == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "remove" && arg1.m_type == TYPE_NUMERICAL)
+            return new StrValue(m_val.remove(static_cast<const NumValue&>(arg1).get().asUI64()-1));
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+   /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+            return apply(sMethod,
+                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "write" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_STRING)
+            return new NumValue(m_val.write(static_cast<const NumValue&>(arg1).get().asUI64()-1, static_cast<const StrValue&>(arg2).get()));
+        else if (sMethod == "insert" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_STRING)
+            return new NumValue(m_val.insert(static_cast<const NumValue&>(arg1).get().asUI64()-1, static_cast<const StrValue&>(arg2).get()));
+        else if (sMethod == "insert" && arg1.m_type == TYPE_NUMERICAL && Object::operator==(arg2))
+            return new NumValue(m_val.insert(static_cast<const NumValue&>(arg1).get().asUI64()-1, static_cast<const PathValue&>(arg2).get()));
+        else if (sMethod == "remove" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_NUMERICAL)
+            return new PathValue(m_val.remove(static_cast<const NumValue&>(arg1).get().asUI64()-1,
+                                              static_cast<const NumValue&>(arg2).get().asUI64()));
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this path instance into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string PathValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (m_val.depth())
+        {
+            std::string sSerialized;
+
+            for (size_t i = 0; i < m_val.depth(); i++)
+            {
+                if (sSerialized.length())
+                    sSerialized += " / ";
+
+                sSerialized += "\"" + m_val[i] + "\"";
+            }
+
+            return "{" + sSerialized + "}";
+        }
+
+        return "{void}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this path instance into a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string PathValue::printVal(size_t digits, size_t chrs) const
+    {
+        if (m_val.depth())
+        {
+            std::string sSerialized;
+
+            for (size_t i = 0; i < m_val.depth(); i++)
+            {
+                if (sSerialized.length())
+                    sSerialized += "/";
+
+                sSerialized += m_val[i];
+            }
+
+            return "{" + sSerialized + "}";
+        }
+
+        return "{void}";
     }
 
 
@@ -2585,6 +3083,8 @@ namespace mu
             return new NumValue(m_val.set_read_pos(static_cast<const NumValue&>(arg1).get().asUI64()));
         else if (sMethod == "open" && arg1.m_type == TYPE_STRING)
             return new NumValue(m_val.open(static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "open" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new NumValue(m_val.open(static_cast<const PathValue&>(arg1).get()));
         else if (sMethod == "read" && arg1.m_type == TYPE_STRING)
             return m_val.read(static_cast<const StrValue&>(arg1).get());
         else if (sMethod == "write")
@@ -2612,6 +3112,10 @@ namespace mu
 
         if (sMethod == "open" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_STRING)
             return new NumValue(m_val.open(static_cast<const StrValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
+        else if (sMethod == "open"
+                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && arg2.m_type == TYPE_STRING)
+            return new NumValue(m_val.open(static_cast<const PathValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
         else if (sMethod == "read" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
             return m_val.read(static_cast<const StrValue&>(arg1).get(), static_cast<const NumValue&>(arg2).get().asUI64());
         else if (sMethod == "write" && arg2.m_type == TYPE_STRING)

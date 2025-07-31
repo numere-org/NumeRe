@@ -3861,6 +3861,7 @@ namespace wxcode
             x = m_owner->GetHeaderWindow()->GetWidth() + 2;
             if (x < GetClientSize().GetWidth()) x_pos = 0;
             SetScrollbars (xUnit, yUnit, x / xUnit, y / yUnit, x_pos, y_pos);
+            SetScrollRate(xUnit, 5);
         }
         else
         {

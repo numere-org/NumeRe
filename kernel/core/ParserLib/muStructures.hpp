@@ -142,6 +142,7 @@ namespace mu
 
             std::string& getStr();
             const std::string& getStr() const;
+            std::string getPath(char separator = '/') const;
 
             Numerical& getNum();
             const Numerical& getNum() const;
@@ -318,7 +319,10 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->getType()))
+                    DataType thisType = get()->m_type;
+                    DataType otherType = other->getType();
+
+                    if (nonRecursiveOps(thisType, otherType) || thisType == TYPE_STRING)
                         return operator=(*this / other);
 
                     *get() /= *other.get();
@@ -781,6 +785,9 @@ namespace mu
                     {
                         get(i) += other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -803,6 +810,9 @@ namespace mu
                     {
                        get(i) -= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -825,6 +835,9 @@ namespace mu
                     {
                         get(i) /= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -847,6 +860,9 @@ namespace mu
                     {
                         get(i) *= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -869,6 +885,9 @@ namespace mu
                     {
                         get(i) ^= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;

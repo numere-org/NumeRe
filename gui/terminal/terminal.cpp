@@ -1742,7 +1742,7 @@ void NumeReTerminal::insertRawText(std::string sText)
     // Replace line comments with block comments, where necessary
     for (size_t i = 0; i < sText.length(); i++)
     {
-        if (sText[i] == '"' && (!i || sText[i-1] != '\\'))
+        if (isQuotationMark(sText, i))
             nQuotes++;
 
         if (nQuotes % 2)

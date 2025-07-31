@@ -531,6 +531,9 @@ size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size
 size_t str_not_match_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
 size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
 
+bool isQuotationMark(const std::string& sString, size_t pos);
+bool isQuotationMark(StringView sString, size_t pos);
+
 
 #endif // STRINGTOOLS_HPP
 
