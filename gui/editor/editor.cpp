@@ -1216,6 +1216,7 @@ static bool isFloat(StringView viewedArg, StringView defaultValue)
 static bool isObject(StringView viewedArg, StringView defaultValue)
 {
     return defaultValue.starts_with("file(")
+        || defaultValue.starts_with("path(")
         || defaultValue.starts_with("dictstruct(")
         || defaultValue.starts_with("queue(")
         || defaultValue.starts_with("stack(")

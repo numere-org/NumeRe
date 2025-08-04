@@ -1353,6 +1353,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "get_utc_offset()"
              && sSyntaxElement != "today()"
              && sSyntaxElement != "dictstruct()"
+             && sSyntaxElement != "path()"
              && sSyntaxElement != "file()"
              && sSyntaxElement != "stack()"
              && sSyntaxElement != "queue()"
