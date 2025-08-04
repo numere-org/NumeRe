@@ -2484,7 +2484,7 @@ namespace mu
         declareMethod(MethodDefinition("depth", 0));
         declareMethod(MethodDefinition("trunk", 1));
         declareMethod(MethodDefinition("branch", 1));
-        declareMethod(MethodDefinition("revbranch", 1));
+        declareMethod(MethodDefinition("uniquetrunk", 1));
         declareMethod(MethodDefinition("format", 1));
         declareMethod(MethodDefinition("at", 1));
         declareMethod(MethodDefinition("sub", 1));
@@ -2748,7 +2748,7 @@ namespace mu
             return new PathValue(m_val.getTrunkPart(static_cast<const PathValue&>(arg1).get()));
         else if (sMethod == "branch" && Object::operator==(arg1))
             return new PathValue(m_val.getBranchPart(static_cast<const PathValue&>(arg1).get()));
-        else if (sMethod == "revbranch" && Object::operator==(arg1))
+        else if (sMethod == "uniquetrunk" && Object::operator==(arg1))
             return new PathValue(m_val.getRevBranchPart(static_cast<const PathValue&>(arg1).get()));
         else if (sMethod == "format" && arg1.m_type == TYPE_STRING)
             return new StrValue(m_val.to_string(static_cast<const StrValue&>(arg1).get().front()));
