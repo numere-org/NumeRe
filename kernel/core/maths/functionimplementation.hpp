@@ -225,12 +225,18 @@ mu::Array oprt_BinAND(const mu::Array&, const mu::Array&);
 
 // Cast functions
 mu::Array cast_category(const mu::Array& cats, const mu::Array& ids); // OPT=1
+mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals); // OPT=2
+mu::Array cast_file(const mu::Array& files, const mu::Array& openmode); // OPT=2
+mu::Array cast_stack(const mu::Array& vals); // OPT=1
+mu::Array cast_queue(const mu::Array& vals); // OPT=1
+mu::Array cast_path(const mu::Array& paths, const mu::Array& separator); // OPT=2
 mu::Array cast_seconds(const mu::Array&);
 mu::Array cast_minutes(const mu::Array&);
 mu::Array cast_hours(const mu::Array&);
 mu::Array cast_days(const mu::Array&);
 mu::Array cast_weeks(const mu::Array&);
 mu::Array cast_years(const mu::Array&);
+
 /////////////////////////////////////////////////
 /// \brief Implements all numerical cast
 /// functions as a template except for complex

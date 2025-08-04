@@ -89,13 +89,15 @@ namespace mu
     Array val2Str(const Array& arr, size_t nLen)
     {
         Array res;
+        size_t elems = arr.size();
+        res.reserve(elems);
 
-        for (const auto& val : arr)
+        for (size_t i = 0; i < elems; i++)
         {
 #ifndef PARSERSTANDALONE
-            std::string sStr = val.printVal(NumeReKernel::getInstance()->getSettings().getPrecision());
+            std::string sStr = arr.get(i).printVal(NumeReKernel::getInstance()->getSettings().getPrecision());
 #else
-            std::string sStr = val.printVal();
+            std::string sStr = arr.get(i).printVal();
 #endif // PARSERSTANDALONE
 
             if (sStr.length() < nLen && sStr.length() > 0)

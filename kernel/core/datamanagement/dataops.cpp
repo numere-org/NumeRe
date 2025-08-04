@@ -201,7 +201,7 @@ void append_data(CommandLineParser& cmdParser)
         info = _data.openFile(sFileList, false, false, 0, "", sFileFormat);
 
     // Inform the user
-    if (!_data.isEmpty("data") && _option.systemPrints())
+    if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
         NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
 }
 
@@ -328,29 +328,31 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
 /////////////////////////////////////////////////
 static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, MemoryManager& _data)
 {
-    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+    mu::Variable* cluster = _parser.ReadVar(sCluster.substr(0, sCluster.find('{')));
+
+    if (cluster)
     {
-        if (sCluster.substr(0, sCluster.find('{')) == iter->first)
-        {
-            // Cache was found
-            // Get the indices from the cache expression
-            Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, false);
+        // Cache was found
+        // Get the indices from the cache expression
+        Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, false);
 
-            // Check the indices
-            if (!isValidIndexSet(_iDeleteIndex))
-                return false;
+        // Check the indices
+        if (!isValidIndexSet(_iDeleteIndex))
+            return false;
 
-            // Evaluate the indices
-            if (_iDeleteIndex.row.isOpenEnd())
-                _iDeleteIndex.row.setRange(0, _data.getCluster(iter->first).size() - 1);
+        // Evaluate the indices
+        if (_iDeleteIndex.row.isOpenEnd())
+            _iDeleteIndex.row.setRange(0, cluster->size() - 1);
 
-            // Delete the section identified by the cache expression
-            // The indices are vectors
-            _data.getCluster(iter->first).deleteItems(_iDeleteIndex.row);
+        // The cluster function for deleting items expects
+        // 1-based indices
+        _iDeleteIndex.row.apply_offset(1);
 
-            // Return true
-            return true;
-        }
+        // Delete the section identified by the cache expression
+        // The indices are vectors
+        cluster->deleteItems(_iDeleteIndex.row.getVector());
+
+        return true;
     }
 
     return false;
@@ -570,30 +572,34 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, Indices& _idx)
 {
     vector<int> vSortIndex;
-    NumeRe::Cluster& cluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sCluster);
+    mu::Variable& cluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sCluster);
 
     // Evalulate special index values
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, cluster.size() - 1);
 
-    // Perform the actual sorting operation
-    // The member function will be able to handle the remaining command line parameters by itself
-    vSortIndex = cluster.sortElements(_idx.row, cmdParser.getParameterList());
+    mu::Array opts;
 
-    // If the sorting index contains elements, the user had requested them
-    if (vSortIndex.size())
-    {
-        // Transform the integer indices into doubles
-        mu::Array vDoubleSortIndex;
+    if (cmdParser.hasParam("desc"))
+        opts.push_back("desc");
 
-        for (size_t i = 0; i < vSortIndex.size(); i++)
-            vDoubleSortIndex.push_back(vSortIndex[i]);
+    if (cmdParser.hasParam("ignorecase"))
+        opts.push_back("ignorecase");
 
-        // Set the vector name and set the vector for the parser
-        cmdParser.setReturnValue(vDoubleSortIndex);
-    }
+    // Get a sorting index
+    mu::Array order = cluster.order(opts);
+
+    // If the user has requested the index, return that instead of
+    // actually reordering
+    if (cmdParser.hasParam("index"))
+        cmdParser.setReturnValue(order);
     else
+    {
+        // Perform the actual sorting operation
+        cluster = cluster.call("sel", order);
+
         cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
+    }
 
     // Return true
     return true;

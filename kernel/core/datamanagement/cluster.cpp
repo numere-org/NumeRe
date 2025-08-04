@@ -19,6 +19,7 @@
 #include <gsl/gsl_statistics.h>
 
 #include "cluster.hpp"
+#include "../../kernel.hpp"
 #include "../ui/error.hpp"
 
 namespace NumeRe
@@ -68,6 +69,7 @@ namespace NumeRe
                 resize(_idx.row.front()+1, mu::Value(NAN));
 
             mu::Array::get(_idx.row.front()) = mu::Value(data);
+            dereference();
             return;
         }
 
@@ -83,6 +85,8 @@ namespace NumeRe
 
             mu::Array::get(_idx.row[i]) = data.mu::Array::get(i);
         }
+
+        dereference();
     }
 
 
@@ -159,44 +163,6 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief Set a value at the position i ensuring
-    /// correct size of the underlying array.
-    ///
-    /// \param i size_t
-    /// \param v const mu::Value&
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-    void Cluster::set(size_t i, const mu::Value& v)
-    {
-        if (i >= size())
-            resize(i+1, mu::Value(NAN));
-
-        mu::Array::get(i) = v;
-
-        if (getCommonType() != v.getType())
-            m_commonType = mu::TYPE_VOID;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Local function override to obtain void
-    /// instead of errors.
-    ///
-    /// \param i size_t
-    /// \return mu::Value
-    ///
-    /////////////////////////////////////////////////
-    mu::Value Cluster::get(size_t i) const
-    {
-        if (i < size())
-            return mu::Array::get(i);
-
-        return mu::Value();
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief This member function inserts the data
     /// of all cluster items memory into the pointer
     /// passed to the function. This function is used
@@ -257,6 +223,7 @@ namespace NumeRe
         }
 
         mu::Array::operator=(a);
+        dereference();
     }
 
 
@@ -394,73 +361,6 @@ namespace NumeRe
     //
     //
 
-
-    /////////////////////////////////////////////////
-    /// \brief This member function creates a valid
-    /// cluster identifier name, which can be used to
-    /// create or append a new cluster.
-    ///
-    /// \param sCluster const std::string&
-    /// \return std::string
-    ///
-    /////////////////////////////////////////////////
-    std::string ClusterManager::validateClusterName(const std::string& sCluster)
-    {
-        std::string sClusterName = sCluster.substr(0, sCluster.find('{'));
-        const static std::string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
-
-        if ((sClusterName[0] >= '0' && sClusterName[0] <= '9') || sClusterName[0] == '~' || sClusterName.find_first_not_of(sVALIDCHARACTERS) != std::string::npos)
-            throw SyntaxError(SyntaxError::INVALID_CLUSTER_NAME, "", SyntaxError::invalid_position, sClusterName);
-
-        return sClusterName;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief This private member function returns
-    /// an iterator to the referenced cluster or
-    /// std::map::end().
-    ///
-    /// \param view StringView
-    /// \return std::map<std::string, Cluster>::const_iterator
-    ///
-    /////////////////////////////////////////////////
-    std::map<std::string, Cluster>::const_iterator ClusterManager::mapStringViewFind(StringView view) const
-    {
-        for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
-        {
-            if (view == iter->first)
-                return iter;
-            else if (view < iter->first)
-                return mClusterMap.end();
-        }
-
-        return mClusterMap.end();
-    }
-
-    /////////////////////////////////////////////////
-    /// \brief This private member function returns
-    /// an iterator to the referenced cluster or
-    /// std::map::end().
-    ///
-    /// \param view StringView
-    /// \return std::map<std::string, Cluster>::iterator
-    ///
-    /////////////////////////////////////////////////
-    std::map<std::string, Cluster>::iterator ClusterManager::mapStringViewFind(StringView view)
-    {
-        for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
-        {
-            if (view == iter->first)
-                return iter;
-            else if (view < iter->first)
-                return mClusterMap.end();
-        }
-
-        return mClusterMap.end();
-    }
-
-
     /////////////////////////////////////////////////
     /// \brief This member function detects, whether
     /// any cluster is used in the current expression.
@@ -481,7 +381,7 @@ namespace NumeRe
         for (size_t i = 1; i < sCmdLine.length(); i++)
         {
             // Consider quotation marks
-            if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
+            if (isQuotationMark(sCmdLine, i))
                 nQuotes++;
 
             if (nQuotes % 2)
@@ -519,7 +419,7 @@ namespace NumeRe
                 }
 
                 // Try to find the candidate in the internal map
-                if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
+                if (isCluster(sCmdLine.substr(nStartPos, i - nStartPos)))
                     return true;
             }
         }
@@ -539,7 +439,9 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool ClusterManager::isCluster(StringView sCluster) const
     {
-        if (mapStringViewFind(sCluster.subview(0, sCluster.find('{'))) != mClusterMap.end())
+        mu::Variable* cluster = NumeReKernel::getInstance()->getParser().ReadVar(sCluster.subview(0, sCluster.find('{')).to_string());
+
+        if (cluster && cluster->getCommonType() == mu::TYPE_CLUSTER)
             return true;
 
         return false;
@@ -557,7 +459,9 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool ClusterManager::isCluster(const std::string& sCluster) const
     {
-        if (mClusterMap.find(sCluster.substr(0, sCluster.find('{'))) != mClusterMap.end())
+        mu::Variable* cluster = NumeReKernel::getInstance()->getParser().ReadVar(sCluster.substr(0, sCluster.find('{')));
+
+        if (cluster && cluster->getCommonType() == mu::TYPE_CLUSTER)
             return true;
 
         return false;
@@ -570,17 +474,17 @@ namespace NumeRe
     /// passed cluster identifier.
     ///
     /// \param sCluster StringView
-    /// \return Cluster&
+    /// \return mu::Variable&
     ///
     /////////////////////////////////////////////////
-    Cluster& ClusterManager::getCluster(StringView sCluster)
+    mu::Variable& ClusterManager::getCluster(StringView sCluster)
     {
-        auto iter = mapStringViewFind(sCluster.subview(0, sCluster.find('{')));
+        mu::Variable* cluster = NumeReKernel::getInstance()->getParser().ReadVar(sCluster.subview(0, sCluster.find('{')).to_string());
 
-        if (iter == mClusterMap.end())
-            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster.to_string(), sCluster.to_string());
+        if (cluster && cluster->getCommonType() == mu::TYPE_CLUSTER)
+            return *cluster;
 
-        return iter->second;
+        throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster.to_string(), sCluster.to_string());
     }
 
 
@@ -590,17 +494,17 @@ namespace NumeRe
     /// passed cluster identifier.
     ///
     /// \param sCluster const std::string&
-    /// \return Cluster&
+    /// \return mu::Variable&
     ///
     /////////////////////////////////////////////////
-    Cluster& ClusterManager::getCluster(const std::string& sCluster)
+    mu::Variable& ClusterManager::getCluster(const std::string& sCluster)
     {
-        auto iter = mClusterMap.find(sCluster.substr(0, sCluster.find('{')));
+        mu::Variable* cluster = NumeReKernel::getInstance()->getParser().ReadVar(sCluster.substr(0, sCluster.find('{')));
 
-        if (iter == mClusterMap.end())
-            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
+        if (cluster && cluster->getCommonType() == mu::TYPE_CLUSTER)
+            return *cluster;
 
-        return iter->second;
+        throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
     }
 
 
@@ -612,17 +516,17 @@ namespace NumeRe
     /// reference.
     ///
     /// \param sCluster const std::string&
-    /// \return const Cluster&
+    /// \return const mu::Variable&
     ///
     /////////////////////////////////////////////////
-    const Cluster& ClusterManager::getCluster(const std::string& sCluster) const
+    const mu::Variable& ClusterManager::getCluster(const std::string& sCluster) const
     {
-        auto iter = mClusterMap.find(sCluster.substr(0, sCluster.find('{')));
+        mu::Variable* cluster = NumeReKernel::getInstance()->getParser().ReadVar(sCluster.substr(0, sCluster.find('{')));
 
-        if (iter == mClusterMap.end())
-            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
+        if (cluster && cluster->getCommonType() == mu::TYPE_CLUSTER)
+            return *cluster;
 
-        return iter->second;
+        throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
     }
 
 
@@ -632,31 +536,12 @@ namespace NumeRe
     /// and returns a reference to this new object.
     ///
     /// \param sCluster const std::string&
-    /// \return Cluster&
+    /// \return mu::Variable&
     ///
     /////////////////////////////////////////////////
-    Cluster& ClusterManager::newCluster(const std::string& sCluster)
+    mu::Variable& ClusterManager::newCluster(const std::string& sCluster)
     {
-        std::string sValidName = validateClusterName(sCluster);
-        mClusterMap[sValidName] = Cluster();
-
-        return mClusterMap[sValidName];
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief This member function appends the
-    /// passed cluster to the internal cluster map
-    /// using the passed string as the identifier.
-    ///
-    /// \param sCluster const std::string&
-    /// \param cluster const Cluster&
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-    void ClusterManager::appendCluster(const std::string& sCluster, const Cluster& cluster)
-    {
-        mClusterMap[validateClusterName(sCluster)] = cluster;
+        return *NumeReKernel::getInstance()->getParser().CreateVar(sCluster.substr(0, sCluster.find('{')), mu::TYPE_CLUSTER);
     }
 
 
@@ -671,10 +556,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void ClusterManager::removeCluster(const std::string& sCluster)
     {
-        auto iter = mClusterMap.find(sCluster);
-
-        if (iter != mClusterMap.end())
-            mClusterMap.erase(iter);
+        NumeReKernel::getInstance()->getParser().RemoveVar(sCluster.substr(0, sCluster.find('{')));
     }
 
 
@@ -689,8 +571,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     std::string ClusterManager::createTemporaryCluster(const std::string& suffix)
     {
-        std::string sTemporaryClusterName = "_~~TC_" + toString(mClusterMap.size()) + "_" + suffix;
-        mClusterMap[sTemporaryClusterName] = Cluster();
+        std::string sTemporaryClusterName = "_~~TC_" + toString(NumeReKernel::getInstance()->getParser().GetVar().size()) + "_" + suffix;
+        NumeReKernel::getInstance()->getParser().CreateVar(sTemporaryClusterName, mu::TYPE_CLUSTER);
 
         return sTemporaryClusterName + "{}";
     }
@@ -707,14 +589,18 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void ClusterManager::removeTemporaryClusters()
     {
-        auto iter = mClusterMap.begin();
+        const mu::varmap_type& vars = NumeReKernel::getInstance()->getParser().GetVar();
+        std::vector<std::string> clusters;
 
-        while (iter != mClusterMap.end())
+        for (const auto& iter : vars)
         {
-            if (iter->first.starts_with("_~~TC_"))
-                iter = mClusterMap.erase(iter);
-            else
-                ++iter;
+            if (iter.second->getCommonType() == mu::TYPE_CLUSTER && iter.first.starts_with("_~~TC_"))
+                clusters.push_back(iter.first);
+        }
+
+        for (const std::string& cluster: clusters)
+        {
+            NumeReKernel::getInstance()->getParser().RemoveVar(cluster);
         }
     }
 
@@ -727,28 +613,19 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void ClusterManager::clearAllClusters()
     {
-        mClusterMap.clear();
-    }
+        const mu::varmap_type& vars = NumeReKernel::getInstance()->getParser().GetVar();
+        std::vector<std::string> clusters;
 
+        for (const auto& iter : vars)
+        {
+            if (iter.second->getCommonType() == mu::TYPE_CLUSTER && iter.first != "ans")
+                clusters.push_back(iter.first);
+        }
 
-    /////////////////////////////////////////////////
-    /// \brief This member function updates the
-    /// dimension variable reserved for cluster
-    /// accesses with the size of the current
-    /// accessed cluster.
-    ///
-    /// \param sCluster StringView
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool ClusterManager::updateClusterSizeVariables(StringView sCluster)
-    {
-        if (isCluster(sCluster))
-            dClusterElementsCount = mu::Value(getCluster(sCluster.subview(0, sCluster.find('{'))).size());
-        else
-            dClusterElementsCount = mu::Value(0.0);
-
-        return true;
+        for (const std::string& cluster: clusters)
+        {
+            NumeReKernel::getInstance()->getParser().RemoveVar(cluster);
+        }
     }
 }
 

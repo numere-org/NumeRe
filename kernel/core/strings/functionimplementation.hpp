@@ -104,6 +104,8 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr);
 mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col);
 mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const mu::Array& len); // OPT=2
 mu::Array strfnc_gettypeof(const mu::Array& vals);
+mu::Array strfnc_readxml(const mu::Array& xmlFiles);
+mu::Array strfnc_readjson(const mu::Array& jsonFiles);
 
 #endif // STRFUNCTIONIMPLEMENTATION_HPP
 

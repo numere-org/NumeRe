@@ -5776,10 +5776,7 @@ void NumeReWindow::UpdateTerminalNotebook()
 void NumeReWindow::UpdateVarViewer()
 {
     if (m_varViewer)
-    {
-        NumeReVariables vars = m_terminal->getVariableList();
-        m_varViewer->UpdateVariables(vars.vVariables, vars.nNumerics, vars.nStrings, vars.nTables, vars.nClusters);
-    }
+        m_varViewer->UpdateVariables(m_terminal->getVariableList());
 }
 
 
@@ -6134,7 +6131,16 @@ void NumeReWindow::prepareFunctionTree()
         currentNode = m_functionTree->AppendItem(methodNode, _guilang.get("PARSERFUNCS_LISTFUNC_METHODS_TYPE_" + toUpperCase(vKeyList[i])),
                                                  idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[" + toUpperCase(vKeyList[i]) + "]");
-        std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : (vKeyList[i] == "string" ? "STRING" : "VECT");
+        std::string sPrefix = "VECT";
+
+        if (vKeyList[i] == "data")
+            sPrefix = "TABLE()";
+        else if (vKeyList[i] == "cat")
+            sPrefix = "CATEGORY";
+        else if (vKeyList[i] == "dict")
+            sPrefix = "DICTSTRUCT";
+        else
+            sPrefix = toUpperCase(vKeyList[i]);
 
         for (size_t j = 0; j < vDirList.size(); j++)
         {

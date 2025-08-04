@@ -80,7 +80,6 @@ NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _function
     sAnswer.clear();
     sPlotCompose.clear();
     kernelInstance = this;
-    _ans = nullptr;
 }
 
 
@@ -336,7 +335,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
     _parser.DefineVar("nrows", &_memoryManager.tableLinesCount);
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
-    _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
     // Define the operators
     g_logger.debug("Defining operators.");
@@ -728,6 +726,11 @@ void NumeReKernel::defineNumFunctions()
 
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
+    _parser.DefineFun("dictstruct", cast_dictstruct, true, 2);                   // dictstruct(fields,vals)
+    _parser.DefineFun("file", cast_file, false, 2);                              // file(file,mode)
+    _parser.DefineFun("queue", cast_queue, true, 1);                             // queue(vals)
+    _parser.DefineFun("stack", cast_stack, true, 1);                             // stack(vals)
+    _parser.DefineFun("path", cast_path, true, 2);                               // path(paths,separator)
     _parser.DefineFun("seconds", cast_seconds);                                  // seconds(val)
     _parser.DefineFun("minutes", cast_minutes);                                  // minutes(val)
     _parser.DefineFun("hours", cast_hours);                                      // hours(val)
@@ -851,6 +854,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
+    _parser.DefineFun("readxml", strfnc_readxml);                                    // readxml(file)
+    _parser.DefineFun("readjson", strfnc_readjson);                                  // readjson(file)
 }
 
 
@@ -971,7 +976,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
     for (size_t i = 0; i < sCommandLine.length(); i++)
     {
-        if (sCommandLine[i] == '"' && (!i || sCommandLine[i-1] != '\\'))
+        if (isQuotationMark(sCommandLine, i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -1251,20 +1256,17 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 sLine = promptForUserInput(sLine);
 
 			bool bWriteToCache = false;
-			bool bWriteToCluster = false;
 
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
             // for a cluster
-            if (_memoryManager.containsTablesOrClusters(sLine))
+            if (_memoryManager.containsTables(sLine))
             {
                 sCache = getDataElements(sLine, _parser, _memoryManager);
 
                 if (sCache.length())
                     bWriteToCache = true;
             }
-            else if (isClusterCandidate(sLine, sCache))
-                bWriteToCache = true;
 
             // Remove the definition operator
             while (sLine.find(":=") != std::string::npos)
@@ -1280,15 +1282,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 // Get the indices from the corresponding function
                 getIndices(sCache, _idx, _parser, _memoryManager, true);
 
-                if (sCache[sCache.find_first_of("({")] == '{')
-                {
-                    bWriteToCluster = true;
-                }
-
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + "," + _idx.col.to_string());
 
-                if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                     throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
                 sCache.erase(sCache.find_first_of("({"));
@@ -1308,16 +1305,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             createCalculationAnswer(nNum, v);
 
             if (bWriteToCache)
-            {
-                // Is it a cluster?
-                if (bWriteToCluster)
-                {
-                    NumeRe::Cluster& cluster = _memoryManager.getCluster(sCache);
-                    cluster.assignResults(_idx, v[0].get());
-                }
-                else
-                    _memoryManager.writeToTable(_idx, sCache, v[0].get());
-            }
+                _memoryManager.writeToTable(_idx, sCache, v[0].get());
         }
         // This section starts the error handling
         catch (mu::Parser::exception_type& e)
@@ -2079,7 +2067,7 @@ bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
                 else
                 {
                     _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1,
-                                                "_~PROC~[" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "]");
+                                                "_~PROC`" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "`");
                     nProc++;
                 }
             }
@@ -2339,8 +2327,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, const mu::StackItem* v)
 {
-    vAns.overwrite(v[0].get());
-    getAns().setValueArray(v[0].get());
+    vAns = v[0].get();
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
@@ -2721,7 +2708,6 @@ NumeReVariables NumeReKernel::getVariableList()
 
     mu::varmap_type varmap = _parser.GetVar();
     std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
-    const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2729,7 +2715,8 @@ NumeReVariables NumeReKernel::getVariableList()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() == mu::TYPE_STRING
+            || (iter->second->getCommonType() != mu::TYPE_NUMERICAL
+                && iter->second->getCommonType() != mu::TYPE_VOID)
             || isDimensionVar(iter->first))
             continue;
 
@@ -2737,10 +2724,8 @@ NumeReVariables NumeReKernel::getVariableList()
             + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vNumVars.push_back(sCurrentLine);
     }
-
-    vars.nNumerics = vars.vVariables.size();
 
     // Gather all (global) string variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2755,10 +2740,8 @@ NumeReVariables NumeReKernel::getVariableList()
             + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second->getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vStrVars.push_back(sCurrentLine);
     }
-
-    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
     // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
@@ -2775,25 +2758,43 @@ NumeReVariables NumeReKernel::getVariableList()
             + toString(stats.second, DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
             + formatByteSize(_memoryManager.getBytes(iter->first));
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vTables.push_back(sCurrentLine);
     }
-
-    vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
 
     // Gather all (global) clusters
-    for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).starts_with("_~"))
+        if ((iter->first).starts_with("_~")
+            || iter->second->getCommonType() != mu::TYPE_CLUSTER
+            || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
-        sCurrentLine += "\tcluster\t" + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true)
-            + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
+        sCurrentLine = iter->first + "{}\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
+            + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->first + "{}\t" + formatByteSize(iter->second->getBytes());
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vClusters.push_back(sCurrentLine);
     }
 
-    vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
+    // Gather all (global) class variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() < mu::TYPE_CATEGORY
+            || iter->second->getCommonType() > mu::TYPE_OBJECT
+            || isDimensionVar(iter->first))
+            continue;
+
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
+            + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+            + iter->first + "\t" + formatByteSize(iter->second->getBytes());
+
+        // Shorten the "kind of" obsolete "object." prefix before the type
+        replaceAll(sCurrentLine, "\tobject.", "\tobj.");
+
+        vars.vObjects.push_back(sCurrentLine);
+    }
 
     return vars;
 }
@@ -2813,7 +2814,6 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
     mu::varmap_type varmap = _parser.GetVar();
     std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
-    const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2821,16 +2821,15 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     {
         if ((iter->first).starts_with("_~")
             || iter->first == "ans"
-            || iter->second->getCommonType() == mu::TYPE_STRING
+            || (iter->second->getCommonType() != mu::TYPE_NUMERICAL
+                && iter->second->getCommonType() != mu::TYPE_VOID)
             || isDimensionVar(iter->first))
             continue;
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vNumVars.push_back(sCurrentLine);
     }
-
-    vars.nNumerics = vars.vVariables.size();
 
     // Gather all (global) string variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2843,10 +2842,8 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
         sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vStrVars.push_back(sCurrentLine);
     }
-
-    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
     // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
@@ -2857,23 +2854,36 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
         sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
             + toString(_memoryManager.getCols(iter->first, false)) + "\ttable";
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vTables.push_back(sCurrentLine);
     }
-
-    vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
 
     // Gather all (global) clusters
-    for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).starts_with("_~"))
+        if ((iter->first).starts_with("_~")
+            || iter->second->getCommonType() != mu::TYPE_CLUSTER
+            || isDimensionVar(iter->first))
             continue;
 
-        sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1\tcluster";
+        sCurrentLine = iter->first + "{}\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
 
-        vars.vVariables.push_back(sCurrentLine);
+        vars.vClusters.push_back(sCurrentLine);
     }
 
-    vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
+    // Gather all (global) class variables
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).starts_with("_~")
+            || iter->first == "ans"
+            || iter->second->getCommonType() < mu::TYPE_CATEGORY
+            || iter->second->getCommonType() > mu::TYPE_OBJECT
+            || isDimensionVar(iter->first))
+            continue;
+
+        sCurrentLine = iter->first + "\t" + iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString();
+
+        vars.vObjects.push_back(sCurrentLine);
+    }
 
     return vars;
 }
@@ -3109,7 +3119,14 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
 
     for (int n = 0; n < nNum; n++)
     {
-        if (v[n].get().size() > 1)
+        const mu::Array* arr;
+
+        if (v[n].get().size() == 1 && v[n].get().front().isArray())
+            arr = &v[n].get().front().getArray();
+        else
+            arr = &v[n].get();
+
+        if (arr->size() > 1)
         {
             // More than one result
             //
@@ -3122,15 +3139,15 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
                 sAns = "ans = {";
 
             // compose the result
-            for (size_t i = 0; i < v[n].get().size(); ++i)
+            for (size_t i = 0; i < arr->size(); ++i)
             {
-                sAns += strfill(v[n].get()[i].print(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                sAns += strfill(arr->get(i).printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
                                 prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
-                if (i < v[n].get().size() - 1)
+                if (i < arr->size() - 1)
                     sAns += ", ";
 
-                if (v[n].get().size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < v[n].get().size() - 1)
+                if (arr->size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < arr->size() - 1)
                     sAns += "...\n|          ";
             }
 
@@ -3140,9 +3157,9 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
         {
             // Only one result
             if (n)
-                sAns += "\n|-> ans = " + v[n].get().print(prec, 0);
+                sAns += "\n|-> ans = " + arr->print(prec, 0);
             else
-                sAns = "ans = " + v[n].get().print(prec, 0);
+                sAns = "ans = " + arr->print(prec, 0);
         }
     }
 
@@ -3699,6 +3716,86 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 
 
 /////////////////////////////////////////////////
+/// \brief Convert an Array into a string table
+/// handling possible special cases.
+///
+/// \param arr const mu::Array&
+/// \return NumeRe::Container<std::string>
+///
+/////////////////////////////////////////////////
+static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
+{
+    constexpr size_t MAXSTRINGLENGTH = 1024;
+
+    if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
+    {
+        const mu::DictStruct& dict = arr.front().getDictStruct();
+        NumeRe::Container<std::string> stringTable(dict.size(), 2);
+        std::vector<std::string> fields = dict.getFields();
+
+        for (size_t i = 0; i < fields.size(); i++)
+        {
+            stringTable.set(i, 0, "." + fields[i] + ":");
+            stringTable.set(i, 1, dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+        }
+
+        return stringTable;
+    }
+
+    NumeRe::Container<std::string> stringTable(arr.size(), 1);
+
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        const mu::Value& val = arr.get(i);
+
+        if (val.getType() == mu::TYPE_ARRAY)
+            stringTable.set(i, 0, val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
+        else
+            stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+    }
+
+    return stringTable;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Select a subelement of the array by a
+/// selection string containing methods.
+///
+/// \param arr mu::Array
+/// \param sSelectionString StringView
+/// \return NumeRe::Container<std::string>
+///
+/////////////////////////////////////////////////
+static NumeRe::Container<std::string> selectByMethod(mu::Array arr, StringView sSelectionString)
+{
+    size_t p = 0;
+
+    while ((p = sSelectionString.find(".", p)) != std::string::npos)
+    {
+        StringView sMethod = sSelectionString.subview(p+1, sSelectionString.find_first_of(". (", p+1)-p-1);
+
+        if (sMethod == "sel")
+        {
+            std::string element = sSelectionString.subview(p+5, getMatchingParenthesis(sSelectionString.subview(p+4))-1).to_string();
+            size_t el = StrToInt(element)-1;
+
+            if (el >= arr.size())
+                return NumeRe::Container<std::string>();
+
+            arr = arr.get(el);
+        }
+        else
+            arr = arr.call(sMethod.to_string());
+
+        p++;
+    }
+
+    return arrayToStringTable(arr);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function creates the table
 /// container for the string table or the clusters.
 ///
@@ -3709,77 +3806,16 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& sStringTableName)
 {
     g_logger.info("Requested variable: " + sStringTableName);
-    constexpr size_t MAXSTRINGLENGTH = 1024;
 
-    if (_memoryManager.isCluster(sStringTableName))
+    if (_parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find_first_of("{."))) != _parser.GetVar().end())
     {
-        // Create the container for the selected cluster
-        NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
-
-        if (sStringTableName.find(".sel(") == std::string::npos)
-        {
-            NumeRe::Container<std::string> stringTable(clust.size(), 1);
-
-            for (size_t i = 0; i < clust.size(); i++)
-            {
-                const mu::Value& val = clust.get(i);
-
-                if (val.getType() == mu::TYPE_STRING)
-                    stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
-                else
-                    stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-            }
-
-            return stringTable;
-        }
-
-        size_t p = 0;
-        mu::Array selected = clust;
-
-        while ((p = sStringTableName.find(".sel(", p)) != std::string::npos)
-        {
-            std::string element = sStringTableName.substr(p+5, getMatchingParenthesis(StringView(sStringTableName, p+4))-1);
-            size_t el = StrToInt(element)-1;
-
-            if (el >= selected.size())
-                return NumeRe::Container<std::string>();
-
-            selected = selected.get(el);
-            p++;
-        }
-
-        NumeRe::Container<std::string> stringTable(selected.size(), 1);
-
-        for (size_t i = 0; i < selected.size(); i++)
-        {
-            const mu::Value& val = selected.get(i);
-
-            if (val.getType() == mu::TYPE_STRING)
-                stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
-            else
-                stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-        }
-
-        return stringTable;
-    }
-    else if (_parser.GetVar().find(sStringTableName) != _parser.GetVar().end())
-    {
-        auto iter = _parser.GetVar().find(sStringTableName);
+        auto iter = _parser.GetVar().find(sStringTableName.substr(0, sStringTableName.find_first_of("{.")));
         const mu::Array& arr = *(iter->second);
 
-        NumeRe::Container<std::string> stringTable(arr.size(), 1);
+        if (sStringTableName.find(".") == std::string::npos)
+            arrayToStringTable(arr);
 
-        for (size_t i = 0; i < arr.size(); i++)
-        {
-            const mu::Value& val = arr.get(i);
-
-            if (val.getType() == mu::TYPE_STRING)
-                stringTable.set(i, 0, val.print(0, MAXSTRINGLENGTH, true));
-            else
-                stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-        }
-
-        return stringTable;
+        return selectByMethod(arr, sStringTableName);
     }
 
     return NumeRe::Container<std::string>();
@@ -3874,7 +3910,6 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     std::map<std::string, std::pair<std::string, mu::Variable*>> mLocalVars;
     std::map<std::string, std::string> mLocalTables;
-    std::map<std::string, std::string> mLocalClusters;
     std::map<std::string, std::string> mArguments;
 
     // Obtain references to the debugger and the parser
@@ -3898,18 +3933,9 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     for (const auto& iter : tableMap)
         mLocalTables[iter.first] = iter.first;
 
-    // Get the cluster mao
-    const std::map<std::string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
-
-    for (const auto& iter : clusterMap)
-    {
-        if (!iter.first.starts_with("_~"))
-            mLocalClusters[iter.first] = iter.first;
-    }
-
 
     // Pass the created information to the debugger
-    _debugger.gatherInformations(mLocalVars, mLocalTables, mLocalClusters, mArguments,
+    _debugger.gatherInformations(mLocalVars, mLocalTables, mArguments,
                                  sCurrentCommand, getInstance()->getScript().getScriptFileName(),
                                  getInstance()->getScript().getCurrentLine()-1);
 

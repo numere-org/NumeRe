@@ -48,9 +48,8 @@ class NumeReDebugger
         std::string sErraticCommand;
         std::string sErraticModule;
         std::string sErrorMessage;
-        std::map<std::string,mu::Array> mLocalVars;
+        std::map<std::string,const mu::Variable*> mLocalVars;
         std::map<std::string,std::string> mLocalTables;
-        std::map<std::string,std::string> mLocalClusters;
         std::map<std::string,std::string> mArguments;
         bool bAlreadyThrown;
         bool bExceptionHandled;
@@ -62,7 +61,7 @@ class NumeReDebugger
         void resetBP();
         void formatMessage();
         std::string decodeType(std::string& sArgumentValue, const std::string& sArgumentName = "");
-        std::vector<std::string> getVars(mu::DataType dt);
+        std::vector<std::string> getVars(const std::vector<mu::DataType>& dt);
 
     public:
         NumeReDebugger();
@@ -128,7 +127,6 @@ class NumeReDebugger
 
         void gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
                                 const std::map<std::string, std::string>& _mLocalTables,
-                                const std::map<std::string, std::string>& _mLocalClusters,
                                 const std::map<std::string, std::string>& _mArguments,
                                 const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
@@ -140,6 +138,7 @@ class NumeReDebugger
         std::vector<std::string> getStringVars();
         std::vector<std::string> getTables();
         std::vector<std::string> getClusters();
+        std::vector<std::string> getObjects();
         std::vector<std::string> getArguments();
         std::vector<std::string> getGlobals();
 

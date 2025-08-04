@@ -43,10 +43,27 @@ extern double g_pixelScale;
 #endif
 #include "../utils/tools.hpp"
 #include "../../versioninformation.hpp"
+#include "../ParserLib/muValueImpl.hpp"
 
 /*
  * Ende der globalen Variablen
  */
+
+/////////////////////////////////////////////////
+/// \brief Quick wrapper to handle occurences,
+/// where var^0 might appear in a formal
+/// definition, which shall be (symbolically)
+/// evaluated to 1.
+///
+/// \param val const std::complex<double>&
+/// \param exp int
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> intPowerSymbolic(const std::complex<double>& val, int exp)
+{
+    return !exp ? 1.0 : intPower(val, exp);
+}
 
 
 /////////////////////////////////////////////////
@@ -64,8 +81,8 @@ mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res[i] = mu::Numerical(std::complex<double>(v[i].getNum().asCF64().imag() != 0.0 ? -v[i].getNum().asCF64().imag() : 0.0,
-                                                    v[i].getNum().asCF64().real()));
+        res[i] = mu::Numerical(std::complex<double>(v.get(i).getNum().asCF64().imag() != 0.0 ? -v.get(i).getNum().asCF64().imag() : 0.0,
+                                                    v.get(i).getNum().asCF64().real()));
     }
 
     return res;
@@ -87,7 +104,7 @@ mu::Array numfnc_real(const mu::Array& v)
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res[i] = mu::Numerical(v[i].getNum().asF64());
+        res[i] = mu::Numerical(v.get(i).getNum().asF64());
     }
 
     return res;
@@ -109,7 +126,7 @@ mu::Array numfnc_imag(const mu::Array& v)
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res[i] = mu::Numerical(v[i].getNum().asCF64().imag());
+        res[i] = mu::Numerical(v.get(i).getNum().asCF64().imag());
     }
 
     return res;
@@ -132,8 +149,8 @@ mu::Array numfnc_rect2polar(const mu::Array& v)
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res[i] = mu::Numerical(std::complex<double>(std::abs(v[i].getNum().asCF64()),
-                                                    std::arg(v[i].getNum().asCF64())));
+        res[i] = mu::Numerical(std::complex<double>(std::abs(v.get(i).getNum().asCF64()),
+                                                    std::arg(v.get(i).getNum().asCF64())));
     }
 
     return res;
@@ -156,8 +173,8 @@ mu::Array numfnc_polar2rect(const mu::Array& v)
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        res[i] = mu::Numerical(std::polar(v[i].getNum().asCF64().real(),
-                                          v[i].getNum().asCF64().imag()));
+        res[i] = mu::Numerical(std::polar(v.get(i).getNum().asCF64().real(),
+                                          v.get(i).getNum().asCF64().imag()));
     }
 
     return res;
@@ -194,8 +211,8 @@ mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 
     for (size_t i = 0; i < res.size(); i++)
     {
-        res[i] = mu::Numerical(std::complex<double>(re[i].getNum().asF64(),
-                                                    im[i].getNum().asF64()));
+        res[i] = mu::Numerical(std::complex<double>(re.get(i).getNum().asF64(),
+                                                    im.get(i).getNum().asF64()));
     }
 
     return res;
@@ -391,7 +408,7 @@ mu::Array numfnc_Num(const mu::MultiArgFuncParams& vElements)
 
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (!vElements[0][i].isValid())
+            if (!vElements[0].get(i).isValid())
                 elems--;
         }
     }
@@ -437,7 +454,7 @@ mu::Array numfnc_Cnt(const mu::MultiArgFuncParams& vElements)
 {
     if (vElements.count() == 1)
     {
-        if (vElements[0].getCommonType() == mu::TYPE_VOID)
+        if (vElements[0].isVoid())
             return mu::Value(0u);
 
         return mu::Array(mu::Value(vElements[0].size()));
@@ -482,8 +499,8 @@ mu::Array numfnc_Std(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid())
-                vStd += (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean);
+            if (vElements[0].get(i).isValid())
+                vStd += (vElements[0].get(i) - vMean) * conj(vElements[0].get(i) - vMean);
         }
     }
     else
@@ -518,8 +535,8 @@ mu::Array numfnc_product(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid())
-                vProd *= vElements[0][i];
+            if (vElements[0].get(i).isValid())
+                vProd *= vElements[0].get(i);
         }
     }
     else
@@ -554,8 +571,8 @@ mu::Array numfnc_Norm(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid())
-                vNorm += vElements[0][i] * conj(vElements[0][i]);
+            if (vElements[0].get(i).isValid())
+                vNorm += vElements[0].get(i) * conj(vElements[0].get(i));
         }
     }
     else
@@ -620,8 +637,8 @@ mu::Array numfnc_Skew(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid())
-                skew += (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean) * (vElements[0][i] - vMean);
+            if (vElements[0].get(i).isValid())
+                skew += (vElements[0].get(i) - vMean) * conj(vElements[0].get(i) - vMean) * (vElements[0].get(i) - vMean);
         }
     }
     else
@@ -658,9 +675,9 @@ mu::Array numfnc_Exc(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid())
-                excess += (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean)
-                    * (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean);
+            if (vElements[0].get(i).isValid())
+                excess += (vElements[0].get(i) - vMean) * conj(vElements[0].get(i) - vMean)
+                    * (vElements[0].get(i) - vMean) * conj(vElements[0].get(i) - vMean);
         }
     }
     else
@@ -669,7 +686,7 @@ mu::Array numfnc_Exc(const mu::MultiArgFuncParams& vElements)
         {
             if (vElements[i].front().isValid())
                 excess += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean)
-                    * (vElements[i].front() - vMean) * conj(vElements[0][i] - vMean);
+                    * (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean);
         }
     }
 
@@ -697,7 +714,7 @@ mu::Array numfnc_Med(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            _mem.writeData(i, 0, vElements[0][i]);
+            _mem.writeData(i, 0, vElements[0].get(i));
         }
 
         return mu::Value(_mem.med(VectorIndex(0, vElements[0].size()-1), VectorIndex(0)));
@@ -735,7 +752,7 @@ mu::Array numfnc_Pct(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            _mem.writeData(i, 0, vElements[0][i]);
+            _mem.writeData(i, 0, vElements[0].get(i));
         }
 
         mu::Array ret;
@@ -804,47 +821,47 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
 
     for (size_t i = 0; i < vElements.size(); i++)
     {
-        if (!vElements[i].isValid())
+        if (!vElements.get(i).isValid())
             continue;
 
-        if (vElements[i] == vRef)
+        if (vElements.get(i) == vRef)
         {
             if (nType & RETURN_VALUE)
-                return vElements[i];
+                return vElements.get(i);
 
             return i+1;
         }
-        else if (nType & RETURN_GE && vElements[i] > vRef)
+        else if (nType & RETURN_GE && vElements.get(i) > vRef)
         {
             if (nType & RETURN_FIRST)
             {
                 if (nType & RETURN_VALUE)
-                    return vElements[i];
+                    return vElements.get(i);
 
                 return i+1;
             }
 
-            if (nKeep == -1 || vElements[i] < vKeep)
+            if (nKeep == -1 || vElements.get(i) < vKeep)
             {
-                vKeep = vElements[i];
+                vKeep = vElements.get(i);
                 nKeep = i;
             }
             else
                 continue;
         }
-        else if (nType & RETURN_LE && vElements[i] < vRef)
+        else if (nType & RETURN_LE && vElements.get(i) < vRef)
         {
             if (nType & RETURN_FIRST)
             {
                 if (nType & RETURN_VALUE)
-                    return vElements[i];
+                    return vElements.get(i);
 
                 return i+1;
             }
 
-            if (nKeep == -1 || vElements[i] > vKeep)
+            if (nKeep == -1 || vElements.get(i) > vKeep)
             {
-                vKeep = vElements[i];
+                vKeep = vElements.get(i);
                 nKeep = i;
             }
             else
@@ -963,7 +980,7 @@ mu::Array numfnc_xor(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i])
+            if (vElements[0].get(i))
             {
                 if (!isTrue)
                     isTrue = true;
@@ -1238,7 +1255,7 @@ mu::Array numfnc_logtoidx(const mu::MultiArgFuncParams& v)
     {
         for (size_t i = 0; i < v[0].size(); i++)
         {
-            if (v[0][i].isValid() && v[0][i])
+            if (v[0].get(i).isValid() && v[0].get(i))
                 vIdx.emplace_back(uint64_t(i+1));
         }
     }
@@ -1283,8 +1300,8 @@ mu::Array numfnc_idxtolog(const mu::MultiArgFuncParams& v)
     {
         for (size_t i = 0; i < v[0].size(); i++)
         {
-            if (v[0][i].isValid() || v[0][i] > mu::Value(0))
-                vLogical[v[0][i].getNum().asI64()-1] = mu::Value(true);
+            if (v[0].get(i).isValid() || v[0].get(i) > mu::Value(0))
+                vLogical[v[0].get(i).getNum().asI64()-1] = mu::Value(true);
         }
     }
     else
@@ -1324,13 +1341,13 @@ mu::Array numfnc_order(const mu::MultiArgFuncParams& v)
             index.push_back(i);
         }
 
-        auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
+        auto sorter = [&](const mu::Value& v1, const mu::Value& v2)
             {
-                if (!v[0][v1.getNum().asI64()-1].isValid())
+                if (!v[0].get(v1.getNum().asI64()-1).isValid())
                     return false;
 
-                return bool(v[0][v1.getNum().asI64()-1] < v[0][v2.getNum().asI64()-1])
-                    || !v[0][v2.getNum().asI64()-1].isValid();
+                return bool(v[0].get(v1.getNum().asI64()-1) < v[0].get(v2.getNum().asI64()-1))
+                    || !v[0].get(v2.getNum().asI64()-1).isValid();
             };
         std::sort(index.begin(), index.end(), sorter);
     }
@@ -1343,7 +1360,7 @@ mu::Array numfnc_order(const mu::MultiArgFuncParams& v)
             index.push_back(i);
         }
 
-        auto sorter = [=](const mu::Value& v1, const mu::Value& v2)
+        auto sorter = [&](const mu::Value& v1, const mu::Value& v2)
             {
                 if (!v[v1.getNum().asI64()-1].front().isValid())
                     return false;
@@ -1372,7 +1389,7 @@ mu::Array numfnc_is_equal(const mu::MultiArgFuncParams& arr)
     {
         for (size_t i = 1; i < arr[0].size(); i++)
         {
-            if (arr[0][i] != arr[0][0])
+            if (arr[0].get(i) != arr[0].get(0))
                 return mu::Value(false);
         }
 
@@ -1403,7 +1420,7 @@ mu::Array numfnc_is_ordered(const mu::MultiArgFuncParams& arr)
     {
         for (size_t i = 1; i < arr[0].size(); i++)
         {
-            if (arr[0][i-1] > arr[0][i])
+            if (arr[0].get(i-1) > arr[0].get(i))
                 return mu::Value(false);
         }
 
@@ -1436,7 +1453,7 @@ mu::Array numfnc_is_unique(const mu::MultiArgFuncParams& arr)
     {
         for (size_t i = 1; i < order.size(); i++)
         {
-            if (arr[0][order[i-1].getNum().asI64()-1] == arr[0][order[i].getNum().asI64()-1])
+            if (arr[0].get(order[i-1].getNum().asI64()-1) == arr[0].get(order[i].getNum().asI64()-1))
                 return mu::Value(false);
         }
 
@@ -1473,7 +1490,7 @@ mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct)
     {
         for (size_t j = 0; j < order.size(); j++)
         {
-            if (arr[order[j].getNum().asI64()-1] > pct[i])
+            if (arr.get(order[j].getNum().asI64()-1) > pct.get(i))
             {
                 if (j)
                     pctInv.push_back(mu::Value((j-0.5)/(order.size()-1.0)));
@@ -1483,17 +1500,17 @@ mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct)
                 break;
             }
 
-            if (arr[order[j].getNum().asI64()-1] == pct[i])
+            if (arr.get(order[j].getNum().asI64()-1) == pct.get(i))
             {
                 pctInv.push_back(mu::Value(j/(order.size()-1.0)));
 
                 // There might be more values to consider, if the following
                 // value also equals the comparison value
-                if (j+1 < order.size() && arr[order[j+1].getNum().asI64()-1] == pct[i])
+                if (j+1 < order.size() && arr.get(order[j+1].getNum().asI64()-1) == pct.get(i))
                 {
                     for (size_t k = j+1; k < order.size(); k++)
                     {
-                        if (arr[order[k].getNum().asI64()-1] > pct[i])
+                        if (arr.get(order[k].getNum().asI64()-1) > pct.get(i))
                         {
                             pctInv.push_back(mu::Value((k-1)/(order.size()-1.0)));
                             break;
@@ -1535,8 +1552,8 @@ mu::Array numfnc_Sum(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (vElements[0][i].isValid())
-                fRes += vElements[0][i];
+            if (vElements[0].get(i).isValid())
+                fRes += vElements[0].get(i);
         }
     }
     else
@@ -1585,8 +1602,8 @@ mu::Array numfnc_Min(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 1; i < vElements[0].size(); i++)
         {
-            if (!res.isValid() || (vElements[0][i].isValid() && vElements[0][i] < res))
-                res = vElements[0][i];
+            if (!res.isValid() || (vElements[0].get(i).isValid() && vElements[0].get(i) < res))
+                res = vElements[0].get(i);
         }
     }
     else
@@ -1621,8 +1638,8 @@ mu::Array numfnc_Max(const mu::MultiArgFuncParams& vElements)
     {
         for (size_t i = 1; i < vElements[0].size(); i++)
         {
-            if (!res.isValid() || (vElements[0][i].isValid() && vElements[0][i] > res))
-                res = vElements[0][i];
+            if (!res.isValid() || (vElements[0].get(i).isValid() && vElements[0].get(i) > res))
+                res = vElements[0].get(i);
         }
     }
     else
@@ -1778,13 +1795,15 @@ static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& 
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
         return NAN;
-    int n = intCast(fabs(vn));
 
+    int n = intCast(fabs(vn));
     std::complex<double> dResult = 0.0;
+
     for (int k = 0; k <= n/2; k++)
     {
-        dResult += intPower(-1,k)*binom_impl(n,k)*binom_impl(2*(n-k),n)*intPower(v,n-2*k);
+        dResult += intPower(-1,k)*binom_impl(n,k)*binom_impl(2*(n-k),n) * intPowerSymbolic(v, n-2*k);
     }
+
     dResult *= intPower(2, -n);
     return dResult;
 }
@@ -1949,12 +1968,12 @@ static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<
     {
         if (k % 2)
         {
-            vReturn -= factorial_impl(n-k)*intPower(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+            vReturn -= factorial_impl(n-k)*intPowerSymbolic(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
             vNorm -= factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
         }
         else
         {
-            vReturn += factorial_impl(n-k)*intPower(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+            vReturn += factorial_impl(n-k)*intPowerSymbolic(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
             vNorm += factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
         }
     }
@@ -2217,13 +2236,15 @@ static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& 
 {
     if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
         return NAN;
-    int n = intCast(fabs(vn));
 
+    int n = intCast(fabs(vn));
     std::complex<double> dResult = 0.0;
+
     for (int k = 0; k <= n; k++)
     {
-        dResult += intPower(-v,k)*binom_impl(n,k)/factorial_impl(k);
+        dResult += intPowerSymbolic(-v,k)*binom_impl(n,k)/factorial_impl(k);
     }
+
     return dResult;
 }
 
@@ -2269,7 +2290,7 @@ static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex
 
     for (int m = 0; m <= n; m++)
     {
-        dResult += binom_above / (factorial_impl(n-m)*factorial_impl(k+m)) * intPower(-x,m) / factorial_impl(m);
+        dResult += binom_above / (factorial_impl(n-m)*factorial_impl(k+m)) * intPowerSymbolic(-x,m) / factorial_impl(m);
     }           // -----------------binom(n+k, n-m) ----------------------
 
     return dResult;
@@ -3949,7 +3970,7 @@ mu::Array numfnc_complement(const mu::Array& universe, const mu::Array& refSet)
 
         for (size_t j = 0; j < refSet.size(); j++)
         {
-            if (universe[i] == refSet[j])
+            if (universe.get(i) == refSet.get(j))
             {
                 found = true;
                 break;
@@ -3957,7 +3978,7 @@ mu::Array numfnc_complement(const mu::Array& universe, const mu::Array& refSet)
         }
 
         if (!found)
-            complementary.push_back(universe[i]);
+            complementary.push_back(universe.get(i));
     }
 
     return complementary;
@@ -3985,7 +4006,7 @@ mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
 
         for (size_t j = 0; j < unified.size(); j++)
         {
-            if (unified[j] == setA[i])
+            if (unified.get(j) == setA.get(i))
             {
                 found = true;
                 break;
@@ -3993,7 +4014,7 @@ mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
         }
 
         if (!found)
-            unified.push_back(setA[i]);
+            unified.push_back(setA.get(i));
     }
 
     for (size_t i = 0; i < setB.size(); i++)
@@ -4005,7 +4026,7 @@ mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
 
         for (size_t j = 0; j < unified.size(); j++)
         {
-            if (unified[j] == setB[i])
+            if (unified.get(j) == setB.get(i))
             {
                 found = true;
                 break;
@@ -4013,7 +4034,7 @@ mu::Array numfnc_union(const mu::Array& setA, const mu::Array& setB)
         }
 
         if (!found)
-            unified.push_back(setB[i]);
+            unified.push_back(setB.get(i));
     }
 
     return unified;
@@ -4039,7 +4060,7 @@ mu::Array numfnc_intersection(const mu::Array& setA, const mu::Array& setB)
 
         for (size_t j = 0; j < setB.size(); j++)
         {
-            if (setA[i] == setB[j])
+            if (setA.get(i) == setB.get(j))
             {
                 found = true;
                 break;
@@ -4047,7 +4068,7 @@ mu::Array numfnc_intersection(const mu::Array& setA, const mu::Array& setB)
         }
 
         if (found)
-            intersected.push_back(setA[i]);
+            intersected.push_back(setA.get(i));
     }
 
     return intersected;
@@ -4294,7 +4315,7 @@ mu::Array numfnc_isnan(const mu::Array& v)
 /////////////////////////////////////////////////
 mu::Array numfnc_isvoid(const mu::Array& v)
 {
-    return mu::Value(v.getCommonType() == mu::TYPE_VOID);
+    return mu::Value(v.isVoid());
 }
 
 
@@ -6384,6 +6405,146 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
     }
 
     return res;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the dictstruct cast.
+///
+/// \param fields const mu::Array&
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals)
+{
+    size_t elems = fields.size();
+    mu::DictStructMap dict;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::string fieldName = fields.get(i).getStr();
+
+        if (!vals.isDefault())
+        {
+            if (vals.get(i).isRef())
+                dict[fieldName].reset(vals.get(i).getRef().get().clone());
+            else
+                dict[fieldName].reset(vals.get(i).get()->clone());
+        }
+        else
+            dict[fieldName].reset(mu::Value("").release());
+    }
+
+    return mu::Value(mu::DictStruct(dict));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a file object instance.
+///
+/// \param files const mu::Array&
+/// \param openmode const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_file(const mu::Array& files, const mu::Array& openmode)
+{
+    size_t elems = std::max(files.size(), openmode.size());
+
+    if (!elems)
+        return mu::Value(new mu::FileValue);
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::unique_ptr<mu::FileValue> file(new mu::FileValue);
+
+        if (openmode.isDefault())
+            file->get().open(files.get(i).getPath(), "r");
+        else
+            file->get().open(files.get(i).getPath(), openmode.get(i).getStr());
+
+        ret.emplace_back(file.release());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a stack object instance.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_stack(const mu::Array& vals)
+{
+    size_t elems = vals.size();
+    std::unique_ptr<mu::StackValue> mustack(new mu::StackValue);
+
+    for (int i = elems-1; i >= 0; i--)
+    {
+        mustack->apply("push", *vals.get(i).get());
+    }
+
+    return mu::Value(mustack.release());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a queue object instance.
+///
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_queue(const mu::Array& vals)
+{
+    size_t elems = vals.size();
+    std::unique_ptr<mu::QueueValue> muqueue(new mu::QueueValue);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        muqueue->apply("push", *vals.get(i).get());
+    }
+
+    return mu::Value(muqueue.release());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a path object instance.
+///
+/// \param paths const mu::Array&
+/// \param separator const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_path(const mu::Array& paths, const mu::Array& separator)
+{
+    size_t elems = paths.size();
+
+    if (!elems)
+        return mu::Value(new mu::PathValue);
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::unique_ptr<mu::PathValue> path(new mu::PathValue);
+
+        if (separator.isDefault())
+            ret.emplace_back(new mu::PathValue(mu::Path(paths.get(i).getStr(), "/\\")));
+        else
+            ret.emplace_back(new mu::PathValue(mu::Path(paths.get(i).getStr(), separator.get(i).getStr())));
+    }
+
+    return ret;
 }
 
 

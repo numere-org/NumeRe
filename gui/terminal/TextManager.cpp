@@ -951,7 +951,7 @@ void TextManager::Reset()
 
     m_linesReceived = 1;
 
-    m_tabLength = 8;
+    m_tabLength = 4;
     m_indentDepth = 4;
 }
 

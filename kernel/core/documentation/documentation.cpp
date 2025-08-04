@@ -238,7 +238,7 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         return vDoc;
     }
 
-    _ctip = tipProvider.getMethod(sToken);
+    _ctip = tipProvider.getMethod(sToken, "*");
 
     if (_ctip.sDefinition.length())
     {

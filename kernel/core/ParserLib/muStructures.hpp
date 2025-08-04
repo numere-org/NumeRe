@@ -21,8 +21,10 @@
 
 #include <vector>
 #include <memory>
+#include <list>
 
 #include "muTypes.hpp"
+#include "muCompositeStructures.hpp"
 #include "muApply.hpp"
 #include "muValueBase.hpp"
 #include "muParserError.h"
@@ -32,6 +34,7 @@ namespace mu
     // Forward declaration of the Variable class
     class Variable;
     class Array;
+    class RefArray;
 
 
     /////////////////////////////////////////////////
@@ -62,7 +65,32 @@ namespace mu
             Value(const std::complex<double>& value, bool autoType = true);
             Value(const std::string& sData);
             Value(const char* sData);
+            Value(const DictStruct& dict);
+            Value(const Object& obj);
             Value(DataType type);
+
+            /////////////////////////////////////////////////
+            /// \brief Assign a Value.
+            ///
+            /// \param other const Value&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& assign(const Value& other)
+            {
+                if (!other.get())
+                    reset(nullptr);
+                else if (isRef())
+                    getRef() = *other.get();
+                else if (!get() || (get()->m_type != other->m_type))
+                    reset(other->clone());
+                else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
+                    reset(other->clone());
+                else if (this != &other)
+                    *get() = *other.get();
+
+                return *this;
+            }
 
             /////////////////////////////////////////////////
             /// \brief Assign a Value.
@@ -76,6 +104,8 @@ namespace mu
                 if (!other.get())
                     reset(nullptr);
                 else if (!get() || (get()->m_type != other->m_type))
+                    reset(other->clone());
+                else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
                     reset(other->clone());
                 else if (this != &other)
                     *get() = *other.get();
@@ -105,9 +135,14 @@ namespace mu
             bool isString() const;
             bool isCategory() const;
             bool isArray() const;
+            bool isDictStruct() const;
+            bool isObject() const;
+            bool isRef() const;
+            bool isGenerator() const;
 
             std::string& getStr();
             const std::string& getStr() const;
+            std::string getPath(char separator = '/') const;
 
             Numerical& getNum();
             const Numerical& getNum() const;
@@ -117,6 +152,17 @@ namespace mu
 
             Array& getArray();
             const Array& getArray() const;
+
+            DictStruct& getDictStruct();
+            const DictStruct& getDictStruct() const;
+
+            Object& getObject();
+            const Object& getObject() const;
+
+            RefValue& getRef();
+            const RefValue& getRef() const;
+
+            const GeneratorValue& getGenerator() const;
 
             std::complex<double> as_cmplx() const;
 
@@ -230,7 +276,7 @@ namespace mu
                     reset(other->clone());
                 else if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this + other);
 
                     *get() += *other.get();
@@ -253,7 +299,7 @@ namespace mu
 
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this - other);
 
                     *get() -= *other.get();
@@ -273,7 +319,10 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    DataType thisType = get()->m_type;
+                    DataType otherType = other->getType();
+
+                    if (nonRecursiveOps(thisType, otherType) || thisType == TYPE_STRING)
                         return operator=(*this / other);
 
                     *get() /= *other.get();
@@ -294,7 +343,7 @@ namespace mu
                 if (get() && other.get())
                 {
                     DataType thisType = get()->m_type;
-                    DataType otherType = other->m_type;
+                    DataType otherType = other->getType();
 
                     if (nonRecursiveOps(thisType, otherType)
                         || (thisType == TYPE_NUMERICAL && otherType == TYPE_STRING))
@@ -317,7 +366,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->m_type))
+                    if (nonRecursiveOps(get()->m_type, other->getType()))
                         return operator=(*this ^ other);
 
                     *get() ^= *other.get();
@@ -354,7 +403,24 @@ namespace mu
             Value operator&&(const Value& other) const;
             Value operator||(const Value& other) const;
 
+            MethodDefinition isMethod(const std::string& sMethod, size_t argc) const;
+
+            Value call(const std::string& sMethod) const;
+            Value call(const std::string& sMethod, const Value& arg1) const;
+            Value call(const std::string& sMethod, const Value& arg1, const Value& arg2) const;
+            Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const;
+            Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const;
+
+            MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
+
+            Value apply(const std::string& sMethod);
+            Value apply(const std::string& sMethod, const Value& arg1);
+            Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2);
+            Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3);
+            Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4);
+
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
+            std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVal(size_t digits = 0, size_t chrs = 0) const;
             void clear();
             size_t getBytes() const;
@@ -393,11 +459,69 @@ namespace mu
             Array(const std::vector<std::complex<double>>& other);
             Array(const std::vector<double>& other);
             Array(const std::vector<size_t>& other);
+            Array(const std::vector<int>& other);
             Array(const std::vector<int64_t>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
-            Array(const Array& fst, const Array& lst);
-            Array(const Array& fst, const Array& inc, const Array& lst);
+            Array(GeneratorValue* generator);
+
+            /////////////////////////////////////////////////
+            /// \brief Assign an Array.
+            ///
+            /// \param other const Array&
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& assign(const Array& other)
+            {
+                if (other.count() == 1 && other.m_commonType != TYPE_GENERATOR)
+                {
+                    if (other.first().isArray()) // was front()
+                        return assign(other.first().getArray()); // was front()
+
+                    if (size() && first().isRef()) // was front()
+                    {
+                        size_t elems = size();
+                        for (size_t i = 0; i < elems; i++)
+                        {
+                            get(i).assign(other.get(i));
+                        }
+
+                        m_commonType = other.m_commonType;
+                        return *this;
+                    }
+
+                    if (size() != 1)
+                        resize(1);
+
+                    first().assign(other.first()); // was front()
+                }
+                else if (count() == 1 && first().isRef()) // was front()
+                {
+                    // Insert a complete array into a single reference
+                    first().assign(other); // was front()
+                    m_commonType = TYPE_ARRAY;
+                    return *this;
+                }
+                else
+                {
+                    resize(other.size());
+
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        get(i).assign(other.get(i));
+                    }
+                }
+
+                if (other.m_commonType == TYPE_GENERATOR)
+                    m_commonType = TYPE_NUMERICAL;
+                else
+                    m_commonType = other.m_commonType;
+
+                m_isConst = other.m_isConst;
+
+                return *this;
+            }
 
             /////////////////////////////////////////////////
             /// \brief Assign an Array.
@@ -410,25 +534,37 @@ namespace mu
             {
                 if (other.size() == 1)
                 {
-                    if (other.front().isArray())
-                        return operator=(other.front().getArray());
+                    if (other.first().isArray())
+                        return operator=(other.first().getArray());
 
                     if (size() != 1)
                         resize(1);
 
-                    front() = other.front();
+                    first() = other.first();
                 }
-                else
+                else if (other.m_commonType == TYPE_GENERATOR)
                 {
-                    resize(other.size());
+                    size_t elems = other.count();
+                    resize(elems);
 
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elems; i++)
                     {
                         operator[](i) = other[i];
                     }
                 }
+                else
+                {
+                    size_t elems = other.size();
+                    resize(elems);
+
+                    for (size_t i = 0; i < elems; i++)
+                    {
+                        get(i) = other.get(i);
+                    }
+                }
 
                 m_commonType = other.m_commonType;
+                m_isConst = other.m_isConst;
 
                 return *this;
             }
@@ -442,20 +578,69 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
-                std::swap(_M_impl._M_start, other._M_impl._M_start);
-                std::swap(_M_impl._M_finish, other._M_impl._M_finish);
-                std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
-                std::swap(m_commonType, other.m_commonType);
+                if (other.count() == 1 && other.first().isArray() && !other.first().isRef()) // was front()
+                {
+                    Array& fst = other.first().getArray(); // was front()
+                    std::swap(_M_impl._M_start, fst._M_impl._M_start);
+                    std::swap(_M_impl._M_finish, fst._M_impl._M_finish);
+                    std::swap(_M_impl._M_end_of_storage, fst._M_impl._M_end_of_storage);
+                    std::swap(m_commonType, fst.m_commonType);
+                    std::swap(m_isConst, fst.m_isConst);
+                }
+                else
+                {
+                    std::swap(_M_impl._M_start, other._M_impl._M_start);
+                    std::swap(_M_impl._M_finish, other._M_impl._M_finish);
+                    std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
+                    std::swap(m_commonType, other.m_commonType);
+                    std::swap(m_isConst, other.m_isConst);
+                }
 
                 return *this;
             }
 
-            std::vector<DataType> getType() const;
+            std::vector<DataType> getType(DataType& common) const;
             DataType getCommonType() const;
             std::string getCommonTypeAsString() const;
             NumericalType getCommonNumericalType() const;
             bool isScalar() const;
             bool isDefault() const;
+            bool isVoid() const;
+
+            /////////////////////////////////////////////////
+            /// \brief Is this a constant instance?
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isConst() const
+            {
+                return m_isConst;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Make this instance mutable.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& makeMutable()
+            {
+                m_isConst = false;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Make this instance a generator.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& makeGenerator()
+            {
+                m_commonType = TYPE_GENERATOR;
+                return *this;
+            }
 
             /////////////////////////////////////////////////
             /// \brief Add operator.
@@ -592,14 +777,17 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator+=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator+(other));
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) += other.get(i);
+                        get(i) += other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -614,14 +802,17 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator-=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator-(other));
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) -= other.get(i);
+                       get(i) -= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -636,14 +827,17 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator/=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator/(other));
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) /= other.get(i);
+                        get(i) /= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -658,14 +852,17 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator*=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator*(other));
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) *= other.get(i);
+                        get(i) *= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -680,14 +877,17 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator^=(const Array& other)
             {
-                if (size() < other.size())
+                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator^(other));
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
                     {
-                        operator[](i) ^= other.get(i);
+                        get(i) ^= other.get(i);
                     }
+
+                    // A recursive operation may change the common type
+                    m_commonType = TYPE_VOID;
                 }
 
                 return *this;
@@ -702,7 +902,7 @@ namespace mu
             /////////////////////////////////////////////////
             void flipSign()
             {
-                for (size_t i = 0; i < size(); i++)
+                for (size_t i = 0; i < count(); i++)
                 {
                     operator[](i).flipSign();
                 }
@@ -723,10 +923,31 @@ namespace mu
             Array operator||(const Array& other) const;
 
             Array unWrap() const;
+            Array expandGenerators() const;
+
+            MethodDefinition isMethod(const std::string& sMethod, size_t argc) const;
 
             Array call(const std::string& sMethod) const;
             Array call(const std::string& sMethod, const Array& arg1) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2) const;
+            Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const;
+            Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const;
+
+            MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
+
+            Array apply(const std::string& sMethod);
+            Array apply(const std::string& sMethod, const Array& arg1);
+            Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2);
+            Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3);
+            Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4);
+
+            Array index(const Array& idx);
+            Array index(const Array& idx) const;
+
+            Array insertItems(const Array& idx, const Array& vals = Array());
+            Array deleteItems(const Array& idx);
+
+            Array order(const Array& opts = Array()) const;
 
             int64_t getAsScalarInt() const;
 
@@ -734,11 +955,16 @@ namespace mu
             std::vector<std::complex<double>> as_cmplx_vector() const;
             std::vector<std::string> to_string() const;
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
+            std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printVals(size_t digits = 0, size_t chrs = 0) const;
             std::string printDims() const;
             std::string printJoined(const std::string& sSep = "", bool keepEmpty = false) const;
             std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
+            size_t size() const;
+            size_t count() const;
+            Value& first();
+            const Value& first() const;
 
             /////////////////////////////////////////////////
             /// \brief Get the i-th element.
@@ -749,9 +975,18 @@ namespace mu
             /////////////////////////////////////////////////
             Value& get(size_t i)
             {
-                if (size() == 1u)
-                    return front();
-                else if (size() <= i)
+                size_t vectSize = count();
+
+                if (m_commonType == TYPE_GENERATOR)
+                    return getGenerated(i);
+                else if (vectSize == 1u)
+                {
+                    if (first().isRef() && first().isArray())
+                        return first().getArray().get(i);
+
+                    return operator[](0);
+                }
+                else if (vectSize <= i)
                     throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
 
                 return operator[](i);
@@ -766,20 +1001,92 @@ namespace mu
             /////////////////////////////////////////////////
             const Value& get(size_t i) const
             {
-                if (size() == 1u)
-                    return front();
-                else if (size() <= i)
+                size_t vectSize = count();
+
+                if (m_commonType == TYPE_GENERATOR)
+                    return getGenerated(i);
+                else if (vectSize == 1u)
+                {
+                    if (first().isRef() && first().isArray())
+                        return first().getArray().get(i);
+
+                    return operator[](0);
+                }
+                else if (vectSize <= i)
                     return m_default;
 
                 return operator[](i);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get a ref to the first element.
+            ///
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& front()
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(0);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const ref to the first element.
+            ///
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& front() const
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(0);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a ref to the last element.
+            ///
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& back()
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(size()-1);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const ref to the last element.
+            ///
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& back() const
+            {
+                if (empty())
+                    throw std::length_error("Array is empty.");
+
+                return get(size()-1);
+            }
+
+            Value& getGenerated(size_t i);
+            const Value& getGenerated(size_t i) const;
+            void set(size_t i, const Value& v);
+
             void zerosToVoid();
             bool isCommutative() const;
+            void dereference() const;
 
         protected:
             mutable DataType m_commonType;
             static const Value m_default;
+            bool m_isConst;
+            mutable std::list<Value> m_buffer;
     };
 
 
@@ -793,6 +1100,7 @@ namespace mu
     {
         public:
             Variable();
+            Variable(DataType type);
             Variable(const Value& data);
             Variable(const Array& data);
             Variable(const Variable& data);
@@ -811,9 +1119,24 @@ namespace mu
             /////////////////////////////////////////////////
             Variable& operator=(const Array& other)
             {
-                if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
+                if (this == &other)
+                    return *this;
+
+                DataType common = getCommonType();
+
+                if (accepts(other))
                 {
-                    Array::operator=(other);
+                    // It might be possible that this Array is the
+                    // data source for references in the passed array.
+                    // Therefore, we assign the data to a buffer,
+                    // dereference it and move the result later.
+                    other.dereference();
+                    assign(other);
+                    makeMutable();
+
+                    if (common == TYPE_CLUSTER)
+                        m_commonType = TYPE_CLUSTER;
+
                     return *this;
                 }
 
@@ -822,7 +1145,9 @@ namespace mu
 
             Variable& operator=(const Variable& other);
 
+            void indexedAssign(const Array& idx, const Array& vals);
             void overwrite(const Array& other);
+            bool accepts(const Array& other) const;
     };
 
 
@@ -864,7 +1189,7 @@ namespace mu
                 {
                     for (size_t i = 0; i < std::min(size(), values.size()); i++)
                     {
-                        *operator[](i) = values[i];
+                        *operator[](i) = values.get(i);
                     }
                 }
 

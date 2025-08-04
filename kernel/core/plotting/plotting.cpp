@@ -22,6 +22,7 @@
 #include "plotasset.hpp"
 #include "../maths/parser_functions.hpp"
 #include "../../kernel.hpp"
+#include "../procedure/mangler.hpp"
 
 
 extern DefaultVariables _defVars;
@@ -3706,10 +3707,8 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 
-            if (_data.containsTablesOrClusters(sSubPlotIDX))
-            {
+            if (_data.containsTables(sSubPlotIDX))
                 getDataElements(sSubPlotIDX, _parser, _data);
-            }
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
@@ -3777,7 +3776,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 
-            if (_data.containsTablesOrClusters(sSubPlotIDX))
+            if (_data.containsTables(sSubPlotIDX))
                 getDataElements(sSubPlotIDX, _parser, _data);
 
             _parser.SetExpr(sSubPlotIDX);
@@ -4555,7 +4554,7 @@ void Plot::createDataLegends()
                 && sTemp.find(')') != std::string::npos)
         {
             // Ensure that the referenced data object contains valid data
-            if (_data.containsTablesOrClusters(sTemp) && !_data.isValid())
+            if (_data.containsTables(sTemp) && !_data.isValid())
                 throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCurrentExpr, sTemp, sTemp);
 
             // Strip all spaces and extract the table name
@@ -4659,7 +4658,25 @@ void Plot::createDataLegends()
                 }
             }
             else
-                sTemp = toExternalString(sTemp);
+                sTemp = toExternalString(Mangler::demangleExpression(sTemp));
+
+            // Prepend backslashes before opening and closing
+            // braces
+            for (size_t i = 0; i < sTemp.size(); i++)
+            {
+                if (sTemp[i] == '{' || sTemp[i] == '}')
+                {
+                    sTemp.insert(i, 1, '\\');
+                    i++;
+                }
+            }
+
+            // Replace the data expression with the parsed headlines
+            m_manager.assets[i].legend = sTemp;
+        }
+        else if (_data.containsClusters(sTemp))
+        {
+            sTemp = toExternalString(Mangler::demangleExpression(sTemp));
 
             // Prepend backslashes before opening and closing
             // braces

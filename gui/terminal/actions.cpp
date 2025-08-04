@@ -239,7 +239,7 @@ void GenericTerminal::tab()
         else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
         {
             isMethod = true;
-            std::pair<NumeReSyntax::SyntaxColors, bool> type = get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1,
+            std::pair<std::string, bool> type = get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1,
                                                                                     termCursor.y);
             sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense, type.first, type.second);
         }
@@ -266,7 +266,7 @@ void GenericTerminal::tab()
             }
             else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
             {
-                std::pair<NumeReSyntax::SyntaxColors, bool> type = get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1,
+                std::pair<std::string, bool> type = get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1,
                                                                                         termCursor.y);
                 sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense, type.first, type.second);
             }

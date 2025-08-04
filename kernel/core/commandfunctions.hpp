@@ -34,6 +34,7 @@
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
 #include "../../database/database.hpp"
+#include "ParserLib/muValueImpl.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -1247,21 +1248,24 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     //
     // Get the numerical variables
     const mu::varmap_type& variables = _parser.GetVar();
+    size_t nWinWidth = _option.getWindow(0);
+    size_t nPrec = _option.getPrecision();
+
 
     // Get the current defined data tables
-    const map<string, std::pair<size_t, size_t>>& CacheMap = _data.getTableMap();
-    const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+    const map<string, std::pair<size_t, size_t>>& tableMap = _data.getTableMap();
 
     NumeReKernel::toggleTableStatus();
     make_hline();
     NumeReKernel::print("NUMERE: " + toUpperCase(toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_HEADLINE"))));
     make_hline();
 
-    // Print all defined caches first
-    for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
+    // Print all defined tables first
+    for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
     {
         string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
-        NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[table]", 19));
+        NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (nWinWidth - 32) / 2 - (iter->first).length() + nWinWidth % 2)
+                                  + strfill(sCacheSize, (nWinWidth - 50) / 2) + strfill("[table]", 19));
 
         if (_data.getSize(iter->second.second) >= 1024 * 1024)
             NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
@@ -1273,53 +1277,41 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
         nBytesSum += _data.getSize(iter->second.second);
     }
 
-    NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
-
-    // Print all defined cluster
-    for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
-    {
-        string sClusterSize = toString(iter->second.size()) + " x 1";
-        NumeReKernel::printPreFmt("|   " + iter->first + "{}" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sClusterSize, (_option.getWindow(0) - 50) / 2) + strfill("[cluster]", 19));
-
-        if (iter->second.getBytes() >= 1024 * 1024)
-            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-        else if (iter->second.getBytes() >= 1024)
-            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0), 4), 9) + " KBytes\n");
-        else
-            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes()), 9) + "  Bytes\n");
-
-        nBytesSum += iter->second.getBytes();
-    }
-
-    if (mClusterMap.size())
-        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+    NumeReKernel::printPreFmt("|   " + strfill("-", nWinWidth - 4, '-') + "\n");
 
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
     {
-        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
+        std::string sVarName = item->first;
+
+        if (item->second->getCommonType() == mu::TYPE_CLUSTER)
+            sVarName += "{}";
+
+        NumeReKernel::printPreFmt("|   " + sVarName + strfill(" = ", (nWinWidth - 20) / 2 + 1
+                                                              - nPrec - sVarName.length() + nWinWidth % 2));
 
         std::string printed = item->second->print();
         size_t bytes = item->second->getBytes();
 
-        if (printed.length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
-            NumeReKernel::printPreFmt(strfill(printed.substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 9) + "...", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+        if (printed.length() > nPrec + (nWinWidth - 60) / 2 - 4)
+            NumeReKernel::printPreFmt(strfill(printed.substr(0, nPrec + (nWinWidth - 60) / 2 - 9) + "...",
+                                              (nWinWidth - 60) / 2 + nPrec));
         else
-            NumeReKernel::printPreFmt(strfill(printed, (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+            NumeReKernel::printPreFmt(strfill(printed, (nWinWidth - 60) / 2 + nPrec));
 
         NumeReKernel::printPreFmt(strfill("[" + item->second->getCommonTypeAsString() + "]", 19) + strfill(toString(bytes), 9) + "  Bytes\n");
         nBytesSum += bytes;
-
     }
 
     // Create now the footer of the list:
     // Combine the number of variables and data
     // tables first
     NumeReKernel::printPreFmt("|   -- " + toString(variables.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
+
     if (_data.isValid())
     {
-        NumeReKernel::printPreFmt(toString(CacheMap.size()));
-        nDataSetNum = CacheMap.size();
+        NumeReKernel::printPreFmt(toString(tableMap.size()));
+        nDataSetNum = tableMap.size();
     }
     else
         NumeReKernel::printPreFmt("0");
@@ -1329,20 +1321,23 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     // Calculate now the needed memory for the stored values and print it at the
     // end of the footer line
     if (variables.size() > 9 && nDataSetNum > 9)
-        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+        NumeReKernel::printPreFmt(strfill("Total: ", (nWinWidth - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()
+                                                      - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     else if (variables.size() > 9 || nDataSetNum > 9)
-        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+        NumeReKernel::printPreFmt(strfill("Total: ", (nWinWidth - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()
+                                                      - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     else
-        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+        NumeReKernel::printPreFmt(strfill("Total: ", (nWinWidth - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()
+                                                      - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
     if (nBytesSum >= 1024 * 1024)
         NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0 * 1024.0), 4), 8) + " MBytes\n");
     else if (nBytesSum >= 1024)
         NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0), 4), 8) + " KBytes\n");
     else
         NumeReKernel::printPreFmt(strfill(toString(nBytesSum), 8) + "  Bytes\n");
+
     NumeReKernel::toggleTableStatus();
     make_hline();
-    return;
 }
 
 
@@ -3063,8 +3058,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         // Clear also the clusters
         _data.clearAllClusters();
-        NumeRe::Cluster& ans = _data.newCluster("ans");
-        NumeReKernel::getInstance()->setAns(&ans);
     }
 
     return COMMAND_PROCESSED;
@@ -3776,39 +3769,20 @@ static CommandReturnValues cmd_show(string& sCmd)
 {
     // Get references to the main objects
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
-
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-    _accessParser.evalIndices();
 
     if (_accessParser.getDataObject().length())
     {
         if (_accessParser.isCluster())
         {
-            NumeRe::Cluster& cluster = _data.getCluster(_accessParser.getDataObject());
-
-            // Create the target container
-            NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), 1);
-
-            // Copy the data to the new container
-            for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
-            {
-                const mu::Value& val = cluster.get(_accessParser.getIndices().row[i]);
-
-                if (val.getType() == mu::TYPE_STRING)
-                    _stringTable.set(i, 0, val.print());
-                else
-                    _stringTable.set(i, 0, !val.isValid() ? "---" : val.print(5));
-            }
-
             // Redirect control
-            NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
-
-            return COMMAND_PROCESSED;
+            NumeReKernel::showStringTable(NumeReKernel::getInstance()->getStringTable(_accessParser.getDataObject()),
+                                          _accessParser.getDataObject() + "{}");
         }
         else
         {
+            _accessParser.evalIndices();
             MemoryManager _cache;
 
             // Validize the obtained index sets
@@ -3821,12 +3795,15 @@ static CommandReturnValues cmd_show(string& sCmd)
                 NumeReKernel::showTable(_data.extractTable(_accessParser.getDataObject()), _accessParser.getDataObject());
             else
                 throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-
-            return COMMAND_PROCESSED;
         }
     }
     else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+    {
+        const std::string& sExpr = cmdParser.getExpr();
+
+        // Redirect control
+        NumeReKernel::showStringTable(NumeReKernel::getInstance()->getStringTable(sExpr), sExpr);
+    }
 
     return COMMAND_PROCESSED;
 }
@@ -4423,7 +4400,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (!_data.containsTablesOrClusters(sCmd))
+    if (!_data.containsTables(sCmd))
         return COMMAND_PROCESSED;
 
     // DEPRECATED: Declared at v1.1.2rc1
@@ -4752,7 +4729,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty(info.sTableName))
                 {
-                    if (_option.systemPrints())
+                    if (_option.systemPrints() && !cmdParser.hasParam("mask"))
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
@@ -4780,7 +4757,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument,
                                                   getTargetTable(cmdParser.getParameterList()), sFileFormat).sTableName;
 
-                if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
+                if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints() && !cmdParser.hasParam("mask"))
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString(vFilelist.size()), sFileName));
 
                 // Returning of indices not possible due to multiple
@@ -4811,7 +4788,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         _data.openFile(vFilelist[i], false, false, nArgument, "", sFileFormat);
                     }
 
-                    if (!_data.isEmpty("data") && _option.systemPrints())
+                    if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
@@ -4839,7 +4816,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty("data"))
                 {
-                    if (_option.systemPrints())
+                    if (_option.systemPrints() && !cmdParser.hasParam("mask"))
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
@@ -5002,14 +4979,109 @@ static CommandReturnValues cmd_print(string& sCmd)
     }
 
     std::vector<mu::Array> res = cmdParser.parseExpr();
-
     NumeReKernel::toggleTableStatus();
 
     for (size_t i = 0; i < res.size(); i++)
     {
-        std::string sArgument = res[i].printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
-        replaceAll(sArgument, "\n", "\n|   ");
-        NumeReKernel::printPreFmt("\r|-> " + sArgument + "\n");
+        std::string sPrinted;
+
+        if (res[i].getCommonType() == mu::TYPE_DICTSTRUCT && res[i].size() == 1)
+        {
+            const mu::DictStruct& dict = res[i].get(0).getDictStruct();
+            std::vector<std::string> vKeys = dict.getFields();
+            make_hline();
+            NumeReKernel::print("NUMERE: " + toUpperCase(cmdParser.getExpr()));
+            make_hline();
+
+            if (vKeys.size())
+            {
+                size_t len = std::max_element(vKeys.begin(), vKeys.end(),
+                                              [](const std::string& a, const std::string& b){return a.length() < b.length();})->length();
+
+                for (size_t i = 0; i < vKeys.size(); i++)
+                {
+                    if (sPrinted.length())
+                        sPrinted += "\n";
+
+                    sPrinted += strfill(vKeys[i], len, ' ') + ":  "
+                        + dict.read(vKeys[i])->printEmbedded(NumeReKernel::getInstance()->getSettings().getPrecision(), 0, false);
+                }
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+            make_hline();
+        }
+        else if (res[i].getCommonType() == mu::TYPE_OBJECT && res[i].size() == 1)
+        {
+            const mu::Object& object = res[i].get(0).getObject();
+            std::string sObjectType = object.getObjectType();
+
+            make_hline();
+            NumeReKernel::print("NUMERE: " + toUpperCase(cmdParser.getExpr()));
+            make_hline();
+
+            if (sObjectType == "file")
+            {
+                const mu::File& f = static_cast<const mu::FileValue&>(object).get();
+                sPrinted += "isopen:  " + toString(f.is_open());
+                sPrinted += "\n   len:  " + toString(f.length());
+                sPrinted += "\n fname:  " + f.getFileName();
+                sPrinted += "\n  mode:  " + f.getOpenMode();
+            }
+            else if (sObjectType == "path")
+            {
+                const mu::Path& s = static_cast<const mu::PathValue&>(object).get();
+                sPrinted += "depth:  " + toString(s.depth());
+
+                if (s.depth())
+                {
+                    sPrinted += "\n path:  " + s.root();
+
+                    for (size_t i = 1; i < s.depth(); i++)
+                    {
+                        sPrinted += " / " + s[i];
+                    }
+                }
+            }
+            else if (sObjectType == "stack")
+            {
+                const mu::Stack& s = static_cast<const mu::StackValue&>(object).get();
+                sPrinted += "len:  " + toString(s.size());
+
+                if (s.size())
+                    sPrinted += "\ntop:  " + s.back().printEmbedded();
+                else
+                    sPrinted += "\ntop:  void";
+            }
+            else if (sObjectType == "queue")
+            {
+                const mu::Queue& q = static_cast<const mu::QueueValue&>(object).get();
+                sPrinted += "  len:  " + toString(q.size());
+
+                if (q.size())
+                {
+                    sPrinted += "\nfront:  " + q.front().printEmbedded();
+                    sPrinted += "\n back:  " + q.back().printEmbedded();
+                }
+                else
+                {
+                    sPrinted += "\nfront:  void";
+                    sPrinted += "\n back:  void";
+                }
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+            make_hline();
+        }
+        else
+        {
+            sPrinted = res[i].printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|-> " + sPrinted + "\n");
+        }
+
     }
 
     NumeReKernel::toggleTableStatus();
@@ -5237,6 +5309,7 @@ static std::map<std::string, CommandFunc> getCommandFunctions()
     mCommandFuncMap["var"] = cmd_context_specific;
     mCommandFuncMap["str"] = cmd_context_specific;
     mCommandFuncMap["cst"] = cmd_context_specific;
+    mCommandFuncMap["obj"] = cmd_context_specific;
     mCommandFuncMap["namespace"] = cmd_context_specific;
     mCommandFuncMap["layout"] = cmd_context_specific;
     mCommandFuncMap["endlayout"] = cmd_context_specific;

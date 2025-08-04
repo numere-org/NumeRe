@@ -388,6 +388,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		std::map<int, int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
 		wxString getNextToken(int& nPos);
 		std::pair<int,int> getCurrentContext(int line);
+		std::pair<std::string,bool> get_method_root_type(int pos);
 
 		NumeReWindow* m_mainFrame;
 		ProcedureViewer* m_procedureViewer;

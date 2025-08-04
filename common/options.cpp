@@ -86,6 +86,8 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i) const
             return SyntaxStyles(DEFAULT_ST_NUMBER);
         case Styles::METHODS:
             return SyntaxStyles(DEFAULT_ST_METHODS);
+        case Styles::CUSTOM_METHOD:
+            return SyntaxStyles(DEFAULT_ST_CUSTOMMETHOD);
         case Styles::INSTALL:
             return SyntaxStyles(DEFAULT_ST_INSTALL);
         case Styles::DEFAULT_VARS: // x y z t
@@ -297,6 +299,7 @@ wxArrayString Options::GetStyleIdentifier() const
     sReturn.Add("NUMBER");
     sReturn.Add("PROCEDURE COMMAND");
     sReturn.Add("METHODS");
+    sReturn.Add("CUSTOM METHODS");
     sReturn.Add("INSTALL");
     sReturn.Add("DEFAULT VARS");
     sReturn.Add("ACTIVE LINE");
@@ -442,6 +445,8 @@ std::string Options::syntaxStylesToString(Styles style) const
             return SETTING_S_ST_PROCCOMMAND;
         case Styles::METHODS:
             return SETTING_S_ST_METHODS;
+        case Styles::CUSTOM_METHOD:
+            return SETTING_S_ST_CUSTOMMETHOD;
         case Styles::INSTALL:
             return SETTING_S_ST_INSTALL;
         case Styles::DEFAULT_VARS:

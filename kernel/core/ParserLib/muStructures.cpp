@@ -55,8 +55,23 @@ namespace mu
     /// \param other BaseValue*
     ///
     /////////////////////////////////////////////////
-    Value::Value(BaseValue* other) : std::unique_ptr<BaseValue>(other)
-    { }
+    Value::Value(BaseValue* other)
+    {
+        if (other && other->m_type == TYPE_ARRAY)
+        {
+            ArrValue* arrVal = static_cast<ArrValue*>(other);
+
+            if (arrVal->get().size() == 1)
+            {
+                operator=(arrVal->get().front());
+                delete other;
+            }
+            else
+                reset(other);
+        }
+        else
+            reset(other);
+    }
 
 
     /////////////////////////////////////////////////
@@ -91,7 +106,13 @@ namespace mu
     /////////////////////////////////////////////////
     Value::Value(const Array& data)
     {
-        reset(new ArrValue(data));
+        if (data.size() == 1)
+        {
+            if (data.front().get())
+                reset(data.front().get()->clone());
+        }
+        else
+            reset(new ArrValue(data));
     }
 
 
@@ -215,6 +236,32 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct a Value from a DictStruct
+    /// instance.
+    ///
+    /// \param dict const DictStruct&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const DictStruct& dict)
+    {
+        reset(new DictStructValue(dict));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a Value from an Object
+    /// instance.
+    ///
+    /// \param obj const Object&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const Object& obj)
+    {
+        reset(obj.clone());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct a Value from a data type.
     ///
     /// \param type DataType
@@ -231,8 +278,9 @@ namespace mu
                 reset(new NeutralValue);
                 break;
             case TYPE_NUMERICAL:
-                reset(new NumValue);
+                reset(new NumValue(NAN, false));
                 break;
+            case TYPE_CLUSTER:
             case TYPE_INVALID:
                 reset(new NumValue(NAN, true));
                 break;
@@ -241,6 +289,15 @@ namespace mu
                 break;
             case TYPE_ARRAY:
                 reset(new ArrValue);
+                break;
+            case TYPE_DICTSTRUCT:
+                reset(new DictStructValue);
+                break;
+            case TYPE_VOID:
+            case TYPE_OBJECT:
+            case TYPE_GENERATOR:
+            case TYPE_GENERATOR_CONSTRUCTOR:
+            case TYPE_REFERENCE:
                 break;
         }
     }
@@ -255,7 +312,7 @@ namespace mu
     DataType Value::getType() const
     {
         if (get())
-            return get()->m_type;
+            return get()->getType();
 
         return TYPE_VOID;
     }
@@ -285,7 +342,23 @@ namespace mu
             case TYPE_STRING:
                 return "string";
             case TYPE_ARRAY:
+                return getArray().getCommonTypeAsString();
+            case TYPE_DICTSTRUCT:
+                return "dictstruct";
+            case TYPE_OBJECT:
+                if (isVoid())
+                    return "object.void";
+                return "object." + getObject().getObjectType();
+            case TYPE_CLUSTER:
                 return "cluster";
+            case TYPE_REFERENCE:
+                return "reference";
+            case TYPE_GENERATOR:
+            case TYPE_GENERATOR_CONSTRUCTOR:
+                return "generator";
+            case TYPE_VOID:
+            case TYPE_INVALID:
+                break;
         }
 
         return "void";
@@ -325,7 +398,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isNumerical() const
     {
-        return get() && (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID || get()->m_type == TYPE_CATEGORY);
+        return get() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID || get()->getType() == TYPE_CATEGORY);
     }
 
 
@@ -338,7 +411,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isString() const
     {
-        return get() && (get()->m_type == TYPE_STRING || get()->m_type == TYPE_CATEGORY);
+        return get() && (get()->getType() == TYPE_STRING || get()->getType() == TYPE_CATEGORY);
     }
 
 
@@ -351,7 +424,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isCategory() const
     {
-        return get() && get()->m_type == TYPE_CATEGORY;
+        return get() && get()->getType() == TYPE_CATEGORY;
     }
 
 
@@ -364,7 +437,59 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isArray() const
     {
-        return get() && get()->m_type == TYPE_ARRAY;
+        return get() && get()->getType() == TYPE_ARRAY;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// DictStruct.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isDictStruct() const
+    {
+        return get() && get()->getType() == TYPE_DICTSTRUCT;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is an
+    /// Object.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isObject() const
+    {
+        return get() && get()->getType() == TYPE_OBJECT;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// reference.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isRef() const
+    {
+        return get() && get()->m_type == TYPE_REFERENCE;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// Generator.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isGenerator() const
+    {
+        return get() && get()->m_type == TYPE_GENERATOR;
     }
 
 
@@ -382,6 +507,10 @@ namespace mu
                 return static_cast<StrValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().name;
+            else if (isRef() && get()->getType() == TYPE_STRING)
+                return static_cast<StrValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<CatValue&>(getRef().get()).get().name;
         }
 
         throw ParserError(ecTYPE_NO_STR, getTypeAsString());
@@ -402,6 +531,34 @@ namespace mu
                 return static_cast<const StrValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().name;
+            else if (isRef() && get()->getType() == TYPE_STRING)
+                return static_cast<const StrValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<const CatValue&>(getRef().get()).get().name;
+        }
+        else
+            return m_defString;
+
+        throw ParserError(ecTYPE_NO_STR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained string or the
+    /// contained Path formatted as string.
+    ///
+    /// \param separator char
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Value::getPath(char separator) const
+    {
+        if (get())
+        {
+            if (isString())
+                return getStr();
+            else if (isObject() && getObject().getObjectType() == "path")
+                return static_cast<const PathValue*>(get())->get().to_string(separator);
         }
         else
             return m_defString;
@@ -424,6 +581,10 @@ namespace mu
                 return static_cast<NumValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().val;
+            else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
+                return static_cast<NumValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<CatValue&>(getRef().get()).get().val;
         }
 
         throw ParserError(ecTYPE_NO_VAL, getTypeAsString());
@@ -444,6 +605,10 @@ namespace mu
                 return static_cast<const NumValue*>(get())->get();
             else if (get()->m_type == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val;
+            else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
+                return static_cast<const NumValue&>(getRef().get()).get();
+            else if (isRef() && get()->getType() == TYPE_CATEGORY)
+                return static_cast<const CatValue&>(getRef().get()).get().val;
         }
         else
             return m_defVal;
@@ -462,6 +627,8 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_CATEGORY)
             return static_cast<CatValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_CATEGORY)
+            return static_cast<CatValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_CAT, getTypeAsString());
     }
@@ -477,6 +644,8 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_CATEGORY)
             return static_cast<const CatValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_CATEGORY)
+            return static_cast<const CatValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_CAT, getTypeAsString());
     }
@@ -492,6 +661,8 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_ARRAY)
             return static_cast<ArrValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_ARRAY)
+            return static_cast<ArrValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
     }
@@ -507,8 +678,123 @@ namespace mu
     {
         if (get() && get()->m_type == TYPE_ARRAY)
             return static_cast<const ArrValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_ARRAY)
+            return static_cast<const ArrValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained DictStruct.
+    ///
+    /// \return DictStruct&
+    ///
+    /////////////////////////////////////////////////
+    DictStruct& Value::getDictStruct()
+    {
+        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+            return static_cast<DictStructValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
+            return static_cast<DictStructValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained DictStruct.
+    ///
+    /// \return const DictStruct&
+    ///
+    /////////////////////////////////////////////////
+    const DictStruct& Value::getDictStruct() const
+    {
+        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+            return static_cast<const DictStructValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
+            return static_cast<const DictStructValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Object.
+    ///
+    /// \return Object&
+    ///
+    /////////////////////////////////////////////////
+    Object& Value::getObject()
+    {
+        if (get() && get()->m_type == TYPE_OBJECT)
+            return *static_cast<Object*>(get());
+        else if (isRef() && get()->getType() == TYPE_OBJECT)
+            return static_cast<Object&>(getRef().get());
+
+        throw ParserError(ecTYPE_NO_OBJ, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Object.
+    ///
+    /// \return const Object&
+    ///
+    /////////////////////////////////////////////////
+    const Object& Value::getObject() const
+    {
+        if (get() && get()->m_type == TYPE_OBJECT)
+            return *static_cast<const Object*>(get());
+        else if (isRef() && get()->getType() == TYPE_OBJECT)
+            return static_cast<const Object&>(getRef().get());
+
+        throw ParserError(ecTYPE_NO_OBJ, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained RefValue.
+    ///
+    /// \return RefValue&
+    ///
+    /////////////////////////////////////////////////
+    RefValue& Value::getRef()
+    {
+        if (get() && get()->m_type == TYPE_REFERENCE)
+            return *static_cast<RefValue*>(get());
+
+        throw ParserError(ecTYPE_NO_REF, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained RefValue.
+    ///
+    /// \return const RefValue&
+    ///
+    /////////////////////////////////////////////////
+    const RefValue& Value::getRef() const
+    {
+        if (get() && get()->m_type == TYPE_REFERENCE)
+            return *static_cast<const RefValue*>(get());
+
+        throw ParserError(ecTYPE_NO_REF, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained GeneratorValue.
+    ///
+    /// \return const GeneratorValue&
+    ///
+    /////////////////////////////////////////////////
+    const GeneratorValue& Value::getGenerator() const
+    {
+        if (get() && get()->m_type == TYPE_GENERATOR)
+            return *static_cast<const GeneratorValue*>(get());
+
+        throw ParserError(ecTYPE_NO_REF, getTypeAsString());
     }
 
 
@@ -522,15 +808,10 @@ namespace mu
     /////////////////////////////////////////////////
     std::complex<double> Value::as_cmplx() const
     {
-        if (get())
-        {
-            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
-                return static_cast<const NumValue*>(get())->get().asCF64();
-            else if (get()->m_type == TYPE_CATEGORY)
-                return static_cast<const CatValue*>(get())->get().val.asCF64();
-        }
+        if (!get() || !isNumerical())
+            return NAN;
 
-        return NAN;
+        return getNum().asCF64();
     }
 
 
@@ -698,6 +979,222 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Does this value object have the
+    /// requested method?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition Value::isMethod(const std::string& sMethod, size_t argc) const
+    {
+        if (get())
+            return get()->isMethod(sMethod, argc);
+
+        return MethodDefinition();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod) const
+    {
+        if (!get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1) const
+    {
+        if (!get() || !arg1.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2) const
+    {
+        if (!get() || !arg1.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get(), *arg2.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get(), *arg2.get(), *arg3.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \param arg4 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg3.get() || !arg4.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->call(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Does this value object have the
+    /// requested applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition Value::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    {
+        if (get())
+            return get()->isApplyingMethod(sMethod, argc);
+
+        return MethodDefinition();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod)
+    {
+        if (!get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1)
+    {
+        if (!get() || !arg1.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2)
+    {
+        if (!get() || !arg1.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get(), *arg2.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3)
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg2.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Value&
+    /// \param arg2 const Value&
+    /// \param arg3 const Value&
+    /// \param arg4 const Value&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4)
+    {
+        if (!get() || !arg1.get() || !arg2.get() || !arg3.get() || !arg4.get())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Convert the contained value into a
     /// string for printing on the terminal. Will
     /// append quotation marks to string values, if
@@ -714,6 +1211,33 @@ namespace mu
     {
         if (get())
             return get()->print(digits, chrs, trunc);
+
+#ifdef PARSERSTANDALONE
+        return "0x0";
+#else
+        return "void";
+#endif
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the contained value into a
+    /// string for printing on the terminal. Will
+    /// append quotation marks to string values, if
+    /// necessary, and can truncate the value to a
+    /// number of characters. Structures and arrays
+    /// are shortened in this variant.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Value::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (get())
+            return get()->printEmbedded(digits, chrs, trunc);
 
 #ifdef PARSERSTANDALONE
         return "0x0";
@@ -785,7 +1309,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Construct an empty Array.
     /////////////////////////////////////////////////
-    Array::Array() : std::vector<Value>(), m_commonType(TYPE_VOID)
+    Array::Array() : std::vector<Value>(), m_commonType(TYPE_VOID), m_isConst(true)
     { }
 
 
@@ -808,7 +1332,7 @@ namespace mu
     /// \param fillVal const Value&
     ///
     /////////////////////////////////////////////////
-    Array::Array(size_t n, const Value& fillVal) : std::vector<Value>(n, fillVal), m_commonType(fillVal.getType())
+    Array::Array(size_t n, const Value& fillVal) : std::vector<Value>(n, fillVal), m_commonType(fillVal.getType()), m_isConst(true)
     { }
 
 
@@ -837,7 +1361,7 @@ namespace mu
     /// \param var const Variable&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType)
+    Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType), m_isConst(true)
     { }
 
 
@@ -848,7 +1372,7 @@ namespace mu
     /// \param other const std::vector<std::complex<double>>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<std::complex<double>>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<std::complex<double>>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -864,7 +1388,7 @@ namespace mu
     /// \param other const std::vector<double>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<double>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<double>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -880,7 +1404,23 @@ namespace mu
     /// \param other const std::vector<size_t>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<size_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<size_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
+    {
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = Numerical(other[i]);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an Array from a std::vector
+    /// of int values.
+    ///
+    /// \param other const std::vector<int>&
+    ///
+    /////////////////////////////////////////////////
+    Array::Array(const std::vector<int>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -896,7 +1436,7 @@ namespace mu
     /// \param other const std::vector<int64_t>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<int64_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<int64_t>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -912,7 +1452,7 @@ namespace mu
     /// \param other const std::vector<Numerical>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -928,7 +1468,7 @@ namespace mu
     /// \param other const std::vector<std::string>&
     ///
     /////////////////////////////////////////////////
-    Array::Array(const std::vector<std::string>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_STRING)
+    Array::Array(const std::vector<std::string>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_STRING), m_isConst(true)
     {
         for (size_t i = 0; i < other.size(); i++)
         {
@@ -938,60 +1478,56 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Make this array a 2-val generator
-    /// array.
+    /// \brief Construct an Array from a
+    /// GeneratorValue.
     ///
-    /// \param fst const Array&
-    /// \param lst const Array&
-    ///
-    /////////////////////////////////////////////////
-    Array::Array(const Array& fst, const Array& lst) : std::vector<Value>({fst,lst}), m_commonType(TYPE_GENERATOR)
-    { }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Make this array a 3-val generator
-    /// array.
-    ///
-    /// \param fst const Array&
-    /// \param inc const Array&
-    /// \param lst const Array&
+    /// \param generator GeneratorValue*
     ///
     /////////////////////////////////////////////////
-    Array::Array(const Array& fst, const Array& inc, const Array& lst) : std::vector<Value>({fst,inc,lst}), m_commonType(TYPE_GENERATOR)
-    { }
+    Array::Array(GeneratorValue* generator) : std::vector<Value>(1u), m_commonType(TYPE_GENERATOR_CONSTRUCTOR), m_isConst(true)
+    {
+        first().reset(generator);
+    }
 
 
     /////////////////////////////////////////////////
     /// \brief Get the (general) data types of every
     /// contained Value.
     ///
+    /// \param common& DataType
     /// \return std::vector<DataType>
     ///
     /////////////////////////////////////////////////
-    std::vector<DataType> Array::getType() const
+    std::vector<DataType> Array::getType(DataType& common) const
     {
         std::vector<DataType> types;
-        size_t elems = size();
+
+        if (count() == 1 && first().isRef() && first().isArray())
+            return first().getArray().getType(common);
+
+        size_t elems = count();
         types.reserve(elems);
 
         for (size_t i = 0; i < elems; i++)
         {
             types.push_back(operator[](i).getType());
 
-            if (m_commonType == TYPE_VOID
-                || ((m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID) && types.back() != TYPE_VOID))
-                m_commonType = types.back();
+            if (common == TYPE_VOID
+                || ((common == TYPE_NEUTRAL || common == TYPE_INVALID) && types.back() != TYPE_VOID))
+                common = types.back();
 
             if (types.back() != TYPE_VOID
                 && types.back() != TYPE_NEUTRAL
                 && types.back() != TYPE_INVALID
-                && m_commonType != types.back())
-                m_commonType = TYPE_MIXED;
+                && common != types.back())
+                common = TYPE_CLUSTER;
         }
 
-        if (m_commonType == TYPE_NEUTRAL || m_commonType == TYPE_INVALID)
-            m_commonType = TYPE_NUMERICAL;
+        if (common == TYPE_NEUTRAL || common == TYPE_INVALID)
+            common = TYPE_NUMERICAL;
+
+        if (common == TYPE_ARRAY)
+            common = TYPE_CLUSTER;
 
         return types;
     }
@@ -1007,7 +1543,7 @@ namespace mu
     DataType Array::getCommonType() const
     {
         if (m_commonType == TYPE_VOID && size())
-            getType();
+            getType(m_commonType);
 
         return m_commonType;
     }
@@ -1023,25 +1559,66 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::getCommonTypeAsString() const
     {
+        if (count() == 1 && first().isRef() && first().isArray())
+            return first().getArray().getCommonTypeAsString();
+
         switch (getCommonType())
         {
             case TYPE_CATEGORY:
                 return "category";
             case TYPE_NUMERICAL:
             {
-                TypeInfo info = front().getNum().getInfo();
+                if (empty())
+                    return "value.void";
+
+                TypeInfo info = first().getNum().getInfo();
 
                 for (size_t i = 1; i < size(); i++)
                 {
-                    info.promote(operator[](i).getNum().getInfo());
+                    info.promote(get(i).getNum().getInfo());
                 }
 
                 return info.printType();
             }
             case TYPE_STRING:
                 return "string";
-            case TYPE_MIXED:
+            case TYPE_CLUSTER:
                 return "cluster";
+            case TYPE_ARRAY:
+                return "cluster*";
+            case TYPE_DICTSTRUCT:
+                return "dictstruct";
+            case TYPE_OBJECT:
+            {
+                if (empty())
+                    return "object.void";
+
+                std::string sType = first().getObject().getObjectType();
+
+                for (size_t i = 1; i < size(); i++)
+                {
+                    const Object& obj = get(i).getObject();
+
+                    if (sType == "void")
+                        sType = obj.getObjectType();
+                    else if (sType != obj.getObjectType())
+                    {
+                        sType = "*";
+                        break;
+                    }
+                }
+
+                return "object." + sType;
+            }
+            case TYPE_REFERENCE:
+                return "reference";
+            case TYPE_GENERATOR:
+            case TYPE_GENERATOR_CONSTRUCTOR:
+                return "generator";
+            case TYPE_VOID:
+            case TYPE_NEUTRAL:
+            case TYPE_INVALID:
+                break;
         }
 
         return "void";
@@ -1058,11 +1635,11 @@ namespace mu
     /////////////////////////////////////////////////
     NumericalType Array::getCommonNumericalType() const
     {
-        TypeInfo info = front().getNum().getInfo();
+        TypeInfo info = get(0).getNum().getInfo();
 
         for (size_t i = 1; i < size(); i++)
         {
-            info.promote(operator[](i).getNum().getInfo());
+            info.promote(get(i).getNum().getInfo());
         }
 
         return info.asType();
@@ -1093,6 +1670,24 @@ namespace mu
     bool Array::isDefault() const
     {
         return !size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether this Array is void
+    /// as a whole.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::isVoid() const
+    {
+        if (isDefault())
+            return true;
+
+        std::vector<DataType> types = getType(m_commonType);
+
+        return std::find_if(types.begin(), types.end(), [](DataType type){return type != TYPE_VOID;}) == types.end();
     }
 
 
@@ -1154,7 +1749,7 @@ namespace mu
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(operator[](i).operator!());
+            ret.emplace_back(get(i).operator!());
         }
 
         return ret;
@@ -1367,6 +1962,55 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Return this Array with any generators
+    /// expanded.
+    ///
+    /// \return Array
+    ///
+    /// \warning That might not fit into memory!
+    /////////////////////////////////////////////////
+    Array Array::expandGenerators() const
+    {
+        Array expanded;
+        size_t elems = size();
+        expanded.reserve(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            expanded.push_back(get(i));
+        }
+
+        return expanded;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the passed string
+    /// corresponds to a method.
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition Array::isMethod(const std::string& sMethod, size_t argc) const
+    {
+        static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
+                                        {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
+                                        {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
+                                        {"unwrap", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
+                                        {"order", 0}, {"order", -1}});
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return front().isMethod(sMethod, argc);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Call a method with zero arguments.
     ///
     /// \param sMethod const std::string&
@@ -1375,13 +2019,10 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod) const
     {
-        if (sMethod == "len")
-            return strfnc_strlen(*this);
-        else if (sMethod == "first")
-            return strfnc_firstch(*this);
-        else if (sMethod == "last")
-            return strfnc_lastch(*this);
-        else if (sMethod == "std")
+        if (size() == 1 && first().isArray())
+            return first().getArray().call(sMethod);
+
+        if (sMethod == "std")
             return numfnc_Std(this); // Pointer as single-element array
         else if (sMethod == "avg")
             return numfnc_Avg(this);
@@ -1422,9 +2063,21 @@ namespace mu
         else if (sMethod == "rms")
             return numfnc_Rms(this);
         else if (sMethod == "order")
-            return numfnc_order(this);
+            return order();
         else if (sMethod == "unwrap")
             return unWrap();
+        else if (front().isMethod(sMethod, 0))
+        {
+            Array ret;
+            ret.reserve(size());
+
+            for (size_t i = 0; i < size(); i++)
+            {
+                ret.emplace_back(get(i).call(sMethod));
+            }
+
+            return ret;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1440,30 +2093,45 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1) const
     {
-        if (sMethod == "at")
-            return strfnc_char(*this, arg1);
-        else if (sMethod == "startsw")
-            return strfnc_startswith(*this, arg1);
-        else if (sMethod == "endsw")
-            return strfnc_endswith(*this, arg1);
-        else if (sMethod == "sel")
+        if (size() == 1 && first().isArray())
+            return first().getArray().call(sMethod, arg1);
+
+        if (sMethod == "sel")
             return numfnc_getElements(*this, arg1);
-        else if (sMethod == "sub")
-            return strfnc_substr(*this, arg1, mu::Array());
-        else if (sMethod == "splt")
-            return strfnc_split(*this, arg1, mu::Array());
-        else if (sMethod == "fnd")
-            return strfnc_strfnd(arg1, *this, mu::Array());
-        else if (sMethod == "rfnd")
-            return strfnc_strrfnd(arg1, *this, mu::Array());
-        else if (sMethod == "mtch")
-            return strfnc_strmatch(arg1, *this, mu::Array());
-        else if (sMethod == "rmtch")
-            return strfnc_strrmatch(arg1, *this, mu::Array());
-        else if (sMethod == "nmtch")
-            return strfnc_str_not_match(arg1, *this, mu::Array());
-        else if (sMethod == "nrmtch")
-            return strfnc_str_not_rmatch(arg1, *this, mu::Array());
+        else if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
+        {
+            Array ret;
+            size_t elems = size();
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(arg1.front().getStr()));
+            }
+
+            return ret;
+        }
+        else if (sMethod == "order")
+            return order(arg1);
+
+        MethodDefinition def = front().isMethod(sMethod, 1);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1);
+
+            Array ret;
+            size_t elems = std::max(size(), arg1.size());
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i)));
+            }
+
+            return ret;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1480,25 +2148,563 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2) const
     {
-        if (sMethod == "sub")
-            return strfnc_substr(*this, arg1, arg2);
-        else if (sMethod == "splt")
-            return strfnc_split(*this, arg1, arg2);
-        else if (sMethod == "fnd")
-            return strfnc_strfnd(arg1, *this, arg2);
-        else if (sMethod == "rfnd")
-            return strfnc_strrfnd(arg1, *this, arg2);
-        else if (sMethod == "mtch")
-            return strfnc_strmatch(arg1, *this, arg2);
-        else if (sMethod == "rmtch")
-            return strfnc_strrmatch(arg1, *this, arg2);
-        else if (sMethod == "nmtch")
-            return strfnc_str_not_match(arg1, *this, arg2);
-        else if (sMethod == "nrmtch")
-            return strfnc_str_not_rmatch(arg1, *this, arg2);
+        if (size() == 1 && first().isArray())
+            return first().getArray().call(sMethod, arg1, arg2);
+
+        if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
+        {
+            Array ret;
+            size_t elems = size();
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(arg1.front().getStr(), arg2));
+            }
+
+            return ret;
+        }
+
+        MethodDefinition def = front().isMethod(sMethod, 2);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1, arg2);
+
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size()});
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i), arg2.get(i)));
+            }
+
+            return ret;
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const
+    {
+        MethodDefinition def = front().isMethod(sMethod, 3);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1, arg2, arg3);
+
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i), arg2.get(i), arg3.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \param arg4 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const
+    {
+        MethodDefinition def = front().isMethod(sMethod, 4);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().call(sMethod, arg1, arg2, arg3, arg4);
+
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).call(sMethod, arg1.get(i), arg2.get(i), arg3.get(i), arg4.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the passed string
+    /// corresponds to an applying method.
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    {
+        const static MethodSet methods = {{"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return front().isApplyingMethod(sMethod, argc);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with zero arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (front().isApplyingMethod(sMethod, 0))
+        {
+            Array ret;
+            ret.reserve(size());
+            ret.makeMutable();
+
+            for (size_t i = 0; i < size(); i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (sMethod == "sel")
+        {
+            if (size() == 1 && first().isArray())
+                return first().getArray().makeMutable().apply(sMethod, arg1);
+
+            Array ret;
+            size_t elems = arg1.size();
+            ret.reserve(elems);
+            ret.makeMutable();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                int64_t n = arg1.get(i).getNum().asI64();
+
+                if (n > 0 && (size_t)n <= size())
+                    ret.emplace_back(new RefValue(&get(n-1)));
+            }
+
+            return ret;
+        }
+        else if (sMethod == "rem" && arg1.getCommonType() == TYPE_NUMERICAL)
+            return deleteItems(arg1);
+        else if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
+            return insertItems(arg1);
+
+        MethodDefinition def = front().isApplyingMethod(sMethod, 1);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1);
+
+            Array ret;
+            size_t elems = std::max(size(), arg1.size());
+            ret.reserve(elems);
+            ret.makeMutable();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
+            return insertItems(arg1, arg2);
+
+        MethodDefinition def = front().isApplyingMethod(sMethod, 2);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1, arg2);
+
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size()});
+            ret.reserve(elems);
+            ret.makeMutable();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i), arg2.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with three arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        MethodDefinition def = front().isApplyingMethod(sMethod, 3);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1, arg2, arg3);
+
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size()});
+            ret.reserve(elems);
+            ret.makeMutable();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i), arg2.get(i), arg3.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with four arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const Array&
+    /// \param arg2 const Array&
+    /// \param arg3 const Array&
+    /// \param arg4 const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4)
+    {
+        if (isConst())
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+
+        MethodDefinition def = front().isApplyingMethod(sMethod, 4);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+                return front().apply(sMethod, arg1, arg2, arg3, arg4);
+
+            Array ret;
+            size_t elems = std::max({size(), arg1.size(), arg2.size(), arg3.size(), arg4.size()});
+            ret.reserve(elems);
+            ret.makeMutable();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                ret.emplace_back(get(i).apply(sMethod, arg1.get(i), arg2.get(i), arg3.get(i), arg4.get(i)));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get references to individual elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::index(const Array& idx)
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(std::min(size(), elems));
+        ret.makeMutable();
+        DataType common = getCommonType();
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(new RefValue(&get(p-1)));
+            else if (p > 0 && idx.m_commonType == TYPE_GENERATOR && idx.size() == UINT64_MAX)
+                return ret;
+            else if (p > 0)
+                ret.emplace_back(Value(common));
+            else
+                throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get constant references to individual
+    /// elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::index(const Array& idx) const
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(get(p-1));
+            else if (p > 0)
+                ret.emplace_back(Value(getCommonType()));
+            else
+                throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Insert the selected elements.
+    ///
+    /// \param idx const Array&
+    /// \param vals const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::insertItems(const Array& idx, const Array& vals)
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.resize(elems);
+        DataType commonType = getCommonType();
+
+        // Ordering the accessing index is reasonable
+        Array order = idx.order();
+
+        // Insert the elements
+        for (int i = elems-1; i >= 0; i--)
+        {
+            int64_t item = order.get(i).getNum().asI64();
+            int64_t p = idx.get(item-1).getNum().asI64();
+
+            // Construct and insert the element
+            if (p > 0 && p <= (int64_t)size())
+            {
+                if (vals.isDefault())
+                    ret.get(item-1) = Value(commonType);
+                else
+                    ret.get(item-1) = vals.get(item-1);
+
+                insert(begin()+p-1, ret.get(item-1));
+            }
+        }
+
+        if (m_commonType != TYPE_CLUSTER)
+            m_commonType = TYPE_VOID;
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Delete the selected elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::deleteItems(const Array& idx)
+    {
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(elems);
+
+        // Ordering the accessing index is reasonable
+        Array order = idx.order();
+
+        // Move the elements to the returning array
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(get(p-1).release());
+        }
+
+        // Erase the remaining stubs
+        for (int i = elems-1; i >= 0; i--)
+        {
+            int64_t item = order.get(i).getNum().asI64();
+            int64_t p = idx.get(item-1).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                erase(begin()+p-1);
+        }
+
+        if (m_commonType != TYPE_CLUSTER)
+            m_commonType = TYPE_VOID;
+
+        // If only one element is remaining, unwrap it automatically
+        if (count() == 1 && first().isArray() && !first().isRef())
+        {
+            // Assigning a child of this array is amazingly complex
+            // Release the pointer first, move the contents and delete
+            // it afterwards
+            ArrValue* arr = static_cast<ArrValue*>(first().release());
+            operator=(std::move(arr->get()));
+            delete arr;
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the order of this array.
+    ///
+    /// \param opts const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::order(const Array& opts) const
+    {
+        if (!size())
+            return mu::Value(false);
+
+        bool desc = false;
+        bool ignoreCase = false;
+
+        if (!opts.isDefault())
+        {
+            for (size_t i = 0; i < opts.size(); i++)
+            {
+                if (opts.get(i) == "desc")
+                    desc = true;
+
+                if (opts.get(i) == "ignorecase")
+                    ignoreCase = true;
+            }
+        }
+
+        mu::Array index;
+        index.reserve(size());
+
+        for (size_t i = 1; i <= size(); i++)
+        {
+            index.push_back(i);
+        }
+
+        auto sorter = [=, this](const mu::Value& v1, const mu::Value& v2)
+            {
+                int64_t p1 = desc ? v2.getNum().asI64()-1 : v1.getNum().asI64()-1;
+                int64_t p2 = desc ? v1.getNum().asI64()-1 : v2.getNum().asI64()-1;
+
+                if (!get(p1).isValid())
+                    return false;
+
+                if (ignoreCase && get(p1).isString() && get(p2).isString())
+                    return toLowerCase(get(p1).getStr()) < toLowerCase(get(p2).getStr());
+
+                return bool(get(p1) < get(p2)) || !get(p2).isValid();
+            };
+        std::sort(index.begin(), index.end(), sorter);
+
+        return index;
+    }
+
 
 
     /////////////////////////////////////////////////
@@ -1527,10 +2733,12 @@ namespace mu
     std::vector<std::string> Array::as_str_vector() const
     {
         std::vector<std::string> ret;
+        size_t elems = size();
+        ret.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
-            ret.push_back(operator[](i).getStr());
+            ret.push_back(get(i).getStr());
         }
 
         return ret;
@@ -1549,10 +2757,12 @@ namespace mu
     std::vector<std::complex<double>> Array::as_cmplx_vector() const
     {
         std::vector<std::complex<double>> ret;
+        size_t elems = size();
+        ret.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
-            ret.push_back(operator[](i).as_cmplx());
+            ret.push_back(get(i).as_cmplx());
         }
 
         return ret;
@@ -1570,10 +2780,12 @@ namespace mu
     std::vector<std::string> Array::to_string() const
     {
         std::vector<std::string> ret;
+        size_t elems = size();
+        ret.reserve(elems);
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
-            ret.push_back(operator[](i).print());
+            ret.push_back(get(i).print());
         }
 
         return ret;
@@ -1599,6 +2811,8 @@ namespace mu
 #else
             return "void";
 #endif
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().print(digits, chrs, trunc);
 
         std::string ret;
 
@@ -1607,13 +2821,41 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).print(digits, chrs, trunc);
+            if (size() > 1)
+                ret += get(i).printEmbedded(digits, chrs, trunc);
+            else
+                ret += get(i).print(digits, chrs, trunc);
         }
 
         if (size() > 1)
             return "{" + ret + "}";
 
         return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print the contents as if they are
+    /// embedded.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Array::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        if (isDefault())
+#ifdef PARSERSTANDALONE
+            return "default";
+#else
+            return "void";
+#endif
+        if (size() == 1 && first().isArray())
+            return first().getArray().printEmbedded(digits, chrs, trunc);
+
+        return "{" + printDims() + " " + getCommonTypeAsString() + "}";
     }
 
 
@@ -1631,6 +2873,9 @@ namespace mu
         if (isDefault())
             return "void";
 
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().printVals(digits, chrs);
+
         std::string ret;
 
         for (size_t i = 0; i < size(); i++)
@@ -1638,7 +2883,7 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).printVal(digits, chrs);
+            ret += get(i).printVal(digits, chrs);
         }
 
         return ret;
@@ -1653,6 +2898,12 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printDims() const
     {
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().printDims();
+
+        if (!size())
+            return "0 x 0";
+
         return toString(size()) + " x 1";
     }
 
@@ -1672,7 +2923,7 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            std::string sVal = operator[](i).printVal();
+            std::string sVal = get(i).printVal();
 
             if ((sRet.length() && sVal.length())
                 || (i && keepEmpty))
@@ -1699,6 +2950,9 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printOverview(size_t digits, size_t chrs, size_t maxElems, bool alwaysBraces) const
     {
+        //if (size() == 1 && front().isRef() && front().isArray())
+        //    return front().getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
+
         // Return an empty brace pair, if no data is
         // available
         if (!size())
@@ -1710,24 +2964,46 @@ namespace mu
 
         std::string sVector;
 
-        // Append the contained data depending on its type but
-        // restrict the number to maximal five values (use the first
-        // and the last ones) and insert an ellipsis in the middle
-        for (size_t i = 0; i < size(); i++)
+        if (m_commonType == TYPE_GENERATOR)
         {
-            if (sVector.size())
+            for (size_t i = 0; i < count(); i++)
+            {
+                if (sVector.size())
                 sVector += ", ";
 
-            sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+                sVector += operator[](i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
 
-            // Insert the ellipsis in the middle. The additional -1 is to
-            // handle the zero-based indices
-            if (i == maxElems / 2 - 1 && size() > maxElems)
-            {
-                sVector += ", ...";
-                i = size()-maxElems / 2 - 1;
+                // Insert the ellipsis in the middle. The additional -1 is to
+                // handle the zero-based indices
+                if (i == maxElems / 2 - 1 && count() > maxElems)
+                {
+                    sVector += ", ...";
+                    i = size()-maxElems / 2 - 1;
+                }
             }
         }
+        else
+        {
+            // Append the contained data depending on its type but
+            // restrict the number to maximal five values (use the first
+            // and the last ones) and insert an ellipsis in the middle
+            for (size_t i = 0; i < size(); i++)
+            {
+                if (sVector.size())
+                    sVector += ", ";
+
+                sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+
+                // Insert the ellipsis in the middle. The additional -1 is to
+                // handle the zero-based indices
+                if (i == maxElems / 2 - 1 && size() > maxElems)
+                {
+                    sVector += ", ...";
+                    i = size()-maxElems / 2 - 1;
+                }
+            }
+        }
+
 
         return "{" + sVector + "}";
     }
@@ -1744,12 +3020,201 @@ namespace mu
     {
         size_t bytes = 0;
 
-        for (size_t i = 0; i < size(); i++)
+        for (size_t i = 0; i < count(); i++)
         {
             bytes += operator[](i).getBytes();
         }
 
         return bytes;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Custom size function. Will default to
+    /// the parent size function except when this
+    /// array contains a reference to another array.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Array::size() const
+    {
+        size_t vectSize = count();
+
+        if (vectSize == 1 && first().isRef() && first().isArray())
+            return first().getArray().size();
+
+        if (m_commonType == TYPE_GENERATOR)
+        {
+            size_t totalSize = 0;
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                if (operator[](i).isGenerator())
+                {
+                    size_t genSize = operator[](i).getGenerator().size();
+
+                    if (genSize == UINT64_MAX)
+                        return genSize;
+
+                    totalSize += genSize;
+                }
+                else
+                    totalSize++;
+            }
+
+            return totalSize;
+        }
+
+        return vectSize;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the number of elements stored in
+    /// the array. Does not correspond to its size.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Array::count() const
+    {
+        return std::vector<Value>::size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief The the first element stored in the
+    /// array. Does not correspond to calling front().
+    ///
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
+    Value& Array::first()
+    {
+        return std::vector<Value>::front();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief The the first element stored in the
+    /// array. Does not correspond to calling front().
+    ///
+    /// \return const Value&
+    ///
+    /////////////////////////////////////////////////
+    const Value& Array::first() const
+    {
+        return std::vector<Value>::front();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Generate the i-th value and return a
+    /// reference to its buffered value.
+    ///
+    /// \param i size_t
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
+    Value& Array::getGenerated(size_t i)
+    {
+        if (i >= size())
+            throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
+
+        size_t vectSize = count();
+
+        for (size_t n = 0; n < vectSize; n++)
+        {
+            Value& val = operator[](n);
+
+            if (val.isGenerator())
+            {
+                if (val.getGenerator().size() <= i)
+                    i -= val.getGenerator().size();
+                else
+                {
+                    m_buffer.push_back(val.getGenerator().at(i));
+
+                    if (m_buffer.size() > 10)
+                        m_buffer.pop_front();
+
+                    return m_buffer.back();
+                }
+            }
+            else if (i)
+                i--;
+            else if (!i)
+                return val;
+        }
+
+        throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Generate the i-th value and return a
+    /// reference to its buffered value.
+    ///
+    /// \param i size_t
+    /// \return const Value&
+    ///
+    /////////////////////////////////////////////////
+    const Value& Array::getGenerated(size_t i) const
+    {
+        if (i >= size())
+            throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
+
+        size_t vectSize = count();
+
+        for (size_t n = 0; n < vectSize; n++)
+        {
+            const Value& val = operator[](n);
+
+            if (val.isGenerator())
+            {
+                if (val.getGenerator().size() <= i)
+                    i -= val.getGenerator().size();
+                else
+                {
+                    m_buffer.push_back(val.getGenerator().at(i));
+
+                    if (m_buffer.size() > 10)
+                        m_buffer.pop_front();
+
+                    return m_buffer.back();
+                }
+            }
+            else if (i)
+                i--;
+            else if (!i)
+                return val;
+        }
+
+        throw ParserError(ecTYPE_MISMATCH_OOB, "{A:B}");
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Set a value at some place in the array.
+    ///
+    /// \param i size_t
+    /// \param v const Value&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::set(size_t i, const Value& v)
+    {
+        DataType common = getCommonType();
+
+        if (i >= size())
+            resize(i+1, Value(NAN));
+
+        get(i) = v;
+        dereference();
+
+        if (common != v.getType() && common != TYPE_CLUSTER)
+            m_commonType = TYPE_VOID;
     }
 
 
@@ -1770,8 +3235,8 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            if (operator[](i).getNum().asCF64() == 0.0)
-                operator[](i).clear();
+            if (get(i).getNum().asCF64() == 0.0)
+                get(i).clear();
             else
                 canBeDefaulted = false;
         }
@@ -1798,6 +3263,29 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Remove all instances of RefValue in
+    /// this array and replace them by clones of
+    /// their referenced-to values.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::dereference() const
+    {
+        for (size_t i = 0; i < count(); i++)
+        {
+            Value& v = const_cast<Value&>(operator[](i));
+
+            if (v.isRef())
+                v.reset(v.getRef().get().clone());
+
+            if (v.isArray())
+                v.getArray().dereference();
+        }
+    }
+
+
 
 
 
@@ -1807,7 +3295,29 @@ namespace mu
     /// \brief Construct an empty Variable.
     /////////////////////////////////////////////////
     Variable::Variable() : Array()
-    { }
+    {
+        makeMutable();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct an empty Variable with a
+    /// dedicated data type.
+    ///
+    /// \param type DataType
+    ///
+    /////////////////////////////////////////////////
+    Variable::Variable(DataType type) : Array()
+    {
+        // Pre-initialize default variable types
+        if (type == TYPE_NUMERICAL)
+            emplace_back(0.0);
+        else if (type == TYPE_STRING)
+            emplace_back("");
+
+        makeMutable();
+        m_commonType = type;
+    }
 
 
     /////////////////////////////////////////////////
@@ -1817,7 +3327,10 @@ namespace mu
     ///
     /////////////////////////////////////////////////
     Variable::Variable(const Value& data) : Array(data)
-    { }
+    {
+        makeMutable();
+        dereference();
+    }
 
 
     /////////////////////////////////////////////////
@@ -1827,7 +3340,10 @@ namespace mu
     ///
     /////////////////////////////////////////////////
     Variable::Variable(const Array& data) : Array(data)
-    { }
+    {
+        makeMutable();
+        dereference();
+    }
 
 
     /////////////////////////////////////////////////
@@ -1837,7 +3353,9 @@ namespace mu
     ///
     /////////////////////////////////////////////////
     Variable::Variable(const Variable& data) : Array(data)
-    { }
+    {
+        makeMutable();
+    }
 
 
     /////////////////////////////////////////////////
@@ -1863,9 +3381,17 @@ namespace mu
         if (other.getType() == TYPE_ARRAY)
             return Variable::operator=(other.getArray());
 
-        if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
+        DataType common = getCommonType();
+
+        if (accepts(other))
         {
             Array::operator=(Array(other));
+            makeMutable();
+            dereference();
+
+            if (common == TYPE_CLUSTER)
+                m_commonType = TYPE_CLUSTER;
+
             return *this;
         }
 
@@ -1883,13 +3409,77 @@ namespace mu
     /////////////////////////////////////////////////
     Variable& Variable::operator=(const Variable& other)
     {
-        if (getCommonType() == TYPE_VOID || getType() == other.getType())
+        if (this == &other)
+            return *this;
+
+        DataType common = getCommonType();
+
+        if (accepts(other))
         {
             Array::operator=(other);
+            makeMutable();
+
+            if (common == TYPE_CLUSTER)
+                m_commonType = TYPE_CLUSTER;
+
             return *this;
         }
 
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Perform an indexed assign.
+    ///
+    /// \param idx const Array&
+    /// \param vals const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Variable::indexedAssign(const Array& idx, const Array& vals)
+    {
+        // Is this an assignment to the original var but with a new order?
+        if (this == &vals)
+        {
+            // We need to buffer the values before assignment
+            Array buffer(vals);
+            return indexedAssign(idx, buffer);
+        }
+
+        if (accepts(vals))
+        {
+            vals.dereference();
+            size_t elems = idx.size();
+            size_t valSize = vals.size();
+
+            // Assign the whole array directly
+            if (elems == 1)
+            {
+                set(idx.get(0).getNum().asI64()-1, vals);
+                return;
+            }
+
+            // Assign individual elements
+            for (size_t i = 0; i < elems; i++)
+            {
+                // Ensure that we have enough values
+                if (valSize > 1 && valSize <= i)
+                    break;
+
+                int64_t p = idx.get(i).getNum().asI64()-1;
+
+                // A scalar value is only written until the last
+                // already available value (or exceeds once for the first
+                // element)
+                if (elems == UINT64_MAX && valSize == 1 && i && p >= (int64_t)size())
+                    break;
+
+                set(p, vals.get(i));
+            }
+        }
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
     }
 
 
@@ -1903,10 +3493,53 @@ namespace mu
     /////////////////////////////////////////////////
     void Variable::overwrite(const Array& other)
     {
-        Array::operator=(other);
+        other.dereference();
+        assign(other);
+        makeMutable();
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether the current
+    /// variable accepts the passed value types.
+    ///
+    /// \param other const Array&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Variable::accepts(const Array& other) const
+    {
+        DataType common = getCommonType();
+
+        // Empty vars or clusters consume everything
+        if (common == TYPE_VOID || common == TYPE_CLUSTER)
+            return true;
+
+        DataType otherCommon = other.getCommonType();
+
+        // Objects consume other objects or categories, identical types work
+        // always and numericals consume generators as well
+        if (common == otherCommon
+            || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT && otherCommon >= TYPE_CATEGORY && otherCommon <= TYPE_OBJECT)
+            || (common == TYPE_NUMERICAL && otherCommon == TYPE_GENERATOR))
+            return true;
+
+        // Clusters do hide their internal data type. Let's extract it
+        if (otherCommon == TYPE_CLUSTER)
+        {
+            DataType otherInternal = TYPE_VOID;
+            other.getType(otherInternal);
+
+            // Objects consume other objects or categories, identical types work
+            // always and numericals consume generators as well
+            if (common == otherInternal
+                || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT && otherInternal >= TYPE_CATEGORY && otherInternal <= TYPE_OBJECT)
+                || (common == TYPE_NUMERICAL && otherInternal == TYPE_GENERATOR))
+                return true;
+        }
+
+        return false;
+    }
 
 
 
@@ -1918,9 +3551,10 @@ namespace mu
     /// \param var Variable*
     ///
     /////////////////////////////////////////////////
-    VarArray::VarArray(Variable* var) : std::vector<Variable*>(1, var)
+    VarArray::VarArray(Variable* var) : VarArray()
     {
-        //
+        if (var)
+            push_back(var);
     }
 
 
@@ -2231,7 +3865,7 @@ namespace mu
 
         for (size_t i = 0; i < arr.size(); i++)
         {
-            if (!arr[i])
+            if (!arr.get(i))
                 return false;
         }
 
@@ -2251,7 +3885,7 @@ namespace mu
     {
         for (size_t i = 0; i < arr.size(); i++)
         {
-            if (arr[i])
+            if (arr.get(i))
                 return true;
         }
 
@@ -2273,9 +3907,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a+v);
+            ret.push_back(arr.get(i)+v);
         }
 
         return ret;
@@ -2294,9 +3928,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a-v);
+            ret.push_back(arr.get(i)-v);
         }
 
         return ret;
@@ -2315,9 +3949,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a*v);
+            ret.push_back(arr.get(i)*v);
         }
 
         return ret;
@@ -2336,9 +3970,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(a/v);
+            ret.push_back(arr.get(i)/v);
         }
 
         return ret;
@@ -2357,9 +3991,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(v+a);
+            ret.push_back(v+arr.get(i));
         }
 
         return ret;
@@ -2378,9 +4012,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(v-a);
+            ret.push_back(v-arr.get(i));
         }
 
         return ret;
@@ -2413,9 +4047,9 @@ namespace mu
     {
         Array ret;
 
-        for (const auto& a : arr)
+        for (size_t i = 0; i < arr.size(); i++)
         {
-            ret.push_back(v/a);
+            ret.push_back(v/arr.get(i));
         }
 
         return ret;

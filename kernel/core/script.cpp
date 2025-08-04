@@ -534,7 +534,7 @@ void Script::writeLayout(std::string& sScriptCommand)
 
     for (size_t i = sScriptCommand.find_first_not_of(' ', 6); i < sScriptCommand.length(); i++)
     {
-        if (sScriptCommand[i] == '"' && sScriptCommand[i-1] != '\\')
+        if (isQuotationMark(sScriptCommand, i))
             nQuotes++;
 
         if (!(nQuotes % 2) && sScriptCommand[i] == ' ')

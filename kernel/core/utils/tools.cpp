@@ -213,8 +213,8 @@ std::string getUserDisplayName(bool informal)
     // comma is used for the inverted NAME, GIVEN-NAME order
     if (informal)
     {
-        if (sUserName.find(',') == std::string::npos)
-            sUserName.erase(0, sUserName.find(',')+1);
+        if (sUserName.find(',') != std::string::npos)
+            sUserName.erase(sUserName.find(',')+1);
 
         StripSpaces(sUserName);
 
@@ -261,15 +261,12 @@ int findParameter(const string& sCmd, const string& sParam, const char cFollowin
         for (size_t i = 0; i < __sCmd.length(); i++)
         {
             // Count the quotation marks, so that we're not inside of a string
-            if (__sCmd[i] == '"'
-                    && (!i || (i && __sCmd[i - 1] != '\\')))
+            if (isQuotationMark(__sCmd, i))
                 nQuotes++;
 
             // If all quotation marks are pairs and we found a minus sign, then we're probably at the start of a parameter
             if (!(nQuotes % 2) && __sCmd[i] == '-' && nParamStart == string::npos)
-            {
                 nParamStart = i;
-            }
 
             // Detect option values and force NumeRe to ignore
             // them in this context
@@ -454,7 +451,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
 
     for (size_t i = nPos; i < sCmd.length(); i++)
     {
-        if (sCmd[i] == '"' && (!i || sCmd[i-1] != '\\'))
+        if (isQuotationMark(sCmd, i))
         {
             nQuotes++;
             continue;
@@ -557,7 +554,7 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
                 i += getMatchingParenthesis(StringView(sExpr, i));
 
             // Count quotation marks
-            if (sExpr[i] == '"')
+            if (isQuotationMark(sExpr, i))
                 nQuotationMarks++;
 
             if (sExpr[i] == ',' && !(nQuotationMarks % 2))
@@ -1623,7 +1620,7 @@ static void parseArg(std::string& sArg, int flags)
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
 
     // Read data
-    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
+    if (instance->getMemoryManager().containsTables(sArg))
         getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
     // Ensure that a string evaluation is necessary (buggy fix, hard to derive a more general one)
@@ -1686,7 +1683,7 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
 
     for (size_t i = nPos; i < sCmd.length(); i++)
     {
-        if (sCmd[i] == '"' && (!i || sCmd[i - 1] != '\\'))
+        if (isQuotationMark(sCmd, i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -1757,7 +1754,7 @@ bool isInQuotes(StringView sExpr, size_t nPos, bool bIgnoreVarParser /* = false*
         }
 
         // Count the quotation marks
-        if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
+        if (isQuotationMark(sExpr, i))
             nQuotes++;
     }
 
@@ -2274,15 +2271,15 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 /////////////////////////////////////////////////
 static bool containsStringClusters(StringView sLine)
 {
-    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
+    const mu::varmap_type vars = NumeReKernel::getInstance()->getParser().GetVar();
 
-    for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+    for (auto iter = vars.begin(); iter != vars.end(); ++iter)
     {
-        if (iter->second.getCommonType() == mu::TYPE_STRING)
+        if (iter->second->getCommonType() == mu::TYPE_STRING || iter->second->getCommonType() == mu::TYPE_CLUSTER)
         {
-            size_t pos = sLine.find(iter->first + "{");
+            size_t pos = sLine.find(iter->first);
 
-            if (pos != std::string::npos && (!pos || isDelimiter(sLine[pos-1])))
+            if (pos != std::string::npos && sLine.is_delimited_sequence(pos, iter->first.length()))
                 return true;
         }
     }
@@ -2497,8 +2494,8 @@ void reduceLogFilesize(const string& sFileName)
 /////////////////////////////////////////////////
 static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
-    mOprtRplc["("] = "[";
-    mOprtRplc[")"] = "]";
+    mOprtRplc["("] = "`";
+    mOprtRplc[")"] = "`";
     mOprtRplc[":"] = "~c~";
     mOprtRplc[","] = "_";
     mOprtRplc["."] = "_";
@@ -2540,7 +2537,7 @@ string replaceToVectorname(const string& sExpression)
         OprtRplc_setup(mOprtRplc);
 
     if (sVectorName.find_first_of("\"#") != std::string::npos)
-        return "_~" + sha256(sVectorName) + "[]";
+        return "_~" + sha256(sVectorName) + "`_`";
 
     // Remove whitespaces
     while (sVectorName.find(' ') != string::npos)
@@ -2553,8 +2550,8 @@ string replaceToVectorname(const string& sExpression)
             sVectorName.replace(sVectorName.find(iter->first), (iter->first).length(), iter->second);
     }
 
-    if (sVectorName.find('[') == string::npos)
-        sVectorName += "[]";
+    if (sVectorName.find('`') == std::string::npos)
+        sVectorName += "`_`";
 
     // return the new vector name
     return "_~" + sVectorName;
@@ -2591,12 +2588,8 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                 j += getMatchingParenthesis(StringView(sExpr, j));
 
             // Count the not escaped parentheses
-            if (sExpr[j] == '"')
-            {
-                if (j && sExpr[j - 1] == '\\')
-                    continue;
+            if (isQuotationMark(sExpr, j))
                 nQuotes++;
-            }
 
             // continue, if we're inside of quotation marks
             if (nQuotes % 2)
@@ -2669,12 +2662,8 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                         k += getMatchingParenthesis(StringView(sExpr, k));
 
                     // Count the quotation marks, which are not escaped
-                    if (sExpr[k] == '"')
-                    {
-                        if (k && sExpr[k - 1] == '\\')
-                            continue;
+                    if (isQuotationMark(sExpr, k))
                         nQuotes++;
-                    }
 
                     // Contine, if we're inside of quotation marks
                     if (nQuotes % 2)
@@ -2813,12 +2802,8 @@ void evalRecursiveExpressions(string& sExpr)
         }
 
         // Count the quatation marks, which are not escaped
-        if (sExpr[i] == '"')
-        {
-            if (i && sExpr[i - 1] == '\\')
-                continue;
+        if (isQuotationMark(sExpr, i))
             nQuotes++;
-        }
 
         // Continue, if we're inside of quotation marks
         if (nQuotes % 2) // nQuotes % 2 == 1, wenn eine ungerade Zahl an Anfuehrungszeichen aufgetreten ist => die Position befindet sich als hinter einem geoeffneten Anfuehrungszeichen.
@@ -2949,7 +2934,7 @@ bool validateParenthesisNumber(StringView sCmd)
     {
         // This function counts the quotation marks by itself
         // because it's much faster
-        if (sCmd[i] == '"' && (!i || sCmd[i - 1] != '\\'))
+        if (isQuotationMark(sCmd, i))
             nQuotes++;
 
         // If we're not in quotation marks
@@ -3043,7 +3028,7 @@ bool isToCmd(StringView sCmd, size_t nPos)
     // Go through the whole string and try to find the functions arguments
     for (int i = nPos - 6; i >= 0; i--)
     {
-        if (sCmd[i] == '"' && (!i || sCmd[i-1] != '\\'))
+        if (isQuotationMark(sCmd, i))
             quotes++;
 
         if (!(quotes % 2) && sCmd.match("to_cmd(", i))
@@ -3385,17 +3370,15 @@ std::string shortenFileName(const std::string& sFullFileName)
 
     std::string sFileName = replacePathSeparator(sFullFileName);
 
-    while (sFileName.rfind('/', nPos) != string::npos)
+    while ((nPos = sFileName.rfind('/', nPos)) != std::string::npos)
     {
-        nPos = sFileName.rfind('/', nPos);
-
-        if (nPos != 0 && nPos-1 != ':')
+        if (nPos != 0 && sFileName[nPos-1] != ':')
         {
             size_t nPos_2 = sFileName.rfind('/', nPos-1);
 
-            if (nPos_2 != string::npos)
+            if (nPos_2 != std::string::npos)
             {
-                sFileName = sFileName.substr(0,nPos_2+1) + ".." + sFileName.substr(nPos);
+                sFileName = sFileName.substr(0,nPos_2+1) + "..." + sFileName.substr(nPos);
                 nPos = nPos_2;
             }
             else
@@ -3623,7 +3606,7 @@ size_t getMatchingParenthesis(const StringView& sLine)
     for (size_t i = 0; i < sLine.length(); i++)
     {
         // Count unmasked quotation marks
-        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
+        if (isQuotationMark(sLine, i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -3692,7 +3675,7 @@ static StringView getNextCommandLineToken(StringView& sArgList, char cSep)
     // Go through the complete string
     for (size_t i = 0; i < sArgList.length(); i++)
     {
-        if (sArgList[i] == '"' && (!i || sArgList[i-1] != '\\'))
+        if (isQuotationMark(sArgList, i))
             nQuotes++;
 
         if (nQuotes % 2)

@@ -113,6 +113,25 @@ namespace mu
 	}
 
     /////////////////////////////////////////////////
+    /// \brief Add a dimension variable to bytecode.
+    ///
+    /// \param a_pVar Variable*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::AddDimVar(Variable* a_pVar)
+	{
+		++m_iStackPos;
+		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+		// optimization does not apply
+		SToken tok;
+		tok.Cmd       = cmDIMVAR;
+		tok.m_data = SValData{.var{a_pVar}, .data{std::move(Value(1))}, .isVect{false}};
+		m_vRPN.push_back(std::move(tok));
+	}
+
+    /////////////////////////////////////////////////
     /// \brief Add a Vararray to the bytecode.
     ///
     /// \param a_varArray const VarArray&
@@ -459,6 +478,7 @@ namespace mu
 					case cmDIV:
                         if (m_vRPN[curr].Cmd == cmVAL
                             && m_vRPN[prev].Cmd == cmVARMUL
+                            && m_vRPN[curr].Val().data2.getCommonType() != TYPE_STRING
                             && all(m_vRPN[curr].Val().data2 != Array(Value(0))))
 						{
 							// Optimization: 4*a/2 -> 2*a
@@ -472,7 +492,8 @@ namespace mu
 							bOptimized = true;
 						}
                         else if (m_vRPN[curr].Cmd == cmVAL
-                                 && m_vRPN[prev].Cmd == cmVAR)
+                                 && m_vRPN[prev].Cmd == cmVAR
+                                 && m_vRPN[curr].Val().data2.getCommonType() != TYPE_STRING)
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[prev].Val().data /= m_vRPN[curr].Val().data2;
@@ -494,7 +515,8 @@ namespace mu
 							bOptimized = true;
 						}
                         else if (m_vRPN[prev].Cmd == cmVAL
-                                 && m_vRPN[curr].Cmd == cmVAR)
+                                 && m_vRPN[curr].Cmd == cmVAR
+                                 && m_vRPN[prev].Val().data2.getCommonType() != TYPE_STRING)
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[prev].Val().data = std::move(m_vRPN[prev].Val().data2);
@@ -620,10 +642,11 @@ namespace mu
     /// \param a_iArgc int
     /// \param optimizeAway bool
     /// \param funcName const std::string&
+    /// \param code ECmdCode
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway, const std::string& funcName)
+	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway, const std::string& funcName, ECmdCode code)
 	{
 	    // Shall we try to optimize?
 		if (m_bEnableOptimizer && optimizeAway)
@@ -797,7 +820,7 @@ namespace mu
             m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
 
             SToken tok;
-            tok.Cmd = cmFUNC;
+            tok.Cmd = code;
             tok.m_data = SFunData{.ptr{a_pFun}, .name{funcName}, .argc{a_iArgc}, .idx{0}};
             m_vRPN.push_back(tok);
 		}
@@ -960,11 +983,15 @@ namespace mu
 			switch (m_vRPN[i].Cmd)
 			{
 				case cmVAL:
-				    printFormatted("VAL       \t<" + m_vRPN[i].Val().data2.print() + ">\n");
+				    printFormatted("VAL       \t<" + m_vRPN[i].Val().data2.printOverview() + ">\n");
 					break;
 
 				case cmVAR:
-				    printFormatted("VAR       \t[" + m_vRPN[i].Val().var->print() + "]\n");
+				    printFormatted("VAR       \t[" + m_vRPN[i].Val().var->printOverview() + "]\n");
+					break;
+
+				case cmDIMVAR:
+				    printFormatted("DIMVAR    \t[" + m_vRPN[i].Val().var->printOverview() + "].size()\n");
 					break;
 
 				case cmVARARRAY:
@@ -972,43 +999,52 @@ namespace mu
 					break;
 
 				case cmVARPOW2:
-				    printFormatted("VARPOW2   \t[" + m_vRPN[i].Val().var->print() + "]\n");
+				    printFormatted("VARPOW2   \t[" + m_vRPN[i].Val().var->printOverview() + "]\n");
 					break;
 
 				case cmVARPOW3:
-					printFormatted("VARPOW3   \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					printFormatted("VARPOW3   \t[" + m_vRPN[i].Val().var->printOverview() + "]\n");
 					break;
 
 				case cmVARPOW4:
-					printFormatted("VARPOW4   \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					printFormatted("VARPOW4   \t[" + m_vRPN[i].Val().var->printOverview() + "]\n");
 					break;
 
 				case cmVARPOWN:
-					printFormatted("VARPOWN   \t[" + m_vRPN[i].Val().var->print() + "] ^ <" + m_vRPN[i].Val().data.print() + ">\n");
+					printFormatted("VARPOWN   \t[" + m_vRPN[i].Val().var->printOverview() + "] ^ <" + m_vRPN[i].Val().data.printOverview() + ">\n");
 					break;
 
 				case cmVARMUL:
-					printFormatted("VARMUL    \t[" + m_vRPN[i].Val().var->print() + "]");
-					printFormatted(" * <" + m_vRPN[i].Val().data.print() + "> + <" + m_vRPN[i].Val().data2.print() + ">\n");
+					printFormatted("VARMUL    \t[" + m_vRPN[i].Val().var->printOverview() + "]");
+					printFormatted(" * <" + m_vRPN[i].Val().data.printOverview() + "> + <" + m_vRPN[i].Val().data2.printOverview() + ">\n");
 					break;
 
 				case cmREVVARMUL:
-					printFormatted("REVVARMUL \t<" + m_vRPN[i].Val().data2.print() + ">");
-					printFormatted(" + [" + m_vRPN[i].Val().var->print() + "] * <" + m_vRPN[i].Val().data.print() + ">\n");
+					printFormatted("REVVARMUL \t<" + m_vRPN[i].Val().data2.printOverview() + ">");
+					printFormatted(" + [" + m_vRPN[i].Val().var->printOverview() + "] * <" + m_vRPN[i].Val().data.printOverview() + ">\n");
 					break;
 
 				case cmDIVVAR:
-					printFormatted("DIVVAR    \t<" + m_vRPN[i].Val().data.print() + ">");
-					printFormatted(" / [" + m_vRPN[i].Val().var->print() + "] + <" + m_vRPN[i].Val().data2.print() + ">\n");
+					printFormatted("DIVVAR    \t<" + m_vRPN[i].Val().data.printOverview() + ">");
+					printFormatted(" / [" + m_vRPN[i].Val().var->printOverview() + "] + <" + m_vRPN[i].Val().data2.printOverview() + ">\n");
 					break;
 
 				case cmFUNC:
-				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [FUNC: " + m_vRPN[i].Fun().name + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
+				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [FUNC: "
+                                   + m_vRPN[i].Fun().name + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun().ptr) + "]\n");
 					break;
 
 				case cmMETHOD:
 				    printFormatted("CALL      \t[ARG: " + toString(m_vRPN[i].Fun().argc) + "] [METHOD: " + m_vRPN[i].Fun().name + "]\n");
 					break;
+
+                case cmIDX:
+                    printFormatted("IDX\n");
+                    break;
+
+                case cmIDXASGN:
+                    printFormatted("IDXASGN\n");
+                    break;
 
 				case cmLT:
 				    printFormatted("LT\n");
@@ -1066,11 +1102,11 @@ namespace mu
 					break;
 
                 case cmVARCOPY:
-					printFormatted("VARCOPY   \t[" + m_vRPN[i].Oprt().var.print() + "] <- [" + m_vRPN[i].Oprt().src->print() + "]\n");
+					printFormatted("VARCOPY   \t[" + m_vRPN[i].Oprt().var.print() + "] <- [" + m_vRPN[i].Oprt().src->printOverview() + "]\n");
 					break;
 
                 case cmVARINIT:
-					printFormatted("VARINIT   \t[" + m_vRPN[i].Oprt().var.print() + "] <- <" + m_vRPN[i].Oprt().val.print() + ">\n");
+					printFormatted("VARINIT   \t[" + m_vRPN[i].Oprt().var.print() + "] <- <" + m_vRPN[i].Oprt().val.printOverview() + ">\n");
 					break;
 
 				case cmASSIGN:
@@ -1114,4 +1150,29 @@ namespace mu
 		toggleTableMode();
 		printFormatted("|   END\n");
 	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief Detect, whether the parsed expression
+    /// is a constant expression, i.e. without any
+    /// variable assignments. This does not check for
+    /// modifications via methods.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool ParserByteCode::isConst() const
+    {
+        for (size_t i = 0; i < m_vRPN.size(); i++)
+        {
+            if (m_vRPN[i].Cmd >= cmASSIGN && m_vRPN[i].Cmd <= cmDECR)
+                return false;
+        }
+
+        return true;
+    }
+
 } // namespace mu
+
+
+

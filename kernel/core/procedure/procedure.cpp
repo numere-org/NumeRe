@@ -241,7 +241,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
 
                 // Get the data from the used data object
-                if (_data.containsTablesOrClusters(sErrorToken))
+                if (_data.containsTables(sErrorToken))
                     getDataElements(sErrorToken, _parser, _data);
 
                 _parser.SetExpr(sErrorToken);
@@ -403,14 +403,13 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     // following sections
     std::string sCache;
     bool bWriteToCache = false;
-    bool bWriteToCluster = false;
 
     // Get elements from data access
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_DATAACCESS
         || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
     {
-        if (_data.containsTablesOrClusters(sLine))
+        if (_data.containsTables(sLine))
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
@@ -419,13 +418,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             if (sCache.length())
                 bWriteToCache = true;
-        }
-        else if (isClusterCandidate(sLine, sCache))
-        {
-            bWriteToCache = true;
-
-            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
         }
     }
 
@@ -443,13 +435,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // Get the indices from the corresponding function
             getIndices(sCache, _idx, _parser, _data, true);
 
-            if (sCache[sCache.find_first_of("({")] == '{')
-                bWriteToCluster = true;
-
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             sCache.erase(sCache.find_first_of("({"));
@@ -468,8 +457,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (needReturnValue)
         thisReturnVal.valArray = mu::make_vector(v, nNum);
 
-    vAns.overwrite(v[0].get());
-    NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
+    vAns = v[0].get();
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
@@ -477,16 +465,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Write the return values to cache
     if (bWriteToCache)
-    {
-        // Is it a cluster?
-        if (bWriteToCluster)
-        {
-            NumeRe::Cluster& cluster = _data.getCluster(sCache);
-            cluster.assignResults(_idx, v[0].get());
-        }
-        else
-            _data.writeToTable(_idx, sCache, v[0].get());
-    }
+        _data.writeToTable(_idx, sCache, v[0].get());
 
     // Clear the vector variables after the loop returned
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))
@@ -708,6 +687,12 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
     {
         _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "cst");
+    }
+
+    if (findCommand(sVarList, "obj").sString == "obj")
+    {
+        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "obj");
     }
 
     StripSpaces(sVarDeclarationList);
@@ -1308,9 +1293,9 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 else
                 {
                     nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1,
-                                             "_~PROC~[" + mangleName(__sName) + "~"
+                                             "_~PROC`" + mangleName(__sName) + "~"
                                                 + toString(nProc) + "_" + toString(nthRecursion) + "_"
-                                                + toString(nth_command + nthRecursion) + "]");
+                                                + toString(nth_command + nthRecursion) + "`");
                     nProc++;
                 }
 
@@ -1338,7 +1323,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
         // Ensure that this is no "wrong" procedure call
         for (size_t i = 0; i < sLine.length(); i++)
         {
-            if (sLine[i] == '"' && (!i || sLine[i - 1] != '\\'))
+            if (isQuotationMark(sLine, i))
                 nQuotes++;
 
             if (sLine[i] == '$' && !(nQuotes % 2))
@@ -1472,7 +1457,7 @@ int Procedure::procedureCmdInterface(StringView sLine, bool compiling)
     string sCommand = findCommand(sLine).sString;
 
     // Try to identify the command
-    if (sCommand == "var" || sCommand == "str" || sCommand == "tab" || sCommand == "cst")
+    if (sCommand == "var" || sCommand == "str" || sCommand == "tab" || sCommand == "cst" || sCommand == "obj")
     {
         if (compiling && NumeReKernel::getInstance()->getDebugger().getStackSize())
         {
@@ -2016,9 +2001,7 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
 
                     // Insert the returned list, if it is non-empty
                     if (vExpandedArgList.size())
-                    {
                         vExpandedProcedures.insert(vExpandedProcedures.end(), vExpandedArgList.begin(), vExpandedArgList.end());
-                    }
                 }
 
                 // Ensure that the current procedure is inlinable
@@ -2099,7 +2082,9 @@ int Procedure::isInlineable(const string& sProc, const string& sFileName, int* n
 
             // If the procedure either is not inlinable or we've reached
             // the end of the procedure, break the loop
-            if (!nInlineable || currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT || findCommand(currentline.second.getCommandLine()).sString == "return")
+            if (!nInlineable
+                || currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT
+                || findCommand(currentline.second.getCommandLine()).sString == "return")
             {
                 break;
             }
@@ -2152,7 +2137,7 @@ int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sA
         // while considering the quotation marks
         for (size_t i = 0; i < sCommandLine.length(); i++)
         {
-            if (sCommandLine[i] == '"' && (!i || sCommandLine[i-1] != '\\'))
+            if (isQuotationMark(sCommandLine, i))
                 nQuotes++;
 
             if (sCommandLine[i] == '$' && !(nQuotes % 2))
@@ -2265,15 +2250,47 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
 
         // Local variables and strings are allowed and will be redirected
         // into temporary cluster elements
+        std::string sCommand = findCommand(sCommandLine).sString;
+
+        /*if (sCommand == "var" || sCommand == "str" || sCommand == "cst" || sCommand == "tab" || sCommand == "obj")
+        {
+            // Create the vars
+            if (sCommand == "var")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_NUMERICAL);
+            else if (sCommand == "str")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_STRING);
+            else if (sCommand == "cst")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_CLUSTER);
+            else if (sCommand == "tab")
+                varFactory.createLocalTables(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            else if (sCommand == "obj")
+                varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_OBJECT);
+
+            // Apply name mangling
+            sCommandLine = varFactory.resolveVariables(" " + sCommandLine + " ");
+
+            // Push the definition
+            vProcCommandLines.push_back(sCommandLine);
+
+            // Use the extracted assignments (TODO) as secondary line
+            sCommandLine = varFactory.sInlineVarDef + ";";
+        }*/
+
         if (findCommand(sCommandLine).sString == "var")
         {
-            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_NUMERICAL);
             sCommandLine = varFactory.sInlineVarDef + ";";
             inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
         else if (findCommand(sCommandLine).sString == "str")
         {
-            varFactory.createLocalStrings(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_STRING);
+            sCommandLine = varFactory.sInlineVarDef + ";";
+            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
+        }
+        else if (findCommand(sCommandLine).sString == "obj")
+        {
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_OBJECT);
             sCommandLine = varFactory.sInlineVarDef + ";";
             inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
@@ -2913,6 +2930,15 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
     if (sCommand == "cst" && sProcCommandLine.length() > 6)
     {
         _varFactory->createLocalClusters(sProcCommandLine.substr(sProcCommandLine.find("cst") + 3));
+
+        sProcCommandLine = "";
+        return true;
+    }
+
+    // Is it a class declaration?
+    if (sCommand == "obj" && sProcCommandLine.length() > 6)
+    {
+        _varFactory->createLocalClasses(sProcCommandLine.substr(sProcCommandLine.find("obj") + 3));
 
         sProcCommandLine = "";
         return true;

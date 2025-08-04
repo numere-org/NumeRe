@@ -144,13 +144,19 @@ namespace mu
         cmPOW,                 ///< Operator item:  y to the power of ...
         cmLAND,                ///< Operator item:  logical and
         cmLOR,                 ///< Operator item:  logical or
-        cmBO,                  ///< Operator item:  opening bracket
-        cmBC,                  ///< Operator item:  closing bracket
+        cmBO,                  ///< Operator item:  opening brace
+        cmBC,                  ///< Operator item:  closing brace
         cmVO,                  ///< Operator item:  opening vector brace
         cmVC,                  ///< Operator item:  closing vector brace
+        cmSQO,                 ///< Operator item:  opening square bracket
+        cmSQC,                 ///< Operator item:  closing square bracket
         cmIF,                  ///< For use in the ternary if-then-else operator
         cmELSE,                ///< For use in the ternary if-then-else operator
         cmENDIF,               ///< For use in the ternary if-then-else operator
+        cmIDX,                 ///< Operator item:  opening vector brace/index
+        cmIDXASGN,             ///< Operator item:  opening vector brace/index for assignment
+        cmSQIDX,               ///< Operator item:  opening square bracket index
+        cmSQIDXASGN,           ///< Operator item:  opening square bracket index for assignment
         cmEXP2,                ///< The two-value expansion operator
         cmEXP3,                ///< The three-value expansion operator
         cmARG_SEP,             ///< function argument separator
@@ -179,6 +185,7 @@ namespace mu
         cmOPRT_INFIX,          ///< code for infix operators
         cmVAL2STR,             ///< code for special var2str operator
         cmPATHPLACEHOLDER,     ///< code for path placeholder-operator
+        cmDIMVAR,              ///< code for an automatic dimension variable
         cmEND,                 ///< end of formula
         cmUNKNOWN              ///< uninitialized item
     };

@@ -262,6 +262,36 @@ void Language::addToLanguage(const std::map<std::string,std::string>& _langstrin
 
 
 /////////////////////////////////////////////////
+/// \brief Determine, whether the language table
+/// contains a string for the selected ID.
+///
+/// \param sId const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Language::containsString(const std::string& sId) const
+{
+    // Search for the language string
+    if (sId.find('*') != std::string::npos)
+    {
+        std::string sPrefix = sId.substr(0, sId.find('*'));
+
+        // Find a candidate for the passed identifier
+        // containing an asteriks
+        for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
+        {
+            if ((iter->first).starts_with(sPrefix))
+                return true;
+        }
+    }
+    else if (mLangStrings.find(sId) != mLangStrings.end())
+        return true;
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function searches the
 /// internal language map for an identifier, which
 /// starts similar with the passed identifier and

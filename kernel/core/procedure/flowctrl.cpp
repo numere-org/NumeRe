@@ -1456,7 +1456,8 @@ const mu::StackItem* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -1542,7 +1543,7 @@ const mu::StackItem* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression
     if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
         if (nCurrentCalcType
-            || _dataRef->containsTablesOrClusters(sHeadExpression))
+            || _dataRef->containsTables(sHeadExpression))
         {
             if (!nCurrentCalcType)
                 nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
@@ -1715,7 +1716,7 @@ mu::Array FlowCtrl::evalRangeBasedHeader(std::string sHeadExpression, int nth_Cm
     if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
         if (nCurrentCalcType
-            || _dataRef->containsTablesOrClusters(sHeadExpression))
+            || _dataRef->containsTables(sHeadExpression))
         {
             if (!nCurrentCalcType)
                 nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
@@ -1888,7 +1889,7 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
 
             for (size_t i = __sCmd.find('(')+1; i < nTermPos; i++)
             {
-                if (__sCmd[i] == '"' && __sCmd[i-1] != '\\')
+                if (isQuotationMark(__sCmd, i))
                     nQuotes++;
 
                 if (!(nQuotes % 2))
@@ -2145,7 +2146,7 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
 
         for (size_t n = 0; n < __sCmd.length(); n++)
         {
-            if (__sCmd[n] == '"' && (!n || __sCmd[n-1] != '\\'))
+            if (isQuotationMark(__sCmd, n))
                 nQuotes++;
 
             if (__sCmd[n] == ' ' && !(nQuotes % 2))
@@ -2416,8 +2417,7 @@ void FlowCtrl::reset()
 
     for (size_t i = 0; i < sVarArray.size(); i++)
     {
-        if (sVarArray[i].find('{') == std::string::npos && sVarArray[i].find("->") == std::string::npos)
-            _parserRef->RemoveVar(sVarArray[i]);
+        _parserRef->RemoveVar(sVarArray[i]);
     }
 
     if (mVarMap.size())
@@ -2440,9 +2440,7 @@ void FlowCtrl::reset()
 
     if (!vVars.empty())
     {
-        varmap_type::const_iterator item = vVars.begin();
-
-        for (; item != vVars.end(); ++item)
+        for (auto item = vVars.begin(); item != vVars.end(); ++item)
         {
             _parserRef->DefineVar(item->first, item->second);
         }
@@ -2520,7 +2518,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     Indices _idx;
     bool bCompiling = false;
     bool bWriteToCache = false;
-    bool bWriteToCluster = false;
     bool returnCommand = false;
     _assertionHandler.reset();
     updateTestStats();
@@ -2571,7 +2568,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -2630,7 +2628,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
 
             // Get the data from the used data object
-            if (_dataRef->containsTablesOrClusters(sErrorToken))
+            if (_dataRef->containsTables(sErrorToken))
                 getDataElements(sErrorToken, *_parserRef, *_dataRef);
 
             _parserRef->SetExpr(sErrorToken);
@@ -2701,8 +2699,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         v = _parserRef->Eval(nNum);
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns.overwrite(v[0].get());
-        NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
+        vAns = v[0].get();
 
         if (!bLoopSupressAnswer)
         {
@@ -2929,7 +2926,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     evalRecursiveExpressions(sLine);
 
     // Get the data from the used data object
-    if (_dataRef->containsTablesOrClusters(sLine))
+    if (_dataRef->containsTables(sLine))
     {
         nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
 
@@ -2952,39 +2949,27 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
         _parserRef->SetCompiling(false);
     }
-    else if (isClusterCandidate(sLine, sCache))
-    {
-        bWriteToCache = true;
-        nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
-    }
 
     // Get the target indices of the target data object
     if (bWriteToCache)
     {
-        size_t pos;
+        size_t pos = sCache.find('(');
 
         if (bCompiling)
         {
             _parserRef->SetCompiling(true);
             getIndices(sCache, _idx, *_parserRef, *_dataRef, true);
 
-            if (sCache[(pos = sCache.find_first_of("({"))] == '{')
-                bWriteToCluster = true;
-
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             sCache.erase(pos);
             StripSpaces(sCache);
 
-            if (!bWriteToCluster)
-                _parserRef->CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
-            else
-                _parserRef->CacheCurrentTarget(sCache + "{" + _idx.sCompiledAccessEquation + "}");
-
+            _parserRef->CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
             _parserRef->SetCompiling(false);
         }
         else
@@ -2993,13 +2978,10 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             //_idx.col.front() = 0;
             //_idx.row.front() = 0;
 
-            if (sCache[(pos = sCache.find_first_of("({"))] == '{')
-                bWriteToCluster = true;
-
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             sCache.erase(pos);
@@ -3015,8 +2997,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     v = _parserRef->Eval(nNum);
     _assertionHandler.checkAssertion(v, nNum);
 
-    vAns.overwrite(v[0].get());
-    NumeReKernel::getInstance()->getAns().setValueArray(v[0].get());
+    vAns = v[0].get();
 
     // Do only add the bytecode flag, if it does not depend on
     // previous operations
@@ -3044,13 +3025,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     // this was implied by the syntax of the command
     // line
     if (bWriteToCache)
-    {
-        // Is it a cluster?
-        if (bWriteToCluster)
-            _dataRef->getCluster(sCache).assignResults(_idx, v[0].get());
-        else
-            _dataRef->writeToTable(_idx, sCache, v[0].get());
-    }
+        _dataRef->writeToTable(_idx, sCache, v[0].get());
 
     if (returnCommand)
     {
@@ -3079,7 +3054,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 {
     const mu::StackItem* v = 0;
     int nNum = 0;
-    NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
     // No great impact on calctime
     _assertionHandler.reset();
@@ -3159,7 +3133,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             sErrorToken = sBuffer.substr(findCommand(sBuffer).nPos+6);
 
             // Get the data from the used data object
-            if (_dataRef->containsTablesOrClusters(sErrorToken))
+            if (_dataRef->containsTables(sErrorToken))
                 getDataElements(sErrorToken, *_parserRef, *_dataRef);
 
             _parserRef->SetExpr(sErrorToken);
@@ -3237,8 +3211,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         // Check only the last expression
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns.overwrite(v[0].get());
-        ans.setValueArray(v[0].get());
+        vAns = v[0].get();
 
         if (!bLoopSupressAnswer)
             NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
@@ -3459,14 +3432,14 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     std::string sDataObject;
     bool bCompiling = false;
     bool bWriteToCache = false;
-    bool bWriteToCluster = false;
 
     // Get the data from the used data object
     if (nCurrentCalcType & CALCTYPE_DATAACCESS)
     {
         sBuffer = sLine.to_string();
+
         // --> Datafile/Cache! <--
-        if (_dataRef->containsTablesOrClusters(sBuffer))
+        if (_dataRef->containsTables(sBuffer))
         {
             if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
             {
@@ -3487,8 +3460,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 
             _parserRef->SetCompiling(false);
         }
-        else if (isClusterCandidate(sBuffer, sDataObject))
-            bWriteToCache = true;
 
         sLine = StringView(sBuffer);
     }
@@ -3501,30 +3472,23 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     {
         if (bWriteToCache)
         {
-            size_t pos;
+            size_t pos = sDataObject.find('(');
 
             if (bCompiling)
             {
                 _parserRef->SetCompiling(true);
                 getIndices(sDataObject, _idx, *_parserRef, *_dataRef, true);
 
-                if (sDataObject[(pos = sDataObject.find_first_of("({"))] == '{')
-                    bWriteToCluster = true;
-
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-                if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                     throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
 
                 sDataObject.erase(pos);
                 StripSpaces(sDataObject);
 
-                if (!bWriteToCluster)
-                    _parserRef->CacheCurrentTarget(sDataObject + "(" + _idx.sCompiledAccessEquation + ")");
-                else
-                    _parserRef->CacheCurrentTarget(sDataObject + "{" + _idx.sCompiledAccessEquation + "}");
-
+                _parserRef->CacheCurrentTarget(sDataObject + "(" + _idx.sCompiledAccessEquation + ")");
                 _parserRef->SetCompiling(false);
             }
             else
@@ -3533,13 +3497,10 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
                 //_idx.col.front() = 0;
                 //_idx.row.front() = 0;
 
-                if (sDataObject[(pos = sDataObject.find_first_of("({"))] == '{')
-                    bWriteToCluster = true;
-
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-                if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
+                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                     throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
 
                 sDataObject.erase(pos);
@@ -3556,8 +3517,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     v = _parserRef->Eval(nNum);
     _assertionHandler.checkAssertion(v, nNum);
 
-    vAns.overwrite(v[0].get());
-    ans.setValueArray(v[0].get());
+    vAns = v[0].get();
 
     if (!bLoopSupressAnswer)
         NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
@@ -3566,13 +3526,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // this was implied by the syntax of the command
     // line
     if (bWriteToCache)
-    {
-        // Is it a cluster?
-        if (bWriteToCluster)
-            _dataRef->getCluster(sDataObject).assignResults(_idx, v[0].get());
-        else
-            _dataRef->writeToTable(_idx, sDataObject, v[0].get());
-    }
+        _dataRef->writeToTable(_idx, sDataObject, v[0].get());
 
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
@@ -4309,7 +4263,7 @@ void FlowCtrl::updateTestStats()
 {
     if (sTestClusterName.length())
     {
-        NumeRe::Cluster& testcluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sTestClusterName);
+        mu::Variable& testcluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sTestClusterName);
         AssertionStats total = _assertionHandler.getStats();
 
         testcluster.set(1, double(total.nCheckedAssertions - baseline.nCheckedAssertions));

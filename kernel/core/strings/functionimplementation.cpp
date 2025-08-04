@@ -26,7 +26,7 @@
 #include "../../kernel.hpp"
 #include "../../versioninformation.hpp"
 #endif
-#include <boost/tokenizer.hpp>
+
 #include <regex>
 #include <sstream>
 #include <libsha.hpp>
@@ -192,10 +192,10 @@ mu::Array strfnc_getenvvar(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
             ret.emplace_back("");
 
-        const char* sVarValue = getenv(a[i].getStr().c_str());
+        const char* sVarValue = getenv(a.get(i).getStr().c_str());
 
         if (!sVarValue)
             ret.emplace_back("");
@@ -223,11 +223,10 @@ mu::Array strfnc_getFileParts(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getPath().length())
             ret.emplace_back("");
 
-        std::vector<std::string> vFileParts = _fSys.getFileParts(a[i].getStr());
-        ret.insert(ret.end(), vFileParts.begin(), vFileParts.end());
+        ret.emplace_back(_fSys.getFileParts(a.get(i).getPath()));
     }
 
     return ret;
@@ -252,15 +251,13 @@ mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        if (!a1.get(i).getStr().length() || !a2.get(i).getStr().length())
+        if (!a1.get(i).getPath().length() || !a2.get(i).getPath().length())
             ret.emplace_back("");
 
-        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getStr(), "", false, false),
-                                          _fSys.ValidFileName(a2.get(i).getStr(), "", false, false));
+        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getPath(), "", false, false),
+                                          _fSys.ValidFileName(a2.get(i).getPath(), "", false, false));
         replaceAll(sDiffs, "\r\n", "\n");
-        std::vector<std::string> vSplitted = split(sDiffs, '\n');
-
-        ret.insert(ret.end(), vSplitted.begin(), vSplitted.end());
+        ret.emplace_back(split(sDiffs, '\n'));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -282,12 +279,13 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 #ifndef PARSERSTANDALONE
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
+        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getPath(),
+                                                                                                      a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
 
         if (!vFileList.size())
             ret.emplace_back("");
         else
-            ret.insert(ret.end(), vFileList.begin(), vFileList.end());
+            ret.emplace_back(vFileList);
     }
 
     if (!ret.size())
@@ -312,12 +310,13 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 #ifndef PARSERSTANDALONE
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getStr(), a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
+        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getPath(),
+                                                                                                          a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
 
         if (!vFolderList.size())
             ret.emplace_back("");
         else
-            ret.insert(ret.end(), vFolderList.begin(), vFolderList.end());
+            ret.emplace_back(vFolderList);
     }
 
     if (!ret.size())
@@ -342,7 +341,7 @@ mu::Array strfnc_strlen(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        ret.emplace_back(a[i].getStr().length());
+        ret.emplace_back(a.get(i).getStr().length());
     }
 
     return ret;
@@ -364,10 +363,10 @@ mu::Array strfnc_firstch(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
             ret.emplace_back("");
         else
-            ret.emplace_back(std::string(1, a[i].getStr().front()));
+            ret.emplace_back(std::string(1, a.get(i).getStr().front()));
     }
 
     return ret;
@@ -389,10 +388,10 @@ mu::Array strfnc_lastch(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
             ret.emplace_back("");
         else
-            ret.emplace_back(std::string(1, a[i].getStr().back()));
+            ret.emplace_back(std::string(1, a.get(i).getStr().back()));
     }
 
     return ret;
@@ -415,7 +414,7 @@ mu::Array strfnc_getmatchingparens(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        ret.emplace_back(getMatchingParenthesis(a[i].getStr())+1);
+        ret.emplace_back(getMatchingParenthesis(a.get(i).getStr())+1);
     }
 #endif
     return ret;
@@ -436,10 +435,15 @@ mu::Array strfnc_ascii(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            ret.emplace_back((uint8_t)a[i].getStr()[j]);
+            current.emplace_back((uint8_t)a.get(i).getStr()[j]);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -462,21 +466,26 @@ mu::Array strfnc_isblank(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isblank(a[i].getStr()[j])
-                && _umlauts.lower.find(a[i].getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a[i].getStr()[j]) == std::string::npos)
-                ret.emplace_back(true);
+            if (isblank(a.get(i).getStr()[j])
+                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
+                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -499,21 +508,26 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isalnum(a[i].getStr()[j])
-                || _umlauts.lower.find(a[i].getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a[i].getStr()[j]) != std::string::npos)
-                ret.emplace_back(true);
+            if (isalnum(a.get(i).getStr()[j])
+                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
+                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -536,21 +550,26 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isalpha(a[i].getStr()[j])
-                || _umlauts.lower.find(a[i].getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a[i].getStr()[j]) != std::string::npos)
-                ret.emplace_back(true);
+            if (isalpha(a.get(i).getStr()[j])
+                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
+                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -573,21 +592,26 @@ mu::Array strfnc_iscntrl(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (iscntrl(a[i].getStr()[j])
-                && _umlauts.lower.find(a[i].getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a[i].getStr()[j]) == std::string::npos)
-                ret.emplace_back(true);
+            if (iscntrl(a.get(i).getStr()[j])
+                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
+                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -609,19 +633,24 @@ mu::Array strfnc_isdigit(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isdigit(a[i].getStr()[j]))
-                ret.emplace_back(true);
+            if (isdigit(a.get(i).getStr()[j]))
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -644,21 +673,26 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isgraph(a[i].getStr()[j])
-                || _umlauts.lower.find(a[i].getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a[i].getStr()[j]) != std::string::npos)
-                ret.emplace_back(true);
+            if (isgraph(a.get(i).getStr()[j])
+                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
+                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -681,20 +715,25 @@ mu::Array strfnc_islower(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (islower(a[i].getStr()[j])
-                || _umlauts.lower.find(a[i].getStr()[j]) != std::string::npos)
-                ret.emplace_back(true);
+            if (islower(a.get(i).getStr()[j])
+                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -717,21 +756,26 @@ mu::Array strfnc_isprint(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isprint(a[i].getStr()[j])
-                || _umlauts.lower.find(a[i].getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a[i].getStr()[j]) != std::string::npos)
-                ret.emplace_back(true);
+            if (isprint(a.get(i).getStr()[j])
+                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
+                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -754,21 +798,26 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (ispunct(a[i].getStr()[j])
-                && _umlauts.lower.find(a[i].getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a[i].getStr()[j]) == std::string::npos)
-                ret.emplace_back(true);
+            if (ispunct(a.get(i).getStr()[j])
+                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
+                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -791,21 +840,26 @@ mu::Array strfnc_isspace(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isspace(a[i].getStr()[j])
-                && _umlauts.lower.find(a[i].getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a[i].getStr()[j]) == std::string::npos)
-                ret.emplace_back(true);
+            if (isspace(a.get(i).getStr()[j])
+                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
+                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -828,20 +882,25 @@ mu::Array strfnc_isupper(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isupper(a[i].getStr()[j])
-                || _umlauts.upper.find(a[i].getStr()[j]) != std::string::npos)
-                ret.emplace_back(true);
+            if (isupper(a.get(i).getStr()[j])
+                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -863,19 +922,24 @@ mu::Array strfnc_isxdigit(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        if (!a[i].getStr().length())
+        if (!a.get(i).getStr().length())
         {
             ret.emplace_back(false);
             continue;
         }
 
-        for (size_t j = 0; j < a[i].getStr().length(); j++)
+        mu::Array current;
+        current.reserve(a.get(i).getStr().length());
+
+        for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isxdigit(a[i].getStr()[j]))
-                ret.emplace_back(true);
+            if (isxdigit(a.get(i).getStr()[j]))
+                current.emplace_back(true);
             else
-                ret.emplace_back(false);
+                current.emplace_back(false);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -898,7 +962,7 @@ mu::Array strfnc_isdir(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        ret.emplace_back(is_dir(a[i].getStr()));
+        ret.emplace_back(is_dir(a.get(i).getPath()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -921,7 +985,7 @@ mu::Array strfnc_isfile(const mu::Array& a)
 
     for (size_t i = 0; i < a.size(); i++)
     {
-        ret.emplace_back(is_file(a[i].getStr()));
+        ret.emplace_back(is_file(a.get(i).getPath()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -944,8 +1008,8 @@ mu::Array strfnc_to_char(const mu::MultiArgFuncParams& arrs)
     {
         for (size_t i = 0; i < arrs[0].size(); i++)
         {
-            if (arrs[0][i].isValid())
-                sToChar += char(arrs[0][i].getNum().asI64());
+            if (arrs[0].get(i).isValid())
+                sToChar += char(arrs[0].get(i).getNum().asI64());
         }
     }
     else
@@ -983,15 +1047,16 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
         if (!a2.isDefault())
-            _fSys.setPath(a2.get(i).getStr(), false, sExePath);
+            _fSys.setPath(a2.get(i).getPath(), false, sExePath);
         else
             _fSys.setPath(sExePath, false, sExePath);
 
         std::string sExtension = ".dat";
+        std::string sPath = a1.get(i).getPath();
 
-        if (a1.get(i).getStr().rfind('.') != std::string::npos)
+        if (sPath.rfind('.') != std::string::npos)
         {
-            sExtension = a1.get(i).getStr().substr(a1.get(i).getStr().rfind('.'));
+            sExtension = sPath.substr(sPath.rfind('.'));
 
             if (sExtension.find('*') != std::string::npos || sExtension.find('?') != std::string::npos)
                 sExtension = ".dat";
@@ -999,7 +1064,7 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
                 _fSys.declareFileType(sExtension);
         }
 
-        std::string sFile = _fSys.ValidFileName(a1.get(i).getStr(), sExtension);
+        std::string sFile = _fSys.ValidFileName(sPath, sExtension);
 
         ret.emplace_back(fileExists(sFile));
     }
@@ -1024,20 +1089,7 @@ mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array
 
     for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
     {
-        if (!a2.get(i).getStr().length())
-        {
-            ret.emplace_back("");
-            continue;
-        }
-
-        boost::char_separator<char> cSep(a2.get(i).getStr().c_str(), nullptr,
-                                         (!a3.isDefault() && (bool)a3.get(i)) ? boost::keep_empty_tokens : boost::drop_empty_tokens);
-        boost::tokenizer<boost::char_separator<char>> tok(a1.get(i).getStr(), cSep);
-
-        for (boost::tokenizer<boost::char_separator<char>>::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-        {
-            ret.emplace_back(std::string(*iter));
-        }
+        ret.push_back(mu::Value(split_impl(a1.get(i).getStr(), a2.get(i).getStr(), !a3.isDefault() && (bool)a3.get(i))));
     }
 
     if (!ret.size())
@@ -1171,20 +1223,10 @@ mu::Array strfnc_strfnd(const mu::Array& what, const mu::Array& where, const mu:
 
     for (size_t i = 0; i < std::max({what.size(), where.size(), from.size()}); i++)
     {
-        if (!where.get(i).getStr().length())
-        {
-            ret.emplace_back(0u);
-            continue;
-        }
-
-        size_t pos = 1;
-
-        if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asI64();
-
-        ret.emplace_back(where.get(i).getStr().find(what.get(i).getStr(), pos-1)+1);
+        if (!from.isDefault())
+            ret.emplace_back(strfnd_impl(where.get(i).getStr(), what.get(i).getStr(), from.get(i).getNum().asI64()-1));
+        else
+            ret.emplace_back(strfnd_impl(where.get(i).getStr(), what.get(i).getStr()));
     }
 
     return ret;
@@ -1208,20 +1250,10 @@ mu::Array strfnc_strrfnd(const mu::Array& what, const mu::Array& where, const mu
 
     for (size_t i = 0; i < std::max({what.size(), where.size(), from.size()}); i++)
     {
-        if (!where.get(i).getStr().length())
-        {
-            ret.emplace_back(0u);
-            continue;
-        }
-
-        size_t pos = where.get(i).getStr().length()+1;
-
-        if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asI64();
-
-        ret.emplace_back(where.get(i).getStr().rfind(what.get(i).getStr(), pos-1)+1);
+        if (!from.isDefault())
+            ret.emplace_back(strrfnd_impl(where.get(i).getStr(), what.get(i).getStr(), from.get(i).getNum().asI64()-1));
+        else
+            ret.emplace_back(strrfnd_impl(where.get(i).getStr(), what.get(i).getStr()));
     }
 
     return ret;
@@ -1245,20 +1277,10 @@ mu::Array strfnc_strmatch(const mu::Array& chars, const mu::Array& where, const 
 
     for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
     {
-        if (!where.get(i).getStr().length())
-        {
-            ret.emplace_back(0u);
-            continue;
-        }
-
-        size_t pos = 1;
-
-        if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asI64();
-
-        ret.emplace_back(where.get(i).getStr().find_first_of(chars.get(i).getStr(), pos-1)+1);
+        if (!from.isDefault())
+            ret.emplace_back(strmatch_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+        else
+            ret.emplace_back(strmatch_impl(where.get(i).getStr(), chars.get(i).getStr()));
     }
 
     return ret;
@@ -1282,20 +1304,10 @@ mu::Array strfnc_strrmatch(const mu::Array& chars, const mu::Array& where, const
 
     for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
     {
-        if (!where.get(i).getStr().length())
-        {
-            ret.emplace_back(0u);
-            continue;
-        }
-
-        size_t pos = where.get(i).getStr().length()+1;
-
-        if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asI64();
-
-        ret.emplace_back(where.get(i).getStr().find_last_of(chars.get(i).getStr(), pos-1)+1);
+        if (!from.isDefault())
+            ret.emplace_back(strrmatch_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+        else
+            ret.emplace_back(strrmatch_impl(where.get(i).getStr(), chars.get(i).getStr()));
     }
 
     return ret;
@@ -1319,20 +1331,10 @@ mu::Array strfnc_str_not_match(const mu::Array& chars, const mu::Array& where, c
 
     for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
     {
-        if (!where.get(i).getStr().length())
-        {
-            ret.emplace_back(0u);
-            continue;
-        }
-
-        size_t pos = 1;
-
-        if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asI64();
-
-        ret.emplace_back(where.get(i).getStr().find_first_not_of(chars.get(i).getStr(), pos-1)+1);
+        if (!from.isDefault())
+            ret.emplace_back(str_not_match_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+        else
+            ret.emplace_back(str_not_match_impl(where.get(i).getStr(), chars.get(i).getStr()));
     }
 
     return ret;
@@ -1356,20 +1358,10 @@ mu::Array strfnc_str_not_rmatch(const mu::Array& chars, const mu::Array& where, 
 
     for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
     {
-        if (!where.get(i).getStr().length())
-        {
-            ret.emplace_back(0u);
-            continue;
-        }
-
-        size_t pos = where.get(i).getStr().length()+1;
-
-        if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos = from.get(i).getNum().asI64();
-
-        ret.emplace_back(where.get(i).getStr().find_last_not_of(chars.get(i).getStr(), pos-1)+1);
+        if (!from.isDefault())
+            ret.emplace_back(str_not_rmatch_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+        else
+            ret.emplace_back(str_not_rmatch_impl(where.get(i).getStr(), chars.get(i).getStr()));
     }
 
     return ret;
@@ -1402,7 +1394,8 @@ mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const 
 
         size_t pos_start = 0;
         size_t pos_last;
-        bool found = false;
+
+        mu::Array current;
 
         if (!from.isDefault()
             && from.get(i).getNum().asI64() > 0
@@ -1422,14 +1415,15 @@ mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const 
 
             if (pos_start <= pos_last)
             {
-                found = true;
                 pos_start++;
-                ret.emplace_back(pos_start);
+                current.emplace_back(pos_start);
             }
         }
 
-        if (!found)
-            ret.emplace_back(0);
+        if (!current.size())
+            ret.emplace_back(0u);
+        else
+            ret.emplace_back(current);
     }
 
     return ret;
@@ -1463,6 +1457,8 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
         size_t pos_start = 0;
         size_t pos_last;
 
+        mu::Array current;
+
         if (!from.isDefault()
             && from.get(i).getNum().asI64() > 0
             && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
@@ -1480,10 +1476,12 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
             size_t match = where.get(i).getStr().find(chars.get(i).getStr()[j], pos_start);
 
             if (match <= pos_last)
-                ret.emplace_back(match+1);
+                current.emplace_back(match+1);
             else
-                ret.emplace_back(0);
+                current.emplace_back(0u);
         }
+
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -1548,16 +1546,10 @@ mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::A
 
     for (size_t i = 0; i < std::max({sStr.size(), pos.size(), len.size()}); i++)
     {
-        if (!sStr.get(i).getStr().length() || (size_t)pos.get(i).getNum().asI64() > sStr.get(i).getStr().length())
-        {
-            ret.emplace_back("");
-            continue;
-        }
-
         if (!len.isDefault())
-            ret.emplace_back(sStr.get(i).getStr().substr(std::max(0LL, pos.get(i).getNum().asI64()-1), len.get(i).getNum().asI64()));
+            ret.emplace_back(substr_impl(sStr.get(i).getStr(), pos.get(i).getNum().asI64()-1, len.get(i).getNum().asI64()));
         else
-            ret.emplace_back(sStr.get(i).getStr().substr(std::max(0LL, pos.get(i).getNum().asI64()-1)));
+            ret.emplace_back(substr_impl(sStr.get(i).getStr(), pos.get(i).getNum().asI64()-1));
     }
 
     return ret;
@@ -1922,9 +1914,10 @@ static double extractLaTeXExponent(std::string& sExpr)
 mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, const mu::Array& p1, const mu::Array& p2)
 {
     mu::Array ret;
-    ret.reserve(std::max({sStr.size(), pattern.size(), p1.size(), p2.size()}));
+    size_t elems = std::max({sStr.size(), pattern.size(), p1.size(), p2.size()});
+    ret.reserve(elems);
 
-    for (size_t i = 0; i < std::max({sStr.size(), pattern.size(), p1.size(), p2.size()}); i++)
+    for (size_t i = 0; i < elems; i++)
     {
         StringView sSearchString = sStr.get(i).getStr();
         StringView sPattern = pattern.get(i).getStr();
@@ -1961,7 +1954,7 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
         static const std::string sIDENTIFIERCHARS = "sfaLlthbo";
 
         std::vector<StringView> vPatterns;
-        size_t offset = ret.size();
+        mu::Array current;
 
         // Tokenize the search pattern
         while (sPattern.length())
@@ -1981,9 +1974,9 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
                     vPatterns.push_back(sPattern.subview(i, 2));
 
                     if (vPatterns.back() == "%s")
-                        ret.emplace_back("");
+                        current.emplace_back("");
                     else if (vPatterns.back() != "%a")
-                        ret.emplace_back(std::complex<double>(NAN));
+                        current.emplace_back(std::complex<double>(NAN));
 
                     sPattern.trim_front(i+2);
                     break;
@@ -2042,17 +2035,17 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
 
             // Append the found token
             if (vPatterns[n] == "%s")
-                ret[offset+nth_token] = sSearchString.subview(lastPosition, pos - lastPosition).to_string();
+                current[nth_token] = sSearchString.subview(lastPosition, pos - lastPosition).to_string();
             else if (vPatterns[n] == "%h")
-                ret[offset+nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), HEX));
+                current[nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), HEX));
             else if (vPatterns[n] == "%o")
-                ret[offset+nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), OCT));
+                current[nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), OCT));
             else if (vPatterns[n] == "%b")
-                ret[offset+nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), BIN));
+                current[nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), BIN));
             else if (vPatterns[n] == "%l")
-                ret[offset+nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), LOG));
+                current[nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), LOG));
             else if (vPatterns[n] == "%t")
-                ret[offset+nth_token] = mu::Value(StrToTime(sSearchString.subview(lastPosition, pos - lastPosition).to_string()));
+                current[nth_token] = mu::Value(StrToTime(sSearchString.subview(lastPosition, pos - lastPosition).to_string()));
             else if (vPatterns[n] == "%f")
             {
                 std::string sFloatingPoint = sSearchString.subview(lastPosition, pos - lastPosition).to_string();
@@ -2060,7 +2053,7 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
                 if (sFloatingPoint.find('.') == std::string::npos)
                     replaceAll(sFloatingPoint, ",", ".");
 
-                ret[offset+nth_token] = isConvertible(sFloatingPoint, CONVTYPE_VALUE) ? StrToCmplx(sFloatingPoint) : NAN;
+                current[nth_token] = isConvertible(sFloatingPoint, CONVTYPE_VALUE) ? StrToCmplx(sFloatingPoint) : NAN;
             }
             else if (vPatterns[n] == "%L")
             {
@@ -2126,10 +2119,10 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
                             break;
                     }
 
-                    ret[offset+nth_token] = vValFinal;
+                    current[nth_token] = vValFinal;
                 }
                 else // This can handle simple multiplications
-                    ret[offset+nth_token] = StrToCmplx(sLaTeXFormatted);
+                    current[nth_token] = StrToCmplx(sLaTeXFormatted);
             }
 
             if (vPatterns[n] != "%a")
@@ -2139,6 +2132,7 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
             lastPosition = pos + nextPattern.length();
         }
 
+        ret.emplace_back(current);
     }
 
     return ret;
@@ -2175,7 +2169,7 @@ mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu:
         // Examine the whole string array
         for (size_t i = 0; i < arr.size(); i++)
         {
-            StringView arg = arr[i].getStr();
+            StringView arg = arr.get(i).getStr();
 
             // Apply the chosen matching method
             if (t == 1)
@@ -2258,7 +2252,7 @@ mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
 
             for (size_t i = 0; i < arr.size(); i++)
             {
-                vFuncArgs.push_back(arr[i].getStr());
+                vFuncArgs.push_back(arr.get(i).getStr());
             }
 
             // Sort and isolate the unique values
@@ -2277,7 +2271,7 @@ mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
             for (size_t i = 0; i < arr.size(); i++)
             {
                 // Get a quotation mark free copy
-                std::string sArg = arr[i].getStr();
+                std::string sArg = arr.get(i).getStr();
 
                 // Sort and isolate the unique chars
                 std::sort(sArg.begin(), sArg.end());
@@ -2325,11 +2319,11 @@ mu::Array strfnc_strjoin(const mu::Array& arr, const mu::Array& sep, const mu::A
             // Only insert the separator if either the string as well
             // as the following one have a length or if also empty strings
             // shall be kept and this is the second string to be added
-            if ((sJoined.length() && arr[i].getStr().length())
+            if ((sJoined.length() && arr.get(i).getStr().length())
                 || (i && keepEmpty))
                 sJoined += sSeparator;
 
-            sJoined += arr[i].getStr();
+            sJoined += arr.get(i).getStr();
         }
 
         ret.emplace_back(sJoined);
@@ -2368,14 +2362,14 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
         for (size_t i = 0; i < kvlist.size(); i+=2)
         {
             // Remove the masked strings
-            StringView arg = kvlist[i].getStr();
+            StringView arg = kvlist.get(i).getStr();
 
             // Remove surrounding whitespaces and compare
             arg.strip();
 
             if (arg == sKey)
             {
-                ret.emplace_back(kvlist[i+1]);
+                ret.emplace_back(kvlist.get(i+1));
                 found = true;
             }
         }
@@ -2576,11 +2570,14 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
 
         int64_t p = 1;
         int64_t l = s.length();
+        mu::Array current;
+        current.reserve(2);
 
         if (!r.length())
         {
-            ret.emplace_back(0);
-            ret.emplace_back(0);
+            current.emplace_back(0);
+            current.emplace_back(0);
+            ret.emplace_back(current);
             continue;
         }
 
@@ -2598,14 +2595,16 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
 
             if (std::regex_search(sStr, match, expr))
             {
-                ret.emplace_back(match.position(0) + (size_t)p);
-                ret.emplace_back(match.length(0));
+                current.emplace_back(match.position(0) + (size_t)p);
+                current.emplace_back(match.length(0));
             }
             else
             {
-                ret.emplace_back(0);
-                ret.emplace_back(0);
+                current.emplace_back(0);
+                current.emplace_back(0);
             }
+
+            ret.emplace_back(current);
         }
         catch (std::regex_error& e)
         {
@@ -2784,7 +2783,7 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
         for (size_t i = 0; i < arr.size(); i++)
         {
             // Remove the masked strings
-            StringView sStr = arr[i].getStr();
+            StringView sStr = arr.get(i).getStr();
 
             // Remove surrounding whitespaces
             sStr.strip();
@@ -2796,7 +2795,7 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
         // Fill all string with as many whitespaces as necessary
         for (size_t i = 0; i < arr.size(); i++)
         {
-            StringView view = arr[i].getStr();
+            StringView view = arr.get(i).getStr();
             view.strip();
 
             std::string sStr = view.to_string();
@@ -2991,22 +2990,24 @@ mu::Array strfnc_getfileinfo(const mu::Array& file)
 {
     mu::Array sFileInfo;
 #ifndef PARSERSTANDALONE
-    sFileInfo.reserve(file.size()*16); // 8 key-value pairs
+    sFileInfo.reserve(file.size());
 
     for (size_t i = 0; i < file.size(); i++)
     {
-        FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(file[i].getStr());
+        FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(file.get(i).getPath());
+        mu::Array currentFile;
+        currentFile.reserve(16); // 8 key-value pairs
 
-        sFileInfo.emplace_back("Drive");
-        sFileInfo.emplace_back(fInfo.drive);
-        sFileInfo.emplace_back("Path");
-        sFileInfo.emplace_back(fInfo.path);
-        sFileInfo.emplace_back("Name");
-        sFileInfo.emplace_back(fInfo.name);
-        sFileInfo.emplace_back("FileExt");
-        sFileInfo.emplace_back(fInfo.ext);
-        sFileInfo.emplace_back("Size");
-        sFileInfo.emplace_back(fInfo.filesize);
+        currentFile.emplace_back("Drive");
+        currentFile.emplace_back(fInfo.drive);
+        currentFile.emplace_back("Path");
+        currentFile.emplace_back(fInfo.path);
+        currentFile.emplace_back("Name");
+        currentFile.emplace_back(fInfo.name);
+        currentFile.emplace_back("FileExt");
+        currentFile.emplace_back(fInfo.ext);
+        currentFile.emplace_back("Size");
+        currentFile.emplace_back(fInfo.filesize);
 
         std::string sAttr = fInfo.fileAttributes & FileInfo::ATTR_READONLY ? "readonly," : "";
         sAttr += fInfo.fileAttributes & FileInfo::ATTR_HIDDEN ? "hidden," : "";
@@ -3024,12 +3025,14 @@ mu::Array strfnc_getfileinfo(const mu::Array& file)
         else
             sAttr = "none";
 
-        sFileInfo.emplace_back("Attributes");
-        sFileInfo.emplace_back(sAttr);
-        sFileInfo.emplace_back("CreationTime");
-        sFileInfo.emplace_back(fInfo.creationTime);
-        sFileInfo.emplace_back("ModificationTime");
-        sFileInfo.emplace_back(fInfo.modificationTime);
+        currentFile.emplace_back("Attributes");
+        currentFile.emplace_back(sAttr);
+        currentFile.emplace_back("CreationTime");
+        currentFile.emplace_back(fInfo.creationTime);
+        currentFile.emplace_back("ModificationTime");
+        currentFile.emplace_back(fInfo.modificationTime);
+
+        sFileInfo.emplace_back(currentFile);
     }
 #endif // PARSERSTANDALONE
     return sFileInfo;
@@ -3057,7 +3060,7 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
         else
         {
 #ifndef PARSERSTANDALONE
-            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getPath(),
                                                                                                ".dat", false, true);
 
             // Ensure that the file actually exist
@@ -3108,7 +3111,7 @@ mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, c
         else
         {
 #ifndef PARSERSTANDALONE
-            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getStr(),
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getPath(),
                                                                                                ".dat", false, true);
 
             // Ensure that the file actually exist
@@ -3223,19 +3226,22 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
 
     for (size_t i = 0; i < sStr.size(); i++)
     {
-        if (sStr[i].isString())
+        if (sStr.get(i).isString())
         {
-            p.SetExpr(sStr[i].getStr());
+            p.SetExpr(sStr.get(i).getStr());
             int res;
             const mu::StackItem* vals = p.Eval(res);
+            mu::Array results;
 
             for (int n = 0; n < res; n++)
             {
-                ret.insert(ret.end(), vals[n].get().begin(), vals[n].get().end());
+                results.insert(results.end(), vals[n].get().begin(), vals[n].get().end());
             }
+
+            ret.emplace_back(results);
         }
         else
-            ret.emplace_back(sStr[i]);
+            ret.emplace_back(sStr.get(i));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -3327,10 +3333,14 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
         _accessParser.getIndices().row.linearize();
         _accessParser.getIndices().col.linearize();
 
-        ret.emplace_back(_accessParser.getIndices().row.front() + 1);
-        ret.emplace_back(_accessParser.getIndices().row.last() + 1);
-        ret.emplace_back(_accessParser.getIndices().col.front() + 1);
-        ret.emplace_back(_accessParser.getIndices().col.last() + 1);
+        mu::Array current;
+        current.reserve(4);
+
+        current.emplace_back(_accessParser.getIndices().row.front() + 1);
+        current.emplace_back(_accessParser.getIndices().row.last() + 1);
+        current.emplace_back(_accessParser.getIndices().col.front() + 1);
+        current.emplace_back(_accessParser.getIndices().col.last() + 1);
+        ret.emplace_back(current);
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -3355,7 +3365,7 @@ mu::Array strfnc_is_data(const mu::Array& sStr)
 
     for (size_t i = 0; i < sStr.size(); i++)
     {
-        ret.emplace_back(_data.isTable(sStr[i].getStr()) || _data.isCluster(sStr[i].getStr()));
+        ret.emplace_back(_data.isTable(sStr.get(i).getStr()) || _data.isCluster(sStr.get(i).getStr()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -3379,7 +3389,7 @@ mu::Array strfnc_is_table(const mu::Array& sStr)
 
     for (size_t i = 0; i < sStr.size(); i++)
     {
-        ret.emplace_back(_data.isTable(sStr[i].getStr()));
+        ret.emplace_back(_data.isTable(sStr.get(i).getStr()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -3403,7 +3413,7 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr)
 
     for (size_t i = 0; i < sStr.size(); i++)
     {
-        ret.emplace_back(_data.isCluster(sStr[i].getStr()));
+        ret.emplace_back(_data.isCluster(sStr.get(i).getStr()));
     }
 #endif // PARSERSTANDALONE
     return ret;
@@ -3439,7 +3449,7 @@ mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
                                                   {col.get(i).getStr()}, false, false);
 
         if (cols.size())
-            ret.insert(ret.end(), cols.begin(), cols.end());
+            ret.emplace_back(cols);
         else
             ret.emplace_back(NAN);
     }
@@ -3505,6 +3515,65 @@ mu::Array strfnc_gettypeof(const mu::Array& vals)
     return mu::Value(vals.getCommonTypeAsString());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implements the readxml() function.
+///
+/// \param xmlFiles const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_readxml(const mu::Array& xmlFiles)
+{
+    mu::Array ret;
+    ret.reserve(xmlFiles.size());
+#ifndef PARSERSTANDALONE
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+
+    for (const mu::Value& file : xmlFiles)
+    {
+        std::string validFile = _fSys.ValidFileName(file.getPath(), ".xml", false, true);
+
+        if (!fileExists(validFile))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
+
+        ret.emplace_back(mu::DictStruct());
+        ret.back().getDictStruct().importXml(validFile);
+    }
+#endif
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the readjson() function.
+///
+/// \param jsonFiles const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_readjson(const mu::Array& jsonFiles)
+{
+    mu::Array ret;
+    ret.reserve(jsonFiles.size());
+#ifndef PARSERSTANDALONE
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+
+    for (const mu::Value& file : jsonFiles)
+    {
+        std::string validFile = _fSys.ValidFileName(file.getPath(), ".json", false, true);
+
+        if (!fileExists(validFile))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);
+
+        ret.emplace_back(mu::DictStruct());
+        ret.back().getDictStruct().importJson(validFile);
+    }
+#endif
+
+    return ret;
+}
 
 
 

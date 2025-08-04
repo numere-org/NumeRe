@@ -196,13 +196,13 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
 
     VectorIndex idx;
 
-    for (const mu::Value& val : arr)
+    for (size_t i = 0; i < arr.size(); i++)
     {
-        if (val.getType() == mu::TYPE_NUMERICAL)
-            idx.push_back(val.getNum().asI64()-1);
-        else if (val.getType() == mu::TYPE_STRING)
+        if (arr.get(i).getType() == mu::TYPE_NUMERICAL)
+            idx.push_back(arr.get(i).getNum().asI64()-1);
+        else if (arr.get(i).getType() == mu::TYPE_STRING)
         {
-            std::vector<size_t> cols = vMemory[findTable(sTable)]->findCols({val.getStr()}, false, false);
+            std::vector<size_t> cols = vMemory[findTable(sTable)]->findCols({arr.get(i).getStr()}, false, false);
 
             for (size_t c : cols)
             {
@@ -210,6 +210,9 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
             }
         }
     }
+
+    if (!idx.isValid())
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR", SyntaxError::invalid_position, idx.to_string());
 
     return idx;
 }
@@ -1159,7 +1162,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
     for (size_t i = 1; i < sCmdLine.length(); i++)
     {
         // Consider quotation marks
-        if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
+        if (isQuotationMark(sCmdLine, i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -1217,7 +1220,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
             }
 
             // Try to find the candidate in the internal map
-            if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
+            if (isCluster(sCmdLine.substr(nStartPos, i - nStartPos)))
                 return true;
         }
     }
@@ -1268,6 +1271,7 @@ bool MemoryManager::isTable(StringView sTable, bool only) const
         return false;
 
     sTable = sTable.subview(0, sTable.find('('));
+    sTable.strip();
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -1302,7 +1306,7 @@ bool MemoryManager::containsTables(const std::string& sExpression)
     for (size_t i = 1; i < sExpression.length(); i++)
     {
         // Consider quotation marks
-        if (sExpression[i] == '"' && sExpression[i-1] != '\\')
+        if (isQuotationMark(sExpression, i))
             nQuotes++;
 
         if (nQuotes % 2)

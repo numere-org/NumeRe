@@ -95,7 +95,11 @@ class SetValueEvent : public wxEvent
 {
 public:
     SetValueEvent(wxEventType eventType, int winid, int winItem, const WindowItemValue& val)
-        : wxEvent(winid, eventType), m_val(val), m_item(winItem) {}
+        : wxEvent(winid, eventType), m_val(val), m_item(winItem)
+    {
+        m_val.val.dereference();
+    }
+
     virtual wxEvent* Clone() const {return new SetValueEvent(*this); }
 
     WindowItemValue m_val;
@@ -111,7 +115,11 @@ class SetLabelEvent : public wxEvent
 {
 public:
     SetLabelEvent(wxEventType eventType, int winid, int winItem, const mu::Array& label)
-        : wxEvent(winid, eventType), m_label(label), m_item(winItem) {}
+        : wxEvent(winid, eventType), m_label(label), m_item(winItem)
+    {
+        m_label.dereference();
+    }
+
     virtual wxEvent* Clone() const {return new SetLabelEvent(*this); }
 
     mu::Array m_label;
@@ -127,7 +135,11 @@ class SetOptionsEvent : public wxEvent
 {
 public:
     SetOptionsEvent(wxEventType eventType, int winid, int winItem, const mu::Array& opts)
-        : wxEvent(winid, eventType), m_options(opts), m_item(winItem) {}
+        : wxEvent(winid, eventType), m_options(opts), m_item(winItem)
+    {
+        m_options.dereference();
+    }
+
     virtual wxEvent* Clone() const {return new SetOptionsEvent(*this); }
 
     mu::Array m_options;

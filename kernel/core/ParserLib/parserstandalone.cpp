@@ -168,6 +168,93 @@ void runtests()
 }
 
 
+float bswapF32(float f)
+{
+    uint32_t i = *reinterpret_cast<uint32_t*>(&f);
+    i = __builtin_bswap32(i);
+    return *reinterpret_cast<float*>(&i);
+}
+
+double bswapF64(double f)
+{
+    uint64_t i = *reinterpret_cast<uint64_t*>(&f);
+    i = __builtin_bswap64(i);
+    return *reinterpret_cast<double*>(&i);
+}
+
+
+mu::Array bswap(const mu::Array& val)
+{
+    mu::Array ret;
+
+    for (size_t i = 0; i < val.size(); i++)
+    {
+        const mu::Value& v = val.get(i);
+
+        if (v.getType() != mu::TYPE_NUMERICAL)
+            ret.push_back(v);
+        else if (v.getNum().getType() == mu::I16)
+            ret.push_back(mu::Numerical((int16_t)__builtin_bswap16((uint16_t)v.getNum().asI64())));
+        else if (v.getNum().getType() == mu::I32)
+            ret.push_back(mu::Numerical((int32_t)__builtin_bswap32((uint32_t)v.getNum().asI64())));
+        else if (v.getNum().getType() == mu::I64)
+            ret.push_back(mu::Numerical((int64_t)__builtin_bswap64((uint64_t)v.getNum().asI64())));
+        else if (v.getNum().getType() == mu::UI16)
+            ret.push_back(mu::Numerical(__builtin_bswap16((uint16_t)v.getNum().asUI64())));
+        else if (v.getNum().getType() == mu::UI32)
+            ret.push_back(mu::Numerical(__builtin_bswap32((uint32_t)v.getNum().asUI64())));
+        else if (v.getNum().getType() == mu::UI64)
+            ret.push_back(mu::Numerical(__builtin_bswap64(v.getNum().asUI64())));
+        else if (v.getNum().getType() == mu::F32)
+            ret.push_back(mu::Numerical(bswapF32(v.getNum().asF64())));
+        else if (v.getNum().getType() == mu::F64)
+            ret.push_back(mu::Numerical(bswapF64(v.getNum().asF64())));
+        else if (v.getNum().getType() == mu::CF32)
+        {
+            std::complex<double> cf0 = v.getNum().asCF64();
+            std::complex<float> cf;
+            cf.real(bswapF32(cf0.real()));
+            cf.imag(bswapF32(cf0.imag()));
+            ret.push_back(mu::Numerical(cf));
+        }
+        else if (v.getNum().getType() == mu::CF64)
+        {
+            std::complex<double> cf = v.getNum().asCF64();
+            cf.real(bswapF64(cf.real()));
+            cf.imag(bswapF64(cf.imag()));
+            ret.push_back(mu::Numerical(cf));
+        }
+        else
+            ret.push_back(v);
+    }
+
+    return ret;
+}
+
+mu::Array create_dictstruct(const mu::Array& fields, const mu::Array& vals)
+{
+    size_t elems = fields.size();
+
+    std::map<std::string, std::unique_ptr<mu::BaseValue>> dict;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::string fieldName = fields.get(i).getStr();
+
+        if (!vals.isDefault())
+        {
+            if (vals.get(i).getType() == mu::TYPE_REFERENCE)
+                dict[fieldName].reset(static_cast<const mu::RefValue*>(vals.get(i).get())->get().clone());
+            else
+                dict[fieldName].reset(vals.get(i).get()->clone());
+        }
+        else
+            dict[fieldName].reset(mu::Value("").release());
+    }
+
+    return mu::Value(mu::DictStruct(dict));
+}
+
 int main()
 {
 
@@ -218,15 +305,20 @@ int main()
     _parser.DefineFun("idxtolog", numfnc_idxtolog);
     _parser.DefineFun("strlen", strfnc_strlen);
     _parser.DefineFun("substr", strfnc_substr, true, 1);
+    _parser.DefineFun("split", strfnc_split, true, 1);
     _parser.DefineFun("firstch", strfnc_firstch);
     _parser.DefineFun("lastch", strfnc_lastch);
     _parser.DefineFun("to_string", strfnc_to_string);
     _parser.DefineFun("strjoin", strfnc_strjoin, true, 2);
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);
     _parser.DefineFun("landau_rd", rndfnc_landau_rd, false, 1);
+    _parser.DefineFun("textparse", strfnc_textparse, true, 2);
+    _parser.DefineFun("bswap", bswap);
+    _parser.DefineFun("dict", create_dictstruct, true, 2);
 
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
     _parser.DefineConst("nan", mu::Value(NAN));
+    _parser.DefineConst("inf", mu::Value(INFINITY));
 
     std::string sInput;
     int nResults;
@@ -254,6 +346,7 @@ int main()
     cat.push_back(mu::Value(mu::Category(2, "World")));
     cat.push_back(mu::Value(mu::Category(1, "Hello")));
     cat.push_back(mu::Value(mu::Category(2, "World")));
+    mu::Variable t(mu::Numerical(-1.26e31f));
     _parser.DefineVar("vect", &vectorVar);
     _parser.DefineVar("logicals", &logicalVar);
     _parser.DefineVar("var", &var);
@@ -264,6 +357,7 @@ int main()
     _parser.DefineVar("cats", &cat);
     _parser.DefineVar("pi", &pi);
     _parser.DefineVar("e", &e);
+    _parser.DefineVar("t", &t);
 
     runtests();
 
@@ -294,6 +388,11 @@ int main()
                           << res[i].get().getCommonTypeAsString()
                           << " w/ " << res[i].get().getBytes() << " byte]" << std::endl;
             }
+        }
+        catch (mu::ParserError& err)
+        {
+            std::cout << " >> ERROR in " << sInput << std::endl;
+            std::cout << " >> " << err.GetMsg() << std::endl;
         }
         catch (...)
         {

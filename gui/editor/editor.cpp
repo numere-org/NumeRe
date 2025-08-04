@@ -732,7 +732,7 @@ static wxChar getBracePartner(wxChar chr)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReEditor::OnChar( wxStyledTextEvent& event )
+void NumeReEditor::OnChar(wxStyledTextEvent& event)
 {
     ClearDblClkIndicator();
     const wxChar chr = event.GetKey();
@@ -882,53 +882,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                     sNamespace.replace(0, 4, filename);
                 else if (sSelectedNamespace.StartsWith("this~"))
                     sSelectedNamespace.replace(0, 4, filename);
-                /*{
-                    std::string filename = GetFileNameAndPath().ToStdString();
-                    filename = replacePathSeparator(filename);
-                    std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
-                    if (filename.starts_with(vPaths[PROCPATH]))
-                    {
-                        filename.erase(0, vPaths[PROCPATH].length());
-
-                        if (filename.find('/') != string::npos)
-                            filename.erase(filename.rfind('/') + 1);
-
-                        while (filename.front() == '/')
-                            filename.erase(0, 1);
-
-                        replaceAll(filename, "~~", "/../");
-                        replaceAll(filename, "~", "/");
-
-                        sNamespace = filename;
-                    }
-                    else
-                        sNamespace = "";
-                }
-                else if (sSelectedNamespace == "this~")
-                {
-                    string filename = GetFileNameAndPath().ToStdString();
-                    filename = replacePathSeparator(filename);
-                    vector<string> vPaths = m_terminal->getPathSettings();
-
-                    if (filename.starts_with(vPaths[PROCPATH]))
-                    {
-                        filename.erase(0, vPaths[PROCPATH].length());
-
-                        if (filename.find('/') != string::npos)
-                            filename.erase(filename.rfind('/') + 1);
-
-                        while (filename.front() == '/')
-                            filename.erase(0, 1);
-
-                        replaceAll(filename, "~~", "/../");
-                        replaceAll(filename, "~", "/");
-
-                        sSelectedNamespace = filename;
-                    }
-                    else
-                        sSelectedNamespace = "";
-                }*/
                 // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
                 // autocompletion list entries
                 else if (sNamespace == "thisfile"
@@ -958,117 +912,14 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                      && !isStyleType(STYLE_NUMBER, wordstartpos))
             {
                 int smartSenseWordStart = wordstartpos;
-                NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_METHODS;
+                std::string varType = "";
                 bool isVect = false;
 
                 // SmartSense extension: match only methods
                 if (isMethod)
                 {
-                    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
+                    std::tie(varType, isVect) = get_method_root_type(wordstartpos);
                     smartSenseWordStart--;
-                    int style = GetStyleAt(wordstartpos-2);
-                    char c = GetCharAt(wordstartpos-2);
-
-                    // Identify the type of the current method host. Is currently quite rudimentary
-                    // and should be extended with the semi-static parser model
-                    if (style == wxSTC_NSCR_IDENTIFIER)
-                    {
-                        int c_pos = WordStartPosition(wordstartpos-2, true);
-                        varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
-                            || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
-                            ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                        isVect = true;
-                    }
-                    else if (style == wxSTC_NSCR_STRING || style == wxSTC_NSCR_STRING_PARSER)
-                        varType = NumeReSyntax::SYNTAX_STRING;
-                    else if (style == wxSTC_NSCR_METHOD)
-                    {
-                        // Examine method return values
-                        std::string sReturnValue = _provider.getMethodReturnValue(GetTextRange(WordStartPosition(wordstartpos-2, true),
-                                                                                               wordstartpos-1).ToStdString());
-
-                        if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
-                        {
-                            varType = NumeReSyntax::SYNTAX_TABLE;
-                            isVect = true;
-                        }
-                        else
-                        {
-                            varType = sReturnValue.find("STR") != std::string::npos
-                                || sReturnValue.find("ARG") != std::string::npos
-                                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
-                        }
-                    }
-                    else if (c == '}')
-                    {
-                        int braceStart = BraceMatch(wordstartpos-2);
-                        int prevStyle = GetStyleAt(braceStart-1);
-
-                        varType = prevStyle == wxSTC_NSCR_CLUSTER
-                            || prevStyle == wxSTC_NSCR_PREDEFS
-                            || prevStyle == wxSTC_NSCR_STRING_PARSER
-                            || GetTextRange(braceStart, wordstartpos-1).find('"') != std::string::npos
-                            ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_CLUSTER;
-                        isVect = true;
-                    }
-                    else if (c == ')')
-                    {
-                        int braceStart = BraceMatch(wordstartpos-2);
-                        int prevStyle = GetStyleAt(braceStart-1);
-
-                        if (prevStyle == wxSTC_NSCR_METHOD || prevStyle == wxSTC_NSCR_FUNCTION)
-                        {
-                            // Examine method or function return values
-                            std::string sReturnValue = GetTextRange(WordStartPosition(braceStart-1, true), braceStart).ToStdString();
-
-                            if (prevStyle == wxSTC_NSCR_METHOD)
-                                sReturnValue = _provider.getMethodReturnValue(sReturnValue);
-                            else
-                                sReturnValue = _provider.getFunctionReturnValue(sReturnValue);
-
-                            if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
-                            {
-                                varType = NumeReSyntax::SYNTAX_TABLE;
-                                isVect = true;
-                            }
-                            else
-                            {
-                                varType = sReturnValue.find("STR") != std::string::npos
-                                    || sReturnValue.find("ARG") != std::string::npos
-                                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
-                            }
-                        }
-                        else if (prevStyle == wxSTC_NSCR_PROCEDURES)
-                        {
-                            // Examine procedure return values
-                            m_search->FindMarkedProcedure(braceStart-1);
-                            wxString procdef = m_search->FindProcedureDefinition();
-
-                            if (procdef.length() && procdef.find("->") != std::string::npos)
-                            {
-                                std::string sReturnValue = procdef.substr(procdef.find_first_not_of("-> ", procdef.find("->"))).ToStdString();
-
-                                if (sReturnValue.find("::") != std::string::npos)
-                                    sReturnValue.erase(sReturnValue.find("::"));
-
-                                varType = sReturnValue.find("STR") != std::string::npos
-                                    || sReturnValue.find("ARG") != std::string::npos
-                                    || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-                                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
-                            }
-
-                        }
-                        else if (prevStyle == wxSTC_NSCR_STRING_PARSER)
-                            varType = NumeReSyntax::SYNTAX_STRING;
-                        else if (prevStyle == wxSTC_NSCR_PREDEFS || prevStyle == wxSTC_NSCR_CUSTOM_FUNCTION)
-                        {
-                            varType = GetTextRange(braceStart, wordstartpos-1) == "()"
-                                ? NumeReSyntax::SYNTAX_TABLE : NumeReSyntax::SYNTAX_STRING;
-                            isVect = true;
-                        }
-                    }
                 }
 
                 sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
@@ -1355,6 +1206,26 @@ static bool isFloat(StringView viewedArg, StringView defaultValue)
 
 /////////////////////////////////////////////////
 /// \brief Static function to detect, whether an
+/// argument is an object.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isObject(StringView viewedArg, StringView defaultValue)
+{
+    return defaultValue.starts_with("file(")
+        || defaultValue.starts_with("path(")
+        || defaultValue.starts_with("dictstruct(")
+        || defaultValue.starts_with("queue(")
+        || defaultValue.starts_with("stack(")
+        || (viewedArg.front() == 'o' && viewedArg.length() > 1 && isupper(viewedArg[1]));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
 /// argument is an integer.
 ///
 /// \param viewedArg StringView
@@ -1524,7 +1395,7 @@ void NumeReEditor::HandleFunctionCallTip()
     }
     else if (sFunctionContext.front() == '.')
     {
-        _cTip = _provider.getMethod(sFunctionContext.substr(1));
+        _cTip = _provider.getMethod(sFunctionContext.substr(1), get_method_root_type(WordStartPosition(nStartingBrace-1, true)).first);
         nDotPos = _cTip.sDefinition.find('.');
 
         if (!detectArgumentTypes)
@@ -1601,6 +1472,8 @@ void NumeReEditor::HandleFunctionCallTip()
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_INTEGER", viewedArg.to_string());
         else if (isFloat(viewedArg, defaultValue))
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_FLOAT", viewedArg.to_string());
+        else if (isObject(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_OBJECT", viewedArg.to_string());
         else if (isDateTime(viewedArg, defaultValue))
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_TIME", viewedArg.to_string());
         else if (isBool(viewedArg, defaultValue))
@@ -1630,7 +1503,7 @@ void NumeReEditor::HandleFunctionCallTip()
 
     // Adapt the starting position so that the opening braces align
     if (_cTip.sDefinition.find("(", nDotPos) != std::string::npos
-        && _cTip.sDefinition.find("(", nDotPos) <= (size_t)GetColumn(nStartingBrace))
+        && _cTip.sDefinition.find("(", nDotPos) <= (size_t)(nStartingBrace-PositionFromLine(LineFromPosition(nStartingBrace))))
         nStartingBrace -= _cTip.sDefinition.find("(", nDotPos);
 
     if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))
@@ -1794,7 +1667,7 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
         }
 
         // Count and consider quotation marks
-        if (sArgList[i] == '"' && sArgList[i-1] != '\\')
+        if (isQuotationMark(sArgList, i))
             nQuotationMarks++;
 
         // If a parenthesis or a brace was found,
@@ -1952,7 +1825,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
     else if (GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
         _cTip = _provider.getOption(selection.ToStdString());
     else if (GetStyleAt(charpos) == wxSTC_NSCR_METHOD)
-        _cTip = _provider.getMethod(selection.ToStdString());
+        _cTip = _provider.getMethod(selection.ToStdString(), get_method_root_type(startPosition).first);
     else if (GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS)
         _cTip = _provider.getPredef(selection.ToStdString());
     else if (GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
@@ -4155,6 +4028,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                 case wxSTC_NSCR_METHOD:
                     _style = m_options->GetSyntaxStyle(Options::METHODS);
                     break;
+                case wxSTC_NSCR_CUSTOM_METHOD:
+                    _style = m_options->GetSyntaxStyle(Options::CUSTOM_METHOD);
+                    break;
                 case wxSTC_NSCR_PREDEFS:
                     _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
                     break;
@@ -4261,6 +4137,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
                 case wxSTC_NPRC_METHOD:
                     _style = m_options->GetSyntaxStyle(Options::METHODS);
+                    break;
+                case wxSTC_NPRC_CUSTOM_METHOD:
+                    _style = m_options->GetSyntaxStyle(Options::CUSTOM_METHOD);
                     break;
                 case wxSTC_NPRC_PREDEFS:
                     _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
@@ -5348,6 +5227,7 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
     markLocalVariableOfType("cst", bForceRefresh);
     markLocalVariableOfType("tab", bForceRefresh);
     markLocalVariableOfType("str", bForceRefresh);
+    markLocalVariableOfType("obj", bForceRefresh);
 }
 
 
@@ -7005,9 +6885,9 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
 
             // Append the needed opening parentheses, if the completed
             // objects are data objects or functions
-            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos))
+            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos+sMatch.length()) == '('))
                 sFillUp = "(?" + toString((int)NumeReSyntax::SYNTAX_TABLE);
-            else if (isStyleType(STYLE_DATAOBJECT, nPos))
+            else if (isStyleType(STYLE_DATAOBJECT, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos+sMatch.length()) == '{'))
                 sFillUp = "{?" + toString((int)NumeReSyntax::SYNTAX_CLUSTER);
             else if (isStyleType(STYLE_IDENTIFIER, nPos))
                 sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
@@ -8816,6 +8696,160 @@ std::pair<int,int> NumeReEditor::getCurrentContext(int line)
         return std::make_pair(line, GetLineCount());
 
     return std::make_pair(line, LineFromPosition(vMatch.back()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the root data type if the selected
+/// method.
+///
+/// \param pos int
+/// \return std::pair<std::string, bool>
+///
+/////////////////////////////////////////////////
+std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
+{
+    std::string varType = "";
+    bool isVect = false;
+    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
+
+    int style = GetStyleAt(pos-2);
+    char c = GetCharAt(pos-2);
+
+    // Identify the type of the current method host. Is currently quite rudimentary
+    // and should be extended with the semi-static parser model
+    if (style == wxSTC_NSCR_IDENTIFIER)
+    {
+        int c_pos = WordStartPosition(pos-2, true);
+        varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
+            || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
+            ? "string" : "*";
+        isVect = true;
+    }
+    else if (style == wxSTC_NSCR_STRING || style == wxSTC_NSCR_STRING_PARSER)
+        varType = "string";
+    else if (style == wxSTC_NSCR_METHOD)
+    {
+        // Examine method return values
+        int methodStart = WordStartPosition(pos-2, true);
+        std::string sReturnValue = _provider.getMethodReturnValue(GetTextRange(methodStart,
+                                                                               pos-1).ToStdString(), get_method_root_type(methodStart).first);
+
+        if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
+        {
+            varType = "table";
+            isVect = true;
+        }
+        else
+        {
+            if (sReturnValue.find("STR") != std::string::npos)
+                varType = "string";
+            else if (sReturnValue.find("CAT") != std::string::npos)
+                varType = "category";
+            else if (sReturnValue.find("DCT") != std::string::npos)
+                varType = "dictstruct";
+            else if (sReturnValue.find("OBJ") != std::string::npos
+                     || sReturnValue.find("ARG") != std::string::npos
+                     || sReturnValue.find("CST") != std::string::npos)
+                varType = "*";
+
+            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+        }
+    }
+    else if (c == '}')
+    {
+        int braceStart = BraceMatch(pos-2);
+        int prevStyle = GetStyleAt(braceStart-1);
+
+        varType = prevStyle == wxSTC_NSCR_CLUSTER
+            || prevStyle == wxSTC_NSCR_PREDEFS
+            || prevStyle == wxSTC_NSCR_STRING_PARSER
+            || GetTextRange(braceStart, pos-1).find('"') != std::string::npos
+            ? "string" : "*";
+        isVect = true;
+    }
+    else if (c == ')')
+    {
+        int braceStart = BraceMatch(pos-2);
+        int prevStyle = GetStyleAt(braceStart-1);
+
+        if (prevStyle == wxSTC_NSCR_METHOD || prevStyle == wxSTC_NSCR_FUNCTION)
+        {
+            // Examine method or function return values
+            int symbolStart = WordStartPosition(braceStart-1, true);
+            std::string sSymbolName = GetTextRange(symbolStart, braceStart).ToStdString();
+            std::string sReturnValue;
+
+            if (prevStyle == wxSTC_NSCR_METHOD)
+                sReturnValue = _provider.getMethodReturnValue(sSymbolName, get_method_root_type(symbolStart).first);
+            else
+                sReturnValue = _provider.getFunctionReturnValue(sSymbolName);
+
+            if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
+            {
+                varType = "table";
+                isVect = true;
+            }
+            else
+            {
+                if (sReturnValue.find("STR") != std::string::npos)
+                    varType = "string";
+                else if (sReturnValue.find("CAT") != std::string::npos)
+                    varType = "category";
+                else if (sReturnValue.find("DCT") != std::string::npos)
+                    varType = "dictstruct";
+                else if (sReturnValue.find("OBJ") != std::string::npos)
+                    varType = "object." + sSymbolName;
+                else if (sReturnValue.find("CST") != std::string::npos
+                         || sReturnValue.find("ARG") != std::string::npos)
+                    varType = "*";
+
+                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+            }
+        }
+        else if (prevStyle == wxSTC_NSCR_PROCEDURES)
+        {
+            // Examine procedure return values
+            m_search->FindMarkedProcedure(braceStart-1);
+            wxString procdef = m_search->FindProcedureDefinition();
+
+            if (procdef.length() && procdef.find("->") != std::string::npos)
+            {
+                std::string sReturnValue = procdef.substr(procdef.find_first_not_of("-> ", procdef.find("->"))).ToStdString();
+
+                if (sReturnValue.find("::") != std::string::npos)
+                    sReturnValue.erase(sReturnValue.find("::"));
+
+                if (sReturnValue.find("STR") != std::string::npos)
+                    varType = "string";
+                else if (sReturnValue.find("CAT") != std::string::npos)
+                    varType = "category";
+                else if (sReturnValue.find("DCT") != std::string::npos)
+                    varType = "dictstruct";
+                else if (sReturnValue.find("OBJ") != std::string::npos
+                         || sReturnValue.find("CST") != std::string::npos
+                         || sReturnValue.find("ARG") != std::string::npos)
+                    varType = "*";
+
+                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+            }
+
+        }
+        else if (prevStyle == wxSTC_NSCR_STRING_PARSER)
+            varType = "string";
+        else if (prevStyle == wxSTC_NSCR_PREDEFS || prevStyle == wxSTC_NSCR_CUSTOM_FUNCTION)
+        {
+            varType = GetTextRange(braceStart, pos-1) == "()"
+                ? "table" : "*";
+            isVect = true;
+        }
+        else if (prevStyle == wxSTC_NSCR_CUSTOM_METHOD)
+            varType = "*";
+    }
+    else if (style == wxSTC_NSCR_CUSTOM_METHOD)
+        varType = "*";
+
+    return std::make_pair(varType, isVect);
 }
 
 

@@ -160,7 +160,8 @@ namespace mu
 							EOprtAssociativity a_eAssociativity = oaLEFT,
 							bool optimizeAway = true);
 			void DefineConst(const string_type& a_sName, Value a_fVal);
-			Variable* CreateVar(const string_type& a_sName);
+			Variable* CreateVar(const string_type& a_sName, mu::DataType defaultType = mu::TYPE_VOID);
+			Variable* ReadVar(const string_type& a_sName);
 			void DefineVar(const string_type& a_sName, Variable* a_fVar);
 			void DefinePostfixOprt(const string_type& a_strFun, fun_type1 a_pOprt, bool optimizeAway = true);
 			void DefineInfixOprt(const string_type& a_strName, fun_type1 a_pOprt, int a_iPrec = prINFIX, bool optimizeAway = true);
@@ -269,15 +270,6 @@ namespace mu
             static Array Vector3Generator(const Array& firstVal,
                                           const Array& incr,
                                           const Array& lastVal);
-            static Array expandVector2(const Array& firstVal,
-                                       const Array& lastVal);
-            static Array expandVector3(const Array& firstVal,
-                                       const Array& incr,
-                                       const Array& lastVal);
-            static void expandVector(std::complex<double> dFirst,
-                                     const std::complex<double>& dLast,
-                                     const std::complex<double>& dIncrement,
-                                     Array& vResults);
 
 		private:
 			string_type getNextTempVarIndex();

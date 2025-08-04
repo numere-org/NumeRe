@@ -272,23 +272,6 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         return "\t" + sDim + "\t" + isRef + "table\t";
     }
 
-    // Is the current argument value a cluster?
-    if (_data.isCluster(sArgumentValue))
-    {
-        NumeRe::Cluster& cluster = _data.getCluster(sArgumentValue.substr(0, sArgumentValue.find('{')));
-
-        // Replace the value with its actual value and mark the
-        // argument type as reference
-        sArgumentValue = cluster.printOverview(DEFAULT_MINMAX_PRECISION, MAXSTRINGLENGTH, 5, true);
-
-        // Determine whether this is a reference or a templated
-        // variable
-        if (sArgumentName.length() && sArgumentName.find("{}") == std::string::npos)
-            isRef = isRef.length() ? "(&@) " : "(@) ";
-
-        return "\t" + toString(cluster.size()) + " x 1\t" + isRef + "cluster\t";
-    }
-
     // Is the current value surrounded from braces?
     if (sArgumentValue.front() == '{' && sArgumentValue.back() == '}')
     {
@@ -309,10 +292,10 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
-        mu::Variable* address = _parser.GetVar().find(sArgumentValue)->second;
+        mu::Variable* address = _parser.ReadVar(sArgumentValue);
         sArgumentValue = address->print(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
 
-        return "\t1 x 1\t" + isRef + address->getCommonTypeAsString() + "\t";
+        return "\t" + address->printDims() + "\t" + isRef + address->getCommonTypeAsString() + "\t";
     }
 
     // Is it a constant numerical expression or value?
@@ -367,11 +350,17 @@ bool NumeReDebugger::select(size_t nStackElement)
     // statement, obtain the corresponding information here
     if (_curProcedure->bEvaluatingFlowControlStatements)
     {
-        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(), _curProcedure->getCurrentLineNumber(), _curProcedure->mVarMap, _curProcedure->vVarArray, _curProcedure->sVarArray);
+        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(),
+                                    _curProcedure->getCurrentLineNumber(),
+                                    _curProcedure->mVarMap, _curProcedure->vVarArray,
+                                    _curProcedure->sVarArray);
     }
 
     // Obtain the remaining information here
-    gatherInformations(_curProcedure->_varFactory, _curProcedure->sProcCommandLine, _curProcedure->sCurrentProcedureName, _curProcedure->GetCurrentLine());
+    gatherInformations(_curProcedure->_varFactory,
+                       _curProcedure->sProcCommandLine,
+                       _curProcedure->sCurrentProcedureName,
+                       _curProcedure->GetCurrentLine());
 
     // Jump to the selected file and the selected line number
     NumeReKernel::gotoLine(sErraticModule, nLineNumber);
@@ -411,7 +400,6 @@ void NumeReDebugger::resetBP()
     sErraticModule = "";
     mLocalVars.clear();
     mLocalTables.clear();
-    mLocalClusters.clear();
     mArguments.clear();
     bAlreadyThrown = false;
     return;
@@ -515,7 +503,7 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
         return;
     }
 
-    gatherInformations(_varFactory->mLocalVars, _varFactory->mLocalTables, _varFactory->mLocalClusters, _varFactory->mArguments,
+    gatherInformations(_varFactory->mLocalVars, _varFactory->mLocalTables, _varFactory->mArguments,
                        _sErraticCommand, _sErraticModule, _nLineNumber);
 }
 
@@ -528,7 +516,6 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 ///
 /// \param _mLocalVars const std::map<std::string, std::pair<std::string, mu::Variable*>>&
 /// \param _mLocalTables const std::map<std::string, std::string>&
-/// \param _mLocalClusters const std::map<std::string, std::string>&
 /// \param _mArguments const std::map<std::string, std::string>&
 /// \param _sErraticCommand const string&
 /// \param _sErraticModule const string&
@@ -538,7 +525,6 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 /////////////////////////////////////////////////
 void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
                                          const std::map<std::string, std::string>& _mLocalTables,
-                                         const std::map<std::string, std::string>& _mLocalClusters,
                                          const std::map<std::string, std::string>& _mArguments,
                                          const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
 {
@@ -577,7 +563,10 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         if (iter.first != iter.second.first)
             replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
 
-        mLocalVars[iter.first + "\t" + iter.second.first] = *iter.second.second;
+        if (iter.second.second->getCommonType() == mu::TYPE_CLUSTER)
+            mLocalVars[iter.first + "{}\t" + iter.second.first + "{}"] = iter.second.second;
+        else
+            mLocalVars[iter.first + "\t" + iter.second.first] = iter.second.second;
     }
 
     // Store the local tables and replace their
@@ -598,26 +587,6 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
             + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
 
         mLocalTables[iter.first + "()"] = sTableData;
-    }
-
-    // Store the local clusters and replace their
-    // occurence with their definition in the command lines
-    for (const auto& iter : _mLocalClusters)
-    {
-        // Replace the occurences
-        if (iter.first != iter.second)
-            replaceAll(sErraticCommand, (iter.second + (iter.second.back() == '{' ? "" : "{")).c_str(), (iter.first + (iter.first.back() == '{' ? "" : "{")).c_str());
-
-        string sTableData;
-
-        // Extract the minimal and maximal values of the tables
-        // to display them in the variable viewer panel
-        sTableData = toString(instance->getMemoryManager().getCluster(iter.second).size()) + " x 1";
-        sTableData += "\tcluster\t"
-            + instance->getMemoryManager().getCluster(iter.second).printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true) + "\t"
-            + iter.second + "{}";
-
-        mLocalClusters[iter.first + "{}"] = sTableData;
     }
 
     // Is this procedure a macro?
@@ -684,8 +653,6 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
     if (!bDebuggerActive)
         return;
 
-    NumeReKernel* instance = NumeReKernel::getInstance();
-
     // store variable names and replace their occurences with
     // their definitions
     for (size_t i = 0; i < sVarArray.size(); i++)
@@ -694,21 +661,8 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         {
             if (iter->second == sVarArray[i])
             {
-                size_t nBracePos = sVarArray[i].find('{');
-
                 // Store the variables
-                if (nBracePos != std::string::npos)
-                {
-                    NumeRe::Cluster& iterData = instance->getMemoryManager().getCluster(sVarArray[i]);
-                    size_t nItem = 0;
-
-                    if (nBracePos < sVarArray[i].length()-2)
-                        nItem = StrToInt(sVarArray[i].substr(nBracePos+1, sVarArray[i].length()-1-nBracePos-1))-1;
-
-                    mLocalVars[iter->first + "@" + iter->second] = iterData.get(nItem);
-                }
-                else
-                    mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
+                mLocalVars[iter->first + "\t" + iter->second] = &vVarArray[i];
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)
@@ -774,11 +728,11 @@ vector<string> NumeReDebugger::getStackTrace()
 /// \brief This member function returns the
 /// variables of the selected type as a vector.
 ///
-/// \param dt mu::DataType
+/// \param dt const std::vector<mu::DataType>&
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
+std::vector<std::string> NumeReDebugger::getVars(const std::vector<mu::DataType>& dt)
 {
     std::vector<std::string> vVars;
 
@@ -786,15 +740,18 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
     {
         char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
 
-        if (iter->second.getCommonType() != dt
-            && !(dt == mu::TYPE_NUMERICAL && iter->second.getCommonType() == mu::TYPE_VOID))
+        if (std::find(dt.begin(), dt.end(), iter->second->getCommonType()) == dt.end()
+            && !(std::find(dt.begin(), dt.end(), mu::TYPE_NUMERICAL) != dt.end() && iter->second->getCommonType() == mu::TYPE_VOID))
             continue;
 
-        vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second.printDims()
+        vVars.push_back(iter->first.substr(0, iter->first.find(sepChar)) + "\t" + iter->second->printDims()
                         + (sepChar == '@' ? "\t(@) " : "\t")
-                        + iter->second.getCommonTypeAsString() + "\t"
-                        + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
+                        + iter->second->getCommonTypeAsString() + "\t"
+                        + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH) + "\t"
                         + iter->first.substr((iter->first).find(sepChar)+1));
+
+        // Shorten the "kind of" obsolete "object." prefix before the type
+        replaceAll(vVars.back(), "\tobject.", "\tobj.");
     }
 
     return vVars;
@@ -810,7 +767,7 @@ std::vector<std::string> NumeReDebugger::getVars(mu::DataType dt)
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getNumVars()
 {
-    return getVars(mu::TYPE_NUMERICAL);
+    return getVars({mu::TYPE_NUMERICAL});
 }
 
 
@@ -823,7 +780,7 @@ vector<string> NumeReDebugger::getNumVars()
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getStringVars()
 {
-    return getVars(mu::TYPE_STRING);
+    return getVars({mu::TYPE_STRING});
 }
 
 
@@ -856,14 +813,20 @@ vector<string> NumeReDebugger::getTables()
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getClusters()
 {
-    vector<string> vClusters;
+    return getVars({mu::TYPE_CLUSTER});
+}
 
-    for (auto iter = mLocalClusters.begin(); iter != mLocalClusters.end(); ++iter)
-    {
-        vClusters.push_back(iter->first + "\t" + iter->second);
-    }
 
-    return vClusters;
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// class variables as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> NumeReDebugger::getObjects()
+{
+    return getVars({mu::TYPE_DICTSTRUCT, mu::TYPE_CATEGORY, mu::TYPE_OBJECT});
 }
 
 
@@ -918,24 +881,15 @@ vector<string> NumeReDebugger::getGlobals()
         }
     }
 
-    // List all relevant clusters
-    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-    {
-        if (!iter->first.starts_with("_~"))
-        {
-            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t"
-                + iter->second.printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH, 5, true);
-        }
-    }
-
     // List all relevant numerical variables
     for (auto iter = _parser.GetVar().begin(); iter != _parser.GetVar().end(); ++iter)
     {
         if (!iter->first.starts_with("_~")
-            && iter->first != "ans"
             && !isDimensionVar(iter->first))
         {
-            mGlobals[iter->first] = iter->second->printDims() + "\t" + iter->second->getCommonTypeAsString() + "\t"
+            mu::DataType common = iter->second->getCommonType();
+            mGlobals[iter->first + (common == mu::TYPE_CLUSTER ? "{}" : "")] = iter->second->printDims() + "\t"
+                + iter->second->getCommonTypeAsString() + "\t"
                 + iter->second->printOverview(DEFAULT_NUM_PRECISION, MAXSTRINGLENGTH);
         }
     }

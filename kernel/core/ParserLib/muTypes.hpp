@@ -39,12 +39,16 @@ namespace mu
         TYPE_VOID,
         TYPE_NUMERICAL,
         TYPE_STRING,
-        TYPE_CATEGORY,
         TYPE_ARRAY,
+        TYPE_CLUSTER,
+        TYPE_CATEGORY,
+        TYPE_DICTSTRUCT,
+        TYPE_OBJECT,
         TYPE_GENERATOR,
+        TYPE_GENERATOR_CONSTRUCTOR,
         TYPE_NEUTRAL,
         TYPE_INVALID,
-        TYPE_MIXED
+        TYPE_REFERENCE
     };
 
 

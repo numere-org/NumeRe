@@ -249,6 +249,9 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
+        if (!iter->second->size())
+            iter->second->push_back(mu::Value(0.0));
+
         vInitialVals.push_back(iter->second->front().getNum().asF64());
     }
 
@@ -667,10 +670,8 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         if (!_functions.call(fitData.sParams))
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd,fitData. sParams, fitData.sParams);
 
-        if (_data.containsTablesOrClusters(fitData.sParams))
-        {
+        if (_data.containsTables(fitData.sParams))
             getDataElements(fitData.sParams, _parser, _data);
-        }
 
         //if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
         //    convertVectorToExpression(fitData.sParams);
@@ -683,10 +684,8 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, fitData.sFitFunction, fitData.sFitFunction);
 
     // Get values from a references data object
-    if (_data.containsTablesOrClusters(fitData.sFitFunction))
-    {
+    if (_data.containsTables(fitData.sFitFunction))
         getDataElements(fitData.sFitFunction, _parser, _data);
-    }
 
     // Expand remaining vectors
     if (fitData.sFitFunction.find("{") != string::npos)

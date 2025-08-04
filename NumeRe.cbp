@@ -134,7 +134,6 @@
 				<Option compiler="gcc" />
 				<Option use_console_runner="0" />
 				<Compiler>
-					<Add option="-Og" />
 					<Add option="-g" />
 					<Add option="-fopenmp" />
 					<Add option="-D__GNUWIN64__" />
@@ -933,18 +932,7 @@
 			<Option target="Debug_x64" />
 			<Option target="Nightly_x64" />
 		</Unit>
-		<Unit filename="externals/tinyxml2/tinyxml2.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Release_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
-			<Option target="Nightly_x64" />
-		</Unit>
+		<Unit filename="externals/tinyxml2/tinyxml2.cpp" />
 		<Unit filename="externals/tinyxml2/tinyxml2.h">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -2543,6 +2531,8 @@
 		</Unit>
 		<Unit filename="kernel/core/ParserLib/muApply.cpp" />
 		<Unit filename="kernel/core/ParserLib/muApply.hpp" />
+		<Unit filename="kernel/core/ParserLib/muCompositeStructures.cpp" />
+		<Unit filename="kernel/core/ParserLib/muCompositeStructures.hpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.cpp" />
 		<Unit filename="kernel/core/ParserLib/muHelpers.hpp" />
 		<Unit filename="kernel/core/ParserLib/muInternalStructures.hpp" />

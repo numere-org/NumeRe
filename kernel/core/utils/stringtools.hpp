@@ -522,6 +522,19 @@ void strChangeNumberFormat(std::string &sNum, int numFormat);
 std::string encode_base_n(const std::string& sToEncode, bool isFile, int n);
 std::string decode_base_n(const std::string& sToDecode, int n);
 
+std::string substr_impl(const std::string& sString, size_t p, size_t len = -1);
+std::vector<std::string> split_impl(const std::string& sString, const std::string& c, bool keepEmpty = false);
+size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
+size_t strrfnd_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
+size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
+size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
+size_t str_not_match_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
+size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
+
+bool isQuotationMark(const std::string& sString, size_t pos);
+bool isQuotationMark(StringView sString, size_t pos);
+
+
 #endif // STRINGTOOLS_HPP
 
 

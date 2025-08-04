@@ -937,7 +937,59 @@ std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, 
     std::string sScopedList;
 
     // Now find all possible candidates
-    for (std::string sVar : globalVars.vVariables)
+    for (std::string sVar : globalVars.vNumVars)
+    {
+        sVar.erase(sVar.find('\t'));
+
+        if (toLowerCase(sVar).substr(0, sWordStart.length()) == sWordStart)
+        {
+            if (sVar.find_first_of("({") != std::string::npos)
+                sScopedList += sVar.substr(0, sVar.find_first_of("({")+1) + "?1 ";
+            else
+                sScopedList += sVar + "?1 ";
+        }
+    }
+
+    for (std::string sVar : globalVars.vStrVars)
+    {
+        sVar.erase(sVar.find('\t'));
+
+        if (toLowerCase(sVar).substr(0, sWordStart.length()) == sWordStart)
+        {
+            if (sVar.find_first_of("({") != std::string::npos)
+                sScopedList += sVar.substr(0, sVar.find_first_of("({")+1) + "?1 ";
+            else
+                sScopedList += sVar + "?1 ";
+        }
+    }
+
+    for (std::string sVar : globalVars.vObjects)
+    {
+        sVar.erase(sVar.find('\t'));
+
+        if (toLowerCase(sVar).substr(0, sWordStart.length()) == sWordStart)
+        {
+            if (sVar.find_first_of("({") != std::string::npos)
+                sScopedList += sVar.substr(0, sVar.find_first_of("({")+1) + "?1 ";
+            else
+                sScopedList += sVar + "?1 ";
+        }
+    }
+
+    for (std::string sVar : globalVars.vTables)
+    {
+        sVar.erase(sVar.find('\t'));
+
+        if (toLowerCase(sVar).substr(0, sWordStart.length()) == sWordStart)
+        {
+            if (sVar.find_first_of("({") != std::string::npos)
+                sScopedList += sVar.substr(0, sVar.find_first_of("({")+1) + "?1 ";
+            else
+                sScopedList += sVar + "?1 ";
+        }
+    }
+
+    for (std::string sVar : globalVars.vClusters)
     {
         sVar.erase(sVar.find('\t'));
 
@@ -967,21 +1019,37 @@ std::string NumeReTerminal::getVariableType(const std::string& sVarName)
 {
     NumeReVariables globalVars = getVariableListForAutocompletion();
 
-    for (size_t i = 0; i < globalVars.vVariables.size(); i++)
+    for (const std::string& var : globalVars.vNumVars)
     {
-        if (globalVars.vVariables[i].starts_with(sVarName + "\t"))
-        {
-            if (i < globalVars.nNumerics)
-                return globalVars.vVariables[i].find("\t1 x 1\t") != std::string::npos ?  "VAR" : "{VAR}";
-
-            if (i < globalVars.nNumerics + globalVars.nStrings)
-                return globalVars.vVariables[i].find("\t1 x 1\t") != std::string::npos ?  "STR" : "{STR}";
-
-            break;
-        }
+        if (var.starts_with(sVarName + "\t"))
+            return var.find("\t1 x 1\t") != std::string::npos ? "value" : "{value}";
     }
 
-    return "VAR";
+    for (const std::string& var : globalVars.vStrVars)
+    {
+        if (var.starts_with(sVarName + "\t"))
+            return var.find("\t1 x 1\t") != std::string::npos ? "string" : "{string}";
+    }
+
+    for (const std::string& var : globalVars.vObjects)
+    {
+        if (var.starts_with(sVarName + "\t"))
+            return var.find("\t1 x 1\t") != std::string::npos ? var.substr(var.rfind('\t')+1) : "{" + var.substr(var.rfind('\t')+1) + "}";
+    }
+
+    for (const std::string& var : globalVars.vTables)
+    {
+        if (var.starts_with(sVarName + "\t"))
+            return "table";
+    }
+
+    for (const std::string& var : globalVars.vClusters)
+    {
+        if (var.starts_with(sVarName + "\t"))
+            return "cluster";
+    }
+
+    return "N/A";
 }
 
 
@@ -1674,7 +1742,7 @@ void NumeReTerminal::insertRawText(std::string sText)
     // Replace line comments with block comments, where necessary
     for (size_t i = 0; i < sText.length(); i++)
     {
-        if (sText[i] == '"' && (!i || sText[i-1] != '\\'))
+        if (isQuotationMark(sText, i))
             nQuotes++;
 
         if (nQuotes % 2)

@@ -356,7 +356,7 @@ void Interval::refresh()
     if (indices.size() == 1)
     {
         // Get the data elements
-        if (_data.containsTablesOrClusters(indices.front()))
+        if (_data.containsTables(indices.front()))
             getDataElements(indices.front(), _parser, _data);
 
         // Parse the index
@@ -386,7 +386,7 @@ void Interval::refresh()
         for (size_t i = 0; i < indices.size(); i++)
         {
             // Get possible data elements
-            if (_data.containsTablesOrClusters(indices[i]))
+            if (_data.containsTables(indices[i]))
                 getDataElements(indices[i], _parser, _data);
 
             _parser.SetExpr(indices[i]);

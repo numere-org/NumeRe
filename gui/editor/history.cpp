@@ -212,6 +212,9 @@ void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
             case wxSTC_NSCR_METHOD:
                 _style = m_options->GetSyntaxStyle(Options::METHODS);
                 break;
+            case wxSTC_NSCR_CUSTOM_METHOD:
+                _style = m_options->GetSyntaxStyle(Options::CUSTOM_METHOD);
+                break;
             case wxSTC_NSCR_PREDEFS:
                 _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
                 break;

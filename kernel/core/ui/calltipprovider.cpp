@@ -682,7 +682,7 @@ namespace NumeRe
             sToken = "roof";
 
         if (m_returnUnmatchedTokens
-            || _lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*") != "PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")
+            || _lang.containsString("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*"))
             return addLinebreaks(realignLangString(_lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")), m_maxLineLength);
 
         return CallTip();
@@ -779,23 +779,42 @@ namespace NumeRe
     /// method.
     ///
     /// \param sToken std::string
+    /// \param sType const std::string&
     /// \return CallTip
     ///
     /////////////////////////////////////////////////
-    CallTip CallTipProvider::getMethod(std::string sToken) const
+    CallTip CallTipProvider::getMethod(std::string sToken, const std::string& sType) const
     {
         static const char* pref = "PARSERFUNCS_LISTFUNC_METHOD_";
+        std::string sBaseId = pref + toUpperCase(sToken) + "_";
 
         if (!m_returnUnmatchedTokens
-            && _lang.get(pref + toUpperCase(sToken) + "_*") == pref + toUpperCase(sToken) + "_*")
+            && !_lang.containsString(sBaseId + "*"))
             return CallTip();
 
-        if (_lang.get(pref + toUpperCase(sToken) + "_[VECT]") != pref + toUpperCase(sToken) + "_[VECT]")
-            sToken = "VECT." + _lang.get(pref + toUpperCase(sToken) + "_[VECT]");
-        else if (_lang.get(pref + toUpperCase(sToken) + "_[STRING]") != pref + toUpperCase(sToken) + "_[STRING]")
-            sToken = "STRING." + _lang.get(pref + toUpperCase(sToken) + "_[STRING]");
+        if (_lang.containsString(sBaseId + "[VECT]"))
+            sToken = "VECT." + _lang.get(sBaseId + "[VECT]");
+        else if (sType == "string" && _lang.containsString(sBaseId + "[STRING]"))
+            sToken = "STRING." + _lang.get(sBaseId + "[STRING]");
+        else if (sType == "dictstruct" && _lang.containsString(sBaseId + "[DICT]"))
+            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "category" && _lang.containsString(sBaseId + "[CAT]"))
+            sToken = "CATEGORY." + _lang.get(sBaseId + "[CAT]");
+        else if (sType == "table" && _lang.containsString(sBaseId + "[DATA]"))
+            sToken = "TABLE()." + _lang.get(sBaseId + "[DATA]");
+        else if (sType.starts_with("object."))
+        {
+            std::string sSelector = toUpperCase(sType.substr(7));
+
+            if (_lang.containsString(sBaseId + "[" + sSelector + "]"))
+                sToken = sSelector + "." + _lang.get(sBaseId + "[" + sSelector + "]");
+        }
         else
-            sToken = "TABLE()." + _lang.get(pref + toUpperCase(sToken) + "_[DATA]");
+        {
+            std::string sKey = _lang.getKey(sBaseId + "*");
+            size_t p = sKey.rfind('[')+1;
+            sToken = sKey.substr(p, sKey.length()-1 - p) + "." + _lang.get(sKey);
+        }
 
         CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);
         _cTip.nStart = _cTip.sDefinition.find('.')+1;
@@ -869,12 +888,13 @@ namespace NumeRe
     /// method.
     ///
     /// \param sToken std::string
+    /// \param sType const std::string&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string CallTipProvider::getMethodReturnValue(std::string sToken) const
+    std::string CallTipProvider::getMethodReturnValue(std::string sToken, const std::string& sType) const
     {
-        sToken = getMethod(sToken).sDefinition;
+        sToken = getMethod(sToken, sType).sDefinition;
 
         if (sToken.find("->") != std::string::npos)
             return sToken.substr(sToken.find_first_not_of("-> ", sToken.find("->")));

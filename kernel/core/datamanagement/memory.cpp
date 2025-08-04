@@ -756,10 +756,10 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vTarget->assign(1, mu::Value());
+        vTarget->std::vector<mu::Value>::assign(1, mu::Value());
     else
     {
-        vTarget->assign(_vLine.size()*_vCol.size(), mu::Value());
+        vTarget->std::vector<mu::Value>::assign(_vLine.size()*_vCol.size(), mu::Value());
 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)
@@ -1468,7 +1468,7 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
 
     if (_values.size() == 1)
     {
-        writeSingletonData(_idx, _values.front());
+        writeSingletonData(_idx, _values.get(0));
         return;
     }
 
@@ -1497,12 +1497,12 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
 
                 if (_values.size() > i)
-                    writeData(_idx.row[i], _idx.col[j], _values[i], t);
+                    writeData(_idx.row[i], _idx.col[j], _values.get(i), t);
             }
             else
             {
                 if (_values.size() > j)
-                    writeData(_idx.row[i], _idx.col[j], _values[j]);
+                    writeData(_idx.row[i], _idx.col[j], _values.get(j));
             }
         }
     }

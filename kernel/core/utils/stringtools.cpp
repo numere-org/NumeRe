@@ -26,6 +26,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iterator>
+#include <boost/tokenizer.hpp>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -1041,10 +1042,16 @@ std::string toInternalString(std::string sStr)
             && sStr.compare(i, 4, "\\neq") != 0)
             sStr.replace(i, 2, "\n");
 
+        if (sStr.compare(i, 2, "\\r") == 0
+            && sStr.compare(i, 4, "\\rho") != 0)
+            sStr.replace(i, 2, "\r");
+
         if (sStr.compare(i, 2, "\\\"") == 0)
             sStr.replace(i, 2, "\"");
 
-        if (sStr.compare(i, 2, "\\ ") == 0)
+        if (sStr.compare(i, 2, "\\\\") == 0)
+            sStr.replace(i, 2, "\\");
+        else if (sStr.compare(i, 2, "\\ ") == 0)
             sStr.replace(i, 2, "\\");
     }
 
@@ -2096,8 +2103,10 @@ std::string strRepeat(const std::string& sStr, int nCount)
 /////////////////////////////////////////////////
 std::string replaceControlCharacters(std::string sToModify)
 {
+    replaceAll(sToModify, "\\", "\\\\");
     replaceAll(sToModify, "\n", "\\n");
     replaceAll(sToModify, "\t", "\\t");
+    replaceAll(sToModify, "\r", "\\r");
 
     return sToModify;
 }
@@ -2241,8 +2250,10 @@ std::string encode_base_n(const std::string& sToEncode, bool isFile, int n)
     {
         std::ifstream file(sToEncode);
 
+#ifndef PARSERSTANDALONE
         if (!file.good())
             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sToEncode, sToEncode);
+#endif
 
         // istreambuf_iterators do not skip whitespaces
         std::istreambuf_iterator<char> eos;
@@ -2318,4 +2329,211 @@ std::string decode_base_n(const std::string& sToDecode, int n)
 
     return sDecoded;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for substr()
+///
+/// \param sString const std::string&
+/// \param p size_t
+/// \param len size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string substr_impl(const std::string& sString, size_t p, size_t len)
+{
+    if (!sString.length() || p >= sString.length())
+        return "";
+
+    return sString.substr(std::max(0ULL, p), len);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for split()
+///
+/// \param sString const std::string&
+/// \param c const std::string&
+/// \param keepEmpty bool
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> split_impl(const std::string& sString, const std::string& c, bool keepEmpty)
+{
+    std::vector<std::string> ret;
+
+    if (!sString.length() || !c.length())
+    {
+        ret.emplace_back(sString);
+        return ret;
+    }
+
+    boost::char_separator<char> cSep(c.c_str(), nullptr,
+                                     (keepEmpty ? boost::keep_empty_tokens : boost::drop_empty_tokens));
+    boost::tokenizer<boost::char_separator<char>> tok(sString, cSep);
+
+    for (boost::tokenizer<boost::char_separator<char>>::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    {
+        ret.emplace_back(std::string(*iter));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for strfnd()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = 0;
+
+    return sString.find(sFind, p)+1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for strrfnd()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t strrfnd_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = sString.length();
+
+    return sString.rfind(sFind, p)+1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for strmatch()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = 0;
+
+    return sString.find_first_of(sFind, p)+1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for strrmatch()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = sString.length();
+
+    return sString.find_last_of(sFind, p)+1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for str_not_match()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t str_not_match_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = 0;
+
+    return sString.find_first_not_of(sFind, p)+1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for str_not_rmatch()
+///
+/// \param sString const std::string&
+/// \param sFind const std::string&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind, size_t p)
+{
+    if (!sString.length())
+        return 0u;
+
+    if (p >= sString.length())
+        p = sString.length();
+
+    return sString.find_last_not_of(sFind, p)+1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return true, if the selected character
+/// is an unescaped quotation mark.
+///
+/// \param sString const std::string&
+/// \param pos size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isQuotationMark(const std::string& sString, size_t pos)
+{
+    return sString[pos] == '"' && (!pos || sString[pos-1] != '\\' || (pos > 1 && sString[pos-2] == '\\'));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return true, if the selected character
+/// is an unescaped quotation mark.
+///
+/// \param sString StringView
+/// \param pos size_t
+/// \return bool
+/// \overload
+/////////////////////////////////////////////////
+bool isQuotationMark(StringView sString, size_t pos)
+{
+    return sString[pos] == '"' && (!pos || sString[pos-1] != '\\' || (pos > 1 && sString[pos-2] == '\\'));
+}
+
 

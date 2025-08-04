@@ -404,7 +404,7 @@ std::string Documentation::getArgAtPos(const std::string& sCmd, size_t nPos)
         // mark, which is not escaped by a backslash
         for (size_t i = nPos + 1; i < sCmd.length(); i++)
         {
-            if (sCmd[i] == '"' && sCmd[i - 1] != '\\')
+            if (isQuotationMark(sCmd, i))
             {
                 sArgument = sCmd.substr(nPos+1, i - nPos - 1);
                 break;

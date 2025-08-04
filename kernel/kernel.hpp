@@ -53,6 +53,8 @@
 
 #include "core/utils/tools.hpp"
 
+#include "core/structures.hpp"
+
 
 #ifndef KERNEL_HPP
 #define KERNEL_HPP
@@ -62,24 +64,6 @@
 // the kernel and the GUI
 class NumeReTerminal;
 struct NumeReTask;
-
-
-/////////////////////////////////////////////////
-/// \brief This structure combines a vector of
-/// declared variables including their values and
-/// respective sizes with a set of variable type
-/// counts, which can be used to separate the
-/// single vector in multiple vectors containing
-/// only a single type of variables.
-/////////////////////////////////////////////////
-struct NumeReVariables
-{
-    std::vector<std::string> vVariables;
-    size_t nNumerics;
-    size_t nStrings;
-    size_t nTables;
-    size_t nClusters;
-};
 
 
 /////////////////////////////////////////////////
@@ -152,7 +136,6 @@ class NumeReKernel
         Procedure _procedure;
         NumeReDebugger _debugger;
         NumeRe::WindowManager _manager;
-        NumeRe::Cluster* _ans;
 
         // private member functions for special tasks
         void printResult(const std::string& sLine, bool bScriptRunning);
@@ -260,19 +243,6 @@ class NumeReKernel
         MemoryManager& getMemoryManager()
         {
             return _memoryManager;
-        }
-
-        NumeRe::Cluster& getAns()
-        {
-            if (!_ans)
-                _ans = &_memoryManager.getCluster("ans");
-
-            return *_ans;
-        }
-
-        void setAns(NumeRe::Cluster* ans)
-        {
-            _ans = ans;
         }
 
         mu::Parser& getParser()

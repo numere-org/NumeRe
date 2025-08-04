@@ -271,7 +271,7 @@ void GenericTerminal::handle_calltip(int x, int y)
             _cTip = m_tipProvider.getProcedure(sSyntaxElement);
             break;
         case NumeReSyntax::SYNTAX_METHODS:
-            _cTip = m_tipProvider.getMethod(sSyntaxElement);
+            _cTip = m_tipProvider.getMethod(sSyntaxElement, get_method_root_type(posStart-1, y).first);
             break;
         case NumeReSyntax::SYNTAX_CONSTANT:
             _cTip = m_tipProvider.getConstant(sSyntaxElement);
@@ -302,16 +302,16 @@ void GenericTerminal::handle_calltip(int x, int y)
 ///
 /// \param x int
 /// \param y int
-/// \return std::pair<NumeReSyntax::SyntaxColors, bool>
+/// \return std::pair<std::string, bool>
 ///
 /////////////////////////////////////////////////
-std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_type(int x, int y)
+std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
 {
     // Get the rendered line and the corresponding syntax colors
     std::string sLine = tm.getRenderedString(y);
     std::vector<unsigned short> vColors = tm.getRenderedColors(y);
     bool isVect = false;
-    NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_METHODS;
+    std::string varType = "";
 
     if ((int)vColors.size() <= x || x < 1)
         return std::make_pair(varType, isVect);
@@ -324,31 +324,38 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
         while (posStart > 0 && vColors[posStart-1] == vColors[x-1] && isalnum(sLine[posStart-1]))
             posStart--;
 
-        std::string sVarType = getVariableType(sLine.substr(posStart, x - posStart));
+        varType = getVariableType(sLine.substr(posStart, x - posStart));
+        isVect = varType.find('{') != std::string::npos || varType == "cluster";
 
-        // Examine the variable types
-        varType = sVarType.find("STR") != std::string::npos
-            || sVarType.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
-        isVect = sVarType.find('{') != std::string::npos || sVarType.find("CST") != std::string::npos;
+        if (varType.front() == '{')
+            varType = varType.substr(1, varType.length()-2);
     }
     else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STRING)
-        varType = NumeReSyntax::SYNTAX_STRING;
+        varType = "string";
     else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_METHODS)
     {
         // Examine method return values
         size_t p = sLine.rfind('.', x-1);
-        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1));
+        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1), get_method_root_type(p, y).first);
 
         if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
         {
-            varType = NumeReSyntax::SYNTAX_TABLE;
+            varType = "table";
             isVect = true;
         }
         else
         {
-            varType = sReturnValue.find("STR") != std::string::npos
-                || sReturnValue.find("ARG") != std::string::npos
-                || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+            if (sReturnValue.find("STR") != std::string::npos)
+                varType = "string";
+            else if (sReturnValue.find("CAT") != std::string::npos)
+                varType = "category";
+            else if (sReturnValue.find("DCT") != std::string::npos)
+                varType = "dictstruct";
+            else if (sReturnValue.find("OBJ") != std::string::npos
+                     || sReturnValue.find("ARG") != std::string::npos
+                     || sReturnValue.find("CST") != std::string::npos)
+                varType = "*";
+
             isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
         }
     }
@@ -380,7 +387,7 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
                        && isalnum(sLine[x0-1]))
                 || sLine[x0-1] == '#'
                 || sLine.substr(x0, x-1-x0).find('"') != std::string::npos
-                ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_CLUSTER;
+                ? "string" : "*";
         }
 
         isVect = true;
@@ -417,40 +424,50 @@ std::pair<NumeReSyntax::SyntaxColors, bool> GenericTerminal::get_method_root_typ
                 while (posStart > 0 && vColors[posStart-1] == vColors[x0-1])
                     posStart--;
 
-                std::string sReturnValue = sLine.substr(posStart, x0 - posStart);
+                std::string sSymbolName = sLine.substr(posStart, x0 - posStart);
+                std::string sReturnValue;
 
                 // Determine the type of the color
                 switch (prevStyle)
                 {
                     case NumeReSyntax::SYNTAX_FUNCTION:
-                        sReturnValue = m_tipProvider.getFunctionReturnValue(sReturnValue);
+                        sReturnValue = m_tipProvider.getFunctionReturnValue(sSymbolName);
                         break;
                     case NumeReSyntax::SYNTAX_PROCEDURE:
-                        sReturnValue = m_tipProvider.getProcedureReturnValue(sReturnValue);
+                        sReturnValue = m_tipProvider.getProcedureReturnValue(sSymbolName);
                         break;
                     case NumeReSyntax::SYNTAX_METHODS:
-                        sReturnValue = m_tipProvider.getMethodReturnValue(sReturnValue);
+                        sReturnValue = m_tipProvider.getMethodReturnValue(sSymbolName, get_method_root_type(posStart-1, y).first);
                         break;
                 }
 
                 if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
                 {
-                    varType = NumeReSyntax::SYNTAX_TABLE;
+                    varType = "table";
                     isVect = true;
                 }
                 else
                 {
-                    varType = sReturnValue.find("STR") != std::string::npos
-                        || sReturnValue.find("ARG") != std::string::npos
-                        || sReturnValue.find("CST") != std::string::npos ? NumeReSyntax::SYNTAX_STRING : NumeReSyntax::SYNTAX_STD;
+                    if (sReturnValue.find("STR") != std::string::npos)
+                        varType = "string";
+                    else if (sReturnValue.find("CAT") != std::string::npos)
+                        varType = "category";
+                    else if (sReturnValue.find("DCT") != std::string::npos)
+                        varType = "dictstruct";
+                    else if (sReturnValue.find("OBJ") != std::string::npos)
+                        varType = "object." + sSymbolName;
+                    else if (sReturnValue.find("ARG") != std::string::npos
+                             || sReturnValue.find("CST") != std::string::npos)
+                        varType = "*";
+
                     isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
                 }
             }
             else if (prevStyle == NumeReSyntax::SYNTAX_OPERATOR && sLine[x0-1] == '#')
-                varType = NumeReSyntax::SYNTAX_STRING;
+                varType = "string";
             else if (prevStyle == NumeReSyntax::SYNTAX_STD || prevStyle == NumeReSyntax::SYNTAX_SPECIALVAL)
             {
-                varType = sLine.substr(x0, x-x0) == "()" ? NumeReSyntax::SYNTAX_TABLE : NumeReSyntax::SYNTAX_STRING;
+                varType = sLine.substr(x0, x-x0) == "()" ? "table" : "*";
                 isVect = true;
             }
         }

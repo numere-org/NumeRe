@@ -59,6 +59,7 @@ namespace mu
         private:
 
             typedef ParserToken token_type;
+            std::stack<Variable*> m_indexedVars;
 
         public:
 
@@ -104,8 +105,10 @@ namespace mu
                 noELSE    = 1 << 13,
                 noVO      = 1 << 14,
                 noVC      = 1 << 15,
-                noMETHOD  = 1 << 16,
-                sfSTART_OF_LINE = noOPT | noBC | noVC | noPOSTOP | noASSIGN | noIF | noELSE | noARG_SEP | noMETHOD,
+                noSqO     = 1 << 16,
+                noSqC     = 1 << 17,
+                noMETHOD  = 1 << 18,
+                sfSTART_OF_LINE = noOPT | noBC | noVC | noSqO | noSqC | noPOSTOP | noASSIGN | noIF | noELSE | noARG_SEP | noMETHOD,
                 noANY     = ~0       ///< All of he above flags set
             };
 
@@ -131,6 +134,7 @@ namespace mu
             bool IsVarTok(token_type& a_Tok);
             bool IsUndefVarTok(token_type& a_Tok);
             bool IsString(token_type& a_Tok);
+            bool IsLeftHandSide(int pos) const;
             void Error(EErrorCodes a_iErrc,
                        int a_iPos = -1,
                        const string_type& a_sTok = string_type() ) const;
@@ -154,6 +158,7 @@ namespace mu
             Variable m_fZero;      ///< Dummy value of zero, referenced by undefined variables
             int m_iBrackets;
             int m_iVBrackets;
+            int m_iSqBrackets;
             token_type m_lastTok;
             char_type m_cArgSep;     ///< The character used for separating function arguments
     };

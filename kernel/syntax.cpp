@@ -569,11 +569,12 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         char c_string = '0'+SYNTAX_STRING;
         char c_normal = '0'+SYNTAX_STD;
         c = c_string;
+        size_t firstQ = sCommandLine.find('"');
 
         // Simply alternate the colors
-        for (size_t k = sCommandLine.find('"'); k < sCommandLine.length(); k++)
+        for (size_t k = firstQ; k < sCommandLine.length(); k++)
         {
-            if (c == c_normal && sCommandLine[k] == '"' && (!k || sCommandLine[k-1] != '\\'))
+            if (c == c_normal && isQuotationMark(sCommandLine, k))
             {
                 c = c_string;
                 colors[k] = c;
@@ -582,10 +583,8 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
 
             colors[k] = c;
 
-            if (c == c_string && sCommandLine[k] == '"' && k > sCommandLine.find('"') && sCommandLine[k-1] != '\\')
-            {
+            if (c == c_string && k > firstQ && isQuotationMark(sCommandLine, k))
                 c = c_normal;
-            }
         }
     }
 
@@ -829,12 +828,12 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 ///
 /// \param sFirstChars std::string
 /// \param useSmartSense bool
-/// \param varType NumeReSyntax::SyntaxColors
+/// \param varType const std::string&
 /// \param isVect bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType, bool isVect) const
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, const std::string& varType, bool isVect) const
 {
     std::string sAutoCompList;
 
@@ -849,13 +848,21 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     bool selectAllMethods = selectMethods && !sFirstChars.length();
     std::string methodSelector = ".unknown";
 
-    if (varType == SYNTAX_TABLE)
+    if (varType == "table")
     {
         methodSelector = ".tab";
         isVect = true;
     }
-    else if (varType == SYNTAX_STRING)
+    else if (varType == "string")
         methodSelector = ".str";
+    else if (varType == "dictstruct")
+        methodSelector = ".dict";
+    else if (varType == "category")
+        methodSelector = ".cat";
+    else if (varType.starts_with("object."))
+        methodSelector = varType.substr(6);
+    else if (varType == "*" || varType == "cluster")
+        methodSelector = ".";
 
     // Try to find the correspondig elements in the map
     for (const auto& iter : mAutoCompList)

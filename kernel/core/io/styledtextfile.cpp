@@ -175,7 +175,7 @@ void StyledTextFile::lex()
 
                     while ((pos = vFileContents[i].second.find(sStringMarks, pos)) != std::string::npos)
                     {
-                        if (!pos || vFileContents[i].second[pos-1] != '\\')
+                        if (!pos || vFileContents[i].second[pos-1] != '\\' || (pos > 1 && vFileContents[i].second[pos-2] == '\\'))
                             break;
 
                         pos++;
