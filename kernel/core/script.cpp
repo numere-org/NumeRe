@@ -73,6 +73,11 @@ void Script::openScript(std::string& _sScriptFileName, int nFromLine)
 
     _sScriptFileName = ValidFileName(_sScriptFileName, ".nscr");
 
+    if (isInstallMode)
+        g_logger.info("Installing " + _sScriptFileName + " ...");
+    else
+        g_logger.info("Running " + _sScriptFileName + " ...");
+
     // Open the script, if the script file name exists
     if (_sScriptFileName.length())
     {
@@ -358,26 +363,21 @@ bool Script::handleInstallInformation(string& sScriptCommand)
     }
 
     // Determine, whether the current installation needs additional packages
-    if (sInstallInfoString.find("requirepackages=") != string::npos)
+    if (sInstallInfoString.find("requirepackages=") != std::string::npos)
     {
         // Get the required packages list
-        string sInstallPackages = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requirepackages=")+16);
+        std::string sInstallPackages = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requirepackages=")+16);
 
         // Read all required packages
         while (sInstallPackages.length())
         {
             // Get the next dependency
-            string sPackage = getNextArgument(sInstallPackages, true);
-
-            // Try to find the package in the packages
-            // folder first before using the main folder
-            if (fileExists(ValidFileName("packages/" + sPackage, ".nscr")))
-                sPackage = ValidFileName("packages/" + sPackage, ".nscr");
-            else
-                sPackage = ValidFileName(sPackage, ".nscr");
+            std::string sPackage = getNextArgument(sInstallPackages, true);
 
             if (!sPackage.length())
                 continue;
+
+            g_logger.info("Adding installation dependency: " + sPackage);
 
             // If this is the first package, simply append it
             if (!vInstallPackages.size())
@@ -391,7 +391,7 @@ bool Script::handleInstallInformation(string& sScriptCommand)
     }
 
     // Determine, whether a version of NumeRe is required
-    if (sInstallInfoString.find("requireversion=") != string::npos)
+    if (sInstallInfoString.find("requireversion=") != std::string::npos)
         fRequiredVersion = versionToFloat(getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
 
     // Throw an error, if the current version if NumeRe is too old
@@ -1123,8 +1123,10 @@ bool Script::handleLocalDefinitions(string& sScriptCommand)
 bool Script::handleRepositoryInstall(const std::string& sPkgId)
 {
     std::string sPackageFileName = ValidFileName("packages/" + sPkgId, ".nscr");
-    close();
+    m_script.reset();
     isInstallMode = true;
+
+    g_logger.info("Searching " + sPkgId + " in the package folder ...");
 
     // Search in the local storage first
     if (fileExists(sPackageFileName))
@@ -1133,11 +1135,14 @@ bool Script::handleRepositoryInstall(const std::string& sPkgId)
         return true;
     }
 
+    g_logger.info("Searching " + sPkgId + " in the package repository ...");
+
     NumeReKernel::printPreFmt("|-> PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_SEARCHING", sPkgId));
     PackageInfo pkgInfo = m_repo.find(sPkgId);
 
     if (pkgInfo.repoUrl.length())
     {
+        g_logger.info("Package " + pkgInfo.name + " " + pkgInfo.version + " found: " + pkgInfo.repoUrl);
         NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_FOUND", pkgInfo.name, pkgInfo.version));
 
         if (m_repo.download(pkgInfo.repoUrl, sPackageFileName))
