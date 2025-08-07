@@ -103,11 +103,6 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
-    // Ensure that there's at least a single
-    // matrix operation available
-    if (!containsMatrices(sCmd, _data))
-        throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, SyntaxError::invalid_position);
-
     // Rekursive Ausdruecke ersetzen
     evalRecursiveExpressions(sCmd);
 
@@ -821,6 +816,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
         if (sCmd.find(sMatrixName) == string::npos)
             continue;
 
+        // Prepare an empty internal var for this matrix
+        _parser.SetInternalVar(sMatrixName, Array());
         mDataMatrices[i] = sMatrixName;
 
         // Get the column count from the dimensions of the indices
@@ -836,7 +833,10 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
         if (sCmd.find(sMatrixName) == string::npos)
             continue;
 
+        // Prepare an empty internal var for this matrix
+        _parser.SetInternalVar(sMatrixName, Array());
         mReturnedMatrices[i] = sMatrixName;
+
         nRowCount = std::max(nRowCount, _cache.vReturnedMatrices[i].rows());
         nColCount = std::max(nColCount, _cache.vReturnedMatrices[i].cols());
     }
@@ -851,6 +851,18 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
 
     if (mReturnedMatrices.size() == 1 && isEqualStripped(sCmd, mReturnedMatrices.begin()->second))
         return _cache.vReturnedMatrices[mReturnedMatrices.begin()->first];
+
+    // Set the expression in the parser
+    _parser.SetExpr(prepareExpressionForScalarArguments(sCmd));
+
+    // Get all used variables to obtain the final dimension
+    const mu::varmap_type& usedVars = _parser.GetUsedVar();
+
+    // Find the maximal number of rows used in this expression
+    for (const auto& iter : usedVars)
+    {
+        nRowCount = std::max(nRowCount, iter.second->size());
+    }
 
     // Read now the first column of every matrix in the expression
     // as vector for the parser
@@ -879,15 +891,10 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
         _parser.SetInternalVar(iter.second, _cache.vReturnedMatrices[iter.first].data());
     }
 
-    // Set the expression in the parser
-    _parser.SetExpr(prepareExpressionForScalarArguments(sCmd));
-
     g_logger.debug("Matrix calculation");
 
-    mu::Array v;
-
     // Evaluate the first columns
-    v = _parser.Eval();
+    const mu::Array& v = _parser.Eval();
 
     // Create and return a matrix from the calculated
     // results
