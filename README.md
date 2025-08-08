@@ -80,3 +80,7 @@ We use these tools and frameworks (we also provide a complete setup as a compile
 - Boost
 - wxWidgets
 - Code::Blocks
+
+## Building NumeRe
+
+We have a [dedicated page](https://github.com/numere-org/NumeRe/wiki/HowTo:-Build-NumeRe) with information about how to build NumeRe. There are multiple ways, but we do recommend to use our prepared compiler suite.
