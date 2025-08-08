@@ -358,8 +358,8 @@ std::string formatDuration(double dDuration)
 
     dDuration = std::abs(dDuration);
 
-    int nYears = std::floor(dDuration / (365.0*24*3600));
-    dDuration -= nYears * 365.0*24*3600;
+    int nYears = std::floor(dDuration / (365.25*24*3600));
+    dDuration -= nYears * 365.25*24*3600;
 
     int nWeeks = std::floor(dDuration / (7.0*24*3600));
     dDuration -= nWeeks * 7.0*24*3600;
