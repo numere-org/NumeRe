@@ -115,7 +115,7 @@ static std::string formatUnit(const std::string& sUnit)
 /////////////////////////////////////////////////
 std::string DateTimeColumn::getValueAsString(size_t elem) const
 {
-    if (elem < m_data.size() && !mu::isnan(m_data[elem]))
+    if (elem < m_data.size() && !std::isnan(m_data[elem]))
         return toCmdString(m_data[elem]);
 
     return "nan";
@@ -132,7 +132,7 @@ std::string DateTimeColumn::getValueAsString(size_t elem) const
 /////////////////////////////////////////////////
 std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
 {
-    if (elem < m_data.size() && !mu::isnan(m_data[elem]))
+    if (elem < m_data.size() && !std::isnan(m_data[elem]))
         return toString(to_timePoint(m_data[elem]), 0);
 
     return "nan";
@@ -497,7 +497,7 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 
             for (size_t i = 0; i < m_data.size(); i++)
             {
-                if (!mu::isnan(m_data[i]))
+                if (!std::isnan(m_data[i]))
                     col->setValue(i, toString(to_timePoint(m_data[i]), 0));
             }
 
@@ -509,7 +509,7 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 
             for (size_t i = 0; i < m_data.size(); i++)
             {
-                if (!mu::isnan(m_data[i]))
+                if (!std::isnan(m_data[i]))
                     col->setValue(i, toString(to_timePoint(m_data[i]), 0));
             }
 

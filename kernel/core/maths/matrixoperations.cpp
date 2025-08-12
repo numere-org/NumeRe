@@ -106,6 +106,9 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
     // Rekursive Ausdruecke ersetzen
     evalRecursiveExpressions(sCmd);
 
+    if (sCmd.find_first_not_of(" \t") == std::string::npos)
+        throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, "matop", SyntaxError::invalid_position);
+
     // Target identifizieren
     if (sCmd.find('=') != string::npos
         && sCmd.find('=')

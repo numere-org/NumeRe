@@ -1290,7 +1290,7 @@ mu::Array numfnc_idxtolog(const mu::MultiArgFuncParams& v)
 
     mu::Array maxIdx = numfnc_Max(v);
 
-    if (mu::isnan(maxIdx.front().getNum().asF64()))
+    if (std::isnan(maxIdx.front().getNum().asF64()))
         return mu::Value(false);
 
     mu::Array vLogical;
@@ -2629,7 +2629,7 @@ mu::Array rndfnc_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd, c
 /////////////////////////////////////////////////
 static std::complex<double> erf_impl(const std::complex<double>& x)
 {
-    if (mu::isinf(x.real()) || mu::isnan(x.real()))
+    if (std::isinf(x.real()) || std::isnan(x.real()))
         return NAN;
     return std::erf(x.real());
 }
@@ -2645,7 +2645,7 @@ static std::complex<double> erf_impl(const std::complex<double>& x)
 /////////////////////////////////////////////////
 static std::complex<double> erfc_impl(const std::complex<double>& x)
 {
-    if (mu::isinf(x.real()) || mu::isnan(x.real()))
+    if (std::isinf(x.real()) || std::isnan(x.real()))
         return NAN;
     return std::erfc(x.real());
 }
@@ -2853,7 +2853,7 @@ static std::complex<double> EllipticF_impl(const std::complex<double>& phic, con
     double k = kc.real();
     double phi = phic.real();
 
-    if (mu::isnan(k) || mu::isnan(phi) || mu::isinf(k) || mu::isinf(phi))
+    if (std::isnan(k) || std::isnan(phi) || std::isinf(k) || std::isinf(phi))
         return NAN;
 
     if (k < 0 || k >= 1)
@@ -2891,7 +2891,7 @@ static std::complex<double> EllipticE_impl(const std::complex<double>& phic, con
     double phi = phic.real();
     double k = kc.real();
 
-    if (mu::isnan(k) || mu::isnan(phi) || mu::isinf(k) || mu::isinf(phi))
+    if (std::isnan(k) || std::isnan(phi) || std::isinf(k) || std::isinf(phi))
         return NAN;
 
     if (k < 0 || k >= 1)
@@ -2927,7 +2927,9 @@ static std::complex<double> EllipticE_impl(const std::complex<double>& phic, con
 /////////////////////////////////////////////////
 static std::complex<double> EllipticP_impl(const std::complex<double>& phi, const std::complex<double>& n, const std::complex<double>& k)
 {
-    if (mu::isnan(k.real()) || mu::isnan(phi.real()) || mu::isinf(k.real()) || mu::isinf(phi.real()) || mu::isnan(n.real()) || mu::isinf(n.real()))
+    if (std::isnan(k.real()) || std::isnan(phi.real())
+        || std::isinf(k.real()) || std::isinf(phi.real())
+        || std::isnan(n.real()) || std::isinf(n.real()))
         return NAN;
 
     if (k.real() < 0 || k.real() >= 1)
@@ -2962,7 +2964,7 @@ static std::complex<double> EllipticP_impl(const std::complex<double>& phi, cons
 /////////////////////////////////////////////////
 static std::complex<double> EllipticD_impl(const std::complex<double>& phi, const std::complex<double>& k)
 {
-    if (mu::isnan(k.real()) || mu::isnan(phi.real()) || mu::isinf(k.real()) || mu::isinf(phi.real()))
+    if (std::isnan(k.real()) || std::isnan(phi.real()) || std::isinf(k.real()) || std::isinf(phi.real()))
         return NAN;
 
     if (k.real() < 0 || k.real() >= 1)
@@ -3077,7 +3079,7 @@ mu::Array numfnc_EllipticD(const mu::Array& phi, const mu::Array& k)
 /////////////////////////////////////////////////
 static std::complex<double> beta_impl(const std::complex<double>& a, const std::complex<double>& b)
 {
-    if (mu::isnan(a.real()) || mu::isnan(b.real()) || mu::isinf(a.real()) || mu::isinf(b.real()))
+    if (std::isnan(a.real()) || std::isnan(b.real()) || std::isinf(a.real()) || std::isinf(b.real()))
         return NAN;
 
     if ((::isInt(a) && a.real() <= 0) || (::isInt(b) && b.real() <= 0))
@@ -3209,7 +3211,7 @@ mu::Array numfnc_zeta(const mu::Array& s)
 /////////////////////////////////////////////////
 static std::complex<double> clausen_impl(const std::complex<double>& x)
 {
-    if (mu::isnan(x.real()) || mu::isinf(x.real()))
+    if (std::isnan(x.real()) || std::isinf(x.real()))
         return NAN;
 
     return gsl_sf_clausen(x.real());
@@ -3240,7 +3242,7 @@ mu::Array numfnc_clausen(const mu::Array& x)
 /////////////////////////////////////////////////
 static std::complex<double> digamma_impl(const std::complex<double>& x)
 {
-    if (mu::isnan(x.real()) || mu::isinf(x.real()))
+    if (std::isnan(x.real()) || std::isinf(x.real()))
         return NAN;
 
     if (::isInt(x) && x.real() <= 0.0)
@@ -3278,7 +3280,7 @@ mu::Array numfnc_digamma(const mu::Array& x)
 /////////////////////////////////////////////////
 static std::complex<double> polygamma_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
-    if (mu::isnan(n.real()) || mu::isnan(x.real()) || mu::isinf(n.real()) || mu::isinf(x.real()) || x.real() <= 0 || n.real() < 0)
+    if (std::isnan(n.real()) || std::isnan(x.real()) || std::isinf(n.real()) || std::isinf(x.real()) || x.real() <= 0 || n.real() < 0)
         return NAN;
 
     return gsl_sf_psi_n(intCast(n), x.real());

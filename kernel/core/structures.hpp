@@ -3265,8 +3265,11 @@ struct Point
             return;
         }
 
-        double x1 = (x - origin.x) * cos(dAlpha) - (y - origin.y) * sin(dAlpha) + origin.x;
-        double y1 = (x - origin.x) * sin(dAlpha) + (y - origin.y) * cos(dAlpha) + origin.y;
+        double sina = sin(dAlpha);
+        double cosa = cos(dAlpha);
+
+        double x1 = (x - origin.x) * cosa - (y - origin.y) * sina + origin.x;
+        double y1 = (x - origin.x) * sina + (y - origin.y) * cosa + origin.y;
 
         x = x1;
         y = y1;

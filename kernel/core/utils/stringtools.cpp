@@ -353,19 +353,24 @@ std::string formatDuration(double dDuration)
     if (std::isnan(dDuration))
         return "---";
 
+    auto intCast = [](double dur){ return std::abs(dur - rint(dur)) < 1e-7 ? (int)std::rint(dur) : static_cast<int>(dur);};
     std::string sDuration;
     bool isNegative = dDuration < 0.0;
 
+    constexpr double YEAR = 365.25*24*3600;
+    constexpr double WEEK = 7.0*24*3600;
+    constexpr double DAY = 24.0*3600;
+
     dDuration = std::abs(dDuration);
 
-    int nYears = std::floor(dDuration / (365.25*24*3600));
-    dDuration -= nYears * 365.25*24*3600;
+    int nYears = std::floor(dDuration / YEAR);
+    dDuration -= nYears * YEAR;
 
-    int nWeeks = std::floor(dDuration / (7.0*24*3600));
-    dDuration -= nWeeks * 7.0*24*3600;
+    int nWeeks = std::floor(dDuration / WEEK);
+    dDuration -= nWeeks * WEEK;
 
-    int nDays = std::floor(dDuration / (24.0*3600));
-    dDuration -= nDays * 24.0*3600;
+    int nDays = std::floor(dDuration / DAY);
+    dDuration -= nDays * DAY;
 
     int nHours = std::floor(dDuration / 3600.0);
     dDuration -= nHours * 3600.0;
@@ -375,6 +380,38 @@ std::string formatDuration(double dDuration)
 
     int nSeconds = (int)dDuration;
     dDuration -= nSeconds;
+
+    // There might be a rollover in the decimals, if we
+    // cast them to an integer
+    if (intCast(dDuration*1000) == 1000)
+    {
+        nSeconds++;
+        dDuration = 0;
+
+        if (nSeconds == 60)
+        {
+            nMinutes++;
+            nSeconds = 0;
+        }
+
+        if (nMinutes == 60)
+        {
+            nHours++;
+            nMinutes = 0;
+        }
+
+        if (nHours == 24)
+        {
+            nDays++;
+            nHours = 0;
+        }
+
+        if (nDays == 7)
+        {
+            nWeeks++;
+            nDays = 0;
+        }
+    }
 
     if (isNegative)
         sDuration += "-";
@@ -392,7 +429,6 @@ std::string formatDuration(double dDuration)
 
     if (dDuration > 0.0)
     {
-        auto intCast = [](double dur){ return std::abs(dur - rint(dur)) < 1e-7 ? (int)std::rint(dur) : static_cast<int>(dur);};
         dDuration *= 1000;
         int msec = intCast(dDuration);
         dDuration -= msec;

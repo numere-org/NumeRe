@@ -4644,7 +4644,6 @@ void rotateTable(CommandLineParser& cmdParser)
     delete _source;
     _table->markModified();
     _data.shrink(sTargetTable);
-    g_logger.debug("Dataset rotated.");
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));

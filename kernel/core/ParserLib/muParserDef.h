@@ -309,6 +309,11 @@ namespace mu
 	    return std::isinf(v.real()) || std::isinf(v.imag());
 	}
 
+	inline bool isnan(const std::complex<double>& v)
+	{
+	    return v != v;
+	}
+
 	inline bool isnan(const Value& v)
 	{
 	    return (bool)(v != v) || v.isString();

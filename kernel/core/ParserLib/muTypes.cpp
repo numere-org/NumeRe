@@ -25,7 +25,7 @@ namespace mu
     /// \brief Lookup table for determining the
     /// promoted type of the operation.
     /////////////////////////////////////////////////
-    static constexpr NumericalType PROMOTIONTABLE[] = {
+    static constexpr NumericalType PROMOTIONTABLEADDSUB[] = {
 //		 LOGICAL,  UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64
 /*LOG*/	 I8,	   UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
 /*UI8*/	 UI8,	   UI8, 	 UI16,	   UI32,	 UI64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
@@ -40,6 +40,29 @@ namespace mu
 /*F64*/	 F64,	   F64, 	 F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,      DURATION, DATETIME, CF64, CF64,
 /*DUR*/  DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DATETIME, CF64, CF64,
 /*DTM*/  DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DURATION, CF64, CF64,
+/*CF32*/ CF32,	   CF32,	 CF32,	   CF32,	 CF64,	   CF32,     CF32,	   CF32,	 CF64,	   CF32,	 CF64,	   CF64,     CF64,     CF32, CF64,
+/*CF64*/ CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,     CF64, CF64};
+
+
+    /////////////////////////////////////////////////
+    /// \brief Lookup table for determining the
+    /// promoted type of the operation.
+    /////////////////////////////////////////////////
+    static constexpr NumericalType PROMOTIONTABLEMULDIV[] = {
+//		 LOGICAL,  UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64
+/*LOG*/	 I8,	   UI8,	     UI16,	   UI32,	 UI64,	   I8,	     I16,	   I32,	     I64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
+/*UI8*/	 UI8,	   UI8, 	 UI16,	   UI32,	 UI64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI16*/ UI16,	   UI16, 	 UI16,	   UI32,	 UI64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI32*/ UI32,	   UI32, 	 UI32,	   UI32,	 UI64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*UI64*/ UI64,	   UI64, 	 UI64,	   UI64,	 UI64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DURATION, DATETIME, CF64, CF64,
+/*I8*/	 I8,	   I8, 	     I16,	   I32,	     I64, 	   I8, 	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I16*/	 I16,	   I16, 	 I16,	   I32,	     I64, 	   I16,	     I16,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I32*/	 I32,	   I32, 	 I32,	   I32,	     I64, 	   I32,	     I32,	   I32,	     I64, 	   F32,      F64,      DURATION, DATETIME, CF32, CF64,
+/*I64*/	 I64,	   I64, 	 I64,	   I64,	     I64, 	   I64,	     I64,	   I64,	     I64, 	   F64,      F64,      DURATION, DATETIME, CF64, CF64,
+/*F32*/	 F32,	   F32,	     F32,	   F32,	     F64,	   F32,	     F32,	   F32,	     F64,	   F32,	     F64,      DURATION, DATETIME, CF32, CF64,
+/*F64*/	 F64,	   F64, 	 F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,	   F64,	     F64,      DURATION, DATETIME, CF64, CF64,
+/*DUR*/  DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, DURATION, F64,      F64,      CF64, CF64,
+/*DTM*/  DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, DATETIME, F64,      F64,      CF64, CF64,
 /*CF32*/ CF32,	   CF32,	 CF32,	   CF32,	 CF64,	   CF32,     CF32,	   CF32,	 CF64,	   CF32,	 CF64,	   CF64,     CF64,     CF32, CF64,
 /*CF64*/ CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,	   CF64,	 CF64,	   CF64,	 CF64,	   CF64,     CF64,     CF64, CF64};
 
@@ -130,10 +153,28 @@ namespace mu
     /// \return NumericalType
     ///
     /////////////////////////////////////////////////
-    static NumericalType fastPromote(NumericalType fst, NumericalType scnd)
+    static NumericalType fastPromoteAddSub(NumericalType fst, NumericalType scnd)
     {
-        return PROMOTIONTABLE[fst * AUTO + scnd];
+        return PROMOTIONTABLEADDSUB[fst * AUTO + scnd];
     }
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Provides a faster way to calculate the
+    /// promotion of two different types than using
+    /// TypeInfo.
+    ///
+    /// \param fst NumericalType
+    /// \param scnd NumericalType
+    /// \return NumericalType
+    ///
+    /////////////////////////////////////////////////
+    static NumericalType fastPromoteMulDiv(NumericalType fst, NumericalType scnd)
+    {
+        return PROMOTIONTABLEMULDIV[fst * AUTO + scnd];
+    }
+
 
 
     /////////////////////////////////////////////////
@@ -699,7 +740,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator+(const Numerical& other) const
     {
-        NumericalType promotion = fastPromote(m_type, other.m_type);
+        NumericalType promotion = fastPromoteAddSub(m_type, other.m_type);
 
         if (promotion == LOGICAL && asI64() && other.asI64())
             return Numerical(2LL, I8);
@@ -743,7 +784,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator-(const Numerical& other) const
     {
-        NumericalType promotion = fastPromote(m_type, other.m_type);
+        NumericalType promotion = fastPromoteAddSub(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -771,6 +812,11 @@ namespace mu
         if (m_type <= I64)
             return autoType(i64 / other.asCF64());
 
+        NumericalType promotion = fastPromoteMulDiv(m_type, other.m_type);
+
+        if ((promotion == DURATION || promotion == DATETIME) && other.m_type != DURATION && other.m_type != DATETIME)
+            return Numerical(cf64 / other.asCF64(), promotion);
+
         return autoType(cf64 / other.asCF64());
     }
 
@@ -784,7 +830,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical Numerical::operator*(const Numerical& other) const
     {
-        NumericalType promotion = fastPromote(m_type, other.m_type);
+        NumericalType promotion = fastPromoteMulDiv(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -819,7 +865,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical& Numerical::operator+=(const Numerical& other)
     {
-        NumericalType promotion = fastPromote(m_type, other.m_type);
+        NumericalType promotion = fastPromoteAddSub(m_type, other.m_type);
 
         if (promotion == LOGICAL && asI64() && other.asI64())
         {
@@ -852,7 +898,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical& Numerical::operator-=(const Numerical& other)
     {
-        NumericalType promotion = fastPromote(m_type, other.m_type);
+        NumericalType promotion = fastPromoteAddSub(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -891,7 +937,7 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical& Numerical::operator*=(const Numerical& other)
     {
-        NumericalType promotion = fastPromote(m_type, other.m_type);
+        NumericalType promotion = fastPromoteMulDiv(m_type, other.m_type);
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
@@ -1001,7 +1047,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Numerical::operator==(const Numerical& other) const
     {
-        Numerical::InternalType conversion = getConversion(fastPromote(m_type, other.m_type));
+        Numerical::InternalType conversion = getConversion(fastPromoteAddSub(m_type, other.m_type));
 
         if (conversion == Numerical::INT)
             return asI64() == other.asI64();
@@ -1035,7 +1081,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Numerical::operator<(const Numerical& other) const
     {
-        Numerical::InternalType conversion = getConversion(fastPromote(m_type, other.m_type));
+        Numerical::InternalType conversion = getConversion(fastPromoteAddSub(m_type, other.m_type));
 
         if (conversion == Numerical::INT)
             return asI64() < other.asI64();

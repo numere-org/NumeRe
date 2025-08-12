@@ -178,6 +178,9 @@
 				</Linker>
 			</Target>
 			<Environment>
+				<Variable name="bin" value="$(TARGET_COMPILER_DIR)bin" />
+				<Variable name="inc" value="$(TARGET_COMPILER_DIR)include" />
+				<Variable name="lib" value="$(TARGET_COMPILER_DIR)lib" />
 				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />
 			</Environment>
 		</Build>
@@ -196,6 +199,7 @@
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
 			<Add directory="externals/stduuid" />
+			<Add directory="$(inc)" />
 		</Compiler>
 		<ResourceCompiler>
 			<Add directory="$(wx)/include/" />
@@ -246,6 +250,8 @@
 			<Add library="oleaut32" />
 			<Add library="secur32" />
 			<Add directory="$(wx)/lib/gcc_lib" />
+			<Add directory="$(lib)" />
+			<Add directory="$(bin)" />
 		</Linker>
 		<Unit filename="NumeRe.rc">
 			<Option compilerVar="WINDRES" />

@@ -321,7 +321,7 @@ class GenericValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual bool isValid(int elem) const override
         {
-            if ((size_t)elem >= std::min(m_numElements, m_data.size()) || elem < 0 || mu::isnan(m_data[elem]))
+            if ((size_t)elem >= std::min(m_numElements, m_data.size()) || elem < 0 || mu::isnan((std::complex<double>)m_data[elem]))
                 return false;
 
             return true;
@@ -364,7 +364,7 @@ class GenericValueColumn : public TableColumn
 
                     for (size_t i = 0; i < m_data.size(); i++)
                     {
-                        if (!mu::isnan(m_data[i]))
+                        if (!mu::isnan((std::complex<double>)m_data[i]))
                             col->setValue(i, toString(getValue(i), NumeReKernel::getInstance()->getSettings().getPrecision()));
                     }
 
@@ -376,7 +376,7 @@ class GenericValueColumn : public TableColumn
 
                     for (size_t i = 0; i < m_data.size(); i++)
                     {
-                        if (!mu::isnan(m_data[i]))
+                        if (!mu::isnan((std::complex<double>)m_data[i]))
                             col->setValue(i, toString(getValue(i), NumeReKernel::getInstance()->getSettings().getPrecision()));
                     }
 
@@ -388,7 +388,7 @@ class GenericValueColumn : public TableColumn
 
                     for (size_t i = 0; i < m_data.size(); i++)
                     {
-                        if (!mu::isnan(m_data[i]))
+                        if (!mu::isnan((std::complex<double>)m_data[i]))
                             col->setValue(i, getValue(i));
                     }
 
@@ -400,7 +400,7 @@ class GenericValueColumn : public TableColumn
 
                     for (size_t i = 0; i < m_data.size(); i++)
                     {
-                        if (!mu::isnan(m_data[i]))
+                        if (!mu::isnan((std::complex<double>)m_data[i]))
                             col->setValue(i, getValue(i));
                     }
 

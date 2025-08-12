@@ -1238,7 +1238,9 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = _pInfo.ranges[ZRANGE].middle();
 
     // Resize the matrices to fit in the created image
-    m_manager.resize(nWidth, nHeight);
+    // if this is a cartesian coordinate system
+    if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN && !_pData.getSettings(PlotData::LOG_PARAMETRIC))
+        m_manager.resize(nWidth, nHeight);
 
     // Apply curvilinear coordinates
     if (!_pData.getSettings(PlotData::LOG_PARAMETRIC))

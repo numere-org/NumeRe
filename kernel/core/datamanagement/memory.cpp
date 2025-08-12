@@ -373,7 +373,7 @@ static std::complex<double> nanAvg(const std::vector<std::complex<double>>& valu
     std::complex<double> sum = 0.0;
     double c = 0.0;
 
-    for (std::complex<double> val : values)
+    for (const std::complex<double>& val : values)
     {
         if (!mu::isnan(val))
         {
@@ -401,27 +401,25 @@ static std::complex<double> nanAvg(const std::vector<std::complex<double>>& valu
 /////////////////////////////////////////////////
 std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) const
 {
-    if (isnan(_dLine) || isnan(_dCol))
+    if (std::isnan(_dLine) || std::isnan(_dCol))
         return NAN;
 
     // Find the base index
-    int nBaseLine = intCast(_dLine) + (_dLine < 0 ? -1 : 0);
+    int nBaseRow = intCast(_dLine) + (_dLine < 0 ? -1 : 0);
     int nBaseCol = intCast(_dCol) + (_dCol < 0 ? -1 : 0);
 
     // Get the decimal part of the double indices
-    double x = _dLine - nBaseLine;
+    double x = _dLine - nBaseRow;
     double y = _dCol - nBaseCol;
 
-    // Find the surrounding four entries
-    mu::Value vf00 = readMem(nBaseLine, nBaseCol);
-    mu::Value vf10 = readMem(nBaseLine+1, nBaseCol);
-    mu::Value vf01 = readMem(nBaseLine, nBaseCol+1);
-    mu::Value vf11 = readMem(nBaseLine+1, nBaseCol+1);
+    auto readCmplx = [&](int nRow, int nCol)
+        {return nCol < 0 || nCol >= (int)memArray.size() || !memArray[nCol] ? NAN : memArray[nCol]->getValue(nRow);};
 
-    std::complex<double> f00 = vf00.as_cmplx();
-    std::complex<double> f10 = vf10.as_cmplx();
-    std::complex<double> f01 = vf01.as_cmplx();
-    std::complex<double> f11 = vf11.as_cmplx();
+    // Find the surrounding four entries
+    std::complex<double> f00 = readCmplx(nBaseRow, nBaseCol);
+    std::complex<double> f10 = readCmplx(nBaseRow+1, nBaseCol);
+    std::complex<double> f01 = readCmplx(nBaseRow, nBaseCol+1);
+    std::complex<double> f11 = readCmplx(nBaseRow+1, nBaseCol+1);
 
     // If all are NAN, return NAN
     if (mu::isnan(f00) && mu::isnan(f01) && mu::isnan(f10) && mu::isnan(f11))
@@ -431,10 +429,17 @@ std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) co
     std::complex<double> dNanAvg = nanAvg({f00, f01, f10, f11});
 
     // Otherwise set NAN to zero
-    f00 = mu::isnan(f00) ? dNanAvg : f00;
-    f10 = mu::isnan(f10) ? dNanAvg : f10;
-    f01 = mu::isnan(f01) ? dNanAvg : f01;
-    f11 = mu::isnan(f11) ? dNanAvg : f11;
+    if (mu::isnan(f00))
+        f00 = dNanAvg;
+
+    if (mu::isnan(f10))
+        f10 = dNanAvg;
+
+    if (mu::isnan(f01))
+        f01 = dNanAvg;
+
+    if (mu::isnan(f11))
+        f11 = dNanAvg;
 
     //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
     return f00*(1.0-x)*(1.0-y) + f10*x*(1.0-y) + f01*(1.0-x)*y + f11*x*y;
@@ -711,10 +716,12 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 
     _memCopy->Allocate(_vCol.size());
 
-    if (_vCol.size() * _vLine.size() > 10000)
+    size_t cols = _vCol.size();
+
+    if (cols * _vLine.size() > 10000)
     {
         #pragma omp parallel for
-        for (size_t j = 0; j < _vCol.size(); j++)
+        for (size_t j = 0; j < cols; j++)
         {
             if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
             {
@@ -725,7 +732,7 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
     }
     else
     {
-        for (size_t j = 0; j < _vCol.size(); j++)
+        for (size_t j = 0; j < cols; j++)
         {
             if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
             {
