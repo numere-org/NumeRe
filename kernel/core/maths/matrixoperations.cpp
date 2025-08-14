@@ -820,7 +820,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             continue;
 
         // Prepare an empty internal var for this matrix
-        _parser.SetInternalVar(sMatrixName, Array());
+        _parser.SetInternalVar(sMatrixName, Array(Value(0.0)));
         mDataMatrices[i] = sMatrixName;
 
         // Get the column count from the dimensions of the indices
@@ -837,7 +837,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             continue;
 
         // Prepare an empty internal var for this matrix
-        _parser.SetInternalVar(sMatrixName, Array());
+        _parser.SetInternalVar(sMatrixName, Array(Value(0.0)));
         mReturnedMatrices[i] = sMatrixName;
 
         nRowCount = std::max(nRowCount, _cache.vReturnedMatrices[i].rows());
@@ -858,14 +858,9 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     // Set the expression in the parser
     _parser.SetExpr(prepareExpressionForScalarArguments(sCmd));
 
-    // Get all used variables to obtain the final dimension
-    const mu::varmap_type& usedVars = _parser.GetUsedVar();
-
-    // Find the maximal number of rows used in this expression
-    for (const auto& iter : usedVars)
-    {
-        nRowCount = std::max(nRowCount, iter.second->size());
-    }
+    // Execute once with scalar matrices to obtain the final
+    // dimension of all variables
+    nRowCount = std::max(nRowCount, _parser.Eval().size());
 
     // Read now the first column of every matrix in the expression
     // as vector for the parser
