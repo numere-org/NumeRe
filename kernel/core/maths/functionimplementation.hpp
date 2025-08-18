@@ -74,6 +74,7 @@ mu::Array numfnc_order(const mu::MultiArgFuncParams&);
 mu::Array numfnc_is_equal(const mu::MultiArgFuncParams&);
 mu::Array numfnc_is_ordered(const mu::MultiArgFuncParams&);
 mu::Array numfnc_is_unique(const mu::MultiArgFuncParams&);
+mu::Array numfnc_zip(const mu::MultiArgFuncParams&);
 mu::Array numfnc_pct_inv(const mu::Array& arr, const mu::Array& pct);
 mu::Array numfnc_toRadian(const mu::Array&);
 mu::Array numfnc_toDegree(const mu::Array&);

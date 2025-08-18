@@ -1471,6 +1471,51 @@ mu::Array numfnc_is_unique(const mu::MultiArgFuncParams& arr)
 
 
 /////////////////////////////////////////////////
+/// \brief Function for zipping multiple arrays
+/// into one array of tuples.
+///
+/// \param arr const mu::MultiArgFuncParams&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_zip(const mu::MultiArgFuncParams& arr)
+{
+    // Do nothing, if only one array has been passed
+    if (arr.count() == 1)
+        return arr[0];
+
+    mu::Array zippedTuples;
+
+    size_t nTuples = arr[0].size();
+
+    for (size_t j = 0; j < arr.count(); j++)
+    {
+        nTuples = std::max(nTuples, arr[j].size());
+    }
+
+    zippedTuples.reserve(nTuples);
+
+    for (size_t i = 0; i < nTuples; i++)
+    {
+        mu::Array currentTuple;
+        currentTuple.reserve(arr.count());
+
+        for (size_t j = 0; j < arr.count(); j++)
+        {
+            if (arr[j].get(i).getType() == mu::TYPE_NEUTRAL)
+                currentTuple.push_back(mu::Value());
+            else
+                currentTuple.push_back(arr[j].get(i));
+        }
+
+        zippedTuples.push_back(currentTuple);
+    }
+
+    return zippedTuples;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Function for determining the
 /// corresponding percentile of a passed value
 /// for an array (the value does not have to be
