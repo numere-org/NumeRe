@@ -158,6 +158,7 @@ class CommandLineParser
         std::string getFileParameterValueForSaving(std::string sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
         std::string getParsedParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways = false, bool onlyStringEvaluation = false) const;
         mu::Array getParsedParameterValue(const std::string& sParameter) const;
+        std::vector<mu::Array> getParamsValues() const;
         bool hasParam(const std::string& sParameter) const;
 };
 

@@ -27,3 +27,4 @@ Added	Experimental: the "path" object provides a common interface to generic pat
 Cleaned	"getfileparts()" will now return the host as drive for UNC paths.
 Fixed	Vectorial variables are now supported in "matop", but not fully compatible to inline created vectors using the brace syntax "{x,y,z,...}", because they will not be auto-expanded to matrices if necessary. To resolve this, either wrap the vectorial variable into additional braces or enclose it into an explicit "repmat()" call. This is a known issue and will be resolved in a future version together with the complete rework of "matop".
 Fixed	Installation of package dependencies from the repository directly using only the command line interface now works as expected.
+Applied	It is now possible to use SQL placeholders in SQL statements. The corresponding values can be supplied with the "params=[PARAMLIST]" option.

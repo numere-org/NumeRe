@@ -32,11 +32,29 @@ enum DatabaseType
     DB_ODBC
 };
 
+struct SqlStatement
+{
+    std::string stmt;
+    std::vector<mu::Array> params;
+
+    size_t affectedRows() const
+    {
+        size_t count = 1;
+
+        for (const mu::Array& param : params)
+        {
+            count = std::max(count, param.size());
+        }
+
+        return count;
+    }
+};
+
 int64_t openDbConnection(const std::string& fileName, DatabaseType type = DB_SQLITE);
 int64_t openDbConnection(const std::string& host, const std::string& user, const std::string& password,
-                         const std::string& dbname, size_t port = 0, DatabaseType type = DB_MYSQL, const std::string& driver = "");
+                         const std::string& dbname, size_t port = 0, DatabaseType type = DB_MYSQL, const std::string& driver = "", const std::string& sConnectionString = "");
 bool closeDbConnection(int64_t dbId);
-NumeRe::Table executeSql(int64_t dbId, const std::string& sqlCommand);
+NumeRe::Table executeSql(int64_t dbId, const SqlStatement& statement);
 std::vector<std::string> getOdbcDrivers();
 
 #endif // DBINTERNALS_HPP

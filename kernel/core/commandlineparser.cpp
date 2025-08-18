@@ -664,6 +664,47 @@ mu::Array CommandLineParser::getParsedParameterValue(const std::string& sParamet
 
 
 /////////////////////////////////////////////////
+/// \brief Parses the values within the
+/// "params=[VALUES]" definition and returns
+/// them. If the parameter is not found, an empty
+/// vector is returned.
+///
+/// \return std::vector<mu::Array>
+///
+/////////////////////////////////////////////////
+std::vector<mu::Array> CommandLineParser::getParamsValues() const
+{
+    if (!hasParam("params"))
+        return std::vector<mu::Array>();
+
+    std::string sParams = getParameterValue("params");
+
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    // Function call
+    if (!instance->getDefinitions().call(sParams))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sParams, "");
+
+    // Read data
+    if (instance->getMemoryManager().containsTables(sParams))
+        getDataElements(sParams, instance->getParser(), instance->getMemoryManager());
+
+    StripSpaces(sParams);
+
+    // Numerical evaluation
+    if (sParams.front() == '[' && sParams.back() == ']')
+        instance->getParser().SetExpr(StringView(sParams, 1, sParams.length()-2));
+    else
+        instance->getParser().SetExpr(sParams);
+
+    int nResults = 0;
+    const mu::StackItem* res = instance->getParser().Eval(nResults);
+
+    return mu::make_vector(res, nResults);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simple wrapper around findParameter(),
 /// if used as a boolean flag.
 ///

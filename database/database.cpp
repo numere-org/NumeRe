@@ -81,6 +81,7 @@ void databaseCommand(CommandLineParser& cmdParser)
             std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
             std::string sDatabase = cmdParser.getParsedParameterValueAsString("usedb", "", true);
             std::string sDriver = cmdParser.getParsedParameterValueAsString("driver", "", true);
+            std::string sConnectionString = cmdParser.getParsedParameterValueAsString("connstr", "", true);
             mu::Array port = cmdParser.getParsedParameterValue("port");
 
             cmdParser.setReturnValue(mu::Value(openDbConnection(expression.front().front().printVal(),
@@ -89,7 +90,8 @@ void databaseCommand(CommandLineParser& cmdParser)
                                                                 sDatabase,
                                                                 port.size() ? port.getAsScalarInt() : 0,
                                                                 type,
-                                                                sDriver)));
+                                                                sDriver,
+                                                                sConnectionString)));
         }
         else
             cmdParser.setReturnValue(mu::Value(false));
@@ -97,11 +99,16 @@ void databaseCommand(CommandLineParser& cmdParser)
     else if (expression.front().getCommonType() == mu::TYPE_NUMERICAL && !sType.length() && cmdParser.hasParam("sql"))
     {
         mu::Array sqlCommands = cmdParser.getParsedParameterValue("sql");
+        SqlStatement statement;
+
+        if (cmdParser.hasParam("params"))
+            statement.params = cmdParser.getParamsValues();
 
         for (size_t i = 0; i < sqlCommands.size(); i++)
         {
+            statement.stmt = sqlCommands.get(i).getStr();
             NumeRe::Table result = executeSql(expression.front().getAsScalarInt(),
-                                              sqlCommands.get(i).getStr());
+                                              statement);
 
             // TODO How to handle multiple results for an array of SQL statements
             if (i+1 < sqlCommands.size())
