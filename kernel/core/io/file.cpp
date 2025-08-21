@@ -32,6 +32,7 @@
 #include "../../versioninformation.hpp"
 #include "../version.h"
 #include "../../kernel.hpp"
+#include "../../../common/markup.hpp"
 
 #define DEFAULT_PRECISION 14
 
@@ -1134,8 +1135,8 @@ namespace NumeRe
     {
         // Open the file
         open(std::ios::out | std::ios::trunc);
-        fFileStream << "<!DOCTYPE html>\n<meta charset=\"UTF-8\">\n<html>\n<head>\n<title>Table: " << sTableName << "()</title>\n";
-        fFileStream << "<style>\n\t.NumeRe {\n\t\tfont-family: Arial, Helvetica, sans-serif;\n\t\tborder-collapse: collapse;\n\t\twidth: 100%;\n\t}\n\n\t.NumeRe td, .NumeRe th {\n\t\tborder: 1px solid #ddd;\n\t\tpadding: 8px;\n\t}\n\n\t.NumeRe tr:nth-child(even){background-color: #f2f2f2;}\n\n\t.NumeRe tr:hover {background-color: rgb(192, 227, 248);}\n\n\t.NumeRe th {\n\t\tpadding-top: 12px;\n\t\tpadding-bottom: 12px;\n\t\ttext-align: left;\n\t\tbackground-color: rgb(80, 176, 235);\n\t\tcolor: rgb(226, 242, 252);\n\t}\n</style>\n";
+        fFileStream << "<!DOCTYPE html>\n<meta charset=\"UTF-8\">\n<html>\n<head>\n<title>Table: " << sTableName << "</title>\n";
+        fFileStream << "<style>\n\t.NumeRe {\n\t\tfont-family: Arial, Helvetica, sans-serif;\n\t\tborder-collapse: collapse;\n\t\twidth: 100%;\n\t}\n\n\t.NumeRe td, .NumeRe th {\n\t\tborder: 1px solid #ddd;\n\t\tpadding: 8px;\n\t}\n\n\t.NumeRe tr:nth-child(even){background-color: rgb(226, 242, 252);}\n\n\t.NumeRe tr:hover {background-color: rgb(192, 227, 248);}\n\n\t.NumeRe th {\n\t\tpadding-top: 12px;\n\t\tpadding-bottom: 12px;\n\t\ttext-align: left;\n\t\tbackground-color: rgb(80, 176, 235);\n\t\tcolor: rgb(226, 242, 252);\n\t}\n</style>\n";
         fFileStream << "</head>\n<body>\n<table class=\"NumeRe\">\n\t<tr>\n";
 
         for (int n = 0; n < nCols; n++)
@@ -1170,7 +1171,114 @@ namespace NumeRe
                         fFileStream << ((bool)fileData->at(m)->get(n) ? "&#9745;" : "&#9744;") << "</td>\n";
                     else if (fileData->at(m)->m_type == TableColumn::TYPE_STRING)
                     {
-                        std::string cellValue = fileData->at(m)->get(n).printVal();
+                        std::vector<Markup::Token<std::string>> markupTokens = Markup::decode(fileData->at(m)->get(n).printVal());
+                        std::string cellValue;
+
+                        for (size_t i = 0; i < markupTokens.size(); i++)
+                        {
+                            if (i && markupTokens[i-1].line != markupTokens[i].line)
+                            {
+                                // Close the tags in the correct order
+                                if (!(markupTokens[i].inLine & Markup::EMPH) && i && markupTokens[i-1].inLine & Markup::EMPH)
+                                    cellValue += "</span>";
+
+                                if (!(markupTokens[i].inLine & Markup::BRCKT) && i && markupTokens[i-1].inLine & Markup::BRCKT)
+                                    cellValue += "</span>";
+
+                                if (!(markupTokens[i].inLine & Markup::CODE) && i && markupTokens[i-1].inLine & Markup::CODE)
+                                    cellValue += "</code>";
+
+                                if (!(markupTokens[i].inLine & Markup::BOLD) && i && markupTokens[i-1].inLine & Markup::BOLD)
+                                    cellValue += "</b>";
+
+                                if (!(markupTokens[i].inLine & Markup::ITALICS) && i && markupTokens[i-1].inLine & Markup::ITALICS)
+                                    cellValue += "</i>";
+
+                                if (markupTokens[i-1].line == Markup::H1)
+                                    cellValue += "</h1>";
+                                else if (markupTokens[i-1].line == Markup::H2)
+                                    cellValue += "</h2>";
+                                else if (markupTokens[i-1].line == Markup::H3)
+                                    cellValue += "</h3>";
+                                else if (markupTokens[i-1].line == Markup::UL)
+                                    cellValue += "</li></ul>";
+                            }
+
+                            if (!i || markupTokens[i-1].line != markupTokens[i].line)
+                            {
+                                if (markupTokens[i].line == Markup::H1)
+                                    cellValue += "<h1>";
+                                if (markupTokens[i].line == Markup::H2)
+                                    cellValue += "<h2>";
+                                if (markupTokens[i].line == Markup::H3)
+                                    cellValue += "<h3>";
+                                if (markupTokens[i].line == Markup::UL)
+                                    cellValue += "<ul><li>";
+                            }
+
+                            if (markupTokens[i].inLine & Markup::ITALICS && (!i || !(markupTokens[i-1].inLine & Markup::ITALICS)))
+                                cellValue += "<i>";
+
+                            if (markupTokens[i].inLine & Markup::BOLD && (!i || !(markupTokens[i-1].inLine & Markup::BOLD)))
+                                cellValue += "<b>";
+
+                            if (markupTokens[i].inLine & Markup::CODE && (!i || !(markupTokens[i-1].inLine & Markup::CODE)))
+                                cellValue += "<code style=\"color:#00008B; background-color: #DDDDDD;\">";
+
+                            if (markupTokens[i].inLine & Markup::BRCKT && (!i || !(markupTokens[i-1].inLine & Markup::BRCKT)))
+                                cellValue += "<span style=\"color:#0000FF;\">";
+
+                            if (markupTokens[i].inLine & Markup::EMPH && (!i || !(markupTokens[i-1].inLine & Markup::EMPH)))
+                                cellValue += "<span style=\"background-color: #FFFFA4;\">";
+
+                            // Close the tags in the correct order
+                            if (!(markupTokens[i].inLine & Markup::EMPH) && i && markupTokens[i-1].inLine & Markup::EMPH)
+                                cellValue += "</span>";
+
+                            if (!(markupTokens[i].inLine & Markup::BRCKT) && i && markupTokens[i-1].inLine & Markup::BRCKT)
+                                cellValue += "</span>";
+
+                            if (!(markupTokens[i].inLine & Markup::CODE) && i && markupTokens[i-1].inLine & Markup::CODE)
+                                cellValue += "</code>";
+
+                            if (!(markupTokens[i].inLine & Markup::BOLD) && i && markupTokens[i-1].inLine & Markup::BOLD)
+                                cellValue += "</b>";
+
+                            if (!(markupTokens[i].inLine & Markup::ITALICS) && i && markupTokens[i-1].inLine & Markup::ITALICS)
+                                cellValue += "</i>";
+
+                            cellValue += markupTokens[i].text;
+                        }
+
+                        // Close the tags in the correct order
+                        if (markupTokens.back().inLine & Markup::EMPH)
+                            cellValue += "</span>";
+
+                        if (markupTokens.back().inLine & Markup::BRCKT)
+                            cellValue += "</span>";
+
+                        if (markupTokens.back().inLine & Markup::CODE)
+                            cellValue += "</code>";
+
+                        if (markupTokens.back().inLine & Markup::BOLD)
+                            cellValue += "</b>";
+
+                        if (markupTokens.back().inLine & Markup::ITALICS)
+                            cellValue += "</i>";
+
+                        // Close remaining open sections
+                        if (markupTokens.back().line == Markup::H1)
+                            cellValue += "</h1>";
+                        else if (markupTokens.back().line == Markup::H2)
+                            cellValue += "</h2>";
+                        else if (markupTokens.back().line == Markup::H3)
+                            cellValue += "</h3>";
+                        else if (markupTokens.back().line == Markup::UL)
+                            cellValue += "</li></ul>";
+
+                        replaceAll(cellValue, "</ul><ul>", "");
+                        replaceAll(cellValue, "\n<ul>", "<ul>");
+                        replaceAll(cellValue, "\n</li>", "</li>");
                         replaceAll(cellValue, "\n", "<br/>");
                         fFileStream << ansiToUtf8(cellValue) << "</td>\n";
                     }

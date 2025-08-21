@@ -9,7 +9,7 @@ Added	A duration type is now available to increase the date-time logic.
 Added	Functions for base-n encoding "encode_base_n()" and decoding "decode_base_n()" have been added.
 Cleaned	Histograms can now only be calculated from 32 columns or less or for a whole grid at once using the "asgrid" option.
 Fixed	The editor TAB setting is now applied completely and correctly to all editor instances.
-Added	Inserted a possible fix for the inresponsive MySQL server.
+Added	Inserted a possible fix for the unresponsive MySQL server.
 Fixed	Corrected problematic situations, where function might have x^0 in their formal definitions, which should be evaluted to 1 even if x == 0.
 Cleaned	The autocompletion now returns string-parsed vars as their original type.
 Fixed	Table methods were not handled correctly, if they are combined with "print". This was resolved.
@@ -29,3 +29,4 @@ Fixed	Vectorial variables are now supported in "matop", but not fully compatible
 Fixed	Installation of package dependencies from the repository directly using only the command line interface now works as expected.
 Applied	It is now possible to use SQL placeholders in SQL statements. The corresponding values can be supplied with the "params=[PARAMLIST]" option.
 New	The function "zip()" combines multiple arrays elementwise into embedded clusters of the returned cluster.
+Added	HTML exports of tables will now also parse simplified markdown syntax, so that headlines, code segments, bold and italic text is possible.

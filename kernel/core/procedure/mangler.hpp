@@ -86,6 +86,8 @@ class Mangler
         {
             if (sMangledName.starts_with("_~") && sMangledName.find("~~", 3) != std::string::npos)
                 return sMangledName.substr(sMangledName.rfind("~~")+2);
+
+            return sMangledName;
         }
 
         /////////////////////////////////////////////////

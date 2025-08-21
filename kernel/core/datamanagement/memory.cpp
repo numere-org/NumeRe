@@ -33,6 +33,7 @@
 #include "../maths/statslogic.hpp"
 #include "../maths/matdatastructures.hpp"
 #include "../maths/units.hpp"
+#include "../procedure/mangler.hpp"
 
 #ifdef __GNUWIN64__
 #define MAX_TABLE_COLS (INT_MAX-1)/2
@@ -2401,7 +2402,7 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
     // in the file
     file->setDimensions(lines, cols);
     file->setData(&memArray, lines, cols);
-    file->setTableName(sTableName);
+    file->setTableName(Mangler::demangleName(sTableName));
     file->setTextfilePrecision(nPrecision);
 
     // If the file type is a NumeRe data file, then

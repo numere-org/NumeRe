@@ -820,7 +820,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             continue;
 
         // Prepare an empty internal var for this matrix
-        _parser.SetInternalVar(sMatrixName, Array(Value(0.0)));
+        _parser.SetInternalVar(sMatrixName, Array(Value(1.0)));
         mDataMatrices[i] = sMatrixName;
 
         // Get the column count from the dimensions of the indices
@@ -837,7 +837,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
             continue;
 
         // Prepare an empty internal var for this matrix
-        _parser.SetInternalVar(sMatrixName, Array(Value(0.0)));
+        _parser.SetInternalVar(sMatrixName, Array(Value(1.0)));
         mReturnedMatrices[i] = sMatrixName;
 
         nRowCount = std::max(nRowCount, _cache.vReturnedMatrices[i].rows());

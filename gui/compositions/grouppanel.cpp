@@ -18,6 +18,7 @@
 
 #include "grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../common/markup.hpp"
 
 BEGIN_EVENT_TABLE(TextField, wxTextCtrl)
     EVT_TEXT_URL(-1, TextField::OnUrlClick)
@@ -50,200 +51,64 @@ void TextField::SetMarkupText(const wxString& text)
     attr.SetBackgroundColour(*wxWHITE);
     attr.SetLeftIndent(0);
     SetDefaultStyle(attr);
-    size_t lastPos = 0;
 
-    size_t highlightLevel = 0;
+    std::vector<Markup::Token<wxString>> markupTokens = Markup::decode(text);
 
-    bool lineMode = false;
-    bool codeMode = false;
-    bool startOfLine = true;
-    bool emph = false;
-
-    for (size_t i = 0; i < text.size(); i++)
+    for (size_t i = 0; i < markupTokens.size(); i++)
     {
-        if (i && text[i-1] == '\n')
-            startOfLine = true;
+        attr.SetTextColour(*wxBLACK);
+        attr.SetBackgroundColour(*wxWHITE);
+        attr.SetFont(defaultFont);
 
-        if (codeMode)
-        {
-            if (text[i] == '`')
-            {
-                AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = i+1;
-                codeMode = false;
-                attr.SetFont(defaultFont);
-                attr.SetTextColour(*wxBLACK);
-                attr.SetBackgroundColour(*wxWHITE);
-                SetDefaultStyle(attr);
-            }
-
-            continue;
-        }
-
-        if (startOfLine)
-        {
-            if (text.substr(i, 3) == "###")
-            {
-                AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = text.find_first_not_of("# ", i);
-
-                lineMode = true;
-                attr.SetFont(defaultFont.Italic());
-                attr.SetFontSize(defaultFont.GetPointSize()+2);
-
-                SetDefaultStyle(attr);
-                i += 2;
-            }
-            else if (text.substr(i, 2) == "##")
-            {
-                AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = text.find_first_not_of("# ", i);
-
-                lineMode = true;
-                attr.SetFontSize(defaultFont.GetPointSize()+4);
-                SetDefaultStyle(attr);
-                i++;
-            }
-            else if (text[i] == '#')
-            {
-                AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = text.find_first_not_of("# ", i);
-
-                lineMode = true;
-                //attr.SetFont(defaultFont.Bold());
-                attr.SetFontUnderlined(true);
-                attr.SetFontSize(defaultFont.GetPointSize()+6);
-
-                SetDefaultStyle(attr);
-            }
-            else if (text.substr(i, 2) == "- ")
-            {
-                AppendText(text.substr(lastPos, i - lastPos));
-                lastPos = i+1;
-
-                lineMode = true;
-                attr.SetLeftIndent(30, 20);
-
-                SetDefaultStyle(attr);
-                AppendText(L"\u2022");
-            }
-        }
-
-        if (text[i] == '[')
-        {
-            AppendText(text.substr(lastPos, i - lastPos));
-            lastPos = i;
-            attr.SetTextColour(m_highlightColour);
-            SetDefaultStyle(attr);
-        }
-        else if (text[i] == ']')
-        {
-            AppendText(text.substr(lastPos, i + 1 - lastPos));
-            lastPos = i+1;
-            attr.SetTextColour(*wxBLACK);
-            SetDefaultStyle(attr);
-        }
-        else if (text[i] == '\n' && lineMode)
-        {
-            AppendText(text.substr(lastPos, i + 1 - lastPos));
-            lastPos = i+1;
-            lineMode = false;
-            attr.SetFont(defaultFont);
+        if (markupTokens[i].line == Markup::PARAGRAPH)
             attr.SetLeftIndent(0);
+        else if (markupTokens[i].line == Markup::H1)
+        {
+            attr.SetFontUnderlined(true);
+            attr.SetFontSize(defaultFont.GetPointSize()+6);
+        }
+        else if (markupTokens[i].line == Markup::H2)
+        {
+            attr.SetFontSize(defaultFont.GetPointSize()+4);
             SetDefaultStyle(attr);
         }
-        else if (text[i] == '`')
+        else if (markupTokens[i].line == Markup::H3)
         {
-            AppendText(text.substr(lastPos, i - lastPos));
-            lastPos = i+1;
-            codeMode = true;
+            attr.SetFont(defaultFont.Italic());
+            attr.SetFontSize(defaultFont.GetPointSize()+2);
+        }
+        else if (markupTokens[i].line == Markup::UL && (!i || markupTokens[i-1].line != Markup::UL))
+        {
+            attr.SetLeftIndent(30, 20);
+            SetDefaultStyle(attr);
+            AppendText(L"\u2022");
+        }
+
+        if (markupTokens[i].inLine & Markup::ITALICS && markupTokens[i].inLine & Markup::BOLD)
+            attr.SetFont(defaultFont.Italic().Bold());
+        else if (markupTokens[i].inLine & Markup::ITALICS)
+            attr.SetFont(defaultFont.Italic());
+        else if (markupTokens[i].inLine & Markup::BOLD)
+            attr.SetFont(defaultFont.Bold());
+
+        if (markupTokens[i].inLine & Markup::BRCKT)
+            attr.SetTextColour(m_highlightColour);
+
+        if (markupTokens[i].inLine & Markup::EMPH)
+            attr.SetBackgroundColour(wxColor(255,255,164));
+
+        if (markupTokens[i].inLine & Markup::CODE)
+        {
             wxFont font;
             font.SetNativeFontInfoUserDesc("consolas");
             attr.SetFont(font);
             attr.SetTextColour(wxColour(0,0,100));
             attr.SetBackgroundColour(wxColour(240,240,240));
-            SetDefaultStyle(attr);
-        }
-        else if (text.substr(i, 3) == "***" && (highlightLevel == 3 || (text.length() > i+3 && !std::isblank(text[i+3]))))
-        {
-            AppendText(text.substr(lastPos, i - lastPos));
-            lastPos = i+3;
-
-            if (highlightLevel == 0)
-            {
-                highlightLevel = 3;
-                attr.SetFont(defaultFont.Bold().Italic());
-            }
-            else if (highlightLevel == 3)
-            {
-                highlightLevel = 0;
-                attr.SetFont(defaultFont);
-            }
-
-            SetDefaultStyle(attr);
-            i += 2;
-        }
-        else if (text.substr(i, 2) == "**" && (highlightLevel == 2 || (text.length() > i+2 && !std::isblank(text[i+2]))))
-        {
-            AppendText(text.substr(lastPos, i - lastPos));
-            lastPos = i+2;
-
-            if (highlightLevel == 0)
-            {
-                highlightLevel = 2;
-                attr.SetFont(defaultFont.Bold());
-            }
-            else if (highlightLevel == 2)
-            {
-                highlightLevel = 0;
-                attr.SetFont(defaultFont);
-            }
-
-            SetDefaultStyle(attr);
-            i++;
-        }
-        else if (text[i] == '*' && (highlightLevel == 1 || (text.length() > i+1 && !std::isblank(text[i+1]))))
-        {
-            AppendText(text.substr(lastPos, i - lastPos));
-            lastPos = i+1;
-
-            if (highlightLevel == 0)
-            {
-                highlightLevel = 1;
-                attr.SetFont(defaultFont.Italic());
-            }
-            else if (highlightLevel == 1)
-            {
-                highlightLevel = 0;
-                attr.SetFont(defaultFont);
-            }
-
-            SetDefaultStyle(attr);
-        }
-        else if (text.substr(i, 2) == "==" && (emph || (text.length() > i+2 && !std::isblank(text[i+2]))))
-        {
-            AppendText(text.substr(lastPos, i - lastPos));
-            lastPos = i+2;
-
-            if (!emph)
-            {
-                emph = true;
-                attr.SetBackgroundColour(wxColor(255,255,164));
-            }
-            else if (emph)
-            {
-                emph = false;
-                attr.SetBackgroundColour(*wxWHITE);
-            }
-
-            SetDefaultStyle(attr);
-            i++;
         }
 
-        startOfLine = false;
+        SetDefaultStyle(attr);
+        AppendText(markupTokens[i].text);
     }
-
-    AppendText(text.substr(lastPos));
 }
 
 
