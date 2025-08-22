@@ -1124,7 +1124,7 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
         if (!bAutoLoad && _option.systemPrints())
         {
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-            NumeReKernel::print(LineBreak(_lang.get("DEFINE_DONE_LOADING", toString(mFunctionsMap.size())), _option));
+            NumeReKernel::print(_lang.get("DEFINE_DONE_LOADING", toString(mFunctionsMap.size())));
         }
 
     }

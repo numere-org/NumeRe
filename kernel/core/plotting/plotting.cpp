@@ -461,7 +461,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         }
 
         if (!_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints())
-            NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
+            NumeReKernel::printPreFmt("|   " + _lang.get("PLOT_SAVE_LOCATION", sOutputName) + "\n");
     }
 }
 

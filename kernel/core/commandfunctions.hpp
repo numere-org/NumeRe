@@ -1137,8 +1137,8 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
     }
 
     NumeReKernel::printPreFmt("|\n");
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"), _option));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"));
     NumeReKernel::toggleTableStatus();
     make_hline();
     return;
@@ -1216,8 +1216,8 @@ static void listLogicalOperators(const Settings& _option)
         NumeReKernel::printPreFmt(toSystemCodePage("|   " + vLogicals[i]) + "\n");
 
     NumeReKernel::printPreFmt(toSystemCodePage("|\n"));
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE1"), _option));
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE2"), _option));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE1"));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE2"));
     NumeReKernel::toggleTableStatus();
     make_hline();
     return;
@@ -1407,8 +1407,8 @@ static void listConstants(const Parser& _parser, const Settings& _option)
         }
     }
     NumeReKernel::printPreFmt("|\n");
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE1"), _option));
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE2"), _option));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE1"));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE2"));
     NumeReKernel::toggleTableStatus();
     make_hline();
     return;
@@ -1444,8 +1444,8 @@ static void listCommands(const Settings& _option)
     }
 
     NumeReKernel::printPreFmt("|\n");
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"), _option));
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE2"), _option));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE2"));
     NumeReKernel::toggleTableStatus();
     make_hline();
 }
@@ -1527,7 +1527,7 @@ static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
     printUnits("1'n",   "(nano)",             "---",           "1e-9      ---", _option.getWindow());
 
     NumeReKernel::printPreFmt("|\n");
-    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTUNITS_FOOTNOTE"), _option));
+    NumeReKernel::print(_lang.get("PARSERFUNCS_LISTUNITS_FOOTNOTE"));
     NumeReKernel::toggleTableStatus();
     make_hline();
 
@@ -2001,7 +2001,7 @@ static CommandReturnValues swapTables(string& sCmd, MemoryManager& _data, Settin
         _data.swapTables(_data.matchTableAsParameter(sCmd, '='), sArgument);
 
         if (_option.systemPrints())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchTableAsParameter(sCmd, '='), sArgument), _option) );
+            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchTableAsParameter(sCmd, '='), sArgument));
     }
     else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
     {
@@ -2030,7 +2030,7 @@ static CommandReturnValues swapTables(string& sCmd, MemoryManager& _data, Settin
         _data.swapTables(sCmd, sArgument);
 
         if (_option.systemPrints())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCmd, sArgument), _option) );
+            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCmd, sArgument));
     }
 
     return COMMAND_PROCESSED;
@@ -2139,7 +2139,7 @@ static CommandReturnValues cmd_find(string& sCmd)
         doc_SearchFct(cmdParser.getParameterList(), _option);
     else
     {
-        NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ"), _option));
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ"));
         doc_Help("find", _option);
     }
 
@@ -2556,7 +2556,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print(LineBreak("VARLIST: " + getVarList("vars", _parser, _data, _option), _option, false));
+        NumeReKernel::print("VARLIST: " + getVarList("vars", _parser, _data, _option));
         return COMMAND_PROCESSED;
     }
     else if (findSettingOption(sCmd, "stringlist"))
@@ -2571,7 +2571,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print(LineBreak("STRINGLIST: " + getVarList("strings", _parser, _data, _option), _option, false));
+        NumeReKernel::print("STRINGLIST: " + getVarList("strings", _parser, _data, _option));
         return COMMAND_PROCESSED;
     }
     else if (findSettingOption(sCmd, "numlist"))
@@ -2586,7 +2586,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print(LineBreak("NUMLIST: " + getVarList("nums", _parser, _data, _option), _option, false));
+        NumeReKernel::print("NUMLIST: " + getVarList("nums", _parser, _data, _option));
         return COMMAND_PROCESSED;
     }
     else if (findSettingOption(sCmd, "plotparams"))
@@ -2601,7 +2601,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(), _option, false));
+        NumeReKernel::print("PLOTPARAMS: " + _pData.getParams());
         return COMMAND_PROCESSED;
     }
 
@@ -3682,14 +3682,14 @@ static CommandReturnValues cmd_set(string& sCmd)
         {
             if (_option.isDeveloperMode())
             {
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_INACTIVE"), _option) );
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_INACTIVE"));
                 mSettings[SETTING_B_DEVELOPERMODE].active() = false;
                 _parser.EnableDebugDump(false, false);
                 g_logger.setLoggingLevel(Logger::LVL_INFO);
             }
             else
             {
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_ACTIVE"), _option) );
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_ACTIVE"));
                 sArgument = "";
 
                 do
@@ -3702,7 +3702,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 if (sArgument == getVersionName())
                 {
                     mSettings[SETTING_B_DEVELOPERMODE].active() = true;
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS"), _option) );
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS"));
                     _parser.EnableDebugDump(true, true);
                     g_logger.setLoggingLevel(Logger::LVL_DEBUG);
                 }
@@ -3988,7 +3988,7 @@ static CommandReturnValues cmd_move(string& sCmd)
             if (moveData(cmdParser))
             {
                 if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_MOVEDATA_SUCCESS"), _option) );
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEDATA_SUCCESS"));
             }
             else
                 throw SyntaxError(SyntaxError::CANNOT_MOVE_DATA, sCmd, SyntaxError::invalid_position);
@@ -4245,7 +4245,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, samples, dir, sFilter))
         {
             if (_option.systemPrints())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")));
         }
         else
             throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
@@ -4351,7 +4351,7 @@ static CommandReturnValues cmd_rename(string& sCmd)
         _data.renameTable(_data.matchTableAsParameter(sCmd, '='), sArgument);
 
         if (_option.systemPrints())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
+            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument));
     }
     else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
     {
@@ -4380,7 +4380,7 @@ static CommandReturnValues cmd_rename(string& sCmd)
         _data.renameTable(sArgument, sCmd);
 
         if (_option.systemPrints())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sCmd), _option) );
+            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sCmd));
     }
 
     return COMMAND_PROCESSED;
@@ -4435,7 +4435,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, dir))
         {
             if (_option.systemPrints())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")));
         }
         else
             throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());

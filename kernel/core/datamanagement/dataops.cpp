@@ -169,7 +169,7 @@ void append_data(CommandLineParser& cmdParser)
 
         // Inform the user and return
         if (!_data.isEmpty("data") && _option.systemPrints())
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sFileList, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option));
+            NumeReKernel::print(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sFileList, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
         return;
     }
@@ -202,7 +202,7 @@ void append_data(CommandLineParser& cmdParser)
 
     // Inform the user
     if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
-        NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
+        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 }
 
 
@@ -251,10 +251,10 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 
         // Inform the user, if printing is allowed
         if (_option.systemPrints())
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_SUCCESS"), _option));
+            NumeReKernel::print(_lang.get("BUILTIN_CLEARCACHE_SUCCESS"));
     }
     else if (_option.systemPrints())
-        NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_EMPTY"), _option));
+        NumeReKernel::print(_lang.get("BUILTIN_CLEARCACHE_EMPTY"));
 }
 
 

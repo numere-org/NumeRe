@@ -2341,7 +2341,7 @@ void taylor(CommandLineParser& cmdParser)
     // Extract the parameter list
     if (!cmdParser.getParameterList().length())
     {
-        NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_TAYLOR_MISSINGPARAMS"), _option));
+        NumeReKernel::print(_lang.get("PARSERFUNCS_TAYLOR_MISSINGPARAMS"));
         return;
     }
 
@@ -2391,7 +2391,7 @@ void taylor(CommandLineParser& cmdParser)
     // Ensure that the expression uses the selected variable
     if (findVariableInExpression(sExpr, sVarName) == std::string::npos)
     {
-        NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_TAYLOR_CONSTEXPR", sVarName), _option));
+        NumeReKernel::print(_lang.get("PARSERFUNCS_TAYLOR_CONSTEXPR", sVarName));
         return;
     }
 
@@ -2935,9 +2935,9 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (_option.systemPrints())
     {
         if (!_fft.bInverseTrafo)
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_fft.cols)) + " ", _option, 0));
+            NumeReKernel::printPreFmt("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_fft.cols)) + " ");
         else
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_fft.cols)) + " ", _option, 0));
+            NumeReKernel::printPreFmt("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_fft.cols)) + " ");
     }
 
     if (bIs2DFFT)
@@ -3072,9 +3072,9 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
             sExplType += "BSpline";
 
         if (!bInverseTrafo)
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_WAVELET_TRANSFORMING", sExplType) + " ", _option, 0));
+            NumeReKernel::printPreFmt("|-> " + _lang.get("PARSERFUNCS_WAVELET_TRANSFORMING", sExplType) + " ");
         else
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_WAVELET_INVERSE_TRANSFORMING", sExplType) + " ", _option, 0));
+            NumeReKernel::printPreFmt("|-> " + _lang.get("PARSERFUNCS_WAVELET_INVERSE_TRANSFORMING", sExplType) + " ");
     }
 
     for (size_t i = 0; i < (size_t)_mem->getLines(); i++)

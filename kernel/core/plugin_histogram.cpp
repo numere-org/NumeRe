@@ -779,7 +779,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         if (_option.systemPrints() && !bSilent)
         {
             NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-            NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
+            NumeReKernel::printPreFmt("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath) + "\n");
         }
     }
 
@@ -1699,7 +1699,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         if (_option.systemPrints() && !bSilent)
             NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
         if (!_out.isFile() && _option.systemPrints() && !bSilent)
-            NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
+            NumeReKernel::printPreFmt("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath) + "\n");
     }
 }
 

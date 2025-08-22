@@ -1184,7 +1184,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                         {
                             if (_script.wasLastCommand())
                             {
-                                print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                                print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
                                 _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
                                 checkInternalStates();
@@ -1207,7 +1207,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                             if (c == _lang.YES())
                             {
                                 _memoryManager.saveToCacheFile(); // MAIN_CACHE_SAVED
-                                print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
+                                print(_lang.get("MAIN_CACHE_SAVED"));
                                 Sleep(500);
                             }
                             else
@@ -1339,7 +1339,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
             make_hline();
-            print(LineBreak(_lang.get("ERR_STD_BADALLOC", getVersion()), _option, false, 4));
+            print(_lang.get("ERR_STD_BADALLOC", getVersion()));
             make_hline();
             sendErrorNotification();
 
@@ -1374,7 +1374,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             {
                 print(toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")));
                 make_hline();
-                print(LineBreak(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false, 4));
+                print(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"));
                 g_logger.warning("Process was cancelled by user");
             }
             else
@@ -1801,7 +1801,7 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
         {
             // Abort the compose block
             sPlotCompose = "";
-            print(LineBreak(_lang.get("PARSER_ABORTED"), _option));
+            print(_lang.get("PARSER_ABORTED"));
             return false;
         }
         else if (findCommand(sLine).sString != "endcompose")
@@ -1881,7 +1881,7 @@ bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::str
     if (_procedure.is_writing() || sCurrentCommand == "procedure")
     {
         if (!_procedure.writeProcedure(sLine))
-            print(LineBreak(_lang.get("PARSER_CANNOTCREATEPROC"), _option));
+            print(_lang.get("PARSER_CANNOTCREATEPROC"));
 
         if (!(_script.isValid() && _script.isOpen()) && !commandQueue.size())
         {
@@ -1958,11 +1958,11 @@ bool NumeReKernel::uninstallPlugin(const std::string& sLine, const std::string& 
                 }
             }
 
-            print(LineBreak(_lang.get("PARSER_PLUGINDELETED"), _option));
+            print(_lang.get("PARSER_PLUGINDELETED"));
             installationDone();
         }
         else
-            print(LineBreak(_lang.get("PARSER_PLUGINNOTFOUND"), _option));
+            print(_lang.get("PARSER_PLUGINNOTFOUND"));
 
         return true;
     }
@@ -2256,7 +2256,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
             {
                 if (_script.wasLastCommand())
                 {
-                    print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                    print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
                     _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
                     checkInternalStates();
@@ -2278,7 +2278,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
             if (_procedure.getReturnSignal())
             {
                 _script.returnCommand();
-                print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
 
                 checkInternalStates();
 
@@ -2301,7 +2301,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
             // already re-opened due to chained installations.
             if (!_script.isOpen())
             {
-                print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
                 checkInternalStates();
             }
             else
@@ -2480,7 +2480,7 @@ void NumeReKernel::saveData()
     {
         g_logger.info("Saving latest table changes.");
         _memoryManager.saveToCacheFile();
-        print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
+        print(_lang.get("MAIN_CACHE_SAVED"));
         Sleep(500);
     }
 

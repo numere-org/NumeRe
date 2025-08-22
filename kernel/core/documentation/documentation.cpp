@@ -317,7 +317,7 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
     {
         make_hline();
-        NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic), _option));
+        NumeReKernel::print(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic));
         make_hline();
     }
     else if (findParameter(__sTopic, "tex"))

@@ -245,7 +245,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     removeObsoleteParentheses(fitData.sFitFunction);
 
     if (_option.systemPrints())
-        NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FIT_FITTING", sFuncDisplay) + " ", _option, 0));
+        NumeReKernel::printPreFmt("|-> " + _lang.get("PARSERFUNCS_FIT_FITTING", sFuncDisplay) + " ");
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
@@ -1319,7 +1319,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
     if (_option.systemPrints())
     {
         NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-        NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_CHIMAPLOCATION", fitData.sChiMap), _option));
+        NumeReKernel::print(_lang.get("PARSERFUNCS_FIT_CHIMAPLOCATION", fitData.sChiMap));
     }
 
     bool bDefinitionSuccess = false;
