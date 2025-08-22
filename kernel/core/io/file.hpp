@@ -1628,7 +1628,7 @@ namespace NumeRe
             void writeDummyHeader();
             void writeFile();
             void writeColumn(const TblColPtr& col);
-            void readHeader();
+            void readHeader(bool performShaCheck = true);
             void skipDummyHeader();
             void readFile();
             void readColumn(TblColPtr& col);
@@ -1666,7 +1666,7 @@ namespace NumeRe
             void readFileInformation()
             {
                 open(std::ios::in | std::ios::binary);
-                readHeader();
+                readHeader(false);
             }
 
             /////////////////////////////////////////////////
