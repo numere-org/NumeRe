@@ -30,3 +30,4 @@ Fixed	Installation of package dependencies from the repository directly using on
 Applied	It is now possible to use SQL placeholders in SQL statements. The corresponding values can be supplied with the "params=[PARAMLIST]" option.
 New	The function "zip()" combines multiple arrays elementwise into embedded clusters of the returned cluster.
 Added	HTML exports of tables will now also parse simplified markdown syntax, so that headlines, code segments, bold and italic text is possible.
+Cleaned	The "date()" function will now also accept strings as their "formatting type" input parameter.

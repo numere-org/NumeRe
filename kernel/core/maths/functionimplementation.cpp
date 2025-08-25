@@ -4212,21 +4212,21 @@ static mu::Value date_impl(const mu::Value& vTime, const mu::Value& vType)
     {
         const std::string& sType = vType.getStr();
 
-        if (sType == "ymd")
+        if (sType == "YMD")
             nType = -1;
         else if (sType == "hms")
             nType = -2;
-        else if (sType == "year")
+        else if (sType == "YYYY")
             nType = 1;
-        else if (sType == "mth")
+        else if (sType == "MM")
             nType = 2;
-        else if (sType == "day")
+        else if (sType == "DD")
             nType = 3;
-        else if (sType == "hour")
+        else if (sType == "hh")
             nType = 4;
-        else if (sType == "min")
+        else if (sType == "mm")
             nType = 5;
-        else if (sType == "sec")
+        else if (sType == "ss")
             nType = 6;
     }
     else

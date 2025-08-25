@@ -228,7 +228,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     : _data(__data), _parser(__parser), _option(__option), _functions(__functions), _pData(__pData)
 {
     _graph = new mglGraph(0);
-    _graph->SetPenDelta(0.65);
+    _graph->SetPenDelta(0.7);
     bOutputDesired = false;             // if a output directly into a file is desired
 
     _pInfo.sCommand = "";
