@@ -9,7 +9,7 @@
 #include <wx/mimetype.h>
 #include <wx/bitmap.h>
 
-#include "icons/defaultfile.xpm"
+#include "icons/newfile.xpm"
 #include "icons/closedfolder16x1632bpp.xpm"
 #include "icons/exe.xpm"
 #include "icons/doc.xpm"
@@ -28,7 +28,7 @@ IconManager::IconManager(const wxString& programPath)
 
 	m_iconExtensionMapping["cpj"] = m_images->GetImageCount();
 	m_iconExtensionMapping["DEFAULTFILEEXTENSION"] = m_images->GetImageCount();
-	wxBitmap defaultfile(defaultfile_xpm);
+	wxBitmap defaultfile(newfile_xpm);
 	m_images->Add(defaultfile);
 
 	wxBitmap closedfolder(closedfolder16x1632bpp_xpm);

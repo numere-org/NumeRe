@@ -30,4 +30,6 @@ Fixed	Installation of package dependencies from the repository directly using on
 Applied	It is now possible to use SQL placeholders in SQL statements. The corresponding values can be supplied with the "params=[PARAMLIST]" option.
 New	The function "zip()" combines multiple arrays elementwise into embedded clusters of the returned cluster.
 Added	HTML exports of tables will now also parse simplified markdown syntax, so that headlines, code segments, bold and italic text is possible.
+Removed	The uncessary SHA check of NDAT files, if only their header is read (for getting file information), has been deactivated.
+Cleaned	The default icon for files has been changed to appear more neutral.
 Cleaned	The "date()" function will now also accept strings as their "formatting type" input parameter.

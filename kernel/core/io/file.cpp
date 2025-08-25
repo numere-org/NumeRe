@@ -1523,10 +1523,11 @@ namespace NumeRe
     /// legacy format or not. If the file format is
     /// newer than expected, it will throw an error.
     ///
+    /// \param performShaCheck bool Set this to false for header-only imports
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void NumeReDataFile::readHeader()
+    void NumeReDataFile::readHeader(bool performShaCheck)
     {
         // Read the basic information
         versionMajor = readNumField<int32_t>();
@@ -1569,15 +1570,18 @@ namespace NumeRe
             std::string sha_check = readStringField();
             uint32_t fileEnd = readNumField<uint32_t>();
 
-            size_t checkStart = tellg();
+            if (performShaCheck)
+            {
+                size_t checkStart = tellg();
 
-            std::string sha = "SHA-256:" + sha256(fFileStream, checkStart, fileEnd-checkStart);
+                std::string sha = "SHA-256:" + sha256(fFileStream, checkStart, fileEnd-checkStart);
 
-            // Is it corrupted?
-            if (sha_check != sha)
-                NumeReKernel::issueWarning(_lang.get("COMMON_DATAFILE_CORRUPTED", sFileName));
+                // Is it corrupted?
+                if (sha_check != sha)
+                    NumeReKernel::issueWarning(_lang.get("COMMON_DATAFILE_CORRUPTED", sFileName));
 
-            seekg(checkStart);
+                seekg(checkStart);
+            }
         }
 
         // Read the table name and the comment
