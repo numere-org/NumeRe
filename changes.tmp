@@ -34,3 +34,4 @@ Removed	The uncessary SHA check of NDAT files, if only their header is read (for
 Cleaned	The default icon for files has been changed to appear more neutral.
 Cleaned	The "date()" function will now also accept strings as their "formatting type" input parameter.
 Updated	The default UI style has been changed to a more bluish theme. Click on "RESET" for the "UI THEME" within the "Style" tab in the settings dialog to load the new default theme (only if you want to change, of course).
+Cleaned	Added a fix to redraw the options dialog immediately to resolve a Windows 11 styling change not reflected in wxWidgets.

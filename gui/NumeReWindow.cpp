@@ -7554,6 +7554,12 @@ void NumeReWindow::OnOptions()
     m_options->copySettings(m_terminal->getKernelSettings());
     m_optionsDialog->InitializeDialog();
 
+    // Refresh for WIN 11
+    m_optionsDialog->Show();
+    m_optionsDialog->Refresh();
+    m_optionsDialog->Update();
+    // Refresh for WIN 11 END
+
     int result = m_optionsDialog->ShowModal();
 
     if (result == wxID_OK)
