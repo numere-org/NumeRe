@@ -1004,7 +1004,7 @@ namespace NumeRe
 
             for (long long int j = 0; j < nCols; j++)
             {
-                fFileStream.width(vColumnWidth[j]+2);
+                fFileStream.width(vColumnWidth[j]);
                 fFileStream.fill(' ');
                 std::string sHead = fileData->at(j)->m_sHeadLine;
                 replaceAll(sHead, "\n", " ");
@@ -1039,7 +1039,7 @@ namespace NumeRe
 
             for (long long int j = 0; j < nCols; j++)
             {
-                fFileStream.width(vColumnWidth[j]+2);
+                fFileStream.width(vColumnWidth[j]);
                 fFileStream.fill(' ');
                 fFileStream.precision(nPrecFields);
 

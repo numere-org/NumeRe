@@ -37,6 +37,14 @@ IconManager::IconManager(const wxString& programPath)
 
 	wxBitmap document(doc_xpm);
 	m_iconExtensionMapping["DOCUMENT"] = m_images->GetImageCount();
+	m_iconExtensionMapping["txt"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".txt"] = m_images->GetImageCount();
+	m_iconExtensionMapping["log"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".log"] = m_images->GetImageCount();
+	m_iconExtensionMapping["xml"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".xml"] = m_images->GetImageCount();
+	m_iconExtensionMapping["md"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".md"] = m_images->GetImageCount();
 	m_images->Add(document);
 
 	//wxBitmap openfolder(openfolder16x1632bpp_xpm);
@@ -128,8 +136,6 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping[".m"] = m_images->GetImageCount();
 	m_images->Add(MATLAB);
 
-
-
 	AddIconToList("c");
 	AddIconToList("cpp");
 	AddIconToList("h");
@@ -141,14 +147,8 @@ IconManager::IconManager(const wxString& programPath)
 	CreateDisabledIcon("cpp");
 	CreateDisabledIcon("h");
 
-	AddIconToList("txt");
-
 	wxBitmap exe(exe_xpm);
 	m_iconExtensionMapping["exe"] = m_images->GetImageCount();
-
-	// we'll assume any .out files are also executable
-	m_iconExtensionMapping["out"] = m_images->GetImageCount();
-	m_images->Add(exe);
 }
 
 IconManager::~IconManager()
