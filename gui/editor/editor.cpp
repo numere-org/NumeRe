@@ -4675,6 +4675,9 @@ FileFilterType NumeReEditor::GetFileType(const wxFileName& filename)
 /////////////////////////////////////////////////
 bool NumeReEditor::canOpen(const wxFileName& filename)
 {
+    if (filename.GetExt() == "pdf")
+        return false;
+
     // Check for text-only std::isspace || std::isgraph
     std::ifstream file(filename.GetFullPath().ToStdString());
     size_t readChars = 0;

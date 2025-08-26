@@ -37,3 +37,4 @@ Updated	The default UI style has been changed to a more bluish theme. Click on "
 Cleaned	Added a fix to redraw the options dialog immediately to resolve a Windows 11 styling change not reflected in wxWidgets.
 Cleaned	Markdown table exports are now aligned better.
 Cleaned	Text files (and similar) do have a "text document" icon now.
+Fixed	Disabled the possibility to edit PDFs in the editor (which was working in some situations).
