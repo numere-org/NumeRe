@@ -214,7 +214,7 @@ std::string getUserDisplayName(bool informal)
     if (informal)
     {
         if (sUserName.find(',') != std::string::npos)
-            sUserName.erase(sUserName.find(',')+1);
+            sUserName.erase(0, sUserName.find(',')+1);
 
         StripSpaces(sUserName);
 

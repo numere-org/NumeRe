@@ -304,7 +304,7 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
         sTopic = toInternalString(sTopic);
 
     // Check for function documentation first
-    if (doc_findFunctionDocumentation(sTopic).size())
+    if (!findParameter(__sTopic, "tex") && doc_findFunctionDocumentation(sTopic).size())
     {
         bool generateFile = (bool)findParameter(__sTopic, "html");
         std::string sHTML = doc_HelpAsHTML(sTopic, generateFile, _option);
