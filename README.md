@@ -74,7 +74,7 @@ For the development of new features you will need these skills:
 **Your tools**
 
 We use these tools and frameworks (we also provide a complete setup as a compiler suite with all libraries):
-- MinGW/TDM-GCC > 10.3.0
+- MinGW/TDM-GCC >= 10.3.0
 - MathGL
 - Gnu Scientific Library (GSL)
 - Boost
