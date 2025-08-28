@@ -635,6 +635,7 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("union", numfnc_union);                                    // union({x,y,z...}, {a,b,c,...})
     _parser.DefineFun("intersection", numfnc_intersection);                      // intersection({x,y,z...}, {a,b,c,...})
     _parser.DefineFun("getoverlap", numfnc_getOverlap);                          // getoverlap({x1,x2}, {y1,y2})
+    _parser.DefineFun("swapbytes", numfnc_swapBytes);                            // swapbytes(arr)
 
     _parser.DefineFun("convertunit", unit_conversion, true, 1);                  // convertunit({x,y,..},{u1,u2,...}[,{m1,...}])
 

@@ -4152,6 +4152,99 @@ mu::Array numfnc_getOverlap(const mu::Array& left, const mu::Array& right)
 
 
 /////////////////////////////////////////////////
+/// \brief Apply byte swapping to 32 bit floats.
+///
+/// \param f float
+/// \return float
+///
+/////////////////////////////////////////////////
+static float bswapF32(float f)
+{
+    uint32_t i = *reinterpret_cast<uint32_t*>(&f);
+    i = __builtin_bswap32(i);
+    return *reinterpret_cast<float*>(&i);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply byte swapping to 64 bit floats.
+///
+/// \param f double
+/// \return double
+///
+/////////////////////////////////////////////////
+static double bswapF64(double f)
+{
+    uint64_t i = *reinterpret_cast<uint64_t*>(&f);
+    i = __builtin_bswap64(i);
+    return *reinterpret_cast<double*>(&i);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Swaps all numerical values in the
+/// array from big to little endian byte order or
+/// vice versa.
+///
+/// \param arr const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_swapBytes(const mu::Array& arr)
+{
+    mu::Array ret;
+    size_t elems = arr.size();
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        const mu::Value& v = arr.get(i);
+
+        if (v.getType() != mu::TYPE_NUMERICAL)
+            ret.emplace_back(v);
+
+        const mu::Numerical& numVal = v.getNum();
+
+        if (numVal.getType() == mu::I16)
+            ret.emplace_back(mu::Numerical((int16_t)__builtin_bswap16((uint16_t)numVal.asI64())));
+        else if (numVal.getType() == mu::I32)
+            ret.emplace_back(mu::Numerical((int32_t)__builtin_bswap32((uint32_t)numVal.asI64())));
+        else if (numVal.getType() == mu::I64)
+            ret.emplace_back(mu::Numerical((int64_t)__builtin_bswap64((uint64_t)numVal.asI64())));
+        else if (numVal.getType() == mu::UI16)
+            ret.emplace_back(mu::Numerical(__builtin_bswap16((uint16_t)numVal.asUI64())));
+        else if (numVal.getType() == mu::UI32)
+            ret.emplace_back(mu::Numerical(__builtin_bswap32((uint32_t)numVal.asUI64())));
+        else if (numVal.getType() == mu::UI64)
+            ret.emplace_back(mu::Numerical(__builtin_bswap64(numVal.asUI64())));
+        else if (numVal.getType() == mu::F32)
+            ret.emplace_back(mu::Numerical(bswapF32(numVal.asF64())));
+        else if (numVal.getType() == mu::F64)
+            ret.emplace_back(mu::Numerical(bswapF64(numVal.asF64())));
+        else if (numVal.getType() == mu::CF32)
+        {
+            std::complex<double> cf0 = numVal.asCF64();
+            std::complex<float> cf;
+            cf.real(bswapF32(cf0.real()));
+            cf.imag(bswapF32(cf0.imag()));
+            ret.emplace_back(mu::Numerical(cf));
+        }
+        else if (numVal.getType() == mu::CF64)
+        {
+            std::complex<double> cf = numVal.asCF64();
+            cf.real(bswapF64(cf.real()));
+            cf.imag(bswapF64(cf.imag()));
+            ret.emplace_back(mu::Numerical(cf));
+        }
+        else
+            ret.emplace_back(v);
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the version number of NumeRe
 /// as a natural number.
 ///

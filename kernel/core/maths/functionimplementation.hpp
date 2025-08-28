@@ -136,6 +136,7 @@ mu::Array numfnc_complement(const mu::Array&, const mu::Array&);
 mu::Array numfnc_union(const mu::Array&, const mu::Array&);
 mu::Array numfnc_intersection(const mu::Array&, const mu::Array&);
 mu::Array numfnc_getOverlap(const mu::Array&, const mu::Array&);
+mu::Array numfnc_swapBytes(const mu::Array&);
 
 mu::Array numfnc_SinusCardinalis(const mu::Array&);
 mu::Array numfnc_sin(const mu::Array&);
