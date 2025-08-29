@@ -26,6 +26,7 @@
 
 const std::string PI_HIST = "1.1.2";
 extern mglGraph _fontData;
+void applyLegendPosition(mglGraph* _graph, int nLegendPos);
 
 /////////////////////////////////////////////////
 /// \brief This enumeration defines the available
@@ -614,7 +615,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
     {
         if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
-            _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
+            _histGraph->SetTicksTime('x', _pData.getTimeAxis(XRANGE).stepping, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
         else if (!_pData.getLogscale(XRANGE) && _histParams.bBars)
         {
             if (vCategories.size())
@@ -721,7 +722,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     if (!_pData.getSettings(PlotData::LOG_BOX))
         _histGraph->Legend(1.25, 1.0);
     else
-        _histGraph->Legend(_pData.getSettings(PlotData::INT_LEGENDPOSITION));
+        applyLegendPosition(_histGraph, _pData.getSettings(PlotData::INT_LEGENDPOSITION));
 
     std::string sHistSavePath = _out.getFileName();
 
@@ -1526,7 +1527,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _histGraph->SetRanges(_histParams.ranges[XCOORD].min(), _histParams.ranges[XCOORD].max(), _barHistData.Minimal() - _histParams.binWidth[XCOORD] / 20.0, _barHistData.Maximal() + _histParams.binWidth[XCOORD] / 20.0);
 
     if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
-        _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
+        _histGraph->SetTicksTime('x', _pData.getTimeAxis(XRANGE).stepping, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
 
     _histGraph->Box();
     _histGraph->Axis();
@@ -1583,10 +1584,10 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
                               _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
 
     if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
-        _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
+        _histGraph->SetTicksTime('x', _pData.getTimeAxis(XRANGE).stepping, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
 
     if (!_pData.getLogscale(YRANGE) && _pData.getTimeAxis(YRANGE).use)
-        _histGraph->SetTicksTime('y', 0, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
+        _histGraph->SetTicksTime('y', _pData.getTimeAxis(YRANGE).stepping, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
 
     _histGraph->Box();
     _histGraph->Axis("xyz");
@@ -1649,7 +1650,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
                               _histParams.ranges[YCOORD].min(), _histParams.ranges[YCOORD].max());
 
     if (!_pData.getLogscale(YRANGE) && _pData.getTimeAxis(YRANGE).use)
-        _histGraph->SetTicksTime('y', 0, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
+        _histGraph->SetTicksTime('y', _pData.getTimeAxis(YRANGE).stepping, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
 
     _histGraph->Box();
     _histGraph->Axis("xy");

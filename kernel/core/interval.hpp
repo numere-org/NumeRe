@@ -138,13 +138,15 @@ struct Axis
 struct TimeAxis
 {
     std::string sTimeFormat;
+    double stepping;
     bool use;
 
-    TimeAxis() : sTimeFormat(""), use(false) {}
+    TimeAxis() : sTimeFormat(""), stepping(0.0), use(false) {}
 
-    void activate(const std::string& sFormat = "")
+    void activate(const std::string& sFormat = "", double step = 0.0)
     {
         use = true;
+        stepping = step;
         sTimeFormat = sFormat;
 
         if (!sTimeFormat.length())
@@ -178,6 +180,7 @@ struct TimeAxis
     void deactivate()
     {
         use = false;
+        stepping = 0.0;
         sTimeFormat.clear();
     }
 };

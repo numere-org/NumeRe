@@ -35,6 +35,7 @@
 class DataAccessParser;
 
 void createPlot(std::string& sCmd, MemoryManager& _data, mu::Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
+void applyLegendPosition(mglGraph* _graph, int nLegendPos);
 
 
 

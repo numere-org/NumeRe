@@ -95,6 +95,22 @@ static bool has3DView(StringView sCommand)
 #define APPR_TWO 1.9999999
 #define STYLES_COUNT 20
 
+void applyLegendPosition(mglGraph* _graph, int nLegendPos)
+{
+    if (nLegendPos >= 0)
+        _graph->Legend(nLegendPos, "#", "value 0.08");
+    else if (nLegendPos == -1)
+        _graph->Legend(0.5, -0.3, "#-", "value 0.08");
+    else if (nLegendPos == -2)
+        _graph->Legend(1.0, 0.5, "#^", "value 0.05");
+    else if (nLegendPos == -3)
+        _graph->Legend(0.5, 1.15, "#-", "value 0.08");
+    else if (nLegendPos == -4)
+        _graph->Legend(0.5, 0, "#-", "value 0.08");
+    else if (nLegendPos == -5)
+        _graph->Legend(0.5, 1, "#-", "value 0.08");
+}
+
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -1803,7 +1819,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
     {
         _graph->SetMarkSize(1.0);
-        _graph->Legend(_pData.getSettings(PlotData::INT_LEGENDPOSITION));
+        applyLegendPosition(_graph, _pData.getSettings(PlotData::INT_LEGENDPOSITION));
     }
 }
 
@@ -3331,7 +3347,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         if (_pData.getRotateAngle() || _pData.getRotateAngle(1))
             _graph->Legend(1.35, 1.2);
         else
-            _graph->Legend(_pData.getSettings(PlotData::INT_LEGENDPOSITION));
+            applyLegendPosition(_graph, _pData.getSettings(PlotData::INT_LEGENDPOSITION));
     }
 }
 
@@ -3665,7 +3681,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 {
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC))
     {
-        _graph->Legend(_pData.getSettings(PlotData::INT_LEGENDPOSITION));
+        applyLegendPosition(_graph, _pData.getSettings(PlotData::INT_LEGENDPOSITION));
         _graph->ClearLegend();
     }
 
@@ -6590,12 +6606,14 @@ void Plot::CoordSettings()
                 }
             }
 
-            if (_pData.getTimeAxis(i).use)
+            TimeAxis timeAxis = _pData.getTimeAxis(i);
+
+            if (timeAxis.use)
             {
                 if (i < 3)
-                    _graph->SetTicksTime('x' + i, 0, _pData.getTimeAxis(i).sTimeFormat.c_str());
+                    _graph->SetTicksTime('x' + i, timeAxis.stepping, timeAxis.sTimeFormat.c_str());
                 else
-                    _graph->SetTicksTime('c', 0, _pData.getTimeAxis(i).sTimeFormat.c_str());
+                    _graph->SetTicksTime('c', timeAxis.stepping, timeAxis.sTimeFormat.c_str());
             }
         }
 

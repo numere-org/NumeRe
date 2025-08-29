@@ -651,12 +651,22 @@ void PlotData::setParams(const std::string& sCmd, int nType)
     if (findParameter(sCmd, "legend", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "legend", '=')+6;
-        if (getArgAtPos(sCmd, nPos) == "topleft" || getArgAtPos(sCmd, nPos) == "left")
+        if (getArgAtPos(sCmd, nPos) == "topleft")
             intSettings[INT_LEGENDPOSITION] = 2;
         else if (getArgAtPos(sCmd, nPos) == "bottomleft")
             intSettings[INT_LEGENDPOSITION] = 0;
         else if (getArgAtPos(sCmd, nPos) == "bottomright")
             intSettings[INT_LEGENDPOSITION] = 1;
+        else if (getArgAtPos(sCmd, nPos) == "above")
+            intSettings[INT_LEGENDPOSITION] = -3;
+        else if (getArgAtPos(sCmd, nPos) == "below")
+            intSettings[INT_LEGENDPOSITION] = -1;
+        else if (getArgAtPos(sCmd, nPos) == "right")
+            intSettings[INT_LEGENDPOSITION] = -2;
+        else if (getArgAtPos(sCmd, nPos) == "bottom")
+            intSettings[INT_LEGENDPOSITION] = -4;
+        else if (getArgAtPos(sCmd, nPos) == "top")
+            intSettings[INT_LEGENDPOSITION] = -5;
         else
             intSettings[INT_LEGENDPOSITION] = 3;
     }
@@ -962,9 +972,11 @@ void PlotData::setParams(const std::string& sCmd, int nType)
             std::string sAxis = v[0].get()[i].getStr();
 
             if (sAxis == "c")
-                _timeAxes[3].activate(nResults > 1 ? v[1].get().get(i).getStr() : "");
+                _timeAxes[3].activate(nResults > 1 ? v[1].get().get(i).getStr() : "",
+                                      nResults > 2 ? v[2].get().get(i).getNum().asF64() : 0.0);
             else if (sAxis.find_first_of("xyz") != std::string::npos)
-                _timeAxes[sAxis[0]-'x'].activate(nResults > 1 ? v[1].get().get(i).getStr() : "");
+                _timeAxes[sAxis[0]-'x'].activate(nResults > 1 ? v[1].get().get(i).getStr() : "",
+                                                 nResults > 2 ? v[2].get().get(i).getNum().asF64() : 0.0);
         }
     }
 
