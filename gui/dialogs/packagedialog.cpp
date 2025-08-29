@@ -567,6 +567,77 @@ void PackageDialog::findLayoutDependencies(const std::string& sFile, std::set<st
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to make a file
+/// path absolute by resolving the corresponding
+/// root directory.
+///
+/// \param sFile const std::string&
+/// \param vPaths const std::vector<std::string>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string makeAbsolutePath(const std::string& sFile, const std::vector<std::string>& vPaths)
+{
+    if (sFile.starts_with("<loadpath>"))
+        return vPaths[LOADPATH] + sFile.substr(10);
+
+    if (sFile.starts_with("savepath>"))
+        return vPaths[SAVEPATH] + sFile.substr(10);
+
+    if (sFile.starts_with("<scriptpath>"))
+        return vPaths[SCRIPTPATH] + sFile.substr(12);
+
+    if (sFile.starts_with("<procpath>"))
+        return vPaths[PROCPATH] + sFile.substr(10);
+
+    if (sFile.starts_with("<plotpath>"))
+        return vPaths[PLOTPATH] + sFile.substr(10);
+
+    return sFile;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to make a file
+/// path relative to the corresponding root
+/// directory.
+///
+/// \param sFile std::string
+/// \param vPaths const std::vector<std::string>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string makeRelativePath(std::string sFile, const std::vector<std::string>& vPaths)
+{
+    sFile = replacePathSeparator(sFile);
+
+    for (size_t i = LOADPATH; i < PATH_LAST; i++)
+    {
+        if (sFile.starts_with(vPaths[i]))
+        {
+            switch (i)
+            {
+            case LOADPATH:
+                return "<loadpath>" + sFile.substr(vPaths[i].length());
+            case SAVEPATH:
+                return "<savepath>" + sFile.substr(vPaths[i].length());
+            case SCRIPTPATH:
+                return "<scriptpath>" + sFile.substr(vPaths[i].length());
+            case PROCPATH:
+                return "<procpath>" + sFile.substr(vPaths[i].length());
+            case PLOTPATH:
+                return "<plotpath>" + sFile.substr(vPaths[i].length());
+            }
+
+            return sFile;
+        }
+    }
+
+    return sFile;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Loads a NumeRe package project file to
 /// memory and updates the UI correspondingly.
 ///
@@ -580,6 +651,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
     project.LoadFile(filename.c_str());
     tinyxml2::XMLElement* root = project.FirstChildElement("project");
     bool allFilesFound = true;
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
     // Ensure that the file is readable and that the version
     // is known
@@ -615,9 +687,14 @@ void PackageDialog::loadProjectFile(const wxString& filename)
                 continue;
             }
         }
-        else if ((prop->GetName() == DOCFILE || prop->GetName() == POSTINSTALL) && !fileExists(infoitem->GetText()))
+        else if (prop->GetName() == DOCFILE || prop->GetName() == POSTINSTALL)
         {
-            allFilesFound = false;
+            std::string sFile = makeAbsolutePath(infoitem->GetText(), vPaths);
+
+            if (!fileExists(sFile))
+                allFilesFound = false;
+            else
+                prop->SetValueFromString(sFile);
             continue;
         }
 
@@ -632,16 +709,16 @@ void PackageDialog::loadProjectFile(const wxString& filename)
     // Load all files to the table
     while (file)
     {
-        if (!fileExists(file->GetText()))
+        std::string sFile = makeAbsolutePath(file->GetText(), vPaths);
+
+        if (!fileExists(sFile))
         {
             allFilesFound = false;
 
-            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + std::string(file->GetText()), m_icons->GetIconIndex(""));
+            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + sFile, m_icons->GetIconIndex(""));
         }
         else
         {
-            std::string sFile = file->GetText();
-
             if (file->Attribute("lastmodified"))
             {
                 wxString t = file->Attribute("lastmodified");
@@ -686,6 +763,7 @@ void PackageDialog::saveProjectFile(const wxString& filename)
 {
     VersionControlSystemManager manager(static_cast<NumeReWindow*>(GetParent()));
     std::unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
     // Ensure that the revisions are complete
     if (revisions.get())
@@ -728,6 +806,8 @@ void PackageDialog::saveProjectFile(const wxString& filename)
 
             infoitem->SetAttribute("autoincrement", true);
         }
+        else if (prop->GetName() == POSTINSTALL || prop->GetName() == DOCFILE)
+            infoitem->SetText(makeRelativePath(prop->GetValueAsString().ToStdString(), vPaths).c_str());
         else
             infoitem->SetText(prop->GetValueAsString().ToStdString().c_str());
 
@@ -753,6 +833,8 @@ void PackageDialog::saveProjectFile(const wxString& filename)
             t = t.ToTimezone(wxDateTime::TimeZone(wxDateTime::GMT0));
             file->SetAttribute("lastmodified", t.FormatISOCombined().ToStdString().c_str());
         }
+
+        sFile = makeRelativePath(sFile, vPaths);
 
         file->SetText(sFile.c_str());
         files->InsertEndChild(file);
