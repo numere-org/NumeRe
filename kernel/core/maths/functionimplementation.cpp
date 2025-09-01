@@ -2002,6 +2002,7 @@ static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<
 {
     std::complex<double> vReturn = 0;
     std::complex<double> vNorm = 0;
+    std::complex<double> coeff;
 
     if (std::abs(rho) > 1.0)
         return NAN;
@@ -2011,16 +2012,9 @@ static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<
 
     for (int k = 0; k <= (n-m)/2; k++)
     {
-        if (k % 2)
-        {
-            vReturn -= factorial_impl(n-k)*intPowerSymbolic(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
-            vNorm -= factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
-        }
-        else
-        {
-            vReturn += factorial_impl(n-k)*intPowerSymbolic(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
-            vNorm += factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
-        }
+        coeff = (k % 2 ? -1.0 : 1.0) * factorial_impl(n-k) / (factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+        vReturn += coeff * intPowerSymbolic(rho, n-2*k);
+        vNorm += coeff;
     }
 
     return vReturn/vNorm;

@@ -1127,6 +1127,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             OnExecuteFile(data->filename.ToStdString(), id);
             break;
         }
+        case ID_MENU_PREVIEW_FILE_FROM_TREE:
+            OnPreview();
+            break;
         case ID_MENU_EDIT_FILE_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
@@ -2912,6 +2915,41 @@ void NumeReWindow::OnRemoveFolder()
     Recycler _recycler;
     _recycler.recycle(data->filename.ToStdString().c_str());
     return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Preview the selected file in the table
+/// editor.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnPreview()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    std::string fileName = data->filename.ToStdString();
+
+    if (!NumeRe::canLoadFile(fileName))
+    {
+        wxMessageBox(_guilang.get("GUI_DLG_PREVIEW_ERROR"), _guilang.get("GUI_DLG_PREVIEW"), wxCENTRE | wxICON_ERROR | wxOK, this);
+        return;
+    }
+
+    MemoryManager _memManager;
+
+    try
+    {
+        _memManager.openFile(fileName, false, true, 0, "", "");
+    }
+    catch (...)
+    {
+        wxMessageBox(_guilang.get("GUI_DLG_PREVIEW_ERROR"), _guilang.get("GUI_DLG_PREVIEW"), wxCENTRE | wxICON_ERROR | wxOK, this);
+        return;
+    }
+
+    NumeRe::Table table = _memManager.extractTable("data");
+    openTable(table, fileName, fileName);
 }
 
 
@@ -6274,6 +6312,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (NumeRe::canLoadFile(data->filename.ToStdString()))
         {
+            popupMenu.Append(ID_MENU_PREVIEW_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_PREVIEW"));
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_LOAD"));
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE, _guilang.get("GUI_TREE_PUP_LOADTOTABLE"));
         }

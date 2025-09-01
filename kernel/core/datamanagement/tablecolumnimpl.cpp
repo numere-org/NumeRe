@@ -1029,7 +1029,7 @@ std::string StringColumn::getValueAsParserString(size_t elem) const
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsStringLiteral(size_t elem) const
 {
-    return toExternalString(getValueAsInternalString(elem)) + formatUnit(m_sUnit);
+    return toExternalString(replaceControlCharacters(getValueAsInternalString(elem))) + formatUnit(m_sUnit);
 }
 
 

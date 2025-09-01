@@ -272,7 +272,7 @@ wxString GridNumeReTable::GetValue(int row, int col)
         return sValue;
     }
     else
-        return replaceControlCharacters(_table.getValueAsString(getRow(row), col));
+        return _table.getValueAsString(getRow(row), col);
 }
 
 

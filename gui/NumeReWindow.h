@@ -255,6 +255,7 @@ class NumeReWindow : public wxFrame
         void OnTagCurrentRevision();
         void OnCreateNewFolder();
         void OnRemoveFolder();
+        void OnPreview();
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
         void OnExecuteFile(const std::string& sFileName, int id);

@@ -3,3 +3,4 @@ Added	Using the "-tex" option on the "help" command will only yield documentatio
 New	The function "swapbytes" can be used to convert from little to big endian byte order and vice versa.
 Cleaned	Files in package project are now stored relative to their corresponding root folder. You have to save the package project again to apply this behavior.
 Applied	Time axes may now get a custom stepping and the legend positions have some more possibilities.
+Added	You can now view tabular data directly from the file try by right-clicking on it and selecting the corresponding option.
