@@ -25,6 +25,7 @@
 #include "../controls/treelistctrl.h"
 
 class NumeReWindow;
+class NumeReEditor;
 
 /////////////////////////////////////////////////
 /// \brief This class represents the dialog
@@ -38,6 +39,7 @@ class RevisionDialog : public wxDialog
         wxcode::wxTreeListCtrl* revisionList;
         wxTreeItemId clickedItem;
         NumeReWindow* mainWindow;
+        NumeReEditor* editor;
         wxString currentFilePath;
         wxString currentFileName;
 
@@ -46,6 +48,7 @@ class RevisionDialog : public wxDialog
         void compareRevisions(const wxString& rev1, const wxString& rev2);
 
         // Event handling functions
+        void OnLeftClick(wxTreeEvent& event);
         void OnRightClick(wxTreeEvent& event);
         void OnItemActivated(wxTreeEvent& event);
         void OnMenuEvent(wxCommandEvent& event);

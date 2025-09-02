@@ -137,25 +137,24 @@ using namespace std;
 /// \brief Editor constructor.
 ///
 /// \param mframe NumeReWindow*
-/// \param options Options*
 /// \param parent wxWindow*
 /// \param id wxWindowID
-/// \param __syntax NumeReSyntax*
-/// \param __terminal wxTerm*
 /// \param pos const wxPoint&
 /// \param size const wxSize&
 /// \param style long
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* parent, wxWindowID id,
-                           NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+NumeReEditor::NumeReEditor(NumeReWindow* mframe, wxWindow* parent, wxWindowID id,
+                           const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
                                wxStyledTextCtrl(parent, id, pos, size, style, name)
 {
     m_mainFrame = mframe;
-    m_options = options;
-    m_analyzer = new CodeAnalyzer(this, options);
-    m_search = new SearchController(this, __terminal);
+    m_options = m_mainFrame->getOptions();
+    m_terminal = m_mainFrame->getTerminal();
+    _syntax = m_terminal->getSyntax();
+    m_analyzer = new CodeAnalyzer(this, m_options);
+    m_search = new SearchController(this, m_terminal);
     m_formatter = new CodeFormatter(this);
     m_duplicateCode = nullptr;
     m_nCallTipStart = 0;
@@ -177,9 +176,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
 
     m_lastRightClick.x = -1;
     m_lastRightClick.y = -1;
-    _syntax = __syntax;
     vBlockDefs = _syntax->getFullBlockDefs();
-    m_terminal = __terminal;
     m_dragging = false;
 
     m_nFirstLine = m_nLastLine = 0;
@@ -4343,19 +4340,32 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     {
         SetLexer(wxSTC_LEX_DIFF);
         SetProperty("fold", "1");
+
         StyleSetForeground(wxSTC_DIFF_ADDED, wxColour(0, 128, 0));
         StyleSetBackground(wxSTC_DIFF_ADDED, wxColour(210, 255, 210));
+        StyleSetBold(wxSTC_DIFF_ADDED, false);
+
         StyleSetForeground(wxSTC_DIFF_CHANGED, wxColour(128, 0, 0));
         StyleSetBackground(wxSTC_DIFF_CHANGED, wxColour(255, 210, 210));
+
         StyleSetForeground(wxSTC_DIFF_DELETED, wxColour(128, 0, 0));
         StyleSetBackground(wxSTC_DIFF_DELETED, wxColour(255, 210, 210));
+
         StyleSetForeground(wxSTC_DIFF_DEFAULT, *wxBLACK);
         StyleSetBackground(wxSTC_DIFF_DEFAULT, *wxWHITE);
+        StyleSetItalic(wxSTC_DIFF_DEFAULT, false);
+
+        StyleSetForeground(wxSTC_DIFF_COMMAND, *wxBLUE);
+        StyleSetBackground(wxSTC_DIFF_COMMAND, *wxWHITE);
+        StyleSetBold(wxSTC_DIFF_COMMAND, true);
+
         StyleSetForeground(wxSTC_DIFF_HEADER, *wxBLUE);
         StyleSetBackground(wxSTC_DIFF_HEADER, *wxWHITE);
+
         StyleSetForeground(wxSTC_DIFF_POSITION, wxColour(255, 128, 0));
         StyleSetBackground(wxSTC_DIFF_POSITION, *wxWHITE);
         StyleSetBold(wxSTC_DIFF_POSITION, true);
+        StyleSetUnderline(wxSTC_DIFF_POSITION, false);
     }
     else if (filetype == FILE_XML)
     {
@@ -6484,7 +6494,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
 {
     // Creata a new window and a new editor
     ViewerFrame* copyFrame = new ViewerFrame(m_mainFrame, _guilang.get("GUI_REFACTORING_COPYWINDOW_HEAD"), wxFRAME_FLOAT_ON_PARENT);
-    NumeReEditor* edit = new NumeReEditor(m_mainFrame, m_options, copyFrame, wxID_ANY, _syntax, m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
+    NumeReEditor* edit = new NumeReEditor(m_mainFrame, copyFrame, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     wxStatusBar* statusbar = copyFrame->CreateStatusBar();
     int sizes[] = {-2, -1};
     statusbar->SetFieldsCount(2, sizes);

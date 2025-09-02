@@ -1431,6 +1431,8 @@ NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 	m_selx1 = m_selx2 = event.GetX() / m_charWidth;
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
 	m_selecting = true;
+	MarkSelection();
+	Refresh();
 	this->CaptureMouse();
 }
 
@@ -1493,6 +1495,9 @@ NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 {
 	if (m_selecting)
 	{
+	    int x2Old = m_selx2;
+	    int y2Old = m_sely2;
+
 	    // Get the text coordinates of the mouse
 		m_selx2 = event.GetX() / m_charWidth;
 
@@ -1512,7 +1517,8 @@ NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 
         // Update the terminal
 		// GenericTerminal::Update();
-		Refresh();
+		if (x2Old != m_selx2 || y2Old != m_sely2)
+            Refresh();
 	}
 }
 

@@ -50,24 +50,22 @@ using namespace std;
 /// \brief History constructor
 ///
 /// \param mframe NumeReWindow*
-/// \param options Options*
 /// \param parent wxWindow*
 /// \param id wxWindowID
-/// \param __syntax NumeReSyntax*
-/// \param __terminal wxTerm*
 /// \param pos const wxPoint&
 /// \param size const wxSize&
 /// \param style long
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax,
-                             NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
-                                 NumeReEditor(mframe, options, parent, id, __syntax, __terminal, pos, size, style, name)
+NumeReHistory::NumeReHistory(NumeReWindow* mframe, wxWindow* parent, wxWindowID id,
+                             const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+                                 NumeReEditor(mframe, parent, id, pos, size, style, name)
 {
-	_syntax = __syntax;
 	m_mainframe = mframe;
-	m_terminal = __terminal;
+	m_terminal = m_mainframe->getTerminal();
+	_syntax = m_terminal->getSyntax();
+	Options* options = m_mainframe->getOptions();
 	m_clickedLine = 0;
 
     this->SetTabWidth(4);

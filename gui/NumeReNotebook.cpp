@@ -181,8 +181,7 @@ void EditorNotebook::closeDefaultPage()
 NumeReEditor* EditorNotebook::createEditor(const wxString& text)
 {
     wxSplitterWindow* splitter = new wxSplitterWindow(this, wxID_ANY);
-    NumeReEditor* editor = new NumeReEditor(m_top_parent, m_top_parent->getOptions(), splitter,
-                                            wxID_ANY, m_top_parent->getTerminal()->getSyntax(), m_top_parent->getTerminal());
+    NumeReEditor* editor = new NumeReEditor(m_top_parent, splitter, wxID_ANY);
     splitter->Initialize(editor);
     AddPage(splitter, text, false);
     return editor;
@@ -278,8 +277,7 @@ void EditorNotebook::split(size_t pageNum, bool horizontal)
     if (!splitter->IsSplit())
     {
         NumeReEditor* edit = static_cast<NumeReEditor*>(splitter->GetWindow1());
-        NumeReEditor* secEdit = new NumeReEditor(m_top_parent, m_top_parent->getOptions(), splitter,
-                                                 wxID_ANY, m_top_parent->getTerminal()->getSyntax(), m_top_parent->getTerminal());
+        NumeReEditor* secEdit = new NumeReEditor(m_top_parent, splitter, wxID_ANY);
         secEdit->SetDocPointer(edit->GetDocPointer());
         secEdit->SetFilename(edit->GetFileName(), false);
         secEdit->ToggleSettings(edit->getSettings());

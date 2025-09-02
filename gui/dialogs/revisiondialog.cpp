@@ -19,10 +19,13 @@
 #include "revisiondialog.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../NumeReWindow.h"
+#include "../editor/editor.h"
+#include "../wxProportionalSplitterWindow.h"
 
 extern double g_pixelScale;
 
 BEGIN_EVENT_TABLE(RevisionDialog, wxDialog)
+    EVT_TREE_SEL_CHANGED(-1, RevisionDialog::OnLeftClick)
     EVT_TREE_ITEM_RIGHT_CLICK(-1, RevisionDialog::OnRightClick)
     EVT_TREE_ITEM_ACTIVATED(-1, RevisionDialog::OnItemActivated)
     EVT_MENU_RANGE(ID_REVISIONDIALOG_SHOW, ID_REVISIONDIALOG_REFRESH, RevisionDialog::OnMenuEvent)
@@ -40,25 +43,43 @@ extern Language _guilang;
 ///
 /////////////////////////////////////////////////
 RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& fileNameAndPath)
-    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750*g_pixelScale, 500*g_pixelScale), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev)
+    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(1250*g_pixelScale, 800*g_pixelScale), wxCAPTION | wxCLOSE_BOX), revisions(rev)
 {
     mainWindow = static_cast<NumeReWindow*>(parent);
     currentFileName = fileNameAndPath.substr(fileNameAndPath.find_last_of("/\\")+1);
     currentFilePath = fileNameAndPath.substr(0, fileNameAndPath.find_last_of("/\\")+1);
+    Options* options = mainWindow->getOptions();
+
+    SyntaxStyles uiTheme = options->GetSyntaxStyle(Options::UI_THEME);
 
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
-    revisionList = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED | wxTR_MULTIPLE);
+    ThemedSplitterWindow * splitter = new ThemedSplitterWindow(this);
+
+    // Set styles of splitters
+    splitter->SetThemeColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+    SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+
+    revisionList = new wxcode::wxTreeListCtrl(splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED | wxTR_MULTIPLE);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_REV"), 150*g_pixelScale);
-    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 150*g_pixelScale);
-    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 450*g_pixelScale);
+    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 120*g_pixelScale);
+    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 400*g_pixelScale);
     revisionList->AddRoot(currentFileName);
+
+    editor = new NumeReEditor(mainWindow, splitter, wxID_ANY);
+    editor->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
+
+    wxFont font = options->toFont(options->getSetting(SETTING_S_HISTORYFONT).stringval());
+    editor->SetEditorFont(font);
+    editor->SetMarginWidth(1, 0);
+    editor->MarkerDefine(MARKER_MODIFIED, wxSTC_MARK_EMPTY);
 
     populateRevisionList();
 
-    vsizer->Add(revisionList, 1, wxEXPAND | wxALL, 5);
+    vsizer->Add(splitter, 1, wxEXPAND | wxALL, 5);
     vsizer->Add(CreateButtonSizer(wxOK), 0, wxALIGN_CENTER_HORIZONTAL | wxALL, 5);
 
     SetSizer(vsizer);
+    splitter->SplitVertically(revisionList, editor, 380*g_pixelScale);
 }
 
 
@@ -153,7 +174,57 @@ void RevisionDialog::compareRevisions(const wxString& rev1, const wxString& rev2
 
 
 /////////////////////////////////////////////////
-/// \brief This method displays the context menu containing the actions.
+/// \brief Update the editor's contents after the
+/// selection has changed.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void RevisionDialog::OnLeftClick(wxTreeEvent& event)
+{
+    wxTreeItemId item = event.GetItem();
+
+    // do nothing, if the parent node is not the
+    // table root node
+    if (!item.IsOk() || item == revisionList->GetRootItem())
+        return;
+
+    wxString revID = revisionList->GetItemText(item);
+    wxString revisionContent;
+
+    wxArrayTreeItemIds selectedIds;
+
+    if (revisionList->GetSelections(selectedIds) >= 2)
+    {
+        revID = revisionList->GetItemText(selectedIds.front());
+        wxString secondID = revisionList->GetItemText(selectedIds.back());
+        revisionContent = revisions->compareRevisions(revID, secondID);
+        editor->SetFilename(wxFileName(currentFileName + ".diff"), false);
+    }
+    else //if (!revisionList->GetPrevSibling(item).IsOk())
+    {
+        revisionContent = revisions->getRevision(revID);
+        editor->SetFilename(wxFileName(currentFileName), false);
+    }
+    /*else
+    {
+        wxString prevId = revisionList->GetItemText(revisionList->GetPrevSibling(item));
+        revisionContent = revisions->compareRevisions(prevId, revID);
+        editor->SetFilename(wxFileName(currentFileName + ".diff"), false);
+    }*/
+
+    editor->SetReadOnly(false);
+    editor->SetText(revisionContent);
+    editor->UpdateSyntaxHighlighting(true);
+    editor->EmptyUndoBuffer();
+    editor->SetReadOnly(true);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method displays the context menu
+/// containing the actions.
 ///
 /// \param event wxTreeEvent&
 /// \return void
@@ -165,7 +236,7 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
 
     // do nothing, if the parent node is not the
     // table root node
-    if (event.GetItem() == revisionList->GetRootItem())
+    if (!clickedItem.IsOk() || event.GetItem() == revisionList->GetRootItem())
         return;
 
     // Create the menu
@@ -178,7 +249,9 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
 
     if (revisionList->GetSelections(selection) >= 2)
     {
-        popUpmenu.Append(ID_REVISIONDIALOG_COMPARE, _guilang.get("GUI_DLG_REVISIONDIALOG_COMPARE", revisionList->GetItemText(selection[0]).ToStdString(), revisionList->GetItemText(selection[1]).ToStdString()));
+        popUpmenu.Append(ID_REVISIONDIALOG_COMPARE, _guilang.get("GUI_DLG_REVISIONDIALOG_COMPARE",
+                                                                 revisionList->GetItemText(selection.front()).ToStdString(),
+                                                                 revisionList->GetItemText(selection.back()).ToStdString()));
         popUpmenu.AppendSeparator();
     }
 
@@ -201,6 +274,9 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
 /////////////////////////////////////////////////
 void RevisionDialog::OnItemActivated(wxTreeEvent& event)
 {
+    if (!event.GetItem().IsOk())
+        return;
+
     wxString revID = revisionList->GetItemText(event.GetItem());
     showRevision(revID);
 }
@@ -235,7 +311,7 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
                 wxArrayTreeItemIds selectedIds;
 
                 if (revisionList->GetSelections(selectedIds) >= 2)
-                    compareRevisions(revisionList->GetItemText(selectedIds[0]), revisionList->GetItemText(selectedIds[1]));
+                    compareRevisions(revisionList->GetItemText(selectedIds.front()), revisionList->GetItemText(selectedIds.back()));
 
                 break;
             }
@@ -284,4 +360,6 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
             }
     }
 }
+
+
 

@@ -4,3 +4,5 @@ New	The function "swapbytes" can be used to convert from little to big endian by
 Cleaned	Files in package project are now stored relative to their corresponding root folder. You have to save the package project again to apply this behavior.
 Applied	Time axes may now get a custom stepping and the legend positions have some more possibilities.
 Added	You can now view tabular data directly from the file try by right-clicking on it and selecting the corresponding option.
+Added	The revision dialog now shows a built-in editor, where Diffs may be examined.
+Cleaned	The flickering in the terminal during making a selection has been reduced.

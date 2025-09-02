@@ -256,7 +256,7 @@ wxString FileRevisions::diff(const wxString& revision1, const wxString& revision
 
     // Get revision identifier
     if (revisionID1.length() && revisionID2.length())
-        uniDiff << "--- " << revisionID1 << "\n+++ " << revisionID2 << "\n";
+        uniDiff << "diff \n--- " << revisionID1 << "\n+++ " << revisionID2 << "\n";
 
     diffFile.printUnifiedFormat(uniDiff);
 

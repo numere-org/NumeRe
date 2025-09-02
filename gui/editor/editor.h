@@ -56,8 +56,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 	    friend class SearchController;
 	    friend class CodeFormatter;
 
-		NumeReEditor(NumeReWindow* mframe, Options* options,
-					 wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos = wxDefaultPosition,
+		NumeReEditor(NumeReWindow* mframe, wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition,
 					 const wxSize& size = wxDefaultSize, long style = 0,
 					 const wxString& name = wxSTCNameStr);
 		~NumeReEditor();

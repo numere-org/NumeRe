@@ -36,10 +36,9 @@
 class NumeReHistory : public NumeReEditor
 {
 public:
-	NumeReHistory(NumeReWindow* mframe, Options* options,
-					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos = wxDefaultPosition,
-					const wxSize& size = wxDefaultSize, long style = 0,
-					const wxString& name = wxSTCNameStr);
+	NumeReHistory(NumeReWindow* mframe, wxWindow *parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition,
+                  const wxSize& size = wxDefaultSize, long style = 0,
+                  const wxString& name = wxSTCNameStr);
 	~NumeReHistory();
 
     void UpdateSyntaxHighlighting(bool forceUpdate = false);

@@ -353,7 +353,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitCommandHistory->Show();
     m_book->Show();
     TreePanel* historyPanel = new TreePanel(m_noteTerm, wxID_ANY);
-    m_history = new NumeReHistory(this, m_options, historyPanel, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
+    m_history = new NumeReHistory(this, historyPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     HistorySearchCtrl* histSearchCtrl = new HistorySearchCtrl(historyPanel, wxID_ANY, _guilang.get("GUI_SEARCH_HISTORY"),
                                                               _guilang.get("GUI_SEARCH_CALLTIP_HISTORY"), m_history);
     historyPanel->AddWindows(histSearchCtrl, m_history);
