@@ -1062,19 +1062,21 @@ std::vector<std::string> FileSystem::getFolderList(const std::string& sDirectory
         // read the contents of FindFileData
         do
         {
-            // USe directories
-            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            std::string name = FindFileData.cFileName;
+
+            // Use directories
+            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && name != "." && name != "..")
             {
                 // Push back the directories
                 if (nFlags & FULLPATH)
-                    vFileList.push_back(sDir + FindFileData.cFileName);
+                    vFileList.push_back(sDir + name);
                 else
-                    vFileList.push_back(FindFileData.cFileName);
+                    vFileList.push_back(name);
             }
-            else if (std::string(FindFileData.cFileName).ends_with(".lnk"))
+            else if (name.ends_with(".lnk"))
             {
                 // Handle links
-                std::string sLinkTarget = replacePathSeparator(resolveLink(sDir + FindFileData.cFileName));
+                std::string sLinkTarget = replacePathSeparator(resolveLink(sDir + name));
                 FileInfo info = getFileInfo(sLinkTarget);
 
                 if (info.fileAttributes & FileInfo::ATTR_DIRECTORY)

@@ -1432,7 +1432,7 @@ NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
 	m_selecting = true;
 	MarkSelection();
-	Refresh();
+	Refresh(false);
 	this->CaptureMouse();
 }
 
@@ -1474,7 +1474,7 @@ NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 	if (this->GetCapture() == this)
 	{
 		this->ReleaseMouse();
-		Refresh();
+		Refresh(false);
 	}
 	move_cursor_editable_area(m_selx2, m_sely2);
 }
@@ -1518,7 +1518,7 @@ NumeReTerminal::OnMouseMove(wxMouseEvent& event)
         // Update the terminal
 		// GenericTerminal::Update();
 		if (x2Old != m_selx2 || y2Old != m_sely2)
-            Refresh();
+            Refresh(false);
 	}
 }
 
