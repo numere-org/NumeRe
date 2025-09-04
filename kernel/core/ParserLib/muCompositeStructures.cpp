@@ -1416,8 +1416,14 @@ namespace mu
                     dict[member].reset(new NumValue(Numerical(json[member].asDouble())));
                     break;
                 case Json::stringValue:
-                    dict[member].reset(new StrValue(json[member].asString()));
+                {
+                    if (isConvertible(json[member].asString(), CONVTYPE_DATE_TIME))
+                        dict[member].reset(new NumValue(Numerical(StrToTime(json[member].asString()))));
+                    else
+                        dict[member].reset(new StrValue(json[member].asString()));
+
                     break;
+                }
                 case Json::booleanValue:
                     dict[member].reset(new NumValue(Numerical(json[member].asBool())));
                     break;
@@ -1464,8 +1470,14 @@ namespace mu
                     arr.emplace_back(json[i].asDouble());
                     break;
                 case Json::stringValue:
-                    arr.emplace_back(json[i].asString());
+                {
+                    if (isConvertible(json[i].asString(), CONVTYPE_DATE_TIME))
+                        arr.emplace_back(StrToTime(json[i].asString()));
+                    else
+                        arr.emplace_back(json[i].asString());
+
                     break;
+                }
                 case Json::booleanValue:
                     arr.emplace_back(json[i].asBool());
                     break;
@@ -1548,6 +1560,8 @@ namespace mu
                 sJsonString += encodeJson(val.getArray());
             else if (val.isDictStruct())
                 sJsonString += encodeJson(val.getDictStruct());
+            else if (val.isNumerical() && (val.getNum().getType() == DATETIME || val.getNum().getType() == DURATION))
+                sJsonString += "\"" + val.print() + "\"";
             else
                 sJsonString += val.print();
         }
@@ -1580,6 +1594,10 @@ namespace mu
                 sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const ArrValue*>(val)->get());
             else if (val->m_type == TYPE_DICTSTRUCT)
                 sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const DictStructValue*>(val)->get());
+            else if (val->m_type == TYPE_NUMERICAL
+                     && (static_cast<const NumValue*>(val)->get().getType() == DATETIME
+                         || static_cast<const NumValue*>(val)->get().getType() == DURATION))
+                sJsonString += "\"" + field + "\": \"" + val->print(0, 0, false) + "\"";
             else
                 sJsonString += "\"" + field + "\": " + val->print(0, 0, false);
         }

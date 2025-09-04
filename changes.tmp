@@ -7,3 +7,4 @@ Added	You can now view tabular data directly from the file try by right-clicking
 Added	The revision dialog now shows a built-in editor, where Diffs may be examined.
 Cleaned	The flickering in the terminal during making a selection has been reduced.
 Removed	"getfolderlist()" does not return relative file paths any more.
+Fixed	"jsonencode" and "jsondecode()" will now encode and decode date-time values correctly.
