@@ -127,6 +127,8 @@ class NumeReSyntax
             {return constructString(vFunctions);}
         std::string getMethods() const
             {return constructString(vMethods) + " " + constructString(vMethodsArgs);}
+        std::string getNoArgMethods() const
+            {return constructString(vMethods);}
         std::string getConstants() const
             {return constructString(vConstants);}
         std::string getSpecial() const

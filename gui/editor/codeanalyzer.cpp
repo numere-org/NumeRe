@@ -1297,9 +1297,9 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement + "()")), ANNOTATION_ERROR);
 
         // ignore modifiers, i.e. method without parentheses
-        static string sMODIFIER = ",len,cols,lines,rows,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,description,first,last,shrink,order,";
+        static std::string sMODIFIER = " " + m_editor->_syntax->getNoArgMethods();
 
-        if (sMODIFIER.find("," + sSyntaxElement + ",") == string::npos)
+        if (sMODIFIER.find(" " + sSyntaxElement + " ") == string::npos)
             sSyntaxElement += "()";
 
         sSyntaxElement.insert(0, "VAR.");
@@ -1713,10 +1713,11 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 
     for (int i = m_nCurPos; i > m_editor->PositionFromLine(m_nCurrentLine); i--)
     {
-        if ((m_editor->GetCharAt(i) == '(' || m_editor->GetCharAt(i) == '{')
+        if ((m_editor->GetCharAt(i) == '(' || m_editor->GetCharAt(i) == '{' || m_editor->GetCharAt(i) == '[')
             && (m_editor->BraceMatch(i) >= m_nCurPos || m_editor->BraceMatch(i) == -1) // either no brace (yet) or the brace further right
             && (m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CLUSTER
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CUSTOM_FUNCTION
+                || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_IDENTIFIER
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_PREDEFS)) // table() or data()
         {
             contextPoint = i;
@@ -1750,7 +1751,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
     if (sSyntaxElement == "nlen")
     {
         // Should only be used in clusters
-        if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CLUSTER)
+        if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CLUSTER && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_IDENTIFIER)
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
                                                        highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
                                                        m_sWarn,
