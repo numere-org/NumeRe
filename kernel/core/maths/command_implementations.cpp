@@ -4461,6 +4461,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
     std::vector<double> source_x;
     std::vector<double> source_y;
+    std::pair<int,int> finalSize{0,0};
 
     // Find the target of this operation
     std::string sTargetTable = cmdParser.getTargetTable(_idx, "rotdata");
@@ -4469,6 +4470,14 @@ void rotateTable(CommandLineParser& cmdParser)
 
     if (vParVal.size())
         dAlpha = -vParVal.front().getNum().asF64() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
+
+    vParVal = cmdParser.getParsedParameterValue("size");
+
+    if (vParVal.size() > 1)
+    {
+        finalSize.first = vParVal.get(0).getNum().asI64();
+        finalSize.second = vParVal.get(1).getNum().asI64();
+    }
 
     _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
     _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
@@ -4518,41 +4527,59 @@ void rotateTable(CommandLineParser& cmdParser)
 
     // Get the edges
     Point topLeft(0, 0);
-    Point topRightS(_source->getCols(false), 0);
-    Point topRightP(_source->getCols(false)-1, 0);
-    Point bottomLeftS(0, _source->getLines(false));
-    Point bottomLeftP(0, _source->getLines(false)-1);
     Point bottomRightS(_source->getCols(false), _source->getLines(false));
-    Point bottomRightP(_source->getCols(false)-1, _source->getLines(false)-1);
+
+    if (cmdParser.hasParam("keepdim") || cmdParser.hasParam("k"))
+    {
+        finalSize.first = _source->getLines(false);
+        finalSize.second = _source->getCols(false);
+    }
+
+    double topP;
+    double leftP;
 
     // get the rotation origin
     Point origin = (bottomRightS + topLeft) / 2.0;
 
-    // Calculate their final positions
-    topLeft.rotate(dAlpha, origin);
-    topRightS.rotate(dAlpha, origin);
-    topRightP.rotate(dAlpha, origin);
-    bottomLeftS.rotate(dAlpha, origin);
-    bottomLeftP.rotate(dAlpha, origin);
-    bottomRightS.rotate(dAlpha, origin);
-    bottomRightP.rotate(dAlpha, origin);
+    if (finalSize.first <= 0 || finalSize.second <= 0)
+    {
+        Point topRightS(_source->getCols(false), 0);
+        Point topRightP(_source->getCols(false)-1, 0);
+        Point bottomLeftS(0, _source->getLines(false));
+        Point bottomLeftP(0, _source->getLines(false)-1);
+        Point bottomRightP(_source->getCols(false)-1, _source->getLines(false)-1);
 
-    // Calculate the final image extent
-    double topS   = std::min(topLeft.y, std::min(topRightS.y, std::min(bottomLeftS.y, bottomRightS.y)));
-    double topP   = std::min(topLeft.y, std::min(topRightP.y, std::min(bottomLeftP.y, bottomRightP.y)));
-    double bot    = std::max(topLeft.y, std::max(topRightS.y, std::max(bottomLeftS.y, bottomRightS.y)));
-    double leftS  = std::min(topLeft.x, std::min(topRightS.x, std::min(bottomLeftS.x, bottomRightS.x)));
-    double leftP  = std::min(topLeft.x, std::min(topRightP.x, std::min(bottomLeftP.x, bottomRightP.x)));
-    double right  = std::max(topLeft.x, std::max(topRightS.x, std::max(bottomLeftS.x, bottomRightS.x)));
+        // Calculate their final positions
+        topLeft.rotate(dAlpha, origin);
+        topRightS.rotate(dAlpha, origin);
+        topRightP.rotate(dAlpha, origin);
+        bottomLeftS.rotate(dAlpha, origin);
+        bottomLeftP.rotate(dAlpha, origin);
+        bottomRightS.rotate(dAlpha, origin);
+        bottomRightP.rotate(dAlpha, origin);
 
-    int rows = ceil(bot - topS);
-    int cols = ceil(right - leftS);
+        // Calculate the final image extent
+        double topS   = std::min(topLeft.y, std::min(topRightS.y, std::min(bottomLeftS.y, bottomRightS.y)));
+        topP   = std::min(topLeft.y, std::min(topRightP.y, std::min(bottomLeftP.y, bottomRightP.y)));
+        double bot    = std::max(topLeft.y, std::max(topRightS.y, std::max(bottomLeftS.y, bottomRightS.y)));
+        double leftS  = std::min(topLeft.x, std::min(topRightS.x, std::min(bottomLeftS.x, bottomRightS.x)));
+        leftP  = std::min(topLeft.x, std::min(topRightP.x, std::min(bottomLeftP.x, bottomRightP.x)));
+        double right  = std::max(topLeft.x, std::max(topRightS.x, std::max(bottomLeftS.x, bottomRightS.x)));
+
+        finalSize.first = ceil(bot - topS);
+        finalSize.second = ceil(right - leftS);
+    }
+    else
+    {
+        topP = (_source->getLines(false) - finalSize.first) * 0.5;
+        leftP = (_source->getCols(false) - finalSize.second) * 0.5;
+    }
 
     // Insert the axes, if necessary
     if (cmdParser.getCommand() == "imrot")
     {
         // Write the x axis
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < finalSize.first; i++)
         {
             if (_idx.row.size() <= (size_t)i)
                 break;
@@ -4561,7 +4588,7 @@ void rotateTable(CommandLineParser& cmdParser)
         }
 
         // Write the y axis
-        for (int i = 0; i < cols; i++)
+        for (int i = 0; i < finalSize.second; i++)
         {
             if (_idx.row.size() <= (size_t)i)
                 break;
@@ -4578,7 +4605,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // Rotate "cell" coordinates to old coord sys,
         // interpolate values and rotate back to obtain
         // the values of the new coordinates
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < finalSize.first; i++)
         {
             if (_idx.row.size() <= (size_t)i)
                 break;
@@ -4594,7 +4621,7 @@ void rotateTable(CommandLineParser& cmdParser)
             _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, p.x);
         }
 
-        for (int j = 0; j < cols; j++)
+        for (int j = 0; j < finalSize.second; j++)
         {
             if (_idx.row.size() <= (size_t)j)
                 break;
@@ -4616,16 +4643,16 @@ void rotateTable(CommandLineParser& cmdParser)
     Memory* _table = _data.getTable(sTargetTable);
 
     // Prepare the needed number of columns
-    _table->resizeMemory(-1, _idx.col.subidx(0, cols).max()+1);
+    _table->resizeMemory(-1, _idx.col.subidx(0, finalSize.second).max()+1);
 
     // Calculate the rotated grid
     #pragma omp parallel for
-    for (int j = 0; j < cols; j++)
+    for (int j = 0; j < finalSize.second; j++)
     {
         if (_idx.col.size() <= (size_t)j)
             continue;
 
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < finalSize.first; i++)
         {
             if (_idx.row.size() <= (size_t)i)
                 break;
