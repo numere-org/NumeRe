@@ -1476,7 +1476,11 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
 
     if (_values.size() == 1)
     {
-        writeSingletonData(_idx, _values.get(0));
+        if (_values.get(0).isArray())
+            writeData(_idx, _values.get(0).getArray());
+        else
+            writeSingletonData(_idx, _values.get(0));
+
         return;
     }
 

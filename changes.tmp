@@ -11,3 +11,4 @@ Fixed	"jsonencode" and "jsondecode()" will now encode and decode date-time value
 Fixed	Erronous errors about missing parentheses and a warning about misuse of "nlen" if it was used within square vector brackets have been removed.
 Cleaned	Line numbers in PDF documentations are now continued correctly.
 Added	"imrot" and co now feature the options "size={X,Y}" and "keepdim" (for keeping the original dimensions).
+Fixed	Storing dictstruct fields in a table is now possible.
