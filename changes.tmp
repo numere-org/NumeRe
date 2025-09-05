@@ -9,3 +9,4 @@ Cleaned	The flickering in the terminal during making a selection has been reduce
 Removed	"getfolderlist()" does not return relative file paths any more.
 Fixed	"jsonencode" and "jsondecode()" will now encode and decode date-time values correctly.
 Fixed	Erronous errors about missing parentheses and a warning about misuse of "nlen" if it was used within square vector brackets have been removed.
+Cleaned	Line numbers in PDF documentations are now continued correctly.

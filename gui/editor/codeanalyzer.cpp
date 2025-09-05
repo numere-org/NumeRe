@@ -1455,7 +1455,9 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
     int wordend = m_editor->WordEndPosition(m_nCurPos, true);
 
     // Shift the word end position, if the following character is a dot
-    if (m_editor->GetCharAt(wordend) == '.' && m_editor->GetStyleAt(wordend + 1) != wxSTC_NSCR_METHOD)
+    if (m_editor->GetCharAt(wordend) == '.'
+        && m_editor->GetStyleAt(wordend + 1) != wxSTC_NSCR_METHOD
+        && m_editor->GetStyleAt(wordend + 1) != wxSTC_NSCR_CUSTOM_METHOD)
         wordend = m_editor->WordEndPosition(wordend + 1, true);
 
     // Get the corresponding syntax element

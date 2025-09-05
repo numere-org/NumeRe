@@ -187,9 +187,33 @@ std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
         {
             if (bTextMode)
             {
+                // Find the next code line containing not only whitespace or
+                // hidden comments or the terminal section of block comments
+                // (which are from a previous documentation block)
+                int line = file.LineFromPosition(i);
+
+                // The position might be already at the end of the line
+                // (at the end of a documentation block)
+                if (i == file.getLineEndPosition(line))
+                    line++;
+
+                while (line < file.getLinesCount())
+                {
+                    std::string sLine = file.getLine(line);
+                    StripSpaces(sLine);
+
+                    if (sLine.length() && !sLine.starts_with("##~") && sLine != "*#")
+                    {
+                        i = file.PositionFromLine(line);
+                        break;
+                    }
+
+                    line++;
+                }
+
                 startpos = i;
                 bTextMode = false;
-                sFileContents += "\\begin{lstlisting}\n";
+                sFileContents += "\\begin{lstlisting}[firstnumber=" + toString(file.LineFromPosition(i)+1) + "]\n";
             }
 
             if (i + 1 == file.getLastPosition())
