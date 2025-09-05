@@ -389,7 +389,18 @@ void TableViewer::OnCellChange(wxGridEvent& event)
 {
     SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
 
-    //updateFrame();
+    if (event.GetRow()+1 == GetRows())
+    {
+        AppendRows();
+        updateFrame();
+    }
+
+    if (event.GetCol()+1 == GetCols())
+    {
+        AppendCols();
+        updateFrame();
+    }
+
     UpdateColumnAlignment(GetGridCursorCol());
     event.Veto();
 }

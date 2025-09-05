@@ -12,3 +12,4 @@ Fixed	Erronous errors about missing parentheses and a warning about misuse of "n
 Cleaned	Line numbers in PDF documentations are now continued correctly.
 Added	"imrot" and co now feature the options "size={X,Y}" and "keepdim" (for keeping the original dimensions).
 Fixed	Storing dictstruct fields in a table is now possible.
+Cleaned	If the last row of a table is edited in the table editor via the category value combobox, a new row is now added automatically.
