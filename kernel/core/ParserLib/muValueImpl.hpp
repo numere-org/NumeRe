@@ -171,6 +171,8 @@ namespace mu
     {
         BASE_VALUE_DECL(ArrValue, TYPE_ARRAY, Array, m_val)
 
+        BaseValue* dereferencedClone() const override;
+
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
         BaseValue* operator-(const BaseValue& other) const override;

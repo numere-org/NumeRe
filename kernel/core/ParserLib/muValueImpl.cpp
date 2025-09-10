@@ -1414,6 +1414,21 @@ namespace mu
     BASE_VALUE_IMPL(ArrValue, TYPE_ARRAY, m_val)
 
     /////////////////////////////////////////////////
+    /// \brief Get a dereferenced clone of this
+    /// instance.
+    ///
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* ArrValue::dereferencedClone() const
+    {
+        ArrValue* cloned = new ArrValue(*this);
+        cloned->get().dereference();
+        return cloned;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Addition operator.
     ///
     /// \param other const BaseValue&
@@ -3369,7 +3384,7 @@ namespace mu
 
         if (sMethod == "push")
         {
-            m_stack.emplace_back(arg1.clone());
+            m_stack.emplace_back(arg1.dereferencedClone());
             return new RefValue(&m_stack.back());
         }
 
@@ -3625,12 +3640,12 @@ namespace mu
 
         if (sMethod == "push")
         {
-            m_queue.emplace_back(arg1.clone());
+            m_queue.emplace_back(arg1.dereferencedClone());
             return new RefValue(&m_queue.back());
         }
         else if (sMethod == "pushfront")
         {
-            m_queue.emplace_front(arg1.clone());
+            m_queue.emplace_front(arg1.dereferencedClone());
             return new RefValue(&m_queue.front());
         }
 

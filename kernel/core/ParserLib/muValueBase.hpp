@@ -106,6 +106,7 @@ namespace mu
             ///
             /////////////////////////////////////////////////
             virtual BaseValue* clone() const = 0;
+            virtual BaseValue* dereferencedClone() const;
 
             virtual BaseValue* operator+(const BaseValue& other) const;
             virtual BaseValue* operator-() const;
@@ -334,6 +335,20 @@ namespace mu
             BaseValue* clone() const override
             {
                 return new RefValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a clone of the referenced value.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            BaseValue* dereferencedClone() const override
+            {
+                if (!isNull())
+                    return get().dereferencedClone();
+
+                return nullptr;
             }
 
             BaseValue& get();

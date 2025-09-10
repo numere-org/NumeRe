@@ -23,6 +23,18 @@
 namespace mu
 {
     /////////////////////////////////////////////////
+    /// \brief The default implementation of
+    /// this method simply calls clone();
+    ///
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::dereferencedClone() const
+    {
+        return clone();
+    }
+
+    /////////////////////////////////////////////////
     /// \brief Addition operator.
     ///
     /// \param other const BaseValue&

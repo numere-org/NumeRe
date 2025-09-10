@@ -955,7 +955,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValuePtr* DictStruct::write(const std::string& fieldName, const BaseValue& value)
     {
-        BaseValue* val = value.clone();
+        BaseValue* val = value.dereferencedClone();
         m_fields[fieldName].reset(val);
         return &m_fields[fieldName];
     }
@@ -1021,7 +1021,7 @@ namespace mu
                     }
                     else
                     {
-                        BaseValue* val = value.clone();
+                        BaseValue* val = value.dereferencedClone();
                         element->reset(val);
                         return element;
                     }
@@ -1061,7 +1061,7 @@ namespace mu
             }
             else
             {
-                BaseValue* val = value.clone();
+                BaseValue* val = value.dereferencedClone();
                 element->reset(val);
                 return element;
             }

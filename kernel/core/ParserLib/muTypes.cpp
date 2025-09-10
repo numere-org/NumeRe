@@ -92,6 +92,8 @@ namespace mu
                 return "string";
             case TYPE_ARRAY:
                 return "cluster";
+            case TYPE_REFERENCE:
+                return "reference";
             case TYPE_OBJECT:
                 return "object";
         }
