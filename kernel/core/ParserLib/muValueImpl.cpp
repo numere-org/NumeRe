@@ -141,7 +141,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NeutralValue::operator/(const BaseValue& other) const
     {
-        return NumValue(Numerical(0.0)) / other;// NumValue(Numerical(1.0)) / other;
+        if (other.m_type == TYPE_STRING)
+            return StrValue("") / other;
+
+        return NumValue(Numerical(NAN)) / other;
     }
 
 
@@ -154,7 +157,20 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NeutralValue::operator*(const BaseValue& other) const
     {
-        return NumValue(Numerical(0.0)) * other;//other.clone();
+        return NumValue(Numerical(NAN)) * other;//other.clone();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Power operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* NeutralValue::operator^(const BaseValue& other) const
+    {
+        return NumValue(Numerical(NAN)) ^ other;
     }
 
 
@@ -402,7 +418,7 @@ namespace mu
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
+            return new NumValue(NAN);
         else if (other.m_type == TYPE_REFERENCE)
             return operator/(static_cast<const RefValue&>(other).get());
 
@@ -433,7 +449,7 @@ namespace mu
         else if (other.m_type == TYPE_STRING)
             return new StrValue(strRepeat(static_cast<const StrValue&>(other).get(), m_val.asI64()));
         else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
+            return new NumValue(NAN);
         else if (other.m_type == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
@@ -513,7 +529,9 @@ namespace mu
             m_val /= static_cast<const CatValue&>(other).get().val;
         else if (other.m_type == TYPE_REFERENCE)
             return operator/=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
+        else if (other.m_type == TYPE_NEUTRAL)
+            m_val = NAN;
+        else
             throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
 
         return *this;
@@ -535,7 +553,9 @@ namespace mu
             m_val *= static_cast<const CatValue&>(other).get().val;
         else if (other.m_type == TYPE_REFERENCE)
             return operator*=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
+        else if (other.m_type == TYPE_NEUTRAL)
+            m_val = NAN;
+        else
             throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
 
         return *this;
@@ -557,7 +577,9 @@ namespace mu
             m_val = m_val.pow(static_cast<const CatValue&>(other).get().val);
         else if (other.m_type == TYPE_REFERENCE)
             return operator^=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
+        else if (other.m_type == TYPE_NEUTRAL)
+            m_val = NAN;
+        else
             throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
 
         return *this;
@@ -592,7 +614,7 @@ namespace mu
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Array(Value(m_val)).pow(static_cast<const ArrValue&>(other).get()));
         else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
+            return new NumValue(NAN);
         else if (other.m_type == TYPE_REFERENCE)
             return pow(static_cast<const RefValue&>(other).get());
 
@@ -754,7 +776,7 @@ namespace mu
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
+            return new PathValue(Path(m_val) / "");
         else if (other.m_type == TYPE_REFERENCE)
             return operator/(static_cast<const RefValue&>(other).get());
 
@@ -778,7 +800,7 @@ namespace mu
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
+            return new StrValue("");
         else if (other.m_type == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
@@ -823,7 +845,9 @@ namespace mu
             m_val = strRepeat(m_val, static_cast<const CatValue&>(other).get().val.asI64());
         else if (other.m_type == TYPE_REFERENCE)
             return operator*=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
+        else if (other.m_type == TYPE_NEUTRAL)
+            m_val = "";
+        else
             throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
 
         return *this;
@@ -1216,7 +1240,7 @@ namespace mu
         else if (other.m_type == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
         else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
+            return new NumValue(0.0);
         else if (other.m_type == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
@@ -1472,8 +1496,6 @@ namespace mu
     {
         if (other.m_type == TYPE_ARRAY)
             return new ArrValue(m_val * static_cast<const ArrValue&>(other).m_val);
-        else if (other.m_type == TYPE_NEUTRAL)
-            return clone();
         else if (other.m_type == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
@@ -1594,7 +1616,7 @@ namespace mu
             m_val ^= static_cast<const ArrValue&>(other).m_val;
         else if (other.m_type == TYPE_REFERENCE)
             return operator^=(static_cast<const RefValue&>(other).get());
-        else
+        else if (other.m_type != TYPE_NEUTRAL)
             m_val ^= Value(other.clone());
 
         return *this;

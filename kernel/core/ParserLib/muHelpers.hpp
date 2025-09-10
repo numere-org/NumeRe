@@ -26,6 +26,7 @@ namespace mu
 {
     void print(const std::string& msg);
     void printFormatted(const std::string& msg);
+    void warning(const std::string& msg);
     void toggleTableMode();
     Array val2Str(const Array& arr, size_t nLen);
     Array getPathToken(const Array& arr);

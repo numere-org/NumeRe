@@ -277,10 +277,12 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(a1.get(i).getPath(),
-                                                                                                      a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
+        std::vector<std::string> vFileList = _fSys.getFileList(a1.get(i).getPath(),
+                                                               (a2.isDefault() ? 0 : a2.get(i).getNum().asI64()) | FileSystem::FOLLOW_LINKS);
 
         if (!vFileList.size())
             ret.emplace_back("");
@@ -308,10 +310,12 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+
     for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
     {
-        std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(a1.get(i).getPath(),
-                                                                                                          a2.isDefault() ? 0 : a2.get(i).getNum().asI64());
+        std::vector<std::string> vFolderList = _fSys.getFolderList(a1.get(i).getPath(),
+                                                                   (a2.isDefault() ? 0 : a2.get(i).getNum().asI64()) | FileSystem::NO_RELATIVE_PATH | FileSystem::FOLLOW_LINKS);
 
         if (!vFolderList.size())
             ret.emplace_back("");

@@ -46,6 +46,7 @@ namespace mu
         BaseValue* operator-(const BaseValue& other) const override;
         BaseValue* operator/(const BaseValue& other) const override;
         BaseValue* operator*(const BaseValue& other) const override;
+        BaseValue* operator^(const BaseValue& other) const override;
 
         bool isValid() const override;
 

@@ -172,6 +172,11 @@ mu::Array timfnc_get_utc_offset();
 mu::Array timfnc_is_daylightsavingtime(const mu::Array&);
 mu::Array timfnc_is_leap_year(const mu::Array&);
 
+// Test functions
+mu::Array tstfnc_verifyValue(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=1
+mu::Array tstfnc_verifyNeq(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=1
+mu::Array tstfnc_verifyRange(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=1
+
 // Distribution functions
 mu::Array rndfnc_perlin(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence); // OPT=6
 mu::Array rndfnc_rigedmultifractal(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave); // OPT=5

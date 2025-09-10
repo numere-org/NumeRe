@@ -13,3 +13,5 @@ Cleaned	Line numbers in PDF documentations are now continued correctly.
 Added	"imrot" and co now feature the options "size={X,Y}" and "keepdim" (for keeping the original dimensions).
 Fixed	Storing dictstruct fields in a table is now possible.
 Cleaned	If the last row of a table is edited in the table editor via the category value combobox, a new row is now added automatically.
+Fixed	Multiplication with different vector lengths works now in a reliable manner.
+Added	Functions for verifying results within a SW testing scenario have been added: verifyval(), verifyneq(), verifyrange()

@@ -1254,60 +1254,60 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
         case WXK_BACK:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::bs())
-                Refresh();
+                Refresh(false);
 
             return true;
         case WXK_TAB:
             GenericTerminal::resetAutoComp(RESETCURSOR);
             GenericTerminal::tab();
-            Refresh();
+            Refresh(false);
             return true;
         case WXK_LEFT:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if ((ctrlDown && GenericTerminal::ctrl_left()) || GenericTerminal::cursor_left())
             {
-                Refresh();
+                Refresh(false);
             }
             return true;
         case WXK_RIGHT:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if ((ctrlDown && GenericTerminal::ctrl_right()) || GenericTerminal::cursor_right())
             {
-                Refresh();
+                Refresh(false);
             }
             return true;
         case WXK_UP:
             GenericTerminal::resetAutoComp(RESETTAB);
             if (GenericTerminal::cursor_up())
             {
-                Refresh();
+                Refresh(false);
             }
             return true;
         case WXK_DOWN:
             GenericTerminal::resetAutoComp(RESETTAB);
             if (GenericTerminal::cursor_down())
             {
-                Refresh();
+                Refresh(false);
             }
             return true;
         case WXK_HOME:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::home())
             {
-                Refresh();
+                Refresh(false);
             }
             return true;
         case WXK_END:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::end())
             {
-                Refresh();
+                Refresh(false);
             }
             return true;
         case WXK_DELETE:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::del())
-                Refresh();
+                Refresh(false);
 
             return true;
     }

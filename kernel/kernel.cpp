@@ -752,6 +752,11 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("cf32", cast_numerical_cmplx<float>);                      // cf32(x)
     _parser.DefineFun("cf64", cast_numerical_cmplx<double>);                     // cf64(x)
 
+    // Test functions
+    _parser.DefineFun("verifyval", tstfnc_verifyValue, true, 1);                 // verifyval(results,expected,tol)
+    _parser.DefineFun("verifyneq", tstfnc_verifyNeq, true, 1);                   // verifyneq(results,notexpected,tol)
+    _parser.DefineFun("verifyrange", tstfnc_verifyRange, true, 1);               // verifyrange(results,lower,upper,incl)
+
     /////////////////////////////////////////////////////////////////////
     // NOTE:
     // If multi-argument functions are declared, think of whether

@@ -1346,6 +1346,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "version()"
              && sSyntaxElement != "getlasterror()"
              && sSyntaxElement != "getuilang()"
+             && sSyntaxElement != "getuserinfo()"
              && sSyntaxElement != "uuid()"
              && sSyntaxElement != "getversioninfo()"
              && sSyntaxElement != "landau_rd()"

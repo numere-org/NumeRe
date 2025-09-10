@@ -22,6 +22,7 @@
  */
 #include "functionimplementation.hpp"
 #include "../ParserLib/muParserTemplateMagic.h"
+#include "../ParserLib/muHelpers.hpp"
 #define _USE_MATH_DEFINES
 
 
@@ -6498,6 +6499,167 @@ mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
     }
 
     return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This test function compares the result
+/// with the result considering NaNs to be equal.
+///
+/// \param result const mu::Array&
+/// \param expected const mu::Array&
+/// \param tolerance const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array tstfnc_verifyValue(const mu::Array& result, const mu::Array& expected, const mu::Array& tolerance)
+{
+    mu::Array testResult;
+    size_t elems = std::max({result.size(), expected.size(), tolerance.size()});
+    testResult.reserve(elems);
+    mu::Numerical tol = 1e-14;
+    std::string sDiagString;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        if (!tolerance.isDefault())
+            tol = tolerance.get(i).getNum();
+
+        const mu::Value& res = result.get(i);
+        const mu::Value& expct = expected.get(i);
+
+        if (res.isArray())
+            testResult.push_back(tstfnc_verifyValue(res.getArray(), expct, mu::Value(tol)));
+        else if (res == expct || (res != res && expct != expct))
+            testResult.push_back(true);
+        else if (res.isNumerical() && expct.isNumerical() && numfnc_abs(expct - res).get(0) < tol)
+            testResult.push_back(true);
+        else
+        {
+            if (sDiagString.length())
+                sDiagString += "\n";
+
+            sDiagString += "  [" + toString(i+1) + "]   " + res.print() + " == " + expct.print();
+            testResult.push_back(false);
+        }
+    }
+
+    if (sDiagString.length())
+        mu::warning("Verification failure in verifyval(result,expected,fTol) within operation result == expected\nFailing components:\n" + sDiagString);
+
+    return testResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This test function compares the result
+/// with the result considering NaNs to be equal,
+/// however expecting the inequality.
+///
+/// \param result const mu::Array&
+/// \param notExpected const mu::Array&
+/// \param tolerance const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array tstfnc_verifyNeq(const mu::Array& result, const mu::Array& notExpected, const mu::Array& tolerance)
+{
+    mu::Array testResult;
+    size_t elems = std::max({result.size(), notExpected.size(), tolerance.size()});
+    testResult.reserve(elems);
+    mu::Numerical tol = 1e-14;
+    std::string sDiagString;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        if (!tolerance.isDefault())
+            tol = tolerance.get(i).getNum();
+
+        const mu::Value& res = result.get(i);
+        const mu::Value& expct = notExpected.get(i);
+
+        if (res.isArray())
+            testResult.push_back(tstfnc_verifyNeq(res.getArray(), expct, mu::Value(tol)));
+        else if (res == expct || (res != res && expct != expct))
+        {
+            if (sDiagString.length())
+                sDiagString += "\n";
+
+            sDiagString += "  [" + toString(i+1) + "]   " + res.print() + " != " + expct.print();
+            testResult.push_back(false);
+        }
+        else if (res.isNumerical() && expct.isNumerical() && numfnc_abs(expct - res).get(0) < tol)
+        {
+            if (sDiagString.length())
+                sDiagString += "\n";
+
+            sDiagString += "  [" + toString(i+1) + "]   " + res.print() + " != " + expct.print();
+            testResult.push_back(false);
+        }
+        else
+            testResult.push_back(true);
+    }
+
+    if (sDiagString.length())
+        mu::warning("Verification failure in verifyneq(result,notexpected,fTol) within operation result != notexpected\nFailing components:\n" + sDiagString);
+
+    return testResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This test function compares the result
+/// with the lower and the upper bound and
+/// ensures that the result lies in between of
+/// them (inclusive or exclusive depending on the
+/// last parameter).
+///
+/// \param result const mu::Array&
+/// \param lowerBound const mu::Array&
+/// \param upperBound const mu::Array&
+/// \param inclusive const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array tstfnc_verifyRange(const mu::Array& result, const mu::Array& lowerBound, const mu::Array& upperBound, const mu::Array& inclusive)
+{
+    mu::Array testResult;
+    size_t elems = std::max({result.size(), lowerBound.size(), upperBound.size(), inclusive.size()});
+    testResult.reserve(elems);
+    std::string sDiagString;
+    mu::Value incl = true;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        const mu::Value& res = result.get(i);
+        const mu::Value& lower = lowerBound.get(i);
+        const mu::Value& upper = upperBound.get(i);
+
+        if (!inclusive.isDefault())
+            incl = inclusive.get(i);
+
+        if (res.isArray())
+            testResult.push_back(tstfnc_verifyRange(res.getArray(), lower, upper, incl));
+        else if ((incl && lower <= res && res <= upper)
+                 || (!incl && lower < res && res < upper))
+            testResult.push_back(true);
+        else
+        {
+            if (sDiagString.length())
+                sDiagString += "\n";
+
+            if (incl)
+                sDiagString += "  [" + toString(i+1) + "]   " + lower.print() + " <= " + res.print() + " && " + res.print() + " <= " + upper.print();
+            else
+                sDiagString += "  [" + toString(i+1) + "]   " + lower.print() + " < " + res.print() + " && " + res.print() + " < " + upper.print();
+            testResult.push_back(false);
+        }
+    }
+
+    if (sDiagString.length())
+        mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower <= result && result <= upper\nFailing components:\n" + sDiagString);
+
+    return testResult;
 }
 
 

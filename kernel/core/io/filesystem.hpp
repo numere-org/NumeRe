@@ -113,8 +113,10 @@ class FileSystem
 
         enum
         {
-            ONLY_NAME,
-            FULLPATH
+            ONLY_NAME = 0x0,
+            FULLPATH = 0x1,
+            FOLLOW_LINKS = 0x2,
+            NO_RELATIVE_PATH = 0x10
         };
 
 		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true, bool doCleanPath = true) const;

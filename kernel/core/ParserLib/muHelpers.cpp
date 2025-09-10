@@ -62,6 +62,23 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Print a string on the terminal.
+    ///
+    /// \param msg const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void warning(const std::string& msg)
+    {
+#ifdef PARSERSTANDALONE
+        std::cout << "|-> " << msg << std::endl;
+#else
+        NumeReKernel::issueWarning(msg);
+#endif
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Toggle the table printing mode (i.e.
     /// delay/refresh after) to avoid flickering.
     ///

@@ -299,14 +299,28 @@ wxString FileRevisions::createMerge(const wxString& diffFile)
 {
     // Vectorizes the passed diff file and the current revision root
     std::vector<wxString> vVectorizedDiff = vectorize(convertLineEndings(diffFile));
-    std::vector<wxString> vVectorizedRoot = vectorize(convertLineEndings(getRevision(vVectorizedDiff.front().substr(4))));
+    std::vector<wxString> vVectorizedRoot;
+
+    if (vVectorizedDiff.front().substr(0, 4) == "--- ")
+        vVectorizedRoot = vectorize(convertLineEndings(getRevision(vVectorizedDiff.front().substr(4))));
+    else if (vVectorizedDiff[1].substr(0, 4) == "--- ")
+        vVectorizedRoot = vectorize(convertLineEndings(getRevision(vVectorizedDiff[1].substr(4))));
+    else if (vVectorizedDiff[2].substr(0, 4) == "--- ")
+        vVectorizedRoot = vectorize(convertLineEndings(getRevision(vVectorizedDiff[2].substr(4))));
+    else
+        return "";
 
     int nCurrentInputLine = 0;
 
     // Go through the lines of the diff file. Ignore the first
     // two, because they only contain the revision identifiers.
-    for (size_t i = 2; i < vVectorizedDiff.size(); i++)
+    for (size_t i = 0; i < vVectorizedDiff.size(); i++)
     {
+        if (vVectorizedDiff[i].substr(0, 4) == "+++ "
+            || vVectorizedDiff[i].substr(0, 4) == "--- "
+            || vVectorizedDiff[i].substr(0, 5) == "diff ")
+            continue;
+
         // The start of a change section. Extract the target input
         // line in the current revision (the second number set starting
         // with a "+")
