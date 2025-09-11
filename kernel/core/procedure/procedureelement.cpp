@@ -130,9 +130,8 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
                 sProcPlotCompose = "plotcompose ";
 
                 if (findParameter(sProcCommandLine, "multiplot", '='))
-                {
-                    sProcPlotCompose += "-multiplot=" + getArgAtPos(sProcCommandLine, findParameter(sProcCommandLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
-                }
+                    sProcPlotCompose += "-multiplot=" + getArgAtPos(sProcCommandLine, findParameter(sProcCommandLine, "multiplot", '=') + 9)
+                        + " <<COMPOSE>> ";
 
                 continue;
             }
@@ -149,6 +148,9 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
 
                 if (Plot::isPlottingCommand(sCommand))
                 {
+                    if (sProcCommandLine.back() == ';')
+                        sProcCommandLine.pop_back();
+
                     sProcPlotCompose += sProcCommandLine + " <<COMPOSE>> ";
                     continue;
                 }

@@ -16,3 +16,4 @@ Cleaned	If the last row of a table is edited in the table editor via the categor
 Fixed	Multiplication with different vector lengths works now in a reliable manner.
 Added	Functions for verifying results within a SW testing scenario have been added: verifyval(), verifyneq(), verifyrange()
 Fixed	Combined dictstruct assignments are now possible.
+Fixed	An internal error during plotting occuring if a command inside a "compose" block terminates with a ";" has been resolved.
