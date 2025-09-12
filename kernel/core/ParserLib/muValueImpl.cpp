@@ -2137,7 +2137,7 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"at", 1}, {"len", 0}});
+        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"at", 1}, {"len", 0}, {"contains", 1}});
 
         if (m_val.isField(sMethod) && argc == 0)
             return MethodDefinition(sMethod);
@@ -2215,6 +2215,10 @@ namespace mu
             const BaseValue* v = m_val.read(static_cast<const PathValue&>(arg1).get());
             return v ? v->clone() : nullptr;
         }
+        else if (sMethod == "contains" && arg1.m_type == TYPE_STRING)
+            return new NumValue(m_val.isField(static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "contains" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new NumValue(m_val.isField(static_cast<const PathValue&>(arg1).get()));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
