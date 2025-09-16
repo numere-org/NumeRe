@@ -2201,7 +2201,7 @@ void TableViewer::OnCellDoubleClick(wxGridEvent& event)
 
         if (key.Matches(".*:") && value.Matches("{* x * *}"))
         {
-            if (key.find_first_of(" .!%&/()[]{}?=:,;<>|+-*^#'~$") != std::string::npos)
+            if (key.find_first_of(" .!%&/()[]{}?=:,;<>|+-*^#'~$", 1, key.length()-2) != std::string::npos)
                 m_numereWindow->showTable(m_intName + ".at(\"" + key.substr(1, key.length()-2) + "\")",
                                           m_displayName + ".at(\"" + key.substr(1, key.length()-2) + "\")");
             else

@@ -23,6 +23,7 @@
 #include "../../kernel/kernel.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/io/logger.hpp"
+#include "../../kernel/core/ParserLib/muValueImpl.hpp"
 #include "grouppanel.hpp"
 #include "cellvalueshader.hpp"
 #include <wx/tokenzr.h>
@@ -335,6 +336,9 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
     }
 }
 
+static void populateChild(wxTreeListCtrl* listCtrl, const mu::Array& values, wxTreeListItem parentItem);
+static void populateArrChild(wxTreeListCtrl* listCtrl, const mu::Array& values, wxTreeListItem parentItem);
+static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, wxTreeListItem parentItem);
 
 /////////////////////////////////////////////////
 /// \brief Populate the children of the current
@@ -359,6 +363,17 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::Array& values, wxT
 
         if (elem.isArray())
             sItem = elem.getArray().get(0).printVal();
+        else if (elem.isDictStruct())
+        {
+            while (nColumns < 2)
+            {
+                listCtrl->AppendColumn("");
+                nColumns = listCtrl->GetColumnCount();
+            }
+
+            populateChild(listCtrl, elem.getDictStruct(), parentItem);
+            continue;
+        }
         else
             sItem = elem.printVal();
 
@@ -401,6 +416,186 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::Array& values, wxT
 
 
 /////////////////////////////////////////////////
+/// \brief Populate a child tree based upon the
+/// values from a mu::Array. The values are used
+/// as-is, i.e. not as encoded string rows.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param values const mu::Array&
+/// \param parentItem wxTreeListItem
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateArrChild(wxTreeListCtrl* listCtrl, const mu::Array& values, wxTreeListItem parentItem)
+{
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = listCtrl->GetColumnCount();
+    wxTreeListItem item = parentItem;
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        const mu::Value& elem = values.get(i);
+        wxString sItem;
+
+        if (elem.isArray())
+            sItem = elem.getArray().get(0).printVal();
+        else if (elem.isDictStruct())
+        {
+            populateChild(listCtrl, elem.getDictStruct(), parentItem);
+            continue;
+        }
+        else
+            sItem = elem.printVal();
+
+        size_t currCol = 1u;
+        bool check = false;
+
+        item = listCtrl->AppendItem(parentItem, nextItemValue(sItem));
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+
+        if (elem.isArray() && elem.getArray().size() == nColumns)
+        {
+            for (size_t j = 1; j < nColumns; j++)
+            {
+                if (elem.getArray().get(j).isArray())
+                    populateArrChild(listCtrl, elem.getArray().get(j).getArray(), item);
+                else if (elem.getArray().get(j).isDictStruct())
+                    populateChild(listCtrl, elem.getArray().get(j).getDictStruct(), item);
+                else
+                    listCtrl->SetItemText(item, j, elem.getArray().get(j).printVal());
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Populate a child tree based upon the
+/// values from a DictStruct instance. The
+/// instance members are expected to be in XML
+/// format.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param dict const mu::DictStruct&
+/// \param parentItem wxTreeListItem
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, wxTreeListItem parentItem)
+{
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = listCtrl->GetColumnCount();
+    wxTreeListItem item = parentItem;
+    std::vector<std::string> fields = dict.getFields();
+
+    for (size_t i = 0; i < fields.size(); i++)
+    {
+        if (fields[i] == "name")
+            continue;
+
+        const mu::BaseValue* elem = dict.read(fields[i]);
+
+        if (fields[i] == "text" && nColumns > 1)
+        {
+            listCtrl->SetItemText(parentItem, 1, elem->printVal(0, 0));
+            continue;
+        }
+
+        if (fields[i] == "nodes")
+        {
+            if (elem->m_type == mu::TYPE_ARRAY)
+            {
+                populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), parentItem);
+                continue;
+            }
+            else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+            {
+                populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), parentItem);
+                continue;
+            }
+        }
+
+        wxString sItem;
+        item = listCtrl->AppendItem(parentItem, fields[i]);
+
+        if (elem->m_type == mu::TYPE_ARRAY)
+        {
+            populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), item);
+            continue;
+        }
+        else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+        {
+            populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), item);
+            continue;
+        }
+        else
+            sItem = elem->printVal(0, 0);
+
+        size_t currCol = 1u;
+        bool check = false;
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Populate a child tree based upon the
+/// values from a DictStruct instance.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param dict const mu::DictStruct&
+/// \param parentItem wxTreeListItem
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, wxTreeListItem parentItem)
+{
+    wxTreeListItem item = parentItem;
+
+    if (dict.hasXmlStructure() && dict.isField("name"))
+    {
+        item = listCtrl->AppendItem(parentItem, dict.read("name")->printVal(0, 0));
+        populateXmlChild(listCtrl, dict, item);
+        return;
+    }
+
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = listCtrl->GetColumnCount();
+    std::vector<std::string> fields = dict.getFields();
+
+    for (size_t i = 0; i < fields.size(); i++)
+    {
+        const mu::BaseValue* elem = dict.read(fields[i]);
+        wxString sItem;
+        item = listCtrl->AppendItem(parentItem, fields[i]);
+
+        if (elem->m_type == mu::TYPE_ARRAY)
+        {
+            populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), item);
+            continue;
+        }
+        else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+        {
+            populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), item);
+            continue;
+        }
+        else
+            sItem = elem->printVal(0, 0);
+
+        size_t currCol = 1u;
+        bool check = false;
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function converts the list
 /// of values into items for the passed tree list
 /// control and populates it.
@@ -422,19 +617,25 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const mu::Array& valu
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
     size_t nColumns = 1;
 
-    std::string elem = values.unWrap().get(0).printVal();
-
-    for (size_t pos = 0; pos < elem.length(); pos++)
+    if (values.get(0).isDictStruct())
+        nColumns = 2;
+    else
     {
-        if (elem[pos] == '\t')
-            nColumns++;
+        std::string elem = values.unWrap().get(0).printVal();
 
-        if (elem.substr(pos, 2) == "\n{")
-            break;
+        for (size_t pos = 0; pos < elem.length(); pos++)
+        {
+            if (elem[pos] == '\t')
+                nColumns++;
+
+            if (elem.substr(pos, 2) == "\n{")
+                break;
+        }
+
+        if (useCheckBoxes)
+            nColumns--;
     }
 
-    if (useCheckBoxes)
-        nColumns--;
 
     listCtrl->DeleteAllItems();
 
@@ -453,6 +654,16 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const mu::Array& valu
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the child values of the selected
+/// parent item as a common mu::Array instance.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param parent wxTreeListItem
+/// \param useCheckBox bool
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 static mu::Array getChildValues(wxTreeListCtrl* listCtrl, wxTreeListItem parent, bool useCheckBox)
 {
     mu::Array currentLevel;
@@ -511,36 +722,6 @@ static mu::Array getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
     mu::Array values;
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
     return getChildValues(listCtrl, listCtrl->GetRootItem(), useCheckBoxes);
-    /*wxTreeListItems items;
-
-    // Get selections if any and no checkboxes are used
-    if (!useCheckBoxes)
-    {
-        for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
-        {
-            wxString sItem;
-
-            for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
-            {
-                sItem += listCtrl->GetItemText(item, j);
-
-                if (j+1 < listCtrl->GetColumnCount())
-                    sItem += "\t";
-            }
-
-            values.push_back(sItem.ToStdString());
-        }
-
-        return values;
-    }
-
-    // Get the complete list or the states of the checkboxes
-    for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
-    {
-        values.push_back(mu::Value(listCtrl->GetCheckedState(item) == wxCHK_CHECKED));
-    }
-
-    return values;*/
 }
 
 

@@ -1661,6 +1661,28 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this level of the
+    /// DictStruct instance has XML structure.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::hasXmlStructure() const
+    {
+        if (m_fields.empty())
+            return false;
+
+        for (const auto& iter : m_fields)
+        {
+            if (iter.first != "name" && iter.first != "attrs" && iter.first != "nodes" && iter.first != "text")
+                return false;
+        }
+
+        return true;
+    }
+
+
     //------------------------------------------------------------------------
 
     /////////////////////////////////////////////////

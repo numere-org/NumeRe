@@ -229,6 +229,7 @@ namespace mu
             bool importJson(std::string fileName);
             std::string encodeJson() const;
             bool decodeJson(const std::string& jsonString);
+            bool hasXmlStructure() const;
     };
 
 

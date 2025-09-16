@@ -18,3 +18,4 @@ Added	Functions for verifying results within a SW testing scenario have been add
 Fixed	Combined dictstruct assignments are now possible.
 Fixed	An internal error during plotting occuring if a command inside a "compose" block terminates with a ";" has been resolved.
 Added	The method "contains()" was added to dictstructs.
+Added	"treelist" GUI elements do now accept dictstructs via the value option during runtime.

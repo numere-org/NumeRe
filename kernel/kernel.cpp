@@ -3791,11 +3791,13 @@ static NumeRe::Container<std::string> selectByMethod(mu::Array arr, StringView s
                 return NumeRe::Container<std::string>();
 
             arr = arr.get(el);
+            p += 5 + element.length();
         }
         else if (sMethod == "at")
         {
             std::string element = sSelectionString.subview(p+5, getMatchingParenthesis(sSelectionString.subview(p+3))-3).to_string();
             arr = arr.call("at", mu::Value(element));
+            p += 5 + element.length();
         }
         else
             arr = arr.call(sMethod.to_string());
