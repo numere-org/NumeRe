@@ -776,7 +776,7 @@ namespace mu
                 element = read(pathElement.name);
             else
             {
-                if (element->m_type != TYPE_DICTSTRUCT)
+                if (element->m_type != TYPE_DICTSTRUCT || !static_cast<const DictStructValue*>(element)->get().isField(pathElement.name))
                     return false;
 
                 element = static_cast<const DictStructValue*>(element)->get().read(pathElement.name);

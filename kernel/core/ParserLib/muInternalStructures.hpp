@@ -50,6 +50,21 @@ namespace mu
                 return other.size() > m_alias->size() && other.isCommutative() && m_alias->isCommutative();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Ensures that we do not actually
+            /// override the data in referenced variables.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void ensureConst()
+            {
+                if (!isConst())
+                    dereference();
+
+                m_isConst = true;
+            }
+
         public:
             /////////////////////////////////////////////////
             /// \brief Default constructor. Creates an empty
@@ -269,6 +284,7 @@ namespace mu
                     {
                         const Array* buf = m_alias;
                         operator=(other.get());
+                        ensureConst();
                         Array::operator+=(*buf);
                         return *this;
                     }
@@ -276,6 +292,7 @@ namespace mu
                     operator=(*m_alias);
                 }
 
+                ensureConst();
                 Array::operator+=(other.get());
                 return *this;
             }
@@ -298,6 +315,7 @@ namespace mu
                     {
                         const Array* buf = m_alias;
                         operator=(other.get());
+                        ensureConst();
                         flipSign();
                         Array::operator+=(*buf);
                         return *this;
@@ -306,6 +324,7 @@ namespace mu
                     operator=(*m_alias);
                 }
 
+                ensureConst();
                 Array::operator-=(other.get());
                 return *this;
             }
@@ -328,6 +347,7 @@ namespace mu
                     {
                         const Array* buf = m_alias;
                         operator=(other.get());
+                        ensureConst();
                         Array::operator*=(*buf);
                         return *this;
                     }
@@ -335,6 +355,7 @@ namespace mu
                     operator=(*m_alias);
                 }
 
+                ensureConst();
                 Array::operator*=(other.get());
                 return *this;
             }
@@ -354,6 +375,7 @@ namespace mu
                 if (m_alias)
                     operator=(*m_alias);
 
+                ensureConst();
                 Array::operator/=(other.get());
                 return *this;
             }
@@ -373,6 +395,7 @@ namespace mu
                 if (m_alias)
                     operator=(*m_alias);
 
+                ensureConst();
                 Array::operator^=(other.get());
                 return *this;
             }

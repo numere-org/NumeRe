@@ -7020,7 +7020,9 @@ void NumeReWindow::reloadFileIfOpen(const wxString& fname, bool force)
         // Found it?
         if (edit && edit->GetFileNameAndPath() == fname)
         {
-            g_logger.info("Reloading '" + fname.ToStdString() + "' to editor.");
+            if (!fname.EndsWith("numere.log"))
+                g_logger.info("Reloading '" + fname.ToStdString() + "' to editor.");
+
             wxString fileContents;
             wxString fileNameNoPath;
 

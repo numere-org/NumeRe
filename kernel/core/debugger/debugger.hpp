@@ -63,6 +63,11 @@ class NumeReDebugger
         std::string decodeType(std::string& sArgumentValue, const std::string& sArgumentName = "");
         std::vector<std::string> getVars(const std::vector<mu::DataType>& dt);
 
+        void summarizeInformation(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
+                                  const std::map<std::string, std::string>& _mLocalTables,
+                                  const std::map<std::string, std::string>& _mArguments,
+                                  bool isInline);
+
     public:
         NumeReDebugger();
 
@@ -122,15 +127,18 @@ class NumeReDebugger
         void popStackItem();
         Procedure* getCurrentProcedure();
 
-        void gatherInformations(ProcedureVarFactory* _varFactory,
-                                const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
+        void gatherInformation(ProcedureVarFactory* _varFactory,
+                               const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
-        void gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
-                                const std::map<std::string, std::string>& _mLocalTables,
-                                const std::map<std::string, std::string>& _mArguments,
-                                const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
+        void gatherInformation(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
+                               const std::map<std::string, std::string>& _mLocalTables,
+                               const std::map<std::string, std::string>& _mArguments,
+                               const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
-        void gatherLoopBasedInformations(const std::string& _sErraticCommand, size_t _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::Variable>& vVarArray, const std::vector<std::string>& sVarArray);
+        void gatherFlowCtrlInformation(const std::string& _sErraticCommand, size_t _nLineNumber,
+                                       std::map<std::string,std::string>& mVarMap,
+                                       const std::vector<std::pair<std::string, mu::Variable>>& varStorage,
+                                       const std::vector<std::unique_ptr<ProcedureVarFactory>>& inlineVarStorage);
 
         std::vector<std::string> getModuleInformations();
         std::vector<std::string> getStackTrace();

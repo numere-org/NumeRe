@@ -26,6 +26,7 @@
 #include "../built-in.hpp"
 #include "../utils/tools.hpp"
 #include "../plotting/plotting.hpp"
+#include "procedurevarfactory.hpp"
 
 // Definition of special return values
 enum
@@ -85,7 +86,10 @@ FlowCtrl::FlowCtrl(bool asSyntaxHelper)
     nLoopSafety = -1;
 
     for (size_t i = 0; i < FC_COUNT; i++)
+    {
         nFlowCtrlStatements[i] = 0;
+        nFlowCtrlStatementsMax[i] = 0;
+    }
 
     nCurrentCommand = 0;
     nDebuggerCode = 0;
@@ -243,7 +247,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // inner loop runs through the contained command lines
     for (int64_t __i = nFirstVal; (nInc)*__i <= nInc * nLastVal; __i += nInc)
     {
-        vVarArray[nVarAdress] = mu::Value(__i);
+        *vVarArray[nVarAdress] = mu::Value(__i);
 
         // Handle the optional third parameter containing a condition
         if (nNum > 2 && !mu::all(v[2].get()))
@@ -333,9 +337,10 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 // Evaluate the command line with the calc function
                 if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__j].sCommand,
+                                                                                         getCurrentLineNumber(),
+                                                                                         mVarMap, varStorage,
+                                                                                         inlineVarStorage);
                     getErrorInformationForDebugger();
                     return FLOWCTRL_ERROR;
                 }
@@ -345,9 +350,10 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
             }
             catch (...)
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__j].sCommand,
+                                                                                     getCurrentLineNumber(),
+                                                                                     mVarMap, varStorage,
+                                                                                     inlineVarStorage);
                 getErrorInformationForDebugger();
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                 nCalcType[__j] = CALCTYPE_NONE;
@@ -357,7 +363,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
         // The variable value might have been changed
         // snychronize the index
-        __i = vVarArray[nVarAdress].getAsScalarInt();
+        __i = vVarArray[nVarAdress]->getAsScalarInt();
 
         // Print the status to the terminal, if it is required
         if (!nth_loop && !bMask && bSilent)
@@ -447,7 +453,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
         // Set the value in the correct variable type
         for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
         {
-            vVarArray[nVarAdress+n].overwrite(range.get(i+n));
+            vVarArray[nVarAdress+n]->overwrite(range.get(i+n));
         }
 
         i += vCmdArray[nth_Cmd].nRFStepping;
@@ -536,9 +542,10 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
                 // Evaluate the command line with the calc function
                 if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__j].sCommand,
+                                                                                         getCurrentLineNumber(),
+                                                                                         mVarMap, varStorage,
+                                                                                         inlineVarStorage);
                     getErrorInformationForDebugger();
                     return FLOWCTRL_ERROR;
                 }
@@ -548,9 +555,10 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
             }
             catch (...)
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__j].sCommand,
+                                                                                     getCurrentLineNumber(),
+                                                                                     mVarMap, varStorage,
+                                                                                     inlineVarStorage);
                 getErrorInformationForDebugger();
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                 nCalcType[__j] = CALCTYPE_NONE;
@@ -735,9 +743,10 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 // Evaluate the command line with the calc function
                 if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__j].sCommand,
+                                                                                         getCurrentLineNumber(),
+                                                                                         mVarMap, varStorage,
+                                                                                         inlineVarStorage);
                     getErrorInformationForDebugger();
                     return FLOWCTRL_ERROR;
                 }
@@ -747,9 +756,10 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
             }
             catch (...)
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__j].sCommand,
+                                                                                     getCurrentLineNumber(),
+                                                                                     mVarMap, varStorage,
+                                                                                     inlineVarStorage);
                 getErrorInformationForDebugger();
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                 nCalcType[__j] = CALCTYPE_NONE;
@@ -878,9 +888,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     // Evaluate the command line with the calc function
                     if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                             getCurrentLineNumber(),
+                                                                                             mVarMap, varStorage,
+                                                                                             inlineVarStorage);
                         getErrorInformationForDebugger();
                     }
 
@@ -889,9 +900,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 }
                 catch (...)
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                         getCurrentLineNumber(),
+                                                                                         mVarMap, varStorage,
+                                                                                         inlineVarStorage);
                     getErrorInformationForDebugger();
                     NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                     nCalcType[__i] = CALCTYPE_NONE;
@@ -984,9 +996,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                     getCurrentLineNumber(),
+                                                                                     mVarMap, varStorage,
+                                                                                     inlineVarStorage);
                 getErrorInformationForDebugger();
                 return FLOWCTRL_ERROR;
             }
@@ -996,9 +1009,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         }
         catch (...)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                   getCurrentLineNumber(),
-                                                                                   mVarMap, vVarArray, sVarArray);
+            NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                 getCurrentLineNumber(),
+                                                                                 mVarMap, varStorage,
+                                                                                 inlineVarStorage);
             getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             nCalcType[__i] = CALCTYPE_NONE;
@@ -1135,9 +1149,10 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                     getCurrentLineNumber(),
+                                                                                     mVarMap, varStorage,
+                                                                                     inlineVarStorage);
                 getErrorInformationForDebugger();
                 return FLOWCTRL_ERROR;
             }
@@ -1147,9 +1162,10 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         }
         catch (...)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                   getCurrentLineNumber(),
-                                                                                   mVarMap, vVarArray, sVarArray);
+            NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                 getCurrentLineNumber(),
+                                                                                 mVarMap, varStorage,
+                                                                                 inlineVarStorage);
             getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             nCalcType[__i] = CALCTYPE_NONE;
@@ -1248,9 +1264,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                     getCurrentLineNumber(),
+                                                                                     mVarMap, varStorage,
+                                                                                     inlineVarStorage);
                 getErrorInformationForDebugger();
                 return FLOWCTRL_ERROR;
             }
@@ -1260,9 +1277,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
         }
         catch (...)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                   getCurrentLineNumber(),
-                                                                                   mVarMap, vVarArray, sVarArray);
+            NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                 getCurrentLineNumber(),
+                                                                                 mVarMap, varStorage,
+                                                                                 inlineVarStorage);
             getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(std::current_exception());
             //nCalcType[__i] = CALCTYPE_NONE; // NOTE: This has been deactivated because the compilation process is destructive and a complete recompilation is not possible at this point
@@ -1374,9 +1392,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                     // Evaluate the command line with the calc function
                     if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                             getCurrentLineNumber(),
+                                                                                             mVarMap, varStorage,
+                                                                                             inlineVarStorage);
                         getErrorInformationForDebugger();
                         return FLOWCTRL_ERROR;
                     }
@@ -1386,9 +1405,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                 }
                 catch (...)
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherFlowCtrlInformation(vCmdArray[__i].sCommand,
+                                                                                         getCurrentLineNumber(),
+                                                                                         mVarMap, varStorage,
+                                                                                         inlineVarStorage);
                     getErrorInformationForDebugger();
                     NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                     nCalcType[__i] = CALCTYPE_NONE;
@@ -1456,8 +1476,9 @@ const mu::StackItem* FlowCtrl::evalHeader(int& nNum, std::string sHeadExpression
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
-                                                  mVarMap, vVarArray, sVarArray);
+            _debugger.gatherFlowCtrlInformation(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
+                                                mVarMap, varStorage,
+                                                inlineVarStorage);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -1629,8 +1650,9 @@ mu::Array FlowCtrl::evalRangeBasedHeader(std::string sHeadExpression, int nth_Cm
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
-                                                  mVarMap, vVarArray, sVarArray);
+            _debugger.gatherFlowCtrlInformation(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
+                                                mVarMap, varStorage,
+                                                inlineVarStorage);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -1810,43 +1832,25 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function is used to set a
-/// command line from the outside into the flow
-/// control statement class. The internal flow
-/// control command buffer grows as needed.
+/// \brief Decode a single command line into a
+/// FlowCtrlCommand structure.
 ///
 /// \param __sCmd MutableStringView
 /// \param nCurrentLine int
-/// \return void
+/// \param sAppendedExpression MutableStringView&
+/// \return FlowCtrlCommand
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
+FlowCtrlCommand FlowCtrl::decodeSingleLine(MutableStringView __sCmd, int nCurrentLine, MutableStringView& sAppendedExpression)
 {
     __sCmd.strip();
     bool bDebuggingBreakPoint = __sCmd.starts_with("|>");
-    MutableStringView sAppendedExpression;
 
     // Remove the breakpoint syntax
     if (bDebuggingBreakPoint)
     {
         __sCmd.trim_front(2);
         __sCmd.strip();
-    }
-
-    if (bReturnSignal)
-    {
-        bReturnSignal = false;
-        nReturnType = 1;
-    }
-
-    // If one passes the "abort" command, then NumeRe will
-    // clean the internal buffer and return to the terminal
-    if (__sCmd == "abort")
-    {
-        reset();
-        if (!bIsSyntaxHelper)
-            NumeReKernel::print(_lang.get("LOOP_SETCOMMAND_ABORT"));
-        return;
     }
 
     // Find the command of the current command line
@@ -1858,11 +1862,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
         // Ensure that the parentheses are
         // matching each other
         if (!validateParenthesisNumber(__sCmd))
-        {
-            reset();
             throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd.get_viewed_string(),
                               __sCmd.find_first_of("({[]})")+__sCmd.get_offset());
-        }
 
         FlowCtrlFunction fn = nullptr;
 
@@ -1870,16 +1871,14 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
         {
             blockNames.push_back(FCB_FOR);
             nFlowCtrlStatements[FC_FOR]++;
+            nFlowCtrlStatementsMax[FC_FOR] = std::max(nFlowCtrlStatementsMax[FC_FOR], nFlowCtrlStatements[FC_FOR]);
 
             bool isRangeBased = __sCmd.find("->") != std::string::npos;
 
             // Check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, true))
-            {
-                reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd.get_viewed_string(),
-                                  __sCmd.find("for")+__sCmd.get_offset());
-            }
+                                  __sCmd.find(command)+__sCmd.get_offset());
 
             // Replace the colon operator with a comma, which is faster
             // because it can be parsed internally
@@ -1920,14 +1919,12 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
         {
             blockNames.push_back(FCB_WHL);
             nFlowCtrlStatements[FC_WHILE]++;
+            nFlowCtrlStatementsMax[FC_WHILE] = std::max(nFlowCtrlStatementsMax[FC_WHILE], nFlowCtrlStatements[FC_WHILE]);
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
-            {
-                reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, __sCmd.get_viewed_string(),
-                                  __sCmd.find("while")+__sCmd.get_offset());
-            }
+                                  __sCmd.find(command)+__sCmd.get_offset());
 
             fn = FlowCtrl::while_loop;
         }
@@ -1935,14 +1932,12 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
         {
             blockNames.push_back(FCB_IF);
             nFlowCtrlStatements[FC_IF]++;
+            nFlowCtrlStatementsMax[FC_IF] = std::max(nFlowCtrlStatementsMax[FC_IF], nFlowCtrlStatements[FC_IF]);
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
-            {
-                reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd.get_viewed_string(),
-                                  __sCmd.find("if")+__sCmd.get_offset());
-            }
+                                  __sCmd.find(command)+__sCmd.get_offset());
 
             __sCmd.insert(0, toString(nFlowCtrlStatements[FC_IF]) + ">>");
             fn = FlowCtrl::if_fork;
@@ -1957,11 +1952,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
 
                     // check the flow control argument for completeness
                     if (!checkFlowControlArgument(__sCmd, false))
-                    {
-                        reset();
                         throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd.get_viewed_string(),
-                                          __sCmd.find("elseif")+__sCmd.get_offset());
-                    }
+                                          __sCmd.find(command)+__sCmd.get_offset());
                 }
                 else
                     blockNames.back() = FCB_ELSE;
@@ -1969,7 +1961,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 __sCmd.insert(0, toString(nFlowCtrlStatements[FC_IF]) + ">>");
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "endif")
         {
@@ -1980,20 +1973,19 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 nFlowCtrlStatements[FC_IF]--;
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "switch")
         {
             blockNames.push_back(FCB_SWCH);
             nFlowCtrlStatements[FC_SWITCH]++;
+            nFlowCtrlStatementsMax[FC_SWITCH] = std::max(nFlowCtrlStatementsMax[FC_SWITCH], nFlowCtrlStatements[FC_SWITCH]);
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
-            {
-                reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd.get_viewed_string(),
-                                  __sCmd.find("switch")+__sCmd.get_offset());
-            }
+                                  __sCmd.find(command)+__sCmd.get_offset());
 
             __sCmd.insert(0, toString(nFlowCtrlStatements[FC_SWITCH]) + ">>");
             fn = FlowCtrl::switch_fork;
@@ -2004,11 +1996,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
             {
                 // check the case definition for completeness
                 if (!checkCaseValue(__sCmd))
-                {
-                    reset();
                     throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd.get_viewed_string(),
                                       __sCmd.find_first_of("cd")+__sCmd.get_offset());
-                }
 
                 // Set the corresponding loop names
                 if (command == "default")
@@ -2019,7 +2008,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 __sCmd.insert(0, toString(nFlowCtrlStatements[FC_SWITCH]) + ">>");
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "endswitch")
         {
@@ -2032,12 +2022,14 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 nFlowCtrlStatements[FC_SWITCH]--;
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "try")
         {
             blockNames.push_back(FCB_TRY);
             nFlowCtrlStatements[FC_TRY]++;
+            nFlowCtrlStatementsMax[FC_TRY] = std::max(nFlowCtrlStatementsMax[FC_TRY], nFlowCtrlStatements[FC_TRY]);
 
             __sCmd.insert(0, toString(nFlowCtrlStatements[FC_TRY]) + ">>");
             fn = FlowCtrl::try_catch;
@@ -2048,11 +2040,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
             {
                 // check the case definition for completeness
                 if (!checkCaseValue(__sCmd))
-                {
-                    reset();
                     throw SyntaxError(SyntaxError::CANNOT_EVAL_TRY, __sCmd.get_viewed_string(),
                                       __sCmd.find("catch")+__sCmd.get_offset());
-                }
 
                 // Set the corresponding loop names
                 blockNames.back() = FCB_CTCH;
@@ -2060,7 +2049,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 __sCmd.insert(0, toString(nFlowCtrlStatements[FC_TRY]) + ">>");
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_TRY, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "endtry")
         {
@@ -2071,7 +2061,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 nFlowCtrlStatements[FC_TRY]--;
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_TRY, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "endfor")
         {
@@ -2081,7 +2072,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 nFlowCtrlStatements[FC_FOR]--;
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else if (command == "endwhile")
         {
@@ -2091,10 +2083,12 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
                 nFlowCtrlStatements[FC_WHILE]--;
             }
             else
-                return;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, __sCmd.get_viewed_string(),
+                                  __sCmd.find(command)+__sCmd.get_offset());
         }
         else
-            return;
+            throw SyntaxError(SyntaxError::IF_OR_LOOP_SEEMS_NOT_TO_BE_CLOSED, __sCmd.get_viewed_string(),
+                              __sCmd.find(command)+__sCmd.get_offset());;
 
         // If there's something after the current flow
         // control statement (i.e. a continued command
@@ -2135,54 +2129,96 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
             sAppendedExpression = nullptr;
 
         // Store the current flow control statement
-        vCmdArray.push_back(FlowCtrlCommand(__sCmd.to_string(), nCurrentLine, true, fn));
+        return FlowCtrlCommand(__sCmd.to_string(), nCurrentLine, true, fn);
     }
-    else
+
+    // If there's a flow control statement somewhere
+    // in the current std::string, then store this part in
+    // a temporary cache
+    size_t nQuotes = 0;
+
+    for (size_t n = 0; n < __sCmd.length(); n++)
     {
-        // If there's a flow control statement somewhere
-        // in the current std::string, then store this part in
-        // a temporary cache
-        size_t nQuotes = 0;
+        if (isQuotationMark(__sCmd, n))
+            nQuotes++;
 
-        for (size_t n = 0; n < __sCmd.length(); n++)
+        if (__sCmd[n] == ' ' && !(nQuotes % 2))
         {
-            if (isQuotationMark(__sCmd, n))
-                nQuotes++;
-
-            if (__sCmd[n] == ' ' && !(nQuotes % 2))
+            if (__sCmd.match(" for ", n)
+                || __sCmd.match(" for(", n)
+                || __sCmd.match(" endfor", n)
+                || __sCmd.match(" if ", n)
+                || __sCmd.match(" if(", n)
+                || __sCmd.match(" else", n)
+                || __sCmd.match(" elseif ", n)
+                || __sCmd.match(" elseif(", n)
+                || __sCmd.match(" endif", n)
+                || __sCmd.match(" switch ", n)
+                || __sCmd.match(" switch(", n)
+                || __sCmd.match(" case ", n)
+                || __sCmd.match(" default ", n)
+                || __sCmd.match(" default:", n)
+                || __sCmd.match(" endswitch", n)
+                || __sCmd.match(" try", n)
+                || __sCmd.match(" catch ", n)
+                || __sCmd.match(" catch:", n)
+                || __sCmd.match(" endtry", n)
+                || __sCmd.match(" while ", n)
+                || __sCmd.match(" while(", n)
+                || __sCmd.match(" endwhile", n))
             {
-                if (__sCmd.match(" for ", n)
-                    || __sCmd.match(" for(", n)
-                    || __sCmd.match(" endfor", n)
-                    || __sCmd.match(" if ", n)
-                    || __sCmd.match(" if(", n)
-                    || __sCmd.match(" else", n)
-                    || __sCmd.match(" elseif ", n)
-                    || __sCmd.match(" elseif(", n)
-                    || __sCmd.match(" endif", n)
-                    || __sCmd.match(" switch ", n)
-                    || __sCmd.match(" switch(", n)
-                    || __sCmd.match(" case ", n)
-                    || __sCmd.match(" default ", n)
-                    || __sCmd.match(" default:", n)
-                    || __sCmd.match(" endswitch", n)
-                    || __sCmd.match(" try", n)
-                    || __sCmd.match(" catch ", n)
-                    || __sCmd.match(" catch:", n)
-                    || __sCmd.match(" endtry", n)
-                    || __sCmd.match(" while ", n)
-                    || __sCmd.match(" while(", n)
-                    || __sCmd.match(" endwhile", n))
-                {
-                    sAppendedExpression = __sCmd.subview(n + 1);
-                    __sCmd.remove_from(n);
-                    break;
-                }
+                sAppendedExpression = __sCmd.subview(n + 1);
+                __sCmd.remove_from(n);
+                break;
             }
         }
+    }
 
-        // Store the current command line
-        vCmdArray.push_back(FlowCtrlCommand((bDebuggingBreakPoint ? "|> " : "") + __sCmd.to_string(), nCurrentLine));
+    // Store the current command line
+    return FlowCtrlCommand((bDebuggingBreakPoint ? "|> " : "") + __sCmd.to_string(), nCurrentLine);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to set a
+/// command line from the outside into the flow
+/// control statement class. The internal flow
+/// control command buffer grows as needed.
+///
+/// \param __sCmd MutableStringView
+/// \param nCurrentLine int
+/// \return void
+///
+/////////////////////////////////////////////////
+void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
+{
+    __sCmd.strip();
+    MutableStringView sAppendedExpression;
+
+    if (bReturnSignal)
+    {
+        bReturnSignal = false;
+        nReturnType = 1;
+    }
+
+    // If one passes the "abort" command, then NumeRe will
+    // clean the internal buffer and return to the terminal
+    if (__sCmd == "abort")
+    {
+        reset();
+        if (!bIsSyntaxHelper)
+            NumeReKernel::print(_lang.get("LOOP_SETCOMMAND_ABORT"));
+        return;
+    }
+
+    try
+    {
+        vCmdArray.push_back(decodeSingleLine(__sCmd, nCurrentLine, sAppendedExpression));
+    }
+    catch (...)
+    {
+        reset();
+        throw;
     }
 
     // If there's a command available and all flow
@@ -2251,15 +2287,6 @@ void FlowCtrl::eval()
     if (_optionRef->useMaskDefault())
         bMask = true;
 
-    // Read the flow control statements only and
-    // extract the index variables and the flow
-    // control flags
-    std::vector<std::string> vars = extractFlagsAndIndexVariables();
-
-    // If already suppressed from somewhere else
-    if (!_optionRef->systemPrints())
-        bMask = true;
-
     // If the loop parsing mode is active, ensure that only
     // inline procedures are used in this case. Otherwise
     // turn it off again. Additionally check for "to_cmd()"
@@ -2270,8 +2297,27 @@ void FlowCtrl::eval()
     // expanded form.
     try
     {
-        prepareLocalVarsAndReplace(vars);
         checkParsingModeAndExpandDefinitions();
+    }
+    catch (...)
+    {
+        reset();
+        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+        throw;
+    }
+
+    // Read the flow control statements only and
+    // extract the index variables and the flow
+    // control flags
+    std::vector<std::string> vars = extractFlagsAndIndexVariables();
+
+    // If already suppressed from somewhere else
+    if (!_optionRef->systemPrints())
+        bMask = true;
+
+    try
+    {
+        prepareLocalVarsAndReplace(vars);
     }
     catch (...)
     {
@@ -2408,25 +2454,26 @@ void FlowCtrl::eval()
 /// this FlowCtrl object and sets everything back
 /// to its original state.
 ///
+/// \param finalize bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::reset()
+void FlowCtrl::reset(bool finalize)
 {
     vCmdArray.clear();
 
-    for (size_t i = 0; i < sVarArray.size(); i++)
+    for (size_t i = 0; i < varStorage.size(); i++)
     {
-        _parserRef->RemoveVar(sVarArray[i]);
+        _parserRef->RemoveVar(varStorage[i].first);
     }
 
     if (mVarMap.size())
     {
-        for (size_t i = 0; i < sVarArray.size(); i++)
+        for (size_t i = 0; i < varStorage.size(); i++)
         {
             for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
             {
-                if (iter->second == sVarArray[i])
+                if (iter->second == varStorage[i].first)
                 {
                     mVarMap.erase(iter);
                     break;
@@ -2438,28 +2485,24 @@ void FlowCtrl::reset()
             _parserRef->SetVarAliases(nullptr);
     }
 
-    if (!vVars.empty())
-    {
-        for (auto item = vVars.begin(); item != vVars.end(); ++item)
-        {
-            _parserRef->DefineVar(item->first, item->second);
-        }
-
-        vVars.clear();
-    }
-
     vVarArray.clear();
-    sVarArray.clear();
+    varStorage.clear();
     nJumpTable.clear();
     nCalcType.clear();
 
     if (nDebuggerCode == NumeReKernel::DEBUGGER_STEPOVER)
         nDebuggerCode = NumeReKernel::DEBUGGER_STEP;
 
+    if (finalize)
+        nDebuggerCode = 0;
+
     nLoopSafety = -1;
 
     for (size_t i = 0; i < FC_COUNT; i++)
+    {
         nFlowCtrlStatements[i] = 0;
+        nFlowCtrlStatementsMax[i] = 0;
+    }
 
     bSilent = true;
     blockNames.clear();
@@ -2480,6 +2523,8 @@ void FlowCtrl::reset()
     // Remove obsolete vector variables
     if (_parserRef && (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause()))
         _parserRef->ClearInternalVars(true);
+
+    inlineVarStorage.clear();
 
     for (const auto& cst : inlineClusters)
         _dataRef->removeCluster(cst.substr(0, cst.find('{')));
@@ -2568,8 +2613,9 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(),
-                                                  mVarMap, vVarArray, sVarArray);
+            _debugger.gatherFlowCtrlInformation(sLine, getCurrentLineNumber(),
+                                                mVarMap, varStorage,
+                                                inlineVarStorage);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -3105,8 +3151,9 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            _debugger.gatherLoopBasedInformations(sLine.to_string(), getCurrentLineNumber(),
-                                                  mVarMap, vVarArray, sVarArray);
+            _debugger.gatherFlowCtrlInformation(sLine.to_string(), getCurrentLineNumber(),
+                                                mVarMap, varStorage,
+                                                inlineVarStorage);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -4110,17 +4157,13 @@ void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
 /////////////////////////////////////////////////
 void FlowCtrl::checkParsingModeAndExpandDefinitions()
 {
-    const int INLINING_GLOBALINRETURN = 2;
-
     for (size_t i = 0; i < vCmdArray.size(); i++)
     {
         if (vCmdArray[i].bFlowCtrlStatement)
         {
             if (vCmdArray[i].sCommand.starts_with("for") || vCmdArray[i].sCommand.starts_with("while"))
             {
-                if (!bUseLoopParsingMode)
-                    bUseLoopParsingMode = true;
-
+                bUseLoopParsingMode = true;
                 break;
             }
         }
@@ -4128,6 +4171,8 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 
     if (bUseLoopParsingMode)
     {
+        const int nMAX_INLINING_DEPTH = 10;
+
         // Check for inline procedures and "to_cmd()"
         for (size_t i = 0; i < vCmdArray.size(); i++)
         {
@@ -4136,25 +4181,22 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 
             if (vCmdArray[i].sCommand.find('$') != std::string::npos)
             {
-                int nInlining = 0;
-
-                if (!(nInlining = isInline(vCmdArray[i].sCommand)))
+                if (!isInline(vCmdArray[i].sCommand))
                     bUseLoopParsingMode = false;
-                else if (!vCmdArray[i].bFlowCtrlStatement && nInlining != INLINING_GLOBALINRETURN)
+                else if (!vCmdArray[i].bFlowCtrlStatement)
                 {
-                    std::vector<std::string> vExpandedProcedure = expandInlineProcedures(vCmdArray[i].sCommand);
-                    int nLine = vCmdArray[i].nInputLine;
-
-                    for (size_t j = 0; j < vExpandedProcedure.size(); j++)
-                    {
-                        //g_logger.info("Emplaced '" + vExpandedProcedure[j] + "'");
-                        vCmdArray.emplace(vCmdArray.begin() + i + j, FlowCtrlCommand(vExpandedProcedure[j], nLine));
-                    }
-
-                    i += vExpandedProcedure.size();
+                    std::vector<FlowCtrlCommand> vExpanded = importInlined(vCmdArray[i], vCmdArray[i].nInputLine, nMAX_INLINING_DEPTH);
+                    vCmdArray[i] = vExpanded.back();
+                    vCmdArray.insert(vCmdArray.begin()+i, vExpanded.begin(), vExpanded.end()-1);
+                    i += vExpanded.size()-1;
                 }
             }
         }
+
+        /*for (size_t i = 0; i < vCmdArray.size(); i++)
+        {
+            g_logger.debug("DUMP: " + vCmdArray[i].sCommand);
+        }*/
 
         bool bDefineCommands = false;
 
@@ -4184,9 +4226,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
             for (size_t i = 0; i < vCmdArray.size(); i++)
             {
                 if (!_functionRef->call(vCmdArray[i].sCommand))
-                {
                     throw SyntaxError(SyntaxError::FUNCTION_ERROR, vCmdArray[i].sCommand, SyntaxError::invalid_position);
-                }
 
                 StripSpaces(vCmdArray[i].sCommand);
             }
@@ -4203,6 +4243,84 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 
 
 /////////////////////////////////////////////////
+/// \brief Import all inlined procedures from the
+/// current statement with the selected recursion
+/// depth.
+///
+/// \param statement FlowCtrlCommand
+/// \param nInputLine int
+/// \param nRecursionDepth int
+/// \return std::vector<FlowCtrlCommand>
+///
+/////////////////////////////////////////////////
+std::vector<FlowCtrlCommand> FlowCtrl::importInlined(FlowCtrlCommand statement, int nInputLine, int nRecursionDepth)
+{
+    std::vector<FlowCtrlCommand> vCommands;
+
+    // Get the expansion
+    std::vector<std::string> vExpandedProcedure = expandInlineProcedures(statement.sCommand);
+
+    // Initialize with the current maximal count of elements
+    for (size_t i = 0; i < FC_COUNT; i++)
+    {
+        nFlowCtrlStatements[i] = nFlowCtrlStatementsMax[i];
+    }
+
+    MutableStringView sAppendedExpression;
+
+    for (size_t j = 0; j < vExpandedProcedure.size(); j++)
+    {
+        //g_logger.debug("INLINED: " + vExpandedProcedure[j]);
+        vCommands.emplace_back(decodeSingleLine(vExpandedProcedure[j], nInputLine, sAppendedExpression));
+
+        while (sAppendedExpression.length())
+        {
+            // Copy needed because otherwise we might get an invalid state
+            std::string sExpr = sAppendedExpression.to_string();
+            vCommands.emplace_back(decodeSingleLine(sExpr, nInputLine, sAppendedExpression));
+        }
+    }
+
+    if (statement.sCommand.find_first_not_of(" ;\t") != std::string::npos)
+        vCommands.emplace_back(statement);
+
+    // Ensure that the expansion did return at least something
+    if (!vExpandedProcedure.size())
+        return vCommands;
+
+    //g_logger.debug("INLINED: " + vCommands.back().sCommand);
+
+    for (size_t i = 0; i < vCommands.size(); i++)
+    {
+        if (vCommands[i].sCommand.find("to_cmd(") != std::string::npos)
+            bUseLoopParsingMode = false;
+
+        if (vCommands[i].sCommand.find('$') != std::string::npos)
+        {
+            if (!isInline(vCommands[i].sCommand))
+                bUseLoopParsingMode = false;
+            else if (!vCommands[i].bFlowCtrlStatement)
+            {
+                // Ensure that we did not use all the available recursions already
+                if (!nRecursionDepth)
+                {
+                    bUseLoopParsingMode = false;
+                    break;
+                }
+
+                std::vector<FlowCtrlCommand> vExpanded = importInlined(vCommands[i], nInputLine, nRecursionDepth-1);
+                vCommands[i] = vExpanded.back();
+                vCommands.insert(vCommands.begin()+i, vExpanded.begin(), vExpanded.end()-1);
+                i += vExpanded.size()-1;
+            }
+        }
+    }
+
+    return vCommands;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This method prepares the local
 /// variables including their names and replaces
 /// them in the command lines in the current
@@ -4214,7 +4332,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 /////////////////////////////////////////////////
 void FlowCtrl::prepareLocalVarsAndReplace(const std::vector<std::string>& vars)
 {
-    sVarArray.reserve(vars.size());
+    varStorage.reserve(vars.size());
     vVarArray.reserve(vars.size());
 
     // If a loop variable was defined before the
@@ -4223,21 +4341,20 @@ void FlowCtrl::prepareLocalVarsAndReplace(const std::vector<std::string>& vars)
     // special names
     for (size_t i = 0; i < vars.size(); i++)
     {
-        sVarArray.push_back(vars[i]);
-        StripSpaces(sVarArray.back());
+        std::string currentVar = vars[i];
+        StripSpaces(currentVar);
 
         // Is it already defined?
-        if (sVarArray.back().starts_with("_~") && getPointerToVariable(sVarArray.back(), *_parserRef))
-            vVars[sVarArray.back()] = getPointerToVariable(sVarArray.back(), *_parserRef);
+        if (currentVar.starts_with("_~") && getPointerToVariable(currentVar, *_parserRef))
+            vVarArray.push_back(getPointerToVariable(currentVar, *_parserRef));
         else
         {
             // Create a local variable otherwise
-            mVarMap[sVarArray.back()] = Mangler::mangleFlowCtrlLocals(sVarArray.back(), nthRecursion);
-            sVarArray.back() = mVarMap[sVarArray.back()];
+            mVarMap[currentVar] = Mangler::mangleFlowCtrlLocals(currentVar, nthRecursion);
+            varStorage.emplace_back(mVarMap[currentVar], mu::Variable());
+            vVarArray.push_back(&varStorage.back().second);
+            _parserRef->DefineVar(varStorage.back().first, &varStorage.back().second);
         }
-
-        vVarArray.push_back(mu::Variable());
-        _parserRef->DefineVar(sVarArray.back(), &vVarArray.back());
     }
 
     _parserRef->SetVarAliases(&mVarMap);

@@ -667,31 +667,31 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
 
     if (findCommand(sVarList, "var").sString == "var")
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
     }
 
     if (findCommand(sVarList, "str").sString == "str")
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
     }
 
     if (findCommand(sVarList, "tab").sString == "tab")
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "tab");
     }
 
     if (findCommand(sVarList, "cst").sString == "cst")
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "cst");
     }
 
     if (findCommand(sVarList, "obj").sString == "obj")
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "obj");
     }
 
@@ -705,7 +705,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
     }
     catch (...)
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         _debugger.showError(current_exception());
 
         resetProcedure(_parser, bSupressAnswer_back);
@@ -875,7 +875,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
 
                 if (nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && bp.isActive(false))
                 {
-                    _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                    _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                     nDebuggerCode = evalDebuggerBreakPoint(_parser, _option);
                 }
 
@@ -906,7 +906,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
         }
         catch (...)
         {
-            _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+            _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
@@ -927,7 +927,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
             }
             catch (...)
             {
-                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                 _debugger.showError(current_exception());
 
                 resetProcedure(_parser, bSupressAnswer_back);
@@ -955,30 +955,6 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
 
                 sProcCommandLine = "";
                 continue;
-            }
-        }
-
-        // Ensure that inline procedures don't contain flow control statements
-        if (nFlags & ProcedureCommandLine::FLAG_INLINE)
-        {
-            if (sCurrentCommand == "for"
-                || sCurrentCommand == "if"
-                || sCurrentCommand == "switch"
-                || sCurrentCommand == "try"
-                || sCurrentCommand == "while")
-            {
-                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
-
-                try
-                {
-                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine,
-                                                         SyntaxError::invalid_position));
-                }
-                catch (...)
-                {
-                    resetProcedure(_parser, bSupressAnswer_back);
-                    throw;
-                }
             }
         }
 
@@ -1020,7 +996,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
             }
             catch (...)
             {
-                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                 _debugger.showError(current_exception());
 
                 nCurrentByteCode = 0;
@@ -1066,7 +1042,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                     nByteCode |= ProcedureCommandLine::BYTECODE_THROWCOMMAND;
 
-                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
 
                 try
                 {
@@ -1121,7 +1097,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                    _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                     _debugger.showError(current_exception());
 
                     nCurrentByteCode = 0;
@@ -1152,7 +1128,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
         }
         catch (...)
         {
-            _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+            _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
@@ -1168,7 +1144,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, mu::Parser& _p
     // Ensure that all loops are closed now
     if (getCurrentBlockDepth())
     {
-        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.gatherInformation(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
 
         try
         {
@@ -1224,10 +1200,6 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
     // Handle procedure calls first
     if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos)
     {
-        // Ensure that the current procedure is no inline procedure
-        if (nFlags & ProcedureCommandLine::FLAG_INLINE)
-            throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sLine, SyntaxError::invalid_position);
-
         sLine += " ";
         size_t nPos = 0;
         int nProc = 0;
@@ -1509,19 +1481,19 @@ int Procedure::procedureCmdInterface(StringView sLine, bool compiling)
 /// the file stream and passing the corresponding
 /// procedure linewards to the stream.
 ///
-/// \param sProcedureLine string
+/// \param sProcedureLine std::string
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Procedure::writeProcedure(string sProcedureLine)
+bool Procedure::writeProcedure(std::string sProcedureLine)
 {
-    string sAppendedLine = "";
+    std::string sAppendedLine = "";
 
     // Check, whether the current line is a procedure head,
     // a procedure foot or the actual body of the procedure
     if (sProcedureLine.starts_with("procedure")
-            && sProcedureLine.find('$') != string::npos
-            && sProcedureLine.find('(', sProcedureLine.find('$')) != string::npos)
+            && sProcedureLine.find('$') != std::string::npos
+            && sProcedureLine.find('(', sProcedureLine.find('$')) != std::string::npos)
     {
         // This is the handling code for the procedure head.
         // It will determine the correct file path from the
@@ -1531,7 +1503,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         nthBlock = 0;
 
         // Get the procedure name and its namespace
-        string sFileName = sProcedureLine.substr(sProcedureLine.find('$') + 1, sProcedureLine.find('(', sProcedureLine.find('$')) - sProcedureLine.find('$') - 1);
+        std::string sFileName = sProcedureLine.substr(sProcedureLine.find('$') + 1, sProcedureLine.find('(', sProcedureLine.find('$')) - sProcedureLine.find('$') - 1);
         StripSpaces(sFileName);
 
         // Try to evaluate it using the setProcName
@@ -1547,7 +1519,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
 
         // Create a corresponding folder from the
         // namespace
-        if (sCurrentProcedureName.find_last_of("~/") != string::npos)
+        if (sCurrentProcedureName.find_last_of("~/") != std::string::npos)
         {
             FileSystem _fSys;
             _fSys.setPath(sCurrentProcedureName.substr(0, sCurrentProcedureName.find_last_of("~/")), true, sTokens[5][1]);
@@ -1559,7 +1531,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         // the whole file in advance
         if (bAppend)
         {
-            fProcedure.open(sCurrentProcedureName.c_str(), ios_base::in);
+            fProcedure.open(sCurrentProcedureName.c_str(), std::ios_base::in);
 
             if (!fProcedure.good())
             {
@@ -1567,13 +1539,13 @@ bool Procedure::writeProcedure(string sProcedureLine)
                 return false;
             }
 
-            string sLineTemp;
-            vector<string> vProcedureFile;
+            std::string sLineTemp;
+            std::vector<std::string> vProcedureFile;
 
             // Read the whole file
             while (!fProcedure.eof())
             {
-                getline(fProcedure, sLineTemp);
+                std::getline(fProcedure, sLineTemp);
                 vProcedureFile.push_back(sLineTemp);
             }
 
@@ -1591,20 +1563,20 @@ bool Procedure::writeProcedure(string sProcedureLine)
             }
 
             // Open the file in out mode and truncate it
-            fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::trunc);
+            fProcedure.open(sCurrentProcedureName.c_str(), std::ios_base::out | std::ios_base::trunc);
 
             // Write the stored contents to the file
             for (size_t i = 0; i < vProcedureFile.size(); i++)
             {
-                fProcedure << vProcedureFile[i] << endl;
+                fProcedure << vProcedureFile[i] << std::endl;
             }
 
             // Append two line breaks to separate the procedures
-            fProcedure << endl << endl;
+            fProcedure << std::endl << std::endl;
         }
         else
         {
-            fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::trunc);
+            fProcedure.open(sCurrentProcedureName.c_str(), std::ios_base::out | std::ios_base::trunc);
 
             // Ensure that the file stream could be opened
             if (fProcedure.fail())
@@ -1613,20 +1585,20 @@ bool Procedure::writeProcedure(string sProcedureLine)
                 return false;
             }
 
-            string sProcName = "";
+            std::string sProcName = "";
 
-            if (sFileName.find('~') != string::npos)
+            if (sFileName.find('~') != std::string::npos)
                 sProcName = sFileName.substr(sFileName.rfind('~') + 1);
             else
                 sProcName = sFileName;
 
             // Write the procedure head comment
             size_t nLength = _lang.get("PROC_FOOTER").length();
-            fProcedure << "#**" << std::setfill('*') << std::setw(nLength) << '*' << endl;
-            fProcedure << " * NUMERE-" << toUpperCase(_lang.get("COMMON_PROCEDURE")) << ": $" << sProcName << "()" << endl;
-            fProcedure << " * " << std::setfill('=') << std::setw(nLength) << '=' << endl;
-            fProcedure << " * " << _lang.get("PROC_ADDED_DATE") << ": " << getTimeStamp(false) << " *#" << endl;
-            fProcedure << endl;
+            fProcedure << "#**" << std::setfill('*') << std::setw(nLength) << '*' << std::endl;
+            fProcedure << " * NUMERE-" << toUpperCase(_lang.get("COMMON_PROCEDURE")) << ": $" << sProcName << "()" << std::endl;
+            fProcedure << " * " << std::setfill('=') << std::setw(nLength) << '=' << std::endl;
+            fProcedure << " * " << _lang.get("PROC_ADDED_DATE") << ": " << getTimeStamp(false) << " *#" << std::endl;
+            fProcedure << std::endl;
         }
 
         sLastWrittenProcedureFile = sCurrentProcedureName;
@@ -1634,13 +1606,13 @@ bool Procedure::writeProcedure(string sProcedureLine)
 
         // Print prefixed documentation strings, which were
         // appended, first
-        if (sProcedureLine.find("##!") != string::npos)
+        if (sProcedureLine.find("##!") != std::string::npos)
         {
             // Line comments
             fProcedure << sProcedureLine.substr(sProcedureLine.find("##!"));
             sProcedureLine.erase(sProcedureLine.find("##!"));
         }
-        else if (sProcedureLine.find("#*!") != string::npos)
+        else if (sProcedureLine.find("#*!") != std::string::npos)
         {
             // block comments
             fProcedure << sProcedureLine.substr(sProcedureLine.find("#*!"));
@@ -1650,13 +1622,13 @@ bool Procedure::writeProcedure(string sProcedureLine)
         fProcedure << "procedure $";
 
         // Write the procedure name (without the namespace)
-        if (sFileName.find('~') != string::npos)
+        if (sFileName.find('~') != std::string::npos)
             fProcedure << sFileName.substr(sFileName.rfind('~') + 1);
         else
             fProcedure << sFileName;
 
         // Write the argument list
-        fProcedure << sProcedureLine.substr(sProcedureLine.find('(')) << endl;
+        fProcedure << sProcedureLine.substr(sProcedureLine.find('(')) << std::endl;
         return true;
     }
     else if (sProcedureLine.starts_with("endprocedure"))
@@ -1668,7 +1640,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         // control statements, which are passed as a single
         // line into multiple lines. This is done by pushing the
         // remaining part of the current line into a string cache.
-        if (sProcedureLine.find('(') != string::npos
+        if (sProcedureLine.find('(') != std::string::npos
                 && (sProcedureLine.starts_with("for")
                     || sProcedureLine.starts_with("if ")
                     || sProcedureLine.starts_with("if(")
@@ -1679,50 +1651,50 @@ bool Procedure::writeProcedure(string sProcedureLine)
             sAppendedLine = sProcedureLine.substr(getMatchingParenthesis(sProcedureLine) + 1);
             sProcedureLine.erase(getMatchingParenthesis(sProcedureLine) + 1);
         }
-        else if (sProcedureLine.find(':', 5) != string::npos
+        else if (sProcedureLine.find(':', 5) != std::string::npos
                  && (sProcedureLine.starts_with("case ")
                      || sProcedureLine.starts_with("catch ")
                      || sProcedureLine.starts_with("catch:")
                      || sProcedureLine.starts_with("default ")
                      || sProcedureLine.starts_with("default:"))
-                 && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(':', 5)) != string::npos)
+                 && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(':', 5)) != std::string::npos)
         {
             sAppendedLine = sProcedureLine.substr(sProcedureLine.find(':', 5)+1);
             sProcedureLine.erase(sProcedureLine.find(':', 5)+1);
         }
-        else if (sProcedureLine.find(' ', 4) != string::npos
+        else if (sProcedureLine.find(' ', 4) != std::string::npos
                  && (sProcedureLine.starts_with("else ")
                      || sProcedureLine.starts_with("endif ")
                      || sProcedureLine.starts_with("endtry ")
                      || sProcedureLine.starts_with("endswitch ")
                      || sProcedureLine.starts_with("endfor ")
                      || sProcedureLine.starts_with("endwhile "))
-                 && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(' ', 4)) != string::npos
+                 && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(' ', 4)) != std::string::npos
                  && sProcedureLine[sProcedureLine.find_first_not_of(' ', sProcedureLine.find(' ', 4))] != '-')
         {
             sAppendedLine = sProcedureLine.substr(sProcedureLine.find(' ', 4));
             sProcedureLine.erase(sProcedureLine.find(' ', 4));
         }
-        else if (sProcedureLine.find(" for ") != string::npos
-                 || sProcedureLine.find(" for(") != string::npos
-                 || sProcedureLine.find(" endfor") != string::npos
-                 || sProcedureLine.find(" if ") != string::npos
-                 || sProcedureLine.find(" if(") != string::npos
-                 || sProcedureLine.find(" else") != string::npos
-                 || sProcedureLine.find(" elseif ") != string::npos
-                 || sProcedureLine.find(" elseif(") != string::npos
-                 || sProcedureLine.find(" endif") != string::npos
-                 || sProcedureLine.find(" switch ") != string::npos
-                 || sProcedureLine.find(" switch(") != string::npos
-                 || sProcedureLine.find(" case") != string::npos
-                 || sProcedureLine.find(" default") != string::npos
-                 || sProcedureLine.find(" endswitch") != string::npos
-                 || sProcedureLine.find(" try") != string::npos
-                 || sProcedureLine.find(" catch") != string::npos
-                 || sProcedureLine.find(" endtry") != string::npos
-                 || sProcedureLine.find(" while ") != string::npos
-                 || sProcedureLine.find(" while(") != string::npos
-                 || sProcedureLine.find(" endwhile") != string::npos)
+        else if (sProcedureLine.find(" for ") != std::string::npos
+                 || sProcedureLine.find(" for(") != std::string::npos
+                 || sProcedureLine.find(" endfor") != std::string::npos
+                 || sProcedureLine.find(" if ") != std::string::npos
+                 || sProcedureLine.find(" if(") != std::string::npos
+                 || sProcedureLine.find(" else") != std::string::npos
+                 || sProcedureLine.find(" elseif ") != std::string::npos
+                 || sProcedureLine.find(" elseif(") != std::string::npos
+                 || sProcedureLine.find(" endif") != std::string::npos
+                 || sProcedureLine.find(" switch ") != std::string::npos
+                 || sProcedureLine.find(" switch(") != std::string::npos
+                 || sProcedureLine.find(" case") != std::string::npos
+                 || sProcedureLine.find(" default") != std::string::npos
+                 || sProcedureLine.find(" endswitch") != std::string::npos
+                 || sProcedureLine.find(" try") != std::string::npos
+                 || sProcedureLine.find(" catch") != std::string::npos
+                 || sProcedureLine.find(" endtry") != std::string::npos
+                 || sProcedureLine.find(" while ") != std::string::npos
+                 || sProcedureLine.find(" while(") != std::string::npos
+                 || sProcedureLine.find(" endwhile") != std::string::npos)
         {
             for (size_t n = 0; n < sProcedureLine.length(); n++)
             {
@@ -1774,7 +1746,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
                 || findCommand(sProcedureLine).sString == "else")
             nthBlock--;
 
-        string sTabs = "\t";
+        std::string sTabs = "\t";
 
         for (int i = 0; i < nthBlock; i++)
             sTabs += '\t';
@@ -1800,17 +1772,17 @@ bool Procedure::writeProcedure(string sProcedureLine)
 
     // Write the actual line to the file
     if (fProcedure.is_open())
-        fProcedure << sProcedureLine << endl;
+        fProcedure << sProcedureLine << std::endl;
 
     // If this was the last line, write the final comment lines
     // to the procedure file and close it afterwards
     if (!bWritingTofile && fProcedure.is_open())
     {
-        fProcedure << endl;
-        fProcedure << "#**" << _lang.get("PROC_END_OF_PROCEDURE") << endl;
-        fProcedure << " * " << _lang.get("PROC_FOOTER") << endl;
-        fProcedure << " * https://www.numere.org/" << endl;
-        fProcedure << " **" << std::setfill('*') << std::setw(_lang.get("PROC_FOOTER").length() + 1) << "#" << endl;
+        fProcedure << std::endl;
+        fProcedure << "#**" << _lang.get("PROC_END_OF_PROCEDURE") << std::endl;
+        fProcedure << " * " << _lang.get("PROC_FOOTER") << std::endl;
+        fProcedure << " * https://www.numere.org/" << std::endl;
+        fProcedure << " **" << std::setfill('*') << std::setw(_lang.get("PROC_FOOTER").length() + 1) << "#" << std::endl;
 
         fProcedure.close();
 
@@ -1838,17 +1810,17 @@ bool Procedure::writeProcedure(string sProcedureLine)
 /// corresponding file name from the passed
 /// position in the command line.
 ///
-/// \param sCmdLine const string&
+/// \param sCmdLine const std::string&
 /// \param nPos size_t
-/// \param sProcName string&
-/// \param sArgList string&
-/// \param sFileName string&
+/// \param sProcName std::string&
+/// \param sArgList std::string&
+/// \param sFileName std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos, string& sProcName, string& sArgList, string& sFileName)
+void Procedure::extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName)
 {
-    string __sName = sCmdLine.substr(nPos, sCmdLine.find('(', nPos) - nPos);
+    std::string __sName = sCmdLine.substr(nPos, sCmdLine.find('(', nPos) - nPos);
 
     // Get the argument list
     sArgList = sCmdLine.substr(sCmdLine.find('(', nPos));
@@ -1866,8 +1838,13 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
         throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sCmdLine, SyntaxError::invalid_position, "thisfile");
 
     // Now remove the namespace stuff
-    if (__sName.find('~') != string::npos)
+    if (__sName.find('~') != std::string::npos)
         sProcName = __sName.substr(__sName.rfind('~')+1);
+    else if (__sName.front() == '\'' && __sName.back() == '\'' && __sName.find('/') != std::string::npos)
+    {
+        sProcName = __sName.substr(__sName.rfind('/')+1);
+        sProcName.pop_back();
+    }
     else
         sProcName = __sName;
 
@@ -1888,26 +1865,26 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
 /// are declared as inline and whether they are
 /// inlinable.
 ///
-/// \param sProc const string&
-/// \return int one of ProcedureCommendLine::Inlineable values
+/// \param sProc const std::string&
+/// \return int one of ProcedureCommandLine::Inlineable values
 ///
 /////////////////////////////////////////////////
-int Procedure::isInline(const string& sProc)
+int Procedure::isInline(const std::string& sProc)
 {
     // No procedures?
-    if (sProc.find('$') == string::npos)
+    if (sProc.find('$') == std::string::npos)
         return ProcedureCommandLine::INLINING_IMPOSSIBLE;
 
     size_t nProcedures = 0;
     int nInlineable = ProcedureCommandLine::INLINING_POSSIBLE;
 
-    if (sProc.find('$') != string::npos && sProc.find('(', sProc.find('$')) != string::npos)
+    if (sProc.find('$') != std::string::npos && sProc.find('(', sProc.find('$')) != std::string::npos)
     {
         size_t nPos = 0;
 
         // Examine all procedures, which may be found in the
         // current command string
-        while (sProc.find('$', nPos) != string::npos && sProc.find('(', sProc.find('$', nPos)) != string::npos)
+        while (sProc.find('$', nPos) != std::string::npos && sProc.find('(', sProc.find('$', nPos)) != std::string::npos)
         {
             // Extract the name of the procedure
             nPos = sProc.find('$', nPos) + 1;
@@ -1915,9 +1892,9 @@ int Procedure::isInline(const string& sProc)
             // Only evaluate the current match, if it is not part of a string
             if (!isInQuotes(sProc, nPos, true))
             {
-                string __sFileName;
-                string __sProcName;
-                string __sArgList;
+                std::string __sFileName;
+                std::string __sProcName;
+                std::string __sArgList;
 
                 // Obtain procedure name, argument list and the corresponding
                 // file name of the procedure
@@ -1956,27 +1933,27 @@ int Procedure::isInline(const string& sProc)
 /// flow control command array before the current
 /// command line.
 ///
-/// \param sProc string&
-/// \return vector<string>
+/// \param sProc std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> Procedure::expandInlineProcedures(string& sProc)
+std::vector<std::string> Procedure::expandInlineProcedures(std::string& sProc)
 {
-    vector<string> vExpandedProcedures;
+    std::vector<std::string> vExpandedProcedures;
 
     // No procedures?
-    if (sProc.find('$') == string::npos)
+    if (sProc.find('$') == std::string::npos)
         return vExpandedProcedures;
 
     size_t nProcedures = countProceduresInLine(sProc);
 
-    if (sProc.find('$') != string::npos && sProc.find('(', sProc.find('$')) != string::npos)
+    if (sProc.find('$') != std::string::npos && sProc.find('(', sProc.find('$')) != std::string::npos)
     {
         size_t nPos = 0;
 
         // Examine all procedures, which may be found in the
         // current command string
-        while (sProc.find('$', nPos) != string::npos && sProc.find('(', sProc.find('$', nPos)) != string::npos && nProcedures)
+        while (sProc.find('$', nPos) != std::string::npos && sProc.find('(', sProc.find('$', nPos)) != std::string::npos && nProcedures)
         {
             // Extract the name of the procedure
             nPos = sProc.find('$', nPos) + 1;
@@ -1984,9 +1961,9 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
             // Only evaluate the current match, if it is not part of a string
             if (!isInQuotes(sProc, nPos, true))
             {
-                string __sFileName;
-                string __sProcName;
-                string __sArgList;
+                std::string __sFileName;
+                std::string __sProcName;
+                std::string __sArgList;
 
                 // Obtain procedure name, argument list and the corresponding
                 // file name of the procedure
@@ -1994,10 +1971,10 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
 
                 // Pre-parse procedures, which are part of the current
                 // argument list
-                if (__sArgList.find('$') != string::npos)
+                if (__sArgList.find('$') != std::string::npos)
                 {
                     // Call member function recursively
-                    vector<string> vExpandedArgList = expandInlineProcedures(__sArgList);
+                    std::vector<std::string> vExpandedArgList = expandInlineProcedures(__sArgList);
 
                     // Insert the returned list, if it is non-empty
                     if (vExpandedArgList.size())
@@ -2010,7 +1987,7 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
                 if (isInlineable(__sProcName, __sFileName))
                 {
                     // Get the inlined representation as a vector
-                    vector<string> vInlinedRepresentation = getInlined(__sProcName, __sArgList, __sFileName, nProcedures);
+                    std::vector<std::string> vInlinedRepresentation = getInlined(__sProcName, __sArgList, __sFileName, nProcedures);
 
                     // Replace the return value and insert the
                     // stuff before the return value in the overall
@@ -2035,34 +2012,31 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
 /// i.e. whether it fulfills the internal inlining
 /// rules.
 ///
-/// \param sProc const string&
-/// \param sFileName const string&
+/// \param sProc const std::string&
+/// \param sFileName const std::string&
 /// \param nInlineFlag int*
-/// \return int one of ProcedureCommendLine::Inlineable values
+/// \return int one of ProcedureCommandLine::Inlineable values
 ///
 /////////////////////////////////////////////////
-int Procedure::isInlineable(const string& sProc, const string& sFileName, int* nInlineFlag)
+int Procedure::isInlineable(const std::string& sProc, const std::string& sFileName, int* nInlineFlag)
 {
     // Get procedure element and goto to the corresponding line
     ProcedureElement* element = NumeReKernel::ProcLibrary.getProcedureContents(sFileName);
     int nProcedureLine = element->gotoProcedure("$" + sProc);
     int nInlineable = ProcedureCommandLine::INLINING_IMPOSSIBLE;
-    string sArgumentList;
-
-    const int nMAX_INLINING_LINES = 7;
+    std::string sArgumentList;
+    FlowCtrl fcSyntax(true);
 
     if (nProcedureLine < 0)
         throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, sProc, SyntaxError::invalid_position, "$" + sProc);
 
     // Get the procedure head
-    pair<int, ProcedureCommandLine> currentline = element->getCurrentLine(nProcedureLine);
+    std::pair<int, ProcedureCommandLine> currentline = element->getCurrentLine(nProcedureLine);
 
     // If the inline flag pointer was passed, store the inline flag
     // value here
     if (nInlineFlag)
-    {
         *nInlineFlag = currentline.second.getFlags() & ProcedureCommandLine::FLAG_INLINE;
-    }
 
     // Extract information about inlinability and the argument list
     nInlineable = currentline.second.isInlineable();
@@ -2070,39 +2044,69 @@ int Procedure::isInlineable(const string& sProc, const string& sFileName, int* n
 
     if (nInlineable == ProcedureCommandLine::INLINING_UNKNOWN)
     {
-        size_t nLines = 0;
-
         // Apply the rules and update the procedure definition
         while (!element->isLastLine(currentline.first))
         {
             currentline = element->getNextLine(currentline.first);
+            std::string sLine = currentline.second.getCommandLine();
+            std::string sCommand = findCommand(sLine).sString;
+
+            if (fcSyntax.getCurrentBlockDepth() > 0)
+                fcSyntax.addToControlFlowBlock(sLine, currentline.first);
+            else if (fcSyntax.isFlowCtrlStatement(sCommand))
+                fcSyntax.addToControlFlowBlock(sLine, currentline.first);
+
+            // Check for "thisfile" namespaces - only works within a single file
+            if (sLine.find("$thisfile~") != std::string::npos && sFileName != sCurrentProcedureName)
+            {
+                // This condition is only valid for the current file setup and
+                // must not be cached
+                return ProcedureCommandLine::INLINING_IMPOSSIBLE;
+            }
+
+            // We do not inline procedures with a return statement
+            // within an internal control flow block
+            if (fcSyntax.getCurrentBlock() > 0 && sCommand == "return")
+            {
+                nInlineable = ProcedureCommandLine::INLINING_IMPOSSIBLE;
+                break;
+            }
 
             // Apply the internal inlining rule set
-            nInlineable = applyInliningRuleset(currentline.second.getCommandLine(), sArgumentList);
+            nInlineable = applyInliningRuleset(sLine, sArgumentList);
 
             // If the procedure either is not inlinable or we've reached
             // the end of the procedure, break the loop
             if (!nInlineable
                 || currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT
-                || findCommand(currentline.second.getCommandLine()).sString == "return")
-            {
+                || sCommand == "return")
                 break;
-            }
-
-            nLines++;
         }
-
-        // Ensure that we don't have too many lines
-        if (nLines > nMAX_INLINING_LINES)
-            nInlineable = ProcedureCommandLine::INLINING_IMPOSSIBLE;
 
         // Go to the procedure head again and update the
         // inlinability information
         currentline = element->getCurrentLine(nProcedureLine);
         currentline.second.setInlineable(nInlineable);
-
-        return nInlineable;
     }
+    else
+    {
+        // We still need to ensure that the the usage of thisfile is fitting
+        // for the current file setup
+        while (!element->isLastLine(currentline.first))
+        {
+            currentline = element->getNextLine(currentline.first);
+            std::string sLine = currentline.second.getCommandLine();
+
+            // Check for "thisfile" namespaces - only works within a single file
+            if (sLine.find("$thisfile~") != std::string::npos && sFileName != sCurrentProcedureName)
+            {
+                // This condition is only valid for the current file setup and
+                // must not be cached
+                return ProcedureCommandLine::INLINING_IMPOSSIBLE;
+            }
+        }
+    }
+
 
     return nInlineable;
 }
@@ -2114,36 +2118,20 @@ int Procedure::isInlineable(const string& sProc, const string& sFileName, int* n
 /// procedure command line and returns the
 /// corresponding enumeration flags.
 ///
-/// \param sCommandLine const string&
-/// \param sArgumentList const string&
-/// \return int one of ProcedureCommendLine::Inlineable values
+/// \param sCommandLine const std::string&
+/// \param sArgumentList const std::string&
+/// \return int one of ProcedureCommandLine::Inlineable values
 ///
 /////////////////////////////////////////////////
-int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sArgumentList)
+int Procedure::applyInliningRuleset(const std::string& sCommandLine, const std::string& sArgumentList)
 {
-    static const string sINVALID_INLINING_COMMANDS = " cst tab namespace for if while switch ifndef ifndefined def define lclfunc redef redefine undef undefine ";
-    string command = findCommand(sCommandLine).sString;
+    // Only namespace switches and lclfunc add difficulties
+    static const std::string sINVALID_INLINING_COMMANDS = " namespace lclfunc leave ";
+    std::string command = findCommand(sCommandLine).sString;
 
     // Check for invalid inlining commands
-    if (sINVALID_INLINING_COMMANDS.find(" " + command + " ") != string::npos)
+    if (sINVALID_INLINING_COMMANDS.find(" " + command + " ") != std::string::npos)
         return ProcedureCommandLine::INLINING_IMPOSSIBLE;
-
-    // Check for procedures in the current line
-    if (sCommandLine.find("$") != string::npos)
-    {
-        size_t nQuotes = 0;
-
-        // Go through the line and search for dollars,
-        // while considering the quotation marks
-        for (size_t i = 0; i < sCommandLine.length(); i++)
-        {
-            if (isQuotationMark(sCommandLine, i))
-                nQuotes++;
-
-            if (sCommandLine[i] == '$' && !(nQuotes % 2))
-                return ProcedureCommandLine::INLINING_IMPOSSIBLE;
-        }
-    }
 
     return ProcedureCommandLine::INLINING_POSSIBLE;
 }
@@ -2154,30 +2142,27 @@ int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sA
 /// counts the number of procedures,  which may
 /// be found in the current command line.
 ///
-/// \param sCommandLine const string&
+/// \param sCommandLine const std::string&
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Procedure::countProceduresInLine(const string& sCommandLine)
+size_t Procedure::countProceduresInLine(const std::string& sCommandLine)
 {
     size_t nProcedures = 0;
     size_t nPos = 0;
 
     // Only do something, if there are candidates for procedures
-    if (sCommandLine.find('$') != string::npos && sCommandLine.find('(', sCommandLine.find('$')) != string::npos)
+    if (sCommandLine.find('$') != std::string::npos && sCommandLine.find('(', sCommandLine.find('$')) != std::string::npos)
     {
-
         // Examine all procedures candidates, which may be found in the
         // current command string
-        while (sCommandLine.find('$', nPos) != string::npos && sCommandLine.find('(', sCommandLine.find('$', nPos)) != string::npos)
+        while (sCommandLine.find('$', nPos) != std::string::npos && sCommandLine.find('(', sCommandLine.find('$', nPos)) != std::string::npos)
         {
             nPos = sCommandLine.find('$', nPos) + 1;
 
             // Only count the current match, if it is not part of a string
             if (!isInQuotes(sCommandLine, nPos, true))
-            {
                 nProcedures++;
-            }
         }
     }
 
@@ -2192,25 +2177,38 @@ size_t Procedure::countProceduresInLine(const string& sCommandLine)
 /// selected procedure as a vector containing the
 /// single commands.
 ///
-/// \param sProc const string&
-/// \param sArgumentList const string&
-/// \param sFileName const string&
+/// \param sProc const std::string&
+/// \param sArgumentList const std::string&
+/// \param sFileName const std::string&
 /// \param nProcedures size_t
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> Procedure::getInlined(const string& sProc, const string& sArgumentList, const string& sFileName, size_t nProcedures)
+std::vector<std::string> Procedure::getInlined(const std::string& sProc, const std::string& sArgumentList, const std::string& sFileName, size_t nProcedures)
 {
+    std::string sInlineThisNameSpace = sFileName.substr(0, sFileName.rfind('/'));
+
+    if (sInlineThisNameSpace.starts_with(getPath()))
+    {
+        sInlineThisNameSpace = sInlineThisNameSpace.substr(getPath().length());
+
+        if (sInlineThisNameSpace.front() == '/')
+            sInlineThisNameSpace.erase(0, 1);
+
+        replaceAll(sInlineThisNameSpace, "/", "~");
+    }
+
     // Prepare a variable factory and get the procedure
     // element
-    ProcedureVarFactory varFactory(this, sProc, nthRecursion, true);
+    inlineVarStorage.emplace_back(new ProcedureVarFactory(this, sProc, 1000*(nthRecursion+1)+inlineVarStorage.size()+1, true));
+    ProcedureVarFactory& varFactory = *inlineVarStorage.back();
     ProcedureElement* element = NumeReKernel::ProcLibrary.getProcedureContents(sFileName);
 
     // Goto to the corresponding procedure head
     int nProcedureLine = element->gotoProcedure("$" + sProc);
-    vector<string> vProcCommandLines;
-    string sCommandLine;
-    static const string sSPECIALRETURNVALS = " true false nan inf -inf ";
+    std::vector<std::string> vProcCommandLines;
+    std::string sCommandLine;
+    static const std::string sSPECIALRETURNVALS = " true false nan inf -inf ";
 
     // Get a reference to the debugger. This is needed to insert
     // the applied breakpoints at the correct location
@@ -2230,15 +2228,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
     // If there are some argument copies needed, we'll
     // insert them now
     if (varFactory.vInlineArgDef.size())
-    {
         vProcCommandLines.insert(vProcCommandLines.end(), varFactory.vInlineArgDef.begin(), varFactory.vInlineArgDef.end());
-
-        for (const auto& sArgDef : varFactory.vInlineArgDef)
-        {
-            if (sArgDef.starts_with("_~~TC_"))
-                inlineClusters.insert(sArgDef.substr(0, sArgDef.find('{')));
-        }
-    }
 
     // Read each line, replace the arguments with their
     // values and push the result in the vector
@@ -2252,7 +2242,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
         // into temporary cluster elements
         std::string sCommand = findCommand(sCommandLine).sString;
 
-        /*if (sCommand == "var" || sCommand == "str" || sCommand == "cst" || sCommand == "tab" || sCommand == "obj")
+        if (sCommand == "var" || sCommand == "str" || sCommand == "cst" || sCommand == "tab" || sCommand == "obj")
         {
             // Create the vars
             if (sCommand == "var")
@@ -2266,33 +2256,43 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
             else if (sCommand == "obj")
                 varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_OBJECT);
 
-            // Apply name mangling
-            sCommandLine = varFactory.resolveVariables(" " + sCommandLine + " ");
+            // Add assignments in dedicated command lines
+            if (varFactory.vInlineVarDef.size())
+                vProcCommandLines.insert(vProcCommandLines.end(), varFactory.vInlineVarDef.begin(), varFactory.vInlineVarDef.end());
 
-            // Push the definition
-            vProcCommandLines.push_back(sCommandLine);
-
-            // Use the extracted assignments (TODO) as secondary line
-            sCommandLine = varFactory.sInlineVarDef + ";";
-        }*/
-
-        if (findCommand(sCommandLine).sString == "var")
-        {
-            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_NUMERICAL);
-            sCommandLine = varFactory.sInlineVarDef + ";";
-            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
+            continue;
         }
-        else if (findCommand(sCommandLine).sString == "str")
+
+        // We need to mangle for loop indices
+        if (sCommand == "for" && sCommandLine.find('(', sCommandLine.find("for")) != std::string::npos)
         {
-            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_STRING);
-            sCommandLine = varFactory.sInlineVarDef + ";";
-            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
+            std::string sForDef = sCommandLine.substr(sCommandLine.find('(', sCommandLine.find("for"))+1);
+
+            if (sForDef.find("->") != std::string::npos)
+                sForDef = sForDef.substr(0, sForDef.find("->"));
+            else
+                sForDef = sForDef.substr(0, sForDef.find('='));
+
+            varFactory.createLocalVars(sForDef, mu::TYPE_VOID);
+            sCommandLine = varFactory.resolveVariables(sCommandLine);
         }
-        else if (findCommand(sCommandLine).sString == "obj")
+
+        // Replace all occurences of the relative this namespace with
+        // the absolute namespace
+        if (sCommandLine.find("$this~") != std::string::npos)
         {
-            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4), mu::TYPE_OBJECT);
-            sCommandLine = varFactory.sInlineVarDef + ";";
-            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
+            if (sInlineThisNameSpace.find_first_of(":/") != std::string::npos)
+            {
+                size_t pos;
+
+                while ((pos = sCommandLine.find("$this~")) != std::string::npos)
+                {
+                    sCommandLine.replace(pos, 6, "$'" + sInlineThisNameSpace + "/");
+                    sCommandLine.insert(sCommandLine.find('(', pos), "'");
+                }
+            }
+            else
+                replaceAll(sCommandLine, "$this~", ("$" + sInlineThisNameSpace + "~").c_str());
         }
 
         // Insert a breakpoint, if the breakpoint manager
@@ -2317,7 +2317,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
             size_t pos = findCommand(sCommandLine).nPos;
             sCommandLine.erase(0, pos+7);
 
-            if (sCommandLine.find(';') != string::npos)
+            if (sCommandLine.find(';') != std::string::npos)
                 sCommandLine.erase(sCommandLine.rfind(';'));
 
             // Strip all spaces from the return value
@@ -2331,35 +2331,22 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
                 vProcCommandLines.push_back("");
             else if (!sCommandLine.length())
                 vProcCommandLines.push_back("true");
-            else if (sSPECIALRETURNVALS.find(" " + sCommandLine + " ") != string::npos || _parser.GetConst().find(sCommandLine) != _parser.GetConst().end())
+            else if (sSPECIALRETURNVALS.find(" " + sCommandLine + " ") != std::string::npos
+                     || _parser.GetConst().find(sCommandLine) != _parser.GetConst().end())
                 vProcCommandLines.push_back(sCommandLine);
-            else if (isMultiValue(sCommandLine))
+            else
             {
                 // Multi value return value
                 if (nProcedures > 1)
                 {
                     // Save the return value in a cluster
-                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster("ret");
+                    std::string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster("ret");
                     vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
                     vProcCommandLines.push_back(sTempCluster);
                     inlineClusters.insert(sTempCluster.substr(0, sTempCluster.find('{')));
                 }
                 else
                     vProcCommandLines.push_back("{" + sCommandLine + "}");
-            }
-            else
-            {
-                // Single value return value
-                if (nProcedures > 1)
-                {
-                    // Save the return value in a cluster
-                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster("ret");
-                    vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
-                    vProcCommandLines.push_back(sTempCluster);
-                    inlineClusters.insert(sTempCluster.substr(0, sTempCluster.find('{')));
-                }
-                else
-                    vProcCommandLines.push_back("(" + sCommandLine + ")");
             }
 
             break;
@@ -2518,7 +2505,7 @@ int Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Gather all information needed by the debugger
-    _debugger.gatherInformations(_varFactory, "", sCurrentProcedureName, GetCurrentLine());
+    _debugger.gatherInformation(_varFactory, "", sCurrentProcedureName, GetCurrentLine());
 
     // Let the kernel display the debugger window and jump to the
     // corresponding line in the procedure file
@@ -2545,7 +2532,7 @@ int Procedure::getErrorInformationForDebugger()
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Gather all information needed by the debugger
-    _debugger.gatherInformations(_varFactory, "", sCurrentProcedureName, GetCurrentLine());
+    _debugger.gatherInformation(_varFactory, "", sCurrentProcedureName, GetCurrentLine());
 
     return 1;
 }

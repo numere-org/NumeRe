@@ -39,6 +39,7 @@
 using namespace mu;
 
 struct FlowCtrlCommand;
+class ProcedureVarFactory;
 
 
 class FlowCtrl
@@ -115,14 +116,17 @@ class FlowCtrl
         };
 
         std::vector<FlowCtrlCommand> vCmdArray;
-        std::vector<mu::Variable> vVarArray;
-        std::vector<std::string> sVarArray;
-        varmap_type vVars;
+
+        std::vector<mu::Variable*> vVarArray;
+        std::vector<std::pair<std::string, mu::Variable>> varStorage;
+        std::map<std::string,std::string> mVarMap;
+
         std::vector<std::vector<int>> nJumpTable;
         std::vector<int> nCalcType;
         std::vector<FlowCtrlBlock> blockNames;
 
         int nFlowCtrlStatements[FC_COUNT];
+        int nFlowCtrlStatementsMax[FC_COUNT];
 
         int nCurrentCommand;
         Returnvalue ReturnVal;
@@ -131,7 +135,7 @@ class FlowCtrl
         bool bLockedPauseMode;
         bool bFunctionsReplaced;
         std::string sLoopPlotCompose;
-        std::map<std::string,std::string> mVarMap;
+        std::vector<std::unique_ptr<ProcedureVarFactory>> inlineVarStorage;
         std::set<std::string> inlineClusters;
         bool bSilent;
         bool bMask;
@@ -155,6 +159,8 @@ class FlowCtrl
 
         typedef int(FlowCtrl::*FlowCtrlFunction)(int, int); ///< Definition of a generic FlowCtrl entry point
 
+        FlowCtrlCommand decodeSingleLine(MutableStringView __sCmd, int nCurrentLine, MutableStringView& sAppendedExpression);
+
         int compile(std::string sLine, int nthCmd);
         int calc(StringView sLine, int nthCmd);
         const mu::StackItem* evalHeader(int& nNum, std::string sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
@@ -171,6 +177,7 @@ class FlowCtrl
         void fillJumpTableAndExpandRecursives();
         void prepareSwitchExpression(int nSwitchStart);
         void checkParsingModeAndExpandDefinitions();
+        std::vector<FlowCtrlCommand> importInlined(FlowCtrlCommand statement, int nInputLine, int nRecursionDepth);
         void prepareLocalVarsAndReplace(const std::vector<std::string>& sVars);
         void updateTestStats();
 
@@ -206,7 +213,7 @@ class FlowCtrl
             }
         void addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine);
         void eval();
-        void reset();
+        void reset(bool finalize = false);
 
         int getCurrentLineNumber() const;
         std::string getCurrentCommand() const;

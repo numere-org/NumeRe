@@ -1290,7 +1290,7 @@ namespace NumeRe
             fFileStream << "\t</tr>\n";
         }
 
-        fFileStream << "</table>";
+        fFileStream << "</table>\n</body>";
     }
 
 

@@ -350,17 +350,18 @@ bool NumeReDebugger::select(size_t nStackElement)
     // statement, obtain the corresponding information here
     if (_curProcedure->bEvaluatingFlowControlStatements)
     {
-        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(),
-                                    _curProcedure->getCurrentLineNumber(),
-                                    _curProcedure->mVarMap, _curProcedure->vVarArray,
-                                    _curProcedure->sVarArray);
+        gatherFlowCtrlInformation(_curProcedure->getCurrentCommand(),
+                                  _curProcedure->getCurrentLineNumber(),
+                                  _curProcedure->mVarMap,
+                                  _curProcedure->varStorage,
+                                  _curProcedure->inlineVarStorage);
     }
 
     // Obtain the remaining information here
-    gatherInformations(_curProcedure->_varFactory,
-                       _curProcedure->sProcCommandLine,
-                       _curProcedure->sCurrentProcedureName,
-                       _curProcedure->GetCurrentLine());
+    gatherInformation(_curProcedure->_varFactory,
+                      _curProcedure->sProcCommandLine,
+                      _curProcedure->sCurrentProcedureName,
+                      _curProcedure->GetCurrentLine());
 
     // Jump to the selected file and the selected line number
     NumeReKernel::gotoLine(sErraticModule, nLineNumber);
@@ -492,7 +493,7 @@ Procedure* NumeReDebugger::getCurrentProcedure()
 /// This member function is a wrapper for the
 /// more complicated signature further below.
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
+void NumeReDebugger::gatherInformation(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
 {
     if (bAlreadyThrown)
         return;
@@ -503,8 +504,8 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
         return;
     }
 
-    gatherInformations(_varFactory->mLocalVars, _varFactory->mLocalTables, _varFactory->mArguments,
-                       _sErraticCommand, _sErraticModule, _nLineNumber);
+    gatherInformation(_varFactory->mLocalVars, _varFactory->mLocalTables, _varFactory->mArguments,
+                      _sErraticCommand, _sErraticModule, _nLineNumber);
 }
 
 
@@ -517,25 +518,18 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 /// \param _mLocalVars const std::map<std::string, std::pair<std::string, mu::Variable*>>&
 /// \param _mLocalTables const std::map<std::string, std::string>&
 /// \param _mArguments const std::map<std::string, std::string>&
-/// \param _sErraticCommand const string&
-/// \param _sErraticModule const string&
+/// \param _sErraticCommand const std::string&
+/// \param _sErraticModule const std::string&
 /// \param _nLineNumber size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
-                                         const std::map<std::string, std::string>& _mLocalTables,
-                                         const std::map<std::string, std::string>& _mArguments,
-                                         const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
+void NumeReDebugger::gatherInformation(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
+                                       const std::map<std::string, std::string>& _mLocalTables,
+                                       const std::map<std::string, std::string>& _mArguments,
+                                       const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber)
 {
     if (bAlreadyThrown)
-        return;
-
-    // Get the instance of the kernel
-    NumeReKernel* instance = NumeReKernel::getInstance();
-
-    // If the instance is zero, something really bad happened
-    if (!instance)
         return;
 
     // Store the command line containing the error
@@ -555,88 +549,28 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
     if (!bDebuggerActive)
         return;
 
-    // Store the local numerical variables and replace their
-    // occurence with their definition in the command lines
-    for (const auto& iter : _mLocalVars)
-    {
-        // Replace the occurences
-        if (iter.first != iter.second.first)
-            replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
-
-        if (iter.second.second->getCommonType() == mu::TYPE_CLUSTER)
-            mLocalVars[iter.first + "{}\t" + iter.second.first + "{}"] = iter.second.second;
-        else
-            mLocalVars[iter.first + "\t" + iter.second.first] = iter.second.second;
-    }
-
-    // Store the local tables and replace their
-    // occurence with their definition in the command lines
-    for (const auto& iter : _mLocalTables)
-    {
-        // Replace the occurences
-        if (iter.first != iter.second)
-            replaceAll(sErraticCommand, (iter.second + (iter.second.back() == '(' ? "" : "(")).c_str(), (iter.first + (iter.first.back() == '(' ? "" : "(")).c_str());
-
-        string sTableData;
-
-        // Extract the minimal and maximal values of the tables
-        // to display them in the variable viewer panel
-        sTableData = toString(instance->getMemoryManager().getLines(iter.second, false)) + " x "
-            + toString(instance->getMemoryManager().getCols(iter.second, false));
-        sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
-            + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
-
-        mLocalTables[iter.first + "()"] = sTableData;
-    }
-
-    // Is this procedure a macro?
-    bool isMacro = nCurrentStackElement < vStackTrace.size() ? vStackTrace[nCurrentStackElement].second->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO : false;
-
-    // Store the arguments
-    for (const auto& iter : _mArguments)
-    {
-        if (iter.first.back() == '(')
-        {
-            // Replace the occurences
-            if (!isMacro && iter.first != iter.second)
-                replaceAll(sErraticCommand, (iter.second + "(").c_str(), iter.first.c_str());
-
-            mArguments[iter.first + ")\t" + iter.second] = iter.second;
-        }
-        else if (iter.first.back() == '{')
-        {
-            // Replace the occurences
-            if (!isMacro && iter.first != iter.second)
-                replaceAll(sErraticCommand, (iter.second + "{").c_str(), iter.first.c_str());
-
-            mArguments[iter.first + "}\t" + iter.second] = iter.second;
-        }
-        else
-        {
-            // Replace the occurences
-            if (!isMacro && iter.first != iter.second)
-                replaceAll(sErraticCommand, iter.second.c_str(), iter.first.c_str());
-
-            mArguments[iter.first + "\t" + iter.second] = iter.second;
-        }
-    }
+    // Summarize all necessary information
+    summarizeInformation(_mLocalVars, _mLocalTables, _mArguments, false);
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This member funciton gathers the
-/// necessary debugging informations from the
+/// \brief This member function gathers the
+/// necessary debugging information from the
 /// current executed control flow block.
 ///
 /// \param _sErraticCommand const string&
 /// \param _nLineNumber size_t
 /// \param mVarMap map<string,string>&
-/// \param vVarArray const std::vector<mu::Variable>&
-/// \param sVarArray const std::vector<std::string>&
+/// \param varStorage const std::vector<std::pair<std::string, mu::Variable>>&
+/// \param inlineVarStorage const std::vector<std::unique_ptr<ProcedureVarFactory>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, size_t _nLineNumber, map<string, string>& mVarMap, const std::vector<mu::Variable>& vVarArray, const std::vector<std::string>& sVarArray)
+void NumeReDebugger::gatherFlowCtrlInformation(const string& _sErraticCommand, size_t _nLineNumber,
+                                               map<string, string>& mVarMap,
+                                               const std::vector<std::pair<std::string, mu::Variable>>& varStorage,
+                                               const std::vector<std::unique_ptr<ProcedureVarFactory>>& inlineVarStorage)
 {
     if (bAlreadyThrown)
         return;
@@ -655,20 +589,25 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
 
     // store variable names and replace their occurences with
     // their definitions
-    for (size_t i = 0; i < sVarArray.size(); i++)
+    for (size_t i = 0; i < varStorage.size(); i++)
     {
         for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
         {
-            if (iter->second == sVarArray[i])
+            if (iter->second == varStorage[i].first)
             {
                 // Store the variables
-                mLocalVars[iter->first + "\t" + iter->second] = &vVarArray[i];
+                mLocalVars[iter->first + "\t" + iter->second] = &varStorage[i].second;
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)
                     sErraticCommand.replace(sErraticCommand.find(iter->second), (iter->second).length(), iter->first);
             }
         }
+    }
+
+    for (size_t i = 0; i < inlineVarStorage.size(); i++)
+    {
+        summarizeInformation(inlineVarStorage[i]->mLocalVars, inlineVarStorage[i]->mLocalTables, inlineVarStorage[i]->mArguments, true);
     }
 }
 
@@ -738,7 +677,7 @@ std::vector<std::string> NumeReDebugger::getVars(const std::vector<mu::DataType>
 
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
-        char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
+        char sepChar = (iter->first.find("@\t") != std::string::npos ? '@' : '\t');
 
         if (std::find(dt.begin(), dt.end(), iter->second->getCommonType()) == dt.end()
             && !(std::find(dt.begin(), dt.end(), mu::TYPE_NUMERICAL) != dt.end() && iter->second->getCommonType() == mu::TYPE_VOID))
@@ -755,6 +694,143 @@ std::vector<std::string> NumeReDebugger::getVars(const std::vector<mu::DataType>
     }
 
     return vVars;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function
+/// summarizes all available information from the
+/// different sources.
+///
+/// \param _mLocalVars const std::map<std::string, std::pair<std::string, mu::Variable*>>&
+/// \param _mLocalTables const std::map<std::string, std::string>&
+/// \param _mArguments const std::map<std::string, std::string>&
+/// \param isInline bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReDebugger::summarizeInformation(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
+                                          const std::map<std::string, std::string>& _mLocalTables,
+                                          const std::map<std::string, std::string>& _mArguments,
+                                          bool isInline)
+{
+    // Get the instance of the kernel
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    // If the instance is zero, something really bad happened
+    if (!instance)
+        return;
+
+    // Store the local numerical variables and replace their
+    // occurence with their definition in the command lines
+    for (const auto& iter : _mLocalVars)
+    {
+        std::string sInlineInfo;
+
+        if (isInline) //_~inlinetest_1~~a
+        {
+            size_t p2 = iter.second.first.rfind("~~");
+            size_t p1 = iter.second.first.rfind('_', p2)+1;
+            sInlineInfo = "@" + iter.second.first.substr(p1, p2-p1);
+        }
+
+        // Replace the occurences
+        if (iter.first != iter.second.first)
+            replaceAll(sErraticCommand, iter.second.first.c_str(), (iter.first+sInlineInfo).c_str());
+        else
+            sInlineInfo.clear();
+
+        if (iter.second.second->getCommonType() == mu::TYPE_CLUSTER)
+            mLocalVars[iter.first + sInlineInfo + "{}\t" + iter.second.first + "{}"] = iter.second.second;
+        else
+            mLocalVars[iter.first + sInlineInfo + "\t" + iter.second.first] = iter.second.second;
+    }
+
+    // Store the local tables and replace their
+    // occurence with their definition in the command lines
+    for (const auto& iter : _mLocalTables)
+    {
+        std::string sInlineInfo;
+
+        if (isInline)
+        {
+            size_t p2 = iter.second.rfind("~~");
+            size_t p1 = iter.second.rfind('_', p2)+1;
+            sInlineInfo = "@" + iter.second.substr(p1, p2-p1);
+        }
+
+        // Replace the occurences
+        if (iter.first != iter.second)
+            replaceAll(sErraticCommand, (iter.second + (iter.second.back() == '(' ? "" : "(")).c_str(), (iter.first + sInlineInfo + (iter.first.back() == '(' ? "" : "(")).c_str());
+        else
+            sInlineInfo.clear();
+
+        std::string sTableData;
+
+        // Extract the minimal and maximal values of the tables
+        // to display them in the variable viewer panel
+        sTableData = toString(instance->getMemoryManager().getLines(iter.second, false)) + " x "
+            + toString(instance->getMemoryManager().getCols(iter.second, false));
+        sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
+            + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
+
+        mLocalTables[iter.first + sInlineInfo + "()"] = sTableData;
+    }
+
+    // Is this procedure a macro?
+    bool isMacro = nCurrentStackElement < vStackTrace.size()
+        ? vStackTrace[nCurrentStackElement].second->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO
+        : false;
+
+    // Store the arguments
+    for (const auto& iter : _mArguments)
+    {
+        std::string sInlineInfo;
+
+        if (isInline)
+        {
+            size_t p2 = iter.second.rfind("~~");
+            size_t p1 = iter.second.rfind('_', p2)+1;
+            sInlineInfo = "@" + iter.second.substr(p1, p2-p1);
+        }
+
+        if (iter.first.back() == '(')
+        {
+            // Replace the occurences
+            if (!isMacro && iter.first != iter.second)
+                replaceAll(sErraticCommand,
+                           (iter.second + "(").c_str(),
+                           (iter.first.substr(0, iter.first.length()-1) + sInlineInfo + "(").c_str());
+            else
+                sInlineInfo.clear();
+
+            mArguments[iter.first.substr(0, iter.first.length()-1) + sInlineInfo + "()\t" + iter.second] = iter.second;
+        }
+        else if (iter.first.back() == '{')
+        {
+            // Replace the occurences
+            if (!isMacro && iter.first != iter.second)
+                replaceAll(sErraticCommand,
+                           (iter.second + "{").c_str(),
+                           (iter.first.substr(0, iter.first.length()-1) + sInlineInfo + "{").c_str());
+            else
+                sInlineInfo.clear();
+
+            mArguments[iter.first.substr(0, iter.first.length()-1) + sInlineInfo + "{}\t" + iter.second] = iter.second;
+        }
+        else
+        {
+            // Replace the occurences
+            if (!isMacro && iter.first != iter.second)
+                replaceAll(sErraticCommand,
+                           iter.second.c_str(),
+                           (iter.first + sInlineInfo).c_str());
+            else
+                sInlineInfo.clear();
+
+            mArguments[iter.first + sInlineInfo + "\t" + iter.second] = iter.second;
+        }
+    }
 }
 
 

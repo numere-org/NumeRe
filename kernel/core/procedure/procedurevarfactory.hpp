@@ -86,7 +86,7 @@ class ProcedureVarFactory
         std::map<std::string, std::pair<std::string, mu::Variable*>> mLocalVars;
         std::map<std::string, std::string> mLocalTables;
 
-        std::string sInlineVarDef;
+        std::vector<std::string> vInlineVarDef;
         std::vector<std::string> vInlineArgDef;
 
         ProcedureVarFactory();

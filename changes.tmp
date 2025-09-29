@@ -19,3 +19,7 @@ Fixed	Combined dictstruct assignments are now possible.
 Fixed	An internal error during plotting occuring if a command inside a "compose" block terminates with a ";" has been resolved.
 Added	The method "contains()" was added to dictstructs.
 Added	"treelist" GUI elements do now accept dictstructs via the value option during runtime.
+Fixed	Function definitionscan now use objects and their methods as expected.
+Fixed	Fields of dictstructs are no longer accidentally overwritten if used inside an expression.
+Fixed	The debugger will now trigger again at the first breakpoint in the following run of a script, if the previous run of the script was continued with the "Leave" functionality.
+New	Procedure inlining using the "inline" procedure flag works now far better and also accepts only partial inlined procedure call trees.

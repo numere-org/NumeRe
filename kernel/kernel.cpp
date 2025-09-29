@@ -1191,8 +1191,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                             if (_script.wasLastCommand())
                             {
                                 print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
-                                _memoryManager.setPluginCommands(_procedure.getPluginNames());
-
                                 checkInternalStates();
                             }
 
@@ -1455,8 +1453,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
         if (_script.wasLastCommand())
         {
             print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
-            _memoryManager.setPluginCommands(_procedure.getPluginNames());
-
             checkInternalStates();
 
             if (!commandQueue.size())
@@ -1474,8 +1470,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
     if (_script.wasLastCommand())
     {
         print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
-        _memoryManager.setPluginCommands(_procedure.getPluginNames());
-
         checkInternalStates();
 
         return NUMERE_DONE_KEYWORD;
@@ -2263,8 +2257,6 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
                 if (_script.wasLastCommand())
                 {
                     print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
-                    _memoryManager.setPluginCommands(_procedure.getPluginNames());
-
                     checkInternalStates();
                 }
 
@@ -2285,9 +2277,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
             {
                 _script.returnCommand();
                 print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
-
                 checkInternalStates();
-
                 nReturnVal = NUMERE_DONE_KEYWORD;
             }
         }
@@ -2368,7 +2358,7 @@ void NumeReKernel::resetAfterError()
 
     // Reset the debugger, if not already done
     _debugger.finalize();
-    _procedure.reset();
+    _procedure.reset(true);
 }
 
 
@@ -2450,6 +2440,9 @@ void NumeReKernel::checkInternalStates()
 
         wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     }
+
+    _memoryManager.setPluginCommands(_procedure.getPluginNames());
+    _procedure.reset(true);
 }
 
 
@@ -3945,11 +3938,13 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
 
     for (const auto& iter : tableMap)
-        mLocalTables[iter.first] = iter.first;
-
+    {
+        if (!iter.first.starts_with("_~"))
+            mLocalTables[iter.first] = iter.first;
+    }
 
     // Pass the created information to the debugger
-    _debugger.gatherInformations(mLocalVars, mLocalTables, mArguments,
+    _debugger.gatherInformation(mLocalVars, mLocalTables, mArguments,
                                  sCurrentCommand, getInstance()->getScript().getScriptFileName(),
                                  getInstance()->getScript().getCurrentLine()-1);
 

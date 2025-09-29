@@ -447,7 +447,7 @@ static void populateArrChild(wxTreeListCtrl* listCtrl, const mu::Array& values, 
         else
             sItem = elem.printVal();
 
-        size_t currCol = 1u;
+        //size_t currCol = 1u;
         bool check = false;
 
         item = listCtrl->AppendItem(parentItem, nextItemValue(sItem));
@@ -533,7 +533,7 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
         else
             sItem = elem->printVal(0, 0);
 
-        size_t currCol = 1u;
+        //size_t currCol = 1u;
         bool check = false;
 
         if (check && useCheckBoxes)
@@ -564,7 +564,7 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, 
     }
 
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
-    size_t nColumns = listCtrl->GetColumnCount();
+    //size_t nColumns = listCtrl->GetColumnCount();
     std::vector<std::string> fields = dict.getFields();
 
     for (size_t i = 0; i < fields.size(); i++)
@@ -586,7 +586,7 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, 
         else
             sItem = elem->printVal(0, 0);
 
-        size_t currCol = 1u;
+        //size_t currCol = 1u;
         bool check = false;
 
         if (check && useCheckBoxes)
@@ -3024,38 +3024,43 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                 bool fitSize = false;
 
-                for (size_t i = 0; i < _options.size(); i+=2)
+                if (_options.size() == 1 && _options.get(0).isDictStruct())
                 {
-                    if (_options.get(i) == mu::Value("min-cols"))
+                    const mu::DictStruct& dict = _options.get(0).getDictStruct();
+
+                    if (dict.isField("min-cols") && dict.read("min-cols")->m_type == mu::TYPE_NUMERICAL)
                     {
                         int64_t c = table->GetNumberCols();
+                        int64_t t = static_cast<const mu::NumValue*>(dict.read("min-cols"))->get().asI64();
 
-                        if (c < _options.get(i+1).getNum().asI64()+1)
-                            table->AppendCols(_options.get(i+1).getNum().asI64()-c+1);
+                        if (c < t+1)
+                            table->AppendCols(t-c+1);
                     }
 
-                    if (_options.get(i) == mu::Value("min-rows"))
+                    if (dict.isField("min-rows") && dict.read("min-rows")->m_type == mu::TYPE_NUMERICAL)
                     {
-                        int64_t r = table->GetInternalRows(table->GetNumberRows());
+                        int64_t r = table->GetNumberRows();
+                        int64_t t = static_cast<const mu::NumValue*>(dict.read("min-rows"))->get().asI64();
 
-                        if (r < _options.get(i+1).getNum().asI64()+1)
-                            table->AppendRows(_options.get(i+1).getNum().asI64()-r+1);
+                        if (r < t+1)
+                            table->AppendRows(t-r+1);
                     }
 
-                    if (_options.get(i) == mu::Value("use-qmarks"))
-                        table->enableQuotationMarks((bool)_options.get(i+1));
+                    if (dict.isField("use-qmarks"))
+                        table->enableQuotationMarks((bool)*dict.read("use-qmarks"));
 
-                    if (_options.get(i) == mu::Value("fitsize"))
-                        fitSize = (bool)_options.get(i+1);
+                    if (dict.isField("fitsize"))
+                        fitSize = (bool)*dict.read("fitsize");
 
-                    if (_options.get(i) == mu::Value("fitsize-cols"))
+                    if (dict.isField("fitsize-cols"))
                     {
                         wxArrayInt cols;
                         int64_t currentCols = table->GetNumberCols()-1;
+                        const mu::BaseValue* val = dict.read("fitsize-cols");
 
-                        if (_options.get(i+1).isArray())
+                        if (val->m_type == mu::TYPE_ARRAY)
                         {
-                            const mu::Array& selectedCols = _options.get(i+1).getArray();
+                            const mu::Array& selectedCols = static_cast<const mu::ArrValue*>(val)->get();
 
                             for (size_t k = 0; k < selectedCols.size(); k++)
                             {
@@ -3067,8 +3072,13 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 cols.Add(selected-1);
                             }
                         }
-                        else if (_options.get(i+1).getNum().asI64() > 0 && _options.get(i+1).getNum().asI64() <= currentCols)
-                            cols.Add(_options.get(i+1).getNum().asI64()-1);
+                        else if (val->m_type == mu::TYPE_NUMERICAL)
+                        {
+                            int64_t c = static_cast<const mu::NumValue*>(val)->get().asI64();
+
+                            if (c > 0 && c <= currentCols)
+                                cols.Add(c-1);
+                        }
 
                         if (!cols.size())
                             return false;
@@ -3079,18 +3089,28 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (_options.get(i) == mu::Value("cond-format"))
+                    if (dict.isField("cond-format"))
                     {
-                        const mu::Array& formatting = _options.get(i+1).getArray();
+                        mu::Array formatting = mu::Value(dict.read("cond-format")->clone());
                         int64_t currentCols = table->GetNumberCols()-1;
 
-                        for (size_t j = 0; j < formatting.size(); j+=2)
+                        for (size_t j = 0; j < formatting.size(); j++)
                         {
                             wxArrayInt cols;
 
-                            if (formatting.get(j).isArray())
+                            if (!formatting.get(j).isDictStruct())
+                                return false;
+
+                            const mu::DictStruct& condFormat = formatting.get(j).getDictStruct();
+
+                            if (!condFormat.isField("cols")
+                                || !condFormat.isField("format")
+                                || condFormat.read("format")->m_type != mu::TYPE_ARRAY)
+                                return false;
+
+                            if (condFormat.read("cols")->m_type == mu::TYPE_ARRAY)
                             {
-                                const mu::Array& selectedCols = formatting.get(j).getArray();
+                                const mu::Array& selectedCols = static_cast<const mu::ArrValue*>(condFormat.read("cols"))->get();
 
                                 for (size_t k = 0; k < selectedCols.size(); k++)
                                 {
@@ -3102,8 +3122,13 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                     cols.Add(selected-1);
                                 }
                             }
-                            else if (formatting.get(j).getNum().asI64() > 0 && formatting.get(j).getNum().asI64() <= currentCols)
-                                cols.Add(formatting.get(j).getNum().asI64()-1);
+                            else if (condFormat.read("cols")->m_type == mu::TYPE_NUMERICAL)
+                            {
+                                int64_t c = static_cast<const mu::NumValue*>(condFormat.read("cols"))->get().asI64();
+
+                                if (c > 0 && c <= currentCols)
+                                    cols.Add(c-1);
+                            }
 
                             if (!cols.size())
                                 return false;
@@ -3111,7 +3136,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             wxGridCellCoordsContainer cells(cols, table->GetRows()-1, false);
                             std::vector<wxColour> colors;
 
-                            const mu::Array& definition = formatting.get(j+1).getArray();
+                            const mu::Array& definition = static_cast<const mu::ArrValue*>(condFormat.read("format"))->get();
 
                             if (definition.get(0) == mu::Value("if-true"))
                             {
@@ -3231,22 +3256,32 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (_options.get(i) == mu::Value("cell-format"))
+                    if (dict.isField("cell-format"))
                     { // "cell-format", {CELLS, FORMATTING, CELLS, FORMATTING, ...}
-                        const mu::Array& formatting = _options.get(i+1).getArray();
+                        mu::Array formatting = mu::Value(dict.read("cell-format")->clone());
                         int64_t currentRows = table->GetNumberRows()-1;
                         int64_t currentCols = table->GetNumberCols()-1;
 
-                        for (size_t j = 0; j < formatting.size(); j+=2)
+                        for (size_t j = 0; j < formatting.size(); j++)
                         {
                             wxGridCellCoordsArray cells;
 
                             // CELLS = {r, c} or {{r}, {c}}
-                            if (!formatting.get(j).isArray())
+                            if (!formatting.get(j).isDictStruct())
                                 return false;
 
-                            mu::Array rows = formatting.get(j).getArray().get(0);
-                            mu::Array cols = formatting.get(j).getArray().get(1);
+                            const mu::DictStruct& cellFormat = formatting.get(j).getDictStruct();
+
+                            if (!cellFormat.isField("cells")
+                                || !cellFormat.isField("format")
+                                || cellFormat.read("cells")->m_type != mu::TYPE_ARRAY
+                                || cellFormat.read("format")->m_type != mu::TYPE_DICTSTRUCT)
+                                return false;
+
+                            const mu::Array& cellsDef = static_cast<const mu::ArrValue*>(cellFormat.read("cells"))->get();
+
+                            mu::Array rows = cellsDef.get(0);
+                            mu::Array cols = cellsDef.get(1);
 
                             for (size_t k = 0; k < std::max(rows.size(), cols.size()); k++)
                             {
@@ -3262,49 +3297,44 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                             wxGridCellAttr* attr = new wxGridCellAttr();
 
-                            const mu::Array& definition = formatting.get(j+1).getArray();
-
-                            for (size_t n = 0; n < definition.size(); n+=2)
+                            if (cellFormat.isField(mu::Path("format/font")))
                             {
-                                if (definition.get(n) == mu::Value("font"))
+                                wxFont font = table->GetDefaultCellFont();
+                                std::string sFormattingString = cellFormat.read(mu::Path("format/font"))->printVal(0, 0);
+
+                                for (const char c : sFormattingString)
                                 {
-                                    wxFont font = table->GetDefaultCellFont();
-                                    std::string sFormattingString = definition.get(n+1).getStr();
-
-                                    for (const char c : sFormattingString)
+                                    switch (c)
                                     {
-                                        switch (c)
-                                        {
-                                        case 'i':
-                                            font.MakeItalic();
-                                            break;
-                                        case 'b':
-                                            font.MakeBold();
-                                            break;
-                                        case 'u':
-                                            font.MakeUnderlined();
-                                            break;
-                                        case 'x':
-                                            font.MakeStrikethrough();
-                                            break;
-                                        case 's':
-                                            font.MakeSmaller();
-                                            break;
-                                        case 'l':
-                                            font.MakeLarger();
-                                            break;
-                                        }
+                                    case 'i':
+                                        font.MakeItalic();
+                                        break;
+                                    case 'b':
+                                        font.MakeBold();
+                                        break;
+                                    case 'u':
+                                        font.MakeUnderlined();
+                                        break;
+                                    case 'x':
+                                        font.MakeStrikethrough();
+                                        break;
+                                    case 's':
+                                        font.MakeSmaller();
+                                        break;
+                                    case 'l':
+                                        font.MakeLarger();
+                                        break;
                                     }
-
-                                    attr->SetFont(font);
                                 }
 
-                                if (definition.get(n) == mu::Value("color"))
-                                    attr->SetTextColour(wxColour(definition.get(n+1).getStr()));
-
-                                if (definition.get(n) == mu::Value("bgcolor"))
-                                    attr->SetBackgroundColour(wxColour(definition.get(n+1).getStr()));
+                                attr->SetFont(font);
                             }
+
+                            if (cellFormat.isField(mu::Path("format/color")))
+                                attr->SetTextColour(wxColour(cellFormat.read(mu::Path("format/color"))->printVal(0, 0)));
+
+                            if (cellFormat.isField(mu::Path("format/bgcolor")))
+                                attr->SetBackgroundColour(wxColour(cellFormat.read(mu::Path("format/bgcolor"))->printVal(0, 0)));
 
                             for (size_t n = 0; n < cells.size(); n++)
                             {
@@ -3318,13 +3348,13 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (_options.get(i) == mu::Value("col-labels"))
+                    if (dict.isField("col-labels") && dict.read("col-labels")->m_type == mu::TYPE_DICTSTRUCT)
                     {// "col-labels", {{COLS},{LABELS}}, ...
-                        const mu::Array& labelDef = _options.get(i+1).getArray();
+                        const mu::DictStruct& labelDef = static_cast<const DictStructValue*>(dict.read("col-labels"))->get();
                         int64_t currentCols = table->GetNumberCols()-1;
 
-                        mu::Array cols = labelDef.get(0);
-                        mu::Array labels = labelDef.get(1);
+                        mu::Array cols = mu::Value(labelDef.read("cols")->clone());
+                        mu::Array labels = mu::Value(labelDef.read("labels")->clone());
 
                         for (size_t j = 0; j < std::max(cols.size(), labels.size()); j++)
                         {
@@ -3337,9 +3367,9 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (_options.get(i) == mu::Value("hide-rows"))
+                    if (dict.isField("hide-rows"))
                     {// "hide-rows", {COLS}, ...
-                        mu::Array rows = _options.get(i+1);
+                        mu::Array rows = mu::Value(dict.read("hide-rows")->clone());
                         int64_t currentRows = table->GetNumberRows()-1;
 
                         for (size_t j = 0; j < rows.size(); j++)
@@ -3353,9 +3383,9 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (_options.get(i) == mu::Value("hide-cols"))
+                    if (dict.isField("hide-cols"))
                     {// "hide-cols", {COLS}, ...
-                        mu::Array cols = _options.get(i+1);
+                        mu::Array cols = mu::Value(dict.read("hide-cols")->clone());
                         int64_t currentCols = table->GetNumberCols()-1;
 
                         for (size_t j = 0; j < cols.size(); j++)
@@ -3366,6 +3396,354 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 continue;
 
                             table->HideCol(col-1);
+                        }
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < _options.size(); i+=2)
+                    {
+                        if (_options.get(i) == mu::Value("min-cols"))
+                        {
+                            int64_t c = table->GetNumberCols();
+
+                            if (c < _options.get(i+1).getNum().asI64()+1)
+                                table->AppendCols(_options.get(i+1).getNum().asI64()-c+1);
+                        }
+
+                        if (_options.get(i) == mu::Value("min-rows"))
+                        {
+                            int64_t r = table->GetInternalRows(table->GetNumberRows());
+
+                            if (r < _options.get(i+1).getNum().asI64()+1)
+                                table->AppendRows(_options.get(i+1).getNum().asI64()-r+1);
+                        }
+
+                        if (_options.get(i) == mu::Value("use-qmarks"))
+                            table->enableQuotationMarks((bool)_options.get(i+1));
+
+                        if (_options.get(i) == mu::Value("fitsize"))
+                            fitSize = (bool)_options.get(i+1);
+
+                        if (_options.get(i) == mu::Value("fitsize-cols"))
+                        {
+                            wxArrayInt cols;
+                            int64_t currentCols = table->GetNumberCols()-1;
+
+                            if (_options.get(i+1).isArray())
+                            {
+                                const mu::Array& selectedCols = _options.get(i+1).getArray();
+
+                                for (size_t k = 0; k < selectedCols.size(); k++)
+                                {
+                                    int64_t selected = selectedCols.get(k).getNum().asI64();
+
+                                    if (currentCols < selected || selected < 1)
+                                        continue;
+
+                                    cols.Add(selected-1);
+                                }
+                            }
+                            else if (_options.get(i+1).getNum().asI64() > 0 && _options.get(i+1).getNum().asI64() <= currentCols)
+                                cols.Add(_options.get(i+1).getNum().asI64()-1);
+
+                            if (!cols.size())
+                                return false;
+
+                            for (size_t i = 0; i < cols.size(); i++)
+                            {
+                                table->AutoSizeColumn(i);
+                            }
+                        }
+
+                        if (_options.get(i) == mu::Value("cond-format"))
+                        {
+                            const mu::Array& formatting = _options.get(i+1).getArray();
+                            int64_t currentCols = table->GetNumberCols()-1;
+
+                            for (size_t j = 0; j < formatting.size(); j+=2)
+                            {
+                                wxArrayInt cols;
+
+                                if (formatting.get(j).isArray())
+                                {
+                                    const mu::Array& selectedCols = formatting.get(j).getArray();
+
+                                    for (size_t k = 0; k < selectedCols.size(); k++)
+                                    {
+                                        int64_t selected = selectedCols.get(k).getNum().asI64();
+
+                                        if (currentCols < selected || selected < 1)
+                                            continue;
+
+                                        cols.Add(selected-1);
+                                    }
+                                }
+                                else if (formatting.get(j).getNum().asI64() > 0 && formatting.get(j).getNum().asI64() <= currentCols)
+                                    cols.Add(formatting.get(j).getNum().asI64()-1);
+
+                                if (!cols.size())
+                                    return false;
+
+                                wxGridCellCoordsContainer cells(cols, table->GetRows()-1, false);
+                                std::vector<wxColour> colors;
+
+                                const mu::Array& definition = formatting.get(j+1).getArray();
+
+                                if (definition.get(0) == mu::Value("if-true"))
+                                {
+                                    // {"if-true", "<", 42, "#FF0000"}
+                                    std::string cond = definition.get(1).getStr();
+                                    const mu::Array vals = definition.get(2);
+                                    colors.push_back(wxColour(definition.get(3).getStr()));
+
+                                    CellFilterCondition condition;
+
+                                    for (size_t k = 0; k < vals.size(); k++)
+                                    {
+                                        if (vals.get(k).isString())
+                                            condition.m_strs.push_back(vals.get(k).getStr());
+                                        else
+                                            condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    }
+
+                                    if (cond == "<")
+                                        condition.m_type = CellFilterCondition::CT_LESS_THAN;
+                                    else if (cond == "<=")
+                                        condition.m_type = CellFilterCondition::CT_LESS_EQ_THAN;
+                                    else if (cond == ">")
+                                        condition.m_type = CellFilterCondition::CT_GREATER_THAN;
+                                    else if (cond == ">=")
+                                        condition.m_type = CellFilterCondition::CT_GREATER_EQ_THAN;
+                                    else if (cond == "==")
+                                        condition.m_type = vals.front().isString() ?
+                                            CellFilterCondition::CT_EQUALS_STR : CellFilterCondition::CT_EQUALS_VAL;
+                                    else if (cond == "!=")
+                                        condition.m_type = vals.front().isString() ?
+                                            CellFilterCondition::CT_NOT_EQUALS_STR : CellFilterCondition::CT_NOT_EQUALS_VAL;
+                                    else if (cond == "strfnd" && vals.front().isString())
+                                        condition.m_type = CellFilterCondition::CT_FIND_STR;
+                                    else if (cond == "!strfnd" && vals.front().isString())
+                                        condition.m_type = CellFilterCondition::CT_NOT_FIND_STR;
+
+                                    table->conditionalFormat(cells, CellValueShader(colors, condition));
+                                }
+                                else if (definition.get(0) == mu::Value("map"))
+                                {
+                                    // {"map", {1,2,3,4},{"#FF0000", "#00FF00", "#0000FF", "#FFFFFF"}}
+                                    const mu::Array& vals = definition.get(1);
+                                    const mu::Array& colorStrings = definition.get(2);
+
+                                    if (colorStrings.getCommonType() != mu::TYPE_STRING)
+                                        return false;
+
+                                    CellFilterCondition condition;
+                                    condition.m_type = CellFilterCondition::CT_EQUALS_ARRAY;
+
+                                    for (size_t k = 0; k < vals.size(); k++)
+                                    {
+                                        if (vals.get(k).isNumerical())
+                                            condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        else
+                                            condition.m_vals.push_back(NAN);
+
+                                        condition.m_strs.push_back(vals.get(k).printVal());
+                                    }
+
+                                    for (size_t k = 0; k < colorStrings.size(); k++)
+                                    {
+                                        colors.push_back(wxColour(colorStrings.get(k).getStr()));
+                                    }
+
+                                    table->conditionalFormat(cells, CellValueShader(colors, condition));
+                                }
+                                else if (definition.get(0) == mu::Value("cscale"))
+                                {
+                                    // {"cscale", {0,42},{"#FF0000", "#00FF00"}}
+                                    const mu::Array& vals = definition.get(1);
+                                    const mu::Array& colorStrings = definition.get(2);
+
+                                    if (colorStrings.size() < 2 || colorStrings.getCommonType() != mu::TYPE_STRING)
+                                        return false;
+
+                                    CellFilterCondition condition;
+                                    condition.m_type = CellFilterCondition::CT_INTERVAL_RE;
+
+                                    for (size_t k = 0; k < vals.size(); k++)
+                                    {
+                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    }
+
+                                    for (size_t k = 0; k < colorStrings.size(); k++)
+                                    {
+                                        colors.push_back(wxColour(colorStrings.get(k).getStr()));
+                                    }
+
+                                    table->conditionalFormat(cells, CellValueShader(colors, condition));
+                                }
+                                else if (definition.get(0) == mu::Value("cscale-limited"))
+                                {
+                                    // {"cscale-limited", {0,42},{"#FF0000", "#00FF00"}}
+                                    const mu::Array& vals = definition.get(1);
+                                    const mu::Array& colorStrings = definition.get(2);
+
+                                    if (colorStrings.size() < 4 || colorStrings.getCommonType() != mu::TYPE_STRING)
+                                        return false;
+
+                                    CellFilterCondition condition;
+                                    condition.m_type = CellFilterCondition::CT_INTERVAL_RE_EXCL;
+
+                                    for (size_t k = 0; k < vals.size(); k++)
+                                    {
+                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    }
+
+                                    for (size_t k = 0; k < colorStrings.size(); k++)
+                                    {
+                                        colors.push_back(wxColour(colorStrings.get(k).getStr()));
+                                    }
+
+                                    table->conditionalFormat(cells, CellValueShader(colors, condition));
+                                }
+                            }
+                        }
+
+                        if (_options.get(i) == mu::Value("cell-format"))
+                        { // "cell-format", {CELLS, FORMATTING, CELLS, FORMATTING, ...}
+                            const mu::Array& formatting = _options.get(i+1).getArray();
+                            int64_t currentRows = table->GetNumberRows()-1;
+                            int64_t currentCols = table->GetNumberCols()-1;
+
+                            for (size_t j = 0; j < formatting.size(); j+=2)
+                            {
+                                wxGridCellCoordsArray cells;
+
+                                // CELLS = {r, c} or {{r}, {c}}
+                                if (!formatting.get(j).isArray())
+                                    return false;
+
+                                mu::Array rows = formatting.get(j).getArray().get(0);
+                                mu::Array cols = formatting.get(j).getArray().get(1);
+
+                                for (size_t k = 0; k < std::max(rows.size(), cols.size()); k++)
+                                {
+                                    int64_t row = rows.get(k).getNum().asI64();
+                                    int64_t col = cols.get(k).getNum().asI64();
+
+                                    if (row > 0 && row <= currentRows && col > 0 && col <= currentCols)
+                                        cells.Add(wxGridCellCoords(row-1, col-1));
+                                }
+
+                                if (!cells.size())
+                                    return false;
+
+                                wxGridCellAttr* attr = new wxGridCellAttr();
+
+                                const mu::Array& definition = formatting.get(j+1).getArray();
+
+                                for (size_t n = 0; n < definition.size(); n+=2)
+                                {
+                                    if (definition.get(n) == mu::Value("font"))
+                                    {
+                                        wxFont font = table->GetDefaultCellFont();
+                                        std::string sFormattingString = definition.get(n+1).getStr();
+
+                                        for (const char c : sFormattingString)
+                                        {
+                                            switch (c)
+                                            {
+                                            case 'i':
+                                                font.MakeItalic();
+                                                break;
+                                            case 'b':
+                                                font.MakeBold();
+                                                break;
+                                            case 'u':
+                                                font.MakeUnderlined();
+                                                break;
+                                            case 'x':
+                                                font.MakeStrikethrough();
+                                                break;
+                                            case 's':
+                                                font.MakeSmaller();
+                                                break;
+                                            case 'l':
+                                                font.MakeLarger();
+                                                break;
+                                            }
+                                        }
+
+                                        attr->SetFont(font);
+                                    }
+
+                                    if (definition.get(n) == mu::Value("color"))
+                                        attr->SetTextColour(wxColour(definition.get(n+1).getStr()));
+
+                                    if (definition.get(n) == mu::Value("bgcolor"))
+                                        attr->SetBackgroundColour(wxColour(definition.get(n+1).getStr()));
+                                }
+
+                                for (size_t n = 0; n < cells.size(); n++)
+                                {
+                                    table->SetAttr(table->GetExternalRows(cells[n].GetRow()),
+                                                   cells[n].GetCol(),
+                                                   attr->Clone());
+                                }
+
+                                attr->DecRef();
+                                table->Refresh();
+                            }
+                        }
+
+                        if (_options.get(i) == mu::Value("col-labels"))
+                        {// "col-labels", {{COLS},{LABELS}}, ...
+                            const mu::Array& labelDef = _options.get(i+1).getArray();
+                            int64_t currentCols = table->GetNumberCols()-1;
+
+                            mu::Array cols = labelDef.get(0);
+                            mu::Array labels = labelDef.get(1);
+
+                            for (size_t j = 0; j < std::max(cols.size(), labels.size()); j++)
+                            {
+                                int64_t col = cols.get(j).getNum().asI64();
+
+                                if (col <= 0 || col > currentCols)
+                                    continue;
+
+                                table->SetColLabelValue(col-1, labels.get(j).getStr());
+                            }
+                        }
+
+                        if (_options.get(i) == mu::Value("hide-rows"))
+                        {// "hide-rows", {COLS}, ...
+                            mu::Array rows = _options.get(i+1);
+                            int64_t currentRows = table->GetNumberRows()-1;
+
+                            for (size_t j = 0; j < rows.size(); j++)
+                            {
+                                int64_t row = table->GetExternalRows(rows.get(j).getNum().asI64()-1);
+
+                                if (row < 0 || row >= currentRows)
+                                    continue;
+
+                                table->HideRow(row);
+                            }
+                        }
+
+                        if (_options.get(i) == mu::Value("hide-cols"))
+                        {// "hide-cols", {COLS}, ...
+                            mu::Array cols = _options.get(i+1);
+                            int64_t currentCols = table->GetNumberCols()-1;
+
+                            for (size_t j = 0; j < cols.size(); j++)
+                            {
+                                int64_t col = cols.get(j).getNum().asI64();
+
+                                if (col <= 0 || col > currentCols)
+                                    continue;
+
+                                table->HideCol(col-1);
+                            }
                         }
                     }
                 }

@@ -233,6 +233,9 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
                 if (getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find('('))) == std::string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, sProcCommandLine.find('('));
 
+                sArgumentList = sProcCommandLine.substr(sProcCommandLine.find('(')+1);
+                sArgumentList.erase(sArgumentList.rfind(')'));
+
                 // Ensure that the argument list is defined reasonable
                 if (findCommand(sArgumentList, "var").sString == "var")
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME,
@@ -249,9 +252,6 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
                 if (findCommand(sArgumentList, "cst").sString == "cst")
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME,
                                       "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, "cst", "cst");
-
-                sArgumentList = sProcCommandLine.substr(sProcCommandLine.find('(')+1);
-                sArgumentList = " " + sArgumentList.erase(sArgumentList.rfind(')')) + " ";
 
                 // Store the procedure name and the corresponding line in the
                 // procedure list map

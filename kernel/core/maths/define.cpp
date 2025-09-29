@@ -473,7 +473,7 @@ bool FunctionDefinition::replaceArgumentOccurences()
         while ((nPos = defString.find(vArguments[i], nPos)) != std::string::npos)
         {
             // check, whether the found match is an actual variable
-            if (defString.is_delimited_sequence(nPos, vArguments[i].length()))
+            if (defString.is_delimited_sequence(nPos, vArguments[i].length(), StringViewBase::STRING_DELIMITER))
             {
                 // replace VAR with >>VAR<< and increment the
                 // position index by the variable length + 4
