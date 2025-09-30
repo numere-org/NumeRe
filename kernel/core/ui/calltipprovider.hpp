@@ -20,6 +20,8 @@
 #define CALLTIPPROVIDER_HPP
 
 #include <string>
+#include <vector>
+
 namespace NumeRe
 {
     /////////////////////////////////////////////////
@@ -33,10 +35,12 @@ namespace NumeRe
         std::string sDocumentation;
         size_t nStart;
         size_t nEnd;
+        std::vector<std::string> arguments;
+        size_t nReqArgs;
 
-        CallTip() : nStart(0u), nEnd(0u) {}
-        CallTip(const std::string& sDef, const std::string& sDoc = "", size_t s = 0u, size_t e = 0u)
-            : sDefinition(sDef), sDocumentation(sDoc), nStart(s), nEnd(e) {}
+        CallTip() : nStart(0u), nEnd(0u), nReqArgs(0u) {}
+        CallTip(const std::string& sDef, const std::string& sDoc = "", size_t s = 0u, size_t e = 0u, size_t r = 0u)
+            : sDefinition(sDef), sDocumentation(sDoc), nStart(s), nEnd(e), nReqArgs(r) {}
     };
 
 

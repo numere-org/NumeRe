@@ -80,7 +80,25 @@ namespace NumeRe
         // Insert separation characters between syntax element
         // and return values for functions
         if (_cTip.sDefinition.find(')') < lastpos || _cTip.sDefinition.find('.') < lastpos)
+        {
             _cTip.sDefinition.replace(lastpos, firstpos - lastpos, " -> ");
+            size_t argParens = _cTip.sDefinition.find('(');
+            std::string sReqArgs = _cTip.sDefinition.substr(argParens+1, getMatchingParenthesis(_cTip.sDefinition)-argParens-1);
+            _cTip.arguments = getAllArguments(sReqArgs);
+
+            if (_cTip.arguments.size() && _cTip.arguments.back() == "...")
+                _cTip.nReqArgs = 1u;
+            else
+            {
+                _cTip.nReqArgs = _cTip.arguments.size();
+
+                for (const std::string& arg : _cTip.arguments)
+                {
+                    if (arg.find('=') != std::string::npos)
+                        _cTip.nReqArgs--;
+                }
+            }
+        }
         else if (firstpos - lastpos > 2)
                 _cTip.sDefinition.erase(lastpos, firstpos - lastpos - 1);
 
@@ -435,6 +453,8 @@ namespace NumeRe
                         if (currentarg.front() == '_')
                             currentarg.erase(0, 1);
 
+                        _cTip.arguments.push_back(currentarg);
+                        _cTip.nReqArgs += currentarg.find('=') == std::string::npos;
                         _cTip.sDefinition += currentarg;
 
                         if (sArgList.length())

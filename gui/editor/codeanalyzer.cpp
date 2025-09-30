@@ -1282,6 +1282,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
 {
     AnnotationCount AnnotCount;
+    static NumeRe::CallTipProvider _provider = *m_editor->m_terminal->getProvider();
+    NumeRe::CallTip _cTip;
 
     bool canContinue = false;
     int wordstart = m_editor->WordStartPosition(m_nCurPos, true);
@@ -1332,7 +1334,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     }
 
     // There's a missing parenthesis?
-    if (m_editor->BraceMatch(wordend) < wordend && sSyntaxElement.find('(') != string::npos)
+    if (m_editor->BraceMatch(wordend) < wordend && sSyntaxElement.find('(') != std::string::npos)
     {
         // MATLAB doesn't require a parenthesis pair for empty arguments.
         // However, issue a warning as it is good practice to visually distinguish between variables and functions
@@ -1341,35 +1343,24 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
         else
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
     }
-    else if (sSyntaxElement != "time()"
-             && sSyntaxElement != "clock()"
-             && sSyntaxElement != "version()"
-             && sSyntaxElement != "getlasterror()"
-             && sSyntaxElement != "getuilang()"
-             && sSyntaxElement != "getuserinfo()"
-             && sSyntaxElement != "uuid()"
-             && sSyntaxElement != "getversioninfo()"
-             && sSyntaxElement != "landau_rd()"
-             && sSyntaxElement != "evt_close()"
-             && sSyntaxElement != "get_utc_offset()"
-             && sSyntaxElement != "today()"
-             && sSyntaxElement != "dictstruct()"
-             && sSyntaxElement != "path()"
-             && sSyntaxElement != "file()"
-             && sSyntaxElement != "stack()"
-             && sSyntaxElement != "queue()"
-             && sSyntaxElement.find('(') != string::npos)
+    else if (sSyntaxElement.find('(') != std::string::npos)
     {
         // Check for missing arguments
         int nPos = m_editor->BraceMatch(wordend);
-        string sArgument = m_editor->GetTextRange(wordend + 1, nPos).ToStdString();
-        StripSpaces(sArgument);
-        if (!sArgument.length())
-        {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, 2), m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
-        }
-    }
+        std::string sArgument = m_editor->GetTextRange(wordend + 1, nPos).ToStdString();
+        EndlessVector<std::string> args = getAllArguments(sArgument);
 
+        if (sSyntaxElement.find('.') == std::string::npos)
+            _cTip = _provider.getFunction(m_editor->GetTextRange(wordstart, wordend).ToStdString());
+        else
+            _cTip = _provider.getMethod(m_editor->GetTextRange(wordstart, wordend).ToStdString(), "");
+
+        if (args.size() > _cTip.arguments.size() && (!_cTip.arguments.size() || _cTip.arguments.back() != "..."))
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_TOOMANYARGS")), ANNOTATION_ERROR);
+        else if (args.size() < _cTip.nReqArgs)
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+
+    }
 
     // Examine mode-specific functions
     if (std::find(m_MATOP_FUNCS.begin(), m_MATOP_FUNCS.end(), sSyntaxElement) != m_MATOP_FUNCS.end() && m_currentMode != "matop")
@@ -1412,28 +1403,59 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
         m_nCurPos++;
 
     // Validate the procedure name for unwanted characters
-    for (size_t i = 0; i < sSyntaxElement.length(); i++)
+    if (!sSyntaxElement.starts_with("$'"))
     {
-        if (!isalnum(sSyntaxElement[i])
-            && sSyntaxElement[i] != '$'
-            && sSyntaxElement[i] != '/'
-            && sSyntaxElement[i] != ':'
-            && sSyntaxElement[i] != '_'
-            && sSyntaxElement[i] != '\''
-            && sSyntaxElement[i] != '('
-            && sSyntaxElement[i] != ')'
-            && sSyntaxElement[i] != '~')
+        for (size_t i = 0; i < sSyntaxElement.length(); i++)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDUREINVALIDCHARS", sSyntaxElement)), ANNOTATION_ERROR);
-            break;
+            if (!isalnum(sSyntaxElement[i])
+                && sSyntaxElement[i] != '$'
+                && sSyntaxElement[i] != '/'
+                && sSyntaxElement[i] != ':'
+                && sSyntaxElement[i] != '_'
+                && sSyntaxElement[i] != '\''
+                && sSyntaxElement[i] != '('
+                && sSyntaxElement[i] != ')'
+                && sSyntaxElement[i] != '~')
+            {
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDUREINVALIDCHARS", sSyntaxElement)), ANNOTATION_ERROR);
+                break;
+            }
         }
     }
 
+    std::string procDef = m_editor->m_search->FindProcedureDefinition().ToStdString();
+
     // Try to find the correspondung procedure definition
-    if (!m_editor->m_search->FindProcedureDefinition().length())
+    if (!procDef.length())
     {
         // Procedure definition was not found
         AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND", sSyntaxElement)), ANNOTATION_ERROR);
+    }
+    else
+    {
+        size_t argParens = procDef.find('(');
+        std::string sReqArgs = procDef.substr(argParens+1, getMatchingParenthesis(procDef)-argParens-1);
+        EndlessVector<std::string> procArgs = getAllArguments(sReqArgs);
+
+        int wordend = m_nCurPos+1;
+        int nPos = m_editor->BraceMatch(wordend);
+        std::string sArgument = m_editor->GetTextRange(wordend + 1, nPos).ToStdString();
+        EndlessVector<std::string> args = getAllArguments(sArgument);
+
+        if (args.size() > procArgs.size())
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_TOOMANYARGS")), ANNOTATION_ERROR);
+        else
+        {
+            for (size_t i = 0; i < procArgs.size(); i++)
+            {
+                if (procArgs[i].find('=') == std::string::npos && (args.size() <= i || !args[i].length()))
+                {
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                               highlightFoundOccurence(procArgs[i], wordend, nPos-wordend+1),
+                                                               m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                }
+            }
+        }
     }
 
     // return the number of gathered annotations
