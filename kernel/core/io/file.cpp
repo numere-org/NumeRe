@@ -32,7 +32,7 @@
 #include "../../versioninformation.hpp"
 #include "../version.h"
 #include "../../kernel.hpp"
-#include "../../../common/markup.hpp"
+#include "../ParserLib/muHelpers.hpp"
 
 #define DEFAULT_PRECISION 14
 
@@ -1167,123 +1167,10 @@ namespace NumeRe
                     fFileStream << "&mdash;" << "</td>\n";
                 else
                 {
-                    if (fileData->at(m)->m_type == TableColumn::TYPE_LOGICAL)
-                        fFileStream << ((bool)fileData->at(m)->get(n) ? "&#9745;" : "&#9744;") << "</td>\n";
-                    else if (fileData->at(m)->m_type == TableColumn::TYPE_STRING)
-                    {
-                        std::vector<Markup::Token<std::string>> markupTokens = Markup::decode(fileData->at(m)->get(n).printVal());
-                        std::string cellValue;
-
-                        for (size_t i = 0; i < markupTokens.size(); i++)
-                        {
-                            if (i && markupTokens[i-1].line != markupTokens[i].line)
-                            {
-                                // Close the tags in the correct order
-                                if (!(markupTokens[i].inLine & Markup::EMPH) && i && markupTokens[i-1].inLine & Markup::EMPH)
-                                    cellValue += "</span>";
-
-                                if (!(markupTokens[i].inLine & Markup::BRCKT) && i && markupTokens[i-1].inLine & Markup::BRCKT)
-                                    cellValue += "</span>";
-
-                                if (!(markupTokens[i].inLine & Markup::CODE) && i && markupTokens[i-1].inLine & Markup::CODE)
-                                    cellValue += "</code>";
-
-                                if (!(markupTokens[i].inLine & Markup::BOLD) && i && markupTokens[i-1].inLine & Markup::BOLD)
-                                    cellValue += "</b>";
-
-                                if (!(markupTokens[i].inLine & Markup::ITALICS) && i && markupTokens[i-1].inLine & Markup::ITALICS)
-                                    cellValue += "</i>";
-
-                                if (markupTokens[i-1].line == Markup::H1)
-                                    cellValue += "</h1>";
-                                else if (markupTokens[i-1].line == Markup::H2)
-                                    cellValue += "</h2>";
-                                else if (markupTokens[i-1].line == Markup::H3)
-                                    cellValue += "</h3>";
-                                else if (markupTokens[i-1].line == Markup::UL)
-                                    cellValue += "</li></ul>";
-                            }
-
-                            if (!i || markupTokens[i-1].line != markupTokens[i].line)
-                            {
-                                if (markupTokens[i].line == Markup::H1)
-                                    cellValue += "<h1>";
-                                if (markupTokens[i].line == Markup::H2)
-                                    cellValue += "<h2>";
-                                if (markupTokens[i].line == Markup::H3)
-                                    cellValue += "<h3>";
-                                if (markupTokens[i].line == Markup::UL)
-                                    cellValue += "<ul><li>";
-                            }
-
-                            if (markupTokens[i].inLine & Markup::ITALICS && (!i || !(markupTokens[i-1].inLine & Markup::ITALICS)))
-                                cellValue += "<i>";
-
-                            if (markupTokens[i].inLine & Markup::BOLD && (!i || !(markupTokens[i-1].inLine & Markup::BOLD)))
-                                cellValue += "<b>";
-
-                            if (markupTokens[i].inLine & Markup::CODE && (!i || !(markupTokens[i-1].inLine & Markup::CODE)))
-                                cellValue += "<code style=\"color:#00008B; background-color: #DDDDDD;\">";
-
-                            if (markupTokens[i].inLine & Markup::BRCKT && (!i || !(markupTokens[i-1].inLine & Markup::BRCKT)))
-                                cellValue += "<span style=\"color:#0000FF;\">";
-
-                            if (markupTokens[i].inLine & Markup::EMPH && (!i || !(markupTokens[i-1].inLine & Markup::EMPH)))
-                                cellValue += "<span style=\"background-color: #FFFFA4;\">";
-
-                            // Close the tags in the correct order
-                            if (!(markupTokens[i].inLine & Markup::EMPH) && i && markupTokens[i-1].inLine & Markup::EMPH)
-                                cellValue += "</span>";
-
-                            if (!(markupTokens[i].inLine & Markup::BRCKT) && i && markupTokens[i-1].inLine & Markup::BRCKT)
-                                cellValue += "</span>";
-
-                            if (!(markupTokens[i].inLine & Markup::CODE) && i && markupTokens[i-1].inLine & Markup::CODE)
-                                cellValue += "</code>";
-
-                            if (!(markupTokens[i].inLine & Markup::BOLD) && i && markupTokens[i-1].inLine & Markup::BOLD)
-                                cellValue += "</b>";
-
-                            if (!(markupTokens[i].inLine & Markup::ITALICS) && i && markupTokens[i-1].inLine & Markup::ITALICS)
-                                cellValue += "</i>";
-
-                            cellValue += markupTokens[i].text;
-                        }
-
-                        // Close the tags in the correct order
-                        if (markupTokens.back().inLine & Markup::EMPH)
-                            cellValue += "</span>";
-
-                        if (markupTokens.back().inLine & Markup::BRCKT)
-                            cellValue += "</span>";
-
-                        if (markupTokens.back().inLine & Markup::CODE)
-                            cellValue += "</code>";
-
-                        if (markupTokens.back().inLine & Markup::BOLD)
-                            cellValue += "</b>";
-
-                        if (markupTokens.back().inLine & Markup::ITALICS)
-                            cellValue += "</i>";
-
-                        // Close remaining open sections
-                        if (markupTokens.back().line == Markup::H1)
-                            cellValue += "</h1>";
-                        else if (markupTokens.back().line == Markup::H2)
-                            cellValue += "</h2>";
-                        else if (markupTokens.back().line == Markup::H3)
-                            cellValue += "</h3>";
-                        else if (markupTokens.back().line == Markup::UL)
-                            cellValue += "</li></ul>";
-
-                        replaceAll(cellValue, "</ul><ul>", "");
-                        replaceAll(cellValue, "\n<ul>", "<ul>");
-                        replaceAll(cellValue, "\n</li>", "</li>");
-                        replaceAll(cellValue, "\n", "<br/>");
-                        fFileStream << ansiToUtf8(cellValue) << "</td>\n";
-                    }
+                    if (fileData->at(m)->m_type == TableColumn::TYPE_LOGICAL || fileData->at(m)->m_type == TableColumn::TYPE_STRING)
+                        fFileStream << ansiToUtf8(mu::to_html(fileData->at(m)->get(n))) << "</td>\n";
                     else
-                        fFileStream << fileData->at(m)->get(n).printVal() + formatUnit(fileData->at(m)->m_sUnit) << "</td>\n";
+                        fFileStream << mu::to_html(fileData->at(m)->get(n)) + formatUnit(fileData->at(m)->m_sUnit) << "</td>\n";
                 }
             }
 

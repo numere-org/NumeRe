@@ -143,5 +143,99 @@ namespace mu
         return arr;
 #endif // PARSERSTANDALONE
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Simple helper to create an HTML
+    /// exponent from a string.
+    ///
+    /// \param sExp const std::string&
+    /// \param negative bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    static std::string createHtmlExponent(const std::string& sExp, bool negative)
+    {
+        return "&times;10<sup>" + (negative ? "-"+sExp : sExp) + "</sup>";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function converts a number
+    /// into a tex string.
+    ///
+    /// \param number const Value&
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    static std::string formatNumberToHtml(const Value& number)
+    {
+        std::string sNumber = number.printVal();
+
+        size_t firstExp = 0;
+
+        // Handle floating point numbers with
+        // exponents correctly
+        while ((firstExp = sNumber.find('e', firstExp) )!= std::string::npos)
+        {
+            // Find first exponent start and value
+            size_t expBegin = sNumber.find_first_not_of("e0+-", firstExp);
+            size_t expEnd = sNumber.find_first_not_of("0123456789", expBegin);
+
+            if (expEnd == std::string::npos)
+            {
+                // Get the modified string where the first exponent is replaced by the tex string format
+                sNumber.replace(firstExp, expEnd,
+                                createHtmlExponent(sNumber.substr(expBegin), sNumber[firstExp+1] == '-'));
+            }
+            else
+            {
+                // Get the modified string where the first exponent is replaced by the tex string format
+                sNumber.replace(firstExp, expEnd-firstExp,
+                                createHtmlExponent(sNumber.substr(expBegin, expEnd-expBegin), sNumber[firstExp+1] == '-'));
+            }
+
+            // Jump over the "e" in &times;
+            firstExp += 20;
+        }
+
+        // Consider some special values
+        replaceAll(sNumber, "inf", "&infin;");
+
+        // Return the formatted string in math mode
+        return sNumber;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Converts the value's contents into an
+    /// HTML representation.
+    ///
+    /// \param val const Value&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string to_html(const Value& val)
+    {
+#ifndef PARSERSTANDALONE
+        if (!val.isValid())
+            return "&mdash;";
+
+        if (val.isString())
+            return markupToHtml(val.printVal());
+
+        if (val.isNumerical())
+        {
+            if (val.getNum().getType() == LOGICAL)
+                return (bool)val ? "&#9745;" : "&#9744;";
+
+            return formatNumberToHtml(val);
+        }
+
+        return val.printVal();
+#else
+        return val.print();
+#endif // PARSERSTANDALONE
+    }
 }
 

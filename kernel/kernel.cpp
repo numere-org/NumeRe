@@ -783,6 +783,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("to_lowercase", strfnc_to_lowercase);                          // to_lowercase(str)
     _parser.DefineFun("to_ansi", strfnc_utf8ToAnsi);                                 // to_ansi(str)
     _parser.DefineFun("to_utf8", strfnc_ansiToUtf8);                                 // to_utf8(str)
+    _parser.DefineFun("to_html", strfnc_toHtml);                                     // to_html(val)
     _parser.DefineFun("getenvvar", strfnc_getenvvar);                                // getenvvar(str)
     _parser.DefineFun("getfileparts", strfnc_getFileParts);                          // getfileparts(str)
     _parser.DefineFun("getfilediff", strfnc_getFileDiffs, false);                    // getfilediff(str1,str2) <- file accesses cannot be optimized away

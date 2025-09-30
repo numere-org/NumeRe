@@ -20,6 +20,7 @@
 #include "../settings.hpp"
 #include "../structures.hpp"
 #include "../../../externals/base-n/include/basen.hpp"
+#include "../../../common/markup.hpp"
 
 #include <fast_float/fast_float.h>
 #include <cstring>
@@ -1944,6 +1945,130 @@ std::string ansiToUtf8(const std::string& sString)
     }
 
     return sUtf8String;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert markup'ed text into an HTML
+/// representation-.
+///
+/// \param sString const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string markupToHtml(const std::string& sString)
+{
+    std::vector<Markup::Token<std::string>> markupTokens = Markup::decode(sString);
+    std::string cellValue;
+
+    for (size_t i = 0; i < markupTokens.size(); i++)
+    {
+        if (i && markupTokens[i-1].line != markupTokens[i].line)
+        {
+            // Close the tags in the correct order
+            if (!(markupTokens[i].inLine & Markup::EMPH) && i && markupTokens[i-1].inLine & Markup::EMPH)
+                cellValue += "</span>";
+
+            if (!(markupTokens[i].inLine & Markup::BRCKT) && i && markupTokens[i-1].inLine & Markup::BRCKT)
+                cellValue += "</span>";
+
+            if (!(markupTokens[i].inLine & Markup::CODE) && i && markupTokens[i-1].inLine & Markup::CODE)
+                cellValue += "</code>";
+
+            if (!(markupTokens[i].inLine & Markup::BOLD) && i && markupTokens[i-1].inLine & Markup::BOLD)
+                cellValue += "</b>";
+
+            if (!(markupTokens[i].inLine & Markup::ITALICS) && i && markupTokens[i-1].inLine & Markup::ITALICS)
+                cellValue += "</i>";
+
+            if (markupTokens[i-1].line == Markup::H1)
+                cellValue += "</h1>";
+            else if (markupTokens[i-1].line == Markup::H2)
+                cellValue += "</h2>";
+            else if (markupTokens[i-1].line == Markup::H3)
+                cellValue += "</h3>";
+            else if (markupTokens[i-1].line == Markup::UL)
+                cellValue += "</li></ul>";
+        }
+
+        if (!i || markupTokens[i-1].line != markupTokens[i].line)
+        {
+            if (markupTokens[i].line == Markup::H1)
+                cellValue += "<h1>";
+            if (markupTokens[i].line == Markup::H2)
+                cellValue += "<h2>";
+            if (markupTokens[i].line == Markup::H3)
+                cellValue += "<h3>";
+            if (markupTokens[i].line == Markup::UL)
+                cellValue += "<ul><li>";
+        }
+
+        if (markupTokens[i].inLine & Markup::ITALICS && (!i || !(markupTokens[i-1].inLine & Markup::ITALICS)))
+            cellValue += "<i>";
+
+        if (markupTokens[i].inLine & Markup::BOLD && (!i || !(markupTokens[i-1].inLine & Markup::BOLD)))
+            cellValue += "<b>";
+
+        if (markupTokens[i].inLine & Markup::CODE && (!i || !(markupTokens[i-1].inLine & Markup::CODE)))
+            cellValue += "<code style=\"color:#00008B; background-color: #DDDDDD;\">";
+
+        if (markupTokens[i].inLine & Markup::BRCKT && (!i || !(markupTokens[i-1].inLine & Markup::BRCKT)))
+            cellValue += "<span style=\"color:#0000FF;\">";
+
+        if (markupTokens[i].inLine & Markup::EMPH && (!i || !(markupTokens[i-1].inLine & Markup::EMPH)))
+            cellValue += "<span style=\"background-color: #FFFFA4;\">";
+
+        // Close the tags in the correct order
+        if (!(markupTokens[i].inLine & Markup::EMPH) && i && markupTokens[i-1].inLine & Markup::EMPH)
+            cellValue += "</span>";
+
+        if (!(markupTokens[i].inLine & Markup::BRCKT) && i && markupTokens[i-1].inLine & Markup::BRCKT)
+            cellValue += "</span>";
+
+        if (!(markupTokens[i].inLine & Markup::CODE) && i && markupTokens[i-1].inLine & Markup::CODE)
+            cellValue += "</code>";
+
+        if (!(markupTokens[i].inLine & Markup::BOLD) && i && markupTokens[i-1].inLine & Markup::BOLD)
+            cellValue += "</b>";
+
+        if (!(markupTokens[i].inLine & Markup::ITALICS) && i && markupTokens[i-1].inLine & Markup::ITALICS)
+            cellValue += "</i>";
+
+        cellValue += markupTokens[i].text;
+    }
+
+    // Close the tags in the correct order
+    if (markupTokens.back().inLine & Markup::EMPH)
+        cellValue += "</span>";
+
+    if (markupTokens.back().inLine & Markup::BRCKT)
+        cellValue += "</span>";
+
+    if (markupTokens.back().inLine & Markup::CODE)
+        cellValue += "</code>";
+
+    if (markupTokens.back().inLine & Markup::BOLD)
+        cellValue += "</b>";
+
+    if (markupTokens.back().inLine & Markup::ITALICS)
+        cellValue += "</i>";
+
+    // Close remaining open sections
+    if (markupTokens.back().line == Markup::H1)
+        cellValue += "</h1>";
+    else if (markupTokens.back().line == Markup::H2)
+        cellValue += "</h2>";
+    else if (markupTokens.back().line == Markup::H3)
+        cellValue += "</h3>";
+    else if (markupTokens.back().line == Markup::UL)
+        cellValue += "</li></ul>";
+
+    replaceAll(cellValue, "</ul><ul>", "");
+    replaceAll(cellValue, "\n<ul>", "<ul>");
+    replaceAll(cellValue, "\n</li>", "</li>");
+    replaceAll(cellValue, "\n", "<br/>");
+
+    return cellValue;
 }
 
 

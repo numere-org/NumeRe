@@ -30,6 +30,7 @@ namespace mu
     void toggleTableMode();
     Array val2Str(const Array& arr, size_t nLen);
     Array getPathToken(const Array& arr);
+    std::string to_html(const Value& val);
 }
 
 #endif // MUHELPERS_HPP

@@ -2107,7 +2107,6 @@ int Procedure::isInlineable(const std::string& sProc, const std::string& sFileNa
         }
     }
 
-
     return nInlineable;
 }
 

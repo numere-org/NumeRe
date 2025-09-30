@@ -21,6 +21,7 @@
 #include "../utils/tools.hpp"
 #include "../utils/filecheck.hpp"
 #include "../../../common/compareFiles.hpp"
+#include "../ParserLib/muHelpers.hpp"
 #ifndef PARSERSTANDALONE
 #include "../../../database/dbinternals.hpp"
 #include "../../kernel.hpp"
@@ -71,7 +72,7 @@ static std::string formatNumberToTex(const mu::Value& number, size_t precision =
     {
         // Find first exponent start and value
         size_t firstExp = sNumber.find('e');
-        size_t expBegin = sNumber.find_first_not_of('0', firstExp + 2);
+        size_t expBegin = sNumber.find_first_not_of("e0+-", firstExp);
         size_t expEnd = sNumber.find_first_not_of("0123456789", expBegin);
 
         // Get the modified string where the first exponent is replaced by the tex string format
@@ -81,7 +82,6 @@ static std::string formatNumberToTex(const mu::Value& number, size_t precision =
 
     // Consider some special values
     replaceAll(sNumber, "inf", "\\infty");
-    replaceAll(sNumber, "-inf", "-\\infty");
     replaceAll(sNumber, "nan", "---");
 
     // Return the formatted string in math mode
@@ -174,6 +174,28 @@ mu::Array strfnc_utf8ToAnsi(const mu::Array& a)
 mu::Array strfnc_ansiToUtf8(const mu::Array& a)
 {
     return mu::apply(ansiToUtf8, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_html()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_toHtml(const mu::Array& a)
+{
+    mu::Array ret;
+    ret.reserve(a.size());
+
+    for (const mu::Value& val : a)
+    {
+        ret.emplace_back(mu::to_html(val));
+    }
+
+    return ret;
 }
 
 

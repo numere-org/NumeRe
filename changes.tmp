@@ -23,3 +23,4 @@ Fixed	Function definitionscan now use objects and their methods as expected.
 Fixed	Fields of dictstructs are no longer accidentally overwritten if used inside an expression.
 Fixed	The debugger will now trigger again at the first breakpoint in the following run of a script, if the previous run of the script was continued with the "Leave" functionality.
 New	Procedure inlining using the "inline" procedure flag works now far better and also accepts only partial inlined procedure call trees.
+Added	The function "to_html()" can be used to convert values into HTML, supporting also markup language. Note that only a subset of Markdown is supported.

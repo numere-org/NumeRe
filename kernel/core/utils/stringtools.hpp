@@ -507,6 +507,7 @@ std::string replaceControlCharacters(std::string sToModify);
 std::string utf8parser(const std::string& sString);
 std::string utf8ToAnsi(const std::string& sString);
 std::string ansiToUtf8(const std::string& sString);
+std::string markupToHtml(const std::string& sString);
 
 std::string replacePathSeparator(const std::string& __sPath);
 std::string getTimeStamp(bool bGetStamp = true);

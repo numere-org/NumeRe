@@ -26,6 +26,7 @@ mu::Array strfnc_to_uppercase(const mu::Array& a);
 mu::Array strfnc_to_lowercase(const mu::Array& a);
 mu::Array strfnc_utf8ToAnsi(const mu::Array& a);
 mu::Array strfnc_ansiToUtf8(const mu::Array& a);
+mu::Array strfnc_toHtml(const mu::Array& a);
 mu::Array strfnc_getenvvar(const mu::Array& a);
 mu::Array strfnc_getFileParts(const mu::Array& a);
 mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2);
