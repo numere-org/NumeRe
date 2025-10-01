@@ -1417,9 +1417,11 @@ namespace mu
                     break;
                 case Json::stringValue:
                 {
+#ifndef PARSERSTANDALONE
                     if (isConvertible(json[member].asString(), CONVTYPE_DATE_TIME))
                         dict[member].reset(new NumValue(Numerical(StrToTime(json[member].asString()))));
                     else
+#endif
                         dict[member].reset(new StrValue(json[member].asString()));
 
                     break;
@@ -1471,9 +1473,11 @@ namespace mu
                     break;
                 case Json::stringValue:
                 {
+#ifndef PARSERSTANDALONE
                     if (isConvertible(json[i].asString(), CONVTYPE_DATE_TIME))
                         arr.emplace_back(StrToTime(json[i].asString()));
                     else
+#endif
                         arr.emplace_back(json[i].asString());
 
                     break;

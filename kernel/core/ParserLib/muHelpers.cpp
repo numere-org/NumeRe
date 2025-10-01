@@ -199,8 +199,10 @@ namespace mu
             firstExp += 20;
         }
 
+#ifndef PARSERSTANDALONE
         // Consider some special values
         replaceAll(sNumber, "inf", "&infin;");
+#endif
 
         // Return the formatted string in math mode
         return sNumber;
