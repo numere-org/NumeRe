@@ -423,7 +423,9 @@ namespace mu
                     && m_iCode != cmIDX
                     && m_iCode != cmIDXASGN
                     && m_iCode != cmSQIDX
-                    && m_iCode != cmSQIDXASGN)
+                    && m_iCode != cmSQIDXASGN
+                    && m_iCode != cmBIDX
+                    && m_iCode != cmBIDXASGN)
                     return m_pCallback->GetCode();
 
                 return m_iCode;

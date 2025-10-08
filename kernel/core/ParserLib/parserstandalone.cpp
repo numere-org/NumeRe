@@ -380,7 +380,7 @@ int main()
 
             _parser.SetExpr(sInput);
             res = _parser.Eval(nResults);
-            _parser.Eval();
+            //_parser.Eval();
 
             for (int i = 0; i < nResults; i++)
             {

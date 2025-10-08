@@ -508,6 +508,47 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Internal alias function to construct
+    /// an index from a list of elements.
+    ///
+    /// \param arrs const mu::MultiArgFuncParams&
+    /// \return mu::Array
+    ///
+    /////////////////////////////////////////////////
+    Array ParserBase::IndexCreate(const MultiArgFuncParams& arrs)
+    {
+        // If no arguments have been passed, we simply
+        // return void
+        if (!arrs.count())
+            return mu::Value();
+
+        mu::Array res;
+
+        for (size_t i = 0; i < arrs.count(); i++)
+        {
+            if (arrs[i].getCommonType() == TYPE_GENERATOR_CONSTRUCTOR)
+            {
+                Array generator;
+                generator.insert(generator.end(), arrs[i].begin(), arrs[i].end());
+                generator.makeGenerator();
+                res.push_back(generator);
+            }
+            else if (arrs[i].getCommonType() == TYPE_GENERATOR)
+                // Expand the embedded array if it is a generator
+                res.push_back(Array().assign(arrs[i]));
+            else if (arrs[i].isScalar())
+                res.push_back(arrs[i].front());
+            else
+                res.push_back(arrs[i]);
+        }
+
+        res.setDims(arrs.count());
+
+        return res;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Internal alias function to construct a
     /// vector from a list of elements.
     ///
@@ -1059,6 +1100,7 @@ namespace mu
 				break;
 			case  cmIDX:
 			case  cmSQIDX:
+			case  cmBIDX:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
@@ -1071,6 +1113,7 @@ namespace mu
 				break;
 			case  cmIDXASGN:
 			case  cmSQIDXASGN:
+			case  cmBIDXASGN:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
@@ -1089,7 +1132,7 @@ namespace mu
 		}
 
 		// Push dummy value representing the function result to the stack
-		if (funTok.GetCode() == cmIDX || funTok.GetCode() == cmSQIDX)
+		if (funTok.GetCode() == cmIDX || funTok.GetCode() == cmSQIDX || funTok.GetCode() == cmBIDX)
         {
             a_stVal.pop();
             token_type token;
@@ -1097,7 +1140,7 @@ namespace mu
             token.ChangeCode(cmVAR);
             a_stVal.push(std::move(token));
         }
-		else if (funTok.GetCode() == cmIDXASGN || funTok.GetCode() == cmSQIDXASGN)
+		else if (funTok.GetCode() == cmIDXASGN || funTok.GetCode() == cmSQIDXASGN || funTok.GetCode() == cmBIDXASGN)
         {
             token_type top = a_stVal.top();
 
@@ -1216,6 +1259,8 @@ namespace mu
 				stOpt.top().GetCode() != cmIDXASGN &&
 				stOpt.top().GetCode() != cmSQIDX &&
 				stOpt.top().GetCode() != cmSQIDXASGN &&
+				stOpt.top().GetCode() != cmBIDX &&
+				stOpt.top().GetCode() != cmBIDXASGN &&
 				stOpt.top().GetCode() != cmEXP2 &&
 				stOpt.top().GetCode() != cmEXP3 &&
 				stOpt.top().GetCode() != cmIF)
@@ -2112,7 +2157,9 @@ namespace mu
                                  || stOpt.top().GetCode() == cmIDX
                                  || stOpt.top().GetCode() == cmIDXASGN
                                  || stOpt.top().GetCode() == cmSQIDX
-                                 || stOpt.top().GetCode() == cmSQIDXASGN) && stVal.size() > 0)
+                                 || stOpt.top().GetCode() == cmSQIDXASGN
+                                 || stOpt.top().GetCode() == cmBIDX
+                                 || stOpt.top().GetCode() == cmBIDXASGN) && stVal.size() > 0)
                             {
                                 ParserToken tok;
                                 tok.Set(cmEXP2, MU_VECTOR_EXP2);
@@ -2215,7 +2262,7 @@ namespace mu
                         ECmdCode optCode = opt.GetCode();
 
 						// Check if the bracket content has been evaluated completely
-						if (stOpt.size() && ((topCode == cmBO && optCode == cmBC)
+						if (stOpt.size() && (((topCode == cmBO || topCode == cmBIDX || topCode == cmBIDXASGN) && optCode == cmBC)
                                              || ((topCode == cmVO || topCode == cmIDX || topCode == cmIDXASGN) && optCode == cmVC)
                                              || ((topCode == cmSQIDX || topCode == cmSQIDXASGN) && optCode == cmSQC)))
 						{
@@ -2262,6 +2309,8 @@ namespace mu
                                                           && stOpt.top().GetCode() != cmIDXASGN
                                                           && stOpt.top().GetCode() != cmSQIDX
                                                           && stOpt.top().GetCode() != cmSQIDXASGN
+                                                          && stOpt.top().GetCode() != cmBIDX
+                                                          && stOpt.top().GetCode() != cmBIDXASGN
                                                           && stOpt.top().GetCode() != cmMETHOD)))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
@@ -2318,6 +2367,8 @@ namespace mu
 							stOpt.top().GetCode() != cmIDXASGN &&
 							stOpt.top().GetCode() != cmSQIDX &&
 							stOpt.top().GetCode() != cmSQIDXASGN &&
+							stOpt.top().GetCode() != cmBIDX &&
+							stOpt.top().GetCode() != cmBIDXASGN &&
 							stOpt.top().GetCode() != cmIF)
 					{
 						int nPrec1 = GetOprtPrecedence(stOpt.top()),
@@ -2361,12 +2412,18 @@ namespace mu
  				case cmIDXASGN:
 				case cmSQIDX:
 				case cmSQIDXASGN:
+				case cmBIDX:
+				case cmBIDXASGN:
                 {
                     ParserToken tok;
-                    tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 
                     if (opt.GetCode() != cmVO)
+                    {
+                        tok.Set(m_FunDef.at(MU_INDEX_CREATE), MU_INDEX_CREATE);
                         tok.ChangeCode(opt.GetCode());
+                    }
+                    else
+                        tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 
 				    stOpt.push(tok);
 				    vectorCreateMode++;
@@ -2781,6 +2838,12 @@ namespace mu
 						break;
 					case cmSQIDXASGN:
 						printFormatted("|   INDEX/ASSIGN \"[\"\n");
+						break;
+					case cmBIDX:
+						printFormatted("|   INDEX \"(\"\n");
+						break;
+					case cmBIDXASGN:
+						printFormatted("|   INDEX/ASSIGN \"(\"\n");
 						break;
 					case cmSQC:
 						printFormatted("|   INDEX \"]\"\n");

@@ -26,6 +26,13 @@
 
 #include "muValueImpl.hpp"
 
+#ifdef PARSERSTANDALONE
+void log(const std::string& message)
+{
+    mu::print(message);
+}
+#endif // PARSERSTANDALONE
+
 namespace mu
 {
     /////////////////////////////////////////////////
@@ -272,7 +279,7 @@ namespace mu
         switch (type)
         {
             case TYPE_CATEGORY:
-               reset(new CatValue);
+                reset(new CatValue);
                 break;
             case TYPE_NEUTRAL:
                 reset(new NeutralValue);
@@ -2502,6 +2509,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::index(const Array& idx)
     {
+        if (idx.getDims() > 1)
+            return ndIndex(idx);
+
         Array ret;
         size_t elems = idx.size();
         ret.reserve(std::min(size(), elems));
@@ -2520,6 +2530,124 @@ namespace mu
                 ret.emplace_back(Value(common));
             else
                 throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calculate the value at the n-th index.
+    ///
+    /// \param ret Array&
+    /// \param idx const Array&
+    /// \param source std::vector<size_t>&
+    /// \param target std::vector<size_t>&
+    /// \param currentDim size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::nthIndex(Array& ret, const Array& idx, std::vector<size_t>& source, std::vector<size_t>& target, size_t currentDim)
+    {
+        DataType common = getCommonType();
+
+        for (size_t n = 0; n < ret.m_dimSizes[currentDim]; n++)
+        {
+            target[currentDim] = n;
+
+            if (idx.get(currentDim).isArray())
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(n).getNum().asI64())-1;
+            else
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            if (ret.m_dimSizes.size() > currentDim+1)
+                nthIndex(ret, idx, source, target, currentDim+1);
+            else
+            {
+                if (isInside(source))
+                    ret.get(target).reset(new RefValue(&get(source)));
+                else
+                    ret.get(target) = Value(common);
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get references to individual elements
+    /// using an n-dimensional index.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::ndIndex(const Array& idx)
+    {
+        Array ret;
+        size_t dims = idx.size();
+        ret.m_dimSizes = std::vector<size_t>(dims, 1ull);
+        size_t elems = 1ull;
+
+        for (size_t i = 0; i < dims; i++)
+        {
+            if (idx.get(i).isArray())
+            {
+                ret.m_dimSizes[i] = idx.get(i).getArray().size();
+                elems *= ret.m_dimSizes[i];
+            }
+        }
+
+        // Should not happen but added for safety reasons
+        if (ret.m_dimSizes.size() < 2)
+            throw ParserError(ecTYPE_MISMATCH_OOB, "VAR()");
+
+        ret.resize(elems);
+        ret.makeMutable();
+        DataType common = getCommonType();
+        std::vector<size_t> source(dims);
+        std::vector<size_t> target(dims);
+
+        if (!m_dimSizes.size())
+            m_dimSizes.push_back(size());
+
+        for (size_t i = 0; i < ret.m_dimSizes[0]; i++)
+        {
+            target[0] = i;
+
+            if (idx.get(0).isArray())
+                source[0] = std::max(1LL, idx.get(0).getArray().get(i).getNum().asI64())-1;
+            else
+                source[0] = std::max(1LL, idx.get(0).getNum().asI64())-1;
+
+            for (size_t j = 0; j < ret.m_dimSizes[1]; j++)
+            {
+                target[1] = j;
+
+                if (idx.get(1).isArray())
+                    source[1] = std::max(1LL, idx.get(1).getArray().get(j).getNum().asI64())-1;
+                else
+                    source[1] = std::max(1LL, idx.get(1).getNum().asI64())-1;
+
+                if (dims > 2)
+                    nthIndex(ret, idx, source, target, 2);
+                else
+                {
+                    if (isInside(source))
+                        ret.get(i, j).reset(new RefValue(&get(source[0], source[1])));
+                    else
+                        ret.get(i, j) = Value(common);
+                }
+            }
+        }
+
+        while (ret.m_dimSizes.size() > 2 && ret.m_dimSizes.back() == 1ull)
+        {
+            ret.m_dimSizes.pop_back();
+        }
+
+        while (ret.m_dimSizes.size() > 2 && ret.m_dimSizes.front() == 1ull)
+        {
+            ret.m_dimSizes.erase(ret.m_dimSizes.begin());
         }
 
         return ret;
@@ -2811,24 +2939,73 @@ namespace mu
 #else
             return "void";
 #endif
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().print(digits, chrs, trunc);
 
         std::string ret;
 
-        for (size_t i = 0; i < size(); i++)
+        if (m_dimSizes.size() == 2)
         {
-            if (ret.length())
-                ret += ", ";
+            if (m_dimSizes[0] == 1)
+            {
+                if (m_dimSizes[1] == 1)
+                    ret += get(0).print(digits, chrs, trunc);
+                else
+                {
+                    for (size_t j = 0; j < m_dimSizes[1]; j++)
+                    {
+                        if (j)
+                            ret += ", ";
+
+                        ret += get(0, j).printEmbedded(digits, chrs, trunc);
+                    }
+                }
+
+                return "(" + ret + ")";
+            }
+            else
+            {
+                ret += "\n"; ///< For readability
+                for (size_t i = 0; i < m_dimSizes[0]; i++)
+                {
+                    if (!i)
+                        ret += "/ ";
+                    else if (i+1 == m_dimSizes[0])
+                        ret += "\\ ";
+                    else
+                        ret += "| ";
+
+                    for (size_t j = 0; j < m_dimSizes[1]; j++)
+                    {
+                        if (j)
+                            ret += ", ";
+
+                        ret += get(i, j).printEmbedded(digits, chrs, trunc);
+                    }
+
+                    if (!i)
+                        ret += " \\\n";
+                    else if (i+1 == m_dimSizes[0])
+                        ret += " /\n";
+                    else
+                        ret += " |\n";
+                }
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                if (ret.length())
+                    ret += ", ";
+
+                if (size() > 1)
+                    ret += get(i).printEmbedded(digits, chrs, trunc);
+                else
+                    ret += get(i).print(digits, chrs, trunc);
+            }
 
             if (size() > 1)
-                ret += get(i).printEmbedded(digits, chrs, trunc);
-            else
-                ret += get(i).print(digits, chrs, trunc);
+                return "{" + ret + "}";
         }
-
-        if (size() > 1)
-            return "{" + ret + "}";
 
         return ret;
     }
@@ -2873,9 +3050,6 @@ namespace mu
         if (isDefault())
             return "void";
 
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().printVals(digits, chrs);
-
         std::string ret;
 
         for (size_t i = 0; i < size(); i++)
@@ -2898,13 +3072,23 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printDims() const
     {
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().printDims();
-
         if (!size())
             return "0 x 0";
 
-        return toString(size()) + " x 1";
+        if (m_dimSizes.size() < 2)
+            return toString(size()) + " x 1";
+
+        std::string dims;
+
+        for (size_t s : m_dimSizes)
+        {
+            if (dims.length())
+                dims += " x ";
+
+            dims += toString(s);
+        }
+
+        return dims;
     }
 
 
@@ -2950,9 +3134,6 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printOverview(size_t digits, size_t chrs, size_t maxElems, bool alwaysBraces) const
     {
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
-
         // Return an empty brace pair, if no data is
         // available
         if (!size())
@@ -3288,6 +3469,224 @@ namespace mu
 
 
 
+    Array matrixAdd(const Array& curr, const Array& other)
+    {
+        Array ret;
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        currView.mergeDimSizes(otherView);
+        otherView.setDimSizes(currView);
+
+        size_t elements = currView.size();
+        ret.setDimSizes(currView.m_dimSizes);
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) + otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixSub(const Array& curr, const Array& other)
+    {
+        Array ret;
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        currView.mergeDimSizes(otherView);
+        otherView.setDimSizes(currView);
+
+        size_t elements = currView.size();
+        ret.setDimSizes(currView.m_dimSizes);
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) - otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixMul(const Array& curr, const Array& other)
+    {
+        Array ret;
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        currView.mergeDimSizes(otherView);
+        otherView.setDimSizes(currView);
+
+        size_t elements = currView.size();
+        ret.setDimSizes(currView.m_dimSizes);
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) * otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixDiv(const Array& curr, const Array& other)
+    {
+        Array ret;
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        currView.mergeDimSizes(otherView);
+        otherView.setDimSizes(currView);
+
+        size_t elements = currView.size();
+        ret.setDimSizes(currView.m_dimSizes);
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) / otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixPow(const Array& curr, const Array& other)
+    {
+        Array ret;
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        currView.mergeDimSizes(otherView);
+        otherView.setDimSizes(currView);
+
+        size_t elements = currView.size();
+        ret.setDimSizes(currView.m_dimSizes);
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) ^ otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    static bool needsResize(const std::vector<size_t>& currDims, const std::vector<size_t>& otherDims)
+    {
+        if (currDims.size() < otherDims.size())
+            return true;
+
+        for (size_t i = 0; i < currDims.size(); i++)
+        {
+            if (currDims[i] < otherDims[i])
+                return true;
+        }
+
+        return false;
+    }
+
+
+    void matrixSelfAdd(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixAdd(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) += otherView.get(i);
+        }
+    }
+
+
+    void matrixSelfSub(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixSub(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) -= otherView.get(i);
+        }
+    }
+
+
+    void matrixSelfMul(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixMul(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) *= otherView.get(i);
+        }
+    }
+
+
+    void matrixSelfDiv(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixDiv(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) /= otherView.get(i);
+        }
+    }
+
+
+    void matrixSelfPow(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixPow(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) ^= otherView.get(i);
+        }
+    }
+
+
+
+
+
 
 
 
@@ -3450,6 +3849,13 @@ namespace mu
         if (accepts(vals))
         {
             vals.dereference();
+
+            if (idx.getDims() > 1)
+            {
+                ndAssign(idx, vals);
+                return;
+            }
+
             size_t elems = idx.size();
             size_t valSize = vals.size();
 
@@ -3539,6 +3945,145 @@ namespace mu
         }
 
         return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief n-D assign function.
+    ///
+    /// \param idx const Array&
+    /// \param vals const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Variable::ndAssign(const Array& idx, const Array& vals)
+    {
+        if (!m_dimSizes.size())
+            m_dimSizes.push_back(size());
+
+        std::vector<size_t> elemCount(idx.size(), 1ull);
+        std::vector<size_t> sourceDims = vals.getDimSizes();
+        size_t extractionDim = 0;
+
+        // Get the number of assignable elements per dimension
+        for (size_t i = 0; i < idx.size(); i++)
+        {
+            if (sourceDims.size() <= extractionDim && idx.get(i).isArray() && idx.get(i).getArray().size() > 1)
+                throw ParserError(ecTYPE_MISMATCH_OOB);
+
+            if (idx.get(i).isGenerator())
+            {
+                elemCount[i] = std::min(idx.get(i).getGenerator().size(), sourceDims[extractionDim]);
+                sourceDims[extractionDim] = std::min(elemCount[i], sourceDims[extractionDim]);
+                extractionDim++;
+            }
+            else if (idx.get(i).isArray())
+            {
+                elemCount[i] = std::min(idx.get(i).getArray().size(), sourceDims[extractionDim]);
+                sourceDims[extractionDim] = std::min(elemCount[i], sourceDims[extractionDim]);
+                extractionDim++;
+            }
+        }
+
+        // Resize, if necessary
+        std::vector<size_t> targetMinDims(idx.size(), 1ull);
+        bool needsResize = false;
+
+        for (size_t i = 0; i < elemCount.size(); i++)
+        {
+            for (size_t j = 0; j < elemCount[i]; j++)
+            {
+                if (idx.get(i).isArray())
+                    targetMinDims[i] = std::max(targetMinDims[i], idx.get(i).getArray().get(j).getNum().asUI64());
+                else
+                    targetMinDims[i] = std::max(targetMinDims[i], idx.get(i).getNum().asUI64());
+            }
+
+            if ((m_dimSizes.size() <= i && targetMinDims[i] > 1) || targetMinDims[i] > m_dimSizes[i])
+                needsResize = true;
+        }
+
+        if (needsResize)
+        {
+            MatrixView thisView(*this);
+            thisView.mergeDimSizes(targetMinDims);
+
+            Array resized(thisView.size(), Value(getCommonType()));
+
+            for (size_t i = 0; i < resized.size(); i++)
+            {
+                if (thisView.get(i).getType() != TYPE_NEUTRAL)
+                    resized.get(i) = thisView.get(i);
+            }
+
+            operator=(std::move(resized));
+            m_dimSizes = thisView.m_dimSizes;
+        }
+
+        MatrixView valView(const_cast<Array&>(vals));
+        valView.setDimSizes(sourceDims);
+
+        std::vector<size_t> target(elemCount.size());
+        size_t n = 0;
+        int currentDim = elemCount.size()-1;
+
+        // column-major, not row-major -> first dimension has to be the
+        // innermost loop
+        for (size_t i = 0; i < elemCount[currentDim]; i++)
+        {
+            if (idx.get(currentDim).isArray())
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(i).getNum().asI64())-1;
+            else
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            for (size_t j = 0; j < elemCount[currentDim-1]; j++)
+            {
+                if (idx.get(currentDim-1).isArray())
+                    target[currentDim-1] = std::max(1LL, idx.get(currentDim-1).getArray().get(j).getNum().asI64())-1;
+                else
+                    target[currentDim-1] = std::max(1LL, idx.get(currentDim-1).getNum().asI64())-1;
+
+                if (elemCount.size() > 2)
+                    nthIndexAssign(idx, target, elemCount, currentDim-2, valView, n);
+                else
+                {
+                    get(target) = valView.get(n);
+                    n++;
+                }
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Recursive n-D assign function.
+    ///
+    /// \param idx const Array&
+    /// \param target std::vector<size_t>&
+    /// \param elemCount const std::vector<size_t>&
+    /// \param currentDim int
+    /// \param vals const MatrixView&
+    /// \param currentElem size_t&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Variable::nthIndexAssign(const Array& idx, std::vector<size_t>& target, const std::vector<size_t>& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem)
+    {
+        for (size_t n = 0; n < elemCount[currentDim]; n++)
+        {
+            if (idx.get(currentDim).isArray())
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(n).getNum().asI64())-1;
+            else
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            if (currentDim > 0)
+                nthIndexAssign(idx, target, elemCount, currentDim-1, vals, currentElem);
+            else
+            {
+                get(target) = vals.get(currentElem);
+                currentElem++;
+            }
+        }
     }
 
 

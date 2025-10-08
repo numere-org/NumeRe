@@ -465,6 +465,23 @@ namespace mu
 						if (m_iSynFlags & noBO)
 							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
 
+                        // Convert this to an index
+                        if (m_lastTok.GetCode() == cmVAR)
+                        {
+                            // Only clusters are allowed here
+                            if (m_lastTok.GetVar()->getCommonType() == TYPE_CLUSTER)
+                                Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
+
+                            m_indexedVars.push(m_lastTok.GetVar());
+
+                            // Figure out, whether this is part of an assignment
+                            if (IsLeftHandSide(m_iPos))
+                                i = cmBIDXASGN;
+                            else
+                                i = cmBIDX;
+
+                        }
+
 						if (m_lastTok.GetCode() == cmFUNC || m_lastTok.GetCode() == cmMETHOD)
 							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC | noMETHOD | noSqO | noSqC;
 						else
@@ -475,12 +492,36 @@ namespace mu
 
 					case cmBC:
 						if (m_iSynFlags & noBC)
-							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
+						{
+						    // Slicing with open boundaries
+                            if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size())
+                            {
+                                if (IsLeftHandSide(m_iPos))
+                                {
+                                    a_Tok.SetVal(m_pConstDef->at("inf"), "inf");
+                                    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
+                                }
+                                else
+                                {
+                                    a_Tok.SetVar(m_indexedVars.top(), "nlen");
+                                    a_Tok.ChangeCode(cmDIMVAR);
+                                    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+                                }
 
-						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN | noVO | noSqO;
+                                return true;
+                            }
+
+							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
+                        }
+
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
 						if (--m_iBrackets < 0)
 							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
+
+                        while (m_iBrackets < (int)m_indexedVars.size())
+                            m_indexedVars.pop();
+
 						break;
 
 					case cmVO:
@@ -610,7 +651,9 @@ namespace mu
                             if (m_lastTok.GetCode() == cmIDX
                                 || m_lastTok.GetCode() == cmSQIDX
                                 || m_lastTok.GetCode() == cmIDXASGN
-                                || m_lastTok.GetCode() == cmSQIDXASGN)
+                                || m_lastTok.GetCode() == cmSQIDXASGN
+                                || m_lastTok.GetCode() == cmBIDX
+                                || m_lastTok.GetCode() == cmBIDXASGN)
                             {
                                 a_Tok.SetVal(mu::Value(1.0), "1");
                                 m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN | noSqO;
@@ -1032,13 +1075,14 @@ namespace mu
 		a_Tok.SetVar(var, strTok);
 		m_UsedVar[strTok] = var;  // Add variable to used-var-list
 
-        if (m_iPos < (int)m_strFormula.length()+1 && (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]"))
+        if (m_iPos < (int)m_strFormula.length()+1
+            && (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]" || m_strFormula.subview(m_iPos, 2) == "()"))
         {
             m_iPos += 2;
             m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR;
         }
         else
-            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR;
+            m_iSynFlags = noVAL | noVAR | noFUN | noINFIXOP | noSTR;
 
 //  Zur Info hier die SynFlags von IsVal():
 //    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR | noASSIGN;
@@ -1090,13 +1134,13 @@ namespace mu
 
 		m_iPos = iEnd;
 
-        if (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]")
+        if (m_strFormula.subview(m_iPos, 2) == "{}" || m_strFormula.subview(m_iPos, 2) == "[]" || m_strFormula.subview(m_iPos, 2) == "()")
         {
             m_iPos += 2;
-            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
+            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR;
         }
         else
-            m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR;
+            m_iSynFlags = noVAL | noVAR | noFUN | noINFIXOP | noSTR;
 
 		return true;
 	}
