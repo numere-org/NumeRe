@@ -1489,7 +1489,7 @@ namespace mu
                     continue;
 
                 case  cmDIMVAR:
-                    Stack[++sidx] = Value(pTok->Val().var->size());
+                    Stack[++sidx] = Value(pTok->Val().var->getSize(pTok->Val().data.getAsScalarInt()));
                     continue;
 
                 case  cmVARARRAY:
@@ -2134,7 +2134,7 @@ namespace mu
 
 				case cmDIMVAR:
 					stVal.push(opt);
-					m_compilingState.m_byteCode.AddDimVar(opt.GetVar());
+					m_compilingState.m_byteCode.AddDimVar(opt.GetVar(), opt.GetIdx());
 					break;
 
 				case cmVAL:
@@ -2798,7 +2798,7 @@ namespace mu
 					    printFormatted("|   VAR\n");
 						break;
 					case cmDIMVAR:
-					    printFormatted("|   DIMVAR\n");
+					    printFormatted("|   DIMVAR [" + std::to_string(stOprt.top().GetIdx()) + "]\n");
 						break;
 					case cmVAL:
 						printFormatted("|   VAL\n");

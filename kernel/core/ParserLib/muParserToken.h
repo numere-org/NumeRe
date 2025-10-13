@@ -361,6 +361,27 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Set a dim var reference to a specified
+            /// dimension (or all if -1).
+            ///
+            /// \param a_pVar Variable*
+            /// \param a_strTok const std::string&
+            /// \param -1 int dimIdx=
+            /// \return ParserToken&
+            ///
+            /////////////////////////////////////////////////
+            ParserToken& SetDimVar(Variable* a_pVar, const std::string& a_strTok, int dimIdx = -1)
+            {
+                m_iCode = cmDIMVAR;
+                m_iType = tpDBL;
+                m_strTok = a_strTok;
+                m_iIdx = dimIdx;
+                m_var = a_pVar;
+                m_pCallback.reset(0);
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Set a variable array.
             ///
             /// \param a_varArray const VarArray&
@@ -405,6 +426,9 @@ namespace mu
             */
             int GetIdx() const
             {
+                if (m_iCode == cmDIMVAR)
+                    return m_iIdx;
+
                 if (m_iIdx < 0 || m_iCode != cmSTRING )
                     throw ParserError(ecINTERNAL_ERROR);
 

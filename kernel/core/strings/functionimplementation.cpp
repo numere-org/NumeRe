@@ -100,20 +100,24 @@ static std::string formatNumberToTex(const mu::Value& number, size_t precision =
 /////////////////////////////////////////////////
 mu::Array strfnc_to_tex(const mu::Array& a1, const mu::Array& a2)
 {
-    mu::Array ret;
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::Array ret = a1View.prepare(a2View);
+
+    size_t elems = a1View.size();
 
     if (!a2.isDefault())
     {
-        for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+        for (size_t i = 0; i < elems; i++)
         {
-            ret.emplace_back(formatNumberToTex(a1.get(i), a2.get(i).getNum().asI64()));
+            ret.emplace_back(formatNumberToTex(a1View.get(i), a2View.get(i).getNum().asI64()));
         }
     }
     else
     {
-        for (size_t i = 0; i < a1.size(); i++)
+        for (size_t i = 0; i < elems; i++)
         {
-            ret.emplace_back(formatNumberToTex(a1.get(i), 0));
+            ret.emplace_back(formatNumberToTex(a1View.get(i), 0));
         }
     }
 
@@ -188,7 +192,7 @@ mu::Array strfnc_ansiToUtf8(const mu::Array& a)
 mu::Array strfnc_toHtml(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (const mu::Value& val : a)
     {
@@ -210,7 +214,7 @@ mu::Array strfnc_toHtml(const mu::Array& a)
 mu::Array strfnc_getenvvar(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -240,6 +244,7 @@ mu::Array strfnc_getenvvar(const mu::Array& a)
 mu::Array strfnc_getFileParts(const mu::Array& a)
 {
     mu::Array ret;
+    ret.copyDims(a);
     FileSystem _fSys;
     _fSys.initializeFromKernel();
 
@@ -266,22 +271,28 @@ mu::Array strfnc_getFileParts(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 {
-    mu::Array ret;
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::Array ret = a1View.prepare(a2View);
+
+    size_t elems = a1View.size();
+
 #ifndef PARSERSTANDALONE
     FileSystem _fSys;
     _fSys.initializeFromKernel();
 
-    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    for (size_t i = 0; i < elems; i++)
     {
-        if (!a1.get(i).getPath().length() || !a2.get(i).getPath().length())
+        if (!a1View.get(i).getPath().length() || !a2View.get(i).getPath().length())
             ret.emplace_back("");
 
-        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1.get(i).getPath(), "", false, false),
-                                          _fSys.ValidFileName(a2.get(i).getPath(), "", false, false));
+        std::string sDiffs = compareFiles(_fSys.ValidFileName(a1View.get(i).getPath(), "", false, false),
+                                          _fSys.ValidFileName(a2View.get(i).getPath(), "", false, false));
         replaceAll(sDiffs, "\r\n", "\n");
         ret.emplace_back(split(sDiffs, '\n'));
     }
 #endif // PARSERSTANDALONE
+
     return ret;
 }
 
@@ -297,14 +308,20 @@ mu::Array strfnc_getFileDiffs(const mu::Array& a1, const mu::Array& a2)
 /////////////////////////////////////////////////
 mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 {
-    mu::Array ret;
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::Array ret = a1View.prepare(a2View);
+
+    size_t elems = a1View.size();
+
 #ifndef PARSERSTANDALONE
     FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+    int defaultSettings = FileSystem::FOLLOW_LINKS;
 
-    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    for (size_t i = 0; i < elems; i++)
     {
-        std::vector<std::string> vFileList = _fSys.getFileList(a1.get(i).getPath(),
-                                                               (a2.isDefault() ? 0 : a2.get(i).getNum().asI64()) | FileSystem::FOLLOW_LINKS);
+        std::vector<std::string> vFileList = _fSys.getFileList(a1View.get(i).getPath(),
+                                                               (a2.isDefault() ? 0 : a2View.get(i).getNum().asI64()) | defaultSettings);
 
         if (!vFileList.size())
             ret.emplace_back("");
@@ -315,6 +332,7 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
     if (!ret.size())
         ret.emplace_back("");
 #endif
+
     return ret;
 }
 
@@ -330,14 +348,20 @@ mu::Array strfnc_getfilelist(const mu::Array& a1, const mu::Array& a2)
 /////////////////////////////////////////////////
 mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 {
-    mu::Array ret;
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::Array ret = a1View.prepare(a2View);
+
+    size_t elems = a1View.size();
+
 #ifndef PARSERSTANDALONE
     FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+    int defaultSettings = FileSystem::FOLLOW_LINKS | FileSystem::NO_RELATIVE_PATH;
 
-    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    for (size_t i = 0; i < elems; i++)
     {
-        std::vector<std::string> vFolderList = _fSys.getFolderList(a1.get(i).getPath(),
-                                                                   (a2.isDefault() ? 0 : a2.get(i).getNum().asI64()) | FileSystem::NO_RELATIVE_PATH | FileSystem::FOLLOW_LINKS);
+        std::vector<std::string> vFolderList = _fSys.getFolderList(a1View.get(i).getPath(),
+                                                                   (a2.isDefault() ? 0 : a2View.get(i).getNum().asI64()) | defaultSettings);
 
         if (!vFolderList.size())
             ret.emplace_back("");
@@ -348,6 +372,7 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
     if (!ret.size())
         ret.emplace_back("");
 #endif
+
     return ret;
 }
 
@@ -363,7 +388,7 @@ mu::Array strfnc_getfolderlist(const mu::Array& a1, const mu::Array& a2)
 mu::Array strfnc_strlen(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -385,7 +410,7 @@ mu::Array strfnc_strlen(const mu::Array& a)
 mu::Array strfnc_firstch(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -410,7 +435,7 @@ mu::Array strfnc_firstch(const mu::Array& a)
 mu::Array strfnc_lastch(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -436,7 +461,7 @@ mu::Array strfnc_getmatchingparens(const mu::Array& a)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -457,7 +482,7 @@ mu::Array strfnc_getmatchingparens(const mu::Array& a)
 mu::Array strfnc_ascii(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -488,7 +513,7 @@ mu::Array strfnc_isblank(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -530,7 +555,7 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -572,7 +597,7 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -614,7 +639,7 @@ mu::Array strfnc_iscntrl(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -655,7 +680,7 @@ mu::Array strfnc_iscntrl(const mu::Array& a)
 mu::Array strfnc_isdigit(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -695,7 +720,7 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -737,7 +762,7 @@ mu::Array strfnc_islower(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -778,7 +803,7 @@ mu::Array strfnc_isprint(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -820,7 +845,7 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -862,7 +887,7 @@ mu::Array strfnc_isspace(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -904,7 +929,7 @@ mu::Array strfnc_isupper(const mu::Array& a)
 {
     static Umlauts _umlauts;
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -944,7 +969,7 @@ mu::Array strfnc_isupper(const mu::Array& a)
 mu::Array strfnc_isxdigit(const mu::Array& a)
 {
     mu::Array ret;
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -984,7 +1009,7 @@ mu::Array strfnc_isdir(const mu::Array& a)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -1007,7 +1032,7 @@ mu::Array strfnc_isfile(const mu::Array& a)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(a.size());
+    ret.copyDims(a);
 
     for (size_t i = 0; i < a.size(); i++)
     {
@@ -1062,23 +1087,27 @@ mu::Array strfnc_to_char(const mu::MultiArgFuncParams& arrs)
 /////////////////////////////////////////////////
 mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
 {
-    mu::Array ret;
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::Array ret = a1View.prepare(a2View);
+
+    size_t elems = a1View.size();
+
 #ifndef PARSERSTANDALONE
-    ret.reserve(std::max(a1.size(), a2.size()));
     FileSystem _fSys;
     _fSys.initializeFromKernel();
 
     static std::string sExePath = NumeReKernel::getInstance()->getSettings().getExePath();
 
-    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    for (size_t i = 0; i < elems; i++)
     {
         if (!a2.isDefault())
-            _fSys.setPath(a2.get(i).getPath(), false, sExePath);
+            _fSys.setPath(a2View.get(i).getPath(), false, sExePath);
         else
             _fSys.setPath(sExePath, false, sExePath);
 
         std::string sExtension = ".dat";
-        std::string sPath = a1.get(i).getPath();
+        std::string sPath = a1View.get(i).getPath();
 
         if (sPath.rfind('.') != std::string::npos)
         {
@@ -1095,6 +1124,7 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
         ret.emplace_back(fileExists(sFile));
     }
 #endif
+
     return ret;
 }
 
@@ -1110,12 +1140,18 @@ mu::Array strfnc_findfile(const mu::Array& a1, const mu::Array& a2)
 /////////////////////////////////////////////////
 mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array& a3)
 {
-    mu::Array ret;
-    ret.reserve(std::max({a1.size(), a2.size()}));
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::MatrixView a3View(a2);
+    mu::Array ret = a1View.prepare(a2View, a3View);
 
-    for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
+    size_t elems = a1View.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        ret.push_back(mu::Value(split_impl(a1.get(i).getStr(), a2.get(i).getStr(), !a3.isDefault() && (bool)a3.get(i))));
+        ret.push_back(mu::Value(split_impl(a1View.get(i).getStr(),
+                                           a2View.get(i).getStr(),
+                                           !a3.isDefault() && (bool)a3View.get(i))));
     }
 
     if (!ret.size())
@@ -1136,20 +1172,23 @@ mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array
 /////////////////////////////////////////////////
 mu::Array strfnc_to_time(const mu::Array& a1, const mu::Array& a2)
 {
-    mu::Array ret;
-    ret.reserve(std::max(a1.size(), a2.size()));
+    mu::MatrixView a1View(a1);
+    mu::MatrixView a2View(a2);
+    mu::Array ret = a1View.prepare(a2View);
 
-    for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+    size_t elems = a1View.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string sTime = a2.get(i).getStr() + " ";
+        std::string sTime = a2View.get(i).getStr() + " ";
 
-        if (!a1.get(i).getStr().length() && isConvertible(sTime, CONVTYPE_DATE_TIME))
+        if (!a1View.get(i).getStr().length() && isConvertible(sTime, CONVTYPE_DATE_TIME))
         {
             ret.emplace_back(StrToTime(sTime));
             continue;
         }
 
-        std::string sPattern = a1.get(i).getStr() + " ";
+        std::string sPattern = a1View.get(i).getStr() + " ";
 
         if (sTime.length() != sPattern.length())
         {
@@ -1244,15 +1283,19 @@ mu::Array strfnc_to_time(const mu::Array& a1, const mu::Array& a2)
 /////////////////////////////////////////////////
 mu::Array strfnc_strfnd(const mu::Array& what, const mu::Array& where, const mu::Array& from)
 {
-    mu::Array ret;
-    ret.reserve(std::max({what.size(), where.size(), from.size()}));
+    mu::MatrixView whatView(what);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::Array ret = whatView.prepare(whereView, fromView);
 
-    for (size_t i = 0; i < std::max({what.size(), where.size(), from.size()}); i++)
+    size_t elems = whatView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!from.isDefault())
-            ret.emplace_back(strfnd_impl(where.get(i).getStr(), what.get(i).getStr(), from.get(i).getNum().asI64()-1));
+            ret.emplace_back(strfnd_impl(whereView.get(i).getStr(), whatView.get(i).getStr(), fromView.get(i).getNum().asI64()-1));
         else
-            ret.emplace_back(strfnd_impl(where.get(i).getStr(), what.get(i).getStr()));
+            ret.emplace_back(strfnd_impl(whereView.get(i).getStr(), whatView.get(i).getStr()));
     }
 
     return ret;
@@ -1271,15 +1314,19 @@ mu::Array strfnc_strfnd(const mu::Array& what, const mu::Array& where, const mu:
 /////////////////////////////////////////////////
 mu::Array strfnc_strrfnd(const mu::Array& what, const mu::Array& where, const mu::Array& from)
 {
-    mu::Array ret;
-    ret.reserve(std::max({what.size(), where.size(), from.size()}));
+    mu::MatrixView whatView(what);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::Array ret = whatView.prepare(whereView, fromView);
 
-    for (size_t i = 0; i < std::max({what.size(), where.size(), from.size()}); i++)
+    size_t elems = whatView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!from.isDefault())
-            ret.emplace_back(strrfnd_impl(where.get(i).getStr(), what.get(i).getStr(), from.get(i).getNum().asI64()-1));
+            ret.emplace_back(strrfnd_impl(whereView.get(i).getStr(), whatView.get(i).getStr(), fromView.get(i).getNum().asI64()-1));
         else
-            ret.emplace_back(strrfnd_impl(where.get(i).getStr(), what.get(i).getStr()));
+            ret.emplace_back(strrfnd_impl(whereView.get(i).getStr(), whatView.get(i).getStr()));
     }
 
     return ret;
@@ -1298,15 +1345,19 @@ mu::Array strfnc_strrfnd(const mu::Array& what, const mu::Array& where, const mu
 /////////////////////////////////////////////////
 mu::Array strfnc_strmatch(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
-    mu::Array ret;
-    ret.reserve(std::max({chars.size(), where.size(), from.size()}));
+    mu::MatrixView charsView(chars);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::Array ret = charsView.prepare(whereView, fromView);
 
-    for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
+    size_t elems = charsView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!from.isDefault())
-            ret.emplace_back(strmatch_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+            ret.emplace_back(strmatch_impl(whereView.get(i).getStr(), charsView.get(i).getStr(), fromView.get(i).getNum().asI64()-1));
         else
-            ret.emplace_back(strmatch_impl(where.get(i).getStr(), chars.get(i).getStr()));
+            ret.emplace_back(strmatch_impl(whereView.get(i).getStr(), charsView.get(i).getStr()));
     }
 
     return ret;
@@ -1325,15 +1376,19 @@ mu::Array strfnc_strmatch(const mu::Array& chars, const mu::Array& where, const 
 /////////////////////////////////////////////////
 mu::Array strfnc_strrmatch(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
-    mu::Array ret;
-    ret.reserve(std::max({chars.size(), where.size(), from.size()}));
+    mu::MatrixView charsView(chars);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::Array ret = charsView.prepare(whereView, fromView);
 
-    for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
+    size_t elems = charsView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!from.isDefault())
-            ret.emplace_back(strrmatch_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+            ret.emplace_back(strrmatch_impl(whereView.get(i).getStr(), charsView.get(i).getStr(), fromView.get(i).getNum().asI64()-1));
         else
-            ret.emplace_back(strrmatch_impl(where.get(i).getStr(), chars.get(i).getStr()));
+            ret.emplace_back(strrmatch_impl(whereView.get(i).getStr(), charsView.get(i).getStr()));
     }
 
     return ret;
@@ -1352,15 +1407,19 @@ mu::Array strfnc_strrmatch(const mu::Array& chars, const mu::Array& where, const
 /////////////////////////////////////////////////
 mu::Array strfnc_str_not_match(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
-    mu::Array ret;
-    ret.reserve(std::max({chars.size(), where.size(), from.size()}));
+    mu::MatrixView charsView(chars);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::Array ret = charsView.prepare(whereView, fromView);
 
-    for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
+    size_t elems = charsView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!from.isDefault())
-            ret.emplace_back(str_not_match_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+            ret.emplace_back(str_not_match_impl(whereView.get(i).getStr(), charsView.get(i).getStr(), fromView.get(i).getNum().asI64()-1));
         else
-            ret.emplace_back(str_not_match_impl(where.get(i).getStr(), chars.get(i).getStr()));
+            ret.emplace_back(str_not_match_impl(whereView.get(i).getStr(), charsView.get(i).getStr()));
     }
 
     return ret;
@@ -1379,15 +1438,19 @@ mu::Array strfnc_str_not_match(const mu::Array& chars, const mu::Array& where, c
 /////////////////////////////////////////////////
 mu::Array strfnc_str_not_rmatch(const mu::Array& chars, const mu::Array& where, const mu::Array& from)
 {
-    mu::Array ret;
-    ret.reserve(std::max({chars.size(), where.size(), from.size()}));
+    mu::MatrixView charsView(chars);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::Array ret = charsView.prepare(whereView, fromView);
 
-    for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size()}); i++)
+    size_t elems = charsView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!from.isDefault())
-            ret.emplace_back(str_not_rmatch_impl(where.get(i).getStr(), chars.get(i).getStr(), from.get(i).getNum().asI64()-1));
+            ret.emplace_back(str_not_rmatch_impl(whereView.get(i).getStr(), charsView.get(i).getStr(), fromView.get(i).getNum().asI64()-1));
         else
-            ret.emplace_back(str_not_rmatch_impl(where.get(i).getStr(), chars.get(i).getStr()));
+            ret.emplace_back(str_not_rmatch_impl(whereView.get(i).getStr(), charsView.get(i).getStr()));
     }
 
     return ret;
@@ -1407,12 +1470,17 @@ mu::Array strfnc_str_not_rmatch(const mu::Array& chars, const mu::Array& where, 
 /////////////////////////////////////////////////
 mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const mu::Array& from, const mu::Array& to)
 {
-    mu::Array ret;
-    ret.reserve(std::max({what.size(), where.size(), from.size(), to.size()}));
+    mu::MatrixView whatView(what);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::MatrixView toView(to);
+    mu::Array ret = whatView.prepare(whereView, fromView, toView);
 
-    for (size_t i = 0; i < std::max({what.size(), where.size(), from.size(), to.size()}); i++)
+    size_t elems = whatView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        if (!where.get(i).getStr().length())
+        if (!whereView.get(i).getStr().length())
         {
             ret.emplace_back(0u);
             continue;
@@ -1424,20 +1492,20 @@ mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const 
         mu::Array current;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos_start = from.get(i).getNum().asI64()-1;
+            && fromView.get(i).getNum().asI64() > 0
+            && fromView.get(i).getNum().asI64() <= (int64_t)whereView.get(i).getStr().length())
+            pos_start = fromView.get(i).getNum().asI64()-1;
 
         if (!to.isDefault()
-            && to.get(i).getNum().asI64() > 0
-            && to.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos_last = to.get(i).getNum().asI64() - what.get(i).getStr().length();
+            && toView.get(i).getNum().asI64() > 0
+            && toView.get(i).getNum().asI64() <= (int64_t)whereView.get(i).getStr().length())
+            pos_last = toView.get(i).getNum().asI64() - whatView.get(i).getStr().length();
         else
-            pos_last = where.get(i).getStr().length() - what.get(i).getStr().length();
+            pos_last = whereView.get(i).getStr().length() - whatView.get(i).getStr().length();
 
         while (pos_start <= pos_last)
         {
-            pos_start = where.get(i).getStr().find(what.get(i).getStr(), pos_start);
+            pos_start = whereView.get(i).getStr().find(whatView.get(i).getStr(), pos_start);
 
             if (pos_start <= pos_last)
             {
@@ -1469,12 +1537,17 @@ mu::Array strfnc_strfndall(const mu::Array& what, const mu::Array& where, const 
 /////////////////////////////////////////////////
 mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, const mu::Array& from, const mu::Array& to)
 {
-    mu::Array ret;
-    ret.reserve(std::max({chars.size(), where.size(), from.size(), to.size()}));
+    mu::MatrixView charsView(chars);
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::MatrixView toView(to);
+    mu::Array ret = charsView.prepare(whereView, fromView, toView);
 
-    for (size_t i = 0; i < std::max({chars.size(), where.size(), from.size(), to.size()}); i++)
+    size_t elems = charsView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        if (!where.get(i).getStr().length())
+        if (!whereView.get(i).getStr().length())
         {
             ret.emplace_back(0u);
             continue;
@@ -1486,20 +1559,20 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
         mu::Array current;
 
         if (!from.isDefault()
-            && from.get(i).getNum().asI64() > 0
-            && from.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos_start = from.get(i).getNum().asI64()-1;
+            && fromView.get(i).getNum().asI64() > 0
+            && fromView.get(i).getNum().asI64() <= (int64_t)whereView.get(i).getStr().length())
+            pos_start = fromView.get(i).getNum().asI64()-1;
 
         if (!to.isDefault()
-            && to.get(i).getNum().asI64() > 0
-            && to.get(i).getNum().asI64() <= (int64_t)where.get(i).getStr().length())
-            pos_last = to.get(i).getNum().asI64()-1;
+            && toView.get(i).getNum().asI64() > 0
+            && toView.get(i).getNum().asI64() <= (int64_t)whereView.get(i).getStr().length())
+            pos_last = toView.get(i).getNum().asI64()-1;
         else
-            pos_last = where.get(i).getStr().length()-1;
+            pos_last = whereView.get(i).getStr().length()-1;
 
-        for (size_t j = 0; j < chars.get(i).getStr().length(); j++)
+        for (size_t j = 0; j < charsView.get(i).getStr().length(); j++)
         {
-            size_t match = where.get(i).getStr().find(chars.get(i).getStr()[j], pos_start);
+            size_t match = whereView.get(i).getStr().find(charsView.get(i).getStr()[j], pos_start);
 
             if (match <= pos_last)
                 current.emplace_back(match+1);
@@ -1567,15 +1640,19 @@ mu::Array strfnc_findparam(const mu::Array& par, const mu::Array& line, const mu
 /////////////////////////////////////////////////
 mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::Array& len)
 {
-    mu::Array ret;
-    ret.reserve(std::max({sStr.size(), pos.size(), len.size()}));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView posView(pos);
+    mu::MatrixView lenView(len);
+    mu::Array ret = strView.prepare(posView, lenView);
 
-    for (size_t i = 0; i < std::max({sStr.size(), pos.size(), len.size()}); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
         if (!len.isDefault())
-            ret.emplace_back(substr_impl(sStr.get(i).getStr(), pos.get(i).getNum().asI64()-1, len.get(i).getNum().asI64()));
+            ret.emplace_back(substr_impl(strView.get(i).getStr(), posView.get(i).getNum().asI64()-1, lenView.get(i).getNum().asI64()));
         else
-            ret.emplace_back(substr_impl(sStr.get(i).getStr(), pos.get(i).getNum().asI64()-1));
+            ret.emplace_back(substr_impl(strView.get(i).getStr(), posView.get(i).getNum().asI64()-1));
     }
 
     return ret;
@@ -1593,12 +1670,15 @@ mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::A
 /////////////////////////////////////////////////
 mu::Array strfnc_repeat(const mu::Array& sStr, const mu::Array& rep)
 {
-    mu::Array ret;
-    ret.reserve(std::max(sStr.size(), rep.size()));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView repView(rep);
+    mu::Array ret = strView.prepare(repView);
 
-    for (size_t i = 0; i < std::max(sStr.size(), rep.size()); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        ret.emplace_back(strRepeat(sStr.get(i).getStr(), rep.get(i).getNum().asI64()));
+        ret.emplace_back(strRepeat(strView.get(i).getStr(), repView.get(i).getNum().asI64()));
     }
 
     return ret;
@@ -1632,19 +1712,22 @@ static std::string padWithZeros(int nTime, size_t nLength)
 /////////////////////////////////////////////////
 mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
 {
-    mu::Array ret;
-    ret.reserve(std::max(fmt.size(), time.size()));
+    mu::MatrixView fmtView(fmt);
+    mu::MatrixView timeView(time);
+    mu::Array ret = fmtView.prepare(timeView);
 
-    for (size_t i = 0; i < std::max(fmt.size(), time.size()); i++)
+    size_t elems = fmtView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        if (!fmt.get(i).getStr().length())
+        if (!fmtView.get(i).getStr().length())
         {
-            ret.emplace_back(toString(to_timePoint(time.get(i).getNum().asF64()), 0));
+            ret.emplace_back(toString(to_timePoint(timeView.get(i).getNum().asF64()), 0));
             continue;
         }
 
-        std::string sFormattedTime = fmt.get(i).getStr() + " "; // contains pattern
-        sys_time_point nTime = to_timePoint(time.get(i).getNum().asF64());
+        std::string sFormattedTime = fmtView.get(i).getStr() + " "; // contains pattern
+        sys_time_point nTime = to_timePoint(timeView.get(i).getNum().asF64());
         time_stamp timeStruct = getTimeStampFromTimePoint(nTime);
         time_zone tz = getCurrentTimeZone();
 
@@ -1721,16 +1804,19 @@ mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
 /////////////////////////////////////////////////
 mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.reserve(std::max(daynum.size(), opts.size()));
+    mu::MatrixView dayNumView(daynum);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = dayNumView.prepare(optsView);
 
-    for (size_t i = 0; i < std::max(daynum.size(), opts.size()); i++)
+    size_t elems = dayNumView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        sys_time_point nTime = to_timePoint(daynum.get(i).getNum().asF64());
+        sys_time_point nTime = to_timePoint(dayNumView.get(i).getNum().asF64());
 
         size_t day = getWeekDay(nTime);
 
-        if (opts.isDefault()|| !opts.get(i))
+        if (opts.isDefault()|| !optsView.get(i))
         {
             ret.emplace_back(day);
             continue;
@@ -1758,13 +1844,16 @@ mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
 /////////////////////////////////////////////////
 mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
 {
-    mu::Array ret;
-    ret.reserve(std::max(sStr.size(), pos.size()));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView posView(pos);
+    mu::Array ret = strView.prepare(posView);
 
-    for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        const std::string& s = sStr.get(i).getStr();
-        int64_t p = pos.get(i).getNum().asI64();
+        const std::string& s = strView.get(i).getStr();
+        int64_t p = posView.get(i).getNum().asI64();
 
         if (p <= 1)
             ret.emplace_back(s.substr(0, 1));
@@ -1789,14 +1878,17 @@ mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos)
 /////////////////////////////////////////////////
 mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
 {
-    mu::Array ret;
-#ifndef PARSERSTANDALONE
-    ret.reserve(std::max(sStr.size(), pos.size()));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView posView(pos);
+    mu::Array ret = strView.prepare(posView);
 
-    for (size_t i = 0; i < std::max(sStr.size(), pos.size()); i++)
+    size_t elems = strView.size();
+
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < elems; i++)
     {
-        const std::string& s = sStr.get(i).getStr();
-        size_t p = pos.get(i).getNum().asUI64();
+        const std::string& s = strView.get(i).getStr();
+        size_t p = posView.get(i).getNum().asUI64();
 
         if (p < 1)
             p = 1;
@@ -1807,6 +1899,7 @@ mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
             ret.emplace_back(getArgAtPos(s, p-1));
     }
 #endif
+
     return ret;
 }
 
@@ -1824,16 +1917,21 @@ mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos)
 /////////////////////////////////////////////////
 mu::Array strfnc_replace(const mu::Array& where, const mu::Array& from, const mu::Array& len, const mu::Array& rep)
 {
-    mu::Array ret;
-    ret.reserve(std::max({where.size(), from.size(), len.size(), rep.size()}));
+    mu::MatrixView whereView(where);
+    mu::MatrixView fromView(from);
+    mu::MatrixView lenView(len);
+    mu::MatrixView repView(rep);
+    mu::Array ret = whereView.prepare(fromView, lenView, repView);
 
-    for (size_t i = 0; i < std::max({where.size(), from.size(), len.size(), rep.size()}); i++)
+    size_t elems = whereView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string s = where.get(i).getStr();
-        const std::string& r = rep.get(i).getStr();
+        std::string s = whereView.get(i).getStr();
+        const std::string& r = repView.get(i).getStr();
 
-        int64_t p = std::min((int64_t)s.length(), std::max(1LL, from.get(i).getNum().asI64()));
-        int64_t l = len.get(i).getNum().asI64();
+        int64_t p = std::min((int64_t)s.length(), std::max(1LL, fromView.get(i).getNum().asI64()));
+        int64_t l = lenView.get(i).getNum().asI64();
 
         if (!s.length())
             ret.emplace_back("");
@@ -1939,23 +2037,27 @@ static double extractLaTeXExponent(std::string& sExpr)
 /////////////////////////////////////////////////
 mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, const mu::Array& p1, const mu::Array& p2)
 {
-    mu::Array ret;
-    size_t elems = std::max({sStr.size(), pattern.size(), p1.size(), p2.size()});
-    ret.reserve(elems);
+    mu::MatrixView strView(sStr);
+    mu::MatrixView patternView(pattern);
+    mu::MatrixView p1View(p1);
+    mu::MatrixView p2View(p2);
+    mu::Array ret = strView.prepare(patternView, p1View, p2View);
+
+    size_t elems = strView.size();
 
     for (size_t i = 0; i < elems; i++)
     {
-        StringView sSearchString = sStr.get(i).getStr();
-        StringView sPattern = pattern.get(i).getStr();
+        StringView sSearchString = strView.get(i).getStr();
+        StringView sPattern = patternView.get(i).getStr();
 
         int64_t pos1 = 1;
         int64_t pos2 = sSearchString.length();
 
         if (!p1.isDefault())
-            pos1 = std::max(pos1, p1.get(i).getNum().asI64());
+            pos1 = std::max(pos1, p1View.get(i).getNum().asI64());
 
         if (!p2.isDefault())
-            pos2 = std::min(pos2, std::max(1LL, p2.get(i).getNum().asI64()));
+            pos2 = std::min(pos2, std::max(1LL, p2View.get(i).getNum().asI64()));
 
         // Exclude border cases
         if (!sSearchString.length() || pos1 > (int64_t)sSearchString.length() || pos2-pos1 <= 0)
@@ -2431,18 +2533,22 @@ mu::Array strfnc_getkeyval(const mu::Array& kvlist, const mu::Array& key, const 
 /////////////////////////////////////////////////
 mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu::Array& sep)
 {
-    mu::Array ret;
-    ret.resize(std::max({sStr.size(), tok.size(), sep.size()}), size_t(0));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView tokView(tok);
+    mu::MatrixView sepView(sep);
+    mu::Array ret = strView.prepare(tokView, sepView);
 
-    for (size_t i = 0; i < std::max({sStr.size(), tok.size(), sep.size()}); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        StringView sView1 = sStr.get(i).getStr();
-        const std::string& t = tok.get(i).getStr();
+        StringView sView1 = strView.get(i).getStr();
+        const std::string& t = tokView.get(i).getStr();
         std::string s = " \t";
 
         // Define default arguments
         if (!sep.isDefault())
-            s = sep.get(i).getStr();
+            s = sepView.get(i).getStr();
 
         size_t nMatch = 0;
 
@@ -2479,14 +2585,20 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
 /////////////////////////////////////////////////
 mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const mu::Array& rep, const mu::Array& pos1, const mu::Array& pos2)
 {
-    mu::Array ret;
-    ret.reserve(std::max({sStr.size(), fnd.size(), rep.size(), pos1.size(), pos2.size()}));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView fndView(fnd);
+    mu::MatrixView repView(rep);
+    mu::MatrixView pos1View(pos1);
+    mu::MatrixView pos2View(pos2);
+    mu::Array ret = strView.prepare(fndView, repView, pos1View, pos2View);
 
-    for (size_t i = 0; i < std::max({sStr.size(), fnd.size(), rep.size(), pos1.size(), pos2.size()}); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string s = sStr.get(i).getStr();
-        StringView f = fnd.get(i).getStr();
-        StringView r = rep.get(i).getStr();
+        std::string s = strView.get(i).getStr();
+        StringView f = fndView.get(i).getStr();
+        StringView r = repView.get(i).getStr();
 
         if (!s.length() || !f.length())
         {
@@ -2498,10 +2610,10 @@ mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const m
         int64_t p2 = s.length()+1;
 
         if (!pos1.isDefault())
-            p1 = std::max(p1, std::min((int64_t)s.length(), pos1.get(i).getNum().asI64()));
+            p1 = std::max(p1, std::min((int64_t)s.length(), pos1View.get(i).getNum().asI64()));
 
         if (!pos2.isDefault())
-            p2 = std::max(p1, std::min((int64_t)s.length(), pos2.get(i).getNum().asI64()));
+            p2 = std::max(p1, std::min((int64_t)s.length(), pos2View.get(i).getNum().asI64()));
 
         // Using the slower version to enable replacement of null characters
         replaceAll(s, f, r, p1-1, p2-1);
@@ -2525,19 +2637,24 @@ mu::Array strfnc_replaceall(const mu::Array& sStr, const mu::Array& fnd, const m
 /////////////////////////////////////////////////
 mu::Array strfnc_strip(const mu::Array& sStr, const mu::Array& frnt, const mu::Array& bck, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.reserve(std::max({sStr.size(), frnt.size(), bck.size(), opts.size()}));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView frntView(frnt);
+    mu::MatrixView bckView(bck);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = strView.prepare(frntView, bckView, optsView);
 
-    for (size_t i = 0; i < std::max({sStr.size(), frnt.size(), bck.size(), opts.size()}); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        StringView s = sStr.get(i).getStr();
-        StringView f = frnt.get(i).getStr();
-        StringView b = bck.get(i).getStr();
+        StringView s = strView.get(i).getStr();
+        StringView f = frntView.get(i).getStr();
+        StringView b = bckView.get(i).getStr();
 
         int64_t stripAll = 0;
 
         if (!opts.isDefault())
-            stripAll = opts.get(i).getNum().asI64();
+            stripAll = optsView.get(i).getNum().asI64();
 
         if (!s.length())
         {
@@ -2585,14 +2702,19 @@ mu::Array strfnc_strip(const mu::Array& sStr, const mu::Array& frnt, const mu::A
 /////////////////////////////////////////////////
 mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Array& pos, const mu::Array& len)
 {
-    mu::Array ret;
-#ifndef PARSERSTANDALONE
-    ret.reserve(std::max({rgx.size(), sStr.size(), pos.size(), len.size()}));
+    mu::MatrixView rgxView(rgx);
+    mu::MatrixView strView(sStr);
+    mu::MatrixView posView(pos);
+    mu::MatrixView lenView(len);
+    mu::Array ret = rgxView.prepare(strView, posView, lenView);
 
-    for (size_t i = 0; i < std::max({rgx.size(), sStr.size(), pos.size(), len.size()}); i++)
+    size_t elems = rgxView.size();
+
+#ifndef PARSERSTANDALONE
+    for (size_t i = 0; i < elems; i++)
     {
-        StringView r = rgx.get(i).getStr();
-        StringView s = sStr.get(i).getStr();
+        StringView r = rgxView.get(i).getStr();
+        StringView s = strView.get(i).getStr();
 
         int64_t p = 1;
         int64_t l = s.length();
@@ -2608,18 +2730,18 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
         }
 
         if (!pos.isDefault())
-            p = std::max(p, std::min(l, pos.get(i).getNum().asI64()));
+            p = std::max(p, std::min(l, posView.get(i).getNum().asI64()));
 
         if (!len.isDefault())
-            p = std::min(l, pos.get(i).getNum().asI64());
+            p = std::min(l, lenView.get(i).getNum().asI64());
 
         try
         {
             std::smatch match;
             std::regex expr(r.to_string());
-            std::string sStr = s.subview(p-1, l).to_string();
+            std::string sSubView = s.subview(p-1, l).to_string();
 
-            if (std::regex_search(sStr, match, expr))
+            if (std::regex_search(sSubView, match, expr))
             {
                 current.emplace_back(match.position(0) + (size_t)p);
                 current.emplace_back(match.length(0));
@@ -2698,13 +2820,16 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
 /////////////////////////////////////////////////
 mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val)
 {
-    mu::Array ret;
-    ret.reserve(std::max(base.size(), val.size()));
+    mu::MatrixView baseView(base);
+    mu::MatrixView valView(val);
+    mu::Array ret = baseView.prepare(valView);
 
-    for (size_t i = 0; i < std::max(base.size(), val.size()); i++)
+    size_t elems = baseView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        StringView b = base.get(i).getStr();
-        StringView v = val.get(i).getStr();
+        StringView b = baseView.get(i).getStr();
+        StringView v = valView.get(i).getStr();
 
         if (b == "hex")
             ret.emplace_back(convertBaseToDecimal(v, HEX));
@@ -2731,13 +2856,16 @@ mu::Array strfnc_basetodec(const mu::Array& base, const mu::Array& val)
 /////////////////////////////////////////////////
 mu::Array strfnc_dectobase(const mu::Array& base, const mu::Array& val)
 {
-    mu::Array ret;
-    ret.reserve(std::max(base.size(), val.size()));
+    mu::MatrixView baseView(base);
+    mu::MatrixView valView(val);
+    mu::Array ret = baseView.prepare(valView);
 
-    for (size_t i = 0; i < std::max(base.size(), val.size()); i++)
+    size_t elems = baseView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        StringView b = base.get(i).getStr();
-        int64_t v = val.get(i).getNum().asI64();
+        StringView b = baseView.get(i).getStr();
+        int64_t v = valView.get(i).getNum().asI64();
         std::stringstream stream;
 
         if (b == "hex")
@@ -3016,7 +3144,7 @@ mu::Array strfnc_getfileinfo(const mu::Array& file)
 {
     mu::Array sFileInfo;
 #ifndef PARSERSTANDALONE
-    sFileInfo.reserve(file.size());
+    sFileInfo.copyDims(file);
 
     for (size_t i = 0; i < file.size(); i++)
     {
@@ -3076,17 +3204,20 @@ mu::Array strfnc_getfileinfo(const mu::Array& file)
 /////////////////////////////////////////////////
 mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.reserve(std::max(sStr.size(), opts.size()));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = strView.prepare(optsView);
 
-    for (size_t i = 0; i < std::max(sStr.size(), opts.size()); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        if (opts.isDefault() || opts.get(i).getNum().asI64() == 0)
-            ret.emplace_back(sha256(sStr.get(i).getStr()));
+        if (opts.isDefault() || optsView.get(i).getNum().asI64() == 0)
+            ret.emplace_back(sha256(strView.get(i).getStr()));
         else
         {
 #ifndef PARSERSTANDALONE
-            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getPath(),
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(strView.get(i).getPath(),
                                                                                                ".dat", false, true);
 
             // Ensure that the file actually exist
@@ -3117,9 +3248,12 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
 /////////////////////////////////////////////////
 mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, const mu::Array& n)
 {
-    mu::Array ret;
-    size_t elems = std::max({sStr.size(), isFile.size(), n.size()});
-    ret.reserve(elems);
+    mu::MatrixView strView(sStr);
+    mu::MatrixView isFileView(isFile);
+    mu::MatrixView nView(n);
+    mu::Array ret = strView.prepare(isFileView, nView);
+
+    size_t elems = strView.size();
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -3127,17 +3261,17 @@ mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, c
         int encoding = 64;
 
         if (!isFile.isDefault())
-            useFile = isFile.get(i).getNum().asI64() != 0;
+            useFile = isFileView.get(i).getNum().asI64() != 0;
 
         if (!n.isDefault())
-            encoding = n.get(i).getNum().asI64();
+            encoding = nView.get(i).getNum().asI64();
 
         if (!useFile)
-            ret.emplace_back(encode_base_n(sStr.get(i).getStr(), false, encoding));
+            ret.emplace_back(encode_base_n(strView.get(i).getStr(), false, encoding));
         else
         {
 #ifndef PARSERSTANDALONE
-            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sStr.get(i).getPath(),
+            std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(strView.get(i).getPath(),
                                                                                                ".dat", false, true);
 
             // Ensure that the file actually exist
@@ -3164,18 +3298,20 @@ mu::Array strfnc_encode_base_n(const mu::Array& sStr, const mu::Array& isFile, c
 /////////////////////////////////////////////////
 mu::Array strfnc_decode_base_n(const mu::Array& sStr, const mu::Array& n)
 {
-    mu::Array ret;
-    size_t elems = std::max(sStr.size(), n.size());
-    ret.reserve(elems);
+    mu::MatrixView strView(sStr);
+    mu::MatrixView nView(n);
+    mu::Array ret = strView.prepare(nView);
+
+    size_t elems = strView.size();
 
     for (size_t i = 0; i < elems; i++)
     {
         int encoding = 64;
 
         if (!n.isDefault())
-            encoding = n.get(i).getNum().asI64();
+            encoding = nView.get(i).getNum().asI64();
 
-        ret.emplace_back(decode_base_n(sStr.get(i).getStr(), encoding));
+        ret.emplace_back(decode_base_n(strView.get(i).getStr(), encoding));
     }
 
     return ret;
@@ -3193,15 +3329,18 @@ mu::Array strfnc_decode_base_n(const mu::Array& sStr, const mu::Array& n)
 /////////////////////////////////////////////////
 mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with)
 {
-    mu::Array ret;
-    ret.reserve(std::max(sStr.size(), with.size()));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView withView(with);
+    mu::Array ret = strView.prepare(withView);
 
-    for (size_t i = 0; i < std::max(sStr.size(), with.size()); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        if (!with.get(i).getStr().length())
+        if (!withView.get(i).getStr().length())
             ret.emplace_back(false);
         else
-            ret.emplace_back(sStr.get(i).getStr().starts_with(with.get(i).getStr()));
+            ret.emplace_back(strView.get(i).getStr().starts_with(withView.get(i).getStr()));
     }
 
     return ret;
@@ -3219,15 +3358,18 @@ mu::Array strfnc_startswith(const mu::Array& sStr, const mu::Array& with)
 /////////////////////////////////////////////////
 mu::Array strfnc_endswith(const mu::Array& sStr, const mu::Array& with)
 {
-    mu::Array ret;
-    ret.reserve(std::max(sStr.size(), with.size()));
+    mu::MatrixView strView(sStr);
+    mu::MatrixView withView(with);
+    mu::Array ret = strView.prepare(withView);
 
-    for (size_t i = 0; i < std::max(sStr.size(), with.size()); i++)
+    size_t elems = strView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        if (!with.get(i).getStr().length())
+        if (!withView.get(i).getStr().length())
             ret.emplace_back(false);
         else
-            ret.emplace_back(sStr.get(i).getStr().ends_with(with.get(i).getStr()));
+            ret.emplace_back(strView.get(i).getStr().ends_with(withView.get(i).getStr()));
     }
 
     return ret;
@@ -3246,7 +3388,7 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(sStr.size());
+    ret.copyDims(sStr);
 
     mu::Parser p = NumeReKernel::getInstance()->getParser(); // Get a copy
 
@@ -3285,7 +3427,7 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
 mu::Array strfnc_to_string(const mu::Array& vals)
 {
     mu::Array ret;
-    ret.reserve(vals.size());
+    ret.copyDims(vals);
 
     for (const auto& v : vals)
     {
@@ -3385,7 +3527,7 @@ mu::Array strfnc_is_data(const mu::Array& sStr)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(sStr.size());
+    ret.copyDims(sStr);
 
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
@@ -3410,7 +3552,7 @@ mu::Array strfnc_is_table(const mu::Array& sStr)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(sStr.size());
+    ret.copyDims(sStr);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     for (size_t i = 0; i < sStr.size(); i++)
@@ -3434,7 +3576,7 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(sStr.size());
+    ret.copyDims(sStr);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     for (size_t i = 0; i < sStr.size(); i++)
@@ -3496,24 +3638,28 @@ mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
 /////////////////////////////////////////////////
 mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const mu::Array& len)
 {
-    mu::Array ret;
-    ret.reserve(std::max({vals.size(), cfill.size(), len.size()}));
+    mu::MatrixView valsView(vals);
+    mu::MatrixView fillView(cfill);
+    mu::MatrixView lenView(len);
+    mu::Array ret = valsView.prepare(fillView, lenView);
 
-    for (size_t i = 0; i < std::max({vals.size(), cfill.size(), len.size()}); i++)
+    size_t elems = valsView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
 #ifndef PARSERSTANDALONE
-        std::string v = vals.get(i).printVal(NumeReKernel::getInstance()->getSettings().getPrecision());
+        std::string v = valsView.get(i).printVal(NumeReKernel::getInstance()->getSettings().getPrecision());
 #else
-        std::string v = vals.get(i).printVal();
+        std::string v = valsView.get(i).printVal();
 #endif // PARSERSTANDALONE
 
         if (!len.isDefault()
             && !cfill.isDefault()
-            && cfill.get(i).getStr().length()
-            && (int64_t)v.length() < len.get(i).getNum().asI64())
+            && fillView.get(i).getStr().length()
+            && (int64_t)v.length() < lenView.get(i).getNum().asI64())
         {
-            int64_t l = len.get(i).getNum().asI64();
-            const std::string& sChar = cfill.get(i).getStr();
+            int64_t l = lenView.get(i).getNum().asI64();
+            const std::string& sChar = fillView.get(i).getStr();
 
             while ((int64_t)v.length() < l)
             {
@@ -3552,7 +3698,7 @@ mu::Array strfnc_gettypeof(const mu::Array& vals)
 mu::Array strfnc_readxml(const mu::Array& xmlFiles)
 {
     mu::Array ret;
-    ret.reserve(xmlFiles.size());
+    ret.copyDims(xmlFiles);
 #ifndef PARSERSTANDALONE
     FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
 
@@ -3582,7 +3728,7 @@ mu::Array strfnc_readxml(const mu::Array& xmlFiles)
 mu::Array strfnc_readjson(const mu::Array& jsonFiles)
 {
     mu::Array ret;
-    ret.reserve(jsonFiles.size());
+    ret.copyDims(jsonFiles);
 #ifndef PARSERSTANDALONE
     FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
 

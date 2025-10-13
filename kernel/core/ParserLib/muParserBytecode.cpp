@@ -113,13 +113,15 @@ namespace mu
 	}
 
     /////////////////////////////////////////////////
-    /// \brief Add a dimension variable to bytecode.
+    /// \brief Add a dimension variable to bytecode
+    /// with respect to the selected dimension.
     ///
     /// \param a_pVar Variable*
+    /// \param dim int
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserByteCode::AddDimVar(Variable* a_pVar)
+	void ParserByteCode::AddDimVar(Variable* a_pVar, int dim)
 	{
 		++m_iStackPos;
 		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
@@ -127,7 +129,7 @@ namespace mu
 		// optimization does not apply
 		SToken tok;
 		tok.Cmd       = cmDIMVAR;
-		tok.m_data = SValData{.var{a_pVar}, .data{std::move(Value(1))}, .isVect{false}};
+		tok.m_data = SValData{.var{a_pVar}, .data{std::move(Value(dim))}, .isVect{false}};
 		m_vRPN.push_back(std::move(tok));
 	}
 
@@ -991,7 +993,11 @@ namespace mu
 					break;
 
 				case cmDIMVAR:
-				    printFormatted("DIMVAR    \t[" + m_vRPN[i].Val().var->printOverview() + "].size()\n");
+				    if (m_vRPN[i].Val().data.getAsScalarInt() == -1)
+                        printFormatted("DIMVAR    \t[" + m_vRPN[i].Val().var->printOverview() + "].cnt()\n");
+                    else
+                        printFormatted("DIMVAR    \t[" + m_vRPN[i].Val().var->printOverview() + "].size().sel(" + std::to_string(m_vRPN[i].Val().data.getAsScalarInt()+1) + ")\n");
+
 					break;
 
 				case cmVARARRAY:

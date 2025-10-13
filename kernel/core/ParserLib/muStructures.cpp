@@ -1752,7 +1752,7 @@ namespace mu
     {
         Array ret;
         size_t elements = size();
-        ret.reserve(elements);
+        ret.copyDims(*this);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -1772,6 +1772,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator==(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixEq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1794,6 +1797,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator!=(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixNeq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1816,6 +1822,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator<(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixLess(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1838,6 +1847,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator<=(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixLessEq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1860,6 +1872,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator>(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixGreater(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1882,6 +1897,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator>=(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixGreaterEq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1904,6 +1922,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator&&(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixAnd(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1926,6 +1947,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator||(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixOr(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -3150,7 +3174,7 @@ namespace mu
             for (size_t i = 0; i < count(); i++)
             {
                 if (sVector.size())
-                sVector += ", ";
+                    sVector += ", ";
 
                 sVector += operator[](i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
 
@@ -3173,7 +3197,10 @@ namespace mu
                 if (sVector.size())
                     sVector += ", ";
 
-                sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+                if (get(i).isArray())
+                    sVector += get(i).getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
+                else
+                    sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
 
                 // Insert the ellipsis in the middle. The additional -1 is to
                 // handle the zero-based indices
@@ -3471,14 +3498,11 @@ namespace mu
 
     Array matrixAdd(const Array& curr, const Array& other)
     {
-        Array ret;
         MatrixView currView(curr);
         MatrixView otherView(other);
-        currView.mergeDimSizes(otherView);
-        otherView.setDimSizes(currView);
+        Array ret = currView.prepare(otherView);
 
         size_t elements = currView.size();
-        ret.setDimSizes(currView.m_dimSizes);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -3491,14 +3515,11 @@ namespace mu
 
     Array matrixSub(const Array& curr, const Array& other)
     {
-        Array ret;
         MatrixView currView(curr);
         MatrixView otherView(other);
-        currView.mergeDimSizes(otherView);
-        otherView.setDimSizes(currView);
+        Array ret = currView.prepare(otherView);
 
         size_t elements = currView.size();
-        ret.setDimSizes(currView.m_dimSizes);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -3511,14 +3532,11 @@ namespace mu
 
     Array matrixMul(const Array& curr, const Array& other)
     {
-        Array ret;
         MatrixView currView(curr);
         MatrixView otherView(other);
-        currView.mergeDimSizes(otherView);
-        otherView.setDimSizes(currView);
+        Array ret = currView.prepare(otherView);
 
         size_t elements = currView.size();
-        ret.setDimSizes(currView.m_dimSizes);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -3531,14 +3549,11 @@ namespace mu
 
     Array matrixDiv(const Array& curr, const Array& other)
     {
-        Array ret;
         MatrixView currView(curr);
         MatrixView otherView(other);
-        currView.mergeDimSizes(otherView);
-        otherView.setDimSizes(currView);
+        Array ret = currView.prepare(otherView);
 
         size_t elements = currView.size();
-        ret.setDimSizes(currView.m_dimSizes);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -3551,14 +3566,11 @@ namespace mu
 
     Array matrixPow(const Array& curr, const Array& other)
     {
-        Array ret;
         MatrixView currView(curr);
         MatrixView otherView(other);
-        currView.mergeDimSizes(otherView);
-        otherView.setDimSizes(currView);
+        Array ret = currView.prepare(otherView);
 
         size_t elements = currView.size();
-        ret.setDimSizes(currView.m_dimSizes);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -3685,6 +3697,140 @@ namespace mu
 
 
 
+    Array matrixEq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) == otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixNeq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) != otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixLess(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) < otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixLessEq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) <= otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixGreater(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) > otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixGreaterEq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) >= otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixAnd(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) && otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    Array matrixOr(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) || otherView.get(i));
+        }
+
+        return ret;
+    }
 
 
 

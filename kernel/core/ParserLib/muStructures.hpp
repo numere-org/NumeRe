@@ -455,6 +455,15 @@ namespace mu
     void matrixSelfDiv(Array& curr, const Array& other);
     void matrixSelfPow(Array& curr, const Array& other);
 
+    Array matrixEq(const Array& curr, const Array& other);
+    Array matrixNeq(const Array& curr, const Array& other);
+    Array matrixLess(const Array& curr, const Array& other);
+    Array matrixLessEq(const Array& curr, const Array& other);
+    Array matrixGreater(const Array& curr, const Array& other);
+    Array matrixGreaterEq(const Array& curr, const Array& other);
+    Array matrixAnd(const Array& curr, const Array& other);
+    Array matrixOr(const Array& curr, const Array& other);
+
     /////////////////////////////////////////////////
     /// \brief This class handles the scalar-vector
     /// interactions and is the general datatype
@@ -629,7 +638,10 @@ namespace mu
             bool isScalar() const;
             bool isScalarDim(size_t dim) const
             {
-                return dim == 0 ? size() == 1ull : dim >= m_dimSizes.size() || m_dimSizes[dim] == 1ull;
+                if (dim < m_dimSizes.size())
+                    return m_dimSizes[dim] == 1ull;
+
+                return (dim == 0 && size() == 1ull) || (dim > 0 && dim >= m_dimSizes.size());
             }
             bool isDefault() const;
             bool isVoid() const;
@@ -752,6 +764,25 @@ namespace mu
             {
                 m_dimSizes = dimSizes;
                 reserve(std::accumulate(m_dimSizes.begin(), m_dimSizes.end(), 1ull, std::multiplies<size_t>()));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the size of the corresponding
+            /// dimension.
+            ///
+            /// \param dim int
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t getSize(int dim) const
+            {
+                if (dim < 0 || (dim == 0 && !m_dimSizes.size()))
+                    return size();
+
+                if (m_dimSizes.size() <= (size_t)dim)
+                    return 1ull;
+
+                return m_dimSizes[dim];
             }
 
             /////////////////////////////////////////////////
@@ -1403,45 +1434,75 @@ namespace mu
 
             void mergeDimSizes(const std::vector<size_t>& dims)
             {
-                if (dims.size() > m_dimSizes.size())
-                    m_dimSizes.resize(dims.size());
-
-                for (size_t i = 0; i < dims.size(); i++)
-                {
-                    m_dimSizes[i] = std::max(m_dimSizes[i], dims[i]);
-                }
-
+                merge(dims);
                 prepareDimFacts();
             }
 
             void mergeDimSizes(const Array& arr)
             {
-                std::vector<size_t> otherSizes = arr.getDimSizes();
-
-                if (otherSizes.size() > m_dimSizes.size())
-                    m_dimSizes.resize(otherSizes.size());
-
-                for (size_t i = 0; i < otherSizes.size(); i++)
-                {
-                    m_dimSizes[i] = std::max(m_dimSizes[i], otherSizes[i]);
-                }
-
+                merge(arr.getDimSizes());
                 prepareDimFacts();
             }
 
             void mergeDimSizes(const MatrixView& view)
             {
-                std::vector<size_t> otherSizes = view.m_dimSizes;
-
-                if (otherSizes.size() > m_dimSizes.size())
-                    m_dimSizes.resize(otherSizes.size());
-
-                for (size_t i = 0; i < otherSizes.size(); i++)
-                {
-                    m_dimSizes[i] = std::max(m_dimSizes[i], otherSizes[i]);
-                }
-
+                merge(view.m_dimSizes);
                 prepareDimFacts();
+            }
+
+            Array prepare(MatrixView& view1)
+            {
+                mergeDimSizes(view1);
+                view1.setDimSizes(m_dimSizes);
+
+                Array ret;
+                ret.setDimSizes(m_dimSizes);
+                return ret;
+            }
+
+            Array prepare(MatrixView& view1, MatrixView& view2)
+            {
+                merge(view1.m_dimSizes);
+                merge(view2.m_dimSizes);
+                prepareDimFacts();
+                view1.setDimSizes(m_dimSizes);
+                view2.setDimSizes(m_dimSizes);
+
+                Array ret;
+                ret.setDimSizes(m_dimSizes);
+                return ret;
+            }
+
+            Array prepare(MatrixView& view1, MatrixView& view2, MatrixView& view3)
+            {
+                merge(view1.m_dimSizes);
+                merge(view2.m_dimSizes);
+                merge(view3.m_dimSizes);
+                prepareDimFacts();
+                view1.setDimSizes(m_dimSizes);
+                view2.setDimSizes(m_dimSizes);
+                view3.setDimSizes(m_dimSizes);
+
+                Array ret;
+                ret.setDimSizes(m_dimSizes);
+                return ret;
+            }
+
+            Array prepare(MatrixView& view1, MatrixView& view2, MatrixView& view3, MatrixView& view4)
+            {
+                merge(view1.m_dimSizes);
+                merge(view2.m_dimSizes);
+                merge(view3.m_dimSizes);
+                merge(view4.m_dimSizes);
+                prepareDimFacts();
+                view1.setDimSizes(m_dimSizes);
+                view2.setDimSizes(m_dimSizes);
+                view3.setDimSizes(m_dimSizes);
+                view4.setDimSizes(m_dimSizes);
+
+                Array ret;
+                ret.setDimSizes(m_dimSizes);
+                return ret;
             }
 
             size_t size() const
@@ -1470,7 +1531,8 @@ namespace mu
                     }
                 }
 
-                idx.front() = i;
+                if (!m_array.isScalarDim(0))
+                    idx.front() = i;
 
                 return m_array.get(idx);
             }
@@ -1486,6 +1548,17 @@ namespace mu
                 for (size_t n = 1; n < m_dimFacts.size(); n++)
                 {
                     m_dimFacts[n] = std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
+                }
+            }
+
+            void merge(const std::vector<size_t>& dims)
+            {
+                if (dims.size() > m_dimSizes.size())
+                    m_dimSizes.resize(dims.size());
+
+                for (size_t i = 0; i < dims.size(); i++)
+                {
+                    m_dimSizes[i] = std::max(m_dimSizes[i], dims[i]);
                 }
             }
     };

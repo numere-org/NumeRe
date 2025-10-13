@@ -326,6 +326,8 @@ int main()
     std::vector<mu::Numerical> logicals({false,true,true,false,true,true,false});
     std::vector<std::string> strings({"Hello", "World", "More", "Strings", "in", "Here"});
     mu::Variable vectorVar(vals);
+    mu::Variable matVar(vals);
+    matVar.setDimSizes({3,3});
     mu::Variable logicalVar(logicals);
     mu::Variable stringVect(strings);
     mu::Variable var(std::complex<double>(4,8));
@@ -348,6 +350,7 @@ int main()
     cat.push_back(mu::Value(mu::Category(2, "World")));
     mu::Variable t(mu::Numerical(-1.26e31f));
     _parser.DefineVar("vect", &vectorVar);
+    _parser.DefineVar("mat", &matVar);
     _parser.DefineVar("logicals", &logicalVar);
     _parser.DefineVar("var", &var);
     _parser.DefineVar("str", &strvar);

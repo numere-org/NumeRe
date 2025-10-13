@@ -34,7 +34,7 @@ namespace mu
     {
         Array ret;
         size_t elements = a.size();
-        ret.reserve(elements);
+        ret.copyDims(a);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -58,7 +58,7 @@ namespace mu
     {
         Array ret;
         size_t elements = a.size();
-        ret.reserve(elements);
+        ret.copyDims(a);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -82,7 +82,7 @@ namespace mu
     {
         Array ret;
         size_t elements = a.size();
-        ret.reserve(elements);
+        ret.copyDims(a);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -106,13 +106,15 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&),
                 const Array& a1, const Array& a2)
     {
-        Array ret;
-        size_t elements = std::max(a1.size(), a2.size());
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        Array ret = a1View.prepare(a2View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i), a2.get(i)));
+            ret.emplace_back(func(a1View.get(i), a2View.get(i)));
         }
 
         return ret;
@@ -131,14 +133,16 @@ namespace mu
     Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2)
     {
-        Array ret;
-        size_t elements = std::max(a1.size(), a2.size());
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        Array ret = a1View.prepare(a2View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
-                                  a2.get(i).getNum().asCF64()));
+            ret.emplace_back(func(a1View.get(i).getNum().asCF64(),
+                                  a2View.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -159,17 +163,21 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&),
                 const Array& a1, const Array& a2, const Array& a3)
     {
-        Array ret;
-        size_t elements = std::max({a1.size(), a2.size(), a3.size()});
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        MatrixView a3View(a3);
+        Array ret = a1View.prepare(a2View, a3View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i), a2.get(i), a3.get(i)));
+            ret.emplace_back(func(a1View.get(i), a2View.get(i), a3View.get(i)));
         }
 
         return ret;
     }
+
 
     /////////////////////////////////////////////////
     /// \brief Apply a function to three Arrays.
@@ -184,15 +192,18 @@ namespace mu
     Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2, const Array& a3)
     {
-        Array ret;
-        size_t elements = std::max({a1.size(), a2.size(), a3.size()});
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        MatrixView a3View(a3);
+        Array ret = a1View.prepare(a2View, a3View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
-                                  a2.get(i).getNum().asCF64(),
-                                  a3.get(i).getNum().asCF64()));
+            ret.emplace_back(func(a1View.get(i).getNum().asCF64(),
+                                  a2View.get(i).getNum().asCF64(),
+                                  a3View.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -214,16 +225,20 @@ namespace mu
     Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
-        Array ret;
-        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size()});
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        MatrixView a3View(a3);
+        MatrixView a4View(a4);
+        Array ret = a1View.prepare(a2View, a3View, a4View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
-                                  a2.get(i).getNum().asCF64(),
-                                  a3.get(i).getNum().asCF64(),
-                                  a4.get(i).getNum().asCF64()));
+            ret.emplace_back(func(a1View.get(i).getNum().asCF64(),
+                                  a2View.get(i).getNum().asCF64(),
+                                  a3View.get(i).getNum().asCF64(),
+                                  a4View.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -244,13 +259,17 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4)
     {
-        Array ret;
-        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size()});
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        MatrixView a3View(a3);
+        MatrixView a4View(a4);
+        Array ret = a1View.prepare(a2View, a3View, a4View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i)));
+            ret.emplace_back(func(a1View.get(i), a2View.get(i), a3View.get(i), a4View.get(i)));
         }
 
         return ret;
@@ -273,17 +292,22 @@ namespace mu
     Array apply(cmplx64(*func)(const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&, const cmplx64&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
-        Array ret;
-        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()});
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        MatrixView a3View(a3);
+        MatrixView a4View(a4);
+        MatrixView a5View(a5);
+        Array ret = a1View.prepare(a2View, a3View, a4View, a5View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i).getNum().asCF64(),
-                                  a2.get(i).getNum().asCF64(),
-                                  a3.get(i).getNum().asCF64(),
-                                  a4.get(i).getNum().asCF64(),
-                                  a5.get(i).getNum().asCF64()));
+            ret.emplace_back(func(a1View.get(i).getNum().asCF64(),
+                                  a2View.get(i).getNum().asCF64(),
+                                  a3View.get(i).getNum().asCF64(),
+                                  a4View.get(i).getNum().asCF64(),
+                                  a5View.get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -305,13 +329,18 @@ namespace mu
     Array apply(Value(*func)(const Value&, const Value&, const Value&, const Value&, const Value&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
     {
-        Array ret;
-        size_t elements = std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()});
-        ret.reserve(elements);
+        MatrixView a1View(a1);
+        MatrixView a2View(a2);
+        MatrixView a3View(a3);
+        MatrixView a4View(a4);
+        MatrixView a5View(a5);
+        Array ret = a1View.prepare(a2View, a3View, a4View, a5View);
+
+        size_t elements = a1View.size();
 
         for (size_t i = 0; i < elements; i++)
         {
-            ret.emplace_back(func(a1.get(i), a2.get(i), a3.get(i), a4.get(i), a5.get(i)));
+            ret.emplace_back(func(a1View.get(i), a2View.get(i), a3View.get(i), a4View.get(i), a5View.get(i)));
         }
 
         return ret;

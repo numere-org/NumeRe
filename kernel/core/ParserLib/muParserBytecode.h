@@ -169,7 +169,7 @@ namespace mu
 			void Assign(const ParserByteCode& a_ByteCode);
 
 			void AddVar(Variable* a_pVar);
-			void AddDimVar(Variable* a_pVar);
+			void AddDimVar(Variable* a_pVar, int dim = -1);
 			void AddVarArray(const VarArray& a_varArray);
 			void AddVal(Array&& a_fVal);
 			void AddOp(ECmdCode a_Oprt);

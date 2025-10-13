@@ -51,6 +51,13 @@ namespace mu
     // Forward declaration
     class ParserBase;
 
+    struct IndexedVar
+    {
+        Variable* var;
+        size_t indexStart;
+        int parensState[3];
+    };
+
     /** \brief Token reader for the ParserBase class.
 
     */
@@ -59,7 +66,7 @@ namespace mu
         private:
 
             typedef ParserToken token_type;
-            std::stack<Variable*> m_indexedVars;
+            std::stack<IndexedVar> m_indexedVars;
 
         public:
 
@@ -159,6 +166,7 @@ namespace mu
             int m_iBrackets;
             int m_iVBrackets;
             int m_iSqBrackets;
+            int m_argC;
             token_type m_lastTok;
             char_type m_cArgSep;     ///< The character used for separating function arguments
     };
