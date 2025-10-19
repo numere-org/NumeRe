@@ -3607,6 +3607,8 @@
 			<Option target="Debug_x64" />
 			<Option target="Nightly_x64" />
 		</Unit>
+		<Unit filename="kernel/core/maths/matfuncimplementation.cpp" />
+		<Unit filename="kernel/core/maths/matfuncimplementation.hpp" />
 		<Unit filename="kernel/core/maths/matfuncs.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />

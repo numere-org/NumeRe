@@ -21,6 +21,12 @@
 
 #include "../ParserLib/muParserDef.h"
 
+inline mu::Value conj(const mu::Value& val)
+{
+    return mu::Numerical(std::conj(val.getNum().asCF64()));
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Simplify the creation of some
 /// statistics by externalizing the operation
@@ -41,21 +47,21 @@ struct StatsLogic
         OPERATION_NUM
     };
 
-    std::complex<double> m_val;
-    std::complex<double> m_compval;
+    mu::Value m_val;
+    mu::Value m_compval;
     OperationType m_type;
 
-    StatsLogic(OperationType type, double baseVal = 0.0, std::complex<double> compVal = 0.0)
+    StatsLogic(OperationType type, mu::Value baseVal = 0.0, mu::Value compVal = 0.0)
         : m_val(baseVal), m_compval(compVal), m_type(type) {}
 
     /////////////////////////////////////////////////
     /// \brief Implements the statistics logic.
     ///
-    /// \param newVal const std::complex<double>&
+    /// \param newVal const mu::Value&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void operator()(const std::complex<double>& newVal)
+    void operator()(const mu::Value& newVal)
     {
         if (mu::isnan(newVal))
             return;
@@ -72,19 +78,19 @@ struct StatsLogic
                 m_val += newVal * conj(newVal);
                 return;
             case OPERATION_ADDSQSUB:
-                m_val += (newVal - m_compval)*std::conj(newVal - m_compval);
+                m_val += (newVal - m_compval)*conj(newVal - m_compval);
                 return;
             case OPERATION_ADDCBSUB:
-                m_val += (newVal - m_compval)*std::conj(newVal - m_compval)*(newVal - m_compval);
+                m_val += (newVal - m_compval)*conj(newVal - m_compval)*(newVal - m_compval);
                 return;
             case OPERATION_ADDSQSQSUB:
-                m_val += (newVal - m_compval)*std::conj(newVal - m_compval)*(newVal - m_compval)*std::conj(newVal - m_compval);
+                m_val += (newVal - m_compval)*conj(newVal - m_compval)*(newVal - m_compval)*conj(newVal - m_compval);
                 return;
             case OPERATION_MAX:
-                m_val = newVal.real() > m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
+                m_val = bool(newVal > m_val) || mu::isnan(m_val) ? newVal : m_val;
                 return;
             case OPERATION_MIN:
-                m_val = newVal.real() < m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
+                m_val = bool(newVal < m_val) || mu::isnan(m_val) ? newVal : m_val;
                 return;
             case OPERATION_NUM:
                 m_val += 1.0;
@@ -119,10 +125,10 @@ struct StatsLogic
                 m_val *= other.m_val;
                 return;
             case OPERATION_MAX:
-                m_val = other.m_val.real() > m_val.real() || isnan(m_val.real()) ? other.m_val.real() : m_val.real();
+                m_val = bool(other.m_val > m_val) || mu::isnan(m_val) ? other.m_val : m_val;
                 return;
             case OPERATION_MIN:
-                m_val = other.m_val.real() < m_val.real() || isnan(m_val.real()) ? other.m_val.real() : m_val.real();
+                m_val = bool(other.m_val < m_val) || mu::isnan(m_val) ? other.m_val : m_val;
                 return;
         }
     }

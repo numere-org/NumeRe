@@ -21,6 +21,7 @@
 #include "muParser.h"
 #include "../ui/language.hpp"
 #include "../maths/functionimplementation.hpp"
+#include "../maths/matfuncimplementation.hpp"
 #include "../strings/functionimplementation.hpp"
 
 #include "../utils/timer.hpp"
@@ -319,6 +320,8 @@ int main()
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
     _parser.DefineConst("nan", mu::Value(NAN));
     _parser.DefineConst("inf", mu::Value(INFINITY));
+
+    _parser.DefineOprt("**", oprt_MatMul, mu::prMUL_DIV, mu::oaRIGHT, true);
 
     std::string sInput;
     int nResults;

@@ -107,7 +107,7 @@ namespace mu
     {
         Array res;
         size_t elems = arr.size();
-        res.reserve(elems);
+        res.copyDims(arr);
 
         for (size_t i = 0; i < elems; i++)
         {

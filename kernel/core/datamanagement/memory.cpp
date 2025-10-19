@@ -2547,7 +2547,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]).as_cmplx());
+                operation[j](readMem(_vLine[i], _vCol[j]));
             }
         }
     }
@@ -2576,7 +2576,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]).as_cmplx());
+                operation[j](readMem(_vLine[i], _vCol[j]));
             }
         }
     }

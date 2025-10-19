@@ -763,7 +763,54 @@ namespace mu
             void setDimSizes(const std::vector<size_t>& dimSizes)
             {
                 m_dimSizes = dimSizes;
-                reserve(std::accumulate(m_dimSizes.begin(), m_dimSizes.end(), 1ull, std::multiplies<size_t>()));
+
+                if (m_dimSizes.size())
+                    reserve(std::accumulate(m_dimSizes.begin(), m_dimSizes.end(), 1ull, std::multiplies<size_t>()));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the number of rows in this
+            /// instance.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t rows() const
+            {
+                if (!m_dimSizes.size())
+                    return size();
+
+                return m_dimSizes[0];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the number of columns in this
+            /// instance
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t cols() const
+            {
+                if (m_dimSizes.size() < 2ull)
+                    return 1ull;
+
+                return m_dimSizes[1];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the number of layers in this
+            /// instance.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t layers() const
+            {
+                if (m_dimSizes.size() < 3ull)
+                    return 1ull;
+
+                return m_dimSizes[2];
             }
 
             /////////////////////////////////////////////////
@@ -1562,6 +1609,62 @@ namespace mu
                 }
             }
     };
+
+
+    class IndexIterator
+    {
+        private:
+            std::vector<size_t> m_dimSizes;
+            std::vector<size_t> m_current;
+
+        public:
+            IndexIterator(const std::vector<size_t>& dimSizes) : m_dimSizes(dimSizes)
+            {
+                m_current.resize(m_dimSizes.size(), 0ull);
+            }
+
+            const std::vector<size_t>& iter() const
+            {
+                return m_current;
+            }
+
+            bool next()
+            {
+                if (!more())
+                    return false;
+
+                m_current.back()++;
+
+                if (m_current.back() == m_dimSizes.back())
+                {
+                    m_current.back() = 0;
+
+                    for (int i = m_current.size()-2; i >= 0; i--)
+                    {
+                        m_current[i]++;
+
+                        if (m_current[i] == m_dimSizes[i])
+                            m_current[i] = 0;
+                        else
+                            break;
+                    }
+                }
+
+                return true;
+            }
+
+            bool more() const
+            {
+                for (size_t i = 0; i < m_current.size(); i++)
+                {
+                    if (m_current[i]+1 < m_dimSizes[i])
+                        return true;
+                }
+
+                return false;
+            }
+    };
+
 
 
     /////////////////////////////////////////////////
