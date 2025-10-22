@@ -31,6 +31,7 @@
 #include <numeric>
 #include <random>
 #include <mgl2/mgl.h>
+#include <queue>
 
 // Forward declaration from tools.hpp
 std::mt19937& getRandGenInstance();
@@ -75,7 +76,7 @@ static void checkInputMatrix(const mu::Array& mat, int conditionList)
 
     if (conditionList & MATRIX_MUST_NOT_CONTAIN_INVALID_VALUES)
     {
-        if (mat.call("num").getAsScalarInt() != mat.size())
+        if (mat.call("num").getAsScalarInt() != (int64_t)mat.size())
             throw mu::ParserError(mu::ecMATRIX_INVALID_VALS);
     }
 }
@@ -2142,7 +2143,7 @@ mu::Array matfnc_cumprd(const mu::Array& A, const mu::Array& dim)
 __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array& A, const mu::Array& B)
 {
     checkInputMatrix(A, MATRIX_MUST_BE_2D);
-    checkInputMatrix(B);
+    checkInputMatrix(B, 0);
 
     Eigen::MatrixXcd mA(A.rows(), A.cols());
     Eigen::MatrixXcd mB(B.rows(), B.cols());
@@ -3151,9 +3152,136 @@ mu::Array matfnc_filter(const mu::Array& data, const mu::Array& kernel, const mu
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implementation of the circshift()
+/// function.
+///
+/// \param A const mu::Array&
+/// \param steps const mu::Array&
+/// \param dim const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu::Array& dim)
 {
-    //
+    // Design decision: due to exponential higher degrees of freedom in higher order tensor on
+    // how to enumerate things after a shift dimension was chosen, we decided to keep all other
+    // dimensions in the same order. This means that the shift dimension is just moved in front
+    // of the major dimension (rows), i.e., the index tuple ijk will always be kij, if k is the
+    // shift dimension, and never kji.
+    int shiftDim = 0;
+    int shiftSteps = steps.getAsScalarInt();
+
+    if (!dim.isDefault())
+        shiftDim = dim.getAsScalarInt();
+
+    // Check that matrix and the filter are not empty
+    if (!A.size())
+        throw mu::ParserError(mu::ecMATRIX_EMPTY);
+
+    mu::DimSizes dimSizes = A.getDimSizes();
+
+    if (dimSizes.size() <= (size_t)shiftDim || !shiftSteps || !(A.size() % shiftSteps))
+        return A;
+
+    mu::Array shifted(A.size());
+    shifted.setDimSizes(dimSizes);
+
+    shiftSteps = (shiftSteps < 0 ? -1 : 1) * (A.size() % std::abs(shiftSteps));
+    std::vector<size_t> indexMap(dimSizes.size());
+
+    for (size_t i = 0; i < indexMap.size(); i++)
+    {
+        indexMap[i] = i;
+    }
+
+    if (shiftDim)
+    {
+        indexMap.insert(indexMap.begin(), indexMap[shiftDim]);
+        indexMap.erase(indexMap.begin()+shiftDim+1);
+        dimSizes.insert(dimSizes.begin(), dimSizes[shiftDim]);
+        dimSizes.erase(dimSizes.begin()+shiftDim+1);
+    }
+
+    mu::IndexIterator sourceIter(dimSizes);
+    mu::IndexIterator targetIter(dimSizes);
+
+    const mu::IndexTuple& virtualSourceIndex = sourceIter.index();
+    const mu::IndexTuple& virtualTargetIndex = targetIter.index();
+
+    mu::IndexTuple sourceIndex(virtualSourceIndex.size());
+    mu::IndexTuple targetIndex(virtualTargetIndex.size());
+
+    std::queue<mu::IndexTuple> indexBuffer;
+
+    // Buffer the elements shifted from or to the end
+    while (indexBuffer.size() < std::abs(shiftSteps))
+    {
+        if (shiftSteps > 0)
+        {
+            for (size_t i = 0; i < indexMap.size(); i++)
+            {
+                targetIndex[indexMap[i]] = virtualTargetIndex[i];
+            }
+
+            indexBuffer.push(targetIndex);
+            targetIter.next();
+        }
+        else
+        {
+            for (size_t i = 0; i < indexMap.size(); i++)
+            {
+                sourceIndex[indexMap[i]] = virtualSourceIndex[i];
+            }
+
+            indexBuffer.push(sourceIndex);
+            sourceIter.next();
+        }
+    }
+
+    // Copy the intermediate elements
+    while (sourceIter.more() && targetIter.more())
+    {
+        for (size_t i = 0; i < indexMap.size(); i++)
+        {
+            targetIndex[indexMap[i]] = virtualTargetIndex[i];
+            sourceIndex[indexMap[i]] = virtualSourceIndex[i];
+        }
+
+        shifted.get(targetIndex) = A.get(sourceIndex);
+
+        sourceIter.next();
+        targetIter.next();
+    }
+
+    // Copy the elements shifted from or to the end
+    while (indexBuffer.size())
+    {
+        if (shiftSteps > 0)
+        {
+            for (size_t i = 0; i < indexMap.size(); i++)
+            {
+                sourceIndex[indexMap[i]] = virtualSourceIndex[i];
+            }
+
+            shifted.get(indexBuffer.front()) = A.get(sourceIndex);
+            sourceIter.next();
+        }
+        else
+        {
+            for (size_t i = 0; i < indexMap.size(); i++)
+            {
+                targetIndex[indexMap[i]] = virtualTargetIndex[i];
+            }
+
+            shifted.get(targetIndex) = A.get(indexBuffer.front());
+            targetIter.next();
+        }
+
+        indexBuffer.pop();
+    }
+
+    return shifted;
 }
 
 
