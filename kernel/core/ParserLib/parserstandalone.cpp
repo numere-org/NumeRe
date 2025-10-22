@@ -317,6 +317,11 @@ int main()
     _parser.DefineFun("bswap", bswap);
     _parser.DefineFun("dict", create_dictstruct, true, 2);
 
+    _parser.DefineFun("matfc", matfnc_matfc);
+    _parser.DefineFun("reshape", matfnc_reshape, true, 1);
+    _parser.DefineFun("resize", matfnc_resize, true, 1);
+    _parser.DefineFun("repmat", matfnc_repmat, true, 1);
+
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
     _parser.DefineConst("nan", mu::Value(NAN));
     _parser.DefineConst("inf", mu::Value(INFINITY));

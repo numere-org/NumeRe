@@ -2080,7 +2080,7 @@ namespace mu
         else if (sMethod == "xor")
             return numfnc_xor(this);
         else if (sMethod == "size")
-            return numfnc_Cnt(this);
+            return getDimSizes();
         else if (sMethod == "maxpos")
             return numfnc_MaxPos(*this);
         else if (sMethod == "minpos")
@@ -2565,13 +2565,13 @@ namespace mu
     ///
     /// \param ret Array&
     /// \param idx const Array&
-    /// \param source std::vector<size_t>&
-    /// \param target std::vector<size_t>&
+    /// \param source IndexTuple&
+    /// \param target IndexTuple&
     /// \param currentDim size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Array::nthIndex(Array& ret, const Array& idx, std::vector<size_t>& source, std::vector<size_t>& target, size_t currentDim)
+    void Array::nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim)
     {
         DataType common = getCommonType();
 
@@ -2609,7 +2609,7 @@ namespace mu
     {
         Array ret;
         size_t dims = idx.size();
-        ret.m_dimSizes = std::vector<size_t>(dims, 1ull);
+        ret.m_dimSizes = DimSizes(dims, 1ull);
         size_t elems = 1ull;
 
         for (size_t i = 0; i < dims; i++)
@@ -2628,8 +2628,8 @@ namespace mu
         ret.resize(elems);
         ret.makeMutable();
         DataType common = getCommonType();
-        std::vector<size_t> source(dims);
-        std::vector<size_t> target(dims);
+        IndexTuple source(dims);
+        IndexTuple target(dims);
 
         if (!m_dimSizes.size())
             m_dimSizes.push_back(size());
@@ -3496,6 +3496,16 @@ namespace mu
 
 
 
+
+
+    /////////////////////////////////////////////////
+    /// \brief Addition function for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixAdd(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3513,6 +3523,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Subtraction function for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixSub(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3530,6 +3548,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) multiplication function
+    /// for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixMul(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3547,6 +3574,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) division function for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixDiv(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3564,6 +3600,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) power function for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixPow(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3581,7 +3626,18 @@ namespace mu
     }
 
 
-    static bool needsResize(const std::vector<size_t>& currDims, const std::vector<size_t>& otherDims)
+
+    /////////////////////////////////////////////////
+    /// \brief Static helper function for determining
+    /// whether the first dimension sizes can fit the
+    /// second or if they need to be resized.
+    ///
+    /// \param currDims const DimSizes&
+    /// \param otherDims const DimSizes&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    static bool needsResize(const DimSizes& currDims, const DimSizes& otherDims)
     {
         if (currDims.size() < otherDims.size())
             return true;
@@ -3596,6 +3652,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Self-addition function for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void matrixSelfAdd(Array& curr, const Array& other)
     {
         if (needsResize(curr.getDimSizes(), other.getDimSizes()))
@@ -3616,6 +3680,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Self-subtraction function for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void matrixSelfSub(Array& curr, const Array& other)
     {
         if (needsResize(curr.getDimSizes(), other.getDimSizes()))
@@ -3636,6 +3708,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) self-multiplication
+    /// function for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void matrixSelfMul(Array& curr, const Array& other)
     {
         if (needsResize(curr.getDimSizes(), other.getDimSizes()))
@@ -3656,6 +3737,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) self-division function
+    /// for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void matrixSelfDiv(Array& curr, const Array& other)
     {
         if (needsResize(curr.getDimSizes(), other.getDimSizes()))
@@ -3676,6 +3766,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) self-power function for
+    /// matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void matrixSelfPow(Array& curr, const Array& other)
     {
         if (needsResize(curr.getDimSizes(), other.getDimSizes()))
@@ -3697,6 +3796,14 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical equal for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixEq(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3714,6 +3821,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical not-equal for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixNeq(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3731,6 +3847,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical less-than for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixLess(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3748,6 +3873,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical less-or-equal for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixLessEq(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3765,6 +3899,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical greater-than for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixGreater(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3782,6 +3925,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical greator-or-equal
+    /// for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixGreaterEq(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3799,6 +3951,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical and for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixAnd(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3816,6 +3976,14 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical or for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
     Array matrixOr(const Array& curr, const Array& other)
     {
         MatrixView currView(curr);
@@ -3831,6 +3999,8 @@ namespace mu
 
         return ret;
     }
+
+
 
 
 
@@ -4107,8 +4277,8 @@ namespace mu
         if (!m_dimSizes.size())
             m_dimSizes.push_back(size());
 
-        std::vector<size_t> elemCount(idx.size(), 1ull);
-        std::vector<size_t> sourceDims = vals.getDimSizes();
+        DimSizes elemCount(idx.size(), 1ull);
+        DimSizes sourceDims = vals.getDimSizes();
         size_t extractionDim = 0;
 
         // Get the number of assignable elements per dimension
@@ -4132,7 +4302,7 @@ namespace mu
         }
 
         // Resize, if necessary
-        std::vector<size_t> targetMinDims(idx.size(), 1ull);
+        DimSizes targetMinDims(idx.size(), 1ull);
         bool needsResize = false;
 
         for (size_t i = 0; i < elemCount.size(); i++)
@@ -4169,7 +4339,7 @@ namespace mu
         MatrixView valView(const_cast<Array&>(vals));
         valView.setDimSizes(sourceDims);
 
-        std::vector<size_t> target(elemCount.size());
+        IndexTuple target(elemCount.size());
         size_t n = 0;
         int currentDim = elemCount.size()-1;
 
@@ -4205,15 +4375,15 @@ namespace mu
     /// \brief Recursive n-D assign function.
     ///
     /// \param idx const Array&
-    /// \param target std::vector<size_t>&
-    /// \param elemCount const std::vector<size_t>&
+    /// \param target IndexTuple&
+    /// \param elemCount const DimSizes&
     /// \param currentDim int
     /// \param vals const MatrixView&
     /// \param currentElem size_t&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Variable::nthIndexAssign(const Array& idx, std::vector<size_t>& target, const std::vector<size_t>& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem)
+    void Variable::nthIndexAssign(const Array& idx, IndexTuple& target, const DimSizes& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem)
     {
         for (size_t n = 0; n < elemCount[currentDim]; n++)
         {

@@ -39,7 +39,9 @@ namespace mu
     // Forward declaration of the Variable class
     class Variable;
     class Array;
-    class RefArray;
+
+    using DimSizes = std::vector<size_t>; ///< An alias for the dimension sizes within an Array
+    using IndexTuple = std::vector<size_t>; ///< An alias for a multidimensional index
 
 
     /////////////////////////////////////////////////
@@ -464,6 +466,9 @@ namespace mu
     Array matrixAnd(const Array& curr, const Array& other);
     Array matrixOr(const Array& curr, const Array& other);
 
+
+
+
     /////////////////////////////////////////////////
     /// \brief This class handles the scalar-vector
     /// interactions and is the general datatype
@@ -743,13 +748,13 @@ namespace mu
             /////////////////////////////////////////////////
             /// \brief Get the dimension sizes of this array.
             ///
-            /// \return std::vector<size_t>
+            /// \return DimSizes
             ///
             /////////////////////////////////////////////////
-            std::vector<size_t> getDimSizes() const
+            DimSizes getDimSizes() const
             {
                 if (!m_dimSizes.size())
-                    return std::vector<size_t>({size()});
+                    return DimSizes({size()});
 
                 return m_dimSizes;
             }
@@ -757,10 +762,10 @@ namespace mu
             /////////////////////////////////////////////////
             /// \brief Set the dimension sizes of this array.
             ///
-            /// \param dimSizes const std::vector<size_t>&
+            /// \param dimSizes const DimSizes&
             ///
             /////////////////////////////////////////////////
-            void setDimSizes(const std::vector<size_t>& dimSizes)
+            void setDimSizes(const DimSizes& dimSizes)
             {
                 m_dimSizes = dimSizes;
 
@@ -1246,11 +1251,11 @@ namespace mu
             /// \brief Access the element
             /// (idx[0], ..., idx[n-1])
             ///
-            /// \param idx const std::vector<size_t>&
+            /// \param idx const IndexTuple&
             /// \return Value&
             ///
             /////////////////////////////////////////////////
-            Value& get(const std::vector<size_t>& idx)
+            Value& get(const IndexTuple& idx)
             {
                 if (m_dimSizes.size() != idx.size())
                     throw std::length_error("Dimension mismatch.");
@@ -1332,11 +1337,11 @@ namespace mu
             /// \brief Get the element
             /// (idx[0], ..., idx[n-1])
             ///
-            /// \param idx const std::vector<size_t>&
+            /// \param idx const IndexTuple&
             /// \return Value&
             ///
             /////////////////////////////////////////////////
-            const Value& get(const std::vector<size_t>& idx) const
+            const Value& get(const IndexTuple& idx) const
             {
                 size_t minDim = std::min(m_dimSizes.size(), idx.size());
 
@@ -1431,17 +1436,17 @@ namespace mu
             static const Value m_default;
             bool m_isConst;
             mutable std::list<Value> m_buffer;
-            std::vector<size_t> m_dimSizes;
+            DimSizes m_dimSizes;
 
             /////////////////////////////////////////////////
             /// \brief Check, whether the index is inside of
             /// the dimension sizes.
             ///
-            /// \param idx const std::vector<size_t>&
+            /// \param idx const IndexTuple&
             /// \return bool
             ///
             /////////////////////////////////////////////////
-            bool isInside(const std::vector<size_t>& idx) const
+            bool isInside(const IndexTuple& idx) const
             {
                 for (size_t i = 0; i < idx.size(); i++)
                 {
@@ -1452,51 +1457,112 @@ namespace mu
                 return true;
             }
 
-            void nthIndex(Array& ret, const Array& idx, std::vector<size_t>& source, std::vector<size_t>& target, size_t currentDim);
+            void nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim);
             Array ndIndex(const Array& idx);
     };
 
 
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class creates a facet on top of
+    /// an existing Array to provide multidimensional
+    /// access to this element supporting the actual
+    /// dimensions and also different dimension sizes.
+    /////////////////////////////////////////////////
     class MatrixView
     {
         public:
-            std::vector<size_t> m_dimSizes;
+            DimSizes m_dimSizes;
 
+            /////////////////////////////////////////////////
+            /// \brief Create a MatrixView instance.
+            ///
+            /// \param arr const Array&
+            ///
+            /////////////////////////////////////////////////
             MatrixView(const Array& arr) : m_array(arr)
             {
                 setDimSizes(m_array.getDimSizes());
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Set new DimSizes from another
+            /// MatrixView instance.
+            ///
+            /// \param view const MatrixView&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setDimSizes(const MatrixView& view)
             {
                 m_dimSizes = view.m_dimSizes;
                 prepareDimFacts();
             }
 
-            void setDimSizes(const std::vector<size_t>& dims)
+            /////////////////////////////////////////////////
+            /// \brief Set new DimSizes.
+            ///
+            /// \param dims const DimSizes&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void setDimSizes(const DimSizes& dims)
             {
                 m_dimSizes = dims;
                 prepareDimFacts();
             }
 
-            void mergeDimSizes(const std::vector<size_t>& dims)
+            /////////////////////////////////////////////////
+            /// \brief Merge the passed DimSizes with the
+            /// current ones.
+            ///
+            /// \param dims const DimSizes&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void mergeDimSizes(const DimSizes& dims)
             {
                 merge(dims);
                 prepareDimFacts();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Merge the DimSizes from the passed
+            /// Array with the current ones.
+            ///
+            /// \param arr const Array&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void mergeDimSizes(const Array& arr)
             {
                 merge(arr.getDimSizes());
                 prepareDimFacts();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Merge the DimSizes from the passed
+            /// MatrixView instance with the current ones.
+            ///
+            /// \param view const MatrixView&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void mergeDimSizes(const MatrixView& view)
             {
                 merge(view.m_dimSizes);
                 prepareDimFacts();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// another MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
             Array prepare(MatrixView& view1)
             {
                 mergeDimSizes(view1);
@@ -1507,6 +1573,15 @@ namespace mu
                 return ret;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// other MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \param view2 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
             Array prepare(MatrixView& view1, MatrixView& view2)
             {
                 merge(view1.m_dimSizes);
@@ -1520,6 +1595,16 @@ namespace mu
                 return ret;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// other MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \param view2 MatrixView&
+            /// \param view3 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
             Array prepare(MatrixView& view1, MatrixView& view2, MatrixView& view3)
             {
                 merge(view1.m_dimSizes);
@@ -1535,6 +1620,17 @@ namespace mu
                 return ret;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// other MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \param view2 MatrixView&
+            /// \param view3 MatrixView&
+            /// \param view4 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
             Array prepare(MatrixView& view1, MatrixView& view2, MatrixView& view3, MatrixView& view4)
             {
                 merge(view1.m_dimSizes);
@@ -1552,11 +1648,26 @@ namespace mu
                 return ret;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Determine the virtual size of the
+            /// contained Array.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             size_t size() const
             {
                 return std::accumulate(m_dimSizes.begin(), m_dimSizes.end(), 1ull, std::multiplies<size_t>());
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Get the i-th element in a linear
+            /// indexing fashion.
+            ///
+            /// \param i size_t
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
             const Value& get(size_t i) const
             {
                 if (m_dimFacts.size() != m_dimSizes.size())
@@ -1565,7 +1676,7 @@ namespace mu
                 if (m_array.isScalar())
                     return m_array.front();
 
-                std::vector<size_t> idx(m_dimSizes.size(), 0u);
+                IndexTuple idx(m_dimSizes.size(), 0u);
 
                 for (int n = idx.size()-1; n > 0; n--)
                 {
@@ -1588,6 +1699,13 @@ namespace mu
             mutable std::vector<size_t> m_dimFacts;
             const Array& m_array;
 
+            /////////////////////////////////////////////////
+            /// \brief Prepare the dimension factors for fast
+            /// indexing access.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void prepareDimFacts() const
             {
                 m_dimFacts.resize(m_dimSizes.size(), 1ull);
@@ -1598,7 +1716,15 @@ namespace mu
                 }
             }
 
-            void merge(const std::vector<size_t>& dims)
+            /////////////////////////////////////////////////
+            /// \brief Merge other DimSizes with the internal
+            /// ones creating a max of all dimensions.
+            ///
+            /// \param dims const DimSizes&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void merge(const DimSizes& dims)
             {
                 if (dims.size() > m_dimSizes.size())
                     m_dimSizes.resize(dims.size());
@@ -1611,23 +1737,50 @@ namespace mu
     };
 
 
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class is an iterator for
+    /// multidimensional structures. It provides each
+    /// new index tuple as an IndexTuple.
+    /////////////////////////////////////////////////
     class IndexIterator
     {
         private:
-            std::vector<size_t> m_dimSizes;
-            std::vector<size_t> m_current;
+            DimSizes m_dimSizes;
+            IndexTuple m_current;
 
         public:
-            IndexIterator(const std::vector<size_t>& dimSizes) : m_dimSizes(dimSizes)
+            /////////////////////////////////////////////////
+            /// \brief Construct an IndexIterator object.
+            ///
+            /// \param dimSizes const DimSizes&
+            ///
+            /////////////////////////////////////////////////
+            IndexIterator(const DimSizes& dimSizes) : m_dimSizes(dimSizes)
             {
                 m_current.resize(m_dimSizes.size(), 0ull);
             }
 
-            const std::vector<size_t>& iter() const
+            /////////////////////////////////////////////////
+            /// \brief Get const access to the internal
+            /// IndexTuple instance.
+            ///
+            /// \return const IndexTuple&
+            ///
+            /////////////////////////////////////////////////
+            const IndexTuple& index() const
             {
                 return m_current;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Calculate the next IndexTuple. Returns
+            /// true, it this was possible, false otherwise.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool next()
             {
                 if (!more())
@@ -1653,6 +1806,14 @@ namespace mu
                 return true;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Determine, whether further IndexTuples
+            /// can be calculated. IndexIterator::next()
+            /// calls this automatically.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool more() const
             {
                 for (size_t i = 0; i < m_current.size(); i++)
@@ -1728,8 +1889,9 @@ namespace mu
 
         protected:
             void ndAssign(const Array& idx, const Array& vals);
-            void nthIndexAssign(const Array& idx, std::vector<size_t>& target, const std::vector<size_t>& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem);
+            void nthIndexAssign(const Array& idx, IndexTuple& target, const DimSizes& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem);
     };
+
 
 
     /////////////////////////////////////////////////
@@ -1803,6 +1965,8 @@ namespace mu
             std::string print() const;
             Array asArray() const;
     };
+
+
 
 
     bool all(const Array& arr);

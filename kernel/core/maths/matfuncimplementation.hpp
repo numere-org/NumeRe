@@ -60,7 +60,7 @@ mu::Array matfnc_repmat(const mu::Array& A, const mu::Array& n, const mu::Array&
 mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim); // OPT=1
 mu::Array matfnc_cumsum(const mu::Array& A, const mu::Array& dim); // OPT=1
 mu::Array matfnc_cumprd(const mu::Array& A, const mu::Array& dim); // OPT=1
-mu::Array matfnc_solve(const mu::Array& A);
+mu::Array matfnc_solve(const mu::Array& A, const mu::Array& B);
 mu::Array matfnc_diag(const mu::MultiArgFuncParams& diagonal);
 mu::Array matfnc_carttocyl(const mu::Array& cartesian);
 mu::Array matfnc_carttopol(const mu::Array& cartesian);

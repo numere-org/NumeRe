@@ -42,12 +42,21 @@ enum
     MATRIX_MUST_NOT_CONTAIN_INVALID_VALUES = 0x4
 };
 
+/////////////////////////////////////////////////
+/// \brief Internal helper function for combined
+/// input checks.
+///
+/// \param mat const mu::Array&
+/// \param conditionList int
+/// \return void
+///
+/////////////////////////////////////////////////
 static void checkInputMatrix(const mu::Array& mat, int conditionList)
 {
     if (!mat.size())
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
 
-    std::vector<size_t> dimSizes = mat.getDimSizes();
+    mu::DimSizes dimSizes = mat.getDimSizes();
 
     if (conditionList & MATRIX_MUST_BE_SQUARE)
     {
@@ -83,8 +92,8 @@ static void checkInputMatrix(const mu::Array& mat, int conditionList)
 /////////////////////////////////////////////////
 mu::Array oprt_MatMul(const mu::Array& A, const mu::Array& B)
 {
-    std::vector<size_t> dimA = A.getDimSizes();
-    std::vector<size_t> dimB = B.getDimSizes();
+    mu::DimSizes dimA = A.getDimSizes();
+    mu::DimSizes dimB = B.getDimSizes();
 
     if (dimB.size() < 2)
         dimB.push_back(1ull);
@@ -1490,7 +1499,7 @@ mu::Array matfnc_zero(const mu::MultiArgFuncParams& n)
     if (n.count() == 1)
     {
         mu::Array ret(n[0].call("prd").getAsScalarInt(), mu::Value(0.0));
-        std::vector<size_t> dimSizes(n[0].size(), 1ull);
+        mu::DimSizes dimSizes(n[0].size(), 1ull);
 
         for (size_t i = 0; i < n[0].size(); i++)
         {
@@ -1501,7 +1510,7 @@ mu::Array matfnc_zero(const mu::MultiArgFuncParams& n)
         return ret;
     }
 
-    std::vector<size_t> dimSizes(n.count(), 1ull);
+    mu::DimSizes dimSizes(n.count(), 1ull);
     size_t numElements = 1ull;
 
     for (size_t i = 0; i < n.count(); i++)
@@ -1528,7 +1537,7 @@ mu::Array matfnc_one(const mu::MultiArgFuncParams& n)
     if (n.count() == 1)
     {
         mu::Array ret(n[0].call("prd").getAsScalarInt(), mu::Value(1.0));
-        std::vector<size_t> dimSizes(n[0].size(), 1ull);
+        mu::DimSizes dimSizes(n[0].size(), 1ull);
 
         for (size_t i = 0; i < n[0].size(); i++)
         {
@@ -1539,7 +1548,7 @@ mu::Array matfnc_one(const mu::MultiArgFuncParams& n)
         return ret;
     }
 
-    std::vector<size_t> dimSizes(n.count(), 1ull);
+    mu::DimSizes dimSizes(n.count(), 1ull);
     size_t numElements = 1ull;
 
     for (size_t i = 0; i < n.count(); i++)
@@ -1767,7 +1776,7 @@ mu::Array matfnc_normalize(const mu::Array& A)
 /////////////////////////////////////////////////
 mu::Array matfnc_reshape(const mu::Array& A, const mu::Array& n, const mu::Array& m)
 {
-    std::vector<size_t> dimSizes;
+    mu::DimSizes dimSizes;
 
     if (m.isDefault())
     {
@@ -1814,7 +1823,7 @@ mu::Array matfnc_reshape(const mu::Array& A, const mu::Array& n, const mu::Array
 /////////////////////////////////////////////////
 mu::Array matfnc_resize(const mu::Array& A, const mu::Array& n, const mu::Array& m)
 {
-    std::vector<size_t> dimSizes;
+    mu::DimSizes dimSizes;
 
     if (m.isDefault())
     {
@@ -1862,8 +1871,8 @@ mu::Array matfnc_resize(const mu::Array& A, const mu::Array& n, const mu::Array&
 /////////////////////////////////////////////////
 mu::Array matfnc_repmat(const mu::Array& A, const mu::Array& n, const mu::Array& m)
 {
-    std::vector<size_t> repetitions;
-    std::vector<size_t> dimSizes;
+    mu::DimSizes repetitions;
+    mu::DimSizes dimSizes;
 
     if (m.isDefault())
     {
@@ -1889,14 +1898,20 @@ mu::Array matfnc_repmat(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array ret(std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>()));
     ret.setDimSizes(dimSizes);
 
-    mu::IndexIterator matrixIter(A.getDimSizes());
-    const std::vector<size_t>& iter = matrixIter.iter();
-    std::vector<size_t> targetIndex(iter.size());
+    mu::DimSizes dimSizesA = A.getDimSizes();
+
+    // Extend the dimensions of the matrix A
+    if (dimSizesA.size() < dimSizes.size())
+        dimSizesA.resize(dimSizes.size(), 1ull);
+
+    mu::IndexIterator matrixIter(dimSizesA);
+    const mu::IndexTuple& iter = matrixIter.index();
+    mu::IndexTuple targetIndex(iter.size());
 
     do
     {
         mu::IndexIterator repIter(repetitions);
-        const std::vector<size_t>& reps = repIter.iter();
+        const mu::IndexTuple& reps = repIter.index();
 
         do
         {
@@ -1958,7 +1973,7 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
     if (uniqueDimSize == 1ull)
         return A;
 
-    std::vector<size_t> dimSizes = A.getDimSizes();
+    mu::DimSizes dimSizes = A.getDimSizes();
     dimSizes[uniqueDim] = 1ull;
 
     std::vector<size_t> uniqueCopies;
@@ -1976,8 +1991,8 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
 
             do
             {
-                std::vector<size_t> iter_i = iterator.iter();
-                std::vector<size_t> iter_j = iterator.iter();
+                mu::IndexTuple iter_i = iterator.index();
+                mu::IndexTuple iter_j = iterator.index();
 
                 iter_i[uniqueDim] = i;
                 iter_j[uniqueDim] = j;
@@ -2002,8 +2017,8 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
 
         do
         {
-            std::vector<size_t> source = iterator.iter();
-            std::vector<size_t> target = iterator.iter();
+            mu::IndexTuple source = iterator.index();
+            mu::IndexTuple target = iterator.index();
 
             source[uniqueDim] = uniqueCopies[i];
             target[uniqueDim] = i;
@@ -2050,15 +2065,15 @@ mu::Array matfnc_cumsum(const mu::Array& A, const mu::Array& dim)
     if (cumDimSize == 1ull)
         return ret;
 
-    std::vector<size_t> dimSizes = A.getDimSizes();
+    mu::DimSizes dimSizes = A.getDimSizes();
     dimSizes[cumdim] = 1ull;
 
     mu::IndexIterator iterator(dimSizes);
 
     do
     {
-        std::vector<size_t> iter_curr = iterator.iter();
-        std::vector<size_t> iter_prev = iterator.iter();
+        mu::IndexTuple iter_curr = iterator.index();
+        mu::IndexTuple iter_prev = iterator.index();
 
         for (size_t i = 1; i < cumDimSize; i++)
         {
@@ -2102,15 +2117,15 @@ mu::Array matfnc_cumprd(const mu::Array& A, const mu::Array& dim)
     if (cumDimSize == 1ull)
         return ret;
 
-    std::vector<size_t> dimSizes = A.getDimSizes();
+    mu::DimSizes dimSizes = A.getDimSizes();
     dimSizes[cumdim] = 1ull;
 
     mu::IndexIterator iterator(dimSizes);
 
     do
     {
-        std::vector<size_t> iter_curr = iterator.iter();
-        std::vector<size_t> iter_prev = iterator.iter();
+        mu::IndexTuple iter_curr = iterator.index();
+        mu::IndexTuple iter_prev = iterator.index();
 
         for (size_t i = 1; i < cumDimSize; i++)
         {
@@ -2124,9 +2139,49 @@ mu::Array matfnc_cumprd(const mu::Array& A, const mu::Array& dim)
 }
 
 
-mu::Array matfnc_solve(const mu::Array& A)
+__attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array& A, const mu::Array& B)
 {
-    //
+    checkInputMatrix(A, MATRIX_MUST_BE_2D);
+    checkInputMatrix(B);
+
+    Eigen::MatrixXcd mA(A.rows(), A.cols());
+    Eigen::MatrixXcd mB(B.rows(), B.cols());
+
+    // Copy the passed matrix into an Eigen matrix
+    #pragma omp parallel for
+    for (size_t i = 0; i < A.rows(); i++)
+    {
+        for (size_t j = 0; j < A.cols(); j++)
+        {
+            mA(i,j) = A.get(i,j);
+        }
+    }
+
+    // Copy the passed matrix into an Eigen matrix
+    #pragma omp parallel for
+    for (size_t i = 0; i < B.rows(); i++)
+    {
+        for (size_t j = 0; j < B.cols(); j++)
+        {
+            mB(i,j) = B.get(i,j);
+        }
+    }
+
+    Eigen::MatrixXcd result = mA.colPivHouseholderQr().solve(mB);
+
+    mu::Array ret(result.rows()*result.cols());
+    ret.setDimSizes({result.rows(), result.cols()});
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < ret.rows(); i++)
+    {
+        for (size_t j = 0; j < ret.cols(); j++)
+        {
+            ret.get(i,j) = result(i,j);
+        }
+    }
+
+    return ret;
 }
 
 
@@ -2559,7 +2614,7 @@ mu::Array matfnc_hcat(const mu::Array& A, const mu::Array& B)
     mu::MatrixView viewA(A);
     mu::MatrixView viewB(B);
     viewA.mergeDimSizes(viewB);
-    std::vector<size_t> dimSizes = viewA.m_dimSizes;
+    mu::DimSizes dimSizes = viewA.m_dimSizes;
 
     if (dimSizes.size() < 2)
         dimSizes.push_back(2);
@@ -2570,7 +2625,7 @@ mu::Array matfnc_hcat(const mu::Array& A, const mu::Array& B)
     ret.setDimSizes(dimSizes);
 
     mu::IndexIterator iteratorA(A.getDimSizes());
-    const std::vector<size_t>& iterA = iteratorA.iter();
+    const mu::IndexTuple& iterA = iteratorA.index();
 
     do
     {
@@ -2578,11 +2633,11 @@ mu::Array matfnc_hcat(const mu::Array& A, const mu::Array& B)
     } while (iteratorA.next());
 
     mu::IndexIterator iteratorB(B.getDimSizes());
-    const std::vector<size_t>& iterB = iteratorB.iter();
+    const mu::IndexTuple& iterB = iteratorB.index();
 
     do
     {
-        std::vector<size_t> iter = iterB;
+        mu::IndexTuple iter = iterB;
 
         if (iter.size() < 2)
             iter.push_back(A.cols());
@@ -2609,7 +2664,7 @@ mu::Array matfnc_vcat(const mu::Array& A, const mu::Array& B)
     mu::MatrixView viewA(A);
     mu::MatrixView viewB(B);
     viewA.mergeDimSizes(viewB);
-    std::vector<size_t> dimSizes = viewA.m_dimSizes;
+    mu::DimSizes dimSizes = viewA.m_dimSizes;
 
     dimSizes[0] = A.rows() + B.rows();
 
@@ -2617,7 +2672,7 @@ mu::Array matfnc_vcat(const mu::Array& A, const mu::Array& B)
     ret.setDimSizes(dimSizes);
 
     mu::IndexIterator iteratorA(A.getDimSizes());
-    const std::vector<size_t>& iterA = iteratorA.iter();
+    const mu::IndexTuple& iterA = iteratorA.index();
 
     do
     {
@@ -2625,11 +2680,11 @@ mu::Array matfnc_vcat(const mu::Array& A, const mu::Array& B)
     } while (iteratorA.next());
 
     mu::IndexIterator iteratorB(B.getDimSizes());
-    const std::vector<size_t>& iterB = iteratorB.iter();
+    const mu::IndexTuple& iterB = iteratorB.index();
 
     do
     {
-        std::vector<size_t> iter = iterB;
+        mu::IndexTuple iter = iterB;
         iter[0] += A.rows();
         ret.get(iter) = B.get(iterB);
     } while (iteratorB.next());
@@ -2666,7 +2721,7 @@ mu::Array matfnc_select(const mu::Array& data, const mu::Array& rows, const mu::
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               rows.printDims() + " vs. " + cols.printDims());
 
-    std::vector<size_t> dimSizes = {std::max(rows.rows(), cols.rows()), std::max(rows.cols(), cols.cols())};
+    mu::DimSizes dimSizes = {std::max(rows.rows(), cols.rows()), std::max(rows.cols(), cols.cols())};
     // Prepare the return value
     mu::Array selected(dimSizes[0]*dimSizes[1], mu::Value(NAN));
     selected.setDimSizes(dimSizes);
@@ -3124,7 +3179,7 @@ mu::Array matfnc_vectshift(const mu::Array& A, const mu::Array& steps, const mu:
     if (!A.size())
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
 
-    std::vector<size_t> dimSizes = A.getDimSizes();
+    mu::DimSizes dimSizes = A.getDimSizes();
 
     if (dimSizes.size() <= (size_t)shiftDim || !shiftSteps || !(dimSizes[shiftDim] % shiftSteps))
         return A;
@@ -3135,11 +3190,11 @@ mu::Array matfnc_vectshift(const mu::Array& A, const mu::Array& steps, const mu:
     shiftSteps = (shiftSteps < 0 ? -1 : 1) * (dimSizes[shiftDim] % std::abs(shiftSteps));
     int dimSize = (int)dimSizes[shiftDim];
     mu::IndexIterator iterator(dimSizes);
-    const std::vector<size_t>& targetIter = iterator.iter();
+    const mu::IndexTuple& targetIter = iterator.index();
 
     do
     {
-        std::vector<size_t> sourceIter = targetIter;
+        mu::IndexTuple sourceIter = targetIter;
         // Calculate the previous position of the dimension index and copy it to the current target dimension index
         sourceIter[shiftDim] = ((((int)sourceIter[shiftDim] - shiftSteps) % dimSize) + dimSize) % dimSize;
 
