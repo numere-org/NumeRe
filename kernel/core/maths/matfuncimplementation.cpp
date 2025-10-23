@@ -21,6 +21,7 @@
 #include "statslogic.hpp"
 #include "matdatastructures.hpp"
 #include "../ParserLib/muParserError.h"
+#include "../structures.hpp"
 
 #define EIGENVALUES 0
 #define EIGENVECTORS 1
@@ -120,6 +121,20 @@ mu::Array oprt_MatMul(const mu::Array& A, const mu::Array& B)
     }
 
     return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Row-column transpose operator (does
+/// not affect other dimensions).
+///
+/// \param A const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array oprt_transpose(const mu::Array& A)
+{
+    return matfnc_transpose(A, mu::Array());
 }
 
 
@@ -741,21 +756,74 @@ mu::Array matfnc_invert(const mu::Array& A)
 /// function.
 ///
 /// \param A const mu::Array&
+/// \param dims const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array matfnc_transpose(const mu::Array& A)
+mu::Array matfnc_transpose(const mu::Array& A, const mu::Array& dims)
 {
-    mu::Array ret(A.size());
-    ret.setDimSizes({A.cols(), A.rows()});
+    if (A.isScalar())
+        return A;
 
-    for (size_t j = 0; j < A.cols(); j++)
+    mu::DimSizes sizes = A.getDimSizes();
+    std::vector<size_t> indexMap(sizes.size());
+
+    if (dims.isDefault() || dims.size() < 2)
     {
-        for (size_t i = 0; i < A.rows(); i++)
+        for (size_t i = 0; i < indexMap.size(); i++)
         {
-            ret.get(j, i) = A.get(i, j);
+            indexMap[i] = i;
         }
+
+        std::swap(sizes[0], sizes[1]);
+        std::swap(indexMap[0], indexMap[1]);
     }
+    else
+    {
+        VectorIndex dimIdx(dims);
+        int maxDim = dimIdx.max();
+
+        if (!dimIdx.isPermutation())
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID);
+
+        if ((int)sizes.size() < maxDim)
+        {
+            sizes.resize(maxDim, 1ull);
+            indexMap.resize(maxDim);
+        }
+
+        for (size_t i = 0; i < indexMap.size(); i++)
+        {
+            indexMap[i] = i;
+        }
+
+        mu::DimSizes newSizes(sizes);
+
+        for (size_t i = 0; i < dimIdx.size(); i++)
+        {
+            indexMap[i] = dimIdx[i];
+            newSizes[i] = sizes[indexMap[i]];
+        }
+
+        sizes = newSizes;
+    }
+
+    mu::Array ret(A.size());
+    ret.setDimSizes(sizes);
+
+    mu::IndexIterator targetIter(sizes);
+    const mu::IndexTuple& targetIndex = targetIter.index();
+    mu::IndexTuple sourceIndex = targetIndex;
+
+    do
+    {
+        for (size_t i = 0; i < indexMap.size(); i++)
+        {
+            sourceIndex[indexMap[i]] = targetIndex[i];
+        }
+
+        ret.get(targetIndex) = A.get(sourceIndex);
+    } while (targetIter.next());
 
     return ret;
 }
@@ -853,16 +921,14 @@ mu::Array matfnc_cutoff(const mu::Array& A, const mu::Array& threshold, const mu
     mu::Array cutMatrix = A;
 
     // Apply the calculated threshold to all matrix elements
-    for (size_t i = 0; i < cutMatrix.rows(); i++)
+    for (size_t i = 0; i < cutMatrix.size(); i++)
     {
-        for (size_t j = 0; j < cutMatrix.cols(); j++)
-        {
-            // Only the real part is considered, imaginary component is discarded
-            if (!mu::isnan(thresLow) && cutMatrix.get(i, j) < thresLow)
-                cutMatrix.get(i, j) = thresLow;
-            if (!mu::isnan(thresHigh) && cutMatrix.get(i, j) > thresHigh)
-                cutMatrix.get(i, j) = thresHigh;
-        }
+
+        if (!mu::isnan(thresLow) && cutMatrix.get(i) < thresLow)
+            cutMatrix.get(i) = thresLow;
+
+        if (!mu::isnan(thresHigh) && cutMatrix.get(i) > thresHigh)
+            cutMatrix.get(i) = thresHigh;
     }
 
     return cutMatrix;
@@ -1595,13 +1661,12 @@ mu::Array matfnc_identity(const mu::Array& n)
 /// \brief Implementation of the shuffle()
 /// function.
 ///
-/// \param A const mu::Array&
 /// \param shuffle const mu::Array&
 /// \param base const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array matfnc_shuffle(const mu::Array& A, const mu::Array& shuffle, const mu::Array& base)
+mu::Array matfnc_shuffle(const mu::Array& shuffle, const mu::Array& base)
 {
     size_t nShuffle = shuffle.getAsScalarInt();
     size_t nBase;
@@ -1703,11 +1768,11 @@ mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B)
 /////////////////////////////////////////////////
 mu::Array matfnc_covar(const mu::Array& A, const mu::Array& B)
 {
-    checkInputMatrix(A, MATRIX_MUST_BE_2D);
-    checkInputMatrix(B, MATRIX_MUST_BE_2D);
+    checkInputMatrix(A, 0);
+    checkInputMatrix(B, 0);
 
     // Ensure that the size is non-zero
-    if (A.rows() != B.rows() || A.cols() != B.cols())
+    if (A.getDimSizes() != B.getDimSizes())
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, A.printDims() + " != " + B.printDims());
 
     // Prepare the target
@@ -1720,17 +1785,14 @@ mu::Array matfnc_covar(const mu::Array& A, const mu::Array& B)
 
     // Calculate the covariance value for each
     // component and sum it up
-    for (size_t i = 0; i < A.rows(); i++)
+    for (size_t i = 0; i < A.size(); i++)
     {
-        for (size_t j = 0; j < A.cols(); j++)
-        {
-            covariance += (A.get(i, j) - mAvg1) * (B.get(i, j) - mAvg2);
-        }
+        covariance += (A.get(i) - mAvg1) * (B.get(i) - mAvg2);
     }
 
     // Normalize the covariance value using
     // the number of elements
-    covariance /= (A.rows() * A.cols() - 1);
+    covariance /= (A.size() - 1);
 
     return covariance;
 }
@@ -1792,7 +1854,7 @@ mu::Array matfnc_reshape(const mu::Array& A, const mu::Array& n, const mu::Array
         dimSizes.push_back(m.getAsScalarInt());
     }
 
-    size_t numElems = std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>());
+    size_t numElems = mu::getNumElements(dimSizes);
 
     if (!A.size() || numElems == 0ull || !dimSizes.size())
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
@@ -1839,7 +1901,7 @@ mu::Array matfnc_resize(const mu::Array& A, const mu::Array& n, const mu::Array&
         dimSizes.push_back(m.getAsScalarInt());
     }
 
-    size_t numElems = std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>());
+    size_t numElems = mu::getNumElements(dimSizes);
 
     if (!A.size() || numElems == 0ull || !dimSizes.size())
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
@@ -1891,12 +1953,12 @@ mu::Array matfnc_repmat(const mu::Array& A, const mu::Array& n, const mu::Array&
         dimSizes.push_back(repetitions.back() * A.cols());
     }
 
-    size_t numReps = std::accumulate(repetitions.begin(), repetitions.end(), 1ull, std::multiplies<size_t>());
+    size_t numReps = mu::getNumElements(repetitions);
 
     if (!A.size() || numReps == 0ull || !dimSizes.size())
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
 
-    mu::Array ret(std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>()));
+    mu::Array ret(mu::getNumElements(dimSizes));
     ret.setDimSizes(dimSizes);
 
     mu::DimSizes dimSizesA = A.getDimSizes();
@@ -2010,7 +2072,7 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
             uniqueCopies.push_back(i);
     }
 
-    mu::Array ret(std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>())*uniqueCopies.size());
+    mu::Array ret(mu::getNumElements(dimSizes)*uniqueCopies.size());
 
     for (size_t i = 0; i < uniqueCopies.size(); i++)
     {
@@ -2140,6 +2202,15 @@ mu::Array matfnc_cumprd(const mu::Array& A, const mu::Array& dim)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Try to solve the system of linear
+/// equations Ax = B.
+///
+/// \param A const mu::Array&
+/// \param B const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array& A, const mu::Array& B)
 {
     checkInputMatrix(A, MATRIX_MUST_BE_2D);
@@ -2622,7 +2693,7 @@ mu::Array matfnc_hcat(const mu::Array& A, const mu::Array& B)
     else
         dimSizes[1] = A.cols() + B.cols();
 
-    mu::Array ret(std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>()), mu::Value(NAN));
+    mu::Array ret(mu::getNumElements(dimSizes), mu::Value(NAN));
     ret.setDimSizes(dimSizes);
 
     mu::IndexIterator iteratorA(A.getDimSizes());
@@ -2669,7 +2740,7 @@ mu::Array matfnc_vcat(const mu::Array& A, const mu::Array& B)
 
     dimSizes[0] = A.rows() + B.rows();
 
-    mu::Array ret(std::accumulate(dimSizes.begin(), dimSizes.end(), 1ull, std::multiplies<size_t>()), mu::Value(NAN));
+    mu::Array ret(mu::getNumElements(dimSizes), mu::Value(NAN));
     ret.setDimSizes(dimSizes);
 
     mu::IndexIterator iteratorA(A.getDimSizes());
@@ -3129,8 +3200,8 @@ static mu::Array matrixConvolution(const mu::Array& data, const mu::Array& kerne
 mu::Array matfnc_filter(const mu::Array& data, const mu::Array& kernel, const mu::Array& mode)
 {
     // Check that matrix and the filter are not empty
-    if (!data.size() || !kernel.size())
-        throw mu::ParserError(mu::ecMATRIX_EMPTY);
+    checkInputMatrix(data, MATRIX_MUST_BE_2D);
+    checkInputMatrix(kernel, MATRIX_MUST_BE_2D);
 
     // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
     if (kernel.rows() > data.rows() || kernel.cols() > data.cols() || !(kernel.rows() % 2) || !(kernel.cols() % 2))
@@ -3173,7 +3244,7 @@ mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu:
     int shiftSteps = steps.getAsScalarInt();
 
     if (!dim.isDefault())
-        shiftDim = dim.getAsScalarInt();
+        shiftDim = dim.getAsScalarInt() - 1;
 
     // Check that matrix and the filter are not empty
     if (!A.size())
@@ -3301,7 +3372,7 @@ mu::Array matfnc_vectshift(const mu::Array& A, const mu::Array& steps, const mu:
     int shiftSteps = steps.getAsScalarInt();
 
     if (!dim.isDefault())
-        shiftDim = dim.getAsScalarInt();
+        shiftDim = dim.getAsScalarInt()-1;
 
     // Check that matrix and the filter are not empty
     if (!A.size())

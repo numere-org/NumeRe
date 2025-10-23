@@ -636,6 +636,29 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Ensure that the contained indices
+        /// represent a permutation of the corresponding
+        /// linear array.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isPermutation() const
+        {
+            if (!isValid())
+                return false;
+
+            // Expanded are always a permutation
+            if (expand)
+                return true;
+
+            VectorIndex vPlain(0, this->max());
+
+            // Ensure that the indices reflect reasonable combinations
+            return std::is_permutation(vPlain.begin(), vPlain.end(), this->begin(), this->end());
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function determines,
         /// whether the indices are calculated or actual
         /// vectorial indices.

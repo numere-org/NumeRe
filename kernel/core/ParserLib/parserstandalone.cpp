@@ -322,11 +322,13 @@ int main()
     _parser.DefineFun("resize", matfnc_resize, true, 1);
     _parser.DefineFun("repmat", matfnc_repmat, true, 1);
 
-    _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
+    _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit, true);
+    _parser.DefinePostfixOprt("'kmh", numfnc_abs, true);
     _parser.DefineConst("nan", mu::Value(NAN));
     _parser.DefineConst("inf", mu::Value(INFINITY));
 
     _parser.DefineOprt("**", oprt_MatMul, mu::prMUL_DIV, mu::oaRIGHT, true);
+    _parser.DefinePostfixOprt("'", oprt_transpose, true);
 
     std::string sInput;
     int nResults;

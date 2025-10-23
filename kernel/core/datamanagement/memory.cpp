@@ -2213,14 +2213,13 @@ bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrde
         return false;
 
     _vCols.setOpenEndIndex(getCols()-1);
-    VectorIndex vPlain(0, _vNewOrder.max());
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vCols.size()
         || _vCols.size() > (size_t)getCols()
         || _vNewOrder.max() >= (int)_vNewOrder.size()
         || !_vCols.isUnique()
-        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        || !_vNewOrder.isPermutation())
         return false;
 
     TableColumnArray buffer;
@@ -2260,14 +2259,13 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
         return false;
 
     _vRows.setOpenEndIndex(getLines()-1);
-    VectorIndex vPlain(0, _vNewOrder.max());
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vRows.size()
         || _vRows.size() > (size_t)getLines()
         || _vNewOrder.max() >= (long long int)_vNewOrder.size()
         || !_vRows.isUnique()
-        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        || !_vNewOrder.isPermutation())
         return false;
 
     vPlain = _vRows.get(_vNewOrder);

@@ -45,6 +45,21 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Simple wrapper to calculate the number
+    /// of elements in an Array based upon its
+    /// DimSizes.
+    ///
+    /// \param sizes const DimSizes&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    inline size_t getNumElements(const DimSizes& sizes)
+    {
+        return std::accumulate(sizes.begin(), sizes.end(), 1ull, std::multiplies<size_t>());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This class is an abstract value, which
     /// can be filled with a string or a numerical
     /// value (or any other value, which will be
@@ -477,7 +492,7 @@ namespace mu
     /// template parameter and a bunch of customized
     /// operators.
     /////////////////////////////////////////////////
-    class Array : public std::vector<Value> // Potential: have dedicated NumArray and StrArray variants or convert Value in an abstract class
+    class Array : public std::vector<Value>
     {
         public:
             Array();
@@ -753,8 +768,8 @@ namespace mu
             /////////////////////////////////////////////////
             DimSizes getDimSizes() const
             {
-                if (!m_dimSizes.size())
-                    return DimSizes({size()});
+                if (m_dimSizes.size() < 2)
+                    return DimSizes({size(), 1ull});
 
                 return m_dimSizes;
             }
@@ -770,7 +785,7 @@ namespace mu
                 m_dimSizes = dimSizes;
 
                 if (m_dimSizes.size())
-                    reserve(std::accumulate(m_dimSizes.begin(), m_dimSizes.end(), 1ull, std::multiplies<size_t>()));
+                    reserve(getNumElements(m_dimSizes));
             }
 
             /////////////////////////////////////////////////
@@ -1657,7 +1672,7 @@ namespace mu
             /////////////////////////////////////////////////
             size_t size() const
             {
-                return std::accumulate(m_dimSizes.begin(), m_dimSizes.end(), 1ull, std::multiplies<size_t>());
+                return getNumElements(m_dimSizes);
             }
 
             /////////////////////////////////////////////////

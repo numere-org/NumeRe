@@ -22,6 +22,7 @@
 #include "../ParserLib/muParser.h"
 
 mu::Array oprt_MatMul(const mu::Array& A, const mu::Array& B); // A ** B
+mu::Array oprt_transpose(const mu::Array& A); // A'
 
 mu::Array matfnc_matfc(const mu::MultiArgFuncParams& cols);
 mu::Array matfnc_matfr(const mu::MultiArgFuncParams& rows);
@@ -35,7 +36,7 @@ mu::Array matfnc_eigenvals(const mu::Array& A);
 mu::Array matfnc_eigenvects(const mu::Array& A);
 mu::Array matfnc_diagonalize(const mu::Array& A);
 mu::Array matfnc_invert(const mu::Array& A);
-mu::Array matfnc_transpose(const mu::Array& A);
+mu::Array matfnc_transpose(const mu::Array& A, const mu::Array& dims); // OPT=1
 mu::Array matfnc_size(const mu::Array& A);
 mu::Array matfnc_cutoff(const mu::Array& A, const mu::Array& threshold, const mu::Array& mode);
 mu::Array matfnc_movsum(const mu::Array& A, const mu::Array& n, const mu::Array& m); // OPT=1
@@ -50,7 +51,7 @@ mu::Array matfnc_movnum(const mu::Array& A, const mu::Array& n, const mu::Array&
 mu::Array matfnc_zero(const mu::MultiArgFuncParams& n);
 mu::Array matfnc_one(const mu::MultiArgFuncParams& n);
 mu::Array matfnc_identity(const mu::Array& n);
-mu::Array matfnc_shuffle(const mu::Array& A, const mu::Array& shuffle, const mu::Array& base); // OPT=1
+mu::Array matfnc_shuffle(const mu::Array& shuffle, const mu::Array& base); // OPT=1
 mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B);
 mu::Array matfnc_covar(const mu::Array& A, const mu::Array& B);
 mu::Array matfnc_normalize(const mu::Array& A);

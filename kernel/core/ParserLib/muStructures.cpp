@@ -2301,7 +2301,7 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        const static MethodSet methods = {{"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
+        const static MethodSet methods = {{"squeeze", 0}, {"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
@@ -2324,7 +2324,21 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod, 0))
+        if (sMethod == "squeeze")
+        {
+            if (m_dimSizes.size() <= 2)
+                return getDimSizes();
+
+            auto iter = m_dimSizes.begin();
+
+            while (m_dimSizes.size() > 2 && (iter = std::find(m_dimSizes.begin()+1, m_dimSizes.end(), 1ull)) != m_dimSizes.end())
+            {
+                m_dimSizes.erase(iter);
+            }
+
+            return m_dimSizes;
+        }
+        else if (front().isApplyingMethod(sMethod, 0))
         {
             Array ret;
             ret.reserve(size());
@@ -2669,11 +2683,6 @@ namespace mu
             ret.m_dimSizes.pop_back();
         }
 
-        while (ret.m_dimSizes.size() > 2 && ret.m_dimSizes.front() == 1ull)
-        {
-            ret.m_dimSizes.erase(ret.m_dimSizes.begin());
-        }
-
         return ret;
     }
 
@@ -2856,7 +2865,6 @@ namespace mu
 
         return index;
     }
-
 
 
     /////////////////////////////////////////////////
