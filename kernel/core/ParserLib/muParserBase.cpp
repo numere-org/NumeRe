@@ -1099,8 +1099,13 @@ namespace mu
                                                    funTok.GetAsString());
 				break;
 			case  cmIDX:
-			case  cmSQIDX:
 			case  cmBIDX:
+			    if (iArgCount == 1)
+                {
+                    m_compilingState.m_byteCode.AddVal(mu::Value(1));
+                    iArgCount++;
+                }
+			case  cmSQIDX:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
@@ -1112,8 +1117,13 @@ namespace mu
                 m_compilingState.m_byteCode.AddOp(cmIDX);
 				break;
 			case  cmIDXASGN:
-			case  cmSQIDXASGN:
 			case  cmBIDXASGN:
+			    if (iArgCount == 1)
+                {
+                    m_compilingState.m_byteCode.AddVal(mu::Value(1));
+                    iArgCount++;
+                }
+			case  cmSQIDXASGN:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());

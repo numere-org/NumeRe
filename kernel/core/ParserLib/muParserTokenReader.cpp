@@ -699,6 +699,15 @@ namespace mu
 			if (m_iSynFlags & noARG_SEP)
 				Error(ecUNEXPECTED_ARG_SEP, m_iPos, szSep);
 
+            // Square index brackets are not allowed to have argument separators
+            // i.e. to be multidimensional
+            if (m_indexedVars.size()
+                && m_strFormula[m_indexedVars.top().indexStart] == '['
+                && m_indexedVars.top().parensState[0] == m_iBrackets
+                && m_indexedVars.top().parensState[1] == m_iVBrackets
+                && m_indexedVars.top().parensState[2] == m_iSqBrackets)
+                Error(ecUNEXPECTED_ARG_SEP, m_iPos, szSep);
+
             // Slicing with open boundaries
             if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size()
                 && m_strFormula[m_indexedVars.top().indexStart] == '('

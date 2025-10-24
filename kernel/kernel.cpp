@@ -1291,9 +1291,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + "," + _idx.col.to_string());
 
-                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-
                 sCache.erase(sCache.find_first_of("({"));
                 StripSpaces(sCache);
             }
@@ -3104,9 +3101,136 @@ void NumeReKernel::printPreFmt(const std::string& __sLine, bool printingEnabled)
 
 
 /////////////////////////////////////////////////
+/// \brief This static helper function formats a
+/// single matrix row (without the leading and
+/// trailing parentheses).
+///
+/// \param mat const mu::Array&
+/// \param row size_t
+/// \param prec size_t
+/// \param nElemPerLine size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string formatMatrixRow(const mu::Array& mat, size_t row, size_t prec, size_t nElemPerLine)
+{
+    std::string sRow;
+
+    for (size_t col = 0; col < mat.cols(); col++)
+    {
+        if (col)
+            sRow += ", ";
+
+        if (mat.cols() > nElemPerLine && nElemPerLine / 2 == col)
+        {
+            sRow += strfill("...", prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
+            col = mat.cols() - nElemPerLine / 2 - 1;
+            continue;
+        }
+
+        sRow += strfill(mat.get(row, col).printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                        prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
+    }
+
+    return sRow;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function is used to format
-/// the result output in the terminal for
-/// numerical-only results.
+///  the result output in the terminal in case of
+/// a matrix.
+///
+/// \param mat const mu::Array&
+/// \param prec size_t
+/// \param nElemPerLine size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string formatMatrixOutput(const mu::Array& mat, size_t prec, size_t nElemPerLine)
+{
+    std::string sPrinted;
+    static const char* TOPLEFT = "|         /";
+    static const char* TOPLASS = "|-> ans = /";
+    static const char* LEFT    = "|         |";
+    static const char* LEFTASS = "|-> ans = |";
+    static const char* BOTLEFT = "|         \\";
+    static const char* TOPRIGHT = " \\\n";
+    static const char* RIGHT    = " |\n";
+    static const char* BOTRIGHT = " /";
+
+    if (mat.rows() > 10)
+    {
+        for (size_t i = 0; i < mat.rows(); i++)
+        {
+            if (!i)
+                sPrinted += TOPLEFT;
+            else if (i+1 == mat.rows())
+                sPrinted += BOTLEFT;
+            else if (i == 5)
+                sPrinted += LEFTASS;
+            else
+                sPrinted += LEFT;
+
+            if (i == 5)
+            {
+                for (size_t j = 0; j < mat.cols(); j++)
+                {
+                    if (j)
+                        sPrinted += ", ";
+
+                    sPrinted += strfill("...", prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
+
+                    if (mat.cols() > nElemPerLine && nElemPerLine / 2 == j)
+                        j = mat.cols() - nElemPerLine / 2 - 1;
+                }
+
+                i = mat.rows()-6;
+            }
+            else
+                sPrinted += formatMatrixRow(mat, i, prec, nElemPerLine);
+
+            if (!i)
+                sPrinted += TOPRIGHT;
+            else if (i+1 == mat.rows())
+                sPrinted += BOTRIGHT;
+            else
+                sPrinted += RIGHT;
+        }
+    }
+    else if (mat.rows() == 1)
+        sPrinted += "|-> ans = (" + formatMatrixRow(mat, 0, prec, nElemPerLine) + " )";
+    else
+    {
+        for (size_t i = 0; i < mat.rows(); i++)
+        {
+            if (!i && mat.rows() == 2)
+                sPrinted += TOPLASS;
+            else if (!i)
+                sPrinted += TOPLEFT;
+            else if (i+1 == mat.rows())
+                sPrinted += BOTLEFT;
+            else if (i == (mat.rows()-1)/2)
+                sPrinted += LEFTASS;
+            else
+                sPrinted += LEFT;
+
+            sPrinted += formatMatrixRow(mat, i, prec, nElemPerLine);
+
+            if (!i)
+                sPrinted += TOPRIGHT;
+            else if (i+1 == mat.rows())
+                sPrinted += BOTRIGHT;
+            else
+                sPrinted += RIGHT;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function is used to format
+/// the result output in the terminal.
 ///
 /// \param nNum int
 /// \param v const mu::StackItem*
@@ -3117,6 +3241,9 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
 {
     size_t prec = getInstance()->getSettings().getPrecision();
     std::string sAns;
+
+    // How many fit into one line?
+    size_t nElemPerLine = numberOfNumbersPerLine();
 
     for (int n = 0; n < nNum; n++)
     {
@@ -3131,28 +3258,36 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
         {
             // More than one result
             //
-            // How many fit into one line?
-            size_t nLineBreak = numberOfNumbersPerLine();
-
-            if (n)
-                sAns += "\n|-> ans = {";
-            else
-                sAns = "ans = {";
-
-            // compose the result
-            for (size_t i = 0; i < arr->size(); ++i)
+            // Is it a 2D-matrix?
+            if (arr->isMatrix() && arr->getDims() == 2)
             {
-                sAns += strfill(arr->get(i).printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
-                                prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
+                if (n)
+                    sAns += "\n";
 
-                if (i < arr->size() - 1)
-                    sAns += ", ";
-
-                if (arr->size() + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < arr->size() - 1)
-                    sAns += "...\n|          ";
+                sAns += formatMatrixOutput(*arr, prec, nElemPerLine);
             }
+            else
+            {
+                if (n)
+                    sAns += "\n|-> ans = {";
+                else
+                    sAns = "ans = {";
 
-            sAns += "}";
+                // compose the result
+                for (size_t i = 0; i < arr->size(); ++i)
+                {
+                    if (i)
+                        sAns += ", ";
+
+                    sAns += strfill(arr->get(i).printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
+                                    prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
+
+                    if (arr->size() + 1 > nElemPerLine && !((i + 1) % nElemPerLine) && i < arr->size() - 1)
+                        sAns += "...\n|          ";
+                }
+
+                sAns += "}";
+            }
         }
         else
         {

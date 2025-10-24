@@ -495,6 +495,10 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
         }
     }
 
+    // Set the corresponding dimension sizes
+    if (_vLine.size() > 1 && _vCol.size() > 1)
+        vReturn.setDimSizes({_vLine.size(), _vCol.size()});
+
     return vReturn;
 }
 
@@ -796,6 +800,9 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
                 (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }
         }
+
+        if (_vLine.size() > 1 && _vCol.size() > 1)
+            vTarget->setDimSizes({_vLine.size(), _vCol.size()});
     }
 }
 
@@ -1489,32 +1496,61 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
     if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
         rewriteColumn = true;
 
-    _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
-    _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
-
-    if (_idx.row.size() > 1)
-        nDirection = COLS;
-    else if (_idx.col.size() > 1)
-        nDirection = LINES;
-
     TableColumn::ColumnType t = to_column_type(_values);
 
-    for (size_t j = 0; j < _idx.col.size(); j++)
+    if (!_values.isMatrix())
     {
-        for (size_t i = 0; i < _idx.row.size(); i++)
+        _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
+        _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
+
+        if (_idx.row.size() > 1)
+            nDirection = COLS;
+        else if (_idx.col.size() > 1)
+            nDirection = LINES;
+
+        for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (nDirection == COLS)
+            for (size_t i = 0; i < _idx.row.size(); i++)
             {
+                if (nDirection == COLS)
+                {
+                    if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
+                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
+
+                    if (_values.size() > i)
+                        writeData(_idx.row[i], _idx.col[j], _values.get(i), t);
+                }
+                else
+                {
+                    if (_values.size() > j)
+                        writeData(_idx.row[i], _idx.col[j], _values.get(j));
+                }
+            }
+        }
+    }
+    else
+    {
+        _idx.row.setOpenEndIndex(_idx.row.front() + _values.rows() - 1);
+        _idx.col.setOpenEndIndex(_idx.col.front() + _values.cols() - 1);
+
+        // Prepare the target size
+        resizeMemory(_values.rows(), _idx.col.max()+1);
+
+        // Write the contents to the table
+        for (size_t j = 0; j < _values.cols(); j++)
+        {
+            if (_idx.col[j] == VectorIndex::INVALID)
+                continue;
+
+            for (size_t i = 0; i < _values.rows(); i++)
+            {
+                if (_idx.row[i] == VectorIndex::INVALID)
+                    break;
+
                 if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
 
-                if (_values.size() > i)
-                    writeData(_idx.row[i], _idx.col[j], _values.get(i), t);
-            }
-            else
-            {
-                if (_values.size() > j)
-                    writeData(_idx.row[i], _idx.col[j], _values.get(j));
+                writeData(_idx.row[i], _idx.col[j], _values.get(i, j), t);
             }
         }
     }

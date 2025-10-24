@@ -1407,10 +1407,10 @@ namespace mu
             switch (json[member].type())
             {
                 case Json::intValue:
-                    dict[member].reset(new NumValue(Numerical(json[member].asInt())));
+                    dict[member].reset(new NumValue(Numerical(json[member].asInt64())));
                     break;
                 case Json::uintValue:
-                    dict[member].reset(new NumValue(Numerical(json[member].asUInt())));
+                    dict[member].reset(new NumValue(Numerical(json[member].asUInt64())));
                     break;
                 case Json::realValue:
                     dict[member].reset(new NumValue(Numerical(json[member].asDouble())));
@@ -1463,10 +1463,10 @@ namespace mu
             switch (json[i].type())
             {
                 case Json::intValue:
-                    arr.emplace_back(json[i].asInt());
+                    arr.emplace_back(json[i].asInt64());
                     break;
                 case Json::uintValue:
-                    arr.emplace_back(json[i].asUInt());
+                    arr.emplace_back(json[i].asUInt64());
                     break;
                 case Json::realValue:
                     arr.emplace_back(json[i].asDouble());

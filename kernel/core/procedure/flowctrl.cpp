@@ -3009,9 +3009,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-
             sCache.erase(pos);
             StripSpaces(sCache);
 
@@ -3026,9 +3023,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
-
-            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             sCache.erase(pos);
         }
@@ -3529,9 +3523,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
-
                 sDataObject.erase(pos);
                 StripSpaces(sDataObject);
 
@@ -3546,9 +3537,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
-
-                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
 
                 sDataObject.erase(pos);
             }
