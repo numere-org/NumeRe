@@ -22,6 +22,7 @@
 #include "muTypes.hpp"
 #include <memory>
 #include <set>
+#include <vector>
 
 
 namespace mu
@@ -33,9 +34,10 @@ namespace mu
     struct MethodDefinition
     {
         std::string name;
-        int argc; // positive for scalars, negative for arrays
+        int8_t argc; // positive for scalars, negative for arrays
+        const static int8_t multiargcount = INT8_MAX;
 
-        MethodDefinition(const std::string& _name = "", int _argc = 0) : name(_name), argc(_argc)
+        MethodDefinition(const std::string& _name = "", int8_t _argc = 0) : name(_name), argc(_argc)
         { }
 
         bool operator==(const MethodDefinition& def) const
@@ -163,17 +165,21 @@ namespace mu
                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const;
             virtual BaseValue* call(const std::string& sMethod,
                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const;
+            virtual BaseValue* call(const std::string& sMethod,
+                                    std::vector<BaseValue*> args) const;
 
             virtual MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
             virtual BaseValue* apply(const std::string& sMethod);
             virtual BaseValue* apply(const std::string& sMethod,
-                                    const BaseValue& arg1);
+                                     const BaseValue& arg1);
             virtual BaseValue* apply(const std::string& sMethod,
-                                    const BaseValue& arg1, const BaseValue& arg2);
+                                     const BaseValue& arg1, const BaseValue& arg2);
             virtual BaseValue* apply(const std::string& sMethod,
-                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3);
+                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3);
             virtual BaseValue* apply(const std::string& sMethod,
-                                    const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
+                                     const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4);
+            virtual BaseValue* apply(const std::string& sMethod,
+                                     std::vector<BaseValue*> args);
 
             virtual std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const;
 
@@ -390,6 +396,8 @@ namespace mu
                             const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const override;
             BaseValue* call(const std::string& sMethod,
                             const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const override;
+            BaseValue* call(const std::string& sMethod,
+                            std::vector<BaseValue*> args) const override;
 
             MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
             BaseValue* apply(const std::string& sMethod) override;
@@ -401,6 +409,8 @@ namespace mu
                              const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) override;
             BaseValue* apply(const std::string& sMethod,
                              const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) override;
+            BaseValue* apply(const std::string& sMethod,
+                             std::vector<BaseValue*> args) override;
 
             std::string print(size_t digits, size_t chrs, bool trunc) const override;
             std::string printVal(size_t digits, size_t chrs) const override;

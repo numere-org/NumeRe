@@ -389,8 +389,8 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
                     // logic
                     DataAccessParser src(source, false);
 
-                    // If it is not a matrix, fall back to standard parsing
-                    if (!src.isMatrix())
+                    // If it is not a matrix or the target is an existing var, fall back to standard parsing
+                    if (!src.isMatrix() || _parser.ReadVar(sCache.substr(sCache.find('('))))
                     {
                         // Convert the StringView first, because its internal data
                         // will be mutated in the next step
@@ -516,7 +516,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
     nPos = 0;
 
     // handle logical table accesses
-    while ((nPos = sLine.find(sEntity + ")", nPos)) != std::string::npos)
+    /*while ((nPos = sLine.find(sEntity + ")", nPos)) != std::string::npos)
     {
         if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~'))
         {
@@ -525,7 +525,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
         }
 
         sLine.replace(nPos, sEntity.length() + 1, (_data.getCols(StringView(sEntity, 0, sEntity.length() - 1)) ? "true" : "false"));
-    }
+    }*/
 
     if (sLine.find(sEntity) == std::string::npos)
         return;

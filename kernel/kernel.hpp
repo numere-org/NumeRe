@@ -159,6 +159,7 @@ class NumeReKernel
         void defineOperators();
         void defineConst();
         void defineNumFunctions();
+        void defineMatFunctions();
         void defineStrFunctions();
 
     public:

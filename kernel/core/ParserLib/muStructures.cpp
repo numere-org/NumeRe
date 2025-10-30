@@ -1094,6 +1094,31 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Call a method with an unlimited number
+    /// of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const std::vector<Value>&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const std::vector<Value>& args) const
+    {
+        std::vector<BaseValue*> pArgs;
+
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            if (!args[i].get())
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+
+            pArgs.push_back(args[i].get());
+        }
+
+        return get()->call(sMethod, pArgs);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Does this value object have the
     /// requested applying method?
     ///
@@ -1198,6 +1223,31 @@ namespace mu
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
         return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with an unlimited
+    /// number of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const std::vector<Value>&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const std::vector<Value>& args)
+    {
+        std::vector<BaseValue*> pArgs;
+
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            if (!args[i].get())
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+
+            pArgs.push_back(args[i].get());
+        }
+
+        return get()->apply(sMethod, pArgs);
     }
 
 
@@ -2030,14 +2080,17 @@ namespace mu
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
                                         {"unwrap", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
-                                        {"order", 0}, {"order", -1}});
+                                        {"order", 0}, {"order", -1}, {"submat", -MethodDefinition::multiargcount}});
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
         if (iter != methods.end())
             return *iter;
 
-        return front().isMethod(sMethod, argc);
+        if (size())
+            return front().isMethod(sMethod, argc);
+
+        return MethodDefinition();
     }
 
 
@@ -2150,7 +2203,7 @@ namespace mu
         if (def)
         {
             if (size() == 1 && def.receiveArray())
-                return front().call(sMethod, arg1);
+                return front().call(sMethod, mu::Value(arg1));
 
             Array ret;
             size_t elems = std::max(size(), arg1.size());
@@ -2190,7 +2243,7 @@ namespace mu
 
             for (size_t i = 0; i < elems; i++)
             {
-                ret.emplace_back(get(i).call(arg1.front().getStr(), arg2));
+                ret.emplace_back(get(i).call(arg1.front().getStr(), mu::Value(arg2)));
             }
 
             return ret;
@@ -2291,6 +2344,78 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Call a method with unlimited number of
+    /// arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const MultiArgFuncParams&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::call(const std::string& sMethod, const MultiArgFuncParams& args) const
+    {
+        if (sMethod == "submat")
+        {
+            Array idx;
+            idx.reserve(args.count());
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                idx.emplace_back(args[i]);
+            }
+
+            idx.setDimSizes({args.count(), 1ull});
+
+            return index(idx);
+        }
+
+        MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t i = 0; i < args.count(); i++)
+                {
+                    vArgs.push_back(args[i]);
+                }
+
+                return front().call(sMethod, vArgs);
+            }
+
+            Array ret;
+
+            size_t elems = size();
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                elems = std::max(elems, args[i].size());
+            }
+
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t j = 0; j < args.count(); j++)
+                {
+                    vArgs.push_back(args[j].get(i));
+                }
+
+                ret.emplace_back(get(i).call(sMethod, vArgs));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Determine, whether the passed string
     /// corresponds to an applying method.
     ///
@@ -2308,7 +2433,10 @@ namespace mu
         if (iter != methods.end())
             return *iter;
 
-        return front().isApplyingMethod(sMethod, argc);
+        if (size())
+            return front().isApplyingMethod(sMethod, argc);
+
+        return MethodDefinition();
     }
 
 
@@ -2329,11 +2457,11 @@ namespace mu
             if (m_dimSizes.size() <= 2)
                 return getDimSizes();
 
-            auto iter = m_dimSizes.begin();
+            auto iter = m_dimSizes.rbegin();
 
-            while (m_dimSizes.size() > 2 && (iter = std::find(m_dimSizes.begin()+1, m_dimSizes.end(), 1ull)) != m_dimSizes.end())
+            while (m_dimSizes.size() > 2 && (iter = std::find(m_dimSizes.rbegin(), m_dimSizes.rend(), 1ull)) != m_dimSizes.rend())
             {
-                m_dimSizes.erase(iter);
+                m_dimSizes.erase(std::next(iter).base());
             }
 
             return m_dimSizes;
@@ -2399,7 +2527,7 @@ namespace mu
         if (def)
         {
             if (size() == 1 && def.receiveArray())
-                return front().apply(sMethod, arg1);
+                return front().apply(sMethod, mu::Value(arg1));
 
             Array ret;
             size_t elems = std::max(size(), arg1.size());
@@ -2539,6 +2667,63 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Apply a method with unlimited number
+    /// of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const MultiArgFuncParams&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const MultiArgFuncParams& args)
+    {
+        MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t i = 0; i < args.count(); i++)
+                {
+                    vArgs.push_back(args[i]);
+                }
+
+                return front().apply(sMethod, vArgs);
+            }
+
+            Array ret;
+
+            size_t elems = size();
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                elems = std::max(elems, args[i].size());
+            }
+
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t j = 0; j < args.count(); j++)
+                {
+                    vArgs.push_back(args[j].get(i));
+                }
+
+                ret.emplace_back(get(i).apply(sMethod, vArgs));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get references to individual elements.
     ///
     /// \param idx const Array&
@@ -2566,6 +2751,39 @@ namespace mu
                 return ret;
             else if (p > 0)
                 ret.emplace_back(Value(common));
+            else
+                throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get constant references to individual
+    /// elements.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::index(const Array& idx) const
+    {
+        if (idx.getDims() > 1)
+            return ndIndex(idx);
+
+        Array ret;
+        size_t elems = idx.size();
+        ret.reserve(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            int64_t p = idx.get(i).getNum().asI64();
+
+            if (p > 0 && p <= (int64_t)size())
+                ret.emplace_back(get(p-1));
+            else if (p > 0)
+                ret.emplace_back(Value(getCommonType()));
             else
                 throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
         }
@@ -2688,29 +2906,112 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Get constant references to individual
-    /// elements.
+    /// \brief Calculate the value at the n-th index.
+    ///
+    /// \param ret Array&
+    /// \param idx const Array&
+    /// \param source IndexTuple&
+    /// \param target IndexTuple&
+    /// \param currentDim size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim) const
+    {
+        DataType common = getCommonType();
+
+        for (size_t n = 0; n < ret.m_dimSizes[currentDim]; n++)
+        {
+            target[currentDim] = n;
+
+            if (idx.get(currentDim).isArray())
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(n).getNum().asI64())-1;
+            else
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            if (ret.m_dimSizes.size() > currentDim+1)
+                nthIndex(ret, idx, source, target, currentDim+1);
+            else
+            {
+                if (isInside(source))
+                    ret.get(target) = get(source);
+                else
+                    ret.get(target) = Value(common);
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get references to individual elements
+    /// using an n-dimensional index.
     ///
     /// \param idx const Array&
     /// \return Array
     ///
     /////////////////////////////////////////////////
-    Array Array::index(const Array& idx) const
+    Array Array::ndIndex(const Array& idx) const
     {
         Array ret;
-        size_t elems = idx.size();
-        ret.reserve(elems);
+        size_t dims = idx.size();
+        ret.m_dimSizes = DimSizes(dims, 1ull);
+        size_t elems = 1ull;
 
-        for (size_t i = 0; i < elems; i++)
+        for (size_t i = 0; i < dims; i++)
         {
-            int64_t p = idx.get(i).getNum().asI64();
+            if (idx.get(i).isArray())
+            {
+                ret.m_dimSizes[i] = idx.get(i).getArray().size();
+                elems *= ret.m_dimSizes[i];
+            }
+        }
 
-            if (p > 0 && p <= (int64_t)size())
-                ret.emplace_back(get(p-1));
-            else if (p > 0)
-                ret.emplace_back(Value(getCommonType()));
+        // Should not happen but added for safety reasons
+        if (ret.m_dimSizes.size() < 2)
+            throw ParserError(ecTYPE_MISMATCH_OOB, "VAR()");
+
+        ret.resize(elems);
+        ret.makeMutable();
+        DataType common = getCommonType();
+        IndexTuple source(dims);
+        IndexTuple target(dims);
+
+        if (!m_dimSizes.size())
+            m_dimSizes.push_back(size());
+
+        for (size_t i = 0; i < ret.m_dimSizes[0]; i++)
+        {
+            target[0] = i;
+
+            if (idx.get(0).isArray())
+                source[0] = std::max(1LL, idx.get(0).getArray().get(i).getNum().asI64())-1;
             else
-                throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
+                source[0] = std::max(1LL, idx.get(0).getNum().asI64())-1;
+
+            for (size_t j = 0; j < ret.m_dimSizes[1]; j++)
+            {
+                target[1] = j;
+
+                if (idx.get(1).isArray())
+                    source[1] = std::max(1LL, idx.get(1).getArray().get(j).getNum().asI64())-1;
+                else
+                    source[1] = std::max(1LL, idx.get(1).getNum().asI64())-1;
+
+                if (dims > 2)
+                    nthIndex(ret, idx, source, target, 2);
+                else
+                {
+                    if (isInside(source))
+                        ret.get(i, j) = get(source[0], source[1]);
+                    else
+                        ret.get(i, j) = Value(common);
+                }
+            }
+        }
+
+        while (ret.m_dimSizes.size() > 2 && ret.m_dimSizes.back() == 1ull)
+        {
+            ret.m_dimSizes.pop_back();
         }
 
         return ret;
@@ -4295,16 +4596,21 @@ namespace mu
             if (sourceDims.size() <= extractionDim && idx.get(i).isArray() && idx.get(i).getArray().size() > 1)
                 throw ParserError(ecTYPE_MISMATCH_OOB);
 
-            if (idx.get(i).isGenerator())
+            if (idx.get(i).isArray())
             {
-                elemCount[i] = std::min(idx.get(i).getGenerator().size(), sourceDims[extractionDim]);
-                sourceDims[extractionDim] = std::min(elemCount[i], sourceDims[extractionDim]);
-                extractionDim++;
-            }
-            else if (idx.get(i).isArray())
-            {
-                elemCount[i] = std::min(idx.get(i).getArray().size(), sourceDims[extractionDim]);
-                sourceDims[extractionDim] = std::min(elemCount[i], sourceDims[extractionDim]);
+                if (sourceDims[extractionDim] == 1ull)
+                {
+                    elemCount[i] = idx.get(i).getArray().size() == UINT64_MAX
+                        ? std::max(1ll, (int64_t)getSize(extractionDim) - idx.get(i).getArray().get(0).getNum().asI64() + 1ll)
+                        : idx.get(i).getArray().size();
+                    sourceDims[extractionDim] = elemCount[i];
+                }
+                else
+                {
+                    elemCount[i] = std::min(idx.get(i).getArray().size(), sourceDims[extractionDim]);
+                    sourceDims[extractionDim] = std::min(elemCount[i], sourceDims[extractionDim]);
+                }
+
                 extractionDim++;
             }
         }

@@ -22,6 +22,7 @@
 #include "matdatastructures.hpp"
 #include "../ParserLib/muParserError.h"
 #include "../structures.hpp"
+#include "../datamanagement/memory.hpp"
 
 #define EIGENVALUES 0
 #define EIGENVECTORS 1
@@ -30,12 +31,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 #include <numeric>
-#include <random>
 #include <mgl2/mgl.h>
 #include <queue>
-
-// Forward declaration from tools.hpp
-std::mt19937& getRandGenInstance();
 
 enum
 {
@@ -520,7 +517,7 @@ __attribute__((force_align_arg_pointer)) static mu::Array calcEigenVectsAndValue
     {
         for (size_t j = 0; j < A.rows(); j++)
         {
-            mMatrix(i,j) = A.get(i,j);
+            mMatrix(i,j) = A.get(i,j).as_cmplx();
         }
     }
 
@@ -784,7 +781,7 @@ mu::Array matfnc_transpose(const mu::Array& A, const mu::Array& dims)
         int maxDim = dimIdx.max();
 
         if (!dimIdx.isPermutation())
-            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID);
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
 
         if ((int)sizes.size() < maxDim)
         {
@@ -1658,57 +1655,6 @@ mu::Array matfnc_identity(const mu::Array& n)
 
 
 /////////////////////////////////////////////////
-/// \brief Implementation of the shuffle()
-/// function.
-///
-/// \param shuffle const mu::Array&
-/// \param base const mu::Array&
-/// \return mu::Array
-///
-/////////////////////////////////////////////////
-mu::Array matfnc_shuffle(const mu::Array& shuffle, const mu::Array& base)
-{
-    size_t nShuffle = shuffle.getAsScalarInt();
-    size_t nBase;
-
-    if (base.isDefault())
-        nBase = nShuffle;
-    else
-        nBase = base.getAsScalarInt();
-
-    if (!nBase)
-        throw mu::ParserError(mu::ecMATRIX_EMPTY);
-
-    mu::Array _mBase(nBase, mu::Value(0.0));
-
-    if (nShuffle > nBase)
-        nShuffle = nBase;
-
-    // Create the base (unshuffled) vector
-    for (size_t i = 0; i < nBase; i++)
-    {
-        _mBase.get(i) = i+1;
-    }
-
-    // Shuffle the vector by swapping the i-th shuffled
-    // element with the i-th element
-    for (size_t i = 0; i < nShuffle; i++)
-    {
-        std::uniform_real_distribution<double> randDist(i, nBase-1);
-
-        int nIndex = rint(randDist(getRandGenInstance()));
-        mu::Value dTemp = _mBase.get(i);
-        _mBase.get(i) = _mBase.get(nIndex);
-        _mBase.get(nIndex) = dTemp;
-    }
-
-    // Return only the requested vector length
-    _mBase.resize(nShuffle);
-    return _mBase;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Implementation of the correl()
 /// function.
 ///
@@ -2225,7 +2171,7 @@ __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array&
     {
         for (size_t j = 0; j < A.cols(); j++)
         {
-            mA(i,j) = A.get(i,j);
+            mA(i,j) = A.get(i,j).as_cmplx();
         }
     }
 
@@ -2235,7 +2181,7 @@ __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array&
     {
         for (size_t j = 0; j < B.cols(); j++)
         {
-            mB(i,j) = B.get(i,j);
+            mB(i,j) = B.get(i,j).as_cmplx();
         }
     }
 
@@ -3065,7 +3011,7 @@ static mu::Array matrixRasterFilter(const mu::Array& data, const mu::Array& kern
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-Matrix convolution(Matrix& mat1, Matrix& mat2)
+static Matrix convolution(Matrix& mat1, Matrix& mat2)
 {
     //Transform matrix 1
     mglDataC _fftData1;

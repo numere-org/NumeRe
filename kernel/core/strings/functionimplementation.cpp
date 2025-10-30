@@ -1142,7 +1142,7 @@ mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array
 {
     mu::MatrixView a1View(a1);
     mu::MatrixView a2View(a2);
-    mu::MatrixView a3View(a2);
+    mu::MatrixView a3View(a3);
     mu::Array ret = a1View.prepare(a2View, a3View);
 
     size_t elems = a1View.size();
@@ -1151,7 +1151,7 @@ mu::Array strfnc_split(const mu::Array& a1, const mu::Array& a2, const mu::Array
     {
         ret.push_back(mu::Value(split_impl(a1View.get(i).getStr(),
                                            a2View.get(i).getStr(),
-                                           !a3.isDefault() && (bool)a3View.get(i))));
+                                           a3.isDefault() ? false : (bool)a3View.get(i))));
     }
 
     if (!ret.size())
@@ -2559,12 +2559,15 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
             if ((!nMatch || s.find(sView1[nMatch-1]) != std::string::npos)
                 && (nMatch + t.length() >= sView1.length() || s.find(sView1[nMatch+t.length()]) != std::string::npos))
             {
-                ret.get(i) = mu::Value(nMatch+1);
+                ret.emplace_back(mu::Value(nMatch+1));
                 break;
             }
 
             nMatch++;
         }
+
+        if (nMatch == std::string::npos)
+            ret.emplace_back(mu::Value(0));
     }
 
     return ret;

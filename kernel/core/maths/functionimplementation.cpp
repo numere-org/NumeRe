@@ -6434,6 +6434,57 @@ mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the shuffle()
+/// function.
+///
+/// \param shuffle const mu::Array&
+/// \param base const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base)
+{
+    size_t nShuffle = shuffle.getAsScalarInt();
+    size_t nBase;
+
+    if (base.isDefault())
+        nBase = nShuffle;
+    else
+        nBase = base.getAsScalarInt();
+
+    if (!nBase)
+        throw mu::ParserError(mu::ecMATRIX_EMPTY);
+
+    mu::Array _mBase(nBase, mu::Value(0.0));
+
+    if (nShuffle > nBase)
+        nShuffle = nBase;
+
+    // Create the base (unshuffled) vector
+    for (size_t i = 0; i < nBase; i++)
+    {
+        _mBase.get(i) = i+1;
+    }
+
+    // Shuffle the vector by swapping the i-th shuffled
+    // element with the i-th element
+    for (size_t i = 0; i < nShuffle; i++)
+    {
+        std::uniform_real_distribution<double> randDist(i, nBase-1);
+
+        int nIndex = rint(randDist(getRandGenInstance()));
+        mu::Value dTemp = _mBase.get(i);
+        _mBase.get(i) = _mBase.get(nIndex);
+        _mBase.get(nIndex) = dTemp;
+    }
+
+    // Return only the requested vector length
+    _mBase.resize(nShuffle);
+    return _mBase;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns the utc offset
 /// in seconds.
 ///

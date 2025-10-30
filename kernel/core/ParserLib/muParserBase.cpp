@@ -59,10 +59,10 @@ size_t getMatchingParenthesis(const StringView&);
 // {a:b}, {a:c:b}, {a:b, ..., c}
 // {a, {b, c}}
 // VAR.METHOD (VAR.FIELD)
-
-// Missing syntax elements
 // X[i]
 // X[i] = EXPR
+
+// Missing syntax elements
 // X.FIELD = EXPR
 // [X, Y, C] = A, B, C
 
@@ -1675,13 +1675,21 @@ namespace mu
                     {
                         int iArgCount = pTok->Fun().argc;
 
+                        if (sidx < iArgCount)
+                            Error(ecINTERNAL_ERROR, 1);
+
+                        const mu::Array& currArr = Stack[sidx-iArgCount+1].get();
+
+                        if (iArgCount > 1
+                            && (currArr.isMethod(pTok->Fun().name, MethodDefinition::multiargcount)
+                                || (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, MethodDefinition::multiargcount))))
+                            iArgCount = -iArgCount;
+
                         // switch according to argument count
                         switch (iArgCount)
                         {
                             case 1:
                                 {
-                                    const mu::Array& currArr = Stack[sidx].get();
-
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 0))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name);
                                     else
@@ -1691,7 +1699,6 @@ namespace mu
                             case 2:
                                 {
                                     sidx -= 1;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 1))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1704,7 +1711,6 @@ namespace mu
                             case 3:
                                 {
                                     sidx -= 2;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 2))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1719,7 +1725,6 @@ namespace mu
                             case 4:
                                 {
                                     sidx -= 3;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 3))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1736,7 +1741,6 @@ namespace mu
                             case 5:
                                 {
                                     sidx -= 4;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 4))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1753,7 +1757,20 @@ namespace mu
                                 }
                                 continue;
                             default:
-                                Error(ecINTERNAL_ERROR, 1);
+                                if (iArgCount > 0) // function with variable arguments store the number as a negative value
+                                    Error(ecINTERNAL_ERROR, 1);
+
+                                sidx -= -iArgCount - 1;
+                                const mu::Array& currArr = Stack[sidx].get();
+
+                                if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, MethodDefinition::multiargcount))
+                                    Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
+                                                                                 MultiArgFuncParams(&Stack[sidx+1], -iArgCount-1));
+                                else
+                                    Stack[sidx] = currArr.call(pTok->Fun().name,
+                                                               MultiArgFuncParams(&Stack[sidx+1], -iArgCount-1));
+
+                                continue;
                         }
                     }
 

@@ -458,7 +458,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
-        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+        NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
 
     // Write the return values to cache
     if (bWriteToCache)

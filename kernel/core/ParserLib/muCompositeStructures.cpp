@@ -1297,7 +1297,7 @@ namespace mu
     static Array importXmlChildren(const tinyxml2::XMLNode* child)
     {
         Array siblings;
-        siblings.makeMutable();
+//        siblings.makeMutable();
 
         while (child)
         {
@@ -1456,7 +1456,7 @@ namespace mu
     static Array importJsonArray(const Json::Value& json)
     {
         Array arr;
-        arr.makeMutable();
+//        arr.makeMutable();
 
         for (Json::ArrayIndex i = 0; i < json.size(); i++)
         {

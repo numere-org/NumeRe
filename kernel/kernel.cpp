@@ -25,6 +25,7 @@
 #include "versioninformation.hpp"
 
 #include "core/maths/functionimplementation.hpp"
+#include "core/maths/matfuncimplementation.hpp"
 #include "core/strings/functionimplementation.hpp"
 
 #define KERNEL_PRINT_SLEEP 2
@@ -347,6 +348,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     // Define the functions
     g_logger.debug("Defining functions.");
     defineNumFunctions();
+    defineMatFunctions();
     defineStrFunctions();
 
     g_logger.info("Kernel ready.");
@@ -404,12 +406,14 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("!", numfnc_Factorial);
     _parser.DefinePostfixOprt("!!", numfnc_doubleFactorial);
     _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
+    _parser.DefinePostfixOprt("'", oprt_transpose, true);
 
     // --> Operatoren <--
     _parser.DefineOprt("%", oprt_Mod, prMUL_DIV, oaLEFT);
     _parser.DefineOprt("|||", oprt_XOR, prLOGIC, oaLEFT);
     _parser.DefineOprt("|", oprt_BinOR, prLOGIC, oaLEFT);
     _parser.DefineOprt("&", oprt_BinAND, prLOGIC, oaLEFT);
+    _parser.DefineOprt("**", oprt_MatMul, mu::prMUL_DIV, mu::oaRIGHT, true);
 }
 
 
@@ -524,15 +528,6 @@ void NumeReKernel::defineConst()
 /////////////////////////////////////////////////
 void NumeReKernel::defineNumFunctions()
 {
-
-    /////////////////////////////////////////////////////////////////////
-    // NOTE:
-    // If multi-argument functions are declared, think of whether
-    // they can be use a column of data sets as their argument list.
-    // If not, then they have to be excluded in the multi-argument
-    // function search in the parser.
-    /////////////////////////////////////////////////////////////////////
-
     _parser.DefineFun("faculty", numfnc_Factorial);                              // faculty(n)
     _parser.DefineFun("factorial", numfnc_Factorial);                            // factorial(n)
     _parser.DefineFun("dblfacul", numfnc_doubleFactorial);                       // dblfacul(n)
@@ -725,6 +720,7 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("student_t_cdf_q", rndfnc_student_t_cdf_q);                // student_t_cdf_q(x, nu)
     _parser.DefineFun("student_t_inv_p", rndfnc_student_t_inv_p);                // student_t_inv_p(p, nu)
     _parser.DefineFun("student_t_inv_q", rndfnc_student_t_inv_q);                // student_t_inv_q(q, nu)
+    _parser.DefineFun("shuffle", rndfnc_shuffle, false, 1);                      // shuffle(n, m=n)
 
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
@@ -756,16 +752,72 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("verifyval", tstfnc_verifyValue, true, 1);                 // verifyval(results,expected,tol)
     _parser.DefineFun("verifyneq", tstfnc_verifyNeq, true, 1);                   // verifyneq(results,notexpected,tol)
     _parser.DefineFun("verifyrange", tstfnc_verifyRange, true, 1);               // verifyrange(results,lower,upper,incl)
+}
 
-    /////////////////////////////////////////////////////////////////////
-    // NOTE:
-    // If multi-argument functions are declared, think of whether
-    // they can be use a column of data sets as their argument list.
-    // If not, then they have to be excluded in the multi-argument
-    // function search in the parser.
-    // Multi-args with a limited number of args (like perlin) have to be
-    // excluded always.
-    /////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////
+/// \brief This member function declares all
+/// matrix functions.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::defineMatFunctions()
+{
+    _parser.DefineFun("matfc", matfnc_matfc);                                    // matfc(x,y,z,...)
+    _parser.DefineFun("matfcf", matfnc_matfcf);                                  // matfcf(x,y,z,...)
+    _parser.DefineFun("matfr", matfnc_matfr);                                    // matfr(x,y,z,...)
+    _parser.DefineFun("matfrf", matfnc_matfrf);                                  // matfrf(x,y,z,...)
+    _parser.DefineFun("matfl", matfnc_matfr);                                    // matfl(x,y,z,...)
+    _parser.DefineFun("matflf", matfnc_matfrf);                                  // matflf(x,y,z,...)
+    _parser.DefineFun("det", matfnc_det);                                        // det(A)
+    _parser.DefineFun("cross", matfnc_cross);                                    // cross(A)
+    _parser.DefineFun("trace", matfnc_trace);                                    // trace(A)
+    _parser.DefineFun("eigenvals", matfnc_eigenvals);                            // eigenvals(A)
+    _parser.DefineFun("eigenvects", matfnc_eigenvects);                          // eigenvects(A)
+    _parser.DefineFun("diagonalize", matfnc_diagonalize);                        // diagonalize(A)
+    _parser.DefineFun("invert", matfnc_invert);                                  // invert(A)
+    _parser.DefineFun("transpose", matfnc_transpose, true, 1);                   // transpose(A,dim={2,1})
+    _parser.DefineFun("size", matfnc_size);                                      // size(A)
+    _parser.DefineFun("cutoff", matfnc_cutoff);                                  // cutoff(A,thresh,mode)
+    _parser.DefineFun("movsum", matfnc_movsum, true, 1);                         // movsum(A,n,m=n)
+    _parser.DefineFun("movstd", matfnc_movstd, true, 1);                         // movstd(A,n,m=n)
+    _parser.DefineFun("movavg", matfnc_movavg, true, 1);                         // movavg(A,n,m=n)
+    _parser.DefineFun("movprd", matfnc_movprd, true, 1);                         // movprd(A,n,m=n)
+    _parser.DefineFun("movmed", matfnc_movmed, true, 1);                         // movmed(A,n,m=n)
+    _parser.DefineFun("movmin", matfnc_movmin, true, 1);                         // movmin(A,n,m=n)
+    _parser.DefineFun("movmax", matfnc_movmax, true, 1);                         // movmax(A,n,m=n)
+    _parser.DefineFun("movnorm", matfnc_movnorm, true, 1);                       // movnorm(A,n,m=n)
+    _parser.DefineFun("movnum", matfnc_movnum, true, 1);                         // movnum(A,n,m=n)
+    _parser.DefineFun("zero", matfnc_zero);                                      // zero(n,m,...)
+    _parser.DefineFun("one", matfnc_one);                                        // one(n,m,...)
+    _parser.DefineFun("identity", matfnc_identity);                              // identity(n)
+    _parser.DefineFun("correl", matfnc_correl);                                  // correl(A,B)
+    _parser.DefineFun("covar", matfnc_covar);                                    // covar(A,B)
+    _parser.DefineFun("normalize", matfnc_normalize);                            // normalize(A)
+    _parser.DefineFun("reshape", matfnc_reshape, true, 1);                       // reshape(A,{n},m={})
+    _parser.DefineFun("resize", matfnc_resize, true, 1);                         // resize(A,{n},m={})
+    _parser.DefineFun("unique", matfnc_unique, true, 1);                         // unique(A,dim=0)
+    _parser.DefineFun("cumsum", matfnc_cumsum, true, 1);                         // cumsum(A,dim=0)
+    _parser.DefineFun("cumprd", matfnc_cumprd, true, 1);                         // cumprd(A,dim=0)
+    _parser.DefineFun("solve", matfnc_solve);                                    // solve(A,b)
+    _parser.DefineFun("diag", matfnc_diag);                                      // diag(x,y,z,...)
+    _parser.DefineFun("carttocyl", matfnc_carttocyl);                            // carttocyl(A)
+    _parser.DefineFun("carttopol", matfnc_carttopol);                            // carttopol(A)
+    _parser.DefineFun("cyltocart", matfnc_cyltocart);                            // cyltocart(A)
+    _parser.DefineFun("cyltopol", matfnc_cyltopol);                              // cyltopol(A)
+    _parser.DefineFun("poltocart", matfnc_poltocart);                            // poltocart(A)
+    _parser.DefineFun("poltocyl", matfnc_poltocyl);                              // poltocyl(A)
+    _parser.DefineFun("coordstogrid", matfnc_coordstogrid);                      // coordstogrid(grid,coords)
+    _parser.DefineFun("interpolate", matfnc_interpolate);                        // interpolate(grid,coords)
+    _parser.DefineFun("hcat", matfnc_hcat);                                      // hcat(A,B)
+    _parser.DefineFun("vcat", matfnc_vcat);                                      // vcat(A,B)
+    _parser.DefineFun("select", matfnc_select);                                  // select(A,row,col)
+    _parser.DefineFun("assemble", matfnc_assemble);                              // assemble(row,col,A)
+    _parser.DefineFun("polylength", matfnc_polylength);                          // polylength(x,y,z,...)
+    _parser.DefineFun("filter", matfnc_filter);                                  // filter(A,ker,boundaries)
+    _parser.DefineFun("circshift", matfnc_circshift, true, 1);                   // circshift(A,steps,dim=1)
+    _parser.DefineFun("vectshift", matfnc_vectshift, true, 1);                   // vectshift(A,steps,dim=1)
 }
 
 
@@ -2972,7 +3024,7 @@ void NumeReKernel::printResult(const std::string& sLine, bool bScriptRunning)
 
     {
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-        m_parent->m_sAnswer += "|-> " + sLine + "\n";
+        m_parent->m_sAnswer += sLine + "\n";
 
         if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
             m_parent->m_KernelStatus = NumeReKernel::NUMERE_CALC_UPDATE;
@@ -3225,6 +3277,8 @@ static std::string formatMatrixOutput(const mu::Array& mat, size_t prec, size_t 
                 sPrinted += RIGHT;
         }
     }
+
+    return sPrinted;
 }
 
 
@@ -3271,16 +3325,16 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
                 if (n)
                     sAns += "\n|-> ans = {";
                 else
-                    sAns = "ans = {";
+                    sAns = "|-> ans = {";
 
                 // compose the result
                 for (size_t i = 0; i < arr->size(); ++i)
                 {
-                    if (i)
-                        sAns += ", ";
-
                     sAns += strfill(arr->get(i).printEmbedded(prec, prec+TERMINAL_FORMAT_FIELD_LENOFFSET, true),
                                     prec + TERMINAL_FORMAT_FIELD_LENOFFSET);
+
+                    if (i+1 < arr->size())
+                        sAns += ", ";
 
                     if (arr->size() + 1 > nElemPerLine && !((i + 1) % nElemPerLine) && i < arr->size() - 1)
                         sAns += "...\n|          ";
@@ -3295,7 +3349,7 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
             if (n)
                 sAns += "\n|-> ans = " + arr->print(prec, 0);
             else
-                sAns = "ans = " + arr->print(prec, 0);
+                sAns = "|-> ans = " + arr->print(prec, 0);
         }
     }
 
@@ -3873,6 +3927,25 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
         {
             stringTable.set(i, 0, "." + fields[i] + ":");
             stringTable.set(i, 1, dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+        }
+
+        return stringTable;
+    }
+    else if (arr.getDims() == 2)
+    {
+        NumeRe::Container<std::string> stringTable(arr.rows(), arr.cols());
+
+        for (size_t i = 0; i < arr.rows(); i++)
+        {
+            for (size_t j = 0; j < arr.cols(); j++)
+            {
+                const mu::Value& val = arr.get(i, j);
+
+                if (val.getType() == mu::TYPE_ARRAY)
+                    stringTable.set(i, j, val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
+                else
+                    stringTable.set(i, j, !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+            }
         }
 
         return stringTable;

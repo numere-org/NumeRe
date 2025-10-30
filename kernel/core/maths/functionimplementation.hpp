@@ -224,6 +224,8 @@ mu::Array rndfnc_student_t_cdf_q(const mu::Array& x, const mu::Array& nu); // ap
 mu::Array rndfnc_student_t_inv_p(const mu::Array& p, const mu::Array& nu); // apply
 mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu); // apply
 
+mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base); // OPT=1
+
 // Operator functions
 mu::Array oprt_Mod(const mu::Array&, const mu::Array&); // apply
 mu::Array oprt_XOR(const mu::Array&, const mu::Array&); // apply

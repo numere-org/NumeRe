@@ -42,6 +42,25 @@ size_t getMatchingParenthesis(const StringView&);
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Really simple helper to name the
+    /// correct dimension variable.
+    ///
+    /// \param dimVar size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    static std::string getDimVarName(size_t dimVar)
+    {
+        if (dimVar == 0)
+            return "nrows";
+        else if (dimVar == 1)
+            return "ncols";
+
+        return "ndim";
+//        return "ndim[" + toString(dimVar+1) + "]";
+    }
+
 
 	// Forward declaration
 	class ParserBase;
@@ -505,7 +524,7 @@ namespace mu
                                 }
                                 else
                                 {
-                                    a_Tok.SetDimVar(m_indexedVars.top().var, "nlen", m_argC);
+                                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_argC), m_argC);
                                     m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
                                 }
 
@@ -563,7 +582,7 @@ namespace mu
                                 }
                                 else
                                 {
-                                    a_Tok.SetDimVar(m_indexedVars.top().var, "nlen");
+                                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_argC), m_argC);
                                     m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
                                 }
 
@@ -722,7 +741,7 @@ namespace mu
                 }
                 else
                 {
-                    a_Tok.SetDimVar(m_indexedVars.top().var, "nlen", m_argC);
+                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_argC), m_argC);
                     m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
                 }
 
@@ -1039,7 +1058,8 @@ namespace mu
 
 			if (strTok == "nlen")
             {
-                if (m_indexedVars.empty())
+                if (!m_indexedVars.size()
+                    || m_strFormula[m_indexedVars.top().indexStart] == '(') // Accept [ and {, the latter for backwards compatibility
                     Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
                 m_iPos = iEnd;
@@ -1051,6 +1071,40 @@ namespace mu
 				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
 				return true;
             }
+
+			if (strTok == "ndim")
+            {
+                if (!m_indexedVars.size()
+                    || m_strFormula[m_indexedVars.top().indexStart] == '[') // Accept ( and {
+                    Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
+
+                m_iPos = iEnd;
+				a_Tok.SetDimVar(m_indexedVars.top().var, strTok, m_argC);
+
+				if (m_iSynFlags & noVAL)
+					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
+
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+				return true;
+            }
+
+			if (strTok == "nrows" || strTok == "nlines" || strTok == "ncols")
+            {
+                if (!m_indexedVars.size()
+                    || m_strFormula[m_indexedVars.top().indexStart] == '[') // Accept ( and {
+                    return false; // Just return false in this case due to backwards compatibility
+                    //Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
+
+                m_iPos = iEnd;
+				a_Tok.SetDimVar(m_indexedVars.top().var, strTok, strTok == "ncols" ? 1 : 0);
+
+				if (m_iSynFlags & noVAL)
+					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
+
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
+				return true;
+            }
+
 		}
 
 		// 3.call the value recognition functions provided by the user

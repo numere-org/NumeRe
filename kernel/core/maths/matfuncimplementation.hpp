@@ -51,7 +51,6 @@ mu::Array matfnc_movnum(const mu::Array& A, const mu::Array& n, const mu::Array&
 mu::Array matfnc_zero(const mu::MultiArgFuncParams& n);
 mu::Array matfnc_one(const mu::MultiArgFuncParams& n);
 mu::Array matfnc_identity(const mu::Array& n);
-mu::Array matfnc_shuffle(const mu::Array& shuffle, const mu::Array& base); // OPT=1
 mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B);
 mu::Array matfnc_covar(const mu::Array& A, const mu::Array& B);
 mu::Array matfnc_normalize(const mu::Array& A);

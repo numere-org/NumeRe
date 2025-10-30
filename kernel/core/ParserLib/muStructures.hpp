@@ -39,6 +39,7 @@ namespace mu
     // Forward declaration of the Variable class
     class Variable;
     class Array;
+    class MultiArgFuncParams;
 
     using DimSizes = std::vector<size_t>; ///< An alias for the dimension sizes within an Array
     using IndexTuple = std::vector<size_t>; ///< An alias for a multidimensional index
@@ -432,6 +433,7 @@ namespace mu
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2) const;
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const;
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const;
+            Value call(const std::string& sMethod, const std::vector<Value>& args) const;
 
             MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
@@ -440,6 +442,7 @@ namespace mu
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2);
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3);
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4);
+            Value apply(const std::string& sMethod, const std::vector<Value>& args);
 
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
@@ -690,6 +693,31 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Return true, if this Array represents
+            /// a row or column vector.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isVector() const
+            {
+                return m_dimSizes.size() == 1ull || (m_dimSizes.size() == 2 && (m_dimSizes[0] == 1ull || m_dimSizes[1] == 1ull));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return true, if this Array is actually
+            /// dimensionless and represents a plain array or
+            /// a list.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isPlainArray() const
+            {
+                return size() > 1 && !m_dimSizes.size();
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Make this instance mutable.
             ///
             /// \return Array&
@@ -768,6 +796,9 @@ namespace mu
             /////////////////////////////////////////////////
             DimSizes getDimSizes() const
             {
+                if (!size())
+                    return DimSizes({0, 0});
+
                 if (m_dimSizes.size() < 2)
                     return DimSizes({size(), 1ull});
 
@@ -1183,6 +1214,7 @@ namespace mu
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const;
+            Array call(const std::string& sMethod, const MultiArgFuncParams& args) const;
 
             MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
@@ -1191,6 +1223,7 @@ namespace mu
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2);
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3);
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4);
+            Array apply(const std::string& sMethod, const MultiArgFuncParams& args);
 
             Array index(const Array& idx);
             Array index(const Array& idx) const;
@@ -1272,29 +1305,37 @@ namespace mu
             /////////////////////////////////////////////////
             Value& get(const IndexTuple& idx)
             {
-                if (m_dimSizes.size() != idx.size())
-                    throw std::length_error("Dimension mismatch.");
+                size_t minDim = std::min(m_dimSizes.size(), idx.size());
+
+                for (size_t n = std::max(minDim, 1ull); n < idx.size(); n++)
+                {
+                    if (idx[n])
+                        throw std::length_error("Dimension mismatch.");
+                }
 
                 size_t linIdx = idx[0];
 
                 for (size_t n = 1; n < idx.size(); n++)
                 {
-                    if (idx[n] >= m_dimSizes[n])
+                    if (idx[n])
                     {
-                        std::string dims;
-
-                        for (size_t m = 0; m < idx.size(); m++)
+                        if (idx[n] >= m_dimSizes[n])
                         {
-                            if (dims.size())
-                                dims += ",";
+                            std::string dims;
 
-                            dims += std::to_string(idx[n]);
+                            for (size_t m = 0; m < idx.size(); m++)
+                            {
+                                if (dims.size())
+                                    dims += ",";
+
+                                dims += std::to_string(idx[n]);
+                            }
+
+                            throw std::length_error("Element (" + dims + ") is out of bounds.");
                         }
 
-                        throw std::length_error("Element (" + dims + ") is out of bounds.");
+                        linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
                     }
-
-                    linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
                 }
 
                 return get(linIdx);
@@ -1451,7 +1492,7 @@ namespace mu
             static const Value m_default;
             bool m_isConst;
             mutable std::list<Value> m_buffer;
-            DimSizes m_dimSizes;
+            mutable DimSizes m_dimSizes;
 
             /////////////////////////////////////////////////
             /// \brief Check, whether the index is inside of
@@ -1473,7 +1514,9 @@ namespace mu
             }
 
             void nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim);
+            void nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim) const;
             Array ndIndex(const Array& idx);
+            Array ndIndex(const Array& idx) const;
     };
 
 
@@ -1584,7 +1627,14 @@ namespace mu
                 view1.setDimSizes(m_dimSizes);
 
                 Array ret;
-                ret.setDimSizes(m_dimSizes);
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
                 return ret;
             }
 
@@ -1606,7 +1656,15 @@ namespace mu
                 view2.setDimSizes(m_dimSizes);
 
                 Array ret;
-                ret.setDimSizes(m_dimSizes);
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix()
+                    && !view2.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
                 return ret;
             }
 
@@ -1631,7 +1689,16 @@ namespace mu
                 view3.setDimSizes(m_dimSizes);
 
                 Array ret;
-                ret.setDimSizes(m_dimSizes);
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix()
+                    && !view2.m_array.isMatrix()
+                    && !view3.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
                 return ret;
             }
 
@@ -1659,7 +1726,17 @@ namespace mu
                 view4.setDimSizes(m_dimSizes);
 
                 Array ret;
-                ret.setDimSizes(m_dimSizes);
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix()
+                    && !view2.m_array.isMatrix()
+                    && !view3.m_array.isMatrix()
+                    && !view4.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
                 return ret;
             }
 
