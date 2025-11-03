@@ -729,7 +729,7 @@ namespace mu
 
             // Slicing with open boundaries
             if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size()
-                && m_strFormula[m_indexedVars.top().indexStart] == '('
+                && m_strFormula[m_indexedVars.top().indexStart] != '['
                 && m_indexedVars.top().parensState[0] == m_iBrackets
                 && m_indexedVars.top().parensState[1] == m_iVBrackets
                 && m_indexedVars.top().parensState[2] == m_iSqBrackets)

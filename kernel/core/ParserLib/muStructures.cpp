@@ -4650,6 +4650,21 @@ namespace mu
             m_dimSizes = thisView.m_dimSizes;
         }
 
+        // If only one target position has been selected
+        // assign all elements as embedded values
+        if (getNumElements(elemCount) == 1ull)
+        {
+            IndexTuple target(elemCount.size());
+
+            for (size_t i = 0; i < target.size(); i++)
+            {
+                target[i] = idx.get(i).getNum().asI64()-1;
+            }
+
+            get(target) = vals;
+            return;
+        }
+
         MatrixView valView(const_cast<Array&>(vals));
         valView.setDimSizes(sourceDims);
 

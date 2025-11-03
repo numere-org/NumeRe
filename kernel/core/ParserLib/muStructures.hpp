@@ -1289,6 +1289,9 @@ namespace mu
                 if (j > 0 && m_dimSizes.size() != 2)
                     throw std::length_error("Dimension mismatch.");
 
+                if (!m_dimSizes.size())
+                    return get(i);
+
                 if (i >= m_dimSizes[0] || j >= m_dimSizes[1])
                     throw std::length_error("Element (" + std::to_string(i) + "," + std::to_string(j) + ") is out of bounds.");
 
@@ -1753,22 +1756,22 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
-            /// \brief Get the i-th element in a linear
-            /// indexing fashion.
+            /// \brief Get the index tuple for the i-th
+            /// element addressed in linear fashion.
             ///
             /// \param i size_t
-            /// \return const Value&
+            /// \return IndexTuple
             ///
             /////////////////////////////////////////////////
-            const Value& get(size_t i) const
+            IndexTuple index(size_t i) const
             {
                 if (m_dimFacts.size() != m_dimSizes.size())
                     prepareDimFacts();
 
-                if (m_array.isScalar())
-                    return m_array.front();
-
                 IndexTuple idx(m_dimSizes.size(), 0u);
+
+                if (m_array.isScalar())
+                    return idx;
 
                 for (int n = idx.size()-1; n > 0; n--)
                 {
@@ -1784,7 +1787,23 @@ namespace mu
                 if (!m_array.isScalarDim(0))
                     idx.front() = i;
 
-                return m_array.get(idx);
+                return idx;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the i-th element in a linear
+            /// indexing fashion.
+            ///
+            /// \param i size_t
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& get(size_t i) const
+            {
+                if (m_array.isScalar())
+                    return m_array.front();
+
+                return m_array.get(index(i));
             }
 
         private:

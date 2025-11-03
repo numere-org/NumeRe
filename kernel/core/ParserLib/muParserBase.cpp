@@ -1098,13 +1098,14 @@ namespace mu
                                                    funTok.IsOptimizable(),
                                                    funTok.GetAsString());
 				break;
-			case  cmIDX:
 			case  cmBIDX:
 			    if (iArgCount == 1)
                 {
                     m_compilingState.m_byteCode.AddVal(mu::Value(1));
                     iArgCount++;
                 }
+                // fallthrough intended
+			case  cmIDX:
 			case  cmSQIDX:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
@@ -1116,13 +1117,14 @@ namespace mu
                                                    funTok.GetAsString());
                 m_compilingState.m_byteCode.AddOp(cmIDX);
 				break;
-			case  cmIDXASGN:
 			case  cmBIDXASGN:
 			    if (iArgCount == 1)
                 {
                     m_compilingState.m_byteCode.AddVal(mu::Value(1));
                     iArgCount++;
                 }
+                // fallthrough intended
+			case  cmIDXASGN:
 			case  cmSQIDXASGN:
 			    // Check, whether enough arguments are available (with some special exceptions)
 				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())

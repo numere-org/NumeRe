@@ -555,7 +555,7 @@ __attribute__((force_align_arg_pointer)) static mu::Array calcEigenVectsAndValue
     else if (nReturnType == DIAGONALIZE)
     {
         Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
-        _mEigenVects.resize(A.rows()*A.cols());
+        _mEigenVects.resize(A.rows()*A.cols(), mu::Value(0.0));
         _mEigenVects.setDimSizes({A.rows(), A.cols()});
 
         for (size_t i = 0; i < _mEigenVects.rows(); i++)
@@ -1562,6 +1562,14 @@ mu::Array matfnc_zero(const mu::MultiArgFuncParams& n)
 {
     if (n.count() == 1)
     {
+        if (n[0].size() == 1)
+        {
+            int64_t dim = n[0].getAsScalarInt();
+            mu::Array ret(dim*dim, mu::Value(0.0));
+            ret.setDimSizes({dim, dim});
+            return ret;
+        }
+
         mu::Array ret(n[0].call("prd").getAsScalarInt(), mu::Value(0.0));
         mu::DimSizes dimSizes(n[0].size(), 1ull);
 
@@ -1600,6 +1608,14 @@ mu::Array matfnc_one(const mu::MultiArgFuncParams& n)
 {
     if (n.count() == 1)
     {
+        if (n[0].size() == 1)
+        {
+            int64_t dim = n[0].getAsScalarInt();
+            mu::Array ret(dim*dim, mu::Value(1.0));
+            ret.setDimSizes({dim, dim});
+            return ret;
+        }
+
         mu::Array ret(n[0].call("prd").getAsScalarInt(), mu::Value(1.0));
         mu::DimSizes dimSizes(n[0].size(), 1ull);
 
@@ -1757,7 +1773,8 @@ mu::Array matfnc_normalize(const mu::Array& A)
     if (!A.size())
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
 
-    mu::Array ret = A;
+    mu::Array ret;
+    ret.assign(A);
     mu::Value _mMax = A.call("max").get(0);
     mu::Value _mMin = A.call("min").get(0);
 
@@ -1963,9 +1980,9 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
         {
             bool insert = true;
 
-            for (size_t j = 0; j < A.size() && insert; j++)
+            for (size_t j = 0; j < ret.size() && insert; j++)
             {
-                if (i != j && A.get(i) == A.get(j))
+                if (A.get(i) == ret.get(j))
                     insert = false;
             }
 
@@ -1991,11 +2008,8 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
     {
         bool insert = true;
 
-        for (size_t j = 0; j < uniqueDimSize && insert; j++)
+        for (size_t j = 0; j < i && insert; j++)
         {
-            if (i == j)
-                continue;
-
             mu::IndexIterator iterator(dimSizes);
 
             do
@@ -2055,7 +2069,8 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
 /////////////////////////////////////////////////
 mu::Array matfnc_cumsum(const mu::Array& A, const mu::Array& dim)
 {
-    mu::Array ret = A;
+    mu::Array ret;
+    ret.assign(A);
 
     if (dim.isDefault() || dim.getAsScalarInt() == 0)
     {
@@ -2107,7 +2122,8 @@ mu::Array matfnc_cumsum(const mu::Array& A, const mu::Array& dim)
 /////////////////////////////////////////////////
 mu::Array matfnc_cumprd(const mu::Array& A, const mu::Array& dim)
 {
-    mu::Array ret = A;
+    mu::Array ret;
+    ret.assign(A);
 
     if (dim.isDefault() || dim.getAsScalarInt() == 0)
     {
@@ -2254,7 +2270,8 @@ mu::Array matfnc_carttocyl(const mu::Array& cartesian)
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               cartesian.printDims() + " vs. "+ toString(cartesian.rows()) + " x 3");
 
-    mu::Array ret = cartesian;
+    mu::Array ret;
+    ret.assign(cartesian);
 
     #pragma omp parallel for
     for (size_t i = 0; i < ret.rows(); i++)
@@ -2284,10 +2301,11 @@ mu::Array matfnc_carttopol(const mu::Array& cartesian)
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               cartesian.printDims() + " vs. "+ toString(cartesian.rows()) + " x 3");
 
-    if (cartesian.cols() == 3)
+    if (cartesian.cols() == 2)
         return matfnc_carttocyl(cartesian);
 
-    mu::Array ret = cartesian;
+    mu::Array ret;
+    ret.assign(cartesian);
 
     #pragma omp parallel for
     for (size_t i = 0; i < ret.rows(); i++)
@@ -2296,7 +2314,7 @@ mu::Array matfnc_carttopol(const mu::Array& cartesian)
                            + cartesian.get(i, 1).pow(2)
                            + cartesian.get(i, 2).pow(2)).front();
         ret.get(i, 1) = numfnc_phi(cartesian.get(i, 0), cartesian.get(i, 1)).front();
-        ret.get(i, 2) = numfnc_theta(cartesian.get(i, 0),cartesian.get(i, 1), cartesian.get(i, 2)).front();
+        ret.get(i, 2) = numfnc_theta(cartesian.get(i, 0), cartesian.get(i, 1), cartesian.get(i, 2)).front();
     }
 
     return ret;
@@ -2320,7 +2338,8 @@ mu::Array matfnc_cyltocart(const mu::Array& cylindrical)
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               cylindrical.printDims() + " vs. "+ toString(cylindrical.rows()) + " x 3");
 
-    mu::Array ret = cylindrical;
+    mu::Array ret;
+    ret.assign(cylindrical);
 
     #pragma omp parallel for
     for (size_t i = 0; i < ret.rows(); i++)
@@ -2350,16 +2369,17 @@ mu::Array matfnc_cyltopol(const mu::Array& cylindrical)
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               cylindrical.printDims() + " vs. "+ toString(cylindrical.rows()) + " x 3");
 
-    if (cylindrical.cols() == 3)
+    if (cylindrical.cols() == 2)
         return cylindrical;
 
-    mu::Array ret = cylindrical;
+    mu::Array ret;
+    ret.assign(cylindrical);
 
     #pragma omp parallel for
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = numfnc_sqrt(cylindrical.get(i, 0).pow(2) + cylindrical.get(i, 2).pow(2)).front();
-        ret.get(i, 1) = numfnc_theta(cylindrical.get(i, 0) * numfnc_cos(cylindrical.get(i, 1)),
+        ret.get(i, 2) = numfnc_theta(cylindrical.get(i, 0) * numfnc_cos(cylindrical.get(i, 1)),
                                      cylindrical.get(i, 0) * numfnc_sin(cylindrical.get(i, 1)),
                                      cylindrical.get(i, 2)).front();
     }
@@ -2389,7 +2409,8 @@ mu::Array matfnc_poltocart(const mu::Array& polar)
     if (polar.cols() == 2)
         return matfnc_cyltocart(polar);
 
-    mu::Array ret = polar;
+    mu::Array ret;
+    ret.assign(polar);
 
     #pragma omp parallel for
     for (size_t i = 0; i < ret.rows(); i++)
@@ -2420,7 +2441,8 @@ mu::Array matfnc_poltocyl(const mu::Array& polar)
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               polar.printDims() + " vs. "+ toString(polar.rows()) + " x 3");
 
-    mu::Array ret = polar;
+    mu::Array ret;
+    ret.assign(polar);
 
     #pragma omp parallel for
     for (size_t i = 0; i < ret.rows(); i++)
@@ -2490,7 +2512,8 @@ mu::Array matfnc_coordstogrid(const mu::Array& grid, const mu::Array& coords)
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID,
                               grid.printDims() + " vs. "+ coords.printDims());
 
-    mu::Array gcoords = coords;
+    mu::Array gcoords;
+    gcoords.assign(coords);
 
     #pragma omp parallel for
     for (size_t i = 0; i < gcoords.rows(); i++)
@@ -2764,7 +2787,7 @@ mu::Array matfnc_select(const mu::Array& data, const mu::Array& rows, const mu::
                 row = intCast(rows.get(i, j).getNum().asF64())-1;
 
             if (!isScalar[1])
-                col = intCast(rows.get(i, j).getNum().asF64())-1;
+                col = intCast(cols.get(i, j).getNum().asF64())-1;
 
             // Extract the selected value
             if (row >= 0 && row < (int)data.rows()
@@ -3198,13 +3221,13 @@ mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu:
 
     mu::DimSizes dimSizes = A.getDimSizes();
 
-    if (dimSizes.size() <= (size_t)shiftDim || !shiftSteps || !(A.size() % shiftSteps))
+    if (dimSizes.size() <= (size_t)shiftDim || !shiftSteps || !(std::abs(shiftSteps) % A.size()))
         return A;
 
     mu::Array shifted(A.size());
     shifted.setDimSizes(dimSizes);
 
-    shiftSteps = (shiftSteps < 0 ? -1 : 1) * (A.size() % std::abs(shiftSteps));
+    shiftSteps = (shiftSteps < 0 ? -1 : 1) * (std::abs(shiftSteps) % A.size());
     std::vector<size_t> indexMap(dimSizes.size());
 
     for (size_t i = 0; i < indexMap.size(); i++)
@@ -3257,7 +3280,7 @@ mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu:
     }
 
     // Copy the intermediate elements
-    while (sourceIter.more() && targetIter.more())
+    while (true)
     {
         for (size_t i = 0; i < indexMap.size(); i++)
         {
@@ -3266,6 +3289,9 @@ mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu:
         }
 
         shifted.get(targetIndex) = A.get(sourceIndex);
+
+        if (!sourceIter.more() || !targetIter.more())
+            break;
 
         sourceIter.next();
         targetIter.next();
@@ -3276,23 +3302,25 @@ mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu:
     {
         if (shiftSteps > 0)
         {
+            sourceIter.next();
+
             for (size_t i = 0; i < indexMap.size(); i++)
             {
                 sourceIndex[indexMap[i]] = virtualSourceIndex[i];
             }
 
             shifted.get(indexBuffer.front()) = A.get(sourceIndex);
-            sourceIter.next();
         }
         else
         {
+            targetIter.next();
+
             for (size_t i = 0; i < indexMap.size(); i++)
             {
                 targetIndex[indexMap[i]] = virtualTargetIndex[i];
             }
 
             shifted.get(targetIndex) = A.get(indexBuffer.front());
-            targetIter.next();
         }
 
         indexBuffer.pop();
@@ -3326,13 +3354,13 @@ mu::Array matfnc_vectshift(const mu::Array& A, const mu::Array& steps, const mu:
 
     mu::DimSizes dimSizes = A.getDimSizes();
 
-    if (dimSizes.size() <= (size_t)shiftDim || !shiftSteps || !(dimSizes[shiftDim] % shiftSteps))
+    if (dimSizes.size() <= (size_t)shiftDim || !shiftSteps || !(std::abs(shiftSteps) % dimSizes[shiftDim]))
         return A;
 
     mu::Array shifted(A.size());
     shifted.setDimSizes(dimSizes);
 
-    shiftSteps = (shiftSteps < 0 ? -1 : 1) * (dimSizes[shiftDim] % std::abs(shiftSteps));
+    shiftSteps = (shiftSteps < 0 ? -1 : 1) * (std::abs(shiftSteps) % dimSizes[shiftDim]);
     int dimSize = (int)dimSizes[shiftDim];
     mu::IndexIterator iterator(dimSizes);
     const mu::IndexTuple& targetIter = iterator.index();

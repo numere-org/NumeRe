@@ -838,6 +838,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             if (nType & RETURN_VALUE)
                 return vElements.get(i);
 
+            if (vElements.isMatrix() && !vElements.isVector())
+            {
+                mu::MatrixView view(vElements);
+                mu::IndexTuple index = view.index(i);
+                mu::Array indices(index.size());
+
+                for (size_t n = 0; n < index.size(); n++)
+                {
+                    indices.get(n) = index[n] + 1;
+                }
+
+                return indices;
+            }
+
             return i+1;
         }
         else if (nType & RETURN_GE && vElements.get(i) > vRef)
@@ -846,6 +860,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             {
                 if (nType & RETURN_VALUE)
                     return vElements.get(i);
+
+                if (vElements.isMatrix() && !vElements.isVector())
+                {
+                    mu::MatrixView view(vElements);
+                    mu::IndexTuple index = view.index(i);
+                    mu::Array indices(index.size());
+
+                    for (size_t n = 0; n < index.size(); n++)
+                    {
+                        indices.get(n) = index[n] + 1;
+                    }
+
+                    return indices;
+                }
 
                 return i+1;
             }
@@ -865,6 +893,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
                 if (nType & RETURN_VALUE)
                     return vElements.get(i);
 
+                if (vElements.isMatrix() && !vElements.isVector())
+                {
+                    mu::MatrixView view(vElements);
+                    mu::IndexTuple index = view.index(i);
+                    mu::Array indices(index.size());
+
+                    for (size_t n = 0; n < index.size(); n++)
+                    {
+                        indices.get(n) = index[n] + 1;
+                    }
+
+                    return indices;
+                }
+
                 return i+1;
             }
 
@@ -882,6 +924,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
         return NAN;
     else if (nType & RETURN_VALUE)
         return vKeep;
+
+    if (vElements.isMatrix() && !vElements.isVector())
+    {
+        mu::MatrixView view(vElements);
+        mu::IndexTuple index = view.index(nKeep);
+        mu::Array indices(index.size());
+
+        for (size_t i = 0; i < index.size(); i++)
+        {
+            indices.get(i) = index[i] + 1;
+        }
+
+        return indices;
+    }
 
     return nKeep+1;
 }
@@ -1262,10 +1318,38 @@ mu::Array numfnc_logtoidx(const mu::MultiArgFuncParams& v)
 
     if (v.count() == 1)
     {
-        for (size_t i = 0; i < v[0].size(); i++)
+        mu::MatrixView view(v[0]);
+
+        if (v[0].isMatrix() && !v[0].isVector())
         {
-            if (v[0].get(i).isValid() && v[0].get(i))
-                vIdx.emplace_back(uint64_t(i+1));
+            mu::Array num = numfnc_Sum(v);
+            vIdx.setDimSizes({num.getAsScalarInt(), v[0].getDims()});
+            vIdx.resize(num.getAsScalarInt() * v[0].getDims());
+
+            size_t nCount = 0;
+
+            for (size_t i = 0; i < v[0].size(); i++)
+            {
+                if (v[0].get(i).isValid() && v[0].get(i))
+                {
+                    mu::IndexTuple index = view.index(i);
+
+                    for (size_t j = 0; j < index.size(); j++)
+                    {
+                        vIdx.get(nCount, j) = index[j] + 1;
+                    }
+
+                    nCount++;
+                }
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < v[0].size(); i++)
+            {
+                if (v[0].get(i).isValid() && v[0].get(i))
+                    vIdx.emplace_back(uint64_t(i+1));
+            }
         }
     }
     else
@@ -1296,6 +1380,37 @@ mu::Array numfnc_idxtolog(const mu::MultiArgFuncParams& v)
 {
     if (!v.count())
         return mu::Value(false);
+
+    if (v.count() == 1 && v[0].getDims() == 2 && !v[0].isVector())
+    {
+        mu::Array vLogical;
+        mu::DimSizes sz = v[0].getDimSizes();
+        mu::DimSizes targetSize(sz[1], 1ull);
+
+        for (size_t j = 0; j < v[0].cols(); j++)
+        {
+            for (size_t i = 0; i < v[0].rows(); i++)
+            {
+                targetSize[j] = std::max(targetSize[j], (uint64_t)std::max(1LL, v[0].get(i, j).getNum().asI64()));
+            }
+        }
+
+        vLogical.setDimSizes(targetSize);
+        vLogical.resize(mu::getNumElements(targetSize), mu::Value(false));
+        mu::IndexTuple index(v[0].cols());
+
+        for (size_t i = 0; i < v[0].rows(); i++)
+        {
+            for (size_t j = 0; j < v[0].cols(); j++)
+            {
+                index[j] = (uint64_t)std::max(0LL, v[0].get(i, j).getNum().asI64()-1);
+            }
+
+            vLogical.get(index) = mu::Value(true);
+        }
+
+        return vLogical;
+    }
 
     mu::Array maxIdx = numfnc_Max(v);
 
