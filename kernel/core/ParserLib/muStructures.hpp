@@ -1897,13 +1897,13 @@ namespace mu
                 if (!more())
                     return false;
 
-                m_current.back()++;
+                m_current.front()++;
 
-                if (m_current.back() == m_dimSizes.back())
+                if (m_current.front() == m_dimSizes.front())
                 {
-                    m_current.back() = 0;
+                    m_current.front() = 0;
 
-                    for (int i = m_current.size()-2; i >= 0; i--)
+                    for (size_t i = 1; i < m_current.size(); i++)
                     {
                         m_current[i]++;
 
