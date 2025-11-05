@@ -103,7 +103,7 @@ mu::Array oprt_MatMul(const mu::Array& A, const mu::Array& B)
     mu::Array ret(dimA[0]*dimB[1], mu::Value(0.0));
     ret.setDimSizes({dimA[0], dimB[1]});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable() && B.isParallelizable())
     for (size_t i = 0; i < dimA[0]; i++)
     {
         for (size_t j = 0; j < dimB[1]; j++)
@@ -445,7 +445,7 @@ mu::Array matfnc_cross(const mu::Array& A)
     mu::Array _mTemp(A.rows()*(A.cols()+1), mu::Value(0.0));
     _mTemp.setDimSizes({A.rows(), A.cols()+1});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (size_t i = 0; i < A.rows(); i++)
     {
         for (size_t j = 0; j < A.cols(); j++)
@@ -512,7 +512,7 @@ __attribute__((force_align_arg_pointer)) static mu::Array calcEigenVectsAndValue
     Eigen::MatrixXcd mMatrix(A.rows(), A.rows());
 
     // Copy the passed matrix into an Eigen matrix
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (size_t i = 0; i < A.rows(); i++)
     {
         for (size_t j = 0; j < A.rows(); j++)
@@ -957,37 +957,18 @@ static mu::Value calculateStats(const mu::Array& mat, StatsLogic logic, int rowS
 
     // Only apply multiprocessing, if there are really a lot of
     // elements to process
-    if (rowCount >= MINTHREADCOUNT && colCount >= MINELEMENTPERCOL)
+    #pragma omp parallel for if (mat.isParallelizable() && rowCount >= MINTHREADCOUNT && colCount >= MINELEMENTPERCOL)
+    for (size_t i = 0; i < rowCount; i++)
     {
-        #pragma omp parallel for
-        for (size_t i = 0; i < rowCount; i++)
+        if (rowStart + (int)i < 0 || rowStart + i >= mat.rows())
+            continue;
+
+        for (size_t j = 0; j < colCount; j++)
         {
-            if (rowStart + (int)i < 0 || rowStart + i >= mat.rows())
+            if (colStart + (int)j < 0 || colStart + j >= mat.cols())
                 continue;
 
-            for (size_t j = 0; j < colCount; j++)
-            {
-                if (colStart + (int)j < 0 || colStart + j >= mat.cols())
-                    continue;
-
-                operation[i](mat.get(i+rowStart, j+colStart));
-            }
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < rowCount; i++)
-        {
-            if (rowStart + (int)i < 0 || rowStart + i >= mat.rows())
-                continue;
-
-            for (size_t j = 0; j < colCount; j++)
-            {
-                if (colStart + (int)j < 0 || colStart + j >= mat.cols())
-                    continue;
-
-                operation[i](mat.get(i+rowStart, j+colStart));
-            }
+            operation[i](mat.get(i+rowStart, j+colStart));
         }
     }
 
@@ -1042,7 +1023,7 @@ mu::Array matfnc_movsum(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1099,7 +1080,7 @@ mu::Array matfnc_movstd(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1167,7 +1148,7 @@ mu::Array matfnc_movavg(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1232,7 +1213,7 @@ mu::Array matfnc_movprd(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1290,7 +1271,7 @@ mu::Array matfnc_movmed(const mu::Array& A, const mu::Array& n, const mu::Array&
     _mResult.setDimSizes({A.rows(), A.cols()});
 
 #ifndef PARSERSTANDALONE
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1365,7 +1346,7 @@ mu::Array matfnc_movmin(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1422,7 +1403,7 @@ mu::Array matfnc_movmax(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1479,7 +1460,7 @@ mu::Array matfnc_movnorm(const mu::Array& A, const mu::Array& n, const mu::Array
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1536,7 +1517,7 @@ mu::Array matfnc_movnum(const mu::Array& A, const mu::Array& n, const mu::Array&
     mu::Array _mResult(A.rows()*A.cols(), mu::Value(NAN));
     _mResult.setDimSizes({A.rows(), A.cols()});
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (int i = 0; i < (int)_mResult.rows(); i++)
     {
         for (int j = 0; j < (int)_mResult.cols(); j++)
@@ -1697,7 +1678,7 @@ mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B)
 
     // Calculate the elements of the matrix by applying
     // elementwise shifts to the matrices
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable() && B.isParallelizable())
     for (int i1 = 0; i1 < (int)mCorrelation.rows(); i1++)
     {
         for (int j1 = 0; j1 < (int)mCorrelation.cols(); j1++)
@@ -2182,7 +2163,7 @@ __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array&
     Eigen::MatrixXcd mB(B.rows(), B.cols());
 
     // Copy the passed matrix into an Eigen matrix
-    #pragma omp parallel for
+    #pragma omp parallel for if (A.isParallelizable())
     for (size_t i = 0; i < A.rows(); i++)
     {
         for (size_t j = 0; j < A.cols(); j++)
@@ -2192,7 +2173,7 @@ __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array&
     }
 
     // Copy the passed matrix into an Eigen matrix
-    #pragma omp parallel for
+    #pragma omp parallel for if (B.isParallelizable())
     for (size_t i = 0; i < B.rows(); i++)
     {
         for (size_t j = 0; j < B.cols(); j++)
@@ -2273,7 +2254,7 @@ mu::Array matfnc_carttocyl(const mu::Array& cartesian)
     mu::Array ret;
     ret.assign(cartesian);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (cartesian.isParallelizable())
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = numfnc_sqrt(cartesian.get(i, 0).pow(2) + cartesian.get(i, 1).pow(2)).front();
@@ -2307,7 +2288,7 @@ mu::Array matfnc_carttopol(const mu::Array& cartesian)
     mu::Array ret;
     ret.assign(cartesian);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (cartesian.isParallelizable())
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = numfnc_sqrt(cartesian.get(i, 0).pow(2)
@@ -2341,7 +2322,7 @@ mu::Array matfnc_cyltocart(const mu::Array& cylindrical)
     mu::Array ret;
     ret.assign(cylindrical);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (cylindrical.isParallelizable())
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = cylindrical.get(i, 0) * numfnc_cos(cylindrical.get(i, 1)).front();
@@ -2375,7 +2356,7 @@ mu::Array matfnc_cyltopol(const mu::Array& cylindrical)
     mu::Array ret;
     ret.assign(cylindrical);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (cylindrical.isParallelizable())
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = numfnc_sqrt(cylindrical.get(i, 0).pow(2) + cylindrical.get(i, 2).pow(2)).front();
@@ -2412,7 +2393,7 @@ mu::Array matfnc_poltocart(const mu::Array& polar)
     mu::Array ret;
     ret.assign(polar);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (polar.isParallelizable())
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = polar.get(i, 0) * numfnc_cos(polar.get(i, 1)).front() * numfnc_sin(polar.get(i, 2)).front();
@@ -2444,7 +2425,7 @@ mu::Array matfnc_poltocyl(const mu::Array& polar)
     mu::Array ret;
     ret.assign(polar);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (polar.isParallelizable())
     for (size_t i = 0; i < ret.rows(); i++)
     {
         ret.get(i, 0) = polar.get(i, 0) * numfnc_sin(polar.get(i, 2)).front();
@@ -2515,7 +2496,7 @@ mu::Array matfnc_coordstogrid(const mu::Array& grid, const mu::Array& coords)
     mu::Array gcoords;
     gcoords.assign(coords);
 
-    #pragma omp parallel for
+    #pragma omp parallel for if (grid.isParallelizable())
     for (size_t i = 0; i < gcoords.rows(); i++)
     {
         for (size_t j = 0; j < gcoords.cols(); j++)
@@ -2624,7 +2605,7 @@ mu::Array matfnc_interpolate(const mu::Array& grid, const mu::Array& coords)
     // Interpolate all values in the matrix coords. First
     // column contains the row values, all remaining contain
     // the corresponding col values
-    #pragma omp parallel for
+    #pragma omp parallel for if (grid.isParallelizable() && coords.isParallelizable())
     for (size_t i = 0; i < coords.rows(); i++)
     {
         if (coords.cols() >= 2)
@@ -2777,7 +2758,7 @@ mu::Array matfnc_select(const mu::Array& data, const mu::Array& rows, const mu::
     if (isScalar[1])
         col = cols.getAsScalarInt()-1;
 
-    #pragma omp parallel for firstprivate(row,col)
+    #pragma omp parallel for if (data.isParallelizable() && rows.isParallelizable() && cols.isParallelizable()) firstprivate(row,col)
     for (size_t i = 0; i < selected.rows(); i++)
     {
         for (size_t j = 0; j < selected.cols(); j++)
@@ -2848,7 +2829,7 @@ mu::Array matfnc_assemble(const mu::Array& rows, const mu::Array& cols, const mu
     if (isScalar[1])
         col = cols.getAsScalarInt()-1;
 
-    #pragma omp parallel for firstprivate(row,col)
+    #pragma omp parallel for if (data.isParallelizable() && rows.isParallelizable() && cols.isParallelizable()) firstprivate(row,col)
     for (size_t i = 0; i < data.rows(); i++)
     {
         for (size_t j = 0; j < data.cols(); j++)
@@ -3009,7 +2990,7 @@ static mu::Array matrixRasterFilter(const mu::Array& data, const mu::Array& kern
     filtered.setDimSizes({inputRows, inputCols});
 
     // Calculate the results by applying the filter to the input pixel by pixel
-    #pragma omp parallel for
+    #pragma omp parallel for if (data.isParallelizable() && kernel.isParallelizable())
     for (int i = 0; i < (int)filtered.rows(); i++)
     {
         for (int j = 0; j < (int)filtered.cols(); j++)

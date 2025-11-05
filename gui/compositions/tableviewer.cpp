@@ -198,7 +198,7 @@ void TableViewer::layoutGrid()
     }
 
     // temporary test for header grouping
-    if (readOnly && NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_AUTOGROUPCOLS).active())
+    if (readOnly && isGridNumeReTable && NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_AUTOGROUPCOLS).active())
         groupHeaders(0, GetNumberCols(), 0);
 
     // Define the minimal size of the window depending
@@ -1149,7 +1149,7 @@ void TableViewer::conditionalFormat(const wxGridCellCoordsContainer& cells, cons
         }
     }
 
-    if (readOnly)
+    if (readOnly && isGridNumeReTable)
         groupHeaders(0, GetNumberCols(), 0);
 
     // Refresh the window to redraw all cells

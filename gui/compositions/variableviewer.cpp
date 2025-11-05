@@ -658,6 +658,9 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
 /////////////////////////////////////////////////
 void VariableViewer::OnDoubleClick(wxTreeEvent& event)
 {
+    if (!event.GetItem().IsOk())
+        return;
+
     wxTreeItemId parent = GetItemParent(event.GetItem());
 
     if (parent != tableRoot && parent != clusterRoot)

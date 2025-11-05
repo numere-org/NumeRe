@@ -3781,6 +3781,21 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Helper method returning true, if the
+    /// underlying data can be queried and written in
+    /// parallel, i.e., it does not contain any
+    /// generators.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::isParallelizable() const
+    {
+        return getCommonType() != TYPE_GENERATOR;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Remove all instances of RefValue in
     /// this array and replace them by clones of
     /// their referenced-to values.

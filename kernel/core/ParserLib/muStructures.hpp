@@ -1271,7 +1271,7 @@ namespace mu
                     return operator[](0);
                 }
                 else if (vectSize <= i)
-                    throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
+                    throw std::out_of_range("Element " + std::to_string(i) + " is out of bounds.");
 
                 return operator[](i);
             }
@@ -1293,7 +1293,7 @@ namespace mu
                     return get(i);
 
                 if (i >= m_dimSizes[0] || j >= m_dimSizes[1])
-                    throw std::length_error("Element (" + std::to_string(i) + "," + std::to_string(j) + ") is out of bounds.");
+                    throw std::out_of_range("Element (" + std::to_string(i) + "," + std::to_string(j) + ") is out of bounds.");
 
                 return get(i + j*m_dimSizes[0]);
             }
@@ -1316,6 +1316,21 @@ namespace mu
                         throw std::length_error("Dimension mismatch.");
                 }
 
+                if (idx[0] >= m_dimSizes[0])
+                {
+                    std::string dims;
+
+                    for (size_t m = 0; m < idx.size(); m++)
+                    {
+                        if (dims.size())
+                            dims += ",";
+
+                        dims += std::to_string(idx[m]);
+                    }
+
+                    throw std::out_of_range("Element (" + dims + ") is out of bounds.");
+                }
+
                 size_t linIdx = idx[0];
 
                 for (size_t n = 1; n < idx.size(); n++)
@@ -1331,10 +1346,10 @@ namespace mu
                                 if (dims.size())
                                     dims += ",";
 
-                                dims += std::to_string(idx[n]);
+                                dims += std::to_string(idx[m]);
                             }
 
-                            throw std::length_error("Element (" + dims + ") is out of bounds.");
+                            throw std::out_of_range("Element (" + dims + ") is out of bounds.");
                         }
 
                         linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
@@ -1413,6 +1428,9 @@ namespace mu
                 if (minDim < 2)
                     return get(idx.front());
 
+                if (idx[0] >= m_dimSizes[0])
+                    return m_default;
+
                 size_t linIdx = idx[0];
 
                 for (size_t n = 1; n < minDim; n++)
@@ -1488,6 +1506,7 @@ namespace mu
 
             void zerosToVoid();
             bool isCommutative() const;
+            bool isParallelizable() const;
             void dereference() const;
 
         protected:

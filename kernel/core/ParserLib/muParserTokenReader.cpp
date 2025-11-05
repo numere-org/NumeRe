@@ -261,7 +261,6 @@ namespace mu
 		m_iBrackets = 0;
 		m_iVBrackets = 0;
 		m_iSqBrackets = 0;
-		m_argC = 0;
 		m_UsedVar.clear();
 		m_lastTok = token_type();
 
@@ -492,8 +491,7 @@ namespace mu
                             if (m_lastTok.GetVar()->getCommonType() == TYPE_CLUSTER)
                                 Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
 
-                            m_indexedVars.push({m_lastTok.GetVar(), m_iPos, {m_iBrackets+1, m_iVBrackets, m_iSqBrackets}});
-                            m_argC = 0;
+                            m_indexedVars.push(IndexedVar(m_lastTok.GetVar(), m_iPos, m_iBrackets+1, m_iVBrackets, m_iSqBrackets));
 
                             // Figure out, whether this is part of an assignment
                             if (IsLeftHandSide(m_iPos))
@@ -524,7 +522,7 @@ namespace mu
                                 }
                                 else
                                 {
-                                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_argC), m_argC);
+                                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_indexedVars.top().argC), m_indexedVars.top().argC);
                                     m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
                                 }
 
@@ -536,11 +534,12 @@ namespace mu
 
 						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
+						if (m_indexedVars.size()
+                            && m_indexedVars.top().braceMatch(m_iBrackets, m_iVBrackets, m_iSqBrackets))
+                            m_indexedVars.pop();
+
 						if (--m_iBrackets < 0)
 							Error(ecUNEXPECTED_PARENS, m_iPos, oprt);
-
-                        while (m_iBrackets < (int)m_indexedVars.size())
-                            m_indexedVars.pop();
 
 						break;
 
@@ -557,7 +556,7 @@ namespace mu
                             if (m_lastTok.GetVar()->getCommonType() != TYPE_CLUSTER)
                                 Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
 
-                            m_indexedVars.push({m_lastTok.GetVar(), m_iPos, {m_iBrackets, m_iVBrackets+1, m_iSqBrackets}});
+                            m_indexedVars.push(IndexedVar(m_lastTok.GetVar(), m_iPos, m_iBrackets, m_iVBrackets+1, m_iSqBrackets));
 
                             // Figure out, whether this is part of an assignment
                             if (IsLeftHandSide(m_iPos))
@@ -582,7 +581,7 @@ namespace mu
                                 }
                                 else
                                 {
-                                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_argC), m_argC);
+                                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_indexedVars.top().argC), m_indexedVars.top().argC);
                                     m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
                                 }
 
@@ -594,11 +593,12 @@ namespace mu
 
 						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
+						if (m_indexedVars.size()
+                            && m_indexedVars.top().braceMatch(m_iBrackets, m_iVBrackets, m_iSqBrackets))
+                            m_indexedVars.pop();
+
 						if (--m_iVBrackets < 0)
 							Error(ecUNEXPECTED_VPARENS, m_iPos, oprt);
-
-                        while (m_iVBrackets < (int)m_indexedVars.size())
-                            m_indexedVars.pop();
 
 						break;
 
@@ -615,7 +615,7 @@ namespace mu
                             if (m_lastTok.GetVar()->getCommonType() == TYPE_CLUSTER)
                                 Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
 
-                            m_indexedVars.push({m_lastTok.GetVar(), m_iPos, {m_iBrackets, m_iVBrackets, m_iSqBrackets+1}});
+                            m_indexedVars.push(IndexedVar(m_lastTok.GetVar(), m_iPos, m_iBrackets, m_iVBrackets, m_iSqBrackets+1));
 
                             // Figure out, whether this is part of an assignment
                             if (IsLeftHandSide(m_iPos))
@@ -654,11 +654,12 @@ namespace mu
 
 						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO | noSqO;
 
+						if (m_indexedVars.size()
+                            && m_indexedVars.top().braceMatch(m_iBrackets, m_iVBrackets, m_iSqBrackets))
+                            m_indexedVars.pop();
+
 						if (--m_iSqBrackets < 0)
 							Error(ecUNEXPECTED_SQPARENS, m_iPos, oprt);
-
-                        while (m_iSqBrackets < (int)m_indexedVars.size())
-                            m_indexedVars.pop();
 
 						break;
 
@@ -722,17 +723,13 @@ namespace mu
             // i.e. to be multidimensional
             if (m_indexedVars.size()
                 && m_strFormula[m_indexedVars.top().indexStart] == '['
-                && m_indexedVars.top().parensState[0] == m_iBrackets
-                && m_indexedVars.top().parensState[1] == m_iVBrackets
-                && m_indexedVars.top().parensState[2] == m_iSqBrackets)
+                && m_indexedVars.top().braceMatch(m_iBrackets, m_iVBrackets, m_iSqBrackets))
                 Error(ecUNEXPECTED_ARG_SEP, m_iPos, szSep);
 
             // Slicing with open boundaries
             if (m_lastTok.GetCode() == cmELSE && m_indexedVars.size()
                 && m_strFormula[m_indexedVars.top().indexStart] != '['
-                && m_indexedVars.top().parensState[0] == m_iBrackets
-                && m_indexedVars.top().parensState[1] == m_iVBrackets
-                && m_indexedVars.top().parensState[2] == m_iSqBrackets)
+                && m_indexedVars.top().braceMatch(m_iBrackets, m_iVBrackets, m_iSqBrackets))
             {
                 if (IsLeftHandSide(m_indexedVars.top().indexStart))
                 {
@@ -741,15 +738,16 @@ namespace mu
                 }
                 else
                 {
-                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_argC), m_argC);
+                    a_Tok.SetDimVar(m_indexedVars.top().var, getDimVarName(m_indexedVars.top().argC), m_indexedVars.top().argC);
                     m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noSqO | noINFIXOP | noSTR | noASSIGN;
                 }
 
                 return true;
             }
 
-            if (m_indexedVars.size())
-                m_argC++;
+            if (m_indexedVars.size()
+                && m_indexedVars.top().braceMatch(m_iBrackets, m_iVBrackets, m_iSqBrackets))
+                m_indexedVars.top().argC++;
 
 			m_iSynFlags  = noBC | noVC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noMETHOD | noSqO | noSqC | noELSE;
 			m_iPos++;
@@ -1079,7 +1077,7 @@ namespace mu
                     Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
                 m_iPos = iEnd;
-				a_Tok.SetDimVar(m_indexedVars.top().var, strTok, m_argC);
+				a_Tok.SetDimVar(m_indexedVars.top().var, strTok, m_indexedVars.top().argC);
 
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
