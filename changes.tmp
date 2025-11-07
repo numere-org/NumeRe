@@ -25,7 +25,7 @@ Fixed	The debugger will now trigger again at the first breakpoint in the followi
 New	Procedure inlining using the "inline" procedure flag works now far better and also accepts only partial inlined procedure call trees.
 Added	The function "to_html()" can be used to convert values into HTML, supporting also markup language. Note that only a subset of Markdown is supported.
 Cleaned	The static code analyzer will now show an error, if too few arguments are used on functions, methods and procedures.
-Cleaned	The "matop" functionalities have been close-to-completely moved to the standard expression parsing. There are slight syntactical differences, though.
-Cleaned	Due to the syntactical differences, "matop" will still be supported but is marked as deprecated.
+Cleaned	The "matop" functionalities have been close-to-completely moved to the standard expression parsing. There are slight syntactical differences, though. See "help matop" for porting information
+Cleaned	Due to the syntactical differences, "matop" will still be supported but is marked as deprecated. A warning will be shown, if the command is still used.
 Applied	Round parentheses indexing will create matrices and vectors as output, square brackets will always create plain arrays.
 Applied	Tables will accept row and column vectors for rows and columns interchangably for maintaining backwards compatibility.

@@ -2230,7 +2230,18 @@ namespace mu
         else if (m_val.isField(sMethod))
         {
             const BaseValue* v = m_val.read(sMethod);
-            return v ? v->clone() : nullptr;
+
+            if (v)
+            {
+                BaseValue* cloned = v->clone();
+
+                if (cloned->getType() == TYPE_ARRAY)
+                    static_cast<ArrValue*>(cloned)->get().makeConst();
+
+                return cloned;
+            }
+
+            return nullptr;
         }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
@@ -2284,7 +2295,7 @@ namespace mu
     {
         static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"decodejson", 1}, {"write", -2}, {"insertkey", -1}, {"insertkey", -2}});
 
-        if (m_val.isField(sMethod) && argc == 1) // TODO Should be <= 1
+        if (m_val.isField(sMethod) && argc <= 1)
             return MethodDefinition(sMethod, -argc);
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));

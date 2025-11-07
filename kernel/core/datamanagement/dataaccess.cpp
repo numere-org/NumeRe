@@ -582,7 +582,7 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
         throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _access.getIndexString());
 
     // evaluate the indices
-    _access.evalIndices(false);
+    _access.evalIndices(_idx.col.size() > 1 && _idx.col.size() > 1);
 
     if (_idx.row.isString())
         bWriteStrings = true;

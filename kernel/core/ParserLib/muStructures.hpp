@@ -730,6 +730,18 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Make this instance const.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& makeConst()
+            {
+                m_isConst = true;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Make this instance a generator.
             ///
             /// \return Array&
