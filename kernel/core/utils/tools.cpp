@@ -2496,6 +2496,10 @@ static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
     mOprtRplc["("] = "`";
     mOprtRplc[")"] = "`";
+    mOprtRplc["["] = "`";
+    mOprtRplc["]"] = "`";
+    mOprtRplc["{"] = "`";
+    mOprtRplc["}"] = "`";
     mOprtRplc[":"] = "~c~";
     mOprtRplc[","] = "_";
     mOprtRplc["."] = "_";
