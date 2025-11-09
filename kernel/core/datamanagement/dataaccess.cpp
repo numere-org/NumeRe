@@ -515,18 +515,6 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
 
     nPos = 0;
 
-    // handle logical table accesses
-    /*while ((nPos = sLine.find(sEntity + ")", nPos)) != std::string::npos)
-    {
-        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~'))
-        {
-            nPos++;
-            continue;
-        }
-
-        sLine.replace(nPos, sEntity.length() + 1, (_data.getCols(StringView(sEntity, 0, sEntity.length() - 1)) ? "true" : "false"));
-    }*/
-
     if (sLine.find(sEntity) == std::string::npos)
         return;
 
@@ -675,6 +663,23 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
 
         if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _data.getCols(_access.sCacheName, false) - 1);
+
+        // Handle the filename and headline access different from the usual data access
+        if (_idx.col.isString())
+        {
+            // Get the file name (or the cache table name)
+            mu::Variable* var = _parser.GetInternalVar(_access.sVectorName);
+            var->std::vector<mu::Value>::assign(1ull, _data.getDataFileName(_access.sCacheName));
+        }
+        else if (_idx.row.isString())
+        {
+            mu::Variable* var = _parser.GetInternalVar(_access.sVectorName);
+            var->clear();
+
+            // Get the headlines
+            for (size_t j = 0; j < _idx.col.size(); j++)
+                var->push_back(_data.getHeadLineElement(_idx.col[j], _access.sCacheName));
+        }
 
         // Get new data and update the stored elements in the internal representation
         _data.copyElementsInto(_parser.GetInternalVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
