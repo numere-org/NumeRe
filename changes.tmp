@@ -29,3 +29,6 @@ Cleaned	The "matop" functionalities have been close-to-completely moved to the s
 Cleaned	Due to the syntactical differences, "matop" will still be supported but is marked as deprecated. A warning will be shown, if the command is still used.
 Applied	Round parentheses indexing will create matrices and vectors as output, square brackets will always create plain arrays.
 Applied	Tables will accept row and column vectors for rows and columns interchangably for maintaining backwards compatibility.
+Fixed	Viewing dictstructs with void fields does not crash the application any more.
+Cleaned	Storing void values in dictstructs, queues and stacks is now partly possible, although those values cannot be used.
+Cleaned	The error message, if a method is called with void values, has been changed to the "dereferencing void" message for better understandability.

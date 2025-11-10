@@ -6912,8 +6912,10 @@ mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals)
         {
             if (vals.get(i).isRef())
                 dict[fieldName].reset(vals.get(i).getRef().get().clone());
-            else
+            else if (!vals.get(i).isVoid())
                 dict[fieldName].reset(vals.get(i).get()->clone());
+            else
+                dict[fieldName];
         }
         else
             dict[fieldName].reset(mu::Value("").release());
@@ -6971,7 +6973,10 @@ mu::Array cast_stack(const mu::Array& vals)
 
     for (int i = elems-1; i >= 0; i--)
     {
-        mustack->apply("push", *vals.get(i).get());
+        if (!vals.get(i).isVoid())
+            mustack->apply("push", *vals.get(i).get());
+        else
+            mustack->apply("push", mu::NeutralValue());
     }
 
     return mu::Value(mustack.release());
@@ -6992,7 +6997,10 @@ mu::Array cast_queue(const mu::Array& vals)
 
     for (size_t i = 0; i < elems; i++)
     {
-        muqueue->apply("push", *vals.get(i).get());
+        if (!vals.get(i).isVoid())
+            muqueue->apply("push", *vals.get(i).get());
+        else
+            muqueue->apply("push", mu::NeutralValue());
     }
 
     return mu::Value(muqueue.release());

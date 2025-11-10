@@ -1013,7 +1013,7 @@ namespace mu
     Value Value::call(const std::string& sMethod) const
     {
         if (!get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->call(sMethod);
     }
@@ -1030,7 +1030,7 @@ namespace mu
     Value Value::call(const std::string& sMethod, const Value& arg1) const
     {
         if (!get() || !arg1.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->call(sMethod, *arg1.get());
     }
@@ -1048,7 +1048,7 @@ namespace mu
     Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2) const
     {
         if (!get() || !arg1.get() || !arg2.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->call(sMethod, *arg1.get(), *arg2.get());
     }
@@ -1067,7 +1067,7 @@ namespace mu
     Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const
     {
         if (!get() || !arg1.get() || !arg2.get() || !arg2.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->call(sMethod, *arg1.get(), *arg2.get(), *arg3.get());
     }
@@ -1087,7 +1087,7 @@ namespace mu
     Value Value::call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const
     {
         if (!get() || !arg1.get() || !arg2.get() || !arg3.get() || !arg4.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->call(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
     }
@@ -1109,7 +1109,7 @@ namespace mu
         for (size_t i = 0; i < args.size(); i++)
         {
             if (!args[i].get())
-                throw ParserError(ecMETHOD_ERROR, sMethod);
+                throw ParserError(ecDEREFERENCE_VOID);
 
             pArgs.push_back(args[i].get());
         }
@@ -1146,7 +1146,7 @@ namespace mu
     Value Value::apply(const std::string& sMethod)
     {
         if (!get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->apply(sMethod);
     }
@@ -1163,7 +1163,7 @@ namespace mu
     Value Value::apply(const std::string& sMethod, const Value& arg1)
     {
         if (!get() || !arg1.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->apply(sMethod, *arg1.get());
     }
@@ -1181,7 +1181,7 @@ namespace mu
     Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2)
     {
         if (!get() || !arg1.get() || !arg2.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->apply(sMethod, *arg1.get(), *arg2.get());
     }
@@ -1200,7 +1200,7 @@ namespace mu
     Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3)
     {
         if (!get() || !arg1.get() || !arg2.get() || !arg2.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get());
     }
@@ -1220,7 +1220,7 @@ namespace mu
     Value Value::apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4)
     {
         if (!get() || !arg1.get() || !arg2.get() || !arg3.get() || !arg4.get())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecDEREFERENCE_VOID);
 
         return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
     }
@@ -1242,7 +1242,7 @@ namespace mu
         for (size_t i = 0; i < args.size(); i++)
         {
             if (!args[i].get())
-                throw ParserError(ecMETHOD_ERROR, sMethod);
+                throw ParserError(ecDEREFERENCE_VOID);
 
             pArgs.push_back(args[i].get());
         }

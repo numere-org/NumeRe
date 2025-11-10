@@ -5003,8 +5003,11 @@ static CommandReturnValues cmd_print(string& sCmd)
                     if (sPrinted.length())
                         sPrinted += "\n";
 
-                    sPrinted += strfill(vKeys[i], len, ' ') + ":  "
-                        + dict.read(vKeys[i])->printEmbedded(NumeReKernel::getInstance()->getSettings().getPrecision(), 0, false);
+                    if (dict.read(vKeys[i]))
+                        sPrinted += strfill(vKeys[i], len, ' ') + ":  "
+                            + dict.read(vKeys[i])->printEmbedded(NumeReKernel::getInstance()->getSettings().getPrecision(), 0, false);
+                    else
+                        sPrinted += strfill(vKeys[i], len, ' ') + ":  void";
                 }
             }
 

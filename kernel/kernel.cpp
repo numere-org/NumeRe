@@ -3927,7 +3927,11 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
         for (size_t i = 0; i < fields.size(); i++)
         {
             stringTable.set(i, 0, "." + fields[i] + ":");
-            stringTable.set(i, 1, dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+
+            if (dict.read(fields[i]))
+                stringTable.set(i, 1, dict.read(fields[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+            else
+                stringTable.set(i, 1, "void");
         }
 
         return stringTable;
