@@ -224,6 +224,8 @@ mu::Array rndfnc_student_t_cdf_q(const mu::Array& x, const mu::Array& nu);
 mu::Array rndfnc_student_t_inv_p(const mu::Array& p, const mu::Array& nu);
 mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu);
 
+mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base); // OPT=1
+
 // Operator functions
 mu::Array oprt_Mod(const mu::Array&, const mu::Array&);
 mu::Array oprt_XOR(const mu::Array&, const mu::Array&);
@@ -257,7 +259,7 @@ template <class T>
 mu::Array cast_numerical(const mu::Array& vals)
 {
     mu::Array ret;
-    ret.reserve(vals.size());
+    ret.copyDims(vals.size());
 
     for (size_t i = 0; i < vals.size(); i++)
     {
@@ -290,7 +292,7 @@ template <class T>
 mu::Array cast_numerical_cmplx(const mu::Array& vals)
 {
     mu::Array ret;
-    ret.reserve(vals.size());
+    ret.copyDims(vals.size());
     mu::NumericalType castType = std::is_same_v<T, double> ? mu::CF64 : mu::CF32;
 
     for (size_t i = 0; i < vals.size(); i++)

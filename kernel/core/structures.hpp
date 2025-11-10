@@ -636,6 +636,29 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Ensure that the contained indices
+        /// represent a permutation of the corresponding
+        /// linear array.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isPermutation() const
+        {
+            if (!isValid())
+                return false;
+
+            // Expanded are always a permutation
+            if (expand)
+                return true;
+
+            VectorIndex vPlain(0, this->max());
+
+            // Ensure that the indices reflect reasonable combinations
+            return std::is_permutation(vPlain.begin(), vPlain.end(), this->begin(), this->end());
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function determines,
         /// whether the indices are calculated or actual
         /// vectorial indices.
@@ -1315,7 +1338,7 @@ class StringViewBase
         static bool is_parser_delim(char c)
         {
             // Characters converted to a single logical expression
-            return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46
+            return c >= 32 && c <= 126 && c != 36 && c != 46
                 && (c < 48 || c > 57)
                 && (c < 64 || c > 90)
                 && (c < 95 || c > 122);
@@ -1332,7 +1355,7 @@ class StringViewBase
         static bool is_std_delim(char c)
         {
             // Characters converted to a single logical expression
-            return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46
+            return c >= 32 && c <= 125 && c != 36 && c != 46
                 && (c < 48 || c > 57)
                 && (c < 64 || c > 90)
                 && (c < 95 || c > 122);

@@ -203,6 +203,7 @@ namespace mu
         DefineFun("min", Min);
         DefineFun("max", Max);
 
+        DefineFun(MU_INDEX_CREATE, ParserBase::IndexCreate);
         DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
         DefineFun(MU_VECTOR_EXP2, ParserBase::Vector2Generator);
         DefineFun(MU_VECTOR_EXP3, ParserBase::Vector3Generator);

@@ -26,6 +26,13 @@
 
 #include "muValueImpl.hpp"
 
+#ifdef PARSERSTANDALONE
+void log(const std::string& message)
+{
+    mu::print(message);
+}
+#endif // PARSERSTANDALONE
+
 namespace mu
 {
     /////////////////////////////////////////////////
@@ -272,7 +279,7 @@ namespace mu
         switch (type)
         {
             case TYPE_CATEGORY:
-               reset(new CatValue);
+                reset(new CatValue);
                 break;
             case TYPE_NEUTRAL:
                 reset(new NeutralValue);
@@ -1087,6 +1094,31 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Call a method with an unlimited number
+    /// of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const std::vector<Value>&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::call(const std::string& sMethod, const std::vector<Value>& args) const
+    {
+        std::vector<BaseValue*> pArgs;
+
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            if (!args[i].get())
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+
+            pArgs.push_back(args[i].get());
+        }
+
+        return get()->call(sMethod, pArgs);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Does this value object have the
     /// requested applying method?
     ///
@@ -1191,6 +1223,31 @@ namespace mu
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
         return get()->apply(sMethod, *arg1.get(), *arg2.get(), *arg3.get(), *arg4.get());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with an unlimited
+    /// number of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const std::vector<Value>&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    Value Value::apply(const std::string& sMethod, const std::vector<Value>& args)
+    {
+        std::vector<BaseValue*> pArgs;
+
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            if (!args[i].get())
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+
+            pArgs.push_back(args[i].get());
+        }
+
+        return get()->apply(sMethod, pArgs);
     }
 
 
@@ -1745,7 +1802,7 @@ namespace mu
     {
         Array ret;
         size_t elements = size();
-        ret.reserve(elements);
+        ret.copyDims(*this);
 
         for (size_t i = 0; i < elements; i++)
         {
@@ -1765,6 +1822,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator==(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixEq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1787,6 +1847,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator!=(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixNeq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1809,6 +1872,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator<(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixLess(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1831,6 +1897,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator<=(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixLessEq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1853,6 +1922,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator>(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixGreater(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1875,6 +1947,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator>=(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixGreaterEq(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1897,6 +1972,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator&&(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixAnd(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1919,6 +1997,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::operator||(const Array& other) const
     {
+        if (isMatrix() || other.isMatrix())
+            return matrixOr(*this, other);
+
         Array ret;
         size_t elements = std::max(size(), other.size());
         ret.reserve(elements);
@@ -1999,14 +2080,17 @@ namespace mu
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
                                         {"unwrap", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
-                                        {"order", 0}, {"order", -1}});
+                                        {"order", 0}, {"order", -1}, {"submat", -MethodDefinition::multiargcount}});
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
         if (iter != methods.end())
             return *iter;
 
-        return front().isMethod(sMethod, argc);
+        if (size())
+            return front().isMethod(sMethod, argc);
+
+        return MethodDefinition();
     }
 
 
@@ -2049,7 +2133,7 @@ namespace mu
         else if (sMethod == "xor")
             return numfnc_xor(this);
         else if (sMethod == "size")
-            return numfnc_Cnt(this);
+            return getDimSizes();
         else if (sMethod == "maxpos")
             return numfnc_MaxPos(*this);
         else if (sMethod == "minpos")
@@ -2119,7 +2203,7 @@ namespace mu
         if (def)
         {
             if (size() == 1 && def.receiveArray())
-                return front().call(sMethod, arg1);
+                return front().call(sMethod, mu::Value(arg1));
 
             Array ret;
             size_t elems = std::max(size(), arg1.size());
@@ -2159,7 +2243,7 @@ namespace mu
 
             for (size_t i = 0; i < elems; i++)
             {
-                ret.emplace_back(get(i).call(arg1.front().getStr(), arg2));
+                ret.emplace_back(get(i).call(arg1.front().getStr(), mu::Value(arg2)));
             }
 
             return ret;
@@ -2260,6 +2344,78 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Call a method with unlimited number of
+    /// arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const MultiArgFuncParams&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::call(const std::string& sMethod, const MultiArgFuncParams& args) const
+    {
+        if (sMethod == "submat")
+        {
+            Array idx;
+            idx.reserve(args.count());
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                idx.emplace_back(args[i]);
+            }
+
+            idx.setDimSizes({args.count(), 1ull});
+
+            return index(idx);
+        }
+
+        MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t i = 0; i < args.count(); i++)
+                {
+                    vArgs.push_back(args[i]);
+                }
+
+                return front().call(sMethod, vArgs);
+            }
+
+            Array ret;
+
+            size_t elems = size();
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                elems = std::max(elems, args[i].size());
+            }
+
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t j = 0; j < args.count(); j++)
+                {
+                    vArgs.push_back(args[j].get(i));
+                }
+
+                ret.emplace_back(get(i).call(sMethod, vArgs));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Determine, whether the passed string
     /// corresponds to an applying method.
     ///
@@ -2270,14 +2426,17 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        const static MethodSet methods = {{"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
+        const static MethodSet methods = {{"squeeze", 0}, {"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
         if (iter != methods.end())
             return *iter;
 
-        return front().isApplyingMethod(sMethod, argc);
+        if (size())
+            return front().isApplyingMethod(sMethod, argc);
+
+        return MethodDefinition();
     }
 
 
@@ -2293,7 +2452,21 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (front().isApplyingMethod(sMethod, 0))
+        if (sMethod == "squeeze")
+        {
+            if (m_dimSizes.size() <= 2)
+                return getDimSizes();
+
+            auto iter = m_dimSizes.rbegin();
+
+            while (m_dimSizes.size() > 2 && (iter = std::find(m_dimSizes.rbegin(), m_dimSizes.rend(), 1ull)) != m_dimSizes.rend())
+            {
+                m_dimSizes.erase(std::next(iter).base());
+            }
+
+            return m_dimSizes;
+        }
+        else if (front().isApplyingMethod(sMethod, 0))
         {
             Array ret;
             ret.reserve(size());
@@ -2354,7 +2527,7 @@ namespace mu
         if (def)
         {
             if (size() == 1 && def.receiveArray())
-                return front().apply(sMethod, arg1);
+                return front().apply(sMethod, mu::Value(arg1));
 
             Array ret;
             size_t elems = std::max(size(), arg1.size());
@@ -2494,6 +2667,63 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Apply a method with unlimited number
+    /// of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args const MultiArgFuncParams&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::apply(const std::string& sMethod, const MultiArgFuncParams& args)
+    {
+        MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
+
+        if (def)
+        {
+            if (size() == 1 && def.receiveArray())
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t i = 0; i < args.count(); i++)
+                {
+                    vArgs.push_back(args[i]);
+                }
+
+                return front().apply(sMethod, vArgs);
+            }
+
+            Array ret;
+
+            size_t elems = size();
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                elems = std::max(elems, args[i].size());
+            }
+
+            ret.reserve(elems);
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                std::vector<Value> vArgs;
+
+                for (size_t j = 0; j < args.count(); j++)
+                {
+                    vArgs.push_back(args[j].get(i));
+                }
+
+                ret.emplace_back(get(i).apply(sMethod, vArgs));
+            }
+
+            return ret;
+        }
+
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get references to individual elements.
     ///
     /// \param idx const Array&
@@ -2502,6 +2732,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::index(const Array& idx)
     {
+        if (idx.getDims() > 1)
+            return ndIndex(idx);
+
         Array ret;
         size_t elems = idx.size();
         ret.reserve(std::min(size(), elems));
@@ -2536,6 +2769,9 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::index(const Array& idx) const
     {
+        if (idx.getDims() > 1)
+            return ndIndex(idx);
+
         Array ret;
         size_t elems = idx.size();
         ret.reserve(elems);
@@ -2550,6 +2786,232 @@ namespace mu
                 ret.emplace_back(Value(getCommonType()));
             else
                 throw ParserError(ecTYPE_MISMATCH_OOB, "VAR[]/VAR{}");
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calculate the value at the n-th index.
+    ///
+    /// \param ret Array&
+    /// \param idx const Array&
+    /// \param source IndexTuple&
+    /// \param target IndexTuple&
+    /// \param currentDim size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim)
+    {
+        DataType common = getCommonType();
+
+        for (size_t n = 0; n < ret.m_dimSizes[currentDim]; n++)
+        {
+            target[currentDim] = n;
+
+            if (idx.get(currentDim).isArray())
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(n).getNum().asI64())-1;
+            else
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            if (ret.m_dimSizes.size() > currentDim+1)
+                nthIndex(ret, idx, source, target, currentDim+1);
+            else
+            {
+                if (isInside(source))
+                    ret.get(target).reset(new RefValue(&get(source)));
+                else
+                    ret.get(target) = Value(common);
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get references to individual elements
+    /// using an n-dimensional index.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::ndIndex(const Array& idx)
+    {
+        Array ret;
+        size_t dims = idx.size();
+        ret.m_dimSizes = DimSizes(dims, 1ull);
+        size_t elems = 1ull;
+
+        for (size_t i = 0; i < dims; i++)
+        {
+            if (idx.get(i).isArray())
+            {
+                ret.m_dimSizes[i] = idx.get(i).getArray().size();
+                elems *= ret.m_dimSizes[i];
+            }
+        }
+
+        // Should not happen but added for safety reasons
+        if (ret.m_dimSizes.size() < 2)
+            throw ParserError(ecTYPE_MISMATCH_OOB, "VAR()");
+
+        ret.resize(elems);
+        ret.makeMutable();
+        DataType common = getCommonType();
+        IndexTuple source(dims);
+        IndexTuple target(dims);
+
+        if (!m_dimSizes.size())
+            m_dimSizes.push_back(size());
+
+        for (size_t i = 0; i < ret.m_dimSizes[0]; i++)
+        {
+            target[0] = i;
+
+            if (idx.get(0).isArray())
+                source[0] = std::max(1LL, idx.get(0).getArray().get(i).getNum().asI64())-1;
+            else
+                source[0] = std::max(1LL, idx.get(0).getNum().asI64())-1;
+
+            for (size_t j = 0; j < ret.m_dimSizes[1]; j++)
+            {
+                target[1] = j;
+
+                if (idx.get(1).isArray())
+                    source[1] = std::max(1LL, idx.get(1).getArray().get(j).getNum().asI64())-1;
+                else
+                    source[1] = std::max(1LL, idx.get(1).getNum().asI64())-1;
+
+                if (dims > 2)
+                    nthIndex(ret, idx, source, target, 2);
+                else
+                {
+                    if (isInside(source))
+                        ret.get(i, j).reset(new RefValue(&get(source[0], source[1])));
+                    else
+                        ret.get(i, j) = Value(common);
+                }
+            }
+        }
+
+        while (ret.m_dimSizes.size() > 2 && ret.m_dimSizes.back() == 1ull)
+        {
+            ret.m_dimSizes.pop_back();
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calculate the value at the n-th index.
+    ///
+    /// \param ret Array&
+    /// \param idx const Array&
+    /// \param source IndexTuple&
+    /// \param target IndexTuple&
+    /// \param currentDim size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Array::nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim) const
+    {
+        DataType common = getCommonType();
+
+        for (size_t n = 0; n < ret.m_dimSizes[currentDim]; n++)
+        {
+            target[currentDim] = n;
+
+            if (idx.get(currentDim).isArray())
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(n).getNum().asI64())-1;
+            else
+                source[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            if (ret.m_dimSizes.size() > currentDim+1)
+                nthIndex(ret, idx, source, target, currentDim+1);
+            else
+            {
+                if (isInside(source))
+                    ret.get(target) = get(source);
+                else
+                    ret.get(target) = Value(common);
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get references to individual elements
+    /// using an n-dimensional index.
+    ///
+    /// \param idx const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array Array::ndIndex(const Array& idx) const
+    {
+        Array ret;
+        size_t dims = idx.size();
+        ret.m_dimSizes = DimSizes(dims, 1ull);
+        size_t elems = 1ull;
+
+        for (size_t i = 0; i < dims; i++)
+        {
+            if (idx.get(i).isArray())
+            {
+                ret.m_dimSizes[i] = idx.get(i).getArray().size();
+                elems *= ret.m_dimSizes[i];
+            }
+        }
+
+        // Should not happen but added for safety reasons
+        if (ret.m_dimSizes.size() < 2)
+            throw ParserError(ecTYPE_MISMATCH_OOB, "VAR()");
+
+        ret.resize(elems);
+        ret.makeMutable();
+        DataType common = getCommonType();
+        IndexTuple source(dims);
+        IndexTuple target(dims);
+
+        if (!m_dimSizes.size())
+            m_dimSizes.push_back(size());
+
+        for (size_t i = 0; i < ret.m_dimSizes[0]; i++)
+        {
+            target[0] = i;
+
+            if (idx.get(0).isArray())
+                source[0] = std::max(1LL, idx.get(0).getArray().get(i).getNum().asI64())-1;
+            else
+                source[0] = std::max(1LL, idx.get(0).getNum().asI64())-1;
+
+            for (size_t j = 0; j < ret.m_dimSizes[1]; j++)
+            {
+                target[1] = j;
+
+                if (idx.get(1).isArray())
+                    source[1] = std::max(1LL, idx.get(1).getArray().get(j).getNum().asI64())-1;
+                else
+                    source[1] = std::max(1LL, idx.get(1).getNum().asI64())-1;
+
+                if (dims > 2)
+                    nthIndex(ret, idx, source, target, 2);
+                else
+                {
+                    if (isInside(source))
+                        ret.get(i, j) = get(source[0], source[1]);
+                    else
+                        ret.get(i, j) = Value(common);
+                }
+            }
+        }
+
+        while (ret.m_dimSizes.size() > 2 && ret.m_dimSizes.back() == 1ull)
+        {
+            ret.m_dimSizes.pop_back();
         }
 
         return ret;
@@ -2706,7 +3168,6 @@ namespace mu
     }
 
 
-
     /////////////////////////////////////////////////
     /// \brief Interpret the Array as a scalar
     /// (ignoring all other values) and return the
@@ -2811,24 +3272,73 @@ namespace mu
 #else
             return "void";
 #endif
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().print(digits, chrs, trunc);
 
         std::string ret;
 
-        for (size_t i = 0; i < size(); i++)
+        if (m_dimSizes.size() == 2)
         {
-            if (ret.length())
-                ret += ", ";
+            if (m_dimSizes[0] == 1)
+            {
+                if (m_dimSizes[1] == 1)
+                    ret += get(0).print(digits, chrs, trunc);
+                else
+                {
+                    for (size_t j = 0; j < m_dimSizes[1]; j++)
+                    {
+                        if (j)
+                            ret += ", ";
+
+                        ret += get(0, j).printEmbedded(digits, chrs, trunc);
+                    }
+                }
+
+                return "(" + ret + ")";
+            }
+            else
+            {
+                ret += "\n"; ///< For readability
+                for (size_t i = 0; i < m_dimSizes[0]; i++)
+                {
+                    if (!i)
+                        ret += "/ ";
+                    else if (i+1 == m_dimSizes[0])
+                        ret += "\\ ";
+                    else
+                        ret += "| ";
+
+                    for (size_t j = 0; j < m_dimSizes[1]; j++)
+                    {
+                        if (j)
+                            ret += ", ";
+
+                        ret += get(i, j).printEmbedded(digits, chrs, trunc);
+                    }
+
+                    if (!i)
+                        ret += " \\\n";
+                    else if (i+1 == m_dimSizes[0])
+                        ret += " /\n";
+                    else
+                        ret += " |\n";
+                }
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                if (ret.length())
+                    ret += ", ";
+
+                if (size() > 1)
+                    ret += get(i).printEmbedded(digits, chrs, trunc);
+                else
+                    ret += get(i).print(digits, chrs, trunc);
+            }
 
             if (size() > 1)
-                ret += get(i).printEmbedded(digits, chrs, trunc);
-            else
-                ret += get(i).print(digits, chrs, trunc);
+                return "{" + ret + "}";
         }
-
-        if (size() > 1)
-            return "{" + ret + "}";
 
         return ret;
     }
@@ -2873,9 +3383,6 @@ namespace mu
         if (isDefault())
             return "void";
 
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().printVals(digits, chrs);
-
         std::string ret;
 
         for (size_t i = 0; i < size(); i++)
@@ -2898,13 +3405,23 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printDims() const
     {
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().printDims();
-
         if (!size())
             return "0 x 0";
 
-        return toString(size()) + " x 1";
+        if (m_dimSizes.size() < 2)
+            return toString(size()) + " x 1";
+
+        std::string dims;
+
+        for (size_t s : m_dimSizes)
+        {
+            if (dims.length())
+                dims += " x ";
+
+            dims += toString(s);
+        }
+
+        return dims;
     }
 
 
@@ -2950,9 +3467,6 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Array::printOverview(size_t digits, size_t chrs, size_t maxElems, bool alwaysBraces) const
     {
-        //if (size() == 1 && front().isRef() && front().isArray())
-        //    return front().getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
-
         // Return an empty brace pair, if no data is
         // available
         if (!size())
@@ -2969,7 +3483,7 @@ namespace mu
             for (size_t i = 0; i < count(); i++)
             {
                 if (sVector.size())
-                sVector += ", ";
+                    sVector += ", ";
 
                 sVector += operator[](i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
 
@@ -2992,7 +3506,10 @@ namespace mu
                 if (sVector.size())
                     sVector += ", ";
 
-                sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
+                if (get(i).isArray())
+                    sVector += get(i).getArray().printOverview(digits, chrs, maxElems, alwaysBraces);
+                else
+                    sVector += get(i).print(digits, chrs < std::string::npos ? chrs/4 : std::string::npos, false);
 
                 // Insert the ellipsis in the middle. The additional -1 is to
                 // handle the zero-based indices
@@ -3264,6 +3781,21 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Helper method returning true, if the
+    /// underlying data can be queried and written in
+    /// parallel, i.e., it does not contain any
+    /// generators.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::isParallelizable() const
+    {
+        return getCommonType() != TYPE_GENERATOR;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Remove all instances of RefValue in
     /// this array and replace them by clones of
     /// their referenced-to values.
@@ -3283,6 +3815,513 @@ namespace mu
             if (v.isArray())
                 v.getArray().dereference();
         }
+    }
+
+
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Addition function for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixAdd(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) + otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Subtraction function for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixSub(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) - otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) multiplication function
+    /// for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixMul(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) * otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) division function for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixDiv(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) / otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) power function for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixPow(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) ^ otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Static helper function for determining
+    /// whether the first dimension sizes can fit the
+    /// second or if they need to be resized.
+    ///
+    /// \param currDims const DimSizes&
+    /// \param otherDims const DimSizes&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    static bool needsResize(const DimSizes& currDims, const DimSizes& otherDims)
+    {
+        if (currDims.size() < otherDims.size())
+            return true;
+
+        for (size_t i = 0; i < currDims.size(); i++)
+        {
+            if (currDims[i] < otherDims[i])
+                return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Self-addition function for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void matrixSelfAdd(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixAdd(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) += otherView.get(i);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Self-subtraction function for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void matrixSelfSub(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixSub(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) -= otherView.get(i);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) self-multiplication
+    /// function for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void matrixSelfMul(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixMul(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) *= otherView.get(i);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) self-division function
+    /// for matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void matrixSelfDiv(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixDiv(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) /= otherView.get(i);
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief (Elementwise) self-power function for
+    /// matrices.
+    ///
+    /// \param curr Array&
+    /// \param other const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void matrixSelfPow(Array& curr, const Array& other)
+    {
+        if (needsResize(curr.getDimSizes(), other.getDimSizes()))
+        {
+            curr = matrixPow(curr, other);
+            return;
+        }
+
+        MatrixView otherView(other);
+        otherView.mergeDimSizes(curr);
+
+        size_t elements = curr.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            curr.get(i) ^= otherView.get(i);
+        }
+    }
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical equal for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixEq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) == otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical not-equal for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixNeq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) != otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical less-than for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixLess(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) < otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical less-or-equal for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixLessEq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) <= otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical greater-than for
+    /// matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixGreater(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) > otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical greator-or-equal
+    /// for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixGreaterEq(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) >= otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical and for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixAnd(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) && otherView.get(i));
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Elementwise logical or for matrices.
+    ///
+    /// \param curr const Array&
+    /// \param other const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    Array matrixOr(const Array& curr, const Array& other)
+    {
+        MatrixView currView(curr);
+        MatrixView otherView(other);
+        Array ret = currView.prepare(otherView);
+
+        size_t elements = currView.size();
+
+        for (size_t i = 0; i < elements; i++)
+        {
+            ret.emplace_back(currView.get(i) || otherView.get(i));
+        }
+
+        return ret;
     }
 
 
@@ -3450,6 +4489,13 @@ namespace mu
         if (accepts(vals))
         {
             vals.dereference();
+
+            if (idx.getDims() > 1)
+            {
+                ndAssign(idx, vals);
+                return;
+            }
+
             size_t elems = idx.size();
             size_t valSize = vals.size();
 
@@ -3539,6 +4585,165 @@ namespace mu
         }
 
         return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief n-D assign function.
+    ///
+    /// \param idx const Array&
+    /// \param vals const Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Variable::ndAssign(const Array& idx, const Array& vals)
+    {
+        if (!m_dimSizes.size())
+            m_dimSizes.push_back(size());
+
+        DimSizes elemCount(idx.size(), 1ull);
+        DimSizes sourceDims = vals.getDimSizes();
+        size_t extractionDim = 0;
+
+        // Get the number of assignable elements per dimension
+        for (size_t i = 0; i < idx.size(); i++)
+        {
+            if (sourceDims.size() <= extractionDim && idx.get(i).isArray() && idx.get(i).getArray().size() > 1)
+                throw ParserError(ecTYPE_MISMATCH_OOB);
+
+            if (idx.get(i).isArray())
+            {
+                if (sourceDims[extractionDim] == 1ull)
+                {
+                    elemCount[i] = idx.get(i).getArray().size() == UINT64_MAX
+                        ? std::max(1ll, (int64_t)getSize(extractionDim) - idx.get(i).getArray().get(0).getNum().asI64() + 1ll)
+                        : idx.get(i).getArray().size();
+                    sourceDims[extractionDim] = elemCount[i];
+                }
+                else
+                {
+                    elemCount[i] = std::min(idx.get(i).getArray().size(), sourceDims[extractionDim]);
+                    sourceDims[extractionDim] = std::min(elemCount[i], sourceDims[extractionDim]);
+                }
+
+                extractionDim++;
+            }
+        }
+
+        // Resize, if necessary
+        DimSizes targetMinDims(idx.size(), 1ull);
+        bool needsResize = false;
+
+        for (size_t i = 0; i < elemCount.size(); i++)
+        {
+            for (size_t j = 0; j < elemCount[i]; j++)
+            {
+                if (idx.get(i).isArray())
+                    targetMinDims[i] = std::max(targetMinDims[i], idx.get(i).getArray().get(j).getNum().asUI64());
+                else
+                    targetMinDims[i] = std::max(targetMinDims[i], idx.get(i).getNum().asUI64());
+            }
+
+            if ((m_dimSizes.size() <= i && targetMinDims[i] > 1) || targetMinDims[i] > m_dimSizes[i])
+                needsResize = true;
+        }
+
+        if (needsResize)
+        {
+            MatrixView thisView(*this);
+            thisView.mergeDimSizes(targetMinDims);
+
+            Array resized(thisView.size(), Value(getCommonType()));
+
+            for (size_t i = 0; i < resized.size(); i++)
+            {
+                if (thisView.get(i).getType() != TYPE_NEUTRAL)
+                    resized.get(i) = thisView.get(i);
+            }
+
+            operator=(std::move(resized));
+            m_dimSizes = thisView.m_dimSizes;
+        }
+
+        // If only one target position has been selected
+        // assign all elements as embedded values
+        if (getNumElements(elemCount) == 1ull)
+        {
+            IndexTuple target(elemCount.size());
+
+            for (size_t i = 0; i < target.size(); i++)
+            {
+                target[i] = idx.get(i).getNum().asI64()-1;
+            }
+
+            get(target) = vals;
+            return;
+        }
+
+        MatrixView valView(const_cast<Array&>(vals));
+        valView.setDimSizes(sourceDims);
+
+        IndexTuple target(elemCount.size());
+        size_t n = 0;
+        int currentDim = elemCount.size()-1;
+
+        // column-major, not row-major -> first dimension has to be the
+        // innermost loop
+        for (size_t i = 0; i < elemCount[currentDim]; i++)
+        {
+            if (idx.get(currentDim).isArray())
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(i).getNum().asI64())-1;
+            else
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            for (size_t j = 0; j < elemCount[currentDim-1]; j++)
+            {
+                if (idx.get(currentDim-1).isArray())
+                    target[currentDim-1] = std::max(1LL, idx.get(currentDim-1).getArray().get(j).getNum().asI64())-1;
+                else
+                    target[currentDim-1] = std::max(1LL, idx.get(currentDim-1).getNum().asI64())-1;
+
+                if (elemCount.size() > 2)
+                    nthIndexAssign(idx, target, elemCount, currentDim-2, valView, n);
+                else
+                {
+                    get(target) = valView.get(n);
+                    n++;
+                }
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Recursive n-D assign function.
+    ///
+    /// \param idx const Array&
+    /// \param target IndexTuple&
+    /// \param elemCount const DimSizes&
+    /// \param currentDim int
+    /// \param vals const MatrixView&
+    /// \param currentElem size_t&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Variable::nthIndexAssign(const Array& idx, IndexTuple& target, const DimSizes& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem)
+    {
+        for (size_t n = 0; n < elemCount[currentDim]; n++)
+        {
+            if (idx.get(currentDim).isArray())
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getArray().get(n).getNum().asI64())-1;
+            else
+                target[currentDim] = std::max(1LL, idx.get(currentDim).getNum().asI64())-1;
+
+            if (currentDim > 0)
+                nthIndexAssign(idx, target, elemCount, currentDim-1, vals, currentElem);
+            else
+            {
+                get(target) = vals.get(currentElem);
+                currentElem++;
+            }
+        }
     }
 
 

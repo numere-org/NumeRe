@@ -438,9 +438,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-
             sCache.erase(sCache.find_first_of("({"));
             StripSpaces(sCache);
         }
@@ -461,7 +458,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
-        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+        NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
 
     // Write the return values to cache
     if (bWriteToCache)

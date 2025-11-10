@@ -121,7 +121,14 @@ namespace mu
         m_vErrMsg[ecNOT_IMPLEMENTED]        =   "ERR_MUP_48_NOT_IMPLEMENTED";
         m_vErrMsg[ecDEREFERENCE_VOID]       =   "ERR_MUP_49_DEREFERENCE_VOID";
 
-        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_50_INTERNAL_ERROR";
+        m_vErrMsg[ecMATRIX_DIMS_INVALID]    =   "ERR_MUP_50_MATRIX_DIMS_INVALID";
+        m_vErrMsg[ecMATRIX_EMPTY]           =   "ERR_MUP_51_MATRIX_EMPTY";
+        m_vErrMsg[ecMATRIX_INVALID_VALS]    =   "ERR_MUP_52_MATRIX_INVALID_VALS";
+        m_vErrMsg[ecMATRIX_NOT_INVERTIBLE]  =   "ERR_MUP_53_MATRIX_NOT_INVERTIBLE";
+        m_vErrMsg[ecINVALID_WINDOW_SIZE]    =   "ERR_MUP_54_INVALID_WINDOW_SIZE";
+        m_vErrMsg[ecINVALID_FILTER_SIZE]    =   "ERR_MUP_55_INVALID_FILTER_SIZE";
+
+        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_56_INTERNAL_ERROR";
 
 
 

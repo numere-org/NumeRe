@@ -1210,14 +1210,17 @@ std::string ProcedureVarFactory::resolveArguments(std::string sProcedureCommandL
     {
         size_t nPos = 0;
         size_t nArgumentBaseLength = iter.first.length();
+        bool shadowsTable = false;
 
         if (iter.first.back() == '(' || iter.first.back() == '{')
             nArgumentBaseLength--;
+        else
+            shadowsTable = mLocalTables.find(iter.first) != mLocalTables.end();
 
         while ((nPos = sProcedureCommandLine.find(iter.first.substr(0, nArgumentBaseLength), nPos)) != std::string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
-                || (iter.first.back() != '(' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '('))
+                || (iter.first.back() != '(' && shadowsTable && sProcedureCommandLine[nPos+nArgumentBaseLength] == '('))
             {
                 nPos += iter.first.length();
                 continue;
@@ -1260,13 +1263,14 @@ std::string ProcedureVarFactory::resolveLocalVars(std::string sProcedureCommandL
 
     for (const auto& iter : mLocalVars)
     {
+        bool shadowsTable = mLocalTables.find(iter.first) != mLocalTables.end();
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
         while ((nPos = sProcedureCommandLine.find(iter.first, nPos)) != std::string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
-                || sProcedureCommandLine[nPos+iter.first.length()] == '(')
+                || (shadowsTable && sProcedureCommandLine[nPos+iter.first.length()] == '('))
             {
                 nPos += iter.first.length();
                 continue;

@@ -43,6 +43,7 @@
 
 #define MUP_CHARS _nrT("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+#define MU_INDEX_CREATE "_~idx~create"
 #define MU_VECTOR_CREATE "_~vect~create"
 #define MU_VECTOR_EXP2 "_~vect~exp2"
 #define MU_VECTOR_EXP3 "_~vect~exp3"
@@ -157,6 +158,8 @@ namespace mu
         cmIDXASGN,             ///< Operator item:  opening vector brace/index for assignment
         cmSQIDX,               ///< Operator item:  opening square bracket index
         cmSQIDXASGN,           ///< Operator item:  opening square bracket index for assignment
+        cmBIDX,                ///< Operator item:  opening round brace index
+        cmBIDXASGN,            ///< Operator item:  opening round brace index for assignment
         cmEXP2,                ///< The two-value expansion operator
         cmEXP3,                ///< The three-value expansion operator
         cmARG_SEP,             ///< function argument separator

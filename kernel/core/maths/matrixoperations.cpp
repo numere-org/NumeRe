@@ -85,6 +85,9 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
 /////////////////////////////////////////////////
 bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
+    // DEPRECATED: Declared at v1.1.8rc
+    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
+
     // Create the cache
     MatOpCache _cache;
     string sTargetName = "";

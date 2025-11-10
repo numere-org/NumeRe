@@ -78,6 +78,7 @@ std::complex<double> intPowerSymbolic(const std::complex<double>& val, int exp)
 mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 {
     mu::Array res;
+    res.copyDims(v);
     res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
@@ -101,6 +102,7 @@ mu::Array numfnc_imaginaryUnit(const mu::Array& v)
 mu::Array numfnc_real(const mu::Array& v)
 {
     mu::Array res;
+    res.copyDims(v);
     res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
@@ -123,6 +125,7 @@ mu::Array numfnc_real(const mu::Array& v)
 mu::Array numfnc_imag(const mu::Array& v)
 {
     mu::Array res;
+    res.copyDims(v);
     res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
@@ -146,6 +149,7 @@ mu::Array numfnc_imag(const mu::Array& v)
 mu::Array numfnc_rect2polar(const mu::Array& v)
 {
     mu::Array res;
+    res.copyDims(v);
     res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
@@ -170,6 +174,7 @@ mu::Array numfnc_rect2polar(const mu::Array& v)
 mu::Array numfnc_polar2rect(const mu::Array& v)
 {
     mu::Array res;
+    res.copyDims(v);
     res.resize(v.size());
 
     for (size_t i = 0; i < v.size(); i++)
@@ -207,16 +212,19 @@ mu::Array numfnc_conj(const mu::Array& v)
 /////////////////////////////////////////////////
 mu::Array numfnc_complex(const mu::Array& re, const mu::Array& im)
 {
-    mu::Array res;
-    res.resize(std::max(re.size(), im.size()));
+    mu::MatrixView reView(re);
+    mu::MatrixView imView(im);
+    mu::Array ret = reView.prepare(imView);
 
-    for (size_t i = 0; i < res.size(); i++)
+    size_t elements = reView.size();
+
+    for (size_t i = 0; i < elements; i++)
     {
-        res[i] = mu::Numerical(std::complex<double>(re.get(i).getNum().asF64(),
-                                                    im.get(i).getNum().asF64()));
+        ret.emplace_back(std::complex<double>(reView.get(i).getNum().asF64(),
+                                              imView.get(i).getNum().asF64()));
     }
 
-    return res;
+    return ret;
 }
 
 
@@ -830,6 +838,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             if (nType & RETURN_VALUE)
                 return vElements.get(i);
 
+            if (vElements.isMatrix() && !vElements.isVector())
+            {
+                mu::MatrixView view(vElements);
+                mu::IndexTuple index = view.index(i);
+                mu::Array indices(index.size());
+
+                for (size_t n = 0; n < index.size(); n++)
+                {
+                    indices.get(n) = index[n] + 1;
+                }
+
+                return indices;
+            }
+
             return i+1;
         }
         else if (nType & RETURN_GE && vElements.get(i) > vRef)
@@ -838,6 +860,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
             {
                 if (nType & RETURN_VALUE)
                     return vElements.get(i);
+
+                if (vElements.isMatrix() && !vElements.isVector())
+                {
+                    mu::MatrixView view(vElements);
+                    mu::IndexTuple index = view.index(i);
+                    mu::Array indices(index.size());
+
+                    for (size_t n = 0; n < index.size(); n++)
+                    {
+                        indices.get(n) = index[n] + 1;
+                    }
+
+                    return indices;
+                }
 
                 return i+1;
             }
@@ -857,6 +893,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
                 if (nType & RETURN_VALUE)
                     return vElements.get(i);
 
+                if (vElements.isMatrix() && !vElements.isVector())
+                {
+                    mu::MatrixView view(vElements);
+                    mu::IndexTuple index = view.index(i);
+                    mu::Array indices(index.size());
+
+                    for (size_t n = 0; n < index.size(); n++)
+                    {
+                        indices.get(n) = index[n] + 1;
+                    }
+
+                    return indices;
+                }
+
                 return i+1;
             }
 
@@ -874,6 +924,20 @@ static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value
         return NAN;
     else if (nType & RETURN_VALUE)
         return vKeep;
+
+    if (vElements.isMatrix() && !vElements.isVector())
+    {
+        mu::MatrixView view(vElements);
+        mu::IndexTuple index = view.index(nKeep);
+        mu::Array indices(index.size());
+
+        for (size_t i = 0; i < index.size(); i++)
+        {
+            indices.get(i) = index[i] + 1;
+        }
+
+        return indices;
+    }
 
     return nKeep+1;
 }
@@ -1254,10 +1318,38 @@ mu::Array numfnc_logtoidx(const mu::MultiArgFuncParams& v)
 
     if (v.count() == 1)
     {
-        for (size_t i = 0; i < v[0].size(); i++)
+        mu::MatrixView view(v[0]);
+
+        if (v[0].isMatrix() && !v[0].isVector())
         {
-            if (v[0].get(i).isValid() && v[0].get(i))
-                vIdx.emplace_back(uint64_t(i+1));
+            mu::Array num = numfnc_Sum(v);
+            vIdx.setDimSizes({num.getAsScalarInt(), v[0].getDims()});
+            vIdx.resize(num.getAsScalarInt() * v[0].getDims());
+
+            size_t nCount = 0;
+
+            for (size_t i = 0; i < v[0].size(); i++)
+            {
+                if (v[0].get(i).isValid() && v[0].get(i))
+                {
+                    mu::IndexTuple index = view.index(i);
+
+                    for (size_t j = 0; j < index.size(); j++)
+                    {
+                        vIdx.get(nCount, j) = index[j] + 1;
+                    }
+
+                    nCount++;
+                }
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < v[0].size(); i++)
+            {
+                if (v[0].get(i).isValid() && v[0].get(i))
+                    vIdx.emplace_back(uint64_t(i+1));
+            }
         }
     }
     else
@@ -1288,6 +1380,37 @@ mu::Array numfnc_idxtolog(const mu::MultiArgFuncParams& v)
 {
     if (!v.count())
         return mu::Value(false);
+
+    if (v.count() == 1 && v[0].getDims() == 2 && !v[0].isVector())
+    {
+        mu::Array vLogical;
+        mu::DimSizes sz = v[0].getDimSizes();
+        mu::DimSizes targetSize(sz[1], 1ull);
+
+        for (size_t j = 0; j < v[0].cols(); j++)
+        {
+            for (size_t i = 0; i < v[0].rows(); i++)
+            {
+                targetSize[j] = std::max(targetSize[j], (uint64_t)std::max(1LL, v[0].get(i, j).getNum().asI64()));
+            }
+        }
+
+        vLogical.setDimSizes(targetSize);
+        vLogical.resize(mu::getNumElements(targetSize), mu::Value(false));
+        mu::IndexTuple index(v[0].cols());
+
+        for (size_t i = 0; i < v[0].rows(); i++)
+        {
+            for (size_t j = 0; j < v[0].cols(); j++)
+            {
+                index[j] = (uint64_t)std::max(0LL, v[0].get(i, j).getNum().asI64()-1);
+            }
+
+            vLogical.get(index) = mu::Value(true);
+        }
+
+        return vLogical;
+    }
 
     mu::Array maxIdx = numfnc_Max(v);
 
@@ -3759,7 +3882,7 @@ mu::Array oprt_BinAND(const mu::Array& v1, const mu::Array& v2)
 mu::Array numfnc_is_string(const mu::Array& v)
 {
     mu::Array res;
-    res.reserve(v.size());
+    res.copyDims(v.size());
 
     for (const auto& val : v)
     {
@@ -4189,7 +4312,7 @@ mu::Array numfnc_swapBytes(const mu::Array& arr)
 {
     mu::Array ret;
     size_t elems = arr.size();
-    ret.reserve(elems);
+    ret.copyDims(arr);
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -4393,7 +4516,7 @@ mu::Array timfnc_date(const mu::Array& vTime, const mu::Array& vType)
 mu::Array timfnc_datetime(const mu::Array& val)
 {
     mu::Array ret;
-    ret.reserve(val.size());
+    ret.copyDims(val.size());
 
     for (size_t i = 0; i < val.size(); i++)
     {
@@ -6426,6 +6549,57 @@ mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the shuffle()
+/// function.
+///
+/// \param shuffle const mu::Array&
+/// \param base const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base)
+{
+    size_t nShuffle = shuffle.getAsScalarInt();
+    size_t nBase;
+
+    if (base.isDefault())
+        nBase = nShuffle;
+    else
+        nBase = base.getAsScalarInt();
+
+    if (!nBase)
+        throw mu::ParserError(mu::ecMATRIX_EMPTY);
+
+    mu::Array _mBase(nBase, mu::Value(0.0));
+
+    if (nShuffle > nBase)
+        nShuffle = nBase;
+
+    // Create the base (unshuffled) vector
+    for (size_t i = 0; i < nBase; i++)
+    {
+        _mBase.get(i) = i+1;
+    }
+
+    // Shuffle the vector by swapping the i-th shuffled
+    // element with the i-th element
+    for (size_t i = 0; i < nShuffle; i++)
+    {
+        std::uniform_real_distribution<double> randDist(i, nBase-1);
+
+        int nIndex = rint(randDist(getRandGenInstance()));
+        mu::Value dTemp = _mBase.get(i);
+        _mBase.get(i) = _mBase.get(nIndex);
+        _mBase.get(nIndex) = dTemp;
+    }
+
+    // Return only the requested vector length
+    _mBase.resize(nShuffle);
+    return _mBase;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns the utc offset
 /// in seconds.
 ///
@@ -6453,7 +6627,7 @@ mu::Array timfnc_get_utc_offset()
 mu::Array timfnc_is_leap_year(const mu::Array& nDate)
 {
     mu::Array ret;
-    ret.reserve(nDate.size());
+    ret.copyDims(nDate.size());
 
     for (size_t i = 0; i < nDate.size(); i++)
     {
@@ -6477,7 +6651,7 @@ mu::Array timfnc_is_leap_year(const mu::Array& nDate)
 mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
 {
     mu::Array ret;
-    ret.reserve(nDate.size());
+    ret.copyDims(nDate.size());
 
     for (size_t i = 0; i < nDate.size(); i++)
     {
@@ -6514,19 +6688,23 @@ mu::Array timfnc_is_daylightsavingtime(const mu::Array& nDate)
 /////////////////////////////////////////////////
 mu::Array tstfnc_verifyValue(const mu::Array& result, const mu::Array& expected, const mu::Array& tolerance)
 {
-    mu::Array testResult;
-    size_t elems = std::max({result.size(), expected.size(), tolerance.size()});
-    testResult.reserve(elems);
+    mu::MatrixView resultView(result);
+    mu::MatrixView expectedView(expected);
+    mu::MatrixView toleranceView(tolerance);
+    mu::Array testResult = resultView.prepare(expectedView, toleranceView);
+
+    size_t elems = resultView.size();
+
     mu::Numerical tol = 1e-14;
     std::string sDiagString;
 
     for (size_t i = 0; i < elems; i++)
     {
         if (!tolerance.isDefault())
-            tol = tolerance.get(i).getNum();
+            tol = toleranceView.get(i).getNum();
 
-        const mu::Value& res = result.get(i);
-        const mu::Value& expct = expected.get(i);
+        const mu::Value& res = resultView.get(i);
+        const mu::Value& expct = expectedView.get(i);
 
         if (res.isArray())
             testResult.push_back(tstfnc_verifyValue(res.getArray(), expct, mu::Value(tol)));
@@ -6564,19 +6742,23 @@ mu::Array tstfnc_verifyValue(const mu::Array& result, const mu::Array& expected,
 /////////////////////////////////////////////////
 mu::Array tstfnc_verifyNeq(const mu::Array& result, const mu::Array& notExpected, const mu::Array& tolerance)
 {
-    mu::Array testResult;
-    size_t elems = std::max({result.size(), notExpected.size(), tolerance.size()});
-    testResult.reserve(elems);
+    mu::MatrixView resultView(result);
+    mu::MatrixView notExpectedView(notExpected);
+    mu::MatrixView toleranceView(tolerance);
+    mu::Array testResult = resultView.prepare(notExpectedView, toleranceView);
+
+    size_t elems = resultView.size();
+
     mu::Numerical tol = 1e-14;
     std::string sDiagString;
 
     for (size_t i = 0; i < elems; i++)
     {
         if (!tolerance.isDefault())
-            tol = tolerance.get(i).getNum();
+            tol = toleranceView.get(i).getNum();
 
-        const mu::Value& res = result.get(i);
-        const mu::Value& expct = notExpected.get(i);
+        const mu::Value& res = resultView.get(i);
+        const mu::Value& expct = notExpectedView.get(i);
 
         if (res.isArray())
             testResult.push_back(tstfnc_verifyNeq(res.getArray(), expct, mu::Value(tol)));
@@ -6623,20 +6805,25 @@ mu::Array tstfnc_verifyNeq(const mu::Array& result, const mu::Array& notExpected
 /////////////////////////////////////////////////
 mu::Array tstfnc_verifyRange(const mu::Array& result, const mu::Array& lowerBound, const mu::Array& upperBound, const mu::Array& inclusive)
 {
-    mu::Array testResult;
-    size_t elems = std::max({result.size(), lowerBound.size(), upperBound.size(), inclusive.size()});
-    testResult.reserve(elems);
+    mu::MatrixView resultView(result);
+    mu::MatrixView lowerBoundView(lowerBound);
+    mu::MatrixView upperBoundView(upperBound);
+    mu::MatrixView inclusiveView(inclusive);
+    mu::Array testResult = resultView.prepare(lowerBoundView, upperBoundView, inclusiveView);
+
+    size_t elems = resultView.size();
+
     std::string sDiagString;
     mu::Value incl = true;
 
     for (size_t i = 0; i < elems; i++)
     {
-        const mu::Value& res = result.get(i);
-        const mu::Value& lower = lowerBound.get(i);
-        const mu::Value& upper = upperBound.get(i);
+        const mu::Value& res = resultView.get(i);
+        const mu::Value& lower = lowerBoundView.get(i);
+        const mu::Value& upper = upperBoundView.get(i);
 
         if (!inclusive.isDefault())
-            incl = inclusive.get(i);
+            incl = inclusiveView.get(i);
 
         if (res.isArray())
             testResult.push_back(tstfnc_verifyRange(res.getArray(), lower, upper, incl));
@@ -6855,7 +7042,7 @@ mu::Array cast_seconds(const mu::Array& dur)
 {
     mu::Array ret;
     size_t elems = dur.size();
-    ret.reserve(elems);
+    ret.copyDims(dur);
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -6877,7 +7064,7 @@ mu::Array cast_minutes(const mu::Array& dur)
 {
     mu::Array ret;
     size_t elems = dur.size();
-    ret.reserve(elems);
+    ret.copyDims(dur);
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -6899,7 +7086,7 @@ mu::Array cast_hours(const mu::Array& dur)
 {
     mu::Array ret;
     size_t elems = dur.size();
-    ret.reserve(elems);
+    ret.copyDims(dur);
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -6921,7 +7108,7 @@ mu::Array cast_days(const mu::Array& dur)
 {
     mu::Array ret;
     size_t elems = dur.size();
-    ret.reserve(elems);
+    ret.copyDims(dur);
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -6943,7 +7130,7 @@ mu::Array cast_weeks(const mu::Array& dur)
 {
     mu::Array ret;
     size_t elems = dur.size();
-    ret.reserve(elems);
+    ret.copyDims(dur);
 
     for (size_t i = 0; i < elems; i++)
     {
@@ -6965,7 +7152,7 @@ mu::Array cast_years(const mu::Array& dur)
 {
     mu::Array ret;
     size_t elems = dur.size();
-    ret.reserve(elems);
+    ret.copyDims(dur);
 
     for (size_t i = 0; i < elems; i++)
     {

@@ -21,6 +21,7 @@
 #include "muParser.h"
 #include "../ui/language.hpp"
 #include "../maths/functionimplementation.hpp"
+#include "../maths/matfuncimplementation.hpp"
 #include "../strings/functionimplementation.hpp"
 
 #include "../utils/timer.hpp"
@@ -316,9 +317,18 @@ int main()
     _parser.DefineFun("bswap", bswap);
     _parser.DefineFun("dict", create_dictstruct, true, 2);
 
-    _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit);
+    _parser.DefineFun("matfc", matfnc_matfc);
+    _parser.DefineFun("reshape", matfnc_reshape, true, 1);
+    _parser.DefineFun("resize", matfnc_resize, true, 1);
+    _parser.DefineFun("repmat", matfnc_repmat, true, 1);
+
+    _parser.DefinePostfixOprt("i", numfnc_imaginaryUnit, true);
+    _parser.DefinePostfixOprt("'kmh", numfnc_abs, true);
     _parser.DefineConst("nan", mu::Value(NAN));
     _parser.DefineConst("inf", mu::Value(INFINITY));
+
+    _parser.DefineOprt("**", oprt_MatMul, mu::prMUL_DIV, mu::oaRIGHT, true);
+    _parser.DefinePostfixOprt("'", oprt_transpose, true);
 
     std::string sInput;
     int nResults;
@@ -326,6 +336,8 @@ int main()
     std::vector<mu::Numerical> logicals({false,true,true,false,true,true,false});
     std::vector<std::string> strings({"Hello", "World", "More", "Strings", "in", "Here"});
     mu::Variable vectorVar(vals);
+    mu::Variable matVar(vals);
+    matVar.setDimSizes({3,3});
     mu::Variable logicalVar(logicals);
     mu::Variable stringVect(strings);
     mu::Variable var(std::complex<double>(4,8));
@@ -348,6 +360,7 @@ int main()
     cat.push_back(mu::Value(mu::Category(2, "World")));
     mu::Variable t(mu::Numerical(-1.26e31f));
     _parser.DefineVar("vect", &vectorVar);
+    _parser.DefineVar("mat", &matVar);
     _parser.DefineVar("logicals", &logicalVar);
     _parser.DefineVar("var", &var);
     _parser.DefineVar("str", &strvar);
@@ -380,7 +393,7 @@ int main()
 
             _parser.SetExpr(sInput);
             res = _parser.Eval(nResults);
-            _parser.Eval();
+            //_parser.Eval();
 
             for (int i = 0; i < nResults; i++)
             {

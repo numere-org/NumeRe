@@ -107,7 +107,7 @@ namespace mu
     {
         Array res;
         size_t elems = arr.size();
-        res.reserve(elems);
+        res.copyDims(arr);
 
         for (size_t i = 0; i < elems; i++)
         {
@@ -199,8 +199,10 @@ namespace mu
             firstExp += 20;
         }
 
+#ifndef PARSERSTANDALONE
         // Consider some special values
         replaceAll(sNumber, "inf", "&infin;");
+#endif
 
         // Return the formatted string in math mode
         return sNumber;

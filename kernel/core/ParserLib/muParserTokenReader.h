@@ -51,6 +51,49 @@ namespace mu
     // Forward declaration
     class ParserBase;
 
+    struct IndexedVar
+    {
+        Variable* var;
+        size_t indexStart;
+        int parensState[3];
+        int argC;
+
+        /////////////////////////////////////////////////
+        /// \brief Create a new IndexedVar instance.
+        ///
+        /// \param v Variable*
+        /// \param start int
+        /// \param roundBraces int
+        /// \param curlyBraces int
+        /// \param squareBraces int
+        ///
+        /////////////////////////////////////////////////
+        IndexedVar(Variable* v, int start, int roundBraces, int curlyBraces, int squareBraces)
+            : var(v), indexStart(start), argC(0)
+        {
+            parensState[0] = roundBraces;
+            parensState[1] = curlyBraces;
+            parensState[2] = squareBraces;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Does the selected set of braces match
+        /// to this IndexedVar instance?
+        ///
+        /// \param roundBraces int
+        /// \param curlyBraces int
+        /// \param squareBraces int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool braceMatch(int roundBraces, int curlyBraces, int squareBraces) const
+        {
+            return parensState[0] == roundBraces
+                && parensState[1] == curlyBraces
+                && parensState[2] == squareBraces;
+        }
+    };
+
     /** \brief Token reader for the ParserBase class.
 
     */
@@ -59,7 +102,7 @@ namespace mu
         private:
 
             typedef ParserToken token_type;
-            std::stack<Variable*> m_indexedVars;
+            std::stack<IndexedVar> m_indexedVars;
 
         public:
 

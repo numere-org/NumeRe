@@ -47,12 +47,10 @@ CodeAnalyzer::CodeAnalyzer(NumeReEditor* parent, Options* opts) : m_editor(paren
 {
     m_STRING_FUNCS = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[STRING]");
     m_STRING_METHODS = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[STRING]");
-    m_MATOP_FUNCS = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[MAT]");
     m_DRAW_FUNCS = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[DRAW]");
 
     std::for_each(m_STRING_FUNCS.begin(), m_STRING_FUNCS.end(), replaceDocStrings);
     std::for_each(m_STRING_METHODS.begin(), m_STRING_METHODS.end(), replaceDocStrings);
-    std::for_each(m_MATOP_FUNCS.begin(), m_MATOP_FUNCS.end(), replaceDocStrings);
     std::for_each(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), replaceDocStrings);
 
 	m_sNote = _guilang.get("GUI_ANALYZER_NOTE");
@@ -1363,9 +1361,6 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     }
 
     // Examine mode-specific functions
-    if (std::find(m_MATOP_FUNCS.begin(), m_MATOP_FUNCS.end(), sSyntaxElement) != m_MATOP_FUNCS.end() && m_currentMode != "matop")
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_MATOPFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
-
     if (std::find(m_STRING_FUNCS.begin(), m_STRING_FUNCS.end(), sSyntaxElement) != m_STRING_FUNCS.end() && m_currentMode == "matop")
         AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
 
@@ -1759,6 +1754,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
         if (sSyntaxElement == "nlen"
             || sSyntaxElement == "nrows"
             || sSyntaxElement == "ncols"
+            || sSyntaxElement == "nlayers"
+            || sSyntaxElement == "ndim"
             || sSyntaxElement == "nlines")
         {
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",

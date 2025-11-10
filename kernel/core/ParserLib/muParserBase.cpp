@@ -59,10 +59,10 @@ size_t getMatchingParenthesis(const StringView&);
 // {a:b}, {a:c:b}, {a:b, ..., c}
 // {a, {b, c}}
 // VAR.METHOD (VAR.FIELD)
-
-// Missing syntax elements
 // X[i]
 // X[i] = EXPR
+
+// Missing syntax elements
 // X.FIELD = EXPR
 // [X, Y, C] = A, B, C
 
@@ -504,6 +504,47 @@ namespace mu
         }
 
         return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Internal alias function to construct
+    /// an index from a list of elements.
+    ///
+    /// \param arrs const mu::MultiArgFuncParams&
+    /// \return mu::Array
+    ///
+    /////////////////////////////////////////////////
+    Array ParserBase::IndexCreate(const MultiArgFuncParams& arrs)
+    {
+        // If no arguments have been passed, we simply
+        // return void
+        if (!arrs.count())
+            return mu::Value();
+
+        mu::Array res;
+
+        for (size_t i = 0; i < arrs.count(); i++)
+        {
+            if (arrs[i].getCommonType() == TYPE_GENERATOR_CONSTRUCTOR)
+            {
+                Array generator;
+                generator.insert(generator.end(), arrs[i].begin(), arrs[i].end());
+                generator.makeGenerator();
+                res.push_back(generator);
+            }
+            else if (arrs[i].getCommonType() == TYPE_GENERATOR)
+                // Expand the embedded array if it is a generator
+                res.push_back(Array().assign(arrs[i]));
+            else if (arrs[i].isScalar())
+                res.push_back(arrs[i].front());
+            else
+                res.push_back(arrs[i]);
+        }
+
+        res.setDims(arrs.count());
+
+        return res;
     }
 
 
@@ -1057,6 +1098,13 @@ namespace mu
                                                    funTok.IsOptimizable(),
                                                    funTok.GetAsString());
 				break;
+			case  cmBIDX:
+			    if (iArgCount == 1)
+                {
+                    m_compilingState.m_byteCode.AddVal(mu::Value(1));
+                    iArgCount++;
+                }
+                // fallthrough intended
 			case  cmIDX:
 			case  cmSQIDX:
 			    // Check, whether enough arguments are available (with some special exceptions)
@@ -1069,6 +1117,13 @@ namespace mu
                                                    funTok.GetAsString());
                 m_compilingState.m_byteCode.AddOp(cmIDX);
 				break;
+			case  cmBIDXASGN:
+			    if (iArgCount == 1)
+                {
+                    m_compilingState.m_byteCode.AddVal(mu::Value(1));
+                    iArgCount++;
+                }
+                // fallthrough intended
 			case  cmIDXASGN:
 			case  cmSQIDXASGN:
 			    // Check, whether enough arguments are available (with some special exceptions)
@@ -1089,7 +1144,7 @@ namespace mu
 		}
 
 		// Push dummy value representing the function result to the stack
-		if (funTok.GetCode() == cmIDX || funTok.GetCode() == cmSQIDX)
+		if (funTok.GetCode() == cmIDX || funTok.GetCode() == cmSQIDX || funTok.GetCode() == cmBIDX)
         {
             a_stVal.pop();
             token_type token;
@@ -1097,7 +1152,7 @@ namespace mu
             token.ChangeCode(cmVAR);
             a_stVal.push(std::move(token));
         }
-		else if (funTok.GetCode() == cmIDXASGN || funTok.GetCode() == cmSQIDXASGN)
+		else if (funTok.GetCode() == cmIDXASGN || funTok.GetCode() == cmSQIDXASGN || funTok.GetCode() == cmBIDXASGN)
         {
             token_type top = a_stVal.top();
 
@@ -1216,6 +1271,8 @@ namespace mu
 				stOpt.top().GetCode() != cmIDXASGN &&
 				stOpt.top().GetCode() != cmSQIDX &&
 				stOpt.top().GetCode() != cmSQIDXASGN &&
+				stOpt.top().GetCode() != cmBIDX &&
+				stOpt.top().GetCode() != cmBIDXASGN &&
 				stOpt.top().GetCode() != cmEXP2 &&
 				stOpt.top().GetCode() != cmEXP3 &&
 				stOpt.top().GetCode() != cmIF)
@@ -1444,7 +1501,7 @@ namespace mu
                     continue;
 
                 case  cmDIMVAR:
-                    Stack[++sidx] = Value(pTok->Val().var->size());
+                    Stack[++sidx] = Value(pTok->Val().var->getSize(pTok->Val().data.getAsScalarInt()));
                     continue;
 
                 case  cmVARARRAY:
@@ -1620,13 +1677,21 @@ namespace mu
                     {
                         int iArgCount = pTok->Fun().argc;
 
+                        if (sidx < iArgCount)
+                            Error(ecINTERNAL_ERROR, 1);
+
+                        const mu::Array& currArr = Stack[sidx-iArgCount+1].get();
+
+                        if (iArgCount > 1
+                            && (currArr.isMethod(pTok->Fun().name, MethodDefinition::multiargcount)
+                                || (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, MethodDefinition::multiargcount))))
+                            iArgCount = -iArgCount;
+
                         // switch according to argument count
                         switch (iArgCount)
                         {
                             case 1:
                                 {
-                                    const mu::Array& currArr = Stack[sidx].get();
-
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 0))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name);
                                     else
@@ -1636,7 +1701,6 @@ namespace mu
                             case 2:
                                 {
                                     sidx -= 1;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 1))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1649,7 +1713,6 @@ namespace mu
                             case 3:
                                 {
                                     sidx -= 2;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 2))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1664,7 +1727,6 @@ namespace mu
                             case 4:
                                 {
                                     sidx -= 3;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 3))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1681,7 +1743,6 @@ namespace mu
                             case 5:
                                 {
                                     sidx -= 4;
-                                    const mu::Array& currArr = Stack[sidx].get();
 
                                     if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, 4))
                                         Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
@@ -1698,7 +1759,20 @@ namespace mu
                                 }
                                 continue;
                             default:
-                                Error(ecINTERNAL_ERROR, 1);
+                                if (iArgCount > 0) // function with variable arguments store the number as a negative value
+                                    Error(ecINTERNAL_ERROR, 1);
+
+                                sidx -= -iArgCount - 1;
+                                const mu::Array& currArr = Stack[sidx].get();
+
+                                if (!currArr.isConst() && currArr.isApplyingMethod(pTok->Fun().name, MethodDefinition::multiargcount))
+                                    Stack[sidx] = Stack[sidx].getMutable().apply(pTok->Fun().name,
+                                                                                 MultiArgFuncParams(&Stack[sidx+1], -iArgCount-1));
+                                else
+                                    Stack[sidx] = currArr.call(pTok->Fun().name,
+                                                               MultiArgFuncParams(&Stack[sidx+1], -iArgCount-1));
+
+                                continue;
                         }
                     }
 
@@ -2089,7 +2163,7 @@ namespace mu
 
 				case cmDIMVAR:
 					stVal.push(opt);
-					m_compilingState.m_byteCode.AddDimVar(opt.GetVar());
+					m_compilingState.m_byteCode.AddDimVar(opt.GetVar(), opt.GetIdx());
 					break;
 
 				case cmVAL:
@@ -2112,7 +2186,9 @@ namespace mu
                                  || stOpt.top().GetCode() == cmIDX
                                  || stOpt.top().GetCode() == cmIDXASGN
                                  || stOpt.top().GetCode() == cmSQIDX
-                                 || stOpt.top().GetCode() == cmSQIDXASGN) && stVal.size() > 0)
+                                 || stOpt.top().GetCode() == cmSQIDXASGN
+                                 || stOpt.top().GetCode() == cmBIDX
+                                 || stOpt.top().GetCode() == cmBIDXASGN) && stVal.size() > 0)
                             {
                                 ParserToken tok;
                                 tok.Set(cmEXP2, MU_VECTOR_EXP2);
@@ -2215,7 +2291,7 @@ namespace mu
                         ECmdCode optCode = opt.GetCode();
 
 						// Check if the bracket content has been evaluated completely
-						if (stOpt.size() && ((topCode == cmBO && optCode == cmBC)
+						if (stOpt.size() && (((topCode == cmBO || topCode == cmBIDX || topCode == cmBIDXASGN) && optCode == cmBC)
                                              || ((topCode == cmVO || topCode == cmIDX || topCode == cmIDXASGN) && optCode == cmVC)
                                              || ((topCode == cmSQIDX || topCode == cmSQIDXASGN) && optCode == cmSQC)))
 						{
@@ -2262,6 +2338,8 @@ namespace mu
                                                           && stOpt.top().GetCode() != cmIDXASGN
                                                           && stOpt.top().GetCode() != cmSQIDX
                                                           && stOpt.top().GetCode() != cmSQIDXASGN
+                                                          && stOpt.top().GetCode() != cmBIDX
+                                                          && stOpt.top().GetCode() != cmBIDXASGN
                                                           && stOpt.top().GetCode() != cmMETHOD)))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
@@ -2318,6 +2396,8 @@ namespace mu
 							stOpt.top().GetCode() != cmIDXASGN &&
 							stOpt.top().GetCode() != cmSQIDX &&
 							stOpt.top().GetCode() != cmSQIDXASGN &&
+							stOpt.top().GetCode() != cmBIDX &&
+							stOpt.top().GetCode() != cmBIDXASGN &&
 							stOpt.top().GetCode() != cmIF)
 					{
 						int nPrec1 = GetOprtPrecedence(stOpt.top()),
@@ -2361,12 +2441,18 @@ namespace mu
  				case cmIDXASGN:
 				case cmSQIDX:
 				case cmSQIDXASGN:
+				case cmBIDX:
+				case cmBIDXASGN:
                 {
                     ParserToken tok;
-                    tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 
                     if (opt.GetCode() != cmVO)
+                    {
+                        tok.Set(m_FunDef.at(MU_INDEX_CREATE), MU_INDEX_CREATE);
                         tok.ChangeCode(opt.GetCode());
+                    }
+                    else
+                        tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 
 				    stOpt.push(tok);
 				    vectorCreateMode++;
@@ -2741,7 +2827,7 @@ namespace mu
 					    printFormatted("|   VAR\n");
 						break;
 					case cmDIMVAR:
-					    printFormatted("|   DIMVAR\n");
+					    printFormatted("|   DIMVAR [" + std::to_string(stOprt.top().GetIdx()) + "]\n");
 						break;
 					case cmVAL:
 						printFormatted("|   VAL\n");
@@ -2781,6 +2867,12 @@ namespace mu
 						break;
 					case cmSQIDXASGN:
 						printFormatted("|   INDEX/ASSIGN \"[\"\n");
+						break;
+					case cmBIDX:
+						printFormatted("|   INDEX \"(\"\n");
+						break;
+					case cmBIDXASGN:
+						printFormatted("|   INDEX/ASSIGN \"(\"\n");
 						break;
 					case cmSQC:
 						printFormatted("|   INDEX \"]\"\n");

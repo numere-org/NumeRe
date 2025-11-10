@@ -18,6 +18,7 @@
 
 #include "muValueImpl.hpp"
 #include "muParserError.h"
+#include "muInternalStructures.hpp"
 #include "../utils/stringtools.hpp"
 
 #include <set>
@@ -1758,7 +1759,7 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition ArrValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        return MethodDefinition(sMethod);
+        return m_val.isMethod(sMethod, argc);
     }
 
 
@@ -1859,6 +1860,29 @@ namespace mu
                         arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return new ArrValue(m_val.call(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone()), Value(arg4.clone())));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with unlimited number of
+    /// arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args std::vector<BaseValue*>
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* ArrValue::call(const std::string& sMethod,
+                              std::vector<BaseValue*> args) const
+    {
+        std::vector<Array> vArgs;
+
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            vArgs.push_back(Value(args[i]->dereferencedClone()));
+        }
+
+        return new ArrValue(m_val.call(sMethod, MultiArgFuncParams(&vArgs[0], vArgs.size())));
     }
 
 
@@ -1974,6 +1998,29 @@ namespace mu
                          arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone()), Value(arg4.clone())));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with unlimited number
+    /// of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args std::vector<BaseValue*>
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* ArrValue::apply(const std::string& sMethod,
+                               std::vector<BaseValue*> args)
+    {
+        std::vector<Array> vArgs;
+
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            vArgs.push_back(Value(args[i]->dereferencedClone()));
+        }
+
+        return new ArrValue(m_val.apply(sMethod, MultiArgFuncParams(&vArgs[0], vArgs.size())));
     }
 
 
@@ -2183,7 +2230,18 @@ namespace mu
         else if (m_val.isField(sMethod))
         {
             const BaseValue* v = m_val.read(sMethod);
-            return v ? v->clone() : nullptr;
+
+            if (v)
+            {
+                BaseValue* cloned = v->clone();
+
+                if (cloned->getType() == TYPE_ARRAY)
+                    static_cast<ArrValue*>(cloned)->get().makeConst();
+
+                return cloned;
+            }
+
+            return nullptr;
         }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
@@ -2237,7 +2295,7 @@ namespace mu
     {
         static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"decodejson", 1}, {"write", -2}, {"insertkey", -1}, {"insertkey", -2}});
 
-        if (m_val.isField(sMethod) && argc == 1)
+        if (m_val.isField(sMethod) && argc <= 1)
             return MethodDefinition(sMethod, -argc);
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));

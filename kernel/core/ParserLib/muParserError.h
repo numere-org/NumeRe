@@ -103,8 +103,15 @@ namespace mu
         ecNOT_IMPLEMENTED        = 48, ///< Operation is not implemented for this data type.
         ecDEREFERENCE_VOID       = 49, ///< Cannot dereference void
 
+        ecMATRIX_DIMS_INVALID    = 50, ///< Matrix dimensions are invalid in some way
+        ecMATRIX_EMPTY           = 51, ///< Matrix is empty
+        ecMATRIX_INVALID_VALS    = 52, ///< Matrix contains invalid values
+        ecMATRIX_NOT_INVERTIBLE  = 53, ///< Matrix is not invertible
+        ecINVALID_WINDOW_SIZE    = 54, ///< Stat window size is invalid
+        ecINVALID_FILTER_SIZE    = 55, ///< Filter kernel size is invalid
+
         // internal errors
-        ecINTERNAL_ERROR         = 50, ///< Internal error of any kind.
+        ecINTERNAL_ERROR         = 56, ///< Internal error of any kind.
 
         // The last two are special entries
         ecCOUNT,                      ///< This is no error code, It just stores just the total number of error codes

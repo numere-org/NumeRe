@@ -2755,7 +2755,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
              *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
              *     Parsers einmal aufgerufen werden <--
              */
-            NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+            NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
         }
 
         return FLOWCTRL_OK;
@@ -3009,9 +3009,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-
             sCache.erase(pos);
             StripSpaces(sCache);
 
@@ -3026,9 +3023,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
-
-            if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             sCache.erase(pos);
         }
@@ -3064,7 +3058,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
          *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
          *     Parsers einmal aufgerufen werden <--
          */
-        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+        NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
     }
 
     // Write the result to a table or a cluster
@@ -3261,7 +3255,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         vAns = v[0].get();
 
         if (!bLoopSupressAnswer)
-            NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+            NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
 
         return FLOWCTRL_OK;
     }
@@ -3529,9 +3523,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
-                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
-
                 sDataObject.erase(pos);
                 StripSpaces(sDataObject);
 
@@ -3546,9 +3537,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
-
-                if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
 
                 sDataObject.erase(pos);
             }
@@ -3567,7 +3555,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     vAns = v[0].get();
 
     if (!bLoopSupressAnswer)
-        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+        NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
 
     // Write the result to a table or a cluster
     // this was implied by the syntax of the command

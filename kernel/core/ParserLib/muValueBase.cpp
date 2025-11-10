@@ -409,6 +409,22 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Call an instance specific method with
+    /// an unlimited number of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args std::vector<BaseValue*>
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::call(const std::string& sMethod,
+                               std::vector<BaseValue*> args) const
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Method to detect, whether an applying
     /// (non-const) method with the passed name is
     /// implemented in this instance. Can also be
@@ -514,6 +530,22 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
+    {
+        throw ParserError(ecMETHOD_ERROR, sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply an instance specific method with
+    /// an unlimited number of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args std::vector<BaseValue*>
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* BaseValue::apply(const std::string& sMethod,
+                                std::vector<BaseValue*> args)
     {
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1101,12 +1133,34 @@ namespace mu
     {
         if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
             return get().call(sMethod,
-                               arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                               arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                               arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
-                               arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+                              arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                              arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                              arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                              arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return get().call(sMethod, arg1, arg2, arg3, arg4);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with unlimited number of
+    /// arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args std::vector<BaseValue*>
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::call(const std::string& sMethod,
+                              std::vector<BaseValue*> args) const
+    {
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            while (args[i]->m_type == TYPE_REFERENCE)
+                args[i] = &static_cast<RefValue*>(args[i])->get();
+        }
+
+        return get().call(sMethod, args);
     }
 
 
@@ -1222,6 +1276,28 @@ namespace mu
                                 arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return get().apply(sMethod, arg1, arg2, arg3, arg4);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with unlimited number
+    /// of arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param args std::vector<BaseValue*>
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* RefValue::apply(const std::string& sMethod,
+                               std::vector<BaseValue*> args)
+    {
+        for (size_t i = 0; i < args.size(); i++)
+        {
+            while (args[i]->m_type == TYPE_REFERENCE)
+                args[i] = &static_cast<RefValue*>(args[i])->get();
+        }
+
+        return get().apply(sMethod, args);
     }
 
 

@@ -264,6 +264,7 @@ namespace mu
 			static Array evalIfElse(const Array& cond,
                                     const Array& true_case,
                                     const Array& false_case);
+            static Array IndexCreate(const MultiArgFuncParams&);  // index creation
             static Array VectorCreate(const MultiArgFuncParams&);  // vector creation
             static Array Vector2Generator(const Array& firstVal,
                                           const Array& lastVal);

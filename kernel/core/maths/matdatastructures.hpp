@@ -24,7 +24,6 @@
 #include <complex>
 #include <utility>
 
-#include "../ui/error.hpp"
 #include "../utils/stringtools.hpp"
 
 /////////////////////////////////////////////////
@@ -376,9 +375,7 @@ class Matrix
         std::complex<double>& operator()(size_t i, size_t j = 0u)
         {
             if (i >= m_rows || j >= m_cols)
-                throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
-                                  SyntaxError::invalid_position,
-                                  "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
+                throw std::out_of_range("INTERNAL INDEXING ERROR: MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
 
             return get(i, j);
         }
@@ -395,9 +392,7 @@ class Matrix
         const std::complex<double>& operator()(size_t i, size_t j = 0u) const
         {
             if (i >= m_rows || j >= m_cols)
-                throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
-                                  SyntaxError::invalid_position,
-                                  "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
+                throw std::out_of_range("INTERNAL INDEXING ERROR: MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
 
             return get(i, j);
         }
@@ -514,9 +509,7 @@ class Matrix
         Matrix operator*(const Matrix& mat) const
         {
             if (mat.m_rows != m_cols)
-                throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, "INTERNAL INDEXING ERROR",
-                                  SyntaxError::invalid_position,
-                                  printDims() + " vs. " + mat.printDims());
+                throw std::out_of_range("INTERNAL INDEXING ERROR: " + printDims() + " vs. " + mat.printDims());
 
             Matrix ret(m_rows, mat.m_cols, mu::Value(0.0));
 

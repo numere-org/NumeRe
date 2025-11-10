@@ -389,8 +389,8 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
                     // logic
                     DataAccessParser src(source, false);
 
-                    // If it is not a matrix, fall back to standard parsing
-                    if (!src.isMatrix())
+                    // If it is not a matrix or the target is an existing var, fall back to standard parsing
+                    if (!src.isMatrix() || _parser.ReadVar(sCache.substr(sCache.find('('))))
                     {
                         // Convert the StringView first, because its internal data
                         // will be mutated in the next step
@@ -515,18 +515,6 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
 
     nPos = 0;
 
-    // handle logical table accesses
-    while ((nPos = sLine.find(sEntity + ")", nPos)) != std::string::npos)
-    {
-        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~'))
-        {
-            nPos++;
-            continue;
-        }
-
-        sLine.replace(nPos, sEntity.length() + 1, (_data.getCols(StringView(sEntity, 0, sEntity.length() - 1)) ? "true" : "false"));
-    }
-
     if (sLine.find(sEntity) == std::string::npos)
         return;
 
@@ -572,7 +560,6 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
 static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOccurence, DataAccessParser&& _access, MemoryManager& _data, mu::Parser& _parser, int options)
 {
     mu::Array vEntityContents;
-    std::string sEntityStringReplacement;
     const std::string& sEntityName = _access.getDataObject();
     bool bWriteStrings = false;
     bool bWriteFileName = false;
@@ -582,11 +569,8 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
     if (!isValidIndexSet(_idx))
         throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _access.getIndexString());
 
-    if (_access.isMatrix())
-        throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
-
     // evaluate the indices
-    _access.evalIndices(false);
+    _access.evalIndices(_idx.col.size() > 1 && _idx.col.size() > 1);
 
     if (_idx.row.isString())
         bWriteStrings = true;
@@ -598,17 +582,13 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
     if (bWriteFileName)
     {
         // Get the file name (or the cache table name)
-        sEntityStringReplacement = "\"" + _data.getDataFileName(sEntityName) + "\"";
+        vEntityContents.push_back(_data.getDataFileName(sEntityName));
     }
     else if (bWriteStrings)
     {
-        mu::Array vStringContents;
-
         // Get the headlines
         for (size_t j = 0; j < _idx.col.size(); j++)
-            vStringContents.push_back(_data.getHeadLineElement(_idx.col[j], sEntityName));
-
-        sEntityStringReplacement = _parser.CreateTempVar(vStringContents);
+            vEntityContents.push_back(_data.getHeadLineElement(_idx.col[j], sEntityName));
     }
     else
     {
@@ -618,34 +598,24 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
     }
 
     // replace the occurences
-    if (sEntityStringReplacement.length())
+    // Define the vector name
+    std::string sEntityReplacement = replaceToVectorname(sEntityOccurence);
+
+    // Set the vector variable and its value for the parser
+    _parser.SetInternalVar(sEntityReplacement, vEntityContents);
+
+    // Cache the current access if needed
+    if (_parser.IsCompiling() && _parser.CanCacheAccess())
     {
-        // Replace the strings (we don't need caching here)
-        _parser.DisableAccessCaching();
-        replaceAll(sLine, sEntityOccurence, sEntityStringReplacement);
+        mu::CachedDataAccess _access = {sEntityName + "(" + _idx.sCompiledAccessEquation + ")",
+                                        sEntityReplacement, sEntityName,
+                                        mu::CachedDataAccess::NO_FLAG
+                                       };
+        _parser.CacheCurrentAccess(_access);
     }
-    else
-    {
-        // Replace the numerical occurences
-        // Define the vector name
-        std::string sEntityReplacement = replaceToVectorname(sEntityOccurence);
 
-        // Set the vector variable and its value for the parser
-        _parser.SetInternalVar(sEntityReplacement, vEntityContents);
-
-        // Cache the current access if needed
-        if (_parser.IsCompiling() && _parser.CanCacheAccess())
-        {
-            mu::CachedDataAccess _access = {sEntityName + "(" + _idx.sCompiledAccessEquation + ")",
-                                            sEntityReplacement, sEntityName,
-                                            mu::CachedDataAccess::NO_FLAG
-                                           };
-            _parser.CacheCurrentAccess(_access);
-        }
-
-        // Replace the occurences
-        replaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser);
-    }
+    // Replace the occurences
+    replaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser);
 }
 
 
@@ -687,9 +657,6 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
         if (!isValidIndexSet(_idx))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
-        if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-            throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
-
         // Evaluate the indices
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _data.getLines(_access.sCacheName, false) - 1);
@@ -697,7 +664,24 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
         if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _data.getCols(_access.sCacheName, false) - 1);
 
-        // Get new data (Parser::GetVectorVar returns a pointer to the vector var) and update the stored elements in the internal representation
+        // Handle the filename and headline access different from the usual data access
+        if (_idx.col.isString())
+        {
+            // Get the file name (or the cache table name)
+            mu::Variable* var = _parser.GetInternalVar(_access.sVectorName);
+            var->std::vector<mu::Value>::assign(1ull, _data.getDataFileName(_access.sCacheName));
+        }
+        else if (_idx.row.isString())
+        {
+            mu::Variable* var = _parser.GetInternalVar(_access.sVectorName);
+            var->clear();
+
+            // Get the headlines
+            for (size_t j = 0; j < _idx.col.size(); j++)
+                var->push_back(_data.getHeadLineElement(_idx.col[j], _access.sCacheName));
+        }
+
+        // Get new data and update the stored elements in the internal representation
         _data.copyElementsInto(_parser.GetInternalVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
     }
 

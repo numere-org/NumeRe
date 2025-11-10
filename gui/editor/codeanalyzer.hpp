@@ -62,7 +62,6 @@ class CodeAnalyzer
         Options* m_options;
         SymDefManager m_symdefs;
 
-        std::vector<std::string> m_MATOP_FUNCS;
         std::vector<std::string> m_DRAW_FUNCS;
         std::vector<std::string> m_STRING_FUNCS;
         std::vector<std::string> m_STRING_METHODS;

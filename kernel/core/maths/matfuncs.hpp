@@ -823,7 +823,7 @@ static std::complex<double> calculateStats(const Matrix& mat, StatsLogic logic, 
         operation.front().combine(operation[i]);
     }
 
-    return operation.front().m_val;
+    return operation.front().m_val.as_cmplx();
 }
 
 
@@ -3413,7 +3413,7 @@ static Matrix matrixRasterFilter(const MatFuncData& funcData, const MatFuncError
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-Matrix convolution(Matrix& mat1, Matrix& mat2)
+static Matrix convolution(Matrix& mat1, Matrix& mat2)
 {
     //Transform matrix 1
     mglDataC _fftData1;

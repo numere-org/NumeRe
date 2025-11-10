@@ -460,8 +460,7 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 {
     mu::Array vReturn;
 
-    if ((_vLine.size() > 1 && _vCol.size() > 1)
-        || !memArray.size()
+    if (!memArray.size()
         /*|| (_vCol.size() == 1 && !getElemsInColumn(_vCol.front()))*/)
         return vReturn;
 
@@ -491,9 +490,13 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
                 continue;
             }*/
 
-            vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
+            vReturn[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
         }
     }
+
+    // Set the corresponding dimension sizes
+    if (_vLine.size() > 1 && _vCol.size() > 1)
+        vReturn.setDimSizes({_vLine.size(), _vCol.size()});
 
     return vReturn;
 }
@@ -796,6 +799,9 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
                 (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }
         }
+
+        if (_vLine.size() > 1 && _vCol.size() > 1)
+            vTarget->setDimSizes({_vLine.size(), _vCol.size()});
     }
 }
 
@@ -1489,32 +1495,64 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
     if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
         rewriteColumn = true;
 
-    _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
-    _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
-
-    if (_idx.row.size() > 1)
-        nDirection = COLS;
-    else if (_idx.col.size() > 1)
-        nDirection = LINES;
-
     TableColumn::ColumnType t = to_column_type(_values);
 
-    for (size_t j = 0; j < _idx.col.size(); j++)
+    if (_values.isMatrix() && !_values.isVector())
     {
-        for (size_t i = 0; i < _idx.row.size(); i++)
+        if (_idx.row.isFullRange(getLines()-1) && _idx.col.isFullRange(getCols()-1))
+            clear();
+
+        _idx.row.setOpenEndIndex(_idx.row.front() + _values.rows() - 1);
+        _idx.col.setOpenEndIndex(_idx.col.front() + _values.cols() - 1);
+
+        // Prepare the target size
+        resizeMemory(_values.rows(), _idx.col.max()+1);
+
+        // Write the contents to the table
+        for (size_t j = 0; j < _values.cols(); j++)
         {
-            if (nDirection == COLS)
+            if (_idx.col[j] == VectorIndex::INVALID)
+                continue;
+
+            for (size_t i = 0; i < _values.rows(); i++)
             {
+                if (_idx.row[i] == VectorIndex::INVALID)
+                    break;
+
                 if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
 
-                if (_values.size() > i)
-                    writeData(_idx.row[i], _idx.col[j], _values.get(i), t);
+                writeData(_idx.row[i], _idx.col[j], _values.get(i, j), t);
             }
-            else
+        }
+    }
+    else // vectors are accepted here for backwards compatibility
+    {
+        _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
+        _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
+
+        if (_idx.row.size() > 1)
+            nDirection = COLS;
+        else if (_idx.col.size() > 1)
+            nDirection = LINES;
+
+        for (size_t j = 0; j < _idx.col.size(); j++)
+        {
+            for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                if (_values.size() > j)
-                    writeData(_idx.row[i], _idx.col[j], _values.get(j));
+                if (nDirection == COLS)
+                {
+                    if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
+                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
+
+                    if (_values.size() > i)
+                        writeData(_idx.row[i], _idx.col[j], _values.get(i), t);
+                }
+                else
+                {
+                    if (_values.size() > j)
+                        writeData(_idx.row[i], _idx.col[j], _values.get(j));
+                }
             }
         }
     }
@@ -2213,14 +2251,13 @@ bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrde
         return false;
 
     _vCols.setOpenEndIndex(getCols()-1);
-    VectorIndex vPlain(0, _vNewOrder.max());
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vCols.size()
         || _vCols.size() > (size_t)getCols()
         || _vNewOrder.max() >= (int)_vNewOrder.size()
         || !_vCols.isUnique()
-        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        || !_vNewOrder.isPermutation())
         return false;
 
     TableColumnArray buffer;
@@ -2260,17 +2297,16 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
         return false;
 
     _vRows.setOpenEndIndex(getLines()-1);
-    VectorIndex vPlain(0, _vNewOrder.max());
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vRows.size()
         || _vRows.size() > (size_t)getLines()
         || _vNewOrder.max() >= (long long int)_vNewOrder.size()
         || !_vRows.isUnique()
-        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        || !_vNewOrder.isPermutation())
         return false;
 
-    vPlain = _vRows.get(_vNewOrder);
+    VectorIndex vPlain = _vRows.get(_vNewOrder);
 
     // Reorder the cells in each column
     for (auto& col : memArray)
@@ -2547,7 +2583,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]).as_cmplx());
+                operation[j](readMem(_vLine[i], _vCol[j]));
             }
         }
     }
@@ -2576,7 +2612,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]).as_cmplx());
+                operation[j](readMem(_vLine[i], _vCol[j]));
             }
         }
     }
@@ -2631,7 +2667,7 @@ std::complex<double> Memory::std(const VectorIndex& _vLine, const VectorIndex& _
     calculateStats(_vLine, _vCol, vLogic);
 
     for (const auto& val : vLogic)
-        dStd += val.m_val;
+        dStd += val.m_val.as_cmplx();
 
     return sqrt(dStd / (num(_vLine, _vCol) - 1.0));
 }
@@ -2669,7 +2705,7 @@ std::complex<double> Memory::max(const VectorIndex& _vLine, const VectorIndex& _
     if (!memArray.size())
         return NAN;
 
-    double dMax = NAN;
+    mu::Value dMax = NAN;
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -2682,11 +2718,11 @@ std::complex<double> Memory::max(const VectorIndex& _vLine, const VectorIndex& _
 
     for (const auto& val : vLogic)
     {
-        if (isnan(dMax) || dMax < val.m_val.real())
-            dMax = val.m_val.real();
+        if (mu::isnan(dMax) || dMax < val.m_val)
+            dMax = val.m_val;
     }
 
-    return dMax;
+    return dMax.as_cmplx();
 }
 
 
@@ -2704,7 +2740,7 @@ std::complex<double> Memory::min(const VectorIndex& _vLine, const VectorIndex& _
     if (!memArray.size())
         return NAN;
 
-    double dMin = NAN;
+    mu::Value dMin = NAN;
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -2717,11 +2753,11 @@ std::complex<double> Memory::min(const VectorIndex& _vLine, const VectorIndex& _
 
     for (const auto& val : vLogic)
     {
-        if (isnan(dMin) || dMin > val.m_val.real())
-            dMin = val.m_val.real();
+        if (mu::isnan(dMin) || dMin > val.m_val)
+            dMin = val.m_val;
     }
 
-    return dMin;
+    return dMin.as_cmplx();
 }
 
 
@@ -2752,7 +2788,7 @@ std::complex<double> Memory::prd(const VectorIndex& _vLine, const VectorIndex& _
 
     for (const auto& val : vLogic)
     {
-        dPrd *= val.m_val;
+        dPrd *= val.m_val.as_cmplx();
     }
 
     return dPrd;
@@ -2786,7 +2822,7 @@ std::complex<double> Memory::sum(const VectorIndex& _vLine, const VectorIndex& _
 
     for (const auto& val : vLogic)
     {
-        dSum += val.m_val;
+        dSum += val.m_val.as_cmplx();
     }
 
     return dSum;
@@ -3106,7 +3142,7 @@ std::complex<double> Memory::norm(const VectorIndex& _vLine, const VectorIndex& 
 
     for (const auto& val : vLogic)
     {
-        dNorm += val.m_val;
+        dNorm += val.m_val.as_cmplx();
     }
 
     return sqrt(dNorm);
@@ -3428,7 +3464,7 @@ std::complex<double> Memory::exc(const VectorIndex& _vLine, const VectorIndex& _
     calculateStats(_vLine, _vCol, vLogic);
 
     for (const auto& val : vLogic)
-        dExc += val.m_val;
+        dExc += val.m_val.as_cmplx();
 
     return dExc / (num(_vLine, _vCol) * intPower(std(_vLine, _vCol), 4)) - 3.0;
 }
@@ -3461,7 +3497,7 @@ std::complex<double> Memory::skew(const VectorIndex& _vLine, const VectorIndex& 
     calculateStats(_vLine, _vCol, vLogic);
 
     for (const auto& val : vLogic)
-        dSkew += val.m_val;
+        dSkew += val.m_val.as_cmplx();
 
     return dSkew / (num(_vLine, _vCol) * intPower(std(_vLine, _vCol), 3));
 }

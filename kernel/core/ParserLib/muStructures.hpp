@@ -22,6 +22,7 @@
 #include <vector>
 #include <memory>
 #include <list>
+#include <numeric>
 
 #include "muTypes.hpp"
 #include "muCompositeStructures.hpp"
@@ -29,12 +30,34 @@
 #include "muValueBase.hpp"
 #include "muParserError.h"
 
+#ifdef PARSERSTANDALONE
+void log(const std::string& message);
+#endif
+
 namespace mu
 {
     // Forward declaration of the Variable class
     class Variable;
     class Array;
-    class RefArray;
+    class MultiArgFuncParams;
+
+    using DimSizes = std::vector<size_t>; ///< An alias for the dimension sizes within an Array
+    using IndexTuple = std::vector<size_t>; ///< An alias for a multidimensional index
+
+
+    /////////////////////////////////////////////////
+    /// \brief Simple wrapper to calculate the number
+    /// of elements in an Array based upon its
+    /// DimSizes.
+    ///
+    /// \param sizes const DimSizes&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    inline size_t getNumElements(const DimSizes& sizes)
+    {
+        return std::accumulate(sizes.begin(), sizes.end(), 1ull, std::multiplies<size_t>());
+    }
 
 
     /////////////////////////////////////////////////
@@ -410,6 +433,7 @@ namespace mu
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2) const;
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3) const;
             Value call(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4) const;
+            Value call(const std::string& sMethod, const std::vector<Value>& args) const;
 
             MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
@@ -418,6 +442,7 @@ namespace mu
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2);
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3);
             Value apply(const std::string& sMethod, const Value& arg1, const Value& arg2, const Value& arg3, const Value& arg4);
+            Value apply(const std::string& sMethod, const std::vector<Value>& args);
 
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
@@ -438,6 +463,30 @@ namespace mu
     class StrArray : public BaseArray, public std::vector<string> {...}
     */
 
+    Array matrixAdd(const Array& curr, const Array& other);
+    Array matrixSub(const Array& curr, const Array& other);
+    Array matrixMul(const Array& curr, const Array& other);
+    Array matrixDiv(const Array& curr, const Array& other);
+    Array matrixPow(const Array& curr, const Array& other);
+
+    void matrixSelfAdd(Array& curr, const Array& other);
+    void matrixSelfSub(Array& curr, const Array& other);
+    void matrixSelfMul(Array& curr, const Array& other);
+    void matrixSelfDiv(Array& curr, const Array& other);
+    void matrixSelfPow(Array& curr, const Array& other);
+
+    Array matrixEq(const Array& curr, const Array& other);
+    Array matrixNeq(const Array& curr, const Array& other);
+    Array matrixLess(const Array& curr, const Array& other);
+    Array matrixLessEq(const Array& curr, const Array& other);
+    Array matrixGreater(const Array& curr, const Array& other);
+    Array matrixGreaterEq(const Array& curr, const Array& other);
+    Array matrixAnd(const Array& curr, const Array& other);
+    Array matrixOr(const Array& curr, const Array& other);
+
+
+
+
     /////////////////////////////////////////////////
     /// \brief This class handles the scalar-vector
     /// interactions and is the general datatype
@@ -446,7 +495,7 @@ namespace mu
     /// template parameter and a bunch of customized
     /// operators.
     /////////////////////////////////////////////////
-    class Array : public std::vector<Value> // Potential: have dedicated NumArray and StrArray variants or convert Value in an abstract class
+    class Array : public std::vector<Value>
     {
         public:
             Array();
@@ -487,6 +536,7 @@ namespace mu
                             get(i).assign(other.get(i));
                         }
 
+                        m_dimSizes = other.m_dimSizes;
                         m_commonType = other.m_commonType;
                         return *this;
                     }
@@ -501,6 +551,7 @@ namespace mu
                     // Insert a complete array into a single reference
                     first().assign(other); // was front()
                     m_commonType = TYPE_ARRAY;
+                    m_dimSizes = other.m_dimSizes;
                     return *this;
                 }
                 else
@@ -518,6 +569,7 @@ namespace mu
                 else
                     m_commonType = other.m_commonType;
 
+                m_dimSizes = other.m_dimSizes;
                 m_isConst = other.m_isConst;
 
                 return *this;
@@ -563,6 +615,7 @@ namespace mu
                     }
                 }
 
+                m_dimSizes = other.m_dimSizes;
                 m_commonType = other.m_commonType;
                 m_isConst = other.m_isConst;
 
@@ -586,6 +639,7 @@ namespace mu
                     std::swap(_M_impl._M_end_of_storage, fst._M_impl._M_end_of_storage);
                     std::swap(m_commonType, fst.m_commonType);
                     std::swap(m_isConst, fst.m_isConst);
+                    std::swap(m_dimSizes, fst.m_dimSizes);
                 }
                 else
                 {
@@ -594,6 +648,7 @@ namespace mu
                     std::swap(_M_impl._M_end_of_storage, other._M_impl._M_end_of_storage);
                     std::swap(m_commonType, other.m_commonType);
                     std::swap(m_isConst, other.m_isConst);
+                    std::swap(m_dimSizes, other.m_dimSizes);
                 }
 
                 return *this;
@@ -604,6 +659,13 @@ namespace mu
             std::string getCommonTypeAsString() const;
             NumericalType getCommonNumericalType() const;
             bool isScalar() const;
+            bool isScalarDim(size_t dim) const
+            {
+                if (dim < m_dimSizes.size())
+                    return m_dimSizes[dim] == 1ull;
+
+                return (dim == 0 && size() == 1ull) || (dim > 0 && dim >= m_dimSizes.size());
+            }
             bool isDefault() const;
             bool isVoid() const;
 
@@ -619,6 +681,43 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Return true, it this Array represents
+            /// a matrix.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isMatrix() const
+            {
+                return m_dimSizes.size() > 1;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return true, if this Array represents
+            /// a row or column vector.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isVector() const
+            {
+                return m_dimSizes.size() == 1ull || (m_dimSizes.size() == 2 && (m_dimSizes[0] == 1ull || m_dimSizes[1] == 1ull));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return true, if this Array is actually
+            /// dimensionless and represents a plain array or
+            /// a list.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isPlainArray() const
+            {
+                return size() > 1 && !m_dimSizes.size();
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Make this instance mutable.
             ///
             /// \return Array&
@@ -627,6 +726,18 @@ namespace mu
             Array& makeMutable()
             {
                 m_isConst = false;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Make this instance const.
+            ///
+            /// \return Array&
+            ///
+            /////////////////////////////////////////////////
+            Array& makeConst()
+            {
+                m_isConst = true;
                 return *this;
             }
 
@@ -643,6 +754,148 @@ namespace mu
             }
 
             /////////////////////////////////////////////////
+            /// \brief Copy the dimensions of the other array.
+            ///
+            /// \param other const Array&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void copyDims(const Array& other)
+            {
+                m_dimSizes = other.m_dimSizes;
+                reserve(other.size());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get this array's dimensions.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t getDims() const
+            {
+                if (!m_dimSizes.size())
+                    return 1;
+
+                return m_dimSizes.size();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set the dimensions to a desired count.
+            /// Note that this will only create the
+            /// dimensions, but there are only one element
+            /// per dimension with exception of the first
+            /// dimension.
+            ///
+            /// \param dims size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void setDims(size_t dims)
+            {
+                if (!dims)
+                    return;
+
+                m_dimSizes.resize(dims, 1ull);
+                m_dimSizes.front() = size();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the dimension sizes of this array.
+            ///
+            /// \return DimSizes
+            ///
+            /////////////////////////////////////////////////
+            DimSizes getDimSizes() const
+            {
+                if (!size())
+                    return DimSizes({0, 0});
+
+                if (m_dimSizes.size() < 2)
+                    return DimSizes({size(), 1ull});
+
+                return m_dimSizes;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set the dimension sizes of this array.
+            ///
+            /// \param dimSizes const DimSizes&
+            ///
+            /////////////////////////////////////////////////
+            void setDimSizes(const DimSizes& dimSizes)
+            {
+                m_dimSizes = dimSizes;
+
+                if (m_dimSizes.size())
+                    reserve(getNumElements(m_dimSizes));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the number of rows in this
+            /// instance.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t rows() const
+            {
+                if (!m_dimSizes.size())
+                    return size();
+
+                return m_dimSizes[0];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the number of columns in this
+            /// instance
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t cols() const
+            {
+                if (m_dimSizes.size() < 2ull)
+                    return 1ull;
+
+                return m_dimSizes[1];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Return the number of layers in this
+            /// instance.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t layers() const
+            {
+                if (m_dimSizes.size() < 3ull)
+                    return 1ull;
+
+                return m_dimSizes[2];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the size of the corresponding
+            /// dimension.
+            ///
+            /// \param dim int
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t getSize(int dim) const
+            {
+                if (dim < 0 || (dim == 0 && !m_dimSizes.size()))
+                    return size();
+
+                if (m_dimSizes.size() <= (size_t)dim)
+                    return 1ull;
+
+                return m_dimSizes[dim];
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Add operator.
             ///
             /// \param other const Array&
@@ -651,6 +904,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array operator+(const Array& other) const
             {
+                if (isMatrix() || other.isMatrix())
+                    return matrixAdd(*this, other);
+
                 Array ret;
                 size_t elements = std::max(size(), other.size());
                 ret.reserve(elements);
@@ -674,6 +930,7 @@ namespace mu
                 Array ret;
                 size_t elements = size();
                 ret.reserve(elements);
+                ret.m_dimSizes = m_dimSizes;
 
                 for (size_t i = 0; i < elements; i++)
                 {
@@ -692,6 +949,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array operator-(const Array& other) const
             {
+                if (isMatrix() || other.isMatrix())
+                    return matrixSub(*this, other);
+
                 Array ret;
 
                 size_t elements = std::max(size(), other.size());
@@ -714,6 +974,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array operator/(const Array& other) const
             {
+                if (isMatrix() || other.isMatrix())
+                    return matrixDiv(*this, other);
+
                 Array ret;
                 size_t elements = std::max(size(), other.size());
                 ret.reserve(elements);
@@ -735,6 +998,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array operator*(const Array& other) const
             {
+                if (isMatrix() || other.isMatrix())
+                    return matrixMul(*this, other);
+
                 Array ret;
                 size_t elements = std::max(size(), other.size());
                 ret.reserve(elements);
@@ -756,6 +1022,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array operator^(const Array& other) const
             {
+                if (isMatrix() || other.isMatrix())
+                    return matrixPow(*this, other);
+
                 Array ret;
                 size_t elements = std::max(size(), other.size());
                 ret.reserve(elements);
@@ -779,6 +1048,11 @@ namespace mu
             {
                 if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator+(other));
+                else if (isMatrix() || other.isMatrix())
+                {
+                    matrixSelfAdd(*this, other);
+                    m_commonType = TYPE_VOID;
+                }
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
@@ -804,6 +1078,11 @@ namespace mu
             {
                 if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator-(other));
+                else if (isMatrix() || other.isMatrix())
+                {
+                    matrixSelfSub(*this, other);
+                    m_commonType = TYPE_VOID;
+                }
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
@@ -829,6 +1108,11 @@ namespace mu
             {
                 if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator/(other));
+                else if (isMatrix() || other.isMatrix())
+                {
+                    matrixSelfDiv(*this, other);
+                    m_commonType = TYPE_VOID;
+                }
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
@@ -854,6 +1138,11 @@ namespace mu
             {
                 if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator*(other));
+                else if (isMatrix() || other.isMatrix())
+                {
+                    matrixSelfMul(*this, other);
+                    m_commonType = TYPE_VOID;
+                }
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
@@ -879,6 +1168,11 @@ namespace mu
             {
                 if (size() < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator^(other));
+                else if (isMatrix() || other.isMatrix())
+                {
+                    matrixSelfPow(*this, other);
+                    m_commonType = TYPE_VOID;
+                }
                 else
                 {
                     for (size_t i = 0; i < size(); i++)
@@ -932,6 +1226,7 @@ namespace mu
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3) const;
             Array call(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4) const;
+            Array call(const std::string& sMethod, const MultiArgFuncParams& args) const;
 
             MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const;
 
@@ -940,6 +1235,7 @@ namespace mu
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2);
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3);
             Array apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4);
+            Array apply(const std::string& sMethod, const MultiArgFuncParams& args);
 
             Array index(const Array& idx);
             Array index(const Array& idx) const;
@@ -987,9 +1283,92 @@ namespace mu
                     return operator[](0);
                 }
                 else if (vectSize <= i)
-                    throw std::length_error("Element " + std::to_string(i) + " is out of bounds.");
+                    throw std::out_of_range("Element " + std::to_string(i) + " is out of bounds.");
 
                 return operator[](i);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Access the element (i,j)
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& get(size_t i, size_t j)
+            {
+                if (j > 0 && m_dimSizes.size() != 2)
+                    throw std::length_error("Dimension mismatch.");
+
+                if (!m_dimSizes.size())
+                    return get(i);
+
+                if (i >= m_dimSizes[0] || j >= m_dimSizes[1])
+                    throw std::out_of_range("Element (" + std::to_string(i) + "," + std::to_string(j) + ") is out of bounds.");
+
+                return get(i + j*m_dimSizes[0]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Access the element
+            /// (idx[0], ..., idx[n-1])
+            ///
+            /// \param idx const IndexTuple&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& get(const IndexTuple& idx)
+            {
+                size_t minDim = std::min(m_dimSizes.size(), idx.size());
+
+                for (size_t n = std::max(minDim, 1ull); n < idx.size(); n++)
+                {
+                    if (idx[n])
+                        throw std::length_error("Dimension mismatch.");
+                }
+
+                if (idx[0] >= m_dimSizes[0])
+                {
+                    std::string dims;
+
+                    for (size_t m = 0; m < idx.size(); m++)
+                    {
+                        if (dims.size())
+                            dims += ",";
+
+                        dims += std::to_string(idx[m]);
+                    }
+
+                    throw std::out_of_range("Element (" + dims + ") is out of bounds.");
+                }
+
+                size_t linIdx = idx[0];
+
+                for (size_t n = 1; n < idx.size(); n++)
+                {
+                    if (idx[n])
+                    {
+                        if (idx[n] >= m_dimSizes[n])
+                        {
+                            std::string dims;
+
+                            for (size_t m = 0; m < idx.size(); m++)
+                            {
+                                if (dims.size())
+                                    dims += ",";
+
+                                dims += std::to_string(idx[m]);
+                            }
+
+                            throw std::out_of_range("Element (" + dims + ") is out of bounds.");
+                        }
+
+                        linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
+                    }
+                }
+
+                return get(linIdx);
             }
 
             /////////////////////////////////////////////////
@@ -1016,6 +1395,65 @@ namespace mu
                     return m_default;
 
                 return operator[](i);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the element (i,j)
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& get(size_t i, size_t j) const
+            {
+                if (m_dimSizes.size() < 2 && j)
+                    return m_default;
+
+                if (m_dimSizes.size() < 2)
+                    return get(i);
+
+                if (i >= m_dimSizes[0] || j >= m_dimSizes[1])
+                    return m_default;
+
+                return get(i + j*m_dimSizes[0]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the element
+            /// (idx[0], ..., idx[n-1])
+            ///
+            /// \param idx const IndexTuple&
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& get(const IndexTuple& idx) const
+            {
+                size_t minDim = std::min(m_dimSizes.size(), idx.size());
+
+                for (size_t n = std::max(minDim, 1ull); n < idx.size(); n++)
+                {
+                    if (idx[n])
+                        return m_default;
+                }
+
+                if (minDim < 2)
+                    return get(idx.front());
+
+                if (idx[0] >= m_dimSizes[0])
+                    return m_default;
+
+                size_t linIdx = idx[0];
+
+                for (size_t n = 1; n < minDim; n++)
+                {
+                    if (idx[n] >= m_dimSizes[n])
+                        return m_default;
+
+                    linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
+                }
+
+                return get(linIdx);
             }
 
             /////////////////////////////////////////////////
@@ -1080,6 +1518,7 @@ namespace mu
 
             void zerosToVoid();
             bool isCommutative() const;
+            bool isParallelizable() const;
             void dereference() const;
 
         protected:
@@ -1087,7 +1526,448 @@ namespace mu
             static const Value m_default;
             bool m_isConst;
             mutable std::list<Value> m_buffer;
+            mutable DimSizes m_dimSizes;
+
+            /////////////////////////////////////////////////
+            /// \brief Check, whether the index is inside of
+            /// the dimension sizes.
+            ///
+            /// \param idx const IndexTuple&
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isInside(const IndexTuple& idx) const
+            {
+                for (size_t i = 0; i < idx.size(); i++)
+                {
+                    if ((m_dimSizes.size() > i && m_dimSizes[i] <= idx[i]) || (m_dimSizes.size() <= i && idx[i]))
+                        return false;
+                }
+
+                return true;
+            }
+
+            void nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim);
+            void nthIndex(Array& ret, const Array& idx, IndexTuple& source, IndexTuple& target, size_t currentDim) const;
+            Array ndIndex(const Array& idx);
+            Array ndIndex(const Array& idx) const;
     };
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class creates a facet on top of
+    /// an existing Array to provide multidimensional
+    /// access to this element supporting the actual
+    /// dimensions and also different dimension sizes.
+    /////////////////////////////////////////////////
+    class MatrixView
+    {
+        public:
+            DimSizes m_dimSizes;
+
+            /////////////////////////////////////////////////
+            /// \brief Create a MatrixView instance.
+            ///
+            /// \param arr const Array&
+            ///
+            /////////////////////////////////////////////////
+            MatrixView(const Array& arr) : m_array(arr)
+            {
+                setDimSizes(m_array.getDimSizes());
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set new DimSizes from another
+            /// MatrixView instance.
+            ///
+            /// \param view const MatrixView&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void setDimSizes(const MatrixView& view)
+            {
+                m_dimSizes = view.m_dimSizes;
+                prepareDimFacts();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Set new DimSizes.
+            ///
+            /// \param dims const DimSizes&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void setDimSizes(const DimSizes& dims)
+            {
+                m_dimSizes = dims;
+                prepareDimFacts();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Merge the passed DimSizes with the
+            /// current ones.
+            ///
+            /// \param dims const DimSizes&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void mergeDimSizes(const DimSizes& dims)
+            {
+                merge(dims);
+                prepareDimFacts();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Merge the DimSizes from the passed
+            /// Array with the current ones.
+            ///
+            /// \param arr const Array&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void mergeDimSizes(const Array& arr)
+            {
+                merge(arr.getDimSizes());
+                prepareDimFacts();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Merge the DimSizes from the passed
+            /// MatrixView instance with the current ones.
+            ///
+            /// \param view const MatrixView&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void mergeDimSizes(const MatrixView& view)
+            {
+                merge(view.m_dimSizes);
+                prepareDimFacts();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// another MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array prepare(MatrixView& view1)
+            {
+                mergeDimSizes(view1);
+                view1.setDimSizes(m_dimSizes);
+
+                Array ret;
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// other MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \param view2 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array prepare(MatrixView& view1, MatrixView& view2)
+            {
+                merge(view1.m_dimSizes);
+                merge(view2.m_dimSizes);
+                prepareDimFacts();
+                view1.setDimSizes(m_dimSizes);
+                view2.setDimSizes(m_dimSizes);
+
+                Array ret;
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix()
+                    && !view2.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// other MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \param view2 MatrixView&
+            /// \param view3 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array prepare(MatrixView& view1, MatrixView& view2, MatrixView& view3)
+            {
+                merge(view1.m_dimSizes);
+                merge(view2.m_dimSizes);
+                merge(view3.m_dimSizes);
+                prepareDimFacts();
+                view1.setDimSizes(m_dimSizes);
+                view2.setDimSizes(m_dimSizes);
+                view3.setDimSizes(m_dimSizes);
+
+                Array ret;
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix()
+                    && !view2.m_array.isMatrix()
+                    && !view3.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Prepare a new Array using this and
+            /// other MatrixView instances' DimSizes.
+            ///
+            /// \param view1 MatrixView&
+            /// \param view2 MatrixView&
+            /// \param view3 MatrixView&
+            /// \param view4 MatrixView&
+            /// \return Array
+            ///
+            /////////////////////////////////////////////////
+            Array prepare(MatrixView& view1, MatrixView& view2, MatrixView& view3, MatrixView& view4)
+            {
+                merge(view1.m_dimSizes);
+                merge(view2.m_dimSizes);
+                merge(view3.m_dimSizes);
+                merge(view4.m_dimSizes);
+                prepareDimFacts();
+                view1.setDimSizes(m_dimSizes);
+                view2.setDimSizes(m_dimSizes);
+                view3.setDimSizes(m_dimSizes);
+                view4.setDimSizes(m_dimSizes);
+
+                Array ret;
+
+                if (m_dimSizes.size() == 2
+                    && !m_array.isMatrix()
+                    && !view1.m_array.isMatrix()
+                    && !view2.m_array.isMatrix()
+                    && !view3.m_array.isMatrix()
+                    && !view4.m_array.isMatrix())
+                    ret.reserve(getNumElements(m_dimSizes));
+                else
+                    ret.setDimSizes(m_dimSizes);
+
+                return ret;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Determine the virtual size of the
+            /// contained Array.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t size() const
+            {
+                return getNumElements(m_dimSizes);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the index tuple for the i-th
+            /// element addressed in linear fashion.
+            ///
+            /// \param i size_t
+            /// \return IndexTuple
+            ///
+            /////////////////////////////////////////////////
+            IndexTuple index(size_t i) const
+            {
+                if (m_dimFacts.size() != m_dimSizes.size())
+                    prepareDimFacts();
+
+                IndexTuple idx(m_dimSizes.size(), 0u);
+
+                if (m_array.isScalar())
+                    return idx;
+
+                for (int n = idx.size()-1; n > 0; n--)
+                {
+                    if (i >= m_dimFacts[n])
+                    {
+                        if (!m_array.isScalarDim(n))
+                            idx[n] = i / m_dimFacts[n];
+
+                        i = i % m_dimFacts[n];
+                    }
+                }
+
+                if (!m_array.isScalarDim(0))
+                    idx.front() = i;
+
+                return idx;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the i-th element in a linear
+            /// indexing fashion.
+            ///
+            /// \param i size_t
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& get(size_t i) const
+            {
+                if (m_array.isScalar())
+                    return m_array.front();
+
+                return m_array.get(index(i));
+            }
+
+        private:
+            mutable std::vector<size_t> m_dimFacts;
+            const Array& m_array;
+
+            /////////////////////////////////////////////////
+            /// \brief Prepare the dimension factors for fast
+            /// indexing access.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void prepareDimFacts() const
+            {
+                m_dimFacts.resize(m_dimSizes.size(), 1ull);
+
+                for (size_t n = 1; n < m_dimFacts.size(); n++)
+                {
+                    m_dimFacts[n] = std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
+                }
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Merge other DimSizes with the internal
+            /// ones creating a max of all dimensions.
+            ///
+            /// \param dims const DimSizes&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void merge(const DimSizes& dims)
+            {
+                if (dims.size() > m_dimSizes.size())
+                    m_dimSizes.resize(dims.size());
+
+                for (size_t i = 0; i < dims.size(); i++)
+                {
+                    m_dimSizes[i] = std::max(m_dimSizes[i], dims[i]);
+                }
+            }
+    };
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class is an iterator for
+    /// multidimensional structures. It provides each
+    /// new index tuple as an IndexTuple.
+    /////////////////////////////////////////////////
+    class IndexIterator
+    {
+        private:
+            DimSizes m_dimSizes;
+            IndexTuple m_current;
+
+        public:
+            /////////////////////////////////////////////////
+            /// \brief Construct an IndexIterator object.
+            ///
+            /// \param dimSizes const DimSizes&
+            ///
+            /////////////////////////////////////////////////
+            IndexIterator(const DimSizes& dimSizes) : m_dimSizes(dimSizes)
+            {
+                m_current.resize(m_dimSizes.size(), 0ull);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get const access to the internal
+            /// IndexTuple instance.
+            ///
+            /// \return const IndexTuple&
+            ///
+            /////////////////////////////////////////////////
+            const IndexTuple& index() const
+            {
+                return m_current;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Calculate the next IndexTuple. Returns
+            /// true, it this was possible, false otherwise.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool next()
+            {
+                if (!more())
+                    return false;
+
+                m_current.front()++;
+
+                if (m_current.front() == m_dimSizes.front())
+                {
+                    m_current.front() = 0;
+
+                    for (size_t i = 1; i < m_current.size(); i++)
+                    {
+                        m_current[i]++;
+
+                        if (m_current[i] == m_dimSizes[i])
+                            m_current[i] = 0;
+                        else
+                            break;
+                    }
+                }
+
+                return true;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Determine, whether further IndexTuples
+            /// can be calculated. IndexIterator::next()
+            /// calls this automatically.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool more() const
+            {
+                for (size_t i = 0; i < m_current.size(); i++)
+                {
+                    if (m_current[i]+1 < m_dimSizes[i])
+                        return true;
+                }
+
+                return false;
+            }
+    };
+
 
 
     /////////////////////////////////////////////////
@@ -1148,7 +2028,12 @@ namespace mu
             void indexedAssign(const Array& idx, const Array& vals);
             void overwrite(const Array& other);
             bool accepts(const Array& other) const;
+
+        protected:
+            void ndAssign(const Array& idx, const Array& vals);
+            void nthIndexAssign(const Array& idx, IndexTuple& target, const DimSizes& elemCount, int currentDim, const MatrixView& vals, size_t& currentElem);
     };
+
 
 
     /////////////////////////////////////////////////
@@ -1222,6 +2107,8 @@ namespace mu
             std::string print() const;
             Array asArray() const;
     };
+
+
 
 
     bool all(const Array& arr);
