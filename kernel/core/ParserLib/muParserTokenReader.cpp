@@ -56,6 +56,8 @@ namespace mu
             return "nrows";
         else if (dimVar == 1)
             return "ncols";
+        else if (dimVar == 2)
+            return "nlayers";
 
         return "ndim";
 //        return "ndim[" + toString(dimVar+1) + "]";
@@ -1086,7 +1088,7 @@ namespace mu
 				return true;
             }
 
-			if (strTok == "nrows" || strTok == "nlines" || strTok == "ncols")
+			if (strTok == "nrows" || strTok == "nlines" || strTok == "ncols" || strTok == "nlayers")
             {
                 if (!m_indexedVars.size()
                     || m_strFormula[m_indexedVars.top().indexStart] == '[') // Accept ( and {
@@ -1094,7 +1096,7 @@ namespace mu
                     //Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
                 m_iPos = iEnd;
-				a_Tok.SetDimVar(m_indexedVars.top().var, strTok, strTok == "ncols" ? 1 : 0);
+				a_Tok.SetDimVar(m_indexedVars.top().var, strTok, strTok == "ncols" ? 1 : (strTok == "nla"));
 
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);

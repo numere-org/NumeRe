@@ -1754,6 +1754,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
         if (sSyntaxElement == "nlen"
             || sSyntaxElement == "nrows"
             || sSyntaxElement == "ncols"
+            || sSyntaxElement == "nlayers"
+            || sSyntaxElement == "ndim"
             || sSyntaxElement == "nlines")
         {
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
