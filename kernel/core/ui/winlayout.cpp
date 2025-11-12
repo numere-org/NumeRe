@@ -204,6 +204,9 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
     if (findParameter(sLayoutCommand, "state", '='))
         layoutElement->SetAttribute("state", getArgAtPos(sLayoutCommand, findParameter(sLayoutCommand, "state", '=')+5).c_str());
 
+    if (findParameter(sLayoutCommand, "fgcell", '='))
+        layoutElement->SetAttribute("fgcell", parseOpt(sLayoutCommand, findParameter(sLayoutCommand, "fgcell", '=')+6).c_str());
+
     if (findParameter(sLayoutCommand, "onchange", '='))
         layoutElement->SetAttribute("onchange", parseEventOpt(sLayoutCommand,
                                                               findParameter(sLayoutCommand, "onchange", '=')+8, sFolderName).c_str());
@@ -385,6 +388,12 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
 
                 if (findParameter(line, "id"))
                     newgroup->SetAttribute("id", parseOpt(line, findParameter(line, "id", '=')+2).c_str());
+
+                if (findParameter(line, "rowscl"))
+                    newgroup->SetAttribute("rowscl", parseOpt(line, findParameter(line, "rowscl", '=')+6).c_str());
+
+                if (findParameter(line, "colscl"))
+                    newgroup->SetAttribute("colscl", parseOpt(line, findParameter(line, "colscl", '=')+6).c_str());
 
                 if (findParameter(line, "onchange", '='))
                     newgroup->SetAttribute("onchange", parseEventOpt(line,

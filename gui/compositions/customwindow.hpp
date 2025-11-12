@@ -26,6 +26,7 @@
 #include <utility>
 #include <wx/treelist.h>
 #include <wx/dateevt.h>
+#include <wx/gbsizer.h>
 
 #include "../../kernel/windowmanager.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
@@ -252,6 +253,7 @@ class CustomWindow : public wxFrame
 
         void layout();
         void layoutChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxSizer* currSizer, GroupPanel* _groupPanel);
+        void layoutGridChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxGridBagSizer* currSizer, GroupPanel* _groupPanel, const std::vector<int>& rowScale, const std::vector<int>& colScale);
         void layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* currMenu);
         void handleEvent(wxEvent& event, const wxString& sEventType, const EventPosition& pos = EventPosition());
         bool getWindowParameters(WindowItemParams& params) const;

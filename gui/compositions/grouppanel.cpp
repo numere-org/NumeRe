@@ -132,6 +132,21 @@ void TextField::OnUrlClick(wxTextUrlEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Simple static helper to simplify the
+/// layout error messaging.
+///
+/// \param uiElement const wxString&
+/// \param parent wxWindow*
+/// \return void
+///
+/////////////////////////////////////////////////
+static void layoutError(const wxString& uiElement, wxWindow* parent)
+{
+    wxMessageBox("An element of type \"" + uiElement + "\" does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, parent);
+}
+
+
 extern Language _guilang;
 #define ELEMENT_BORDER 5
 
@@ -221,69 +236,34 @@ wxBoxSizer* GroupPanel::getMainSizer()
 
 
 /////////////////////////////////////////////////
-/// \brief Add extra space between the last added
-/// (main) element and the next element to be
-/// added.
-///
-/// \param nSize int
-/// \param sizer wxSizer*
-/// \return void
-///
-/////////////////////////////////////////////////
-void GroupPanel::AddSpacer(int nSize, wxSizer* sizer)
-{
-    if (!sizer)
-        sizer = mainSizer;
-
-    sizer->AddSpacer(nSize);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Add some static test to the current
-/// sizer and window.
-///
-/// \param parent wxWindow*
-/// \param sizer wxSizer*
-/// \param text const wxString&
-/// \param id int
-/// \return wxStaticText*
-///
-/////////////////////////////////////////////////
-wxStaticText* GroupPanel::AddStaticText(wxWindow* parent, wxSizer* sizer, const wxString& text, int id, int alignment)
-{
-    wxStaticText* staticText = new wxStaticText(parent, id, text, wxDefaultPosition, wxDefaultSize, 0);
-    sizer->Add(staticText, 0, alignment | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
-
-    return staticText;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Member function to create a group (a
 /// static box with a label) in the panel.
 ///
 /// \param sGroupName const wxString&
 /// \param orient int
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param expand int
 /// \return wxStaticBoxSizer*
 ///
 /////////////////////////////////////////////////
-wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient, wxWindow* parent, wxSizer* sizer, int expand)
+wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient, wxWindow* parent, const SizerWrapper& sizer, int expand)
 {
     if (!parent)
-    {
         parent = this;
-        sizer = mainSizer;
-    }
 
     // Create a new static box sizer
     wxStaticBoxSizer* groupSizer = new wxStaticBoxSizer(orient, parent, sGroupName);
 
     // Add the group to the main sizer
-    sizer->Add(groupSizer, expand, wxEXPAND | wxALL, ELEMENT_BORDER);
+    if (!sizer)
+        mainSizer->Add(groupSizer, expand, wxEXPAND | wxALL, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(groupSizer, expand, wxEXPAND | wxALL, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, wxEXPAND | wxALL, ELEMENT_BORDER);
+    else
+        wxMessageBox("A labeled group does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
 
     return groupSizer;
 }
@@ -294,21 +274,56 @@ wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient
 /// represented as a box sizer.
 ///
 /// \param orient int
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param expand int
 /// \return wxBoxSizer*
 ///
 /////////////////////////////////////////////////
-wxBoxSizer* GroupPanel::createGroup(int orient, wxSizer* sizer, int expand)
+wxBoxSizer* GroupPanel::createGroup(int orient, const SizerWrapper& sizer, int expand)
 {
-    if (!sizer)
-        sizer = mainSizer;
-
     // Create a new static box sizer
     wxBoxSizer* groupSizer = new wxBoxSizer(orient);
 
     // Add the group to the main sizer
-    sizer->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+    if (!sizer)
+        mainSizer->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+    else if (sizer.isBox())
+        sizer.s->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, expand, wxEXPAND | wxALL, 0);
+    else
+        wxMessageBox("A group does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
+
+    return groupSizer;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Member function to create a grid group
+/// represented as a gridbag sizer.
+///
+/// \param sizer const SizerWrapper&
+/// \param expand int
+/// \return wxGridBagSizer*
+///
+/////////////////////////////////////////////////
+wxGridBagSizer* GroupPanel::createGridGroup(const SizerWrapper& sizer, int expand)
+{
+    // Create a new static box sizer
+    wxGridBagSizer* groupSizer = new wxGridBagSizer();
+
+    if (expand)
+        groupSizer->SetFlexibleDirection(wxBOTH);
+
+    // Add the group to the main sizer
+    if (!sizer)
+        mainSizer->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+    else if (sizer.isBox())
+        sizer.s->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, expand, wxEXPAND | wxALL, 0);
+    else
+        wxMessageBox("A group of type \"flexgrid\" does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
 
     return groupSizer;
 }
@@ -320,25 +335,78 @@ wxBoxSizer* GroupPanel::createGroup(int orient, wxSizer* sizer, int expand)
 ///
 /// \param label const wxString&
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \return wxCollapsiblePane*
 ///
 /// \warning This group is currently quite buggy.
 /////////////////////////////////////////////////
-wxCollapsiblePane* GroupPanel::createCollapsibleGroup(const wxString& label, wxWindow* parent, wxSizer* sizer)
+wxCollapsiblePane* GroupPanel::createCollapsibleGroup(const wxString& label, wxWindow* parent, const SizerWrapper& sizer)
 {
     if (!parent)
-    {
         parent = this;
-        sizer = mainSizer;
-    }
 
     wxCollapsiblePane* collpane = new wxCollapsiblePane(parent, wxID_ANY, label, wxDefaultPosition, wxDefaultSize, wxCP_NO_TLW_RESIZE | wxCP_DEFAULT_STYLE);
 
     // add the pane with a zero proportion value to the sizer which contains it
-    sizer->Add(collpane, 1, wxEXPAND | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 1);
+    if (!sizer)
+        mainSizer->Add(collpane, 1, wxEXPAND | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 1);
+    else if (sizer.isBox())
+        sizer.s->Add(collpane, 1, wxEXPAND | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 1);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(collpane, sizer.pos, sizer.span, wxEXPAND | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 1);
 
     return collpane;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Add extra space between the last added
+/// (main) element and the next element to be
+/// added.
+///
+/// \param nSize int
+/// \param sizer const SizerWrapper&
+/// \return void
+///
+/////////////////////////////////////////////////
+void GroupPanel::AddSpacer(int nSize, const SizerWrapper& sizer)
+{
+    if (!sizer)
+        mainSizer->AddSpacer(nSize);
+    else if (sizer.isBox())
+        sizer.s->AddSpacer(nSize);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(nSize, nSize, sizer.pos, sizer.span);
+    else
+        layoutError("spacer", this);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Add some static test to the current
+/// sizer and window.
+///
+/// \param parent wxWindow*
+/// \param sizer const SizerWrapper&
+/// \param text const wxString&
+/// \param id int
+/// \return wxStaticText*
+///
+/////////////////////////////////////////////////
+wxStaticText* GroupPanel::AddStaticText(wxWindow* parent, const SizerWrapper& sizer, const wxString& text, int id, int alignment)
+{
+    wxStaticText* staticText = new wxStaticText(parent, id, text, wxDefaultPosition, wxDefaultSize, 0);
+
+    if (!sizer)
+        mainSizer->Add(staticText, 0, alignment | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(staticText, 0, alignment | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(staticText, sizer.pos, sizer.span, alignment | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    else
+        layoutError("statictext", this);
+
+    return staticText;
 }
 
 
@@ -348,23 +416,28 @@ wxCollapsiblePane* GroupPanel::createCollapsibleGroup(const wxString& label, wxW
 /// "choose" button.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param buttonID int
 /// \param id int
 /// \return wxTextCtrl*
 ///
 /////////////////////////////////////////////////
-wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID, int id)
+wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int buttonID, int id)
 {
+    wxBoxSizer* groupSizer = new wxBoxSizer(wxVERTICAL);
+
     // Create the text above the input line
-    wxStaticText* inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
-    sizer->Add(inputStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    if (description.length())
+    {
+        wxStaticText* inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
+        groupSizer->Add(inputStaticText, 0, wxALIGN_LEFT | wxBOTTOM | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    }
 
     // Create a horizontal sizer for the input
     // line and the buttoon
     wxBoxSizer* hSizer = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(hSizer, wxALIGN_LEFT);
+    groupSizer->Add(hSizer, wxALIGN_LEFT);
 
     // Create the input line
     wxTextCtrl* textCtrl = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxSize(310, -1), wxTE_PROCESS_ENTER);
@@ -373,8 +446,17 @@ wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, wxSizer* sizer, const 
     wxButton* button = new wxButton(parent, buttonID, _guilang.get("GUI_OPTIONS_CHOOSE"));
 
     // Add both to the horizontal sizer
-    hSizer->Add(textCtrl, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
-    hSizer->Add(button, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
+    hSizer->Add(textCtrl, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxRIGHT, 2*ELEMENT_BORDER);
+    hSizer->Add(button, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT, 0);
+
+    if (!sizer)
+        mainSizer->Add(groupSizer, 0, wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(groupSizer, 0, wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
+    else
+        wxMessageBox("A path selector element does not fit into its assigned group. If the group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
 
     return textCtrl;
 }
@@ -385,7 +467,7 @@ wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, wxSizer* sizer, const 
 /// layout for a text input.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param sDefault const wxString&
 /// \param nStyle int
@@ -396,21 +478,40 @@ wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, wxSizer* sizer, const 
 /// \return TextField*
 ///
 /////////////////////////////////////////////////
-TextField* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault, int nStyle, int id, const wxSize& size, int alignment, int proportion)
+TextField* GroupPanel::CreateTextInput(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, const wxString& sDefault, int nStyle, int id, const wxSize& size, int alignment, int proportion)
 {
     wxStaticText* inputStaticText = nullptr;
+    int margin = wxBOTTOM;
+    wxOrientation orient = wxVERTICAL;
+
+    if (sizer.isBox() && static_cast<wxBoxSizer*>(sizer.s)->GetOrientation() != wxVERTICAL)
+    {
+        margin = wxRIGHT;
+        orient = wxHORIZONTAL;
+    }
+
+    wxBoxSizer* groupSizer = new wxBoxSizer(orient);
+
     // Create the text above the input line, if it exists
     if (description.length())
     {
-        int margin = static_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxVERTICAL ? wxRIGHT : wxBOTTOM;
         inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
-        sizer->Add(inputStaticText, 0, alignment | wxLEFT | wxTOP | margin | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        groupSizer->Add(inputStaticText, 0, alignment | margin | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     }
 
     // Create the input line
     TextField* textCtrl = new TextField(parent, id, sDefault, size, nStyle);
     textCtrl->m_label = inputStaticText;
-    sizer->Add(textCtrl, proportion, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    groupSizer->Add(textCtrl, proportion, alignment | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 0);
+
+    if (!sizer)
+        mainSizer->Add(groupSizer, proportion, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(groupSizer, proportion, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("textfield", this);
 
     return textCtrl;
 }
@@ -421,7 +522,7 @@ TextField* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const w
 /// layout for a "lamp".
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param sDefault const wxString&
 /// \param nStyle int
@@ -432,22 +533,41 @@ TextField* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const w
 /// \return TextField*
 ///
 /////////////////////////////////////////////////
-TextField* GroupPanel::CreateLamp(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault, int nStyle, int id, const wxSize& size, int alignment, int proportion)
+TextField* GroupPanel::CreateLamp(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, const wxString& sDefault, int nStyle, int id, const wxSize& size, int alignment, int proportion)
 {
     wxStaticText* inputStaticText = nullptr;
+    int margin = wxBOTTOM;
+    wxOrientation orient = wxVERTICAL;
+
+    if (sizer.isBox() && static_cast<wxBoxSizer*>(sizer.s)->GetOrientation() != wxVERTICAL)
+    {
+        margin = wxRIGHT;
+        orient = wxHORIZONTAL;
+    }
+
+    wxBoxSizer* groupSizer = new wxBoxSizer(orient);
+
     // Create the text above the input line, if it exists
     if (description.length())
     {
-        int margin = static_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxVERTICAL ? wxRIGHT : wxBOTTOM;
         inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
-        sizer->Add(inputStaticText, 0, alignment | wxLEFT | wxTOP | margin | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        groupSizer->Add(inputStaticText, 0, alignment | margin | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     }
 
     // Create the "lamp"
     TextField* textCtrl = new TextField(parent, id, sDefault, size, nStyle | wxBORDER_RAISED | wxTE_READONLY);
     textCtrl->m_label = inputStaticText;
     textCtrl->SetBackgroundColour(wxColour(64,64,64));
-    sizer->Add(textCtrl, proportion, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    groupSizer->Add(textCtrl, proportion, alignment | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 0);
+
+    if (!sizer)
+        mainSizer->Add(groupSizer, proportion, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(groupSizer, proportion, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("lamp", this);
 
     return textCtrl;
 }
@@ -458,18 +578,26 @@ TextField* GroupPanel::CreateLamp(wxWindow* parent, wxSizer* sizer, const wxStri
 /// layout for a usual checkbox.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param id int
 /// \param alignment int
 /// \return wxCheckBox*
 ///
 /////////////////////////////////////////////////
-wxCheckBox* GroupPanel::CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id, int alignment)
+wxCheckBox* GroupPanel::CreateCheckBox(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int id, int alignment)
 {
     // Create the checkbox and assign it to the passed sizer
     wxCheckBox* checkBox = new wxCheckBox(parent, id, description, wxDefaultPosition, wxDefaultSize, 0);
-    sizer->Add(checkBox, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(checkBox, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(checkBox, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(checkBox, sizer.pos, sizer.span, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("checkbox", this);;
 
     return checkBox;
 }
@@ -481,7 +609,7 @@ wxCheckBox* GroupPanel::CreateCheckBox(wxWindow* parent, wxSizer* sizer, const w
 /// assigned text.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param nMin int
 /// \param nMax int
@@ -491,12 +619,20 @@ wxCheckBox* GroupPanel::CreateCheckBox(wxWindow* parent, wxSizer* sizer, const w
 /// \return SpinBut*
 ///
 /////////////////////////////////////////////////
-SpinBut* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id, int alignment)
+SpinBut* GroupPanel::CreateSpinControl(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int nMin, int nMax, int nInitial, int id, int alignment)
 {
     // Create a horizontal sizer for the
     // spin control and its assigned text
     wxBoxSizer* spinCtrlSizer = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(spinCtrlSizer, 0, alignment | wxALL, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(spinCtrlSizer, 0, alignment | wxALL, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(spinCtrlSizer, 0, alignment | wxALL, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(spinCtrlSizer, sizer.pos, sizer.span, alignment | wxALL, ELEMENT_BORDER);
+    else
+        layoutError("spinbut", this);
 
     // Create the spin control
     SpinBut* spinCtrl = new SpinBut(parent, id, wxSize(60, -1), nMin, nMax, nInitial);
@@ -518,7 +654,7 @@ SpinBut* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, const w
 /// layout for a listview control.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param wxLC_REPORT int nStyle=
 /// \param wxDefaultSize wxSize size=
 /// \param id int
@@ -526,11 +662,19 @@ SpinBut* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, const w
 /// \return wxListView*
 ///
 /////////////////////////////////////////////////
-wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle, wxSize size, int id, int proportion)
+wxListView* GroupPanel::CreateListView(wxWindow* parent, const SizerWrapper& sizer, int nStyle, wxSize size, int id, int proportion)
 {
     // Create the listview and assign it to the passed sizer
     wxListView* listView = new wxListView(parent, id, wxDefaultPosition, size, nStyle);
-    sizer->Add(listView, proportion, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(listView, proportion, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(listView, proportion, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(listView, sizer.pos, sizer.span, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
+    else
+        layoutError("wxListView", this);
 
     return listView;
 }
@@ -541,7 +685,7 @@ wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nSt
 /// layout for a treelist control.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param nStyle int
 /// \param size wxSize
 /// \param id int
@@ -550,12 +694,20 @@ wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nSt
 /// \return wxTreeListCtrl*
 ///
 /////////////////////////////////////////////////
-wxTreeListCtrl* GroupPanel::CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle, wxSize size, int id, int alignment, int proportion)
+wxTreeListCtrl* GroupPanel::CreateTreeListCtrl(wxWindow* parent, const SizerWrapper& sizer, int nStyle, wxSize size, int id, int alignment, int proportion)
 {
     // Create the listview and assign it to the passed sizer
     wxTreeListCtrl* listCtrl = new wxTreeListCtrl(parent, id, wxDefaultPosition, size, nStyle);
     listCtrl->SetMinClientSize(wxSize(100,200));
-    sizer->Add(listCtrl, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(listCtrl, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(listCtrl, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(listCtrl, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("treelist", this);
 
     return listCtrl;
 }
@@ -567,7 +719,7 @@ wxTreeListCtrl* GroupPanel::CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer,
 /// variant.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param nStyle int
 /// \param size wxSize
 /// \param id int
@@ -576,12 +728,20 @@ wxTreeListCtrl* GroupPanel::CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer,
 /// \return wxcode::wxTreeListCtrl*
 ///
 /////////////////////////////////////////////////
-wxcode::wxTreeListCtrl* GroupPanel::CreateWxcTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle, wxSize size, int id, int alignment, int proportion)
+wxcode::wxTreeListCtrl* GroupPanel::CreateWxcTreeListCtrl(wxWindow* parent, const SizerWrapper& sizer, int nStyle, wxSize size, int id, int alignment, int proportion)
 {
     // Create the listview and assign it to the passed sizer
     wxcode::wxTreeListCtrl* listCtrl = new wxcode::wxTreeListCtrl(parent, id, wxDefaultPosition, size, nStyle);
     listCtrl->SetMinClientSize(wxSize(100,200));
-    sizer->Add(listCtrl, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(listCtrl, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(listCtrl, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(listCtrl, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("wxCode::TreeListCtrl", this);
 
     return listCtrl;
 }
@@ -592,7 +752,7 @@ wxcode::wxTreeListCtrl* GroupPanel::CreateWxcTreeListCtrl(wxWindow* parent, wxSi
 /// layout for a button.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param id int
 /// \param alignment int
@@ -600,14 +760,18 @@ wxcode::wxTreeListCtrl* GroupPanel::CreateWxcTreeListCtrl(wxWindow* parent, wxSi
 /// \return wxButton*
 ///
 /////////////////////////////////////////////////
-wxButton* GroupPanel::CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id, int alignment, int proportion)
+wxButton* GroupPanel::CreateButton(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int id, int alignment, int proportion)
 {
     wxButton* button = new wxButton(parent, id, description);
 
-    if (sizer == mainSizer)
-        sizer->Add(button, 0, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    if (sizer.s == mainSizer || !sizer)
+        mainSizer->Add(button, 0, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(button, proportion, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(button, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     else
-        sizer->Add(button, proportion, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        layoutError("button", this);
 
     return button;
 }
@@ -618,7 +782,7 @@ wxButton* GroupPanel::CreateButton(wxWindow* parent, wxSizer* sizer, const wxStr
 /// layout for a radio box.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param description const wxString&
 /// \param choices const wxArrayString&
 /// \param style int
@@ -627,10 +791,18 @@ wxButton* GroupPanel::CreateButton(wxWindow* parent, wxSizer* sizer, const wxStr
 /// \return wxRadioBox*
 ///
 /////////////////////////////////////////////////
-wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style, int id, int alignment)
+wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, const wxArrayString& choices, int style, int id, int alignment)
 {
     wxRadioBox* box = new wxRadioBox(parent, id, description, wxDefaultPosition, wxDefaultSize, choices, 0, style);
-    sizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(box, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("radio", this);
 
     return box;
 }
@@ -641,7 +813,7 @@ wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer* sizer, const w
 /// layout for a dropdown list.
 ///
 /// \param parent wxWindow*
-/// \param wxSizer*sizer
+/// \param sizer const SizerWrapper&
 /// \param choices const wxArrayString&
 /// \param id int
 /// \param alignment int
@@ -649,14 +821,20 @@ wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer* sizer, const w
 /// \return wxChoice*
 ///
 /////////////////////////////////////////////////
-wxChoice* GroupPanel::CreateChoices(wxWindow* parent, wxSizer*sizer, const wxArrayString& choices, int id, int alignment, int proportion)
+wxChoice* GroupPanel::CreateChoices(wxWindow* parent, const SizerWrapper& sizer, const wxArrayString& choices, int id, int alignment, int proportion)
 {
     wxChoice* box = new wxChoice(parent, id, wxDefaultPosition, wxDefaultSize, choices);
 
-    if (dynamic_cast<wxBoxSizer*>(sizer) && dynamic_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxHORIZONTAL)
-        sizer->Add(box, proportion, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    if (!sizer)
+        mainSizer->Add(box, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox() && dynamic_cast<wxBoxSizer*>(sizer.s) && dynamic_cast<wxBoxSizer*>(sizer.s)->GetOrientation() == wxHORIZONTAL)
+        sizer.s->Add(box, proportion, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(box, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     else
-        sizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        layoutError("dropdown", this);
 
     return box;
 }
@@ -667,7 +845,7 @@ wxChoice* GroupPanel::CreateChoices(wxWindow* parent, wxSizer*sizer, const wxArr
 /// layout for a combobox.
 ///
 /// \param parent wxWindow*
-/// \param wxSizer*sizer
+/// \param sizer const SizerWrapper&
 /// \param choices const wxArrayString&
 /// \param id int
 /// \param alignment int
@@ -675,14 +853,20 @@ wxChoice* GroupPanel::CreateChoices(wxWindow* parent, wxSizer*sizer, const wxArr
 /// \return wxComboBox*
 ///
 /////////////////////////////////////////////////
-wxComboBox* GroupPanel::CreateComboBox(wxWindow* parent, wxSizer*sizer, const wxArrayString& choices, int id, int alignment, int proportion)
+wxComboBox* GroupPanel::CreateComboBox(wxWindow* parent, const SizerWrapper& sizer, const wxArrayString& choices, int id, int alignment, int proportion)
 {
     wxComboBox* box = new wxComboBox(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, choices);
 
-    if (dynamic_cast<wxBoxSizer*>(sizer) && dynamic_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxHORIZONTAL)
-        sizer->Add(box, proportion, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    if (!sizer)
+        mainSizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox() && dynamic_cast<wxBoxSizer*>(sizer.s) && dynamic_cast<wxBoxSizer*>(sizer.s)->GetOrientation() == wxHORIZONTAL)
+        sizer.s->Add(box, proportion, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(box, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     else
-        sizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        layoutError("combobox", this);
 
     return box;
 }
@@ -693,7 +877,7 @@ wxComboBox* GroupPanel::CreateComboBox(wxWindow* parent, wxSizer*sizer, const wx
 /// layout for a progress bar.
 ///
 /// \param parent wxWindow*
-/// \param wxSizer*sizer
+/// \param sizer const SizerWrapper&
 /// \param style int
 /// \param id int
 /// \param alignment int
@@ -701,10 +885,18 @@ wxComboBox* GroupPanel::CreateComboBox(wxWindow* parent, wxSizer*sizer, const wx
 /// \return wxGauge*
 ///
 /////////////////////////////////////////////////
-wxGauge* GroupPanel::CreateGauge(wxWindow* parent, wxSizer*sizer, int style, int id, int alignment, int proportion)
+wxGauge* GroupPanel::CreateGauge(wxWindow* parent, const SizerWrapper& sizer, int style, int id, int alignment, int proportion)
 {
     wxGauge* gauge = new wxGauge(parent, id, 100, wxDefaultPosition, wxDefaultSize, style);
-    sizer->Add(gauge, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(gauge, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(gauge, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(gauge, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("gauge", this);
 
     return gauge;
 }
@@ -715,17 +907,25 @@ wxGauge* GroupPanel::CreateGauge(wxWindow* parent, wxSizer*sizer, int style, int
 /// layout for a static bitmap.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param filename const wxString&
 /// \param id int
 /// \param alignment int
 /// \return wxStaticBitmap*
 ///
 /////////////////////////////////////////////////
-wxStaticBitmap* GroupPanel::CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id, int alignment)
+wxStaticBitmap* GroupPanel::CreateBitmap(wxWindow* parent, const SizerWrapper& sizer, const wxString& filename, int id, int alignment)
 {
     wxStaticBitmap* bitmap = new wxStaticBitmap(parent, id, wxBitmap(filename, wxBITMAP_TYPE_ANY));
-    sizer->Add(bitmap, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(bitmap, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(bitmap, 0, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(bitmap, sizer.pos, sizer.span, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("bitmap", this);
 
     return bitmap;
 }
@@ -736,7 +936,7 @@ wxStaticBitmap* GroupPanel::CreateBitmap(wxWindow* parent, wxSizer* sizer, const
 /// layout for a slider.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param nMin int
 /// \param nMax int
 /// \param nInitial int
@@ -747,10 +947,18 @@ wxStaticBitmap* GroupPanel::CreateBitmap(wxWindow* parent, wxSizer* sizer, const
 /// \return wxSlider*
 ///
 /////////////////////////////////////////////////
-wxSlider* GroupPanel::CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, int nMax, int nInitial, int style, int id, int alignment, int proportion)
+wxSlider* GroupPanel::CreateSlider(wxWindow* parent, const SizerWrapper& sizer, int nMin, int nMax, int nInitial, int style, int id, int alignment, int proportion)
 {
     wxSlider* slider = new wxSlider(parent, id, nInitial, nMin, nMax, wxDefaultPosition, wxDefaultSize, style);
-    sizer->Add(slider, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(slider, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(slider, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(slider, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("slider", this);
 
     return slider;
 }
@@ -761,7 +969,7 @@ wxSlider* GroupPanel::CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, i
 /// layout for a date picker control.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param dt const wxDateTime&
 /// \param style int
 /// \param id int
@@ -769,10 +977,18 @@ wxSlider* GroupPanel::CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, i
 /// \return wxDatePickerCtrl*
 ///
 /////////////////////////////////////////////////
-wxDatePickerCtrl* GroupPanel::CreateDatePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt, int style, int id, int alignment)
+wxDatePickerCtrl* GroupPanel::CreateDatePicker(wxWindow* parent, const SizerWrapper& sizer, const wxDateTime& dt, int style, int id, int alignment)
 {
     wxDatePickerCtrl* picker = new wxDatePickerCtrl(parent, id, dt, wxDefaultPosition, wxDefaultSize, style);
-    sizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(picker, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("datetimepicker", this);
 
     return picker;
 }
@@ -783,17 +999,25 @@ wxDatePickerCtrl* GroupPanel::CreateDatePicker(wxWindow* parent, wxSizer* sizer,
 /// layout for a time picker control.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param dt const wxDateTime&
 /// \param id int
 /// \param alignment int
 /// \return wxTimePickerCtrl*
 ///
 /////////////////////////////////////////////////
-wxTimePickerCtrl* GroupPanel::CreateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt, int id, int alignment)
+wxTimePickerCtrl* GroupPanel::CreateTimePicker(wxWindow* parent, const SizerWrapper& sizer, const wxDateTime& dt, int id, int alignment)
 {
     wxTimePickerCtrl* picker = new wxTimePickerCtrl(parent, id, dt);
-    sizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    if (!sizer)
+        mainSizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(picker, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        layoutError("datetimepicker", this);
 
     return picker;
 }
@@ -804,7 +1028,7 @@ wxTimePickerCtrl* GroupPanel::CreateTimePicker(wxWindow* parent, wxSizer* sizer,
 /// layout for a date-time picker control.
 ///
 /// \param parent wxWindow*
-/// \param sizer wxSizer*
+/// \param sizer const SizerWrapper&
 /// \param dt const wxDateTime&
 /// \param style int
 /// \param id int
@@ -813,15 +1037,26 @@ wxTimePickerCtrl* GroupPanel::CreateTimePicker(wxWindow* parent, wxSizer* sizer,
 /// \return DateTimePicker*
 ///
 /////////////////////////////////////////////////
-DateTimePicker* GroupPanel::CreateDateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt, int style, int id, int alignment, int proportion)
+DateTimePicker* GroupPanel::CreateDateTimePicker(wxWindow* parent, const SizerWrapper& sizer, const wxDateTime& dt, int style, int id, int alignment, int proportion)
 {
     DateTimePicker* picker = new DateTimePicker(parent, id, dt, style);
 
-    if (dynamic_cast<wxBoxSizer*>(sizer) && dynamic_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxHORIZONTAL)
-        sizer->Add(picker, proportion, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    if (!sizer)
+        mainSizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox() && dynamic_cast<wxBoxSizer*>(sizer.s) && dynamic_cast<wxBoxSizer*>(sizer.s)->GetOrientation() == wxHORIZONTAL)
+        sizer.s->Add(picker, proportion, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.isBox())
+        sizer.s->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else if (sizer.canEmplace())
+        sizer.gbs->Add(picker, sizer.pos, sizer.span, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     else
-        sizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        layoutError("datetimepicker", this);
 
     return picker;
 }
+
+
+
+
+
 

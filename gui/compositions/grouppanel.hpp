@@ -23,6 +23,7 @@
 #include <wx/collpane.h>
 #include <wx/datectrl.h>
 #include <wx/timectrl.h>
+#include <wx/gbsizer.h>
 
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
@@ -209,6 +210,36 @@ class TextField : public wxTextCtrl
 };
 
 
+/////////////////////////////////////////////////
+/// \brief This is a helper object to wrap the
+/// different types of sizers.
+/////////////////////////////////////////////////
+struct SizerWrapper
+{
+    mutable wxSizer* s = nullptr;
+    mutable wxGridBagSizer* gbs = nullptr;
+    wxGBPosition pos;
+    wxGBSpan span;
+
+    SizerWrapper(wxSizer* sz) : s(sz) {}
+    SizerWrapper(wxGridBagSizer* gbsz, const wxGBPosition& p, const wxGBSpan& sp = wxDefaultSpan) : gbs(gbsz), pos(p), span(sp) {}
+
+    bool isBox() const
+    {
+        return s;
+    }
+
+    bool canEmplace() const
+    {
+        return gbs && !gbs->CheckForIntersection(pos, span);
+    }
+
+    operator bool() const
+    {
+        return s || gbs;
+    }
+};
+
 
 /////////////////////////////////////////////////
 /// \brief This class simplifies the creation of
@@ -230,81 +261,82 @@ class GroupPanel : public wxScrolledWindow
         wxBoxSizer* getHorizontalSizer();
         wxBoxSizer* getMainSizer();
 
-        // A spacer
-        void AddSpacer(int nSize = 10, wxSizer* sizer = nullptr);
-
-        // Some static text
-        wxStaticText* AddStaticText(wxWindow* parent, wxSizer* sizer, const wxString& text, int id = wxID_STATIC,
-                                    int alignment = wxALIGN_CENTER_VERTICAL);
-
         // Group adders
         wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL, wxWindow* parent = nullptr,
-                                      wxSizer* sizer = nullptr, int expand = 0);
-        wxBoxSizer* createGroup(int orient = wxVERTICAL, wxSizer* sizer = nullptr, int expand = 0);
-        wxCollapsiblePane* createCollapsibleGroup(const wxString& label, wxWindow* parent = nullptr, wxSizer* sizer = nullptr);
+                                      const SizerWrapper& sizer = nullptr, int expand = 0);
+        wxBoxSizer* createGroup(int orient = wxVERTICAL, const SizerWrapper& sizer = nullptr, int expand = 0);
+        wxGridBagSizer* createGridGroup(const SizerWrapper& sizer = nullptr, int expand = 0);
+        wxCollapsiblePane* createCollapsibleGroup(const wxString& label, wxWindow* parent = nullptr, const SizerWrapper& sizer = nullptr);
+
+        // A spacer
+        void AddSpacer(int nSize = 10, const SizerWrapper& sizer = nullptr);
+
+        // Some static text
+        wxStaticText* AddStaticText(wxWindow* parent, const SizerWrapper& sizer, const wxString& text, int id = wxID_STATIC,
+                                    int alignment = wxALIGN_CENTER_VERTICAL);
 
         // Text fields et al.
-        wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID, int id = wxID_ANY);
-        TextField* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString,
+        wxTextCtrl* CreatePathInput(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int buttonID, int id = wxID_ANY);
+        TextField* CreateTextInput(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, const wxString& sDefault = wxEmptyString,
                                    int nStyle = 0, int id = wxID_ANY, const wxSize& size = wxSize(310,-1),
                                    int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 0);
 
         // A lamp
-        TextField* CreateLamp(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString,
+        TextField* CreateLamp(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, const wxString& sDefault = wxEmptyString,
                               int nStyle = 0, int id = wxID_ANY, const wxSize& size = wxSize(20,10), int alignment = wxALIGN_CENTER_VERTICAL,
                               int proportion = 0);
 
         // A check box
-        wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY,
+        wxCheckBox* CreateCheckBox(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int id = wxID_ANY,
                                    int alignment = wxALIGN_CENTER_VERTICAL);
 
         // A spin button
-        SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial,
+        SpinBut* CreateSpinControl(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int nMin, int nMax, int nInitial,
                                    int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
 
         // Lists and tree lists
-        wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize,
+        wxListView* CreateListView(wxWindow* parent, const SizerWrapper& sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize,
                                    int id = wxID_ANY, int proportion = 1);
-        wxTreeListCtrl* CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle = wxTL_SINGLE, wxSize size = wxDefaultSize,
+        wxTreeListCtrl* CreateTreeListCtrl(wxWindow* parent, const SizerWrapper& sizer, int nStyle = wxTL_SINGLE, wxSize size = wxDefaultSize,
                                            int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 1);
-        wxcode::wxTreeListCtrl* CreateWxcTreeListCtrl(wxWindow* parent, wxSizer* sizer,
+        wxcode::wxTreeListCtrl* CreateWxcTreeListCtrl(wxWindow* parent, const SizerWrapper& sizer,
                                                       int nStyle = wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED,
                                                       wxSize size = wxDefaultSize, int id = wxID_ANY,
                                                       int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 1);
 
         // A regular button
-        wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY,
+        wxButton* CreateButton(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, int id = wxID_ANY,
                                int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 1);
 
         // A Radio box
-        wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices,
+        wxRadioBox* CreateRadioBox(wxWindow* parent, const SizerWrapper& sizer, const wxString& description, const wxArrayString& choices,
                                    int style = wxHORIZONTAL, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
 
         // Drop down et al.
-        wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY,
+        wxChoice* CreateChoices(wxWindow* parent, const SizerWrapper& sizer, const wxArrayString& choices, int id = wxID_ANY,
                                 int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 1);
-        wxComboBox* CreateComboBox(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY,
+        wxComboBox* CreateComboBox(wxWindow* parent, const SizerWrapper& sizer, const wxArrayString& choices, int id = wxID_ANY,
                                    int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 1);
 
         // A gauge (waitbar)
-        wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL,
+        wxGauge* CreateGauge(wxWindow* parent, const SizerWrapper& sizer, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL,
                              int proportion = 0);
 
         // Some static bitmap
-        wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY,
+        wxStaticBitmap* CreateBitmap(wxWindow* parent, const SizerWrapper& sizer, const wxString& filename, int id = wxID_ANY,
                                      int alignment = wxALIGN_CENTER_VERTICAL);
 
         // A slider
-        wxSlider* CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, int nMax, int nInitial, int style, int id = wxID_ANY,
+        wxSlider* CreateSlider(wxWindow* parent, const SizerWrapper& sizer, int nMin, int nMax, int nInitial, int style, int id = wxID_ANY,
                                int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 0);
 
         // Date time pickers
-        wxDatePickerCtrl* CreateDatePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime,
+        wxDatePickerCtrl* CreateDatePicker(wxWindow* parent, const SizerWrapper& sizer, const wxDateTime& dt = wxDefaultDateTime,
                                            int style = wxDP_SHOWCENTURY | wxDP_DROPDOWN, int id = wxID_ANY,
                                            int alignment = wxALIGN_CENTER_VERTICAL);
-        wxTimePickerCtrl* CreateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime, int id = wxID_ANY,
+        wxTimePickerCtrl* CreateTimePicker(wxWindow* parent, const SizerWrapper& sizer, const wxDateTime& dt = wxDefaultDateTime, int id = wxID_ANY,
                                            int alignment = wxALIGN_CENTER_VERTICAL);
-        DateTimePicker* CreateDateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime,
+        DateTimePicker* CreateDateTimePicker(wxWindow* parent, const SizerWrapper& sizer, const wxDateTime& dt = wxDefaultDateTime,
                                              int style = DT_PICKER_DATE | DT_PICKER_TIME, int id = wxID_ANY,
                                              int alignment = wxALIGN_CENTER_VERTICAL, int proportion = 1);
 };

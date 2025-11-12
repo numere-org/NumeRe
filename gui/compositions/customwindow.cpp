@@ -749,6 +749,29 @@ static int enumerateListItems(wxTreeListCtrl* listCtrl, const wxTreeListItem& it
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to convert a
+/// string containing a list of integers into a
+/// vector of ints.
+///
+/// \param strInt const std::string&
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
+static std::vector<int> strIntToVector(const std::string& strInt)
+{
+    EndlessVector<std::string> strs = getAllArguments(strInt);
+    std::vector<int> ints(strs.size());
+
+    for (size_t i = 0; i < strs.size(); i++)
+    {
+        ints[i] = StrToInt(strs[i]);
+    }
+
+    return ints;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Enumeration to define possible states
 /// of window items.
 /////////////////////////////////////////////////
@@ -827,14 +850,7 @@ void CustomWindow::layout()
 
     // Evaluate possible background color information
     if (layoutGroup->Attribute("color"))
-    {
-        wxString sColor = layoutGroup->Attribute("color");
-        wxColour background;
-
-        background.Set("rgb(" + sColor + ")");
-
-        SetBackgroundColour(background);
-    }
+        SetBackgroundColour(toWxColour(layoutGroup->Attribute("color")));
 
     // Evaluate the title information
     if (layoutGroup->Attribute("title"))
@@ -880,28 +896,22 @@ void CustomWindow::layout()
     }
 
     // Evaluate the size information
+    SetClientSize(wxSize(800,600));
+
     if (layoutGroup->Attribute("size"))
     {
-        wxString sSize = layoutGroup->Attribute("size");
-        long int x,y;
-        sSize.substr(0, sSize.find(',')).ToLong(&x);
-        sSize.substr(sSize.find(',')+1).ToLong(&y);
+        std::vector<int> s = strIntToVector(layoutGroup->Attribute("size"));
 
-        if (x == -1 && y == -1)
-            Maximize();
-        else
-            SetClientSize(wxSize(x,y));
+        if (s.size() >= 2)
+        {
+            if (s[0] == -1 && s[1] == -1)
+                Maximize();
+            else
+                SetClientSize(wxSize(s[0], s[1]));
+        }
     }
-    else
-        SetClientSize(wxSize(800,600));
 
     Layout();
-
-
-    //wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
-    //vsizer->Add(_groupPanel, 1, wxEXPAND, 0);
-    //SetSizer(vsizer);
-    //vsizer->SetSizeHints(_groupPanel);
 }
 
 
@@ -1216,13 +1226,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("size"))
             {
-                wxString sSize = currentChild->Attribute("size");
-                long int x,y;
-                sSize.substr(0, sSize.find(',')).ToLong(&x);
-                sSize.substr(sSize.find(',')+1).ToLong(&y);
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
 
-                size.x = x;
-                size.y = y;
+                if (s.size() >= 2)
+                {
+                    size.x = s[0];
+                    size.y = s[1];
+                }
             }
 
             if (currentChild->Attribute("type", "multiline"))
@@ -1262,13 +1272,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("size"))
             {
-                wxString sSize = currentChild->Attribute("size");
-                long int x,y;
-                sSize.substr(0, sSize.find(',')).ToLong(&x);
-                sSize.substr(sSize.find(',')+1).ToLong(&y);
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
 
-                size.x = x;
-                size.y = y;
+                if (s.size() >= 2)
+                {
+                    size.x = s[0];
+                    size.y = s[1];
+                }
             }
 
             wxString label;
@@ -1414,12 +1424,10 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("size"))
             {
-                wxString sSize = currentChild->Attribute("size");
-                long int x,y;
-                sSize.substr(0, sSize.find(',')).ToLong(&x);
-                sSize.substr(sSize.find(',')+1).ToLong(&y);
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
 
-                mgl->SetMinClientSize(wxSize(x,y));
+                if (s.size() >= 2)
+                    mgl->SetMinClientSize(wxSize(s[0], s[1]));
             }
             else
                 mgl->SetMinClientSize(wxSize(600,400));
@@ -1441,13 +1449,14 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("size"))
             {
-                wxString sSize = currentChild->Attribute("size");
-                long int x,y;
-                sSize.substr(0, sSize.find(',')).ToLong(&x);
-                sSize.substr(sSize.find(',')+1).ToLong(&y);
-                NumeRe::Table data(x,y);
-                table->SetData(data, "", "");
-                table->SetMinSize(table->calculateMinSize());
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
+
+                if (s.size() >= 2)
+                {
+                    NumeRe::Table data(s[0], s[1]);
+                    table->SetData(data, "", "");
+                    table->SetMinSize(table->calculateMinSize());
+                }
             }
             else
             {
@@ -1514,24 +1523,24 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             }
             else if (currentChild->Attribute("size"))
             {
-                wxString sSize = currentChild->Attribute("size");
-                long int row,col;
-                sSize.substr(0, sSize.find(',')).ToLong(&row);
-                sSize.substr(sSize.find(',')+1).ToLong(&col);
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
 
-                colSize = std::max(colSize / (int)col - 2, MINCOLSIZE);
-
-                for (size_t j = 0; j < (size_t)col; j++)
+                if (s.size() >= 2)
                 {
-                    if (labels.size() > j)
-                        listCtrl->AppendColumn(labels[j], colSize);
-                    else
-                        listCtrl->AppendColumn("", colSize);
-                }
+                    colSize = std::max(colSize / (int)s[1] - 2, MINCOLSIZE);
 
-                for (int i = 0; i < row; i++)
-                {
-                    listCtrl->AppendItem(listCtrl->GetRootItem(), "ITEM " + wxString::Format("%d", i+1));
+                    for (size_t j = 0; j < (size_t)s[1]; j++)
+                    {
+                        if (labels.size() > j)
+                            listCtrl->AppendColumn(labels[j], colSize);
+                        else
+                            listCtrl->AppendColumn("", colSize);
+                    }
+
+                    for (int i = 0; i < s[0]; i++)
+                    {
+                        listCtrl->AppendItem(listCtrl->GetRootItem(), "ITEM " + wxString::Format("%d", i+1));
+                    }
                 }
             }
             else if (labels.size())
@@ -1565,13 +1574,19 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             bool isCollapsible = false;
             bool isNotebook = false;
             bool isMenu = false;
+            bool isGrid = false;
             int expand = 0;
+            std::vector<int> _rowScl;
+            std::vector<int> _colScl;
 
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
 
             if (currentChild->Attribute("type"))
+            {
                 style = currentChild->Attribute("type", "horizontal") ? wxHORIZONTAL : wxVERTICAL;
+                isGrid = currentChild->Attribute("type", "flexgrid");
+            }
 
             if (currentChild->Attribute("style"))
             {
@@ -1582,6 +1597,12 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("expand"))
                 expand = currentChild->Attribute("expand", "true") ? 1 : 0;
+
+            if (currentChild->Attribute("rowscl"))
+                _rowScl = strIntToVector(currentChild->Attribute("rowscl"));
+
+            if (currentChild->Attribute("colscl"))
+                _colScl = strIntToVector(currentChild->Attribute("colscl"));
 
             // A collapsible group is currently very buggy (if used
             // with the current GroupPanel).
@@ -1612,7 +1633,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
                     GroupPanel* _newPanel = new GroupPanel(noteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, style == wxHORIZONTAL ? false : true);
 
-                    layoutChild(currentChild->FirstChildElement(), _newPanel, _newPanel->getMainSizer(), _newPanel);
+                    if (isGrid)
+                    {
+                        wxGridBagSizer* gbSizer = _newPanel->createGridGroup(_newPanel->getMainSizer(), expand);
+                        layoutGridChild(currentChild->FirstChildElement(), _newPanel, gbSizer, _newPanel, _rowScl, _colScl);
+                    }
+                    else
+                        layoutChild(currentChild->FirstChildElement(), _newPanel, _newPanel->getMainSizer(), _newPanel);
 
                     noteBook->AddPage(_newPanel, label);
                 }
@@ -1633,13 +1660,28 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 else
                 {
                     wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer, expand);
-                    layoutChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), sizer, _groupPanel);
+
+                    if (isGrid)
+                    {
+                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand);
+                        layoutGridChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), gbSizer, _groupPanel, _rowScl, _colScl);
+                    }
+                    else
+                        layoutChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), sizer, _groupPanel);
                 }
             }
             else
             {
-                wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand);
-                layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
+                if (isGrid)
+                {
+                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(currSizer, expand);
+                    layoutGridChild(currentChild->FirstChildElement(), currParent, gbSizer, _groupPanel, _rowScl, _colScl);
+                }
+                else
+                {
+                    wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand);
+                    layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
+                }
             }
 
         }
@@ -1650,6 +1692,830 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             currentChild = currentChild->NextSibling()->ToElement();
         else
             break;
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function can be called
+/// recursively and creates the layout for the
+/// current XMLElement's children.
+///
+/// \param currentChild const tinyxml2::XMLElement*
+/// \param currParent wxWindow*
+/// \param currSizer wxGridBagSizer*
+/// \param _groupPanel GroupPanel*
+/// \param rowScale const std::vector<int>&
+/// \param colScale const std::vector<int>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxGridBagSizer* currSizer, GroupPanel* _groupPanel, const std::vector<int>& rowScale, const std::vector<int>& colScale)
+{
+    wxNotebook* noteBook = nullptr;
+
+    // As long as another child (i.e. sibling) can be found
+    while (currentChild)
+    {
+        // Evaluate the id attribute
+        int id = currentChild->Attribute("id") ?
+                    currentChild->DoubleAttribute("id") : m_windowItems.size() + 1000;
+
+        // Get the text used by some controls
+        wxString text = currentChild->GetText() ? currentChild->GetText() : "";
+
+        wxFont font = GetFont();
+        WindowState state = ENABLED;
+        int alignment = wxALIGN_CENTER_VERTICAL;
+
+        // Evaluate the state attribute
+        if (currentChild->Attribute("state"))
+        {
+            if (currentChild->Attribute("state", "disabled"))
+                state = DISABLED;
+            else if (currentChild->Attribute("state", "hidden"))
+                state = HIDDEN;
+            else if (currentChild->Attribute("state", "readonly"))
+                state = READONLY;
+        }
+
+        // evaluate the font attribute
+        if (currentChild->Attribute("font"))
+        {
+            wxString sFont = currentChild->Attribute("font");
+
+            if (sFont.find('i') != std::string::npos)
+                font.MakeItalic();
+
+            if (sFont.find('b') != std::string::npos)
+                font.MakeBold();
+        }
+
+        // Get the alignment of the elements
+        if (currentChild->Attribute("align"))
+        {
+            wxString sAlign = currentChild->Attribute("align");
+            alignment = 0;
+
+            // LRCTB
+            if (sAlign.find_first_of("TB") == std::string::npos)
+                alignment |= wxALIGN_CENTER_VERTICAL;
+
+            if (sAlign.find_first_of("LR") == std::string::npos)
+                alignment |= wxALIGN_CENTER_HORIZONTAL;
+
+            if (sAlign.find("L") != std::string::npos)
+                alignment |= wxALIGN_LEFT;
+
+            if (sAlign.find("R") != std::string::npos)
+                alignment |= wxALIGN_RIGHT;
+
+            if (sAlign.find("T") != std::string::npos)
+                alignment |= wxALIGN_TOP;
+
+            if (sAlign.find("B") != std::string::npos)
+                alignment |= wxALIGN_BOTTOM;
+
+        }
+
+        wxGBPosition gbPos;
+        wxGBSpan gbSpan;
+
+        if (currentChild->Attribute("fgcell"))
+        {
+            std::vector<int> s = strIntToVector(currentChild->Attribute("fgcell"));
+
+            if (s.size() >= 2)
+            {
+                gbPos.SetRow(s[0]-1);
+                gbPos.SetCol(s[1]-1);
+            }
+
+            if (s.size() == 4)
+            {
+                gbSpan.SetRowspan(s[2]);
+                gbSpan.SetColspan(s[3]);
+            }
+        }
+
+        // Now check for the current XMLElement's
+        // value (i.e. the XML-Tag name) and create
+        // a corresponding control (if available)
+        std::string sValue = currentChild->Value();
+
+        if (sValue == "button")
+        {
+            int proportion = currentChild->IntAttribute("prop", 1);
+            // Add a button
+            wxButton* button = _groupPanel->CreateButton(currParent, SizerWrapper(currSizer, gbPos, gbSpan), removeQuotationMarks(text), id, alignment, proportion);
+            button->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::BUTTON, button);
+
+            if (currentChild->Attribute("onclick"))
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("color"))
+                button->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED || state == READONLY)
+                button->Disable();
+            else if (state == HIDDEN)
+                button->Hide();
+        }
+        else if (sValue == "checkbox")
+        {
+            // Add a checkbox
+            wxCheckBox* checkbox = _groupPanel->CreateCheckBox(currParent, SizerWrapper(currSizer, gbPos, gbSpan), removeQuotationMarks(text), id, alignment);
+            checkbox->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::CHECKBOX, checkbox);
+
+            if (currentChild->Attribute("value"))
+                checkbox->SetValue(currentChild->Attribute("value", "1"));
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                checkbox->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED || state == READONLY)
+                checkbox->Disable();
+            else if (state == HIDDEN)
+                checkbox->Hide();
+        }
+        else if (sValue == "radio")
+        {
+            // Add a radio group
+            wxString label;
+            int style = wxHORIZONTAL;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            if (currentChild->Attribute("type"))
+                style = currentChild->Attribute("type", "horizontal") ? wxHORIZONTAL : wxVERTICAL;
+
+            wxRadioBox* radiobox = _groupPanel->CreateRadioBox(currParent, SizerWrapper(currSizer, gbPos, gbSpan), label, getChoices(text), style, id, alignment);
+            radiobox->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::RADIOGROUP, radiobox);
+
+            if (currentChild->Attribute("value"))
+                radiobox->SetSelection(currentChild->IntAttribute("value")-1);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (state == DISABLED || state == READONLY)
+                radiobox->Disable();
+            else if (state == HIDDEN)
+                radiobox->Hide();
+        }
+        else if (sValue == "spinbut")
+        {
+            // Add a spincontrol group
+            wxString label;
+            int nMin = 0, nMax = 100, nValue = 0;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            if (currentChild->Attribute("min"))
+                nMin = currentChild->DoubleAttribute("min");
+
+            if (currentChild->Attribute("max"))
+                nMax = currentChild->DoubleAttribute("max");
+
+            if (currentChild->Attribute("value"))
+                nValue = currentChild->DoubleAttribute("value");
+
+            SpinBut* spinctrl = _groupPanel->CreateSpinControl(currParent, SizerWrapper(currSizer, gbPos, gbSpan), label, nMin, nMax, nValue, id, alignment);
+            spinctrl->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::SPINCTRL, spinctrl);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                spinctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED || state == READONLY)
+                spinctrl->Enable(false);
+            else if (state == HIDDEN)
+                spinctrl->Show(false);
+        }
+        else if (sValue == "slider")
+        {
+            // Add a slider
+            int proportion = currentChild->IntAttribute("prop", 0);
+            int nMin = 0, nMax = 100, nValue = 0;
+            int style = wxHORIZONTAL;
+
+            if (currentChild->Attribute("type"))
+                style = currentChild->Attribute("type", "horizontal") ? wxHORIZONTAL | wxSL_LABELS | wxSL_AUTOTICKS : wxVERTICAL | wxSL_LABELS | wxSL_AUTOTICKS;
+
+            if (currentChild->Attribute("min"))
+                nMin = currentChild->DoubleAttribute("min");
+
+            if (currentChild->Attribute("max"))
+                nMax = currentChild->DoubleAttribute("max");
+
+            if (currentChild->Attribute("value"))
+                nValue = currentChild->DoubleAttribute("value");
+
+            wxSlider* slider = _groupPanel->CreateSlider(currParent, SizerWrapper(currSizer, gbPos, gbSpan), nMin, nMax, nValue, style, id, alignment, proportion);
+            slider->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::SLIDER, slider);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                slider->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED || state == READONLY)
+                slider->Enable(false);
+            else if (state == HIDDEN)
+                slider->Show(false);
+        }
+        else if (sValue == "gauge")
+        {
+            // Add a gauge
+            int proportion = currentChild->IntAttribute("prop", 0);
+            wxString label;
+            int style = wxHORIZONTAL;
+
+            if (currentChild->Attribute("type"))
+                style = currentChild->Attribute("type", "horizontal") ? wxGA_HORIZONTAL | wxGA_SMOOTH : wxGA_VERTICAL | wxGA_SMOOTH;
+
+            wxGauge* gauge = _groupPanel->CreateGauge(currParent, SizerWrapper(currSizer, gbPos, gbSpan), style, id, alignment, proportion);
+            m_windowItems[id] = std::make_pair(CustomWindow::GAUGE, gauge);
+
+            if (currentChild->Attribute("value"))
+                gauge->SetValue(currentChild->DoubleAttribute("value"));
+
+            if (state == DISABLED || state == READONLY)
+                gauge->Disable();
+            else if (state == HIDDEN)
+                gauge->Hide();
+        }
+        else if (sValue == "dropdown")
+        {
+            // Add a dropdown
+            int proportion = currentChild->IntAttribute("prop", 1);
+            wxArrayString choices;
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString l = currentChild->Attribute("label");
+                choices = getChoices(l);
+            }
+            else
+                choices = getChoices(text);
+
+            wxChoice* choice = _groupPanel->CreateChoices(currParent, SizerWrapper(currSizer, gbPos, gbSpan), choices, id, alignment, proportion);
+            m_windowItems[id] = std::make_pair(CustomWindow::DROPDOWN, choice);
+
+            if (currentChild->Attribute("value"))
+                choice->SetSelection(currentChild->IntAttribute("value")-1);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                choice->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED || state == READONLY)
+                choice->Disable();
+            else if (state == HIDDEN)
+                choice->Hide();
+        }
+        else if (sValue == "combobox")
+        {
+            // Add a combobox
+            int proportion = currentChild->IntAttribute("prop", 1);
+            wxArrayString choices;
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString l = currentChild->Attribute("label");
+                choices = getChoices(l);
+            }
+            else
+                choices = getChoices(text);
+
+            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, SizerWrapper(currSizer, gbPos, gbSpan), choices, id, alignment, proportion);
+            m_windowItems[id] = std::make_pair(CustomWindow::COMBOBOX, combo);
+
+            if (currentChild->Attribute("value"))
+                combo->SetSelection(currentChild->IntAttribute("value")-1);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                combo->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED || state == READONLY)
+                combo->Disable();
+            else if (state == HIDDEN)
+                combo->Hide();
+        }
+        else if (sValue == "textfield")
+        {
+            // Add a textctrl
+            int proportion = currentChild->IntAttribute("prop", 0);
+            int style = wxTE_PROCESS_ENTER;
+            wxSize size(310,-1);
+
+            if (currentChild->Attribute("size"))
+            {
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
+
+                if (s.size() >= 2)
+                {
+                    size.x = s[0];
+                    size.y = s[1];
+                }
+            }
+
+            if (currentChild->Attribute("type", "multiline"))
+                style = wxTE_MULTILINE | wxTE_BESTWRAP;
+
+            if (currentChild->Attribute("type", "markup"))
+                style = wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL;
+
+            wxString label;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            TextField* textctrl = _groupPanel->CreateTextInput(currParent, SizerWrapper(currSizer, gbPos, gbSpan), label, "", style, id, size, alignment, proportion);
+            textctrl->SetMarkupText(toInternalString(text.ToStdString())); // Also correctly convert linebreak characters
+            textctrl->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED)
+                textctrl->Enable(false);
+            else if (state == HIDDEN)
+                textctrl->Show(false);
+
+            textctrl->SetEditable(state != READONLY);
+        }
+        else if (sValue == "lamp")
+        {
+            // Add a lamp
+            int proportion = currentChild->IntAttribute("prop", 0);
+            wxSize size(20,10);
+
+            if (currentChild->Attribute("size"))
+            {
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
+
+                if (s.size() >= 2)
+                {
+                    size.x = s[0];
+                    size.y = s[1];
+                }
+            }
+
+            wxString label;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            TextField* textctrl = _groupPanel->CreateLamp(currParent, SizerWrapper(currSizer, gbPos, gbSpan), label, wxEmptyString, 0, id, size, alignment, proportion);
+            m_windowItems[id] = std::make_pair(CustomWindow::LAMP, textctrl);
+
+            //if (currentChild->Attribute("onclick"))
+            //    m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("color"))
+                textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+            else if (currentChild->Attribute("value"))
+                 textctrl->SetBackgroundColour(colorFromLampStates(currentChild->Attribute("value")));
+
+            if (state == DISABLED || state == READONLY)
+                textctrl->Enable(false);
+            else if (state == HIDDEN)
+                textctrl->Show(false);
+        }
+        else if (sValue == "datetimepicker")
+        {
+            // Add a datetimepicker
+            int proportion = currentChild->IntAttribute("prop", 1);
+            int style = DT_PICKER_DATE | DT_PICKER_TIME;
+
+            if (currentChild->Attribute("type"))
+            {
+                if (currentChild->Attribute("type", "timepicker"))
+                    style = DT_PICKER_TIME;
+
+                if (currentChild->Attribute("type", "datepicker"))
+                    style = DT_PICKER_DATE;
+            }
+
+            DateTimePicker* dtPicker = _groupPanel->CreateDateTimePicker(currParent, SizerWrapper(currSizer, gbPos, gbSpan), wxDefaultDateTime, style, id, alignment, proportion);
+
+            if (currentChild->Attribute("value"))
+            {
+                wxString time = currentChild->Attribute("value");
+                dtPicker->SetValue(removeQuotationMarks(time));
+            }
+
+            m_windowItems[id] = std::make_pair(CustomWindow::DATETIMEPICKER, dtPicker);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (state == DISABLED || state == READONLY)
+                dtPicker->Enable(false);
+            else if (state == HIDDEN)
+                dtPicker->Show(false);
+        }
+        else if (sValue == "statictext" || sValue == "text")
+        {
+            // Add a static test
+            wxStaticText* statictext = _groupPanel->AddStaticText(currParent, SizerWrapper(currSizer, gbPos, gbSpan), removeQuotationMarks(text), id, alignment);
+            statictext->SetFont(font);
+            m_windowItems[id] = std::make_pair(CustomWindow::TEXT, statictext);
+
+            if (currentChild->Attribute("color"))
+                statictext->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
+        }
+        else if (sValue == "prop")
+        {
+            // Create internal variables
+            wxArrayString varList = getChoices(text);
+
+            for (size_t i = 0; i < varList.size(); i++)
+            {
+                if (varList[i].find('=') != std::string::npos)
+                {
+                    std::string name = varList[i].substr(0, varList[i].find('=')).ToStdString();
+                    StripSpaces(name);
+                    std::string value = varList[i].substr(varList[i].find('=')+1).ToStdString();
+
+                    if (value.front() == '{' && value.back() == '}')
+                        value = value.substr(1, value.length()-2);
+
+                    mu::Array v;
+
+                    while (value.length())
+                    {
+                        std::string cur = getNextArgument(value, true);
+
+                        if (isConvertible(cur, CONVTYPE_VALUE))
+                            v.push_back(mu::Value(StrToCmplx(cur)));
+                        else if (isConvertible(cur, CONVTYPE_DATE_TIME))
+                            v.push_back(mu::Value(StrToTime(cur)));
+                        else if (isConvertible(cur, CONVTYPE_LOGICAL))
+                            v.push_back(mu::Value(StrToLogical(cur)));
+                        else
+                            v.push_back(mu::Value(toInternalString(cur)));
+                    }
+
+                    m_varTable[name] = v;
+                }
+                else
+                    m_varTable[varList[i].ToStdString()] = mu::Value();
+            }
+        }
+        else if (sValue == "bitmap")
+        {
+            // Add an image
+            wxStaticBitmap* bitmap = _groupPanel->CreateBitmap(currParent, SizerWrapper(currSizer, gbPos, gbSpan), removeQuotationMarks(text), id, alignment);
+            m_windowItems[id] = std::make_pair(CustomWindow::IMAGE, bitmap);
+        }
+        else if (sValue == "separator")
+        {
+            // Add a separator
+            int style = wxHORIZONTAL;
+            bool created = false;
+
+            if (currentChild->Attribute("type"))
+            {
+                if (currentChild->Attribute("type", "space"))
+                {
+                    // Add a spacer
+                    long int space;
+                    removeQuotationMarks(text).ToLong(&space);
+                    _groupPanel->AddSpacer(space, SizerWrapper(currSizer, gbPos, gbSpan));
+                    created = true;
+                }
+                else
+                    style = currentChild->Attribute("type", "vertical") ? wxVERTICAL : wxHORIZONTAL;
+            }
+
+            if (!created)
+            {
+                // Add a static line (i.e. the default separator)
+                wxStaticLine* line = new wxStaticLine(currParent, wxID_ANY, wxDefaultPosition, wxDefaultSize, style);
+                currSizer->Add(line, gbPos, gbSpan, wxEXPAND | wxALL, 5);
+            }
+        }
+        else if (sValue == "grapher")
+        {
+            // Add a grapher object
+            wxMGL* mgl = new wxMGL(currParent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME, true);
+            m_windowItems[id] = std::make_pair(CustomWindow::GRAPHER, mgl);
+
+            if (currentChild->Attribute("size"))
+            {
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
+
+                if (s.size() >= 2)
+                    mgl->SetMinClientSize(wxSize(s[0],s[1]));
+            }
+            else
+                mgl->SetMinClientSize(wxSize(600,400));
+
+            if (!currSizer->CheckForIntersection(gbPos, gbSpan))
+                currSizer->Add(mgl, gbPos, gbSpan, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            else
+                wxMessageBox("An element of type \"grapher\" does not fit into its assigned group. The target cell(s) are already occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
+
+            if (currentChild->Attribute("onclick"))
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
+        }
+        else if (sValue == "tablegrid")
+        {
+            // Add a table grid
+            TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, static_cast<NumeReWindow*>(m_parent),
+                                                 wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
+
+            if (!currSizer->CheckForIntersection(gbPos, gbSpan))
+                currSizer->Add(table, gbPos, gbSpan, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxFIXED_MINSIZE, 5);
+            else
+                wxMessageBox("An element of type \"tablegrid\" does not fit into its assigned group. The target cell(s) are already occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
+
+            m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
+            table->SetTableReadOnly(state == READONLY);
+
+            if (currentChild->Attribute("size"))
+            {
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
+
+                if (s.size() >= 2)
+                {
+                    NumeRe::Table data(s[0], s[1]);
+                    table->SetData(data, "", "");
+                    table->SetMinSize(table->calculateMinSize());
+                }
+            }
+            else
+            {
+                NumeRe::Table data(1,1);
+                table->SetData(data, "", "");
+                table->SetMinSize(wxSize(-1, 300));
+            }
+
+            if (currentChild->Attribute("onclick"))
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
+
+            if (state == DISABLED)
+                table->Enable(false);
+            else if (state == HIDDEN)
+                table->Show(false);
+        }
+        else if (sValue == "treelist")
+        {
+            // Add a treelist control
+            int proportion = currentChild->IntAttribute("prop", 1);
+            int style = wxTL_SINGLE;
+
+            if (currentChild->Attribute("type"))
+                style |= currentChild->Attribute("type", "checkmark") ? wxTL_CHECKBOX : wxTL_MULTIPLE;
+
+            wxArrayString labels;
+            wxArrayString values;
+            int colSize = GetClientSize().x;
+
+            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, SizerWrapper(currSizer, gbPos, gbSpan), style, wxDefaultSize, id, alignment, proportion);
+            m_windowItems[id] = std::make_pair(CustomWindow::TREELIST, listCtrl);
+            listCtrl->SetFont(font);
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString label = currentChild->Attribute("label");
+                labels = getChoices(label);
+            }
+
+            if (currentChild->Attribute("value"))
+            {
+                wxString value = currentChild->Attribute("value");
+                values = getChoices(value);
+            }
+
+            if (values.size())
+            {
+                if (labels.size())
+                {
+                    colSize = std::max(colSize / (int)labels.size() - 2, MINCOLSIZE);
+
+                    for (size_t j = 0; j < labels.size(); j++)
+                    {
+                        listCtrl->AppendColumn(labels[j], colSize);
+                    }
+                }
+
+                populateTreeListCtrl(listCtrl, values);
+            }
+            else if (currentChild->Attribute("size"))
+            {
+                std::vector<int> s = strIntToVector(currentChild->Attribute("size"));
+
+                if (s.size() >= 2)
+                {
+                    colSize = std::max(colSize / (int)s[1] - 2, MINCOLSIZE);
+
+                    for (size_t j = 0; j < (size_t)s[1]; j++)
+                    {
+                        if (labels.size() > j)
+                            listCtrl->AppendColumn(labels[j], colSize);
+                        else
+                            listCtrl->AppendColumn("", colSize);
+                    }
+
+                    for (int i = 0; i < s[0]; i++)
+                    {
+                        listCtrl->AppendItem(listCtrl->GetRootItem(), "ITEM " + wxString::Format("%d", i+1));
+                    }
+                }
+            }
+            else if (labels.size())
+            {
+                colSize = std::max(colSize / (int)labels.size() - 2, MINCOLSIZE);
+
+                for (size_t j = 0; j < labels.size(); j++)
+                {
+                    listCtrl->AppendColumn(labels[j], colSize);
+                }
+            }
+
+            if (currentChild->Attribute("onclick"))
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
+
+            if (state == DISABLED || state == READONLY)
+                listCtrl->Enable(false);
+            else if (state == HIDDEN)
+                listCtrl->Show(false);
+        }
+        else if (sValue == "group")
+        {
+            // Add a group. A group is a recursive control,
+            // which contains further controls (including further groups).
+            // Will call this function recursively.
+            wxString label;
+            int style = wxHORIZONTAL;
+            bool isCollapsible = false;
+            bool isNotebook = false;
+            bool isMenu = false;
+            bool isGrid = false;
+            int expand = 0;
+            std::vector<int> _rowScl;
+            std::vector<int> _colScl;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            if (currentChild->Attribute("type"))
+            {
+                style = currentChild->Attribute("type", "horizontal") ? wxHORIZONTAL : wxVERTICAL;
+                isGrid = currentChild->Attribute("type", "flexgrid");
+            }
+
+            if (currentChild->Attribute("style"))
+            {
+                isCollapsible = currentChild->Attribute("style", "collapse");
+                isNotebook = currentChild->Attribute("style", "tabs");
+                isMenu = currentChild->Attribute("style", "menu");
+            }
+
+            if (currentChild->Attribute("expand"))
+                expand = currentChild->Attribute("expand", "true") ? 1 : 0;
+
+            if (currentChild->Attribute("rowscl"))
+                _rowScl = strIntToVector(currentChild->Attribute("rowscl"));
+
+            if (currentChild->Attribute("colscl"))
+                _colScl = strIntToVector(currentChild->Attribute("colscl"));
+
+            // A collapsible group is currently very buggy (if used
+            // with the current GroupPanel).
+#warning TODO (numere#6#08/15/21): Fix the collapsible group
+            if (label.length())
+            {
+                if (isCollapsible)
+                {
+                    wxCollapsiblePane* pane = _groupPanel->createCollapsibleGroup(label, currParent, SizerWrapper(currSizer, gbPos, gbSpan));
+                    wxBoxSizer* sizer = new wxBoxSizer(style);
+
+                    layoutChild(currentChild->FirstChildElement(), pane->GetPane(), sizer, _groupPanel);
+
+                    pane->GetPane()->SetSizer(sizer);
+                    sizer->SetSizeHints(pane->GetPane());
+                }
+                else if (isNotebook)
+                {
+                    if (!noteBook)
+                    {
+                        noteBook = new wxNotebook(currParent, id);
+                        m_windowItems[id] = std::make_pair(CustomWindow::NOTEBOOK, noteBook);
+                        currSizer->Add(noteBook, gbPos, gbSpan, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+
+                        if (currentChild->Attribute("onchange"))
+                            m_eventTable[id].onchange = currentChild->Attribute("onchange");
+                    }
+
+                    GroupPanel* _newPanel = new GroupPanel(noteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, style == wxHORIZONTAL ? false : true);
+
+                    if (isGrid)
+                    {
+                        wxGridBagSizer* gbSizer = _newPanel->createGridGroup(_newPanel->getMainSizer(), expand);
+                        layoutGridChild(currentChild->FirstChildElement(), _newPanel, gbSizer, _newPanel, _rowScl, _colScl);
+                    }
+                    else
+                        layoutChild(currentChild->FirstChildElement(), _newPanel, _newPanel->getMainSizer(), _newPanel);
+
+                    noteBook->AddPage(_newPanel, label);
+                }
+                else if (isMenu)
+                {
+                    wxMenuBar* menuBar = GetMenuBar();
+
+                    if (!menuBar)
+                    {
+                        menuBar = new wxMenuBar();
+                        SetMenuBar(menuBar);
+                    }
+
+                    wxMenu* currMenu = new wxMenu();
+                    menuBar->Append(currMenu, label);
+                    layoutMenu(currentChild->FirstChildElement(), currMenu);
+                }
+                else
+                {
+                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, SizerWrapper(currSizer, gbPos, gbSpan), expand);
+
+                    if (isGrid)
+                    {
+                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand);
+                        layoutGridChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), gbSizer, _groupPanel, _rowScl, _colScl);
+                    }
+                    else
+                        layoutChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), sizer, _groupPanel);
+                }
+            }
+            else
+            {
+                if (isGrid)
+                {
+                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    layoutGridChild(currentChild->FirstChildElement(), currParent, gbSizer, _groupPanel, _rowScl, _colScl);
+                }
+                else
+                {
+                    wxBoxSizer* sizer = _groupPanel->createGroup(style, SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
+                }
+            }
+        }
+
+        // Find the next sibling from the current
+        // child element
+        if (currentChild->NextSibling())
+            currentChild = currentChild->NextSibling()->ToElement();
+        else
+            break;
+    }
+
+    // Apply the flex effect after all embedded elements have been created
+    for (int i = 0; i < currSizer->GetRows(); i++)
+    {
+        if (rowScale.size() > i)
+            currSizer->AddGrowableRow(i, rowScale[i]);
+        else
+            currSizer->AddGrowableRow(i, 1);
+    }
+
+    for (int j = 0; j < currSizer->GetCols(); j++)
+    {
+        if (colScale.size() > j)
+            currSizer->AddGrowableCol(j, colScale[j]);
+        else
+            currSizer->AddGrowableCol(j, 1);
     }
 }
 

@@ -32,3 +32,4 @@ Applied	Tables will accept row and column vectors for rows and columns interchan
 Fixed	Viewing dictstructs with void fields does not crash the application any more.
 Cleaned	Storing void values in dictstructs, queues and stacks is now partly possible, although those values cannot be used.
 Cleaned	The error message, if a method is called with void values, has been changed to the "dereferencing void" message for better understandability.
+New	Window layouts now feature groups of type "flexgrid" which do allow elements to be placed in cells with their individual spans.
