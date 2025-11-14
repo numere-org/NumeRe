@@ -79,5 +79,15 @@ mu::Array matfnc_filter(const mu::Array& data, const mu::Array& kernel, const mu
 mu::Array matfnc_circshift(const mu::Array& A, const mu::Array& steps, const mu::Array& dim); // OPT=1
 mu::Array matfnc_vectshift(const mu::Array& A, const mu::Array& steps, const mu::Array& dim); // OPT=1
 
+mu::Array matfnc_squeeze(const mu::Array& A);
+mu::Array matfnc_cat(const mu::Array& A, const mu::Array& B, const mu::Array& dim);
+mu::Array matfnc_rotmat(const mu::Array& angle, const mu::Array& dim, const mu::Array& plane); // OPT=1
+mu::Array matfnc_rank(const mu::Array& A);
+mu::Array matfnc_levicivita(const mu::MultiArgFuncParams& indices);
+mu::Array matfnc_tril(const mu::Array& A, const mu::Array& nDiag); // OPT=1
+mu::Array matfnc_triu(const mu::Array& A, const mu::Array& nDiag); // OPT=1
+mu::Array matfnc_rref(const mu::Array& A, const mu::Array& fTol); // OPT=1
+mu::Array matfnc_insertScalarDim(const mu::Array& A, const mu::Array& nScalarDims);
+
 #endif // MATFUNCIMPLEMENTATION
 

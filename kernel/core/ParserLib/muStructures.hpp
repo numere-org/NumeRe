@@ -1249,6 +1249,7 @@ namespace mu
 
             std::vector<std::string> as_str_vector() const;
             std::vector<std::complex<double>> as_cmplx_vector() const;
+            std::vector<int64_t> as_int_vector() const;
             std::vector<std::string> to_string() const;
             std::string print(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;
             std::string printEmbedded(size_t digits = 0, size_t chrs = 0, bool trunc = false) const;

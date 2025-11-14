@@ -2079,7 +2079,7 @@ namespace mu
         static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
-                                        {"unwrap", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
+                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
                                         {"order", 0}, {"order", -1}, {"submat", -MethodDefinition::multiargcount}});
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
@@ -2150,6 +2150,10 @@ namespace mu
             return order();
         else if (sMethod == "unwrap")
             return unWrap();
+        else if (sMethod == "rows")
+            return rows();
+        else if (sMethod == "cols")
+            return cols();
         else if (front().isMethod(sMethod, 0))
         {
             Array ret;
@@ -2426,7 +2430,7 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        const static MethodSet methods = {{"squeeze", 0}, {"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
+        const static MethodSet methods = {{"sqz", 0}, {"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
@@ -2452,7 +2456,7 @@ namespace mu
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
 
-        if (sMethod == "squeeze")
+        if (sMethod == "sqz")
         {
             if (m_dimSizes.size() <= 2)
                 return getDimSizes();
@@ -3224,6 +3228,30 @@ namespace mu
         for (size_t i = 0; i < elems; i++)
         {
             ret.push_back(get(i).as_cmplx());
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Convert the whole Array into a
+    /// std::vector full of int64_t assuming
+    /// that only Numericals are contained within
+    /// this Array.
+    ///
+    /// \return std::vector<int64_t>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<int64_t> Array::as_int_vector() const
+    {
+        std::vector<int64_t> ret;
+        size_t elems = size();
+        ret.reserve(elems);
+
+        for (size_t i = 0; i < elems; i++)
+        {
+            ret.push_back(intCast(get(i).as_cmplx()));
         }
 
         return ret;

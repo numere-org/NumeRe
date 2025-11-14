@@ -33,3 +33,5 @@ Fixed	Viewing dictstructs with void fields does not crash the application any mo
 Cleaned	Storing void values in dictstructs, queues and stacks is now partly possible, although those values cannot be used.
 Cleaned	The error message, if a method is called with void values, has been changed to the "dereferencing void" message for better understandability.
 New	Window layouts now feature groups of type "flexgrid" which do allow elements to be placed in cells with their individual spans.
+Fixed	Window layouts in activated dialog mode are now forced to be in front of all other windows. Accidental triple-clicks are no longer a problem.
+Added	Multiple matrix functions were added: "cat()", "squeeze()", "rotmat()", "levicivita()", "rank()", "gaussjordan()" (with alias "rref()"), "trilow()", "triup()" and "insertscalardim()"

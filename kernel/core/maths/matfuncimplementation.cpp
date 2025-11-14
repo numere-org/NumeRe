@@ -2209,7 +2209,18 @@ __attribute__((force_align_arg_pointer)) mu::Array matfnc_solve(const mu::Array&
 /////////////////////////////////////////////////
 mu::Array matfnc_diag(const mu::MultiArgFuncParams& diagonal)
 {
-    if (diagonal.count() == 1)
+    if (diagonal.count() == 1 && diagonal[0].isMatrix())
+    {
+        mu::Array ret(diagonal[0].rows());
+
+        for (size_t i = 0; i < ret.size(); i++)
+        {
+            ret.get(i) = diagonal[0].get(i, i);
+        }
+
+        return ret;
+    }
+    else if (diagonal.count() == 1)
     {
         mu::Array ret(diagonal[0].size()*diagonal[0].size(), mu::Value(0.0));
         ret.setDimSizes({diagonal[0].size(), diagonal[0].size()});
@@ -3356,6 +3367,436 @@ mu::Array matfnc_vectshift(const mu::Array& A, const mu::Array& steps, const mu:
     } while (iterator.next());
 
     return shifted;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the squeeze()
+/// function.
+///
+/// \param A const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_squeeze(const mu::Array& A)
+{
+    if (A.getDims() <= 2)
+        return A;
+
+    mu::Array B = A;
+    B.apply("sqz");
+
+    return B;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the cat() function.
+///
+/// \param A const mu::Array&
+/// \param B const mu::Array&
+/// \param dim const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_cat(const mu::Array& A, const mu::Array& B, const mu::Array& dim)
+{
+    int64_t d = dim.getAsScalarInt();
+
+    if (d == 1)
+        return matfnc_vcat(A, B);
+    else if (d == 2)
+        return matfnc_hcat(A, B);
+
+    mu::MatrixView viewA(A);
+    mu::MatrixView viewB(B);
+    viewA.mergeDimSizes(viewB);
+    mu::DimSizes dimSizes = viewA.m_dimSizes;
+
+    if ((int64_t)dimSizes.size() <= d-1)
+        dimSizes.resize(d, 1ull);
+
+    dimSizes[d-1] = A.getSize(d-1) + B.getSize(d-1);
+
+    mu::Array ret(mu::getNumElements(dimSizes), mu::Value(NAN));
+    ret.setDimSizes(dimSizes);
+
+    mu::IndexIterator iteratorA(A.getDimSizes());
+    const mu::IndexTuple& iterA = iteratorA.index();
+
+    do
+    {
+        ret.get(iterA) = A.get(iterA);
+    } while (iteratorA.next());
+
+    mu::IndexIterator iteratorB(B.getDimSizes());
+    const mu::IndexTuple& iterB = iteratorB.index();
+
+    do
+    {
+        mu::IndexTuple iter = iterB;
+
+        if ((int64_t)iter.size() <= d-1)
+            iter.resize(d, 0ull);
+
+        iter[d-1] += A.getSize(d-1);
+        ret.get(iter) = B.get(iterB);
+    } while (iteratorB.next());
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the rotmat()
+/// function.
+///
+/// \param angle const mu::Array&
+/// \param dim const mu::Array&
+/// \param plane const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_rotmat(const mu::Array& angle, const mu::Array& dim, const mu::Array& plane)
+{
+    int64_t a1 = 0;
+    int64_t a2 = 1;
+    int64_t d = dim.getAsScalarInt();
+
+    if (!plane.isDefault() && d > 2)
+    {
+        a1 = plane.get(0).getNum().asI64()-1;
+        a2 = plane.get(1).getNum().asI64()-1;
+    }
+
+    double alpha = angle.get(0).getNum().asF64();
+
+    if (std::min(a1, a2) < 0)
+        throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, "min(nPlane) < 1");
+
+    if (d < std::max(a1,a2))
+        throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, "nDim < max(nPlane)");
+
+    mu::Array ret = matfnc_identity(dim);
+
+    if (d >= 2)
+    {
+        ret.get(a1, a1) = std::cos(alpha);
+        ret.get(a2, a1) = -std::sin(alpha);
+        ret.get(a1, a2) = -ret.get(a2, a1);
+        ret.get(a2, a2) = ret.get(a1, a1);
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the rank() function.
+///
+/// \param A const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_rank(const mu::Array& A)
+{
+    // Check that matrix and the filter are not empty
+    checkInputMatrix(A, MATRIX_MUST_BE_2D);
+
+    Eigen::MatrixXcd mMatrix(A.rows(), A.cols());
+
+    // Copy the passed matrix into an Eigen matrix
+    #pragma omp parallel for if (A.isParallelizable())
+    for (size_t i = 0; i < A.rows(); i++)
+    {
+        for (size_t j = 0; j < A.cols(); j++)
+        {
+            mMatrix(i,j) = A.get(i,j).as_cmplx();
+        }
+    }
+
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> householderQr(mMatrix);
+    return mu::Value(householderQr.rank());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the levicivita()
+/// function.
+///
+/// \param indices const mu::MultiArgFuncParams&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_levicivita(const mu::MultiArgFuncParams& indices)
+{
+    if (indices.count() == 1)
+    {
+        mu::Value ret = 1;
+
+        for (int64_t i = 0; i < (int64_t)indices[0].size()-1; i++)
+        {
+            for (int64_t j = i+1; j < (int64_t)indices[0].size(); j++)
+            {
+                ret *= (indices[0].get(j) - indices[0].get(i)) / mu::Value(j - i);
+            }
+        }
+
+        return ret;
+    }
+
+    mu::Value ret = 1;
+
+    for (int64_t i = 0; i < (int64_t)indices.count()-1; i++)
+    {
+        for (int64_t j = i+1; j < (int64_t)indices.count(); j++)
+        {
+            ret *= (indices[j].get(0) - indices[i].get(0)) / mu::Value(j - i);
+        }
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the trilow()
+/// function.
+///
+/// \param A const mu::Array&
+/// \param nDiag const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_tril(const mu::Array& A, const mu::Array& nDiag)
+{
+    // Check that matrix and the filter are not empty
+    checkInputMatrix(A, MATRIX_MUST_BE_2D);
+
+    int64_t diagonal = 0;
+
+    if (!nDiag.isDefault())
+        diagonal = nDiag.getAsScalarInt();
+
+    if (diagonal <= -(int64_t)A.rows())
+        throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, "nDiag <= -mMat.rows");
+
+    if (diagonal >= (int64_t)A.cols())
+        throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, "nDiag >= mMat.cols");
+
+    mu::Array B(A.size(), mu::Value(0));
+    B.setDimSizes(A.getDimSizes());
+
+    for (int64_t j = 0; j < (int64_t)A.cols(); j++)
+    {
+        for (int64_t i = std::max(0LL, j-diagonal); i < (int64_t)A.rows(); i++)
+        {
+            B.get(i, j) = A.get(i, j);
+        }
+    }
+
+    return B;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the triup() function.
+///
+/// \param A const mu::Array&
+/// \param nDiag const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_triu(const mu::Array& A, const mu::Array& nDiag)
+{
+    // Check that matrix and the filter are not empty
+    checkInputMatrix(A, MATRIX_MUST_BE_2D);
+
+    int64_t diagonal = 0;
+
+    if (!nDiag.isDefault())
+        diagonal = nDiag.getAsScalarInt();
+
+    if (diagonal <= -(int64_t)A.rows())
+        throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, "nDiag <= -mMat.rows");
+
+    if (diagonal >= (int64_t)A.cols())
+        throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, "nDiag >= mMat.cols");
+
+    mu::Array B(A.size(), mu::Value(0));
+    B.setDimSizes(A.getDimSizes());
+
+    for (int64_t j = 0; j < (int64_t)A.cols(); j++)
+    {
+        for (int64_t i = 0; i <= std::min((int64_t)A.rows()-1, j-diagonal); i++)
+        {
+            B.get(i, j) = A.get(i, j);
+        }
+    }
+
+    return B;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for ensuring
+/// that the value's absolut value is larger than
+/// the tolerance.
+///
+/// \param val const mu::Value&
+/// \param tol const mu::Value&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isGreaterThanTol(const mu::Value& val, const mu::Value& tol)
+{
+    return val < -tol || val > tol;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the gaussjordan()
+/// function.
+///
+/// \param A const mu::Array&
+/// \param fTol const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_rref(const mu::Array& A, const mu::Array& fTol)
+{
+    // Check that matrix and the filter are not empty
+    checkInputMatrix(A, MATRIX_MUST_BE_2D);
+
+    // Tolerance value adopted from MATLAB
+    mu::Value tol = __DBL_EPSILON__ * std::max(A.rows(), A.cols()) * A.call("norm").get(0).getNum().asF64();
+    mu::Array ret = A;
+
+    if (!fTol.isDefault() && fTol.get(0) != mu::Value(0.0))
+        tol = fTol.get(0);
+
+    // Perform Gauss-Jordan elimination
+    for (size_t j = 0; j < ret.cols(); j++)
+    {
+        for (size_t i = j; i < ret.rows(); i++)
+        {
+            if (isGreaterThanTol(ret.get(i, j), tol))
+            {
+                if (i != j) // Swap rows
+                {
+                    mu::Value element;
+
+                    for (size_t _j = 0; _j < ret.cols(); _j++)
+                    {
+                        element = ret.get(i, _j);
+                        ret.get(i, _j) = ret.get(j, _j);
+                        ret.get(j, _j) = element;
+                    }
+
+                    i = j-1;
+                }
+                else // Actual eliminition
+                {
+                    mu::Value pivot = ret.get(i, j);
+
+                    // Set the pivot element to 1
+                    for (size_t _j = 0; _j < ret.cols(); _j++)
+                    {
+                        ret.get(i, _j) /= pivot;
+                    }
+
+                    // Apply the elimination to the following rows
+                    for (size_t _i = i+1; _i < ret.rows(); _i++)
+                    {
+                        if (!isGreaterThanTol(ret.get(_i, j), tol))
+                            continue;
+
+                        mu::Value factor = ret.get(_i, j);
+
+                        for (size_t _j = 0; _j < ret.cols(); _j++)
+                        {
+                            ret.get(_i, _j) -= ret.get(i, _j)*factor;
+
+                            if (!isGreaterThanTol(ret.get(_i, _j), tol))
+                                ret.get(_i, _j) = 0.0;
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
+    // Now remove all remaining eliminatable elements by
+    // reversing the operation from the bottom
+    for (int factRow = (int)ret.rows()-1; factRow >= 0; factRow--)
+    {
+        for (int i = 0; i < factRow; i++)
+        {
+            // Is this row eliminiatable with this entry?
+            if (!isGreaterThanTol(ret.get(i, factRow), tol))
+                continue;
+
+            mu::Value factor = ret.get(i, factRow);
+
+            for (size_t j = 0; j < ret.cols(); j++)
+            {
+                ret.get(i, j) -= factor*ret.get(factRow, j);
+
+                if (!isGreaterThanTol(ret.get(i, j), tol))
+                    ret.get(i, j) = 0.0;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the insertscalardim()
+/// function.
+///
+/// \param A const mu::Array&
+/// \param nScalarDims const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_insertScalarDim(const mu::Array& A, const mu::Array& nScalarDims)
+{
+    mu::Array ret(A);
+    mu::DimSizes dims = A.getDimSizes();
+
+    int64_t inserted = 0;
+    std::vector<int64_t> vScalars = nScalarDims.as_int_vector();
+    std::sort(vScalars.begin(), vScalars.end());
+    size_t j = 0;
+
+    for (size_t i = 0; i < dims.size(); i++)
+    {
+        while (j < vScalars.size() && vScalars[j] == (int64_t)i+1)
+        {
+            dims.insert(dims.begin()+i+inserted, 1ull);
+            inserted++;
+            j++;
+        }
+    }
+
+    // still things to be inserted?
+    while (j < vScalars.size())
+    {
+        if (vScalars[j] > 0)
+        {
+            dims.resize(vScalars[j]+inserted, 1ull);
+            inserted++;
+        }
+
+        j++;
+    }
+
+    ret.setDimSizes(dims);
+    return ret;
 }
 
 

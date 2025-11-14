@@ -819,6 +819,16 @@ void NumeReKernel::defineMatFunctions()
     _parser.DefineFun("filter", matfnc_filter);                                  // filter(A,ker,boundaries)
     _parser.DefineFun("circshift", matfnc_circshift, true, 1);                   // circshift(A,steps,dim=1)
     _parser.DefineFun("vectshift", matfnc_vectshift, true, 1);                   // vectshift(A,steps,dim=1)
+    _parser.DefineFun("squeeze", matfnc_squeeze);                                // squeeze(A)
+    _parser.DefineFun("cat", matfnc_cat);                                        // cat(A,B,dim)
+    _parser.DefineFun("rotmat", matfnc_rotmat, true, 1);                         // rotmat(a,dim,nPlane={1,2})
+    _parser.DefineFun("rank", matfnc_rank);                                      // rank(A)
+    _parser.DefineFun("levicivita", matfnc_levicivita);                          // levicivita(1,2,3,...)
+    _parser.DefineFun("trilow", matfnc_tril, true, 1);                           // trilow(A,n=0)
+    _parser.DefineFun("triup", matfnc_triu, true, 1);                            // triup(A,n=0)
+    _parser.DefineFun("rref", matfnc_rref, true, 1);                             // rref(A,fTol=1e-7)
+    _parser.DefineFun("gaussjordan", matfnc_rref, true, 1);                      // gaussjordan(A,fTol=1e-7)
+    _parser.DefineFun("insertscalardim", matfnc_insertScalarDim);                // insertscalardim(A,nDim)
 }
 
 
@@ -3211,6 +3221,14 @@ static std::string formatMatrixOutput(const mu::Array& mat, size_t prec, size_t 
     static const char* TOPRIGHT = " \\\n";
     static const char* RIGHT    = " |\n";
     static const char* BOTRIGHT = " /";
+    static const char* ND_TOPRIGHT = " \\ ... \\\n";
+    static const char* ND_RIGHT    = " | ... |\n";
+    static const char* ND_BOTRIGHT = " / ... /";
+
+    bool is_ND = mat.getDims() > 2;
+
+    if (is_ND)
+        nElemPerLine--;
 
     if (mat.rows() > 10)
     {
@@ -3244,15 +3262,15 @@ static std::string formatMatrixOutput(const mu::Array& mat, size_t prec, size_t 
                 sPrinted += formatMatrixRow(mat, i, prec, nElemPerLine);
 
             if (!i)
-                sPrinted += TOPRIGHT;
+                sPrinted += is_ND ? ND_TOPRIGHT : TOPRIGHT;
             else if (i+1 == mat.rows())
-                sPrinted += BOTRIGHT;
+                sPrinted += is_ND ? ND_BOTRIGHT : BOTRIGHT;
             else
-                sPrinted += RIGHT;
+                sPrinted += is_ND ? ND_RIGHT : RIGHT;
         }
     }
     else if (mat.rows() == 1)
-        sPrinted += "|-> ans = (" + formatMatrixRow(mat, 0, prec, nElemPerLine) + " )";
+        sPrinted += "|-> ans = (" + formatMatrixRow(mat, 0, prec, nElemPerLine) + (is_ND ? " ) ... )" : " )");
     else
     {
         for (size_t i = 0; i < mat.rows(); i++)
@@ -3271,11 +3289,11 @@ static std::string formatMatrixOutput(const mu::Array& mat, size_t prec, size_t 
             sPrinted += formatMatrixRow(mat, i, prec, nElemPerLine);
 
             if (!i)
-                sPrinted += TOPRIGHT;
+                sPrinted += is_ND ? ND_TOPRIGHT : TOPRIGHT;
             else if (i+1 == mat.rows())
-                sPrinted += BOTRIGHT;
+                sPrinted += is_ND ? ND_BOTRIGHT : BOTRIGHT;
             else
-                sPrinted += RIGHT;
+                sPrinted += is_ND ? ND_RIGHT : RIGHT;
         }
     }
 
@@ -3314,7 +3332,7 @@ std::string NumeReKernel::formatResultOutput(int nNum, const mu::StackItem* v)
             // More than one result
             //
             // Is it a 2D-matrix?
-            if (arr->isMatrix() && arr->getDims() == 2)
+            if (arr->isMatrix() && arr->getDims() >= 2)
             {
                 if (n)
                     sAns += "\n";

@@ -296,7 +296,10 @@ class CustomWindow : public wxFrame
         void asDialog()
         {
             if (!m_dialogLock)
+            {
+                Raise();
                 m_dialogLock = new wxWindowDisabler(this);
+            }
         }
 
         bool isDialog() const
