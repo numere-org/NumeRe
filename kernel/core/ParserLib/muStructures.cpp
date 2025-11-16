@@ -2521,9 +2521,9 @@ namespace mu
 
             return ret;
         }
-        else if (sMethod == "rem" && arg1.getCommonType() == TYPE_NUMERICAL)
+        else if (sMethod == "rem" && (arg1.getCommonType() == TYPE_NUMERICAL || arg1.getCommonType() == TYPE_GENERATOR))
             return deleteItems(arg1);
-        else if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
+        else if (sMethod == "ins" && (arg1.getCommonType() == TYPE_NUMERICAL || arg1.getCommonType() == TYPE_GENERATOR))
             return insertItems(arg1);
 
         MethodDefinition def = front().isApplyingMethod(sMethod, 1);
