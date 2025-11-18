@@ -36,3 +36,4 @@ New	Window layouts now feature groups of type "flexgrid" which do allow elements
 Fixed	Window layouts in activated dialog mode are now forced to be in front of all other windows. Accidental triple-clicks are no longer a problem.
 Added	Multiple matrix functions were added: "cat()", "squeeze()", "rotmat()", "levicivita()", "rank()", "gaussjordan()" (with alias "rref()"), "trilow()", "triup()" and "insertscalardim()"
 Fixed	The vector methods "VECT.rem" and "VECT.ins" do now also work with the generator syntax.
+Applied	The vector methods "VECT.delegate", "VECT.rem" and "VECT.ins" do now support multi-dimensional indexing.

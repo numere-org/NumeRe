@@ -1264,6 +1264,67 @@ namespace mu
             const Value& first() const;
 
             /////////////////////////////////////////////////
+            /// \brief Make a linear index from the
+            /// multidimensional IndexTuple.
+            ///
+            /// \param idx const IndexTuple&
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t linearIndex(const IndexTuple& idx) const
+            {
+                size_t minDim = std::min(m_dimSizes.size(), idx.size());
+
+                for (size_t n = std::max(minDim, 1ull); n < idx.size(); n++)
+                {
+                    if (idx[n])
+                        throw std::length_error("Dimension mismatch.");
+                }
+
+                if (idx[0] >= m_dimSizes[0])
+                {
+                    std::string dims;
+
+                    for (size_t m = 0; m < idx.size(); m++)
+                    {
+                        if (dims.size())
+                            dims += ",";
+
+                        dims += std::to_string(idx[m]);
+                    }
+
+                    throw std::out_of_range("Element (" + dims + ") is out of bounds.");
+                }
+
+                size_t linIdx = idx[0];
+
+                for (size_t n = 1; n < idx.size(); n++)
+                {
+                    if (idx[n])
+                    {
+                        if (idx[n] >= m_dimSizes[n])
+                        {
+                            std::string dims;
+
+                            for (size_t m = 0; m < idx.size(); m++)
+                            {
+                                if (dims.size())
+                                    dims += ",";
+
+                                dims += std::to_string(idx[m]);
+                            }
+
+                            throw std::out_of_range("Element (" + dims + ") is out of bounds.");
+                        }
+
+                        linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
+                    }
+                }
+
+                return linIdx;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Get the i-th element.
             ///
             /// \param i size_t
@@ -1321,55 +1382,7 @@ namespace mu
             /////////////////////////////////////////////////
             Value& get(const IndexTuple& idx)
             {
-                size_t minDim = std::min(m_dimSizes.size(), idx.size());
-
-                for (size_t n = std::max(minDim, 1ull); n < idx.size(); n++)
-                {
-                    if (idx[n])
-                        throw std::length_error("Dimension mismatch.");
-                }
-
-                if (idx[0] >= m_dimSizes[0])
-                {
-                    std::string dims;
-
-                    for (size_t m = 0; m < idx.size(); m++)
-                    {
-                        if (dims.size())
-                            dims += ",";
-
-                        dims += std::to_string(idx[m]);
-                    }
-
-                    throw std::out_of_range("Element (" + dims + ") is out of bounds.");
-                }
-
-                size_t linIdx = idx[0];
-
-                for (size_t n = 1; n < idx.size(); n++)
-                {
-                    if (idx[n])
-                    {
-                        if (idx[n] >= m_dimSizes[n])
-                        {
-                            std::string dims;
-
-                            for (size_t m = 0; m < idx.size(); m++)
-                            {
-                                if (dims.size())
-                                    dims += ",";
-
-                                dims += std::to_string(idx[m]);
-                            }
-
-                            throw std::out_of_range("Element (" + dims + ") is out of bounds.");
-                        }
-
-                        linIdx += idx[n] * std::accumulate(m_dimSizes.begin(), m_dimSizes.begin()+n, 1ull, std::multiplies<size_t>());
-                    }
-                }
-
-                return get(linIdx);
+                return get(linearIndex(idx));
             }
 
             /////////////////////////////////////////////////

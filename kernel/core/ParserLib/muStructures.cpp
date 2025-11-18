@@ -2079,8 +2079,9 @@ namespace mu
         static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
-                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"delegate", 1}, {"delegate", -2},
-                                        {"order", 0}, {"order", -1}, {"submat", -MethodDefinition::multiargcount}});
+                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"delegate", 1}, {"order", 0},
+                                        {"order", -1}, {"delegate", -MethodDefinition::multiargcount},
+                                        {"submat", -MethodDefinition::multiargcount}});
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
@@ -2185,20 +2186,7 @@ namespace mu
             return first().getArray().call(sMethod, arg1);
 
         if (sMethod == "sel")
-            return numfnc_getElements(*this, arg1);
-        else if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
-        {
-            Array ret;
-            size_t elems = size();
-            ret.reserve(elems);
-
-            for (size_t i = 0; i < elems; i++)
-            {
-                ret.emplace_back(get(i).call(arg1.front().getStr()));
-            }
-
-            return ret;
-        }
+            return index(arg1);
         else if (sMethod == "order")
             return order(arg1);
 
@@ -2238,20 +2226,6 @@ namespace mu
     {
         if (size() == 1 && first().isArray())
             return first().getArray().call(sMethod, arg1, arg2);
-
-        if (sMethod == "delegate" && arg1.getCommonType() == TYPE_STRING)
-        {
-            Array ret;
-            size_t elems = size();
-            ret.reserve(elems);
-
-            for (size_t i = 0; i < elems; i++)
-            {
-                ret.emplace_back(get(i).call(arg1.front().getStr(), mu::Value(arg2)));
-            }
-
-            return ret;
-        }
 
         MethodDefinition def = front().isMethod(sMethod, 2);
 
@@ -2372,6 +2346,173 @@ namespace mu
 
             return index(idx);
         }
+        else if (sMethod == "delegate" && args[0].getCommonType() == TYPE_STRING)
+        {
+            std::string delegatedMethod = args[0].get(0).getStr();
+            size_t argc = args.count()-1;
+
+            Array ret;
+            size_t elems = size();
+
+            for (size_t i = 0; i < args.count()-1; i++)
+            {
+                elems = std::max(elems, args[i].size());
+            }
+
+            MethodDefinition def;
+
+            if (argc)
+                def = front().isMethod(delegatedMethod, MethodDefinition::multiargcount);
+
+            if (def)
+            {
+                if (def.receiveArray())
+                {
+                    std::vector<Value> vArgs;
+
+                    for (size_t i = 0; i < args.count()-1; i++)
+                    {
+                        vArgs.push_back(args[i]);
+                    }
+
+                    ret.reserve(size());
+
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod, vArgs));
+                    }
+
+                    return ret;
+                }
+
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    std::vector<Value> vArgs;
+
+                    for (size_t j = 0; j < args.count(); j++)
+                    {
+                        vArgs.push_back(args[j].get(i));
+                    }
+
+                    ret.emplace_back(get(i).call(delegatedMethod, vArgs));
+                }
+
+                return ret;
+            }
+
+            def = front().isMethod(delegatedMethod, argc);
+
+            if (!def)
+                throw ParserError(ecMETHOD_ERROR, sMethod);
+
+            if (def.receiveArray())
+                ret.reserve(size());
+            else
+                ret.reserve(elems);
+
+            switch (argc)
+            {
+            case 0:
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(get(i).call(delegatedMethod));
+                }
+
+                return ret;
+            case 1:
+                if (def.receiveArray())
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0]));
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < elems; i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0].get(i)));
+                    }
+                }
+
+                return ret;
+            case 2:
+                if (def.receiveArray())
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0],
+                                                     args[1]));
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < elems; i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0].get(i),
+                                                     args[1].get(i)));
+                    }
+                }
+
+                return ret;
+            case 3:
+                if (def.receiveArray())
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0],
+                                                     args[1],
+                                                     args[2]));
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < elems; i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0].get(i),
+                                                     args[1].get(i),
+                                                     args[2].get(i)));
+                    }
+                }
+
+                return ret;
+            case 4:
+                if (def.receiveArray())
+                {
+                    for (size_t i = 0; i < size(); i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0],
+                                                     args[1],
+                                                     args[2],
+                                                     args[3]));
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < elems; i++)
+                    {
+                        ret.emplace_back(get(i).call(delegatedMethod,
+                                                     args[0].get(i),
+                                                     args[1].get(i),
+                                                     args[2].get(i),
+                                                     args[3].get(i)));
+                    }
+                }
+
+                return ret;
+            }
+
+            throw ParserError(ecMETHOD_ERROR, sMethod);
+        }
 
         MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
 
@@ -2430,7 +2571,9 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition Array::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        const static MethodSet methods = {{"sqz", 0}, {"sel", -1}, {"rem", -1}, {"ins", -1}, {"ins", -2}};
+        const static MethodSet methods = {{"sqz", 0}, {"sel", -1}, {"rem", -MethodDefinition::multiargcount},
+                                          {"ins", -MethodDefinition::multiargcount},
+                                          {"submat", -MethodDefinition::multiargcount}};
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
@@ -2504,27 +2647,10 @@ namespace mu
         if (sMethod == "sel")
         {
             if (size() == 1 && first().isArray())
-                return first().getArray().makeMutable().apply(sMethod, arg1);
+                return first().getArray().makeMutable().index(arg1);
 
-            Array ret;
-            size_t elems = arg1.size();
-            ret.reserve(elems);
-            ret.makeMutable();
-
-            for (size_t i = 0; i < elems; i++)
-            {
-                int64_t n = arg1.get(i).getNum().asI64();
-
-                if (n > 0 && (size_t)n <= size())
-                    ret.emplace_back(new RefValue(&get(n-1)));
-            }
-
-            return ret;
+            return index(arg1);
         }
-        else if (sMethod == "rem" && (arg1.getCommonType() == TYPE_NUMERICAL || arg1.getCommonType() == TYPE_GENERATOR))
-            return deleteItems(arg1);
-        else if (sMethod == "ins" && (arg1.getCommonType() == TYPE_NUMERICAL || arg1.getCommonType() == TYPE_GENERATOR))
-            return insertItems(arg1);
 
         MethodDefinition def = front().isApplyingMethod(sMethod, 1);
 
@@ -2563,9 +2689,6 @@ namespace mu
     {
         if (isConst())
             throw ParserError(ecMETHOD_ERROR, sMethod);
-
-        if (sMethod == "ins" && arg1.getCommonType() == TYPE_NUMERICAL)
-            return insertItems(arg1, arg2);
 
         MethodDefinition def = front().isApplyingMethod(sMethod, 2);
 
@@ -2681,6 +2804,88 @@ namespace mu
     /////////////////////////////////////////////////
     Array Array::apply(const std::string& sMethod, const MultiArgFuncParams& args)
     {
+        if (sMethod == "submat")
+        {
+            Array idx;
+            idx.reserve(args.count());
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                idx.emplace_back(args[i]);
+            }
+
+            idx.setDimSizes({args.count(), 1ull});
+
+            return index(idx);
+        }
+        else if (sMethod == "rem")
+        {
+            if (args.count() == 1ull)
+                return deleteItems(args[0]);
+
+            DimSizes dims(args.count());
+
+            for (size_t i = 0; i < args.count(); i++)
+            {
+                dims[i] = args[i].size();
+            }
+
+            Array linIdx;
+            linIdx.reserve(getNumElements(dims));
+
+            IndexIterator iter(dims);
+            const IndexTuple& index = iter.index();
+
+            IndexTuple idxTuple(args.count());
+
+            do
+            {
+                for (size_t i = 0; i < args.count(); i++)
+                {
+                    idxTuple[i] = args[i].get(index[i]).getNum().asI64()-1;
+                }
+
+                linIdx.emplace_back(linearIndex(idxTuple)+1);
+            } while (iter.next());
+
+            return deleteItems(linIdx);
+        }
+        else if (sMethod == "ins")
+        {
+            if (args.count() == 1ull)
+                return insertItems(args[0]);
+
+            if (args.count() == 2ull)
+                return insertItems(args[0], args[1]);
+
+            DimSizes dims(args.count()-1);
+
+            for (size_t i = 0; i < args.count()-1; i++)
+            {
+                dims[i] = args[i].size();
+            }
+
+            Array linIdx;
+            linIdx.reserve(getNumElements(dims));
+
+            IndexIterator iter(dims);
+            const IndexTuple& index = iter.index();
+
+            IndexTuple idxTuple(args.count()-1);
+
+            do
+            {
+                for (size_t i = 0; i < args.count()-1; i++)
+                {
+                    idxTuple[i] = args[i].get(index[i]).getNum().asI64()-1;
+                }
+
+                linIdx.emplace_back(linearIndex(idxTuple)+1);
+            } while (iter.next());
+
+            return insertItems(linIdx, args[args.count()-1]);
+        }
+
         MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
 
         if (def)
@@ -3058,6 +3263,10 @@ namespace mu
             }
         }
 
+        // Delete the dimensions, if the index was linear
+        if (!idx.m_dimSizes.size())
+            m_dimSizes.clear();
+
         if (m_commonType != TYPE_CLUSTER)
             m_commonType = TYPE_VOID;
 
@@ -3099,6 +3308,10 @@ namespace mu
             if (p > 0 && p <= (int64_t)size())
                 erase(begin()+p-1);
         }
+
+        // Delete the dimensions, if the index was linear
+        if (!idx.m_dimSizes.size())
+            m_dimSizes.clear();
 
         if (m_commonType != TYPE_CLUSTER)
             m_commonType = TYPE_VOID;
