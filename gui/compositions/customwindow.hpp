@@ -95,7 +95,7 @@ struct EventPosition
 class SetValueEvent : public wxEvent
 {
 public:
-    SetValueEvent(wxEventType eventType, int winid, int winItem, const WindowItemValue& val)
+    SetValueEvent(wxEventType eventType, int winid, const std::vector<int64_t>& winItem, const WindowItemValue& val)
         : wxEvent(winid, eventType), m_val(val), m_item(winItem)
     {
         m_val.val.dereference();
@@ -104,7 +104,7 @@ public:
     virtual wxEvent* Clone() const {return new SetValueEvent(*this); }
 
     WindowItemValue m_val;
-    int m_item;
+    std::vector<int64_t> m_item;
 };
 
 
@@ -115,7 +115,7 @@ public:
 class SetLabelEvent : public wxEvent
 {
 public:
-    SetLabelEvent(wxEventType eventType, int winid, int winItem, const mu::Array& label)
+    SetLabelEvent(wxEventType eventType, int winid, const std::vector<int64_t>& winItem, const mu::Array& label)
         : wxEvent(winid, eventType), m_label(label), m_item(winItem)
     {
         m_label.dereference();
@@ -124,7 +124,7 @@ public:
     virtual wxEvent* Clone() const {return new SetLabelEvent(*this); }
 
     mu::Array m_label;
-    int m_item;
+    std::vector<int64_t> m_item;
 };
 
 
@@ -135,7 +135,7 @@ public:
 class SetOptionsEvent : public wxEvent
 {
 public:
-    SetOptionsEvent(wxEventType eventType, int winid, int winItem, const mu::Array& opts)
+    SetOptionsEvent(wxEventType eventType, int winid, const std::vector<int64_t>& winItem, const mu::Array& opts)
         : wxEvent(winid, eventType), m_options(opts), m_item(winItem)
     {
         m_options.dereference();
@@ -144,7 +144,45 @@ public:
     virtual wxEvent* Clone() const {return new SetOptionsEvent(*this); }
 
     mu::Array m_options;
-    int m_item;
+    std::vector<int64_t> m_item;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
+/// change the element color in the window.
+/////////////////////////////////////////////////
+class SetColorEvent : public wxEvent
+{
+public:
+    SetColorEvent(wxEventType eventType, int winid, const std::vector<int64_t>& winItem, const mu::Array& color)
+        : wxEvent(winid, eventType), m_color(color), m_item(winItem)
+    {
+        m_color.dereference();
+    }
+
+    virtual wxEvent* Clone() const {return new SetColorEvent(*this); }
+
+    mu::Array m_color;
+    std::vector<int64_t> m_item;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
+/// change the element state in the window.
+/////////////////////////////////////////////////
+class SetStateEvent : public wxEvent
+{
+public:
+    SetStateEvent(wxEventType eventType, int winid, const std::vector<int64_t>& winItem, const wxString& state)
+        : wxEvent(winid, eventType), m_itemState(state), m_item(winItem)
+    { }
+
+    virtual wxEvent* Clone() const {return new SetStateEvent(*this); }
+
+    wxString m_itemState;
+    std::vector<int64_t> m_item;
 };
 
 
@@ -155,13 +193,13 @@ public:
 class SetSelectionEvent : public wxEvent
 {
 public:
-    SetSelectionEvent(wxEventType eventType, int winid, int winItem, int selId1, int selId2)
+    SetSelectionEvent(wxEventType eventType, int winid, const std::vector<int64_t>& winItem, int selId1, int selId2)
         : wxEvent(winid, eventType), m_selectionId1(selId1), m_selectionId2(selId2), m_item(winItem) {}
     virtual wxEvent* Clone() const {return new SetSelectionEvent(*this); }
 
     int m_selectionId1;
     int m_selectionId2;
-    int m_item;
+    std::vector<int64_t> m_item;
 };
 
 
@@ -183,6 +221,8 @@ wxDEFINE_EVENT(SET_WINDOW_VALUE, SetValueEvent);
 wxDEFINE_EVENT(SET_WINDOW_LABEL, SetLabelEvent);
 wxDEFINE_EVENT(SET_WINDOW_OPTIONS, SetOptionsEvent);
 wxDEFINE_EVENT(SET_WINDOW_SELECTION, SetSelectionEvent);
+wxDEFINE_EVENT(SET_WINDOW_COLOR, SetColorEvent);
+wxDEFINE_EVENT(SET_WINDOW_STATE, SetStateEvent);
 wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
 
 #define cEVT_SET_VALUE(id, func) \
@@ -193,6 +233,10 @@ wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
     wx__DECLARE_EVT1(SET_WINDOW_OPTIONS, id, &func)
 #define cEVT_SET_SELECTION(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_SELECTION, id, &func)
+#define cEVT_SET_COLOR(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_COLOR, id, &func)
+#define cEVT_SET_STATE(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_STATE, id, &func)
 #define cEVT_SET_FOCUS(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_FOCUS, id, &func)
 
@@ -266,19 +310,21 @@ class CustomWindow : public wxFrame
 
         std::vector<int> getWindowItems(WindowItemType _type) const;
         bool closeWindow();
-        WindowItemValue getItemValue(int windowItemID) const;
-        mu::Array getItemLabel(int windowItemID) const;
-        wxString getItemState(int windowItemID) const;
-        mu::Array getItemColor(int windowItemID) const;
-        mu::Array getItemSelection(int windowItemID) const;
+        WindowItemValue getItemValue(const std::vector<int64_t>& windowItemID) const;
+        mu::Array getItemLabel(const std::vector<int64_t>& windowItemID) const;
+        mu::Array getItemState(const std::vector<int64_t>& windowItemID) const;
+        mu::Array getItemColor(const std::vector<int64_t>& windowItemID) const;
+        mu::Array getItemSelection(const std::vector<int64_t>& windowItemID) const;
         mu::Array getPropValue(const std::string& varName) const;
         mu::Array getProperties() const;
         mu::Array getStatusText() const;
 
-        bool pushItemValue(WindowItemValue& _value, int windowItemID);
-        bool pushItemLabel(const mu::Array& _label, int windowItemID);
-        bool pushItemOptions(const mu::Array& _opts, int windowItemID);
-        bool pushItemSelection(int selectionID, int selectionID2, int windowItemID);
+        bool pushItemValue(WindowItemValue& _value, const std::vector<int64_t>& windowItemID);
+        bool pushItemLabel(const mu::Array& _label, const std::vector<int64_t>& windowItemID);
+        bool pushItemOptions(const mu::Array& _opts, const std::vector<int64_t>& windowItemID);
+        bool pushItemColor(const mu::Array& _color, const std::vector<int64_t>& windowItemID);
+        bool pushItemState(const wxString& _state, const std::vector<int64_t>& windowItemID);
+        bool pushItemSelection(int selectionID, int selectionID2, const std::vector<int64_t>& windowItemID);
         bool pushItemFocus(int windowItemID);
 
         bool setItemValue(WindowItemValue& _value, int windowItemID);
@@ -338,22 +384,73 @@ class CustomWindow : public wxFrame
 
         void OnSetValueEvent(SetValueEvent& event)
         {
-            setItemValue(event.m_val, event.m_item);
+            if (event.m_item.size() > 1)
+            {
+                mu::Array v = event.m_val.val;
+
+                for (size_t i = 0; i < event.m_item.size(); i++)
+                {
+                    event.m_val.val = v.get(i);
+                    setItemValue(event.m_val, event.m_item[i]);
+                }
+            }
+            else
+                setItemValue(event.m_val, event.m_item.front());
         }
 
         void OnSetLabelEvent(SetLabelEvent& event)
         {
-            setItemLabel(event.m_label, event.m_item);
+            if (event.m_item.size() > 1)
+            {
+                for (size_t i = 0; i < event.m_item.size(); i++)
+                    setItemLabel(event.m_label.get(i), event.m_item[i]);
+            }
+            else
+                setItemLabel(event.m_label, event.m_item.front());
         }
 
         void OnSetOptionsEvent(SetOptionsEvent& event)
         {
-            setItemOptions(event.m_options, event.m_item);
+            if (event.m_item.size() > 1)
+            {
+                for (size_t i = 0; i < event.m_item.size(); i++)
+                    setItemOptions(event.m_options.get(i), event.m_item[i]);
+            }
+            else
+                setItemOptions(event.m_options, event.m_item.front());
         }
 
         void OnSetSelectionEvent(SetSelectionEvent& event)
         {
-            setItemSelection(event.m_selectionId1, event.m_selectionId2, event.m_item);
+            if (event.m_item.size() > 1)
+            {
+                for (size_t i = 0; i < event.m_item.size(); i++)
+                    setItemSelection(event.m_selectionId1, event.m_selectionId2, event.m_item[i]);
+            }
+            else
+                setItemSelection(event.m_selectionId1, event.m_selectionId2, event.m_item.front());
+        }
+
+        void OnSetColorEvent(SetColorEvent& event)
+        {
+            if (event.m_item.size() > 1)
+            {
+                for (size_t i = 0; i < event.m_item.size(); i++)
+                    setItemColor(event.m_color.get(i), event.m_item[i]);
+            }
+            else
+                setItemColor(event.m_color, event.m_item.front());
+        }
+
+        void OnSetStateEvent(SetStateEvent& event)
+        {
+            if (event.m_item.size() > 1)
+            {
+                for (size_t i = 0; i < event.m_item.size(); i++)
+                    setItemState(event.m_itemState, event.m_item[i]);
+            }
+            else
+                setItemState(event.m_itemState, event.m_item.front());
         }
 
         void OnSetFocusEvent(SetFocusEvent& event)

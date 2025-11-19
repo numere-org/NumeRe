@@ -193,23 +193,23 @@ namespace NumeRe
             void updateWindowInformation(int status, const std::string& _return);
             std::vector<int> getWindowItems(const std::string& _selection) const;
             bool closeWindow();
-            WinItemValue getItemValue(int windowItemID) const;
-            mu::Array getItemLabel(int windowItemID) const;
-            std::string getItemState(int windowItemID) const;
-            mu::Array getItemColor(int windowItemID) const;
-            mu::Array getItemSelection(int windowItemID) const;
+            WinItemValue getItemValue(const std::vector<int64_t>& windowItemID) const;
+            mu::Array getItemLabel(const std::vector<int64_t>& windowItemID) const;
+            mu::Array getItemState(const std::vector<int64_t>& windowItemID) const;
+            mu::Array getItemColor(const std::vector<int64_t>& windowItemID) const;
+            mu::Array getItemSelection(const std::vector<int64_t>& windowItemID) const;
             mu::Array getPropValue(const std::string& varName) const;
             mu::Array getProperties() const;
             mu::Array getStatusText() const;
 
             std::string dialog();
 
-            bool setItemValue(const WinItemValue& _value, int windowItemID);
-            bool setItemLabel(const mu::Array& _label, int windowItemID);
-            bool setItemState(const std::string& _state, int windowItemID);
-            bool setItemColor(const mu::Array& _color, int windowItemID);
-            bool setItemOptions(const mu::Array& _options, int windowItemID);
-            bool setItemSelection(int selectionID, int selectionID2, int windowItemID);
+            bool setItemValue(const WinItemValue& _value, const std::vector<int64_t>& windowItemID);
+            bool setItemLabel(const mu::Array& _label, const std::vector<int64_t>& windowItemID);
+            bool setItemState(const std::string& _state, const std::vector<int64_t>& windowItemID);
+            bool setItemColor(const mu::Array& _color, const std::vector<int64_t>& windowItemID);
+            bool setItemOptions(const mu::Array& _options, const std::vector<int64_t>& windowItemID);
+            bool setItemSelection(int selectionID, int selectionID2, const std::vector<int64_t>& windowItemID);
             bool setItemFocus(int windowItemID);
             bool setItemGraph(GraphHelper* _helper, int windowItemID);
             bool setPropValue(const mu::Array& _value, const std::string& varName);

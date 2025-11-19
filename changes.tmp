@@ -37,3 +37,4 @@ Fixed	Window layouts in activated dialog mode are now forced to be in front of a
 Added	Multiple matrix functions were added: "cat()", "squeeze()", "rotmat()", "levicivita()", "rank()", "gaussjordan()" (with alias "rref()"), "trilow()", "triup()" and "insertscalardim()"
 Fixed	The vector methods "VECT.rem" and "VECT.ins" do now also work with the generator syntax.
 Applied	The vector methods "VECT.delegate", "VECT.rem" and "VECT.ins" do now support multi-dimensional indexing.
+Applied	Properties of multiple GUI elements can now be read and written simultaneously.

@@ -283,11 +283,11 @@ namespace NumeRe
     /// \brief Returns the value of the selected
     /// window item as a string.
     ///
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return NumeRe::WinItemValue
     ///
     /////////////////////////////////////////////////
-    NumeRe::WinItemValue Window::getItemValue(int windowItemID) const
+    NumeRe::WinItemValue Window::getItemValue(const std::vector<int64_t>& windowItemID) const
     {
         NumeRe::WinItemValue val;
 
@@ -308,11 +308,11 @@ namespace NumeRe
     /// \brief Returns the label of the selected
     /// window item as a string.
     ///
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    mu::Array Window::getItemLabel(int windowItemID) const
+    mu::Array Window::getItemLabel(const std::vector<int64_t>& windowItemID) const
     {
         if (m_customWindow)
             return m_customWindow->getItemLabel(windowItemID);
@@ -325,16 +325,16 @@ namespace NumeRe
     /// \brief Returns the state of the selected
     /// window item as a string.
     ///
-    /// \param windowItemID int
-    /// \return std::string
+    /// \param windowItemID const std::vector<int64_t>&
+    /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    std::string Window::getItemState(int windowItemID) const
+    mu::Array Window::getItemState(const std::vector<int64_t>& windowItemID) const
     {
         if (m_customWindow)
-            return m_customWindow->getItemState(windowItemID).ToStdString();
+            return m_customWindow->getItemState(windowItemID);
 
-        return "";
+        return mu::Array();
     }
 
 
@@ -342,11 +342,11 @@ namespace NumeRe
     /// \brief Returns the color of the selected
     /// window item as a string.
     ///
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    mu::Array Window::getItemColor(int windowItemID) const
+    mu::Array Window::getItemColor(const std::vector<int64_t>& windowItemID) const
     {
         if (m_customWindow)
             return m_customWindow->getItemColor(windowItemID);
@@ -359,11 +359,11 @@ namespace NumeRe
     /// \brief Returns the currently selected element
     /// in the corresponding window item.
     ///
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return mu::Array
     ///
     /////////////////////////////////////////////////
-    mu::Array Window::getItemSelection(int windowItemID) const
+    mu::Array Window::getItemSelection(const std::vector<int64_t>& windowItemID) const
     {
         if (m_customWindow)
             return m_customWindow->getItemSelection(windowItemID);
@@ -449,11 +449,11 @@ namespace NumeRe
     /// selected window item to the passed value.
     ///
     /// \param _value const NumeRe::WinItemValue&
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemValue(const NumeRe::WinItemValue& _value, int windowItemID)
+    bool Window::setItemValue(const NumeRe::WinItemValue& _value, const std::vector<int64_t>& windowItemID)
     {
         if (m_customWindow)
         {
@@ -473,11 +473,11 @@ namespace NumeRe
     /// selected window item to the passed label.
     ///
     /// \param _label const mu::Array&
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemLabel(const mu::Array& _label, int windowItemID)
+    bool Window::setItemLabel(const mu::Array& _label, const std::vector<int64_t>& windowItemID)
     {
         if (m_customWindow)
             return m_customWindow->pushItemLabel(_label, windowItemID);
@@ -491,14 +491,14 @@ namespace NumeRe
     /// selected window item to the passed state.
     ///
     /// \param _state const std::string&
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemState(const std::string& _state, int windowItemID)
+    bool Window::setItemState(const std::string& _state, const std::vector<int64_t>& windowItemID)
     {
         if (m_customWindow)
-            return m_customWindow->setItemState(_state, windowItemID);
+            return m_customWindow->pushItemState(_state, windowItemID);
 
         return false;
     }
@@ -509,14 +509,14 @@ namespace NumeRe
     /// selected window item to the passed color.
     ///
     /// \param _color const mu::Array&
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemColor(const mu::Array& _color, int windowItemID)
+    bool Window::setItemColor(const mu::Array& _color, const std::vector<int64_t>& windowItemID)
     {
         if (m_customWindow)
-            return m_customWindow->setItemColor(_color, windowItemID);
+            return m_customWindow->pushItemColor(_color, windowItemID);
 
         return false;
     }
@@ -527,11 +527,11 @@ namespace NumeRe
     /// the selected window item.
     ///
     /// \param _options const mu::Array&
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemOptions(const mu::Array& _options, int windowItemID)
+    bool Window::setItemOptions(const mu::Array& _options, const std::vector<int64_t>& windowItemID)
     {
         if (m_customWindow)
             return m_customWindow->pushItemOptions(_options, windowItemID);
@@ -546,11 +546,11 @@ namespace NumeRe
     ///
     /// \param selectionID int
     /// \param selectionID2 int
-    /// \param windowItemID int
+    /// \param windowItemID const std::vector<int64_t>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Window::setItemSelection(int selectionID, int selectionID2, int windowItemID)
+    bool Window::setItemSelection(int selectionID, int selectionID2, const std::vector<int64_t>& windowItemID)
     {
         if (m_customWindow)
             return m_customWindow->pushItemSelection(selectionID, selectionID2, windowItemID);

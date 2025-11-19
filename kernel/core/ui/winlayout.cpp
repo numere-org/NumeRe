@@ -454,17 +454,17 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
 /// instead "item".
 ///
 /// \param cmdParser CommandLineParser&
-/// \return int64_t
+/// \return std::vector<int64_t>
 ///
 /////////////////////////////////////////////////
-static int64_t getItemId(CommandLineParser& cmdParser)
+static std::vector<int64_t> getItemIds(CommandLineParser& cmdParser)
 {
     if (cmdParser.hasParam("item"))
-        return cmdParser.getParsedParameterValue("item").getAsScalarInt();
+        return cmdParser.getParsedParameterValue("item").as_int_vector();
     else if (cmdParser.hasParam("id"))
-        return cmdParser.getParsedParameterValue("id").getAsScalarInt();
+        return cmdParser.getParsedParameterValue("id").as_int_vector();
 
-    return -1;
+    return {-1};
 }
 
 
@@ -495,7 +495,7 @@ static NumeRe::WindowInformation getWindow(CommandLineParser& cmdParser)
 static void getParametersFromWindow(CommandLineParser& cmdParser)
 {
     // Get value of window item
-    int64_t itemID = getItemId(cmdParser);
+    std::vector<int64_t> itemIds = getItemIds(cmdParser);
     NumeRe::WindowInformation winInfo = getWindow(cmdParser);
 
     // If the window does not exist, the pointer
@@ -517,7 +517,7 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
         }
         else
         {
-            NumeRe::WinItemValue val = winInfo.window->getItemValue(itemID);
+            NumeRe::WinItemValue val = winInfo.window->getItemValue(itemIds);
 
             if (val.type != "tablegrid")
                 cmdParser.setReturnValue(val.val);
@@ -533,13 +533,13 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
         }
     }
     else if (cmdParser.hasParam("label"))
-        cmdParser.setReturnValue(winInfo.window->getItemLabel(itemID));
+        cmdParser.setReturnValue(winInfo.window->getItemLabel(itemIds));
     else if (cmdParser.hasParam("state"))
-        cmdParser.setReturnValue(mu::Value(winInfo.window->getItemState(itemID)));
+        cmdParser.setReturnValue(winInfo.window->getItemState(itemIds));
     else if (cmdParser.hasParam("color"))
-        cmdParser.setReturnValue(winInfo.window->getItemColor(itemID));
+        cmdParser.setReturnValue(winInfo.window->getItemColor(itemIds));
     else if (cmdParser.hasParam("selection"))
-        cmdParser.setReturnValue(winInfo.window->getItemSelection(itemID));
+        cmdParser.setReturnValue(winInfo.window->getItemSelection(itemIds));
     else if (cmdParser.hasParam("statustext"))
         cmdParser.setReturnValue(winInfo.window->getStatusText());
     else if (cmdParser.hasParam("dialogresult"))
@@ -558,7 +558,7 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
 static void setParametersInWindow(CommandLineParser& cmdParser)
 {
     // Change value of window item
-    int64_t itemID = getItemId(cmdParser);
+    std::vector<int64_t> itemIds = getItemIds(cmdParser);
     NumeRe::WindowInformation winInfo = getWindow(cmdParser);
 
     // If the window does not exist, the pointer
@@ -590,27 +590,23 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
                 DataAccessParser _access(sValue, false);
                 _access.evalIndices(true);
                 value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
-
-                if (!_access.isMatrix())
-                    value.val = _memManager.getElement(_access.getIndices().row, _access.getIndices().col, _access.getDataObject());
-                else
-                    value.val = mu::Value(_access.getDataObject() + "()");
+                value.val = _memManager.getElement(_access.getIndices().row, _access.getIndices().col, _access.getDataObject());
             }
             else
                 value.val = cmdParser.getParsedParameterValue("value");
 
-            cmdParser.setReturnValue(mu::Value(winInfo.window->setItemValue(value, itemID)));
+            cmdParser.setReturnValue(mu::Value(winInfo.window->setItemValue(value, itemIds)));
         }
     }
     else if (cmdParser.hasParam("label"))
     {
         mu::Array label = cmdParser.getParsedParameterValue("label");
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemLabel(label, itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemLabel(label, itemIds)));
     }
     else if (cmdParser.hasParam("state"))
     {
         std::string sState = cmdParser.getParameterValue("state");
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemState(sState, itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemState(sState, itemIds)));
     }
     else if (cmdParser.hasParam("display"))
     {
@@ -623,18 +619,18 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
         mu::DataType common = mu::TYPE_VOID;
         color.getType(common);
 
-        if (color.size() < 3 || common != mu::TYPE_NUMERICAL)
+        if (common != mu::TYPE_NUMERICAL && common != mu::TYPE_CLUSTER)
         {
             cmdParser.setReturnValue(mu::Value(false));
             return;
         }
 
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemColor(color, itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemColor(color, itemIds)));
     }
     else if (cmdParser.hasParam("options"))
     {
         mu::Array options = cmdParser.getParsedParameterValue("options");
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemOptions(options, itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemOptions(options, itemIds)));
     }
     else if (cmdParser.hasParam("selection"))
     {
@@ -647,11 +643,11 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
         if (sel.size() > 1)
             sel2 = sel[1].getNum().asI64();
 
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemSelection(sel1, sel2, itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemSelection(sel1, sel2, itemIds)));
     }
     else if (cmdParser.hasParam("focus"))
     {
-        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemFocus(itemID)));
+        cmdParser.setReturnValue(mu::Value(winInfo.window->setItemFocus(itemIds.front())));
     }
     else if (cmdParser.hasParam("statustext"))
     {

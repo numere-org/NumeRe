@@ -809,6 +809,8 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
     cEVT_SET_OPTIONS(-1, CustomWindow::OnSetOptionsEvent)
+    cEVT_SET_COLOR(-1, CustomWindow::OnSetColorEvent)
+    cEVT_SET_STATE(-1, CustomWindow::OnSetStateEvent)
     cEVT_SET_SELECTION(-1, CustomWindow::OnSetSelectionEvent)
     cEVT_SET_FOCUS(-1, CustomWindow::OnSetFocusEvent)
 END_EVENT_TABLE()
@@ -3126,21 +3128,27 @@ bool CustomWindow::closeWindow()
 /////////////////////////////////////////////////
 /// \brief Get the value of the selected item.
 ///
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return WindowItemValue
 ///
 /////////////////////////////////////////////////
-WindowItemValue CustomWindow::getItemValue(int windowItemID) const
+WindowItemValue CustomWindow::getItemValue(const std::vector<int64_t>& windowItemID) const
 {
     WindowItemParams params;
     WindowItemValue value;
+    value.val.resize(windowItemID.size());
 
-    if (getItemParameters(windowItemID, params))
+    for (size_t i = 0; i < windowItemID.size(); i++)
     {
-        value.val = params.value;
-        value.tableValue = params.table;
-        value.type = params.type;
-        return value;
+        if (getItemParameters(windowItemID[i], params))
+        {
+            value.val[i] = params.value;
+
+            if (value.tableValue.isEmpty())
+                value.tableValue = params.table;
+
+            value.type = params.type;
+        }
     }
 
     return value;
@@ -3150,54 +3158,66 @@ WindowItemValue CustomWindow::getItemValue(int windowItemID) const
 /////////////////////////////////////////////////
 /// \brief Get the label of the selected item.
 ///
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array CustomWindow::getItemLabel(int windowItemID) const
+mu::Array CustomWindow::getItemLabel(const std::vector<int64_t>& windowItemID) const
 {
     WindowItemParams params;
+    mu::Array label(windowItemID.size());
 
-    if (getItemParameters(windowItemID, params))
-        return params.label;
+    for (size_t i = 0; i < windowItemID.size(); i++)
+    {
+        if (getItemParameters(windowItemID[i], params))
+            label[i] = params.label;
+    }
 
-    return mu::Array();
+    return label;
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Get the state of the selected item.
 ///
-/// \param windowItemID int
-/// \return wxString
+/// \param windowItemID const std::vector<int64_t>&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-wxString CustomWindow::getItemState(int windowItemID) const
+mu::Array CustomWindow::getItemState(const std::vector<int64_t>& windowItemID) const
 {
     WindowItemParams params;
+    mu::Array state(windowItemID.size());
 
-    if (getItemParameters(windowItemID, params))
-        return params.state;
+    for (size_t i = 0; i < windowItemID.size(); i++)
+    {
+        if (getItemParameters(windowItemID[i], params))
+            state[i] = params.state;
+    }
 
-    return "";
+    return state;
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Get the color of the selected item.
 ///
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array CustomWindow::getItemColor(int windowItemID) const
+mu::Array CustomWindow::getItemColor(const std::vector<int64_t>& windowItemID) const
 {
     WindowItemParams params;
+    mu::Array color(windowItemID.size());
 
-    if (getItemParameters(windowItemID, params))
-        return params.color;
+    for (size_t i = 0; i < windowItemID.size(); i++)
+    {
+        if (getItemParameters(windowItemID[i], params))
+            color[i] = params.color;
+    }
 
-    return mu::Array();
+    return color;
 }
 
 
@@ -3205,84 +3225,89 @@ mu::Array CustomWindow::getItemColor(int windowItemID) const
 /// \brief Get the current selection of the
 /// selected item.
 ///
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array CustomWindow::getItemSelection(int windowItemID) const
+mu::Array CustomWindow::getItemSelection(const std::vector<int64_t>& windowItemID) const
 {
-    auto iter = m_windowItems.find(windowItemID);
+    mu::Array selection(windowItemID.size());
 
-    if (iter == m_windowItems.end())
-        return mu::Array();
-
-    std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
-
-    switch (object.first)
+    for (size_t i = 0; i < windowItemID.size(); i++)
     {
-        case CustomWindow::TEXTCTRL:
-        {
-            TextField* field = static_cast<TextField*>(object.second);
+        auto iter = m_windowItems.find(windowItemID[i]);
 
-            if (field->HasSelection())
+        if (iter == m_windowItems.end())
+            continue;
+
+        std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
+
+        switch (object.first)
+        {
+            case CustomWindow::TEXTCTRL:
             {
-                mu::Array ret;
-                long int from;
-                long int to;
-                field->GetSelection(&from, &to);
-                ret.push_back(mu::Value((int32_t)(from+1)));
-                ret.push_back(mu::Value((int32_t)(to-from)));
-                return ret;
-            }
+                TextField* field = static_cast<TextField*>(object.second);
 
-            return mu::Value((uint64_t)field->GetInsertionPoint()+1);
+                if (field->HasSelection())
+                {
+                    mu::Array ret;
+                    long int from;
+                    long int to;
+                    field->GetSelection(&from, &to);
+                    ret.push_back(mu::Value((int32_t)(from+1)));
+                    ret.push_back(mu::Value((int32_t)(to-from)));
+                    selection[i] = ret;;
+                }
+                else
+                    selection[i] = mu::Value((uint64_t)field->GetInsertionPoint()+1);
+            }
+            case CustomWindow::DROPDOWN:
+            {
+                wxChoice* choices = static_cast<wxChoice*>(object.second);
+                selection[i] = mu::Value(choices->GetSelection()+1);
+            }
+            case CustomWindow::COMBOBOX:
+            {
+                wxComboBox* combo = static_cast<wxComboBox*>(object.second);
+                selection[i] = mu::Value(combo->GetSelection()+1);
+            }
+            case CustomWindow::TABLE:
+            {
+                TableViewer* table = static_cast<TableViewer*>(object.second);
+                mu::Array ret;
+                ret.push_back(mu::Value(table->GetInternalRows(table->GetGridCursorRow())+1));
+                ret.push_back(mu::Value(table->GetGridCursorCol()+1));
+                selection[i] = ret;
+            }
+            case CustomWindow::TREELIST:
+            {
+                wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
+                int sel = enumerateListItems(listCtrl, listCtrl->GetSelection());
+                selection[i] = mu::Value(sel+1);
+            }
+            case CustomWindow::NOTEBOOK:
+            {
+                wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
+                int sel = noteBook->GetSelection();
+                selection[i] = mu::Value(sel+1);
+            }
+            case CustomWindow::GAUGE:
+            case CustomWindow::SPINCTRL:
+            case CustomWindow::SLIDER:
+            case CustomWindow::RADIOGROUP:
+            case CustomWindow::BUTTON:
+            case CustomWindow::CHECKBOX:
+            case CustomWindow::TEXT:
+            case CustomWindow::MENUITEM:
+            case CustomWindow::GRAPHER:
+            case CustomWindow::IMAGE:
+            case CustomWindow::DATETIMEPICKER:
+            case CustomWindow::LAMP:
+                break;
         }
-        case CustomWindow::DROPDOWN:
-        {
-            wxChoice* choices = static_cast<wxChoice*>(object.second);
-            return mu::Value(choices->GetSelection()+1);
-        }
-        case CustomWindow::COMBOBOX:
-        {
-            wxComboBox* combo = static_cast<wxComboBox*>(object.second);
-            return mu::Value(combo->GetSelection()+1);
-        }
-        case CustomWindow::TABLE:
-        {
-            TableViewer* table = static_cast<TableViewer*>(object.second);
-            mu::Array ret;
-            ret.push_back(mu::Value(table->GetInternalRows(table->GetGridCursorRow())+1));
-            ret.push_back(mu::Value(table->GetGridCursorCol()+1));
-            return ret;
-        }
-        case CustomWindow::TREELIST:
-        {
-            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
-            int selection = enumerateListItems(listCtrl, listCtrl->GetSelection());
-            return mu::Value(selection+1);
-        }
-        case CustomWindow::NOTEBOOK:
-        {
-            wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
-            int selection = noteBook->GetSelection();
-            return mu::Value(selection+1);
-        }
-        case CustomWindow::GAUGE:
-        case CustomWindow::SPINCTRL:
-        case CustomWindow::SLIDER:
-        case CustomWindow::RADIOGROUP:
-        case CustomWindow::BUTTON:
-        case CustomWindow::CHECKBOX:
-        case CustomWindow::TEXT:
-        case CustomWindow::MENUITEM:
-        case CustomWindow::GRAPHER:
-        case CustomWindow::IMAGE:
-        case CustomWindow::DATETIMEPICKER:
-        case CustomWindow::LAMP:
-            break;
     }
 
-    return mu::Array();
+    return selection;
 }
 
 
@@ -3352,11 +3377,11 @@ mu::Array CustomWindow::getStatusText() const
 /// internal event handler.
 ///
 /// \param _value WindowItemValue&
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::pushItemValue(WindowItemValue& _value, int windowItemID)
+bool CustomWindow::pushItemValue(WindowItemValue& _value, const std::vector<int64_t>& windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetValueEvent(SET_WINDOW_VALUE, GetId(), windowItemID, _value));
     return true;
@@ -3368,11 +3393,11 @@ bool CustomWindow::pushItemValue(WindowItemValue& _value, int windowItemID)
 /// internal event handler.
 ///
 /// \param _label const mu::Array&
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::pushItemLabel(const mu::Array& _label, int windowItemID)
+bool CustomWindow::pushItemLabel(const mu::Array& _label, const std::vector<int64_t>& windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetLabelEvent(SET_WINDOW_LABEL, GetId(), windowItemID, _label));
     return true;
@@ -3384,13 +3409,45 @@ bool CustomWindow::pushItemLabel(const mu::Array& _label, int windowItemID)
 /// internal event handler.
 ///
 /// \param _opts const mu::Array&
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::pushItemOptions(const mu::Array& _opts, int windowItemID)
+bool CustomWindow::pushItemOptions(const mu::Array& _opts, const std::vector<int64_t>& windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetOptionsEvent(SET_WINDOW_OPTIONS, GetId(), windowItemID, _opts));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push an item options change to the
+/// internal event handler.
+///
+/// \param _color const mu::Array&
+/// \param windowItemID const std::vector<int64_t>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemColor(const mu::Array& _color, const std::vector<int64_t>& windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetColorEvent(SET_WINDOW_COLOR, GetId(), windowItemID, _color));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push an item options change to the
+/// internal event handler.
+///
+/// \param _state const wxString&
+/// \param windowItemID const std::vector<int64_t>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemState(const wxString& _state, const std::vector<int64_t>& windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetStateEvent(SET_WINDOW_STATE, GetId(), windowItemID, _state));
     return true;
 }
 
@@ -3401,11 +3458,11 @@ bool CustomWindow::pushItemOptions(const mu::Array& _opts, int windowItemID)
 ///
 /// \param selectionID int
 /// \param selectionID2 int
-/// \param windowItemID int
+/// \param windowItemID const std::vector<int64_t>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CustomWindow::pushItemSelection(int selectionID, int selectionID2, int windowItemID)
+bool CustomWindow::pushItemSelection(int selectionID, int selectionID2, const std::vector<int64_t>& windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetSelectionEvent(SET_WINDOW_SELECTION, GetId(), windowItemID, selectionID, selectionID2));
     return true;
