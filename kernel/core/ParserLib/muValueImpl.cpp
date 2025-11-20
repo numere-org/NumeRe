@@ -2184,7 +2184,9 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"at", 1}, {"len", 0}, {"contains", 1}});
+        static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"encodejson", 1},
+                                        {"encodexml", 0}, {"encodexml", 1},
+                                        {"at", 1}, {"len", 0}, {"contains", 1}});
 
         if (m_val.isField(sMethod) && argc == 0)
             return MethodDefinition(sMethod);
@@ -2224,7 +2226,9 @@ namespace mu
             return new ArrValue(vals);
         }
         else if (sMethod == "encodejson")
-            return new StrValue(m_val.encodeJson());
+            return new StrValue(m_val.encodeJson(false));
+        else if (sMethod == "encodexml")
+            return new StrValue(m_val.encodeXml(false));
         else if (sMethod == "len")
             return new NumValue(Numerical(m_val.size()));
         else if (m_val.isField(sMethod))
@@ -2277,6 +2281,10 @@ namespace mu
             return new NumValue(m_val.isField(static_cast<const StrValue&>(arg1).get()));
         else if (sMethod == "contains" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(m_val.isField(static_cast<const PathValue&>(arg1).get()));
+        else if (sMethod == "encodejson")
+            return new StrValue(m_val.encodeJson((bool)arg1));
+        else if (sMethod == "encodexml")
+            return new StrValue(m_val.encodeXml((bool)arg1));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2293,7 +2301,9 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1}, {"decodejson", 1}, {"write", -2}, {"insertkey", -1}, {"insertkey", -2}});
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1},
+                                        {"decodejson", 1}, {"decodexml", 1}, {"write", -2},
+                                        {"insertkey", -1}, {"insertkey", -2}});
 
         if (m_val.isField(sMethod) && argc <= 1)
             return MethodDefinition(sMethod, -argc);
@@ -2352,6 +2362,9 @@ namespace mu
 
         if (sMethod == "loadxml" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(Numerical(m_val.importXml(static_cast<const PathValue&>(arg1).get().to_string('/'))));
+
+        if (sMethod == "decodexml" && arg1.m_type == TYPE_STRING)
+            return new NumValue(Numerical(m_val.decodeXml(static_cast<const StrValue&>(arg1).get())));
 
         if (sMethod == "loadjson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.importJson(static_cast<const StrValue&>(arg1).get())));

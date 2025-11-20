@@ -1385,6 +1385,218 @@ namespace mu
 
 
     // Forward declaration due to interdependence of the two
+    // encoder functions for XML
+    static std::string encodeXml(const DictStruct& dict, bool format, size_t level);
+
+    /////////////////////////////////////////////////
+    /// \brief Encode an Array into a XML-formatted
+    /// string.
+    ///
+    /// \param arr const Array&
+    /// \param format bool
+    /// \param level size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    static std::string encodeXml(const Array& arr, bool format, size_t level)
+    {
+        std::string sXmlString;
+        std::string sIndent(format ? level : 0, '\t');
+        std::string sTermatingChar = format ? "\n" : "";
+
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            const Value& val = arr.get(i);
+
+            if (val.isArray())
+            {
+                const Array& a = val.getArray();
+                sXmlString += sIndent + "<a type=\"" + a.getCommonTypeAsString() + "\" size=\"" + a.printDims() + "\">" + sTermatingChar
+                    + encodeXml(a, format, level+1) + sIndent + "</a>" + sTermatingChar;
+            }
+            else if (val.isDictStruct())
+            {
+                const DictStruct& d = val.getDictStruct();
+
+                if (!d.hasXmlStructure())
+                    sXmlString += sIndent + "<d type=\"dictstruct\">" + sTermatingChar;
+
+                sXmlString += encodeXml(val.getDictStruct(), format, d.hasXmlStructure() ? level : level+1);
+
+                if (!d.hasXmlStructure())
+                    sXmlString += sIndent + "</d>" + sTermatingChar;
+            }
+            else
+                sXmlString += sIndent + "<v type=\"" + val.getTypeAsString() + "\">" + val.printVal() + "</v>" + sTermatingChar;
+        }
+
+        return sXmlString;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode a DictStruct into a
+    /// XML-formatted string.
+    ///
+    /// \param dict const DictStruct&
+    /// \param format bool
+    /// \param level size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    static std::string encodeXml(const DictStruct& dict, bool format, size_t level)
+    {
+        std::string sXmlString;
+        std::string sIndent(format ? level : 0, '\t');
+        std::string sTermatingChar = format ? "\n" : "";
+
+        if (dict.hasXmlStructure())
+        {
+            std::string sName = dict.read("name")->printVal(0, 0);
+            std::string sText;
+            std::string sNodes;
+            std::string sAttrs;
+
+            if (dict.isField("text"))
+                sText = dict.read("text")->printVal(0, 0);
+
+            if (dict.isField("attrs"))
+            {
+                const BaseValue* val = dict.read("attrs");
+
+                if (val->m_type == TYPE_ARRAY)
+                    sNodes = encodeXml(static_cast<const ArrValue*>(val)->get(), format, level+1);
+                else if (val->m_type == TYPE_DICTSTRUCT)
+                {
+                    const DictStruct& attrs = static_cast<const DictStructValue*>(val)->get();
+
+                    for (const std::string& attr : attrs.getFields())
+                    {
+                        if (sAttrs.length())
+                            sAttrs += " ";
+
+                        sAttrs += attr + "=\"" + attrs.read(attr)->printVal(0, 0) + "\"";
+                    }
+                }
+            }
+
+            if (dict.isField("nodes"))
+            {
+                const BaseValue* val = dict.read("nodes");
+
+                if (val->m_type == TYPE_ARRAY)
+                    sNodes = encodeXml(static_cast<const ArrValue*>(val)->get(), format, level+1);
+                else if (val->m_type == TYPE_DICTSTRUCT)
+                    sNodes = encodeXml(static_cast<const DictStructValue*>(val)->get(), format, level+1);
+            }
+
+            sXmlString = sIndent + "<" + sName;
+
+            if (sAttrs.length())
+                sXmlString += " " + sAttrs;
+
+            if (!sText.length() && !sNodes.length())
+                return sXmlString + " />" + sTermatingChar;
+
+            sXmlString += ">";
+
+            if (sText.length())
+                sXmlString += sText;
+
+            if (sNodes.length())
+                sXmlString += sTermatingChar + sNodes + sIndent;
+
+            return sXmlString + "</" + sName + ">" + sTermatingChar;
+        }
+
+        std::vector<std::string> fields = dict.getFields();
+
+        for (const std::string& field : fields)
+        {
+            const BaseValue* val = dict.read(field);
+            sXmlString += sIndent;
+
+            if (val->m_type == TYPE_ARRAY)
+            {
+                const Array& a = static_cast<const ArrValue*>(val)->get();
+                sXmlString += "<" + field + " type=\"" + a.getCommonTypeAsString() + "\" size=\"" + a.printDims() + "\">" + sTermatingChar
+                    + encodeXml(a, format, level+1) + sIndent + "</" + field + ">" + sTermatingChar;
+            }
+            else if (val->m_type == TYPE_DICTSTRUCT)
+                sXmlString += "<" + field + " type=\"dictstruct\">" + sTermatingChar
+                    + encodeXml(static_cast<const DictStructValue*>(val)->get(), format, level+1)
+                    + sIndent + "</" + field + ">" + sTermatingChar;
+            else if (val->m_type == TYPE_OBJECT)
+                sXmlString += "<" + field + " type=\"object." + static_cast<const Object*>(val)->getObjectType() + "\">"
+                    + val->printVal(0, 0) + "</" + field + ">" + sTermatingChar;
+            else
+                sXmlString += "<" + field + " type=\"" + getTypeAsString(val->getType()) + "\">"
+                    + val->printVal(0, 0) + "</" + field + ">" + sTermatingChar;
+        }
+
+        return sXmlString;
+    }
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode the contents as a
+    /// string-encoded XML.
+    ///
+    /// \param format bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictStruct::encodeXml(bool format) const
+    {
+        if (!size())
+            return "";
+
+        std::vector<std::string> fields = getFields();
+
+        if (fields.size() == 1 && fields.front() == "DOM")
+        {
+            // Ignore that
+            const BaseValue* val = read("DOM");
+
+            if (val->m_type == TYPE_ARRAY)
+                return mu::encodeXml(static_cast<const ArrValue*>(val)->get(), format, 0);
+
+            return mu::encodeXml(static_cast<const DictStructValue*>(val)->get(), format, 0);
+        }
+
+        // Create an object
+        return mu::encodeXml(*this, format, 0);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Decode the string-encoded XML.
+    ///
+    /// \param xmlString const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::decodeXml(const std::string& xmlString)
+    {
+        tinyxml2::XMLDocument doc;
+
+        if (doc.Parse(xmlString.c_str(), xmlString.length()))
+            return false;
+
+        m_fields.clear();
+        Array nodes = importXmlChildren(doc.FirstChild());
+
+        if (nodes.size() == 1)
+            m_fields["DOM"].reset(nodes.front().release());
+        else
+            m_fields["DOM"].reset(new ArrValue(nodes));
+
+        return true;
+    }
+
+
+    // Forward declaration due to interdependence of the two
     // importer functions for JSON
     static Array importJsonArray(const Json::Value& json);
 
@@ -1539,36 +1751,45 @@ namespace mu
 
     // Forward declaration due to interdependence of the two
     // encoder functions for JSON
-    static std::string encodeJson(const DictStruct& dict);
+    static std::string encodeJson(const DictStruct& dict, bool format, size_t level);
 
     /////////////////////////////////////////////////
     /// \brief Encode an Array into a JSON-formatted
     /// string.
     ///
     /// \param arr const Array&
+    /// \param format bool
+    /// \param level size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    static std::string encodeJson(const Array& arr)
+    static std::string encodeJson(const Array& arr, bool format, size_t level)
     {
         std::string sJsonString;
+        std::string sIndent(level, '\t');
 
         for (size_t i = 0; i < arr.size(); i++)
         {
             if (sJsonString.length())
-                sJsonString += ", ";
+                sJsonString += "," + std::string(format ? "\n" : " ");
+
+            if (format)
+                sJsonString += sIndent;
 
             const Value& val = arr.get(i);
 
             if (val.isArray())
-                sJsonString += encodeJson(val.getArray());
+                sJsonString += encodeJson(val.getArray(), format, level+1);
             else if (val.isDictStruct())
-                sJsonString += encodeJson(val.getDictStruct());
+                sJsonString += encodeJson(val.getDictStruct(), format, level+1);
             else if (val.isNumerical() && (val.getNum().getType() == DATETIME || val.getNum().getType() == DURATION))
                 sJsonString += "\"" + val.print() + "\"";
             else
                 sJsonString += val.print();
         }
+
+        if (format)
+            return "[\n" + sJsonString + "\n" + sIndent.substr(0, level-1) + "]";
 
         return "[" + sJsonString + "]";
     }
@@ -1579,25 +1800,31 @@ namespace mu
     /// JSON-formatted string.
     ///
     /// \param dict const DictStruct&
+    /// \param format bool
+    /// \param level size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    static std::string encodeJson(const DictStruct& dict)
+    static std::string encodeJson(const DictStruct& dict, bool format, size_t level)
     {
         std::vector<std::string> fields = dict.getFields();
         std::string sJsonString;
+        std::string sIndent(level, '\t');
 
         for (const std::string& field : fields)
         {
             if (sJsonString.length())
-                sJsonString += ", ";
+                sJsonString += "," + std::string(format ? "\n" : " ");
+
+            if (format)
+                sJsonString += sIndent;
 
             const BaseValue* val = dict.read(field);
 
             if (val->m_type == TYPE_ARRAY)
-                sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const ArrValue*>(val)->get());
+                sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const ArrValue*>(val)->get(), format, level+1);
             else if (val->m_type == TYPE_DICTSTRUCT)
-                sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const DictStructValue*>(val)->get());
+                sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const DictStructValue*>(val)->get(), format, level+1);
             else if (val->m_type == TYPE_NUMERICAL
                      && (static_cast<const NumValue*>(val)->get().getType() == DATETIME
                          || static_cast<const NumValue*>(val)->get().getType() == DURATION))
@@ -1606,18 +1833,22 @@ namespace mu
                 sJsonString += "\"" + field + "\": " + val->print(0, 0, false);
         }
 
+        if (format)
+            return "{\n" + sJsonString + "\n" + sIndent.substr(0, level-1) + "}";
+
         return "{" + sJsonString + "}";
     }
 
 
     /////////////////////////////////////////////////
     /// \brief Encode the contents as a
-    /// string-encoded json.
+    /// string-encoded JSON.
     ///
+    /// \param format bool
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string DictStruct::encodeJson() const
+    std::string DictStruct::encodeJson(bool format) const
     {
         if (!size())
             return "";
@@ -1630,13 +1861,13 @@ namespace mu
             const BaseValue* val = read("DOM");
 
             if (val->m_type == TYPE_ARRAY)
-                return mu::encodeJson(static_cast<const ArrValue*>(val)->get());
+                return mu::encodeJson(static_cast<const ArrValue*>(val)->get(), format, 1);
 
-            return mu::encodeJson(static_cast<const DictStructValue*>(val)->get());
+            return mu::encodeJson(static_cast<const DictStructValue*>(val)->get(), format, 1);
         }
 
         // Create an object
-        return mu::encodeJson(*this);
+        return mu::encodeJson(*this, format, 1);
     }
 
 
@@ -1675,6 +1906,9 @@ namespace mu
     bool DictStruct::hasXmlStructure() const
     {
         if (m_fields.empty())
+            return false;
+
+        if (!isField("name"))
             return false;
 
         for (const auto& iter : m_fields)

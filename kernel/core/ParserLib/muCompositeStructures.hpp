@@ -226,8 +226,10 @@ namespace mu
             BaseValue* remove(const Path& xPath);
             size_t clear();
             bool importXml(std::string fileName);
+            std::string encodeXml(bool format) const;
+            bool decodeXml(const std::string& xmlString);
             bool importJson(std::string fileName);
-            std::string encodeJson() const;
+            std::string encodeJson(bool format) const;
             bool decodeJson(const std::string& jsonString);
             bool hasXmlStructure() const;
     };
