@@ -67,6 +67,7 @@ class PackageRepo
         const std::vector<std::string>& fetchList();
         PackageInfo fetchInfo(const std::string& sPackageUrl);
         PackageInfo find(const std::string& pkgId);
+        std::vector<std::string> find_candidates(const std::string& pkgId);
         bool download(const std::string& sPackageUrl, const std::string& sTargetFile);
 };
 

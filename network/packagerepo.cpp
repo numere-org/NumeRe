@@ -263,6 +263,36 @@ PackageInfo PackageRepo::find(const std::string& pkgId)
 
 
 /////////////////////////////////////////////////
+/// \brief Find package candidates by using only
+/// a part of the package id. Does not download
+/// any of the necessary data with exception of
+/// the repository list.
+///
+/// \param pkgId const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> PackageRepo::find_candidates(const std::string& pkgId)
+{
+    if (_time64(nullptr) - m_lastRefreshed > 600)
+        fetchList();
+
+    std::vector<std::string> candidates;
+
+    for (const std::string& pkg : m_list)
+    {
+        std::string sFileName = pkg.substr(pkg.rfind('/')+1);
+        sFileName.erase(sFileName.rfind(".nscr"));
+
+        if (sFileName.find(pkgId) != std::string::npos)
+            candidates.push_back(sFileName);
+    }
+
+    return candidates;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Download a package to a defined
 /// location.
 ///

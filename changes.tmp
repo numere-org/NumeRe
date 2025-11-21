@@ -40,3 +40,4 @@ Applied	The vector methods "VECT.delegate", "VECT.rem" and "VECT.ins" do now sup
 Applied	Properties of multiple GUI elements can now be read and written simultaneously.
 Added	The methods "DICT.encodexml" and "DICT.decodexml" do encode the dictstructs contents into an XML string or decode an XML string into this dictstruct.
 Applied	The methods "DICT.encodexml" and  "DICT.encodejson" do now have an optional argument to pretty-print the resulting string output.
+Cleaned	If you do not enter the correct package identifier during "install", possible candidates are now listed and you can select from those.

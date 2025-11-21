@@ -1138,7 +1138,29 @@ bool Script::handleRepositoryInstall(const std::string& sPkgId)
     g_logger.info("Searching " + sPkgId + " in the package repository ...");
 
     NumeReKernel::printPreFmt("|-> PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_SEARCHING", sPkgId));
-    PackageInfo pkgInfo = m_repo.find(sPkgId);
+    std::vector<std::string> candidates = m_repo.find_candidates(sPkgId);
+
+    PackageInfo pkgInfo;
+
+    if (candidates.size() > 1 || (candidates.size() == 1 && candidates.front() != sPkgId))
+    {
+        NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_MULTIPLE_CANDIDATES") + "\n");
+
+        for (const std::string& c : candidates)
+            NumeReKernel::print(c);
+
+        NumeReKernel::printPreFmt("|<- ");
+        std::string sSelection;
+        NumeReKernel::getline(sSelection);
+        NumeReKernel::printPreFmt("|-> PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_SEARCHING", sSelection));
+        pkgInfo = m_repo.find(sSelection);
+        sPackageFileName = ValidFileName("packages/" + sSelection, ".nscr");
+    }
+    else if (candidates.size() == 1 && candidates.front() == sPkgId)
+    {
+        pkgInfo = m_repo.find(candidates.front());
+        sPackageFileName = ValidFileName("packages/" + candidates.front(), ".nscr");
+    }
 
     if (pkgInfo.repoUrl.length())
     {
