@@ -78,6 +78,7 @@ class Plot
         bool createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, bool bNewSubPlot, bool bAnimateVar, std::vector<std::string>& vDrawVector, const std::vector<std::string>& vDataPlots);
         void create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec);
+        bool plot3d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec, bool dataIsComplex);
         void createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], const short nType);
         void create3dPlot();

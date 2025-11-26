@@ -2264,15 +2264,39 @@ namespace mu
 
     /////////////////////////////////////////////////
     /// \brief Template function to convert an array
-    /// of objects of type T into a mu::Array
-    /// instance.
+    /// of objects of arithmetic type T into a
+    /// mu::Array instance.
     ///
     /// \param data const std::unique_ptr<T[]>&
     /// \param n size_t
     /// \return ArrValue*
     ///
     /////////////////////////////////////////////////
-    template<class T>
+    template<class T, std::enable_if<std::is_arithmetic_v<T>, bool>::type = true>
+    static ArrValue* convertToArray(const std::unique_ptr<T[]>& data, size_t n)
+    {
+        Array arr;
+
+        for (size_t i = 0; i < n; i++)
+        {
+            arr.emplace_back(Numerical(data[i]));
+        }
+
+        return new ArrValue(arr);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Template function to convert an array
+    /// of objects of non-arithmetic type T into a
+    /// mu::Array instance.
+    ///
+    /// \param data const std::unique_ptr<T[]>&
+    /// \param n size_t
+    /// \return ArrValue*
+    ///
+    /////////////////////////////////////////////////
+    template<class T, std::enable_if<!std::is_arithmetic_v<T>, bool>::type = true>
     static ArrValue* convertToArray(const std::unique_ptr<T[]>& data, size_t n)
     {
         Array arr;

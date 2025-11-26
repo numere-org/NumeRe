@@ -32,7 +32,7 @@ namespace mu
     /// i.e. the "do-nothing" value, similar to a
     /// neutral value in addition and multiplication.
     /////////////////////////////////////////////////
-    class NeutralValue : public BaseValue
+    class NeutralValue final : public BaseValue
     {
         public:
         NeutralValue();
@@ -64,7 +64,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief This class is a numerical value.
     /////////////////////////////////////////////////
-    class NumValue : public BaseValue
+    class NumValue final : public BaseValue
     {
         BASE_VALUE_DECL(NumValue, TYPE_NUMERICAL, Numerical, m_val)
 
@@ -103,7 +103,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief This class is a string value.
     /////////////////////////////////////////////////
-    class StrValue : public BaseValue
+    class StrValue final : public BaseValue
     {
         BASE_VALUE_DECL(StrValue, TYPE_STRING, std::string, m_val)
 
@@ -135,7 +135,7 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief This class is a categorical value.
     /////////////////////////////////////////////////
-    class CatValue : public BaseValue
+    class CatValue final : public BaseValue
     {
         BASE_VALUE_DECL(CatValue, TYPE_CATEGORY, Category, m_val)
 
@@ -167,7 +167,7 @@ namespace mu
     /// \brief This class wraps an array into a
     /// value.
     /////////////////////////////////////////////////
-    class ArrValue : public BaseValue
+    class ArrValue final : public BaseValue
     {
         BASE_VALUE_DECL(ArrValue, TYPE_ARRAY, Array, m_val)
 
@@ -234,7 +234,7 @@ namespace mu
     /// \brief This class wraps an DictStruct
     /// instance into a value.
     /////////////////////////////////////////////////
-    class DictStructValue : public BaseValue
+    class DictStructValue final : public BaseValue
     {
         BASE_VALUE_DECL(DictStructValue, TYPE_DICTSTRUCT, DictStruct, m_val)
 
@@ -268,7 +268,7 @@ namespace mu
     /// \brief This class wraps a Path instance into
     /// a value.
     /////////////////////////////////////////////////
-    class PathValue : public Object
+    class PathValue final : public Object
     {
         private:
             Path m_val;
@@ -383,7 +383,7 @@ namespace mu
     /// \brief This class wraps a file instance into
     /// an object.
     /////////////////////////////////////////////////
-    class FileValue : public Object
+    class FileValue final : public Object
     {
         private:
             File m_val;
@@ -494,7 +494,7 @@ namespace mu
     /// \brief This class wraps a stack into an
     /// object.
     /////////////////////////////////////////////////
-    class StackValue : public Object
+    class StackValue final : public Object
     {
         private:
             Stack m_stack;
@@ -601,7 +601,7 @@ namespace mu
     /// \brief This class wraps a queue into an
     /// object.
     /////////////////////////////////////////////////
-    class QueueValue : public Object
+    class QueueValue final : public Object
     {
         private:
             Queue m_queue;

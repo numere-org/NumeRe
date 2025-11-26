@@ -1968,6 +1968,8 @@ bool addLegends(string& sExpr)
                 std::string sLabel = arg;
 
                 StripSpaces(sLabel);
+                replaceAll(sLabel, "{", "\\{");
+                replaceAll(sLabel, "}", "\\}");
 
                 sTemp += arg + " " + toExternalString(sLabel);
             }
