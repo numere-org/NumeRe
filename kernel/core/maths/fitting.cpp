@@ -21,10 +21,13 @@
 #include "fitcontroller.hpp"
 #include "../interval.hpp"
 
-// This structure combines all main fitting
-// parameter and storage objects to simplify
-// the interaction between the main routine and
-// the (file static) helper routines
+
+/////////////////////////////////////////////////
+/// \brief This structure combines all main
+/// fitting parameter and storage objects to
+/// simplify the interaction between the main
+/// routine and the (file static) helper routines.
+/////////////////////////////////////////////////
 struct FittingData
 {
     std::vector<double> vx;
@@ -54,12 +57,12 @@ struct FittingData
 };
 
 // These are the prototypes of the file static helper routines
-static std::vector<double> evaluateFittingParams(FittingData& fitData, std::string& sCmd, Indices& _idx, std::string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog);
+static std::vector<double> evaluateFittingParams(FittingData& fitData, CommandLineParser& cmdParser, Indices& _idx, std::string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog);
 static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varmap_type& varMap, const std::string& sCmd);
-static int getDataForFit(const std::string& sCmd, std::string& sDimsForFitLog, FittingData& fitData);
+static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitLog, FittingData& fitData);
 static void removeObsoleteParentheses(std::string& sFunction);
 static bool calculateChiMap(std::string sFunctionDefString, const std::string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, std::vector<double> vInitialVals);
-static std::string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const std::string& sFuncDisplay, const std::string& sCmd);
+static std::string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const std::string& sFuncDisplay);
 static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t paramsMapSize);
 static std::string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const std::string& sFuncDisplay, const std::string& sFittedFunction, const std::string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog);
 static std::string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const std::vector<double>& vInitialVals, size_t windowSize, const std::string& sPMSign, bool forFitLog);
@@ -68,11 +71,21 @@ static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitDat
 static std::string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting);
 static void createTeXExport(Fitcontroller& _fControl, const std::string& sTeXExportFile, const std::string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const std::vector<double>& vInitialVals, size_t nSize, const std::string& sFitAnalysis, const std::string& sFuncDisplay, const std::string& sFittedFunction, double dChisq);
 
-using namespace std;
 
-// This is the fitting main routine
-bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+/////////////////////////////////////////////////
+/// \brief Fit a function with some params and
+/// algorithmic parameters to a passed data set.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool fitDataSet(CommandLineParser& cmdParser)
 {
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
     // Declare the FittingData object first
     FittingData fitData;
 
@@ -110,20 +123,19 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     fitData.nMaxIterations = 500;
     fitData.sChiMap_Vars[0].clear();
     fitData.sChiMap_Vars[1].clear();
-    fitData.sFitFunction = sCmd;
+    fitData.sFitFunction = cmdParser.getParameterList();
     fitData.sRestrictions = "";
 
-    if (findCommand(sCmd, "fit").sString == "fitw")
-        fitData.bUseErrors = true;
+    fitData.bUseErrors = cmdParser.getCommand() == "fitw";
 
     // Ensure that data is available
-    if (!_data.containsTablesOrClusters(sCmd))
-        throw SyntaxError(SyntaxError::NO_DATA_FOR_FIT, sCmd, SyntaxError::invalid_position);
+    if (!isNotEmptyExpression(cmdParser.getExpr()))
+        throw SyntaxError(SyntaxError::NO_DATA_FOR_FIT, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Evaluate all passed parameters in this file static
     // function and return the initial fitting parameter
     // values
-    vInterVal = evaluateFittingParams(fitData, sCmd, _idx, sTeXExportFile, bTeXExport, bMaskDialog);
+    vInterVal = evaluateFittingParams(fitData, cmdParser, _idx, sTeXExportFile, bTeXExport, bMaskDialog);
 
     fitData.sFitFunction = " " + fitData.sFitFunction + " ";
     _parser.SetInitValue(mu::Value(0.0));
@@ -145,7 +157,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
         // Get the map containing all the fitting parameters,
         // which will be used by the fit
-        paramsMap = getFittingParameters(fitData, varMap, sCmd);
+        paramsMap = getFittingParameters(fitData, varMap, cmdParser.getCommandLine());
     }
     catch (...)
     {
@@ -173,13 +185,13 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     if (fitData.sChiMap.length())
     {
         if (fitData.sChiMap_Vars[0] == "x" || fitData.sChiMap_Vars[1] == "x")
-            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, "x");
+            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, cmdParser.getCommandLine(), SyntaxError::invalid_position, "x");
 
         if (fitData.sChiMap_Vars[0] == "y" || fitData.sChiMap_Vars[1] == "y")
-            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, "y");
+            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, cmdParser.getCommandLine(), SyntaxError::invalid_position, "y");
 
         if (varMap.find(fitData.sChiMap_Vars[0]) == varMap.end())
-            throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, fitData.sChiMap_Vars[0]);
+            throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, cmdParser.getCommandLine(), SyntaxError::invalid_position, fitData.sChiMap_Vars[0]);
 
         if (varMap.find(fitData.sChiMap_Vars[1]) == varMap.end())
             fitData.b1DChiMap = true;
@@ -188,7 +200,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // Ensure that "x" is present in the function, if the fit
     // is along a single dimension
     if (!fitData.nFitVars || !(fitData.nFitVars & 1))
-        throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, "x");
+        throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, cmdParser.getCommandLine(), SyntaxError::invalid_position, "x");
 
     // Validate the parameters in the parameter map. If the
     // parameter map contains one of the variables x,y,z, then
@@ -197,10 +209,10 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     for (auto pItem = paramsMap.begin(); pItem != paramsMap.end(); ++pItem)
     {
         if (pItem->first == "x" || pItem->first == "y" || pItem->first == "z")
-            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, pItem->first);
+            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, cmdParser.getCommandLine(), SyntaxError::invalid_position, pItem->first);
 
         if (varMap.find(pItem->first) == varMap.end())
-            throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, pItem->first);
+            throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, cmdParser.getCommandLine(), SyntaxError::invalid_position, pItem->first);
     }
 
     // Remove the parameters of the chi^2 map from the usual
@@ -216,28 +228,25 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     // Ensure that at least a single parameter is available
     if (!paramsMap.size())
-        throw SyntaxError(SyntaxError::NO_PARAMS_FOR_FIT, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_PARAMS_FOR_FIT, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     sFuncDisplay = fitData.sFitFunction;
-
-    sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
-    StripSpaces(sCmd);
 
     // Get the necessary data for the fitting routine. This is done
     // in the following file static routine. It will also return the
     // actual fitting dimension
-    fitData.nDim = getDataForFit(sCmd, sDimsForFitLog, fitData);
+    fitData.nDim = getDataForFit(cmdParser, sDimsForFitLog, fitData);
 
     // Ensure that we're not trying to use more paramters than values
     if (paramsMap.size() > fitData.vy.size())
-        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     if (paramsMap.size() > fitData.vx.size())
-        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     if ((fitData.nFitVars & 2)
         && (paramsMap.size() > fitData.vz.size() || paramsMap.size() > fitData.vz[0].size()))
-        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Remove obsolete parentheses in the function displaying
     // string and the actual fitting function
@@ -267,7 +276,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // Apply the fitting algorithm to data and fitting function.
     // This will update the parameter values and return all necessary
     // values for evaluating the fitting result.
-    sFunctionDefString = applyFitAlgorithm(_fControl, fitData, paramsMap, sFuncDisplay, sCmd);
+    sFunctionDefString = applyFitAlgorithm(_fControl, fitData, paramsMap, sFuncDisplay);
 
     // DONE. We're finished with fitting. The following lines have the
     // single purpose to display the results in the logfiles and in the
@@ -288,10 +297,10 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     if (!bMaskDialog && _option.systemPrints())
         reduceLogFilesize(sFitLog);
 
-    string sFittedFunction = _fControl.getFitFunction();
+    std::string sFittedFunction = _fControl.getFitFunction();
 
     // Open the fitting log file stream
-    oFitLog.open(sFitLog.c_str(), ios_base::ate | ios_base::app);
+    oFitLog.open(sFitLog.c_str(), std::ios_base::ate | std::ios_base::app);
 
     // If the we could not open the file stream
     // abort and inform the user
@@ -299,30 +308,30 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     {
         oFitLog.close();
         NumeReKernel::printPreFmt("\n");
-        throw SyntaxError(SyntaxError::CANNOT_OPEN_FITLOG, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::CANNOT_OPEN_FITLOG, cmdParser.getCommandLine(), SyntaxError::invalid_position);
     }
 
     // Write the headline to the fitting logfile
-    oFitLog << std::setw(156) << std::setfill('=') << '=' << endl;
-    oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) << ": " << getTimeStamp(false) << endl;
-    oFitLog << std::setw(156) << std::setfill('=') << '=' << endl;
+    oFitLog << std::setw(156) << std::setfill('=') << '=' << std::endl;
+    oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) << ": " << getTimeStamp(false) << std::endl;
+    oFitLog << std::setw(156) << std::setfill('=') << '=' << std::endl;
 
     // Write the fitting options table to the log file
-    oFitLog << getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, true) << endl;
+    oFitLog << getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, true) << std::endl;
 
-    string sPMSign = " ";
+    std::string sPMSign = " ";
     sPMSign[0] = (char)177;
 
     // Prepare the headline for the fitting parameter table
     if (fitData.bUseErrors)
-        oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD1") << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD1") << std::endl;
     else
-        oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << std::endl;
 
     // Write the fitting parameter table to the logfile
-    oFitLog << std::setw(156) << std::setfill('-') << '-' << endl;
+    oFitLog << std::setw(156) << std::setfill('-') << '-' << std::endl;
     oFitLog << getParameterTable(fitData, paramsMap, vInitialVals, 160, sPMSign, true);
-    oFitLog << std::setw(156) << std::setfill('-') << '-' << endl;
+    oFitLog << std::setw(156) << std::setfill('-') << '-' << std::endl;
 
 
     if (_option.systemPrints())
@@ -370,10 +379,10 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // Write the correlation matrix to the log file and the terminal
     if (paramsMap.size() > 1 && paramsMap.size() != nSize)
     {
-        oFitLog << endl;
-        oFitLog << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << ":" << endl;
-        oFitLog << endl;
-        oFitLog << constructCovarianceMatrix(fitData, paramsMap.size(), true) << endl;
+        oFitLog << std::endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << ":" << std::endl;
+        oFitLog << std::endl;
+        oFitLog << constructCovarianceMatrix(fitData, paramsMap.size(), true) << std::endl;
 
         if (_option.systemPrints() && !bMaskDialog)
         {
@@ -388,11 +397,11 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // Get the fitting analysis as a string. The fitting analysis is
     // calculated from the average of the percentual errors and the
     // value of the reduced chi^2
-    string sFitAnalysis = getFitAnalysis(_fControl, fitData, dChisq / (double)(nSize - paramsMap.size()), dAverageErrorPercentage, nSize != paramsMap.size());
+    std::string sFitAnalysis = getFitAnalysis(_fControl, fitData, dChisq / (double)(nSize - paramsMap.size()), dAverageErrorPercentage, nSize != paramsMap.size());
 
     // Write the fitting analysis to the logfile and to the terminal
-    oFitLog << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << ":" << endl;
-    oFitLog << sFitAnalysis << endl;
+    oFitLog << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << ":" << std::endl;
+    oFitLog << sFitAnalysis << std::endl;
     oFitLog.close();
 
     if (_option.systemPrints() && !bMaskDialog)
@@ -406,11 +415,12 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // If the user requested an export of the fitting results to
     // a TeX file, this is done here
     if (bTeXExport)
-        createTeXExport(_fControl, sTeXExportFile, sCmd, paramsMap, fitData, vInitialVals, nSize, sFitAnalysis, sFuncDisplay, sFittedFunction, dChisq);
+        createTeXExport(_fControl, sTeXExportFile, cmdParser.getCommandLine(), paramsMap, fitData, vInitialVals, nSize, sFitAnalysis, sFuncDisplay, sFittedFunction, dChisq);
 
     // Update the function definition of the automatically created
     // Fit(x) or Fitw(x) function
     bool bDefinitionSuccess = false;
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!_functions.isDefined(sFunctionDefString))
         bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
@@ -428,32 +438,44 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 }
 
 
-// This static function evaluates the passed
-// parameters of the fitting routine
-static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, Indices& _idx, string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog)
+/////////////////////////////////////////////////
+/// \brief This static function evaluates the
+/// passed parameters of the fitting routine.
+///
+/// \param fitData FittingData&
+/// \param cmdParser CommandLineParser&
+/// \param _idx Indices&
+/// \param sTeXExportFile std::string&
+/// \param bTeXExport bool&
+/// \param bMaskDialog bool&
+/// \return std::vector<double>
+///
+/////////////////////////////////////////////////
+static std::vector<double> evaluateFittingParams(FittingData& fitData, CommandLineParser& cmdParser, Indices& _idx, std::string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog)
 {
+    std::string sParamList = cmdParser.getParameterList();
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    vector<double> vInterVal;
-    static const string sBADFUNCTIONS = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
+    std::vector<double> vInterVal;
+    static const std::string sBADFUNCTIONS = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
 
     // Evaluate the chi^2 map option
-    if (findParameter(sCmd, "chimap", '='))
+    if (findParameter(sParamList, "chimap", '='))
     {
-        fitData.sChiMap = getArgAtPos(sCmd, findParameter(sCmd, "chimap", '=') + 6);
-        eraseToken(sCmd, "chimap", true);
+        fitData.sChiMap = getArgAtPos(sParamList, findParameter(sParamList, "chimap", '=') + 6);
+        eraseToken(sParamList, "chimap", true);
 
         if (fitData.sChiMap.length())
         {
             getIndices(fitData.sChiMap, _idx, _parser, _data, true);
 
             if (!isValidIndexSet(_idx))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+                throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             if (_idx.col.size() < 2)
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+                throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             evaluateIndices(fitData.sChiMap, _idx, _data);
             fitData.sChiMap.erase(fitData.sChiMap.find('('));
@@ -463,16 +485,16 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     }
 
     // Does the user want to export the results into a TeX file?
-    if (findParameter(sCmd, "export", '='))
+    if (findParameter(sParamList, "export", '='))
     {
         bTeXExport = true;
-        sTeXExportFile = getArgAtPos(sCmd, findParameter(sCmd, "export", '=') + 6);
-        eraseToken(sCmd, "export", true);
+        sTeXExportFile = getArgAtPos(sParamList, findParameter(sParamList, "export", '=') + 6);
+        eraseToken(sParamList, "export", true);
     }
-    else if (findParameter(sCmd, "export"))
+    else if (findParameter(sParamList, "export"))
     {
         bTeXExport = true;
-        eraseToken(sCmd, "export", false);
+        eraseToken(sParamList, "export", false);
     }
 
     // Ensure that the file name for the TeX file is valid
@@ -481,25 +503,25 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         sTeXExportFile = _data.ValidFileName(sTeXExportFile, ".tex");
 
         if (!sTeXExportFile.ends_with(".tex"))
-            sTeXExportFile.replace(sTeXExportFile.rfind('.'), string::npos, ".tex");
+            sTeXExportFile.replace(sTeXExportFile.rfind('.'), std::string::npos, ".tex");
     }
 
     // Separate expression from the command line option list
-    for (size_t i = 0; i < sCmd.length(); i++)
+    for (size_t i = 0; i < sParamList.length(); i++)
     {
-        if (sCmd[i] == '(')
-            i += getMatchingParenthesis(StringView(sCmd, i));
+        if (sParamList[i] == '(')
+            i += getMatchingParenthesis(StringView(sParamList, i));
 
-        if (sCmd[i] == '-')
+        if (sParamList[i] == '-')
         {
-            sCmd.erase(0, i);
+            sParamList.erase(0, i);
             break;
         }
     }
 
     // Decode possible interval definitions in the command
     // line option list
-    vInterVal = readAndParseIntervals(sCmd, _parser, _data, _functions, true);
+    vInterVal = readAndParseIntervals(sParamList, _parser, _data, _functions, true);
 
     // Evaluate the contents of the parsed interval definitions
     for (size_t i = 0; i < vInterVal.size(); i += 2)
@@ -517,12 +539,12 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
         if (fitData.sFitFunction[i] == '-')
         {
-            fitData.sFitFunction.replace(i, string::npos, sCmd.substr(sCmd.find('-')));
+            fitData.sFitFunction.replace(i, std::string::npos, sParamList.substr(sParamList.find('-')));
             break;
         }
     }
 
-    sCmd = fitData.sFitFunction;
+    sParamList = fitData.sFitFunction;
 
     // Because it's quite likely that one misspells the option value
     // "saverr", whe accept also the spelling "saveer" as an alternative
@@ -530,14 +552,14 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     {
         fitData.bSaveErrors = true;
         fitData.sFitFunction.erase(findParameter(fitData.sFitFunction, "saverr") - 1, 6);
-        sCmd.erase(findParameter(sCmd, "saverr") - 1, 6);
+        sParamList.erase(findParameter(sParamList, "saverr") - 1, 6);
     }
 
     if (findParameter(fitData.sFitFunction, "saveer"))
     {
         fitData.bSaveErrors = true;
         fitData.sFitFunction.erase(findParameter(fitData.sFitFunction, "saveer") - 1, 6);
-        sCmd.erase(findParameter(sCmd, "saveer") - 1, 6);
+        sParamList.erase(findParameter(sParamList, "saveer") - 1, 6);
     }
 
     // The masking paramter
@@ -545,18 +567,18 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     {
         bMaskDialog = true;
         fitData.sFitFunction.erase(findParameter(fitData.sFitFunction, "mask") - 1, 6);
-        sCmd.erase(findParameter(sCmd, "mask") - 1, 6);
+        sParamList.erase(findParameter(sParamList, "mask") - 1, 6);
     }
 
     // Ensure that a fitting function was defined
     if (!findParameter(fitData.sFitFunction, "with", '='))
-        throw SyntaxError(SyntaxError::NO_FUNCTION_FOR_FIT, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_FUNCTION_FOR_FIT, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Changes to the tolerance
     if (findParameter(fitData.sFitFunction, "tol", '='))
     {
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "tol", '=') + 3));
-        eraseToken(sCmd, "tol", true);
+        eraseToken(sParamList, "tol", true);
         eraseToken(fitData.sFitFunction, "tol", true);
 
         mu::Array v = _parser.Eval();
@@ -583,7 +605,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     if (findParameter(fitData.sFitFunction, "iter", '='))
     {
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "iter", '=') + 4));
-        eraseToken(sCmd, "iter", true);
+        eraseToken(sParamList, "iter", true);
         eraseToken(fitData.sFitFunction, "iter", true);
         fitData.nMaxIterations = std::abs(_parser.Eval().getAsScalarInt());
 
@@ -595,7 +617,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     if (findParameter(fitData.sFitFunction, "restrict", '='))
     {
         fitData.sRestrictions = getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "restrict", '=') + 8);
-        eraseToken(sCmd, "restrict", true);
+        eraseToken(sParamList, "restrict", true);
         eraseToken(fitData.sFitFunction, "restrict", true);
 
         if (fitData.sRestrictions.length() && fitData.sRestrictions.front() == '[' && fitData.sRestrictions.back() == ']')
@@ -625,26 +647,26 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     {
         fitData.bNoParams = true;
         fitData.sFitFunction = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "with", '=') + 4);
-        sCmd.erase(findParameter(sCmd, "with", '=') - 1);
+        sParamList.erase(findParameter(sParamList, "with", '=') - 1);
     }
     else if (findParameter(fitData.sFitFunction, "with", '=') < findParameter(fitData.sFitFunction, "params", '='))
     {
         fitData.sParams = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "params", '=') + 6);
         fitData.sFitFunction = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "with", '=') + 4, findParameter(fitData.sFitFunction, "params", '=') - 1 - findParameter(fitData.sFitFunction, "with", '=') - 4);
-        sCmd = sCmd.substr(0, findParameter(sCmd, "with", '=') - 1);
+        sParamList = sParamList.substr(0, findParameter(sParamList, "with", '=') - 1);
     }
     else
     {
         fitData.sParams = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "params", '=') + 6, findParameter(fitData.sFitFunction, "with", '=') - 1 - findParameter(fitData.sFitFunction, "params", '=') - 6);
         fitData.sFitFunction = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "with", '=') + 4);
-        sCmd = sCmd.substr(0, findParameter(sCmd, "params", '=') - 1);
+        sParamList = sParamList.substr(0, findParameter(sParamList, "params", '=') - 1);
     }
 
     // Remove surrounding brackets from the parameter list
-    if (fitData.sParams.find('[') != string::npos)
+    if (fitData.sParams.find('[') != std::string::npos)
         fitData.sParams = fitData.sParams.substr(fitData.sParams.find('[') + 1);
 
-    if (fitData.sParams.find(']') != string::npos)
+    if (fitData.sParams.find(']') != std::string::npos)
         fitData.sParams = fitData.sParams.substr(0, fitData.sParams.find(']'));
 
     StripSpaces(fitData.sFitFunction);
@@ -668,27 +690,27 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         }
 
         if (!_functions.call(fitData.sParams))
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd,fitData. sParams, fitData.sParams);
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, cmdParser.getCommandLine(), fitData.sParams, fitData.sParams);
 
         if (_data.containsTables(fitData.sParams))
             getDataElements(fitData.sParams, _parser, _data);
 
-        //if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
+        //if (fitData.sParams.find("{") != std::string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
         //    convertVectorToExpression(fitData.sParams);
     }
 
-    StripSpaces(sCmd);
+    StripSpaces(sParamList);
 
     // Evaluate function definition calls
     if (!_functions.call(fitData.sFitFunction))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, fitData.sFitFunction, fitData.sFitFunction);
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, cmdParser.getCommandLine(), fitData.sFitFunction, fitData.sFitFunction);
 
     // Get values from a references data object
     if (_data.containsTables(fitData.sFitFunction))
         getDataElements(fitData.sFitFunction, _parser, _data);
 
     // Expand remaining vectors
-    if (fitData.sFitFunction.find("{") != string::npos)
+    if (fitData.sFitFunction.find("{") != std::string::npos)
         convertVectorToExpression(fitData.sFitFunction);
 
     size_t nPos = 0;
@@ -696,11 +718,11 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     // Ensure that the fitting function does not contain any of the
     // functions from the bad fitting functions list (a list of functions,
     // which cannot be used to solve the optimisation problem)
-    while (sBADFUNCTIONS.find(',', nPos) != string::npos)
+    while (sBADFUNCTIONS.find(',', nPos) != std::string::npos)
     {
-        if (fitData.sFitFunction.find(sBADFUNCTIONS.substr(nPos, sBADFUNCTIONS.find(',', nPos) - nPos - 1)) != string::npos)
+        if (fitData.sFitFunction.find(sBADFUNCTIONS.substr(nPos, sBADFUNCTIONS.find(',', nPos) - nPos - 1)) != std::string::npos)
         {
-            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sCmd, SyntaxError::invalid_position, sBADFUNCTIONS.substr(nPos, sBADFUNCTIONS.find(',', nPos) - nPos));
+            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, cmdParser.getCommandLine(), SyntaxError::invalid_position, sBADFUNCTIONS.substr(nPos, sBADFUNCTIONS.find(',', nPos) - nPos));
         }
         else
             nPos = sBADFUNCTIONS.find(',', nPos) + 1;
@@ -713,9 +735,18 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 }
 
 
-// This static function returns a map of all
-// fitting paramters used in the fitting algorithm
-static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varmap_type& varMap, const string& sCmd)
+/////////////////////////////////////////////////
+/// \brief This static function returns a map of
+/// all fitting paramters used in the fitting
+/// algorithm.
+///
+/// \param fitData FittingData&
+/// \param varMap const mu::varmap_type&
+/// \param sCmd const std::string&
+/// \return mu::varmap_type
+///
+/////////////////////////////////////////////////
+static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varmap_type& varMap, const std::string& sCmd)
 {
     mu::varmap_type paramsMap;
     Parser& _parser = NumeReKernel::getInstance()->getParser();
@@ -748,7 +779,7 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
         // Remove the values from the expression, to avoid
         // that they would be mis-identified as fitting
         // parameters
-        if (fitData.sParams.find('=') != string::npos)
+        if (fitData.sParams.find('=') != std::string::npos)
         {
             for (size_t i = 0; i < fitData.sParams.length(); i++)
             {
@@ -782,410 +813,206 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
 }
 
 
-// This static function obtains the data needed for
-// the fitting algorithm and stores it in the vector
-// members in the FittingData object
-static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData& fitData)
+/////////////////////////////////////////////////
+/// \brief This static function obtains the data
+/// needed for the fitting algorithm and stores
+/// it in the vector members in the FittingData
+/// object.
+///
+/// \param cmdParser CommandLineParser&
+/// \param sDimsForFitLog std::string&
+/// \param fitData FittingData&
+/// \return int
+///
+/////////////////////////////////////////////////
+static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitLog, FittingData& fitData)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    vector<double> vTempZ;
-    string sDataTable = "";
-    Indices _idx;
     int nColumns = 0;
-    bool openEnd = false;
-    bool isCluster = false;
-    sDataTable = "data";
     int nDim = 0;
 
-    _idx = getIndicesForPlotAndFit(sCmd, sDataTable, nColumns, openEnd, isCluster);
+    mu::Array xArray;
+    mu::Array yArray;
+    mu::Array zArray;
 
+    DataView _dataView = cmdParser.getExprAsDataView();
 
-    if (_idx.row.isOpenEnd())
+    _dataView.evalIndices();
+
+    if (!_dataView.isValueLike())
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
+
+    _dataView.reserveAxes(1 + (fitData.nFitVars & 2), false);
+    nColumns = _dataView.cols();
+
+    // Extract the x axis
+    xArray = _dataView.getAxis(0);
+
+    // Get the y and the z axes, if possible
+    if (fitData.nFitVars & 2)
     {
-        if (!isCluster)
-            _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
-        else
-            _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
-    }
-
-    if (!isCluster && _idx.col.isOpenEnd())
-    {
-        _idx.col.setRange(0, _data.getCols(sDataTable, false)-1);
-    }
-
-    if (!isCluster && !_data.isValueLike(_idx.col, sDataTable))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, sDataTable+"(", sDataTable);
-
-    if (!isCluster)
-    {
-        if (_idx.row.back() > _data.getLines(sDataTable, false))
-            _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
-
-        if (_idx.col.back() > _data.getCols(sDataTable))
-            _idx.col.setRange(0, _data.getCols(sDataTable)-1);
+        yArray = _dataView.getAxis(1);
+        zArray = _dataView.get(VectorIndex(0, _dataView.rows()-1), VectorIndex(0));
     }
     else
+        yArray = _dataView.get(VectorIndex(0, _dataView.rows()-1), VectorIndex(0));
+
+    if (nColumns < 2 && fitData.bUseErrors)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
+
+    // Update the intervals, if not already defined by the suer
+    if (mu::isnan(fitData.ivl[0].front()))
+        fitData.ivl[0].reset(xArray.call("min").front().as_cmplx(),
+                             xArray.call("max").front().as_cmplx());
+
+    if (mu::isnan(fitData.ivl[1].front()))
+        fitData.ivl[1].reset(yArray.call("min").front().as_cmplx(),
+                             yArray.call("max").front().as_cmplx());
+
+    if ((fitData.nFitVars & 2) && mu::isnan(fitData.ivl[2].front()))
     {
-        if (_idx.row.back() > (int)_data.getCluster(sDataTable).size())
-            _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
-    }
-
-    /* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch
-     *     von Bedeutung, ob Fehlerwerte verwendet werden sollen <--
-     */
-    nDim = 0;
-
-    if (nColumns == 1 && fitData.bUseErrors && _idx.col.size() < 3)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-
-    if (nColumns == 1)
-        nDim = 2;
-    else if (nColumns == 2)
-    {
-        if (!fitData.bUseErrors)
-        {
-            if (!(fitData.nFitVars & 2))
-            {
-                nDim = 2;
-
-                if (_idx.col.size() < 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-            }
-            else
-            {
-                nDim = 3;
-
-                if (_idx.col.size() < _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)).real() + 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-            }
-        }
+        // Tuple vs Grid
+        if (nColumns <= 2)
+            fitData.ivl[2].reset(zArray.call("min").front().as_cmplx(),
+                                 zArray.call("max").front().as_cmplx());
         else
+            fitData.ivl[2].reset(_dataView.min().as_cmplx(),
+                                 _dataView.max().as_cmplx());
+    }
+
+    // Copy the data
+    if (!(fitData.nFitVars & 2))
+    {
+        // Only x
+        for (size_t i = 0; i < _dataView.rows(); i++)
         {
-            if (!(fitData.nFitVars & 2))
+            if (!fitData.ivl[0].isInside(xArray.get(i).as_cmplx()) || !fitData.ivl[1].isInside(yArray.get(i).as_cmplx()))
+                continue;
+
+            fitData.vx.push_back(xArray.get(i).getNum().asF64());
+            fitData.vy.push_back(yArray.get(i).getNum().asF64());
+
+            if (fitData.bUseErrors)
             {
-                nDim = 4;
-
-                if (_idx.col.size() < 3)
-                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-            }
-            else
-            {
-                nDim = 5;
-
-                if (_idx.col.size() < 3 * _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)).real() + 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-            }
-        }
-    }
-    else
-    {
-        nDim = _idx.col.size();
-    }
-
-    if (isnan(fitData.ivl[0].front()))
-    {
-        fitData.ivl[0].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real(),
-                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real());
-    }
-
-    if (isnan(fitData.ivl[1].front()) && !isCluster)
-    {
-        bool useLast = _idx.col.isExpanded() && nDim == 2;
-
-        fitData.ivl[1].reset(_data.min(sDataTable, _idx.row, VectorIndex(useLast ? _idx.col.last() : _idx.col[1])).real(),
-                             _data.max(sDataTable, _idx.row, VectorIndex(useLast ? _idx.col.last() : _idx.col[1])).real());
-    }
-
-    if (fitData.nFitVars & 2 && !isCluster && isnan(fitData.ivl[2].front()))
-    {
-        fitData.ivl[2].reset(_data.min(sDataTable, _idx.row, _idx.col.subidx(2)).real(),
-                             _data.max(sDataTable, _idx.row, _idx.col.subidx(2)).real());
-    }
-
-    if (nDim == 2 || isCluster)
-    {
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            if (nColumns == 1)
-            {
-                mu::Value val = getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster);
-
-                if (isValidValue(val.getNum().asF64()) && fitData.ivl[0].isInside(val.getNum().asCF64()))
+                if (nColumns == 2)
+                    fitData.vy_w.push_back(_dataView.get(i, 1).isValid() ? std::abs(_dataView.get(i, 1).getNum().asF64()) : 0.0);
+                else
                 {
-                    fitData.vx.push_back(_idx.row[i] + 1);
-                    fitData.vy.push_back(val.getNum().asF64());
-                }
-            }
-            else
-            {
-                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sDataTable)
-                    && _data.isValidElement(_idx.row[i], _idx.col.last(), sDataTable))
-                {
-                    mu::Value valx = _data.getElement(_idx.row[i], _idx.col.front(), sDataTable);
-                    mu::Value valy = _data.getElement(_idx.row[i], _idx.col.last(), sDataTable);
+                    mu::Value valx_w = _dataView.get(i, 1);
+                    mu::Value valy_w = _dataView.get(i, 2);
 
-                    if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
-                        || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
-                        continue;
-
-                    fitData.vx.push_back(valx.getNum().asF64());
-                    fitData.vy.push_back(valy.getNum().asF64());
-                }
-            }
-        }
-    }
-    else if (nDim == 4)
-    {
-        int nErrorCols = 2;
-
-        if (nColumns == 2)
-        {
-            if (abs(_idx.col[1] - _idx.col[0]) == 2)
-                nErrorCols = 1;
-        }
-        else if (nColumns == 4)
-            nErrorCols = 2;
-
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            if (nColumns == 2)
-            {
-                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
-                    && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
-                {
-                    mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
-                    mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
-
-                    if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
-                        || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
-                        continue;
-
-                    fitData.vx.push_back(valx.getNum().asF64());
-                    fitData.vy.push_back(valy.getNum().asF64());
-
-                    if (nErrorCols == 1)
-                    {
-                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().asF64()));
-                        else
-                            fitData.vy_w.push_back(0.0);
-                    }
-                    else
-                    {
-                        mu::Value valx_w = _data.getElement(_idx.row[i], _idx.col[2], sDataTable);
-                        mu::Value valy_w = _data.getElement(_idx.row[i], _idx.col[3], sDataTable);
-
-                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
-                            && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                            && valx_w.getNum().asF64()
-                            && valy_w.getNum().asF64())
-                            fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().asF64()) * fabs(valy_w.getNum().asF64())));
-                        else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
-                                 && valx_w.getNum().asF64())
-                            fitData.vy_w.push_back(fabs(valx_w.getNum().asF64()));
-                        else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                                 && valy_w.getNum().asF64())
-                            fitData.vy_w.push_back(fabs(valy_w.getNum().asF64()));
-                        else
-                            fitData.vy_w.push_back(0.0);
-                    }
-                }
-            }
-            else
-            {
-                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
-                    && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
-                {
-                    mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
-                    mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
-
-                    if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
-                        || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
-                        continue;
-
-                    fitData.vx.push_back(valx.getNum().asF64());
-                    fitData.vy.push_back(valy.getNum().asF64());
-
-                    mu::Value valx_w = _data.getElement(_idx.row[i], _idx.col[2], sDataTable);
-                    mu::Value valy_w = _data.getElement(_idx.row[i], _idx.col[3], sDataTable);
-
-                    if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
-                        && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                        && valx_w.getNum().asF64()
-                        && valy_w.getNum().asF64())
-                        fitData.vy_w.push_back(sqrt(fabs(valx_w.getNum().asF64()) * fabs(valy_w.getNum().asF64())));
-                    else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
-                             && valx_w.getNum().asF64())
-                        fitData.vy_w.push_back(fabs(valx_w.getNum().asF64()));
-                    else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
-                             && valy_w.getNum().asF64())
-                        fitData.vy_w.push_back(fabs(valy_w.getNum().asF64()));
+                    if (valx_w.isValid() && valy_w.isValid())
+                        fitData.vy_w.push_back(std::sqrt(std::abs(valx_w.getNum().asF64() * valy_w.getNum().asF64())));
+                    else if (valx_w.isValid())
+                        fitData.vy_w.push_back(std::abs(valx_w.getNum().asF64()));
+                    else if (valy_w.isValid())
+                        fitData.vy_w.push_back(std::abs(valy_w.getNum().asF64()));
                     else
                         fitData.vy_w.push_back(0.0);
                 }
             }
         }
     }
-    else if (!isCluster && (fitData.nFitVars & 2))
+    else
     {
-        for (size_t i = 0; i < _idx.row.size(); i++)
+        if (nColumns <= 2)
         {
-            mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
-            mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
-
-            if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable)
-                || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
-                continue;
-            else
-                fitData.vy.push_back(valy.getNum().asF64());
-
-            if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
-                || !fitData.ivl[0].isInside(valx.getNum().asCF64()))
-                continue;
-            else
-                fitData.vx.push_back(valx.getNum().asF64());
-
-            for (size_t k = 2; k < _idx.col.size(); k++)
+            // x and y for tuples
+            for (size_t i = 0; i < _dataView.rows(); i++)
             {
-                if (nColumns > 3 && k == _idx.row.size() + 2)
-                    break;
-
-                if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
-                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).getNum().asCF64()))
+                if (!fitData.ivl[0].isInside(xArray.get(i).as_cmplx())
+                    || !fitData.ivl[1].isInside(yArray.get(i).as_cmplx())
+                    || !fitData.ivl[2].isInside(zArray.get(i).as_cmplx()))
                     continue;
-                else if (!fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().asCF64()))
-                {
-                    vTempZ.push_back(NAN);
 
-                    if (fitData.bUseErrors)
-                        fitData.vy_w.push_back(0.0);
+                fitData.vx.push_back(xArray.get(i).getNum().asF64());
+                fitData.vy.push_back(yArray.get(i).getNum().asF64());
+
+                fitData.vz.push_back({zArray.get(i).getNum().asF64()});
+
+                if (fitData.bUseErrors)
+                {
+                    if (_dataView.get(i, 2).isValid())
+                        fitData.vy_w.push_back({std::abs(_dataView.get(i, 2).getNum().asF64())});
+                    else
+                        fitData.vy_w.push_back({0.0});
                 }
-                else
-                {
-                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).getNum().asF64());
+            }
+        }
+        else
+        {
+            // x and y for grid
+            for (size_t i = 0; i < _dataView.rows(); i++)
+            {
+                if (!fitData.ivl[0].isInside(xArray.get(i).as_cmplx())
+                    || !fitData.ivl[1].isInside(yArray.get(i).as_cmplx()))
+                    continue;
 
-                    if (fitData.bUseErrors)
+                fitData.vx.push_back(xArray.get(i).getNum().asF64());
+                fitData.vy.push_back(yArray.get(i).getNum().asF64());
+
+                std::vector<double> vTempZ;
+
+                for (size_t j = 0; j < std::min(yArray.size(), _dataView.cols()); j++)
+                {
+                    if (!fitData.ivl[2].isInside(_dataView.get(i, j).as_cmplx()))
                     {
-                        if (_data.isValidElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k+_idx.row.size()], sDataTable).getNum().asF64()));
-                        else
+                        vTempZ.push_back(NAN);
+
+                        if (fitData.bUseErrors)
                             fitData.vy_w.push_back(0.0);
                     }
+                    else
+                    {
+                        vTempZ.push_back(_dataView.get(i, j).getNum().asF64());
+
+                        if (fitData.bUseErrors)
+                        {
+                            if (_dataView.get(i, j + yArray.size()).isValid())
+                                fitData.vy_w.push_back(std::abs(_dataView.get(i, j+yArray.size()).getNum().asF64()));
+                            else
+                                fitData.vy_w.push_back(0.0);
+                        }
+                    }
+                }
+
+                fitData.vz.push_back(vTempZ);
+
+                if (fitData.vy_w.size() && fitData.bUseErrors)
+                {
+                    fitData.vz_w.push_back(fitData.vy_w);
+                    fitData.vy_w.clear();
                 }
             }
-
-            fitData.vz.push_back(vTempZ);
-            vTempZ.clear();
-
-            if (fitData.vy_w.size() && fitData.bUseErrors)
-            {
-                fitData.vz_w.push_back(fitData.vy_w);
-                fitData.vy_w.clear();
-            }
         }
+    }
+
+    // Define the dimension of the fit data set, which loosely corresponds to the number of columns
+    nDim = std::min(nColumns, 3) + 1 + (fitData.nFitVars & 2);
+
+    // Prepare the message for the fit log
+    if (_dataView.isTable())
+    {
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+        sDimsForFitLog = _dataView.getTableIndices().col.to_string()
+            + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(_dataView.getDataName());
     }
     else
-    {
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
-                && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
-            {
-                mu::Value valx = _data.getElement(_idx.row[i], _idx.col[0], sDataTable);
-                mu::Value valy = _data.getElement(_idx.row[i], _idx.col[1], sDataTable);
-
-                if (!fitData.ivl[0].isInside(valx.getNum().asCF64())
-                    || !fitData.ivl[1].isInside(valy.getNum().asCF64()))
-                    continue;
-
-                fitData.vx.push_back(valx.getNum().asF64());
-                fitData.vy.push_back(valy.getNum().asF64());
-
-                if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).getNum().asF64()));
-                else
-                    fitData.vy_w.push_back(0.0);
-            }
-        }
-    }
-
-    sDimsForFitLog.clear();
-
-    if (nDim == 2)
-    {
-        sDimsForFitLog += toString(_idx.col.front()+1);
-
-        if (nColumns == 2)
-        {
-            sDimsForFitLog += ", " + toString(_idx.col.last() + 1);
-        }
-    }
-    else if (nDim == 4)
-    {
-        int nErrorCols = 2;
-
-        if (nColumns == 2)
-        {
-            if (_idx.col.size() == 3)
-                nErrorCols = 1;
-        }
-        else if (nColumns == 4)
-            nErrorCols = 2;
-
-        if (nColumns == 2)
-        {
-            sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1);
-
-            if (nErrorCols == 2)
-                sDimsForFitLog += ", " + toString(_idx.col[3] + 1);
-        }
-        else
-        {
-            sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1) + ", " + toString(_idx.col[3] + 1);
-        }
-    }
-    else if ((fitData.nFitVars & 2))
-    {
-        if (nColumns == 2)
-        {
-            sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1) + "-" + toString(_idx.col.last()+1);
-
-            if (fitData.bUseErrors)
-                sDimsForFitLog += ", " + toString(_idx.col[2] + 2 + _idx.row.size()) + "-" + toString(_idx.col[2] + 2 + 2 * _idx.row.size());
-        }
-        else
-        {
-            sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1) + "-" + toString(_idx.col[2] + _idx.row.size());
-
-            if (fitData.bUseErrors)
-            {
-                if (nColumns > 3)
-                    sDimsForFitLog += ", " + toString(_idx.col[3] + 1) + "-" + toString(_idx.col[3] + _idx.row.size());
-                else
-                    sDimsForFitLog += ", " + toString(_idx.col[2] + _idx.row.size() + 1) + "-" + toString(_idx.col[0] + 2 * (_idx.row.size()));
-            }
-        }
-    }
-    else
-    {
-        for (int k = 0; k < (int)nDim; k++)
-        {
-            sDimsForFitLog += toString(_idx.col[k] + 1);
-
-            if (k + 1 < (int)nDim)
-                sDimsForFitLog += ", ";
-        }
-    }
-
-    sDimsForFitLog += " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(sDataTable);
+        sDimsForFitLog = "1-" + toString(_dataView.cols())
+            + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _dataView.getDataName();
 
     return nDim;
 }
 
 
-// This static function removes obsolete surrounding
-// parentheses in function strings
-static void removeObsoleteParentheses(string& sFunction)
+/////////////////////////////////////////////////
+/// \brief This static function removes obsolete
+/// surrounding parentheses in function strings.
+///
+/// \param sFunction std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void removeObsoleteParentheses(std::string& sFunction)
 {
     StripSpaces(sFunction);
 
@@ -1194,7 +1021,7 @@ static void removeObsoleteParentheses(string& sFunction)
     // if it is the last character of the function
     while (sFunction.front() == '(')
     {
-        if (getMatchingParenthesis(sFunction) == sFunction.length() - 1 && getMatchingParenthesis(sFunction) != string::npos)
+        if (getMatchingParenthesis(sFunction) == sFunction.length() - 1 && getMatchingParenthesis(sFunction) != std::string::npos)
         {
             sFunction.erase(0, 1);
             sFunction.pop_back();
@@ -1206,9 +1033,21 @@ static void removeObsoleteParentheses(string& sFunction)
 }
 
 
-// This static function calculates the chi^2 map instead
-// of applying the single fit
-static bool calculateChiMap(string sFunctionDefString, const string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, vector<double> vInitialVals)
+/////////////////////////////////////////////////
+/// \brief This static function calculates the
+/// chi^2 map instead of applying the single fit.
+///
+/// \param sFunctionDefString std::string
+/// \param sFuncDisplay const std::string&
+/// \param _idx Indices&
+/// \param varMap mu::varmap_type&
+/// \param paramsMap mu::varmap_type&
+/// \param fitData FittingData&
+/// \param vInitialVals std::vector<double>
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool calculateChiMap(std::string sFunctionDefString, const std::string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, std::vector<double> vInitialVals)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
@@ -1341,13 +1180,23 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 }
 
 
-// This static function applies the fitting algorithm to
-// the obtained data and the prepared fitting function. It
-// returns the function definition string for the autmatically
-// created fitting function
-static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const string& sFuncDisplay, const std::string& sCmd)
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// fitting algorithm to the obtained data and
+/// the prepared fitting function. It returns the
+/// function definition string for the
+/// autmatically created fitting function.
+///
+/// \param _fControl Fitcontroller&
+/// \param fitData FittingData&
+/// \param paramsMap mu::varmap_type&
+/// \param sFuncDisplay const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const std::string& sFuncDisplay)
 {
-    string sFunctionDefString;
+    std::string sFunctionDefString;
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (fitData.nDim >= 2 && fitData.nFitVars == 1)
@@ -1410,9 +1259,19 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
 }
 
 
-// This static function multiplies the elements in the covariance
-// matrix with the "correct" reduced chi^2 value (this depends
-// upon whether fitting weights shall be used for fitting)
+/////////////////////////////////////////////////
+/// \brief This static function multiplies the
+/// elements in the covariance matrix with the
+/// "correct" reduced chi^2 value (this depends
+/// upon whether fitting weights shall be used
+/// for fitting).
+///
+/// \param fitData FittingData&
+/// \param dChisq double
+/// \param paramsMapSize size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t paramsMapSize)
 {
     // Do nothing, if fitting weights have been used
@@ -1441,12 +1300,27 @@ static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t 
 }
 
 
-// This static function returns a string containing the whole fitting
-// options (algorithm parameters, etc.)
-static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const string& sFuncDisplay, const string& sFittedFunction, const string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog)
+/////////////////////////////////////////////////
+/// \brief This static function returns a string
+/// containing the whole fitting options
+/// (algorithm parameters, etc.).
+///
+/// \param _fControl Fitcontroller&
+/// \param fitData FittingData&
+/// \param sFuncDisplay const std::string&
+/// \param sFittedFunction const std::string&
+/// \param sDimsForFitLog const std::string&
+/// \param dChisq double
+/// \param paramsMap const mu::varmap_type&
+/// \param nSize size_t
+/// \param forFitLog bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const std::string& sFuncDisplay, const std::string& sFittedFunction, const std::string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog)
 {
-    string sFitParameterTable;
-    string sPrefix;
+    std::string sFitParameterTable;
+    std::string sPrefix;
 
     if (forFitLog)
     {
@@ -1499,11 +1373,20 @@ static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData,
 }
 
 
-// This static function returns the layouted covariance matrix
-// as a string for printing in file and to terminal
-static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSize, bool forFitLog)
+/////////////////////////////////////////////////
+/// \brief This static function returns the
+/// layouted covariance matrix as a string for
+/// printing in file and to terminal.
+///
+/// \param fitData FittingData&
+/// \param paramsMapSize size_t
+/// \param forFitLog bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSize, bool forFitLog)
 {
-    string sCovMatrix;
+    std::string sCovMatrix;
 
     // Construct the whole matrix as a string
     for (size_t n = 0; n < paramsMapSize; n++)
@@ -1539,13 +1422,25 @@ static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSi
 }
 
 
-// This static function returns the fitting paramters including
-// their initial and final values as a string
-static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const vector<double>& vInitialVals, size_t windowSize, const string& sPMSign, bool forFitLog)
+/////////////////////////////////////////////////
+/// \brief This static function returns the
+/// fitting paramters including their initial and
+/// final values as a string.
+///
+/// \param fitData FittingData&
+/// \param paramsMap mu::varmap_type&
+/// \param vInitialVals const std::vector<double>&
+/// \param windowSize size_t
+/// \param sPMSign const std::string&
+/// \param forFitLog bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const std::vector<double>& vInitialVals, size_t windowSize, const std::string& sPMSign, bool forFitLog)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     auto pItem = paramsMap.begin();
-    string sParameterTable;
+    std::string sParameterTable;
 
     // Construct the fitting parameter table as a single string
     for (size_t n = 0; n < paramsMap.size(); n++)
@@ -1581,13 +1476,23 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
 }
 
 
-// This static function calculates the average of the percentual
-// fitting errors and creates the variables for storing the
-// fitting errors for each parameter for further calculations
+/////////////////////////////////////////////////
+/// \brief This static function calculates the
+/// average of the percentual fitting errors and
+/// creates the variables for storing the fitting
+/// errors for each parameter for further
+/// calculations.
+///
+/// \param fitData FittingData&
+/// \param paramsMap mu::varmap_type&
+/// \param dChisq double
+/// \return double
+///
+/////////////////////////////////////////////////
 static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitData, mu::varmap_type& paramsMap, double dChisq)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    string sErrors = "";
+    std::string sErrors = "";
     auto pItem = paramsMap.begin();
     double dAverageErrorPercentage = 0.0;
 
@@ -1632,9 +1537,20 @@ static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitDat
 }
 
 
-// This static function returns the fitting analysis depending
-// upon the chi^2 value and the sum of the percentual errors
-static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting)
+/////////////////////////////////////////////////
+/// \brief This static function returns the
+/// fitting analysis depending upon the chi^2
+/// value and the sum of the percentual errors.
+///
+/// \param _fControl Fitcontroller&
+/// \param fitData FittingData&
+/// \param dNormChisq double
+/// \param dAverageErrorPercentage double
+/// \param noOverfitting bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting)
 {
     if (fitData.nFitVars & 2)
         dNormChisq = sqrt(dNormChisq);
@@ -1680,13 +1596,30 @@ static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, dou
 }
 
 
-// This static function writes the contents of the logfile to
-// a TeX file, if the used requested this option
-static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq)
+/////////////////////////////////////////////////
+/// \brief This static function writes the
+/// contents of the logfile to a TeX file, if the
+/// user requested this option.
+///
+/// \param _fControl Fitcontroller&
+/// \param sTeXExportFile const std::string&
+/// \param sCmd const std::string&
+/// \param paramsMap mu::varmap_type&
+/// \param fitData FittingData&
+/// \param vInitialVals const std::vector<double>&
+/// \param nSize size_t
+/// \param sFitAnalysis const std::string&
+/// \param sFuncDisplay const std::string&
+/// \param sFittedFunction const std::string&
+/// \param dChisq double
+/// \return void
+///
+/////////////////////////////////////////////////
+static void createTeXExport(Fitcontroller& _fControl, const std::string& sTeXExportFile, const std::string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const std::vector<double>& vInitialVals, size_t nSize, const std::string& sFitAnalysis, const std::string& sFuncDisplay, const std::string& sFittedFunction, double dChisq)
 {
-    ofstream oTeXExport;
+    std::ofstream oTeXExport;
 
-    oTeXExport.open(sTeXExportFile.c_str(), ios_base::trunc);
+    oTeXExport.open(sTeXExportFile.c_str(), std::ios_base::trunc);
 
     // Ensure that the file stream can be opened
     if (oTeXExport.fail())
@@ -1697,75 +1630,75 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
     }
 
     // Write the headline to the TeX file
-    oTeXExport << "%\n% " << _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
-    oTeXExport << "\\section{" << _lang.get("PARSERFUNCS_FIT_HEADLINE") << ": " << getTimeStamp(false)  << "}" << endl;
-    oTeXExport << "\\begin{itemize}" << endl;
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FUNCTION", "$" + replaceToTeX(sFuncDisplay, true) + "$") << endl;
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FITTED_FUNC", "$" + replaceToTeX(sFittedFunction, true) + "$") << endl;
+    oTeXExport << "%\n% " << _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << std::endl;
+    oTeXExport << "\\section{" << _lang.get("PARSERFUNCS_FIT_HEADLINE") << ": " << getTimeStamp(false)  << "}" << std::endl;
+    oTeXExport << "\\begin{itemize}" << std::endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FUNCTION", "$" + replaceToTeX(sFuncDisplay, true) + "$") << std::endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FITTED_FUNC", "$" + replaceToTeX(sFittedFunction, true) + "$") << std::endl;
 
     if (fitData.bUseErrors)
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString(nSize)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString(nSize)) << std::endl;
     else
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString(nSize)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString(nSize)) << std::endl;
 
     if (fitData.restricted[0])
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.ivl[0].min(), 5), toString(fitData.ivl[0].max(), 5)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.ivl[0].min(), 5), toString(fitData.ivl[0].max(), 5)) << std::endl;
 
     if (fitData.restricted[1])
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.ivl[1].min(), 5), toString(fitData.ivl[1].max(), 5)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.ivl[1].min(), 5), toString(fitData.ivl[1].max(), 5)) << std::endl;
 
     if (fitData.restricted[2])
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "z", toString(fitData.ivl[2].min(), 5), toString(fitData.ivl[2].max(), 5)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "z", toString(fitData.ivl[2].min(), 5), toString(fitData.ivl[2].max(), 5)) << std::endl;
 
     if (fitData.sRestrictions.length())
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(fitData.sRestrictions, true) + "$") << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(fitData.sRestrictions, true) + "$") << std::endl;
 
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString(nSize - paramsMap.size())) << endl;
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.eps_rel, 5), toString(fitData.eps_abs, 5), toString(fitData.nMaxIterations)) << endl;
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString(nSize - paramsMap.size())) << std::endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.eps_rel, 5), toString(fitData.eps_abs, 5), toString(fitData.nMaxIterations)) << std::endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << std::endl;
 
     // Write the calculated fitting result values to the TeX file
     if (nSize != paramsMap.size() && !(fitData.nFitVars & 2))
     {
-        string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
+        std::string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
         sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-        oTeXExport << "\t\\item " << sChiReplace << endl;
+        oTeXExport << "\t\\item " << sChiReplace << std::endl;
         sChiReplace = _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7));
         sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-        oTeXExport << "\t\\item " << sChiReplace << endl;
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
+        oTeXExport << "\t\\item " << sChiReplace << std::endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << std::endl;
     }
     else if (fitData.nFitVars & 2 && nSize != paramsMap.size())
     {
-        string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
+        std::string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
         sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-        oTeXExport << "\t\\item " << sChiReplace << endl;
+        oTeXExport << "\t\\item " << sChiReplace << std::endl;
         sChiReplace = _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7));
         sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-        oTeXExport << "\t\\item " << sChiReplace << endl;
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
+        oTeXExport << "\t\\item " << sChiReplace << std::endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << std::endl;
     }
 
     // Start the table for the fitting parameters
-    oTeXExport << "\\end{itemize}" << endl << "\\begin{table}[htb]" << endl << "\t\\centering\n\t\\begin{tabular}{cccc}" << endl << "\t\t\\toprule" << endl;
+    oTeXExport << "\\end{itemize}\n\\begin{table}[htb]\n\t\\centering\n\t\\begin{tabular}{cccc}\n\t\t\\toprule" << std::endl;
 
     // Write the headline for the fitting parameters
     if (fitData.bUseErrors)
         oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
                    << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
                    << _lang.get("PARSERFUNCS_FIT_FITTED") << " & "
-                   << _lang.get("PARSERFUNCS_FIT_PARAM_DEV") << "\\\\" << endl;
+                   << _lang.get("PARSERFUNCS_FIT_PARAM_DEV") << "\\\\" << std::endl;
     else
         oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
                    << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
                    << _lang.get("PARSERFUNCS_FIT_FITTED") << " & "
-                   << _lang.get("PARSERFUNCS_FIT_ASYMPTOTIC_ERROR") << "\\\\" << endl;
+                   << _lang.get("PARSERFUNCS_FIT_ASYMPTOTIC_ERROR") << "\\\\" << std::endl;
 
-    oTeXExport << "\t\t\\midrule" << endl;
+    oTeXExport << "\t\t\\midrule" << std::endl;
 
     auto pItem = paramsMap.begin();
-    string sErrors = "";
-    string sPMSign = " ";
+    std::string sErrors = "";
+    std::string sPMSign = " ";
 
     // Write the fitting parameters linewise to the table
     for (size_t n = 0; n < paramsMap.size(); n++)
@@ -1782,22 +1715,22 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
         // is non-zero.
         if (fitData.vz_w[n][n])
         {
-            oTeXExport << " \\quad (" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (pItem->second->front().as_cmplx()))) * 100.0), 4) + "\\%)$\\\\" << endl;
+            oTeXExport << " \\quad (" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (pItem->second->front().as_cmplx()))) * 100.0), 4) + "\\%)$\\\\" << std::endl;
         }
         else
-            oTeXExport << "$\\\\" << endl;
+            oTeXExport << "$\\\\" << std::endl;
 
         ++pItem;
     }
 
     // Close the fitting parameter table
-    oTeXExport << "\t\t\\bottomrule" << endl << "\t\\end{tabular}" << endl << "\\end{table}" << endl;
+    oTeXExport << "\t\t\\bottomrule\n\t\\end{tabular}\n\\end{table}" << std::endl;
 
     // Write the correlation matrix
     if (paramsMap.size() > 1 && paramsMap.size() != nSize)
     {
-        oTeXExport << endl << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << "}" << endl;
-        oTeXExport << "\\[" << endl << "\t\\begin{pmatrix}" << endl;
+        oTeXExport << "\n\\subsection{" << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << "}" << std::endl;
+        oTeXExport << "\\[\n\t\\begin{pmatrix}" << std::endl;
 
         for (size_t n = 0; n < paramsMap.size(); n++)
         {
@@ -1811,16 +1744,15 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
                     oTeXExport << " & ";
             }
 
-            oTeXExport << "\\\\" << endl;
+            oTeXExport << "\\\\" << std::endl;
         }
 
-        oTeXExport << "\t\\end{pmatrix}" << endl << "\\]" << endl;
+        oTeXExport << "\t\\end{pmatrix}\n\\]" << std::endl;
 
     }
 
-    oTeXExport << endl;
-    oTeXExport << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << "}" << endl;
-    oTeXExport << sFitAnalysis << endl;
+    oTeXExport << "\n\\subsection{" << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << "}" << std::endl;
+    oTeXExport << sFitAnalysis << std::endl;
     oTeXExport.close();
 }
 

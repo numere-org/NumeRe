@@ -863,14 +863,18 @@ bool differentiate(CommandLineParser& cmdParser)
             }
         }
     }
-    else if (_data.containsTables(sExpr))
+    else if (sExpr.length())
     {
         // This is a data set
         //
         // Get the indices first
-        DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-        Indices& _idx = accessParser.getIndices();
-        std::string sTableName = accessParser.getDataObject();
+        DataView _dataView = cmdParser.getExprAsDataView();
+        _dataView.evalIndices();
+
+        if (!_dataView.isValueLike())
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
+                              _dataView.getDataName(), cmdParser.getExpr());
+
         size_t nFilterSize = 5;
         paramVal = cmdParser.getParsedParameterValue("points");
 
@@ -885,23 +889,13 @@ bool differentiate(CommandLineParser& cmdParser)
         NumeRe::SavitzkyGolayDiffFilter diff(nFilterSize, order);
 
         // Validate the indices
-        if (!isValidIndexSet(_idx))
+        /*if (!isValidIndexSet(_idx))
             throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position,
-                              _idx.row.to_string() + ", " + _idx.col.to_string());
-
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getLines(sTableName, false)-1);
-
-        if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _idx.col.front()+1);
-
-        if (!_data.isValueLike(accessParser.getIndices().col, accessParser.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
-                              accessParser.getDataObject()+"(", accessParser.getDataObject());
+                              _idx.row.to_string() + ", " + _idx.col.to_string());*/
 
         // If shorter than filter's size return an invalid
         // value
-        if (_idx.row.size() < nFilterSize)
+        if (_dataView.rows() < nFilterSize)
         {
             vResult.push_back(mu::Value(NAN));
             cmdParser.setReturnValue(vResult);
@@ -916,22 +910,20 @@ bool differentiate(CommandLineParser& cmdParser)
         // Depending on the number of selected columns, we either
         // have to sort the data or we assume that the difference
         // between two values is 1
-        if (_idx.col.size() == 1)
+        if (_dataView.cols() == 1)
         {
-            vResult.resize(_idx.row.size());
+            vResult.resize(_dataView.rows());
 
             // No sorting, difference is 1
             //
             // Jump over NaNs and get the difference of the neighbouring
             // values, which is identical to the derivative in this case
-            for (size_t i = nFilterSize/2; i < _idx.row.size() - nFilterSize/2; i++)
+            for (size_t i = nFilterSize/2; i < _dataView.rows() - nFilterSize/2; i++)
             {
                 for (int j = 0; j < (int)nFilterSize; j++)
                 {
-                    if (_data.isValidElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName))
-                        vResult[i] += mu::Value(diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFilterSize/2],
-                                                                                  _idx.col.front(),
-                                                                                  sTableName).getNum().asCF64()));
+                    if (_dataView.get(i + j - nFilterSize/2, 0).isValid())
+                        vResult[i] += mu::Value(diff.apply(j, 0, _dataView.get(i + j - nFilterSize/2, 0).getNum().asCF64()));
                 }
             }
 
@@ -950,10 +942,10 @@ bool differentiate(CommandLineParser& cmdParser)
             // Copy the data first and sort afterwards
             MemoryManager _cache;
 
-            for (size_t i = 0; i < _idx.row.size(); i++)
+            for (size_t i = 0; i < _dataView.rows(); i++)
             {
-                _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sTableName));
-                _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sTableName));
+                _cache.writeToTable(i, 0, "table", _dataView.get(i, 0));
+                _cache.writeToTable(i, 1, "table", _dataView.get(i, 1));
             }
 
             _cache.sortElements("sort -table c=1[2]");
@@ -968,9 +960,9 @@ bool differentiate(CommandLineParser& cmdParser)
                 for (int i = 0; i < _cache.getLines("table", false) - 1; i++)
                 {
                     if (_cache.isValidElement(i, 0, "table")
-                            && _cache.isValidElement(i + 1, 0, "table")
-                            && _cache.isValidElement(i, 1, "table")
-                            && _cache.isValidElement(i + 1, 1, "table"))
+                        && _cache.isValidElement(i + 1, 0, "table")
+                        && _cache.isValidElement(i, 1, "table")
+                        && _cache.isValidElement(i + 1, 1, "table"))
                         vResult.push_back((_cache.getElement(i + 1, 0, "table") + _cache.getElement(i, 0, "table")) / mu::Value(2.0));
                     else
                         vResult.push_back(mu::Value(NAN));
@@ -1075,55 +1067,82 @@ static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function for
+/// findExtremaInData
+///
+/// \param v const mu::Array&
+/// \param start size_t
+/// \param nOrder size_t
+/// \param nanShiftStart size_t
+/// \param nNewNanShift size_t&
+/// \return double
+///
+/////////////////////////////////////////////////
+static double calculateMedian(const mu::Array& values, const mu::Array& order, size_t start, size_t nOrder, size_t nanShiftStart, size_t& nNewNanShift)
+{
+    std::vector<double> data;
+
+    for (size_t i = start; i < start + nOrder; i++)
+    {
+        while (mu::isnan(values.get(order.get(i + nanShiftStart + nNewNanShift).as_idx()))
+               && i + nanShiftStart + nNewNanShift < values.size() - 1)
+            nNewNanShift++;
+
+        if (i + nanShiftStart + nNewNanShift >= values.size())
+            break;
+
+        data.push_back(values.get(order.get(i + nanShiftStart + nNewNanShift).as_idx()).getNum().asF64());
+    }
+
+    gsl_sort(&data[0], 1, data.size());
+    return gsl_stats_median_from_sorted_data(&data[0], 1, data.size());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function finds extrema in
 /// a multi-result expression, i.e. an expression
 /// containing a table or similar.
 ///
 /// \param cmdParser CommandLineParser&
-/// \param sExpr string&
-/// \param sInterval string&
+/// \param sExpr const std::string&
+/// \param sInterval const std::string&
 /// \param nOrder size_t
 /// \param nMode int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr, string& sInterval, size_t nOrder, int nMode)
+static bool findExtremaInMultiResult(CommandLineParser& cmdParser, const std::string& sExpr, const std::string& sInterval, size_t nOrder, int nMode)
 {
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    mu::Array v = _parser.Eval();
+    mu::Array values = _parser.Eval();
+    mu::Array axis;
+    mu::Array order;
     mu::Array vResults;
-    MemoryManager _cache;
-    size_t res = v.size();
+    size_t res = values.size();
 
-    // Store the results in the second column of a table
-    for (size_t i = 0; i < v.size(); i++)
-        _cache.writeToTable(i, 1, "table", v[i]);
-
-    _parser.SetExpr(sInterval);
-    v = _parser.Eval();
-
-    // Write the results for the x interval in the first column
-    if (v.size() > 1)
+    if (sInterval.length())
     {
-        for (size_t i = 0; i < res; i++)
-        {
-            if (i >= v.size())
-                _cache.writeToTable(i, 0, "table", 0.0);
-            else
-                _cache.writeToTable(i, 0, "table", v[i]);
-        }
+        _parser.SetExpr(sInterval);
+        axis = _parser.Eval();
+
+        if (axis.size() < values.size())
+            axis.resize(values.size(), mu::Value(0.0));
+
+        order = axis.order()-mu::Value(1);
     }
     else
-        return false;
+    {
+        order.emplace_back(new mu::GeneratorValue(0, values.size()-1));
+        order.makeGenerator();
+    }
 
-    std::string sSortingExpr = "sort -table cols=1[2]";
-    _cache.sortElements(sSortingExpr);
-
-    double dMedian = 0.0, dExtremum = 0.0;
+    mu::Value currMedian = 0.0, currExtremum = 0.0;
     std::vector<double> data(nOrder);
-    double nDir = 0;
+    mu::Value nDir = 0;
     size_t nanShift = 0;
+    size_t newNanShift = 0;
 
     if (nOrder >= res / 3)
         nOrder = res / 3;
@@ -1137,79 +1156,58 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
 
     // Find the first median and use it as starting point
     // for identifying the next extremum
-    for (size_t i = 0; i + nanShift < (size_t)_cache.getLines("table", true); i++)
-    {
-        if (i == nOrder)
-            break;
-
-        while (mu::isnan(_cache.getElement(i + nanShift, 1, "table"))
-               && i + nanShift < (size_t)_cache.getLines("table", true) - 1)
-            nanShift++;
-
-        data[i] = _cache.getElement(i + nanShift, 1, "table").getNum().asF64();
-    }
-
-    // Sort the data and find the median
-    gsl_sort(&data[0], 1, nOrder);
-    dExtremum = gsl_stats_median_from_sorted_data(&data[0], 1, nOrder);
+    currExtremum = calculateMedian(values, order, 0, nOrder, nanShift, newNanShift);
+    nanShift += newNanShift;
 
     // Go through the data points using sliding median to find the local
     // extrema in the data set
-    for (size_t i = nOrder; i + nanShift < _cache.getLines("table", false) - nOrder; i++)
+    for (size_t i = nOrder; i + nanShift < res - nOrder; i++)
     {
         size_t currNanShift = 0;
-        dMedian = 0.0;
-
-        for (size_t j = i; j < i + nOrder; j++)
-        {
-            while (mu::isnan(_cache.getElement(j + nanShift + currNanShift, 1, "table"))
-                   && j + nanShift + currNanShift < (size_t)_cache.getLines("table", true) - 1)
-                currNanShift++;
-
-            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "table").getNum().asF64();
-        }
-
-        gsl_sort(&data[0], 1, nOrder);
-        dMedian = gsl_stats_median_from_sorted_data(&data[0], 1, nOrder);
+        currMedian = calculateMedian(values, order, i, nOrder, nanShift, currNanShift);
 
         if (!nDir)
         {
-            if (dMedian > dExtremum)
+            if (currMedian > currExtremum)
                 nDir = 1;
-            else if (dMedian < dExtremum)
+            else if (currMedian < currExtremum)
                 nDir = -1;
 
-            dExtremum = dMedian;
+            currExtremum = currMedian;
         }
         else
         {
-            if (nDir*dMedian < nDir*dExtremum)
+            if (nDir*currMedian < nDir*currExtremum)
             {
-                if (!nMode || nMode == nDir)
+                if (!nMode || bool(mu::Value(nMode) == nDir))
                 {
                     size_t nExtremum = i + nanShift;
-                    double dExtremum = _cache.getElement(i + nanShift, 1, "table").getNum().asF64();
+                    mu::Value extremumCandidate = values.get(order.get(i+nanShift).as_idx());
 
                     for (size_t k = i + nanShift; k >= 0; k--)
                     {
                         if (k == i - nOrder)
                             break;
 
-                        if (nDir*_cache.getElement(k, 1, "table").getNum().asF64() > nDir*dExtremum)
+                        if (nDir*values.get(order.get(k).as_idx()) > nDir*extremumCandidate)
                         {
                             nExtremum = k;
-                            dExtremum = _cache.getElement(k, 1, "table").getNum().asF64();
+                            extremumCandidate = values.get(order.get(k).as_idx());
                         }
                     }
 
-                    vResults.push_back(_cache.getElement(nExtremum, 0, "table"));
+                    if (axis.size())
+                        vResults.push_back(axis.get(nExtremum));
+                    else
+                        vResults.push_back(nExtremum+1);
+
                     i = nExtremum + nOrder;
                 }
 
                 nDir = 0;
             }
 
-            dExtremum = dMedian;
+            currExtremum = currMedian;
         }
 
         nanShift += currNanShift;
@@ -1222,134 +1220,6 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
     return true;
 }
 
-
-/////////////////////////////////////////////////
-/// \brief Static helper function for
-/// findExtremaInData
-///
-/// \param v const mu::Array&
-/// \param start size_t
-/// \param nOrder size_t
-/// \param nanShiftStart size_t
-/// \param nNewNanShift size_t&
-/// \return double
-///
-/////////////////////////////////////////////////
-static double calculateMedian(const mu::Array& v, size_t start, size_t nOrder, size_t nanShiftStart, size_t& nNewNanShift)
-{
-    std::vector<double> data;
-
-    for (size_t i = start; i < start + nOrder; i++)
-    {
-        while (mu::isnan(v[i + nanShiftStart + nNewNanShift])
-               && i + nanShiftStart + nNewNanShift < v.size() - 1)
-            nNewNanShift++;
-
-        if (i + nanShiftStart + nNewNanShift >= v.size())
-            break;
-
-        data.push_back(v[i + nanShiftStart + nNewNanShift].getNum().asF64());
-    }
-
-    gsl_sort(&data[0], 1, data.size());
-    return gsl_stats_median_from_sorted_data(&data[0], 1, data.size());
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function finds extrema in
-/// the selected data sets.
-///
-/// \param cmdParser CommandLineParser&
-/// \param sExpr string&
-/// \param nOrder size_t
-/// \param nMode int
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, size_t nOrder, int nMode)
-{
-    mu::Array v;
-    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
-    _parser.SetExpr(sExpr);
-    v = _parser.Eval();
-
-    if (v.size() > 1)
-    {
-        if (nOrder >= v.size() / 3)
-            nOrder = v.size() / 3;
-
-        double dMedian = 0.0, dExtremum = 0.0;
-        double nDir = 0;
-        size_t nanShift = 0;
-        mu::Array vResults;
-
-        if (nOrder < 3)
-        {
-            vResults = mu::Value(NAN);
-            return false;
-        }
-
-        dExtremum = calculateMedian(v, 0, nOrder, 0, nanShift);
-
-        for (size_t i = nOrder; i + nanShift < v.size() - nOrder; i++)
-        {
-            size_t currNanShift = 0;
-            dMedian = calculateMedian(v, i, nOrder, nanShift, currNanShift);
-
-            if (!nDir)
-            {
-                if (dMedian > dExtremum)
-                    nDir = 1;
-                else if (dMedian < dExtremum)
-                    nDir = -1;
-
-                dExtremum = dMedian;
-            }
-            else
-            {
-                if (nDir*dMedian < nDir*dExtremum)
-                {
-                    if (!nMode || nMode == nDir)
-                    {
-                        size_t nExtremum = i + nanShift;
-                        double dLocalExtremum = v[i + nanShift].getNum().asF64();
-
-                        for (size_t k = i + nanShift; k >= 0; k--)
-                        {
-                            if (k == i + nanShift - nOrder)
-                                break;
-
-                            if (nDir*v[k].getNum().asF64() > nDir*dLocalExtremum)
-                            {
-                                nExtremum = k;
-                                dLocalExtremum = v[k].getNum().asF64();
-                            }
-                        }
-
-                        vResults.push_back(mu::Value(nExtremum + 1));
-                        i = nExtremum + nOrder;
-                        nanShift = 0;
-                    }
-
-                    nDir = 0;
-                }
-
-                dExtremum = dMedian;
-            }
-
-            nanShift += currNanShift;
-        }
-
-        if (!vResults.size())
-            vResults = mu::Value(NAN);
-
-        cmdParser.setReturnValue(vResults);
-        return true;
-    }
-    else
-        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
-}
 
 /////////////////////////////////////////////////
 /// \brief This function searches for the
@@ -1486,7 +1356,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     std::string sInterval = "";
     std::string sVar = "";
 
-    if (!_data.containsTables(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
+    if (!isNotEmptyExpression(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Isolate the expression
@@ -1499,7 +1369,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     sExpr = cmdParser.getExpr();
     sParams = cmdParser.getParameterList();
 
-    if (!isNotEmptyExpression(sExpr) || !instance->getDefinitions().call(sExpr))
+    if (!instance->getDefinitions().call(sExpr))
         return false;
 
     if (!instance->getDefinitions().call(sParams))
@@ -1543,77 +1413,71 @@ bool findExtrema(CommandLineParser& cmdParser)
     }
 
     // Extract the interval
-    if (sParams.find('=') != string::npos
-            || (sParams.find('[') != string::npos
-                && sParams.find(']', sParams.find('['))
-                && sParams.find(':', sParams.find('['))))
-    {
-        if (sParams.substr(0, 2) == "--")
-            sParams = sParams.substr(2);
-        else if (sParams.substr(0, 4) == "-set")
-            sParams = sParams.substr(4);
+    if (sParams.substr(0, 2) == "--")
+        sParams = sParams.substr(2);
+    else if (sParams.substr(0, 4) == "-set")
+        sParams = sParams.substr(4);
 
-        int nResults = 0;
+    int nResults = 0;
 
+    if (sParams.find('=') != std::string::npos
+        || (sParams.find('[') != std::string::npos
+            && sParams.find(']', sParams.find('['))
+            && sParams.find(':', sParams.find('['))))
         sInterval = getIntervalForSearchFunctions(sParams, sVar);
 
-        _parser.SetExpr(sExpr);
-        _parser.Eval(nResults);
+    _parser.SetExpr(sExpr);
+    _parser.Eval(nResults);
 
-        if (nResults > 1)
-            _parser.SetExpr("{" + sExpr + "}");
+    if (nResults > 1)
+        _parser.SetExpr("{" + sExpr + "}");
 
-        mu::Array res = _parser.Eval();
+    mu::Array res = _parser.Eval();
 
-        if (res.size() > 1)
-            return findExtremaInMultiResult(cmdParser, sExpr, sInterval, nOrder, nMode);
-        else
+    if (res.size() > 1)
+        return findExtremaInMultiResult(cmdParser, sExpr, sInterval, nOrder, nMode);
+    else
+    {
+        if (findVariableInExpression(sExpr, sVar) == std::string::npos)
         {
-            if (findVariableInExpression(sExpr, sVar) == std::string::npos)
+            cmdParser.setReturnValue("nan");
+            return true;
+        }
+
+        dVar = getPointerToVariable(sVar, _parser);
+
+        if (!dVar)
+            throw SyntaxError(SyntaxError::EXTREMA_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
+
+        if (sInterval.find(':') == std::string::npos || sInterval.length() < 3)
+            return false;
+
+        auto indices = getAllIndices(sInterval);
+
+        for (size_t i = 0; i < 2; i++)
+        {
+            if (isNotEmptyExpression(indices[i]))
             {
-                cmdParser.setReturnValue("nan");
-                return true;
-            }
+                _parser.SetExpr(indices[i]);
+                dBoundaries[i] = _parser.Eval().front();
 
-            dVar = getPointerToVariable(sVar, _parser);
-
-            if (!dVar)
-                throw SyntaxError(SyntaxError::EXTREMA_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
-
-            if (sInterval.find(':') == string::npos || sInterval.length() < 3)
-                return false;
-
-            auto indices = getAllIndices(sInterval);
-
-            for (size_t i = 0; i < 2; i++)
-            {
-                if (isNotEmptyExpression(indices[i]))
+                if (mu::isinf(dBoundaries[i].getNum().asCF64()) || mu::isnan(dBoundaries[i]))
                 {
-                    _parser.SetExpr(indices[i]);
-                    dBoundaries[i] = _parser.Eval().front();
-
-                    if (mu::isinf(dBoundaries[i].getNum().asCF64()) || mu::isnan(dBoundaries[i]))
-                    {
-                        cmdParser.setReturnValue("nan");
-                        return false;
-                    }
-                }
-                else
+                    cmdParser.setReturnValue("nan");
                     return false;
+                }
             }
+            else
+                return false;
+        }
 
-            if (dBoundaries[1] < dBoundaries[0])
-            {
-                mu::Value Temp = dBoundaries[1];
-                dBoundaries[1] = dBoundaries[0];
-                dBoundaries[0] = Temp;
-            }
+        if (dBoundaries[1] < dBoundaries[0])
+        {
+            mu::Value Temp = dBoundaries[1];
+            dBoundaries[1] = dBoundaries[0];
+            dBoundaries[0] = Temp;
         }
     }
-    else if (cmdParser.exprContainsDataObjects())
-        return findExtremaInData(cmdParser, sExpr, nOrder, nMode);
-    else
-        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Calculate the number of samples depending on
     // the interval width
@@ -1749,76 +1613,74 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 {
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
-    mu::Array v = _parser.Eval();
-    MemoryManager _cache;
-    size_t res = v.size();
-
+    mu::Array values = _parser.Eval();
+    mu::Array axis;
+    mu::Array order;
     mu::Array vResults;
 
-    for (size_t i = 0; i < res; i++)
-        _cache.writeToTable(i, 1, "table", v[i]);
-
-    _parser.SetExpr(sInterval);
-    v = _parser.Eval();
-
-    if (v.size() > 1)
+    if (sInterval.length())
     {
-        for (size_t i = 0; i < res; i++)
-        {
-            if (i >= v.size())
-                _cache.writeToTable(i, 0, "table", 0.0);
-            else
-                _cache.writeToTable(i, 0, "table", v[i]);
-        }
+        _parser.SetExpr(sInterval);
+        axis = _parser.Eval();
+
+        if (axis.size() < values.size())
+            axis.resize(values.size(), mu::Value(0.0));
+
+        order = axis.order()-mu::Value(1);
     }
     else
-        return false;
-
-    std::string sSortingExpr = "sort -table cols=1[2]";
-    _cache.sortElements(sSortingExpr);
-
-    for (size_t i = 1; i < (size_t)_cache.getLines("table", false); i++)
     {
-        if (mu::isnan(_cache.getElement(i - 1, 1, "table")))
+        axis.emplace_back(new mu::GeneratorValue(0, values.size()-1));
+        axis.makeGenerator();
+        order.emplace_back(new mu::GeneratorValue(0, values.size()-1));
+        order.makeGenerator();
+    }
+
+    for (size_t i = 1; i < values.size(); i++)
+    {
+        mu::Value product = values.get(order.get(i).as_idx())*values.get(order.get(i-1).as_idx());
+
+        if (mu::isnan(values.get(order.get(i-1).as_idx()))
+            || bool(product > mu::Value(0.0)))
             continue;
 
-        if (!nMode && bool(_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= mu::Value(0.0)))
+        if (!nMode)
         {
-            if (_cache.getElement(i, 1, "table") == mu::Value(0.0))
+            if (values.get(order.get(i).as_idx()) == mu::Value(0.0))
             {
-                vResults.push_back(_cache.getElement(i, 0, "table"));
+                vResults.push_back(axis.get(order.get(i).as_idx()));
                 i++;
             }
-            else if (_cache.getElement(i - 1, 1, "table") == mu::Value(0.0))
-                vResults.push_back(_cache.getElement(i - 1, 0, "table"));
-            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < mu::Value(0.0))
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table").getNum().asF64(),
-                                             _cache.getElement(i - 1, 1, "table").getNum().asF64(),
-                                             _cache.getElement(i, 0, "table").getNum().asF64(),
-                                             _cache.getElement(i, 1, "table").getNum().asF64()));
+            else if (values.get(order.get(i-1).as_idx()) == mu::Value(0.0))
+                vResults.push_back(axis.get(order.get(i-1).as_idx()));
+            else if (product < mu::Value(0.0))
+                vResults.push_back(Linearize(values.get(order.get(i-1).as_idx()).getNum().asF64(),
+                                             axis.get(order.get(i-1).as_idx()).getNum().asF64(),
+                                             values.get(order.get(i).as_idx()).getNum().asF64(),
+                                             axis.get(order.get(i).as_idx()).getNum().asF64()));
         }
-        else if (nMode && bool(_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= mu::Value(0.0)))
+        else
         {
-            if (_cache.getElement(i, 1, "table") == mu::Value(0.0) && _cache.getElement(i - 1, 1, "table") == mu::Value(0.0))
+            if (values.get(order.get(i).as_idx()) == mu::Value(0.0) && values.get(order.get(i-1).as_idx()) == mu::Value(0.0))
             {
-                for (size_t j = i + 1; j < (size_t)_cache.getLines("table", false); j++)
+                for (size_t j = i + 1; j < values.size(); j++)
                 {
-                    if (mu::Value(nMode) * _cache.getElement(j, 1, "table") > mu::Value(0.0))
+                    if (mu::Value(nMode) * values.get(order.get(j).as_idx()) > mu::Value(0.0))
                     {
                         for (size_t k = i - 1; k <= j; k++)
-                            vResults.push_back(_cache.getElement(k, 0, "table"));
+                            vResults.push_back(axis.get(order.get(k).as_idx()));
 
                         break;
                     }
-                    else if (mu::Value(nMode) * _cache.getElement(j, 1, "table") < mu::Value(0.0))
+                    else if (mu::Value(nMode) * values.get(order.get(j).as_idx()) < mu::Value(0.0))
                         break;
 
-                    if (j + 1 == (size_t)_cache.getLines("table", false)
+                    if (j + 1 == values.size()
                         && i > 1
-                        && bool(mu::Value(nMode) * _cache.getElement(i - 2, 1, "table") < mu::Value(0.0)))
+                        && bool(mu::Value(nMode) * values.get(order.get(i-2).as_idx()) < mu::Value(0.0)))
                     {
                         for (size_t k = i - 1; k <= j; k++)
-                            vResults.push_back(_cache.getElement(k, 0, "table"));
+                            vResults.push_back(axis.get(order.get(k).as_idx()));
 
                         break;
                     }
@@ -1826,18 +1688,18 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 
                 continue;
             }
-            else if (_cache.getElement(i, 1, "table") == mu::Value(0.0)
-                     && mu::Value(nMode) * _cache.getElement(i - 1, 1, "table") < mu::Value(0.0))
-                vResults.push_back(_cache.getElement(i, 0, "table"));
-            else if (_cache.getElement(i - 1, 1, "table") == mu::Value(0.0)
-                     && mu::Value(nMode) * _cache.getElement(i, 1, "table") > mu::Value(0.0))
-                vResults.push_back(_cache.getElement(i - 1, 0, "table"));
-            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < mu::Value(0.0)
-                     && mu::Value(nMode) * _cache.getElement(i - 1, 1, "table") < mu::Value(0.0))
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table").getNum().asF64(),
-                                             _cache.getElement(i - 1, 1, "table").getNum().asF64(),
-                                             _cache.getElement(i, 0, "table").getNum().asF64(),
-                                             _cache.getElement(i, 1, "table").getNum().asF64()));
+            else if (values.get(order.get(i).as_idx()) == mu::Value(0.0)
+                     && mu::Value(nMode) * values.get(order.get(i-1).as_idx()) < mu::Value(0.0))
+                vResults.push_back(axis.get(order.get(i).as_idx()));
+            else if (values.get(order.get(i-1).as_idx()) == mu::Value(0.0)
+                     && mu::Value(nMode) * values.get(order.get(i).as_idx()) > mu::Value(0.0))
+                vResults.push_back(axis.get(order.get(i-1).as_idx()));
+            else if (product < mu::Value(0.0)
+                     && mu::Value(nMode) * values.get(order.get(i-1).as_idx()) < mu::Value(0.0))
+                vResults.push_back(Linearize(values.get(order.get(i-1).as_idx()).getNum().asF64(),
+                                             axis.get(order.get(i-1).as_idx()).getNum().asF64(),
+                                             values.get(order.get(i).as_idx()).getNum().asF64(),
+                                             axis.get(order.get(i).as_idx()).getNum().asF64()));
         }
     }
 
@@ -1846,97 +1708,6 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 
     cmdParser.setReturnValue(vResults);
     return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function finds zeroes in
-/// the selected data set.
-///
-/// \param cmdParser CommandLineParser&
-/// \param sExpr string&
-/// \param nMode int
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool findZeroesInData(CommandLineParser& cmdParser, string& sExpr, int nMode)
-{
-    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
-    _parser.SetExpr(sExpr);
-    mu::Array v = _parser.Eval();
-
-    if (v.size() > 1)
-    {
-        mu::Array vResults;
-
-        for (size_t i = 1; i < v.size(); i++)
-        {
-            if (mu::isnan(v[i - 1]))
-                continue;
-
-            if (!nMode && bool(v[i]*v[i - 1] <= mu::Value(0.0)))
-            {
-                if (v[i] == mu::Value(0.0))
-                {
-                    vResults.push_back(mu::Value(i + 1));
-                    i++;
-                }
-                else if (v[i - 1] == mu::Value(0.0))
-                    vResults.push_back(mu::Value(i));
-                else if (fabs(v[i].getNum().asCF64()) <= fabs(v[i - 1].getNum().asCF64()))
-                    vResults.push_back(mu::Value(i + 1));
-                else
-                    vResults.push_back(mu::Value(i));
-            }
-            else if (nMode && bool(v[i]*v[i - 1] <= mu::Value(0.0)))
-            {
-                if (v[i] == mu::Value(0.0) && v[i - 1] == mu::Value(0.0))
-                {
-                    for (size_t j = i + 1; j < v.size(); j++)
-                    {
-                        if (mu::Value(nMode) * v[j] > mu::Value(0.0))
-                        {
-                            for (size_t k = i - 1; k <= j; k++)
-                                vResults.push_back(mu::Value(k));
-
-                            break;
-                        }
-                        else if (mu::Value(nMode) * v[j] < mu::Value(0.0))
-                            break;
-
-                        if (j + 1 == v.size()
-                            && i > 2
-                            && bool(mu::Value(nMode) * v[i - 2] < mu::Value(0.0)))
-                        {
-                            for (size_t k = i - 1; k <= j; k++)
-                                vResults.push_back(mu::Value(k));
-
-                            break;
-                        }
-                    }
-
-                    continue;
-                }
-                else if (v[i] == mu::Value(0.0) && mu::Value(nMode) * v[i - 1] < mu::Value(0.0))
-                    vResults.push_back(mu::Value(i + 1));
-                else if (v[i - 1] == mu::Value(0.0) && mu::Value(nMode) * v[i] > mu::Value(0.0))
-                    vResults.push_back((double)i);
-                else if (fabs(v[i].getNum().asCF64()) <= fabs(v[i - 1].getNum().asCF64())
-                         && bool(mu::Value(nMode) * v[i - 1] < mu::Value(0.0)))
-                    vResults.push_back(mu::Value(i + 1));
-                else if (mu::Value(nMode) * v[i - 1] < mu::Value(0.0))
-                    vResults.push_back(mu::Value(i));
-            }
-        }
-
-        if (!vResults.size())
-            vResults = mu::Value(NAN);
-
-        cmdParser.setReturnValue(vResults);
-        return true;
-    }
-    else
-        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 }
 
 
@@ -2079,7 +1850,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     std::string sInterval = "";
     std::string sVar = "";
 
-    if (!_data.containsTables(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
+    if (!isNotEmptyExpression(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Ensure that the expression is not empty
@@ -2088,7 +1859,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     sExpr = cmdParser.getExpr();
     sParams = cmdParser.getParameterList();
 
-    if (!isNotEmptyExpression(sExpr) || !instance->getDefinitions().call(sExpr))
+    if (!instance->getDefinitions().call(sExpr))
         return false;
 
     if (!instance->getDefinitions().call(sParams))
@@ -2120,73 +1891,72 @@ bool findZeroes(CommandLineParser& cmdParser)
         sParams.erase(findParameter(sParams, "samples", '=') - 1, 8);
     }
 
+    if (sParams.substr(0, 2) == "--")
+        sParams = sParams.substr(2);
+    else if (sParams.substr(0, 4) == "-set")
+        sParams = sParams.substr(4);
+
+    int nResults = 0;
+
     // Evaluate the interval
     if (sParams.find('=') != string::npos
         || (sParams.find('[') != string::npos
             && sParams.find(']', sParams.find('['))
             && sParams.find(':', sParams.find('['))))
-    {
-        if (sParams.substr(0, 2) == "--")
-            sParams = sParams.substr(2);
-        else if (sParams.substr(0, 4) == "-set")
-            sParams = sParams.substr(4);
-
-        int nResults = 0;
-
         sInterval = getIntervalForSearchFunctions(sParams, sVar);
 
-        _parser.SetExpr(sExpr);
-        _parser.Eval(nResults);
+    _parser.SetExpr(sExpr);
+    _parser.Eval(nResults);
 
-        if (nResults > 1)
-            return findZeroesInMultiResult(cmdParser, sExpr, sInterval, nMode);
-        else
+    if (nResults > 1)
+        _parser.SetExpr("{" + sExpr + "}");
+
+    mu::Array res = _parser.Eval();
+
+    if (res.size() > 1)
+        return findZeroesInMultiResult(cmdParser, sExpr, sInterval, nMode);
+    else
+    {
+        if (findVariableInExpression(sExpr, sVar) == std::string::npos)
         {
-            if (findVariableInExpression(sExpr, sVar) == std::string::npos)
+            cmdParser.setReturnValue("nan");
+            return true;
+        }
+
+        dVar = getPointerToVariable(sVar, _parser);
+
+        if (!dVar)
+            throw SyntaxError(SyntaxError::ZEROES_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
+
+        if (sInterval.find(':') == string::npos || sInterval.length() < 3)
+            return false;
+
+        auto indices = getAllIndices(sInterval);
+
+        for (size_t i = 0; i < 2; i++)
+        {
+            if (isNotEmptyExpression(indices[i]))
             {
-                cmdParser.setReturnValue("nan");
-                return true;
-            }
+                _parser.SetExpr(indices[i]);
+                dBoundaries[i] = _parser.Eval().front();
 
-            dVar = getPointerToVariable(sVar, _parser);
-
-            if (!dVar)
-                throw SyntaxError(SyntaxError::ZEROES_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
-
-            if (sInterval.find(':') == string::npos || sInterval.length() < 3)
-                return false;
-
-            auto indices = getAllIndices(sInterval);
-
-            for (size_t i = 0; i < 2; i++)
-            {
-                if (isNotEmptyExpression(indices[i]))
+                if (mu::isinf(dBoundaries[i].getNum().asCF64()) || mu::isnan(dBoundaries[i]))
                 {
-                    _parser.SetExpr(indices[i]);
-                    dBoundaries[i] = _parser.Eval().front();
-
-                    if (mu::isinf(dBoundaries[i].getNum().asCF64()) || mu::isnan(dBoundaries[i]))
-                    {
-                        cmdParser.setReturnValue("nan");
-                        return false;
-                    }
-                }
-                else
+                    cmdParser.setReturnValue("nan");
                     return false;
+                }
             }
+            else
+                return false;
+        }
 
-            if (dBoundaries[1] < dBoundaries[0])
-            {
-                mu::Value Temp = dBoundaries[1];
-                dBoundaries[1] = dBoundaries[0];
-                dBoundaries[0] = Temp;
-            }
+        if (dBoundaries[1] < dBoundaries[0])
+        {
+            mu::Value Temp = dBoundaries[1];
+            dBoundaries[1] = dBoundaries[0];
+            dBoundaries[0] = Temp;
         }
     }
-    else if (cmdParser.exprContainsDataObjects())
-        return findZeroesInData(cmdParser, sExpr, nMode);
-    else
-        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Calculate the interval
     if (intCast(std::abs(dBoundaries[1].getNum().asCF64() - dBoundaries[0].getNum().asCF64())))
@@ -2885,51 +2655,58 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     // search for explicit "target" options and select the target cache
     sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
 
-    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-
     // get the data from the data object and sort only for the forward transformation
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, bIs2DFFT ? -1 : 2, !_fft.bInverseTrafo));
+    DataView _dataView = cmdParser.getExprAsDataView();
+    _dataView.evalIndices();
 
-    if (!_mem)
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+    if (!_fft.bInverseTrafo)
+        _dataView.sortTable();
 
-    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+    if (!_dataView.isValid())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-    _mem->shrink();
+    if (!_dataView.isValueLike())
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-    _fft.lines = _mem->getElemsInColumn(0);
-    _fft.cols = _mem->getCols();
+    _fft.lines = _dataView.rows();
+    _fft.cols = _dataView.cols();
+
+    _dataView.reserveAxes(1+bIs2DFFT);
 
     if (_fft.lines % 2 && _fft.lines > 1e3)
         _fft.lines--;
 
-    _fft.dNyquistFrequency[0] = _fft.lines/(_mem->readMem(_fft.lines - 1, 0).getNum().asF64()-_mem->readMem(0, 0).getNum().asF64())/2.0;
-    _fft.dTimeInterval[0] = (_fft.lines - 1) / (_mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real() - _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real());
+    mu::Array xAxis = _dataView.getAxis(0);
+    mu::Array yAxis;
+
+    _fft.dNyquistFrequency[0] = _fft.lines / (xAxis.back() - xAxis.front()).getNum().asF64() / 2.0;
+    _fft.dTimeInterval[0] = (_fft.lines - 1) / (xAxis.call("max").front().getNum().asF64() - xAxis.call("min").front().getNum().asF64());
 
     if (bIs2DFFT)
     {
+        yAxis = _dataView.getAxis(1);
+
         if (_fft.cols % 2 && _fft.cols > 1e3)
             _fft.cols--;
 
-        int collines = _mem->getElemsInColumn(1);
+        int collines = yAxis.call("num").getAsScalarInt();
 
-        _fft.dNyquistFrequency[1] = collines/(_mem->readMem(collines-1, 1).getNum().asF64()-_mem->readMem(0, 1).getNum().asF64())/2.0;
-        _fft.dTimeInterval[1] = (collines - 1) / (_mem->readMem(collines - 1, 1).getNum().asF64());
+        _fft.dNyquistFrequency[1] = collines / (yAxis.back() - yAxis.front()).getNum().asF64() / 2.0;
+        _fft.dTimeInterval[1] = (collines - 1) / (yAxis.call("max").front().getNum().asF64() - yAxis.call("min").front().getNum().asF64());;
     }
 
     // Check the dimensions of the input data
-    if (_fft.lines < 10 || _fft.cols < 2 || (bIs2DFFT && _fft.cols < _mem->getElemsInColumn(1)+2))
+    if (_fft.lines < 10 || _fft.cols < 2 || (bIs2DFFT && _fft.cols < yAxis.call("num").getAsScalarInt()+2))
         throw SyntaxError(SyntaxError::WRONG_DATA_SIZE, cmdParser.getCommandLine(), cmdParser.getExpr());
 
     // Adapt the values for the shifted axis
     if (_fft.bShiftAxis)
     {
         _fft.dFrequencyOffset = -_fft.dNyquistFrequency[0] * (1 + (_fft.lines % 2) * 1.0 / _fft.lines);
-        _fft.dTimeInterval[0] = fabs((_fft.lines + (_fft.lines % 2)) / (_mem->readMem(0, 0).getNum().asF64())) * 0.5;
+        _fft.dTimeInterval[0] = fabs((_fft.lines + (_fft.lines % 2)) / (xAxis.front().getNum().asF64())) * 0.5;
 
         if (bIs2DFFT)
-            _fft.dTimeInterval[1] = fabs((_fft.cols-2 + (_fft.cols % 2)) / (_mem->readMem(0, 1).getNum().asF64())) * 0.5;
+            _fft.dTimeInterval[1] = fabs((_fft.cols-2 + (_fft.cols % 2)) / (yAxis.front().getNum().asF64())) * 0.5;
     }
 
     if (_option.systemPrints())
@@ -2963,12 +2740,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     for (int i = 0; i < _fft.lines; i++)
     {
         if (_fft.cols == 2)
-            _fftData.a[i] = nanguard(_mem->readMem(vAxis[i], 1)); // Can be complex or not: does not matter
+            _fftData.a[i] = nanguard(_dataView.get(vAxis[i], 0)); // Can be complex or not: does not matter
         else if (_fft.cols == 3 && _fft.bComplex)
-            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i], 1).getNum().asF64(), _mem->readMem(vAxis[i], 2).getNum().asF64()));
+            _fftData.a[i] = nanguard(dual(_dataView.get(vAxis[i], 0).getNum().asF64(), _dataView.get(vAxis[i], 1).getNum().asF64()));
         else if (_fft.cols == 3 && !_fft.bComplex)
-            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i],1).getNum().asF64()*cos(_mem->readMem(vAxis[i], 2).getNum().asF64()),
-                                          _mem->readMem(vAxis[i],1).getNum().asF64()*sin(_mem->readMem(vAxis[i], 2).getNum().asF64())));
+            _fftData.a[i] = nanguard(dual(_dataView.get(vAxis[i], 0).getNum().asF64()*cos(_dataView.get(vAxis[i], 1).getNum().asF64()),
+                                          _dataView.get(vAxis[i], 0).getNum().asF64()*sin(_dataView.get(vAxis[i], 1).getNum().asF64())));
         else if (bIs2DFFT)
         {
             int nLines = _fft.lines;
@@ -2977,13 +2754,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             for (int j = 0; j < nCols; j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[i+j*nLines] = nanguard(_mem->readMem(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
-                                                                    j+2 + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2)));
+                    _fftData.a[i+j*nLines] = nanguard(_dataView.get(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
+                                                                    j + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2)));
                 else
-                    _fftData.a[i+j*nLines] = nanguard(_mem->readMem(i, j+2));
+                    _fftData.a[i+j*nLines] = nanguard(_dataView.get(i, j));
             }
         }
-
     }
 
     // Calculate the actual transformation and apply some
@@ -2992,7 +2768,6 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         calculate2dFFT(_data, _idx, sTargetTable, _fftData, vAxis, _fft);
     else
         calculate1dFFT(_data, _idx, sTargetTable, _fftData, vAxis, _fft);
-
 
     if (_option.systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
@@ -3046,16 +2821,13 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     // search for explicit "target" options and select the target cache
     sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
 
-    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-
     // get the data from the data object
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
+    DataView _dataView = cmdParser.getExprAsDataView();
+    _dataView.evalIndices();
+    _dataView.reserveAxes(1);
 
-    if (!_mem)
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
-
-    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+    if (!_dataView.isValueLike())
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
     if (_option.systemPrints())
     {
@@ -3077,13 +2849,13 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
             NumeReKernel::printPreFmt("|-> " + _lang.get("PARSERFUNCS_WAVELET_INVERSE_TRANSFORMING", sExplType) + " ");
     }
 
-    for (size_t i = 0; i < (size_t)_mem->getLines(); i++)
+    for (size_t i = 0; i < _dataView.rows(); i++)
     {
-        vWaveletData.push_back(_mem->readMem(i, 1).getNum().asF64());
-
-        if (bTargetGrid)
-            vAxisData.push_back(_mem->readMem(i, 0).getNum().asF64());
+        vWaveletData.push_back(_dataView.get(i, 0).getNum().asF64());
     }
+
+    if (bTargetGrid)
+        vAxisData = mu::real(_dataView.getAxis(0).as_cmplx_vector());
 
     // calculate the wavelet:
     if (sType == "d" || sType == "daubechies")
@@ -3202,12 +2974,7 @@ bool evalPoints(CommandLineParser& cmdParser)
     // Evaluate calls in the expression
     // to any table or cluster
     if (_data.containsTables(sExpr))
-    {
         getDataElements(sExpr, _parser, _data);
-
-        if (sExpr.find("{") != string::npos)
-            convertVectorToExpression(sExpr);
-    }
 
     IntervalSet ivl = cmdParser.parseIntervals();
 
@@ -3290,7 +3057,7 @@ bool evalPoints(CommandLineParser& cmdParser)
     {
         dTemp = *dVar;
         *dVar = ivl[0](0);
-        vResults.push_back(_parser.Eval().front());
+        vResults.emplace_back(_parser.Eval());
 
         for (size_t i = 1; i < nSamples; i++)
         {
@@ -3300,7 +3067,7 @@ bool evalPoints(CommandLineParser& cmdParser)
             else
                 *dVar = ivl[0](i, nSamples);
 
-            vResults.push_back(_parser.Eval().front());
+            vResults.emplace_back(_parser.Eval());
         }
 
         *dVar = dTemp;
@@ -3308,7 +3075,7 @@ bool evalPoints(CommandLineParser& cmdParser)
     else
     {
         for (size_t i = 0; i < nSamples; i++)
-            vResults.push_back(_parser.Eval().front());
+            vResults.emplace_back(_parser.Eval());
     }
 
     cmdParser.setReturnValue(vResults);
@@ -3330,32 +3097,29 @@ static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, c
     vector<size_t> vSamples = nSamples;
 
     // If the z vals are inside of a table then obtain the correct number of samples here
-    if (cmdParser.exprContainsDataObjects())
+    if (findVariableInExpression(cmdParser.getExpr(), "x", 0) == std::string::npos
+        && findVariableInExpression(cmdParser.getExpr(), "y", 0) == std::string::npos)
     {
-        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
         // Get the indices and identify the table name
-        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+        DataView _dataView = cmdParser.getExprAsDataView();
+        _dataView.evalIndices(true);
 
-        if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
+        if (!_dataView.isValid())
             throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        Indices& _idx = _accessParser.getIndices();
-        std::string& sZDatatable = _accessParser.getDataObject();
-
         // Check the indices
-        if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+        /*if (!isValidIndexSet(_idx))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());*/
 
         // The indices are vectors
-        if (_idx.col.isOpenEnd())
+        /*if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);
+            _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);*/
 
-        vSamples.front() = _idx.row.size();
-        vSamples.back() = _idx.col.size();
+        vSamples.front() = _dataView.rows();
+        vSamples.back() = _dataView.cols();
 
         // Check for singletons
         if (vSamples[0] < 2 && vSamples[1] >= 2)
@@ -3508,52 +3272,72 @@ bool createDatagrid(CommandLineParser& cmdParser)
         vSamples[1-bTranspose] = ivl[1].getSamples();
 
     //>> Z-Matrix
-    if (cmdParser.exprContainsDataObjects())
+    if (findVariableInExpression(cmdParser.getExpr(), "x", 0) != std::string::npos
+        || findVariableInExpression(cmdParser.getExpr(), "y", 0) != std::string::npos)
+    {
+        Parser& _parser = NumeReKernel::getInstance()->getParser();
+
+        // Calculate the grid from formula
+        _parser.SetExpr(cmdParser.getExprAsMathExpression());
+
+        mu::Array vVector;
+        vVector.reserve(vSamples[bTranspose]);
+
+        for (size_t x = 0; x < vSamples[bTranspose]; x++)
+        {
+            _defVars.vValue[0][0] = ivl[0](x, vSamples[bTranspose]);
+
+            for (size_t y = 0; y < vSamples[1-bTranspose]; y++)
+            {
+                _defVars.vValue[1][0] = ivl[1](y, vSamples[1-bTranspose]);
+                vVector.emplace_back(_parser.Eval().front());
+            }
+
+            vZVals.emplace_back(vVector);
+            vVector.clear();
+        }
+    }
+    else
     {
         // Get the datagrid from another table
-        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+        DataView _dataView = cmdParser.getExprAsDataView();
+        _dataView.evalIndices(true);
 
-        if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+        if (!_dataView.isValid())
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-        if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
-
-        Indices& _idx = _accessParser.getIndices();
-
-        // identify the table
-        std::string& szDatatable = _accessParser.getDataObject();
+        if (!_dataView.isValueLike())
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
         // Check the indices
-        if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+        /*if (!isValidIndexSet(_idx))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());*/
 
         // the indices are vectors
         mu::Array vVector;
+        vZVals.reserve(bTranspose ? _dataView.cols() : _dataView.rows());
 
-        if (_idx.col.isOpenEnd())
+        /*if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _data.getCols(szDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0), szDatatable)-1);
+            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0), szDatatable)-1);*/
 
         // Get the data. Choose the order of reading depending on the "transpose" command line option
         if (!bTranspose)
         {
-            for (size_t i = 0; i < _idx.row.size(); i++)
+            for (size_t i = 0; i < _dataView.rows(); i++)
             {
-                vVector = _data.getElement(VectorIndex(_idx.row[i]), _idx.col, szDatatable);
-                vZVals.push_back(vVector);
-                vVector.clear();
+                vVector = _dataView.get(VectorIndex(i), VectorIndex(0, _dataView.cols()-1));
+                vZVals.emplace_back(vVector);
             }
         }
         else
         {
-            for (size_t j = 0; j < _idx.col.size(); j++)
+            for (size_t j = 0; j < _dataView.cols(); j++)
             {
-                vVector = _data.getElement(_idx.row, VectorIndex(_idx.col[j]), szDatatable);
-                vZVals.push_back(vVector);
-                vVector.clear();
+                vVector = _dataView.get(VectorIndex(0, _dataView.rows()-1), VectorIndex(j));
+                vZVals.emplace_back(vVector);
             }
         }
 
@@ -3564,29 +3348,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
         // Expand the z vector into a matrix for the datagrid if necessary
         expandVectorToDatagrid(ivl, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
     }
-    else
-    {
-        Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-        // Calculate the grid from formula
-        _parser.SetExpr(cmdParser.getExprAsMathExpression());
-
-        mu::Array vVector;
-
-        for (size_t x = 0; x < vSamples[bTranspose]; x++)
-        {
-            _defVars.vValue[0][0] = ivl[0](x, vSamples[bTranspose]);
-
-            for (size_t y = 0; y < vSamples[1-bTranspose]; y++)
-            {
-                _defVars.vValue[1][0] = ivl[1](y, vSamples[1-bTranspose]);
-                vVector.push_back(_parser.Eval().front());
-            }
-
-            vZVals.push_back(vVector);
-            vVector.clear();
-        }
-    }
 
     // Store the results in the target cache
     if (_iTargetIndex.row.isOpenEnd())
@@ -3654,8 +3416,6 @@ bool createDatagrid(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool writeAudioFile(CommandLineParser& cmdParser)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
     string sAudioFileName = "<savepath>/audiofile.wav";
     int nSamples = 44100;
     int nChannels = 1;
@@ -3671,47 +3431,39 @@ bool writeAudioFile(CommandLineParser& cmdParser)
     // Dateiname lesen
     sAudioFileName = cmdParser.getFileParameterValueForSaving(".wav", "<savepath>", sAudioFileName);
 
-    // Indices lesen
-    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-    Indices& _idx = _accessParser.getIndices();
+    DataView _dataView = cmdParser.getExprAsDataView();
+    _dataView.evalIndices(true);
 
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + 1);
+    if (!_dataView.isValueLike())
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-    if (!_data.isValueLike(_idx.col, _accessParser.getDataObject()))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
-
-    _accessParser.evalIndices();
-
-    if (_idx.col.size() > 2)
+    if (_dataView.cols() > 2)
         return false;
 
     // Find the absolute maximal value
-    dMin = fabs(_data.min(_accessParser.getDataObject(), _idx.row, _idx.col));
-    dMax = fabs(_data.max(_accessParser.getDataObject(), _idx.row, _idx.col));
+    dMin = std::abs(_dataView.min().getNum().asF64());
+    dMax = std::abs(_dataView.max().getNum().asF64());
 
     dMax = std::max(dMin, dMax);
 
-    nChannels = _idx.col.size() > 1 ? 2 : 1;
+    nChannels = _dataView.cols() > 1 ? 2 : 1;
 
     std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFileName));
 
-    if (!audiofile.get())
+    if (!audiofile)
         return false;
 
-    audiofile.get()->setChannels(nChannels);
-    audiofile.get()->setSampleRate(nSamples);
-    audiofile.get()->newFile();
+    audiofile->setChannels(nChannels);
+    audiofile->setSampleRate(nSamples);
+    audiofile->newFile();
 
-    if (!audiofile.get()->isValid())
+    if (!audiofile->isValid())
         return false;
 
-    const std::string& sTab = _accessParser.getDataObject();
-
-    for (size_t i = 0; i < _idx.row.size(); i++)
+    for (size_t i = 0; i < _dataView.rows(); i++)
     {
-        audiofile.get()->write(Audio::Sample(_data.getElement(_idx.row[i],_idx.col[0],sTab).getNum().asF64()/dMax,
-                                             nChannels > 1 ? _data.getElement(_idx.row[i],_idx.col[1],sTab).getNum().asF64()/dMax : NAN));
+        audiofile->write(Audio::Sample(_dataView.get(i, 0).getNum().asF64()/dMax,
+                                       nChannels > 1 ? _dataView.get(i, 1).getNum().asF64()/dMax : NAN));
     }
 
     return true;
@@ -3999,25 +3751,24 @@ bool analyzePulse(CommandLineParser& cmdParser)
     double dSampleSize = NAN;
 
     // Indices lesen
-    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    DataView _dataView = cmdParser.getExprAsDataView();
 
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
+    if (!_dataView.isValid())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-    if (!_mem)
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+    if (!_dataView.isValueLike())
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
-        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+    size_t nRows = _dataView.rows();
+    _dataView.reserveAxes(1);
 
-    long long int nLines = _mem->getLines();
+    dXmin = _dataView.getAxis(0).call("min").front().getNum().asF64();
+    dXmax = _dataView.getAxis(0).call("max").front().getNum().asF64();
 
-    dXmin = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
-    dXmax = _mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
+    _v.Create(nRows);
 
-    _v.Create(nLines);
-
-    for (long long int i = 0; i < nLines; i++)
-        _v.a[i] = _mem->readMem(i, 1).getNum().asF64();
+    for (size_t i = 0; i < nRows; i++)
+        _v.a[i] = _dataView.get(i, 0).getNum().asF64();
 
     dSampleSize = (dXmax - dXmin) / ((double)_v.GetNx() - 1.0);
     mglData _pulse(_v.Pulse('x'));
@@ -4045,8 +3796,11 @@ bool analyzePulse(CommandLineParser& cmdParser)
         make_hline();
 
         for (size_t i = 0; i < vPulseProperties.size(); i++)
+        {
             NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString(i + 1) + "_*",
                                                          vPulseProperties[i].print(NumeReKernel::getInstance()->getSettings().getPrecision())) + "\n");
+
+        }
 
         NumeReKernel::toggleTableStatus();
         make_hline();
@@ -4265,51 +4019,43 @@ void boneDetection(CommandLineParser& cmdParser)
     std::string sTargetCache = cmdParser.getTargetTable(_target, "detectdat");
 
     // Indices lesen
-    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-    Indices& _idx = accessParser.getIndices();
+    DataView _dataView = cmdParser.getExprAsDataView();
+    _dataView.evalIndices(true);
 
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(accessParser.getDataObject())-1);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + _data.getLines(accessParser.getDataObject(), true)
-                                              - _data.getAppendedZeroes(_idx.col[1], accessParser.getDataObject()) + 1);
-
-    if (!_data.isValueLike(_idx.col, accessParser.getDataObject()))
+    if (!_dataView.isValueLike())
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
-                          accessParser.getDataObject()+"(", accessParser.getDataObject());
+                          _dataView.getDataName(), cmdParser.getExpr());
 
-    // Get x and y axis for the final scaling
-    mu::Array vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), accessParser.getDataObject());
-    mu::Array vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), accessParser.getDataObject());
+    if (!_dataView.isValid())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(),
+                          _dataView.getDataName(), cmdParser.getExpr());
 
-    _idx.col = _idx.col.subidx(2);
+    _dataView.reserveAxes(2);
 
     // Get the data
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 100));
+    size_t nRows = _dataView.rows();
+    size_t nCols = _dataView.cols();
 
-    if (!_mem)
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
-
-    long long int nLines = _mem->getLines();
-    long long int nCols = _mem->getCols();
+    // Get x and y axis for the final scaling
+    std::vector<double> vX = mu::real(_dataView.getAxis(0).as_cmplx_vector());
+    std::vector<double> vY = mu::real(_dataView.getAxis(1).as_cmplx_vector());
 
     // Restrict the attraction to not exceed the axis range
-    dAttrX = min(dAttrX, (double)nLines);
+    dAttrX = min(dAttrX, (double)nRows);
     dAttrY = min(dAttrY, (double)nCols);
 
     // Use minimal data value if level is NaN
     if (isnan(dLevel))
-        dLevel = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END)).real();
+        dLevel = _dataView.med().getNum().asF64();
 
-    _mData.Create(nLines, nCols);
+    _mData.Create(nRows, nCols);
 
     // Copy the data to the mglData object
-    for (long long int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nRows; i++)
     {
-        for (long long int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
-            _mData.a[i+j*nLines] = _mem->readMem(i, j).getNum().asF64();
+            _mData.a[i+j*nRows] = _dataView.get(i, j+2).getNum().asF64();
         }
     }
 
@@ -4335,10 +4081,10 @@ void boneDetection(CommandLineParser& cmdParser)
 
             if (!j)
                 _data.writeToTable(_target.row[i], _target.col[j], sTargetCache,
-                                   interpolateToGrid(mu::real(vX.as_cmplx_vector()), _res.a[j+i*_res.GetNx()]));
+                                   interpolateToGrid(vX, _res.a[j+i*_res.GetNx()]));
             else
                 _data.writeToTable(_target.row[i], _target.col[j], sTargetCache,
-                                   interpolateToGrid(mu::real(vY.as_cmplx_vector()), _res.a[j+i*_res.GetNx()]));
+                                   interpolateToGrid(vY, _res.a[j+i*_res.GetNx()]));
         }
     }
 

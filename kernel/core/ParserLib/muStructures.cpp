@@ -823,6 +823,23 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Convert the contained type to a
+    /// size_t in a fail-safe mode (returning 0 if
+    /// a conversion is not possible).
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Value::as_idx() const
+    {
+        if (!get() || !isNumerical())
+            return 0ull;
+
+        return getNum().asUI64();
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Optimized power-function.
     ///
     /// \param exponent const Value&

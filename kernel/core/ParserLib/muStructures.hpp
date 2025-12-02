@@ -188,6 +188,7 @@ namespace mu
             const GeneratorValue& getGenerator() const;
 
             std::complex<double> as_cmplx() const;
+            size_t as_idx() const;
 
             /////////////////////////////////////////////////
             /// \brief Add operator.

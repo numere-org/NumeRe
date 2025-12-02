@@ -564,20 +564,12 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 /// data object equals a cluster identifier.
 ///
 /// \param cmdParser CommandLineParser&
-/// \param sCluster const string&
-/// \param _idx Indices&
+/// \param _dataView const DataView&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, Indices& _idx)
+static bool sortMat(CommandLineParser& cmdParser, const DataView& _dataView)
 {
-    vector<int> vSortIndex;
-    mu::Variable& cluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sCluster);
-
-    // Evalulate special index values
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, cluster.size() - 1);
-
     mu::Array opts;
 
     if (cmdParser.hasParam("desc"))
@@ -587,19 +579,15 @@ static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, I
         opts.push_back("ignorecase");
 
     // Get a sorting index
-    mu::Array order = cluster.order(opts);
+    mu::Array order = _dataView.getArray().order(opts);
 
     // If the user has requested the index, return that instead of
     // actually reordering
     if (cmdParser.hasParam("index"))
         cmdParser.setReturnValue(order);
     else
-    {
         // Perform the actual sorting operation
-        cluster = cluster.call("sel", order);
-
-        cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
-    }
+        cmdParser.setReturnValue(_dataView.getArray().call("sel", order));
 
     // Return true
     return true;
@@ -618,32 +606,32 @@ static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, I
 bool sortData(CommandLineParser& cmdParser)
 {
     vector<int> vSortIndex;
-    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+    DataView _dataView = cmdParser.getExprAsDataView();
 
-    if (!_accessParser.getDataObject().length())
+    if (!_dataView.isValid())
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
-
-    // Get the indices
-    Indices& _idx = _accessParser.getIndices();
-
-    // Ensure that the indices are reasonable
-    if (!isValidIndexSet(_idx))
-        throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
     // If the current cache equals a cluster, leave the function at
     // this point and redirect the control to the cluster sorting
     // function
-    if (_accessParser.isCluster())
-        return sortClusters(cmdParser, _accessParser.getDataObject(), _idx);
+    if (!_dataView.isTable())
+        return sortMat(cmdParser, _dataView);
 
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Evalulate special index values
-    _accessParser.evalIndices();
+    _dataView.evalIndices();
+
+    // Get the indices
+    const Indices& _idx = _dataView.getTableIndices();
+
+    // Ensure that the indices are reasonable
+    //if (!isValidIndexSet(_idx))
+    //    throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-    vSortIndex = _data.sortElements(_accessParser.getDataObject(),
+    vSortIndex = _data.sortElements(_dataView.getDataName(),
                                     _idx.row, _idx.col,
                                     cmdParser.getParameterList());
 

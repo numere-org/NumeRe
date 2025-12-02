@@ -2446,15 +2446,8 @@ static CommandReturnValues cmd_plotting(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_fit(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-
-    if (_data.isValid())
-        fitDataSet(sCmd, _parser, _data, _functions, _option);
-    else
-        doc_Help("fit", _option);
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
+    fitDataSet(cmdParser);
 
     return COMMAND_PROCESSED;
 }

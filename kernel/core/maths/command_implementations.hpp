@@ -34,7 +34,7 @@ bool differentiate(CommandLineParser& cmdParser);
 bool findExtrema(CommandLineParser& cmdParser);
 bool findZeroes(CommandLineParser& cmdParser);
 void taylor(CommandLineParser& cmdParser);
-bool fitDataSet(std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool fitDataSet(CommandLineParser& cmdParser);
 bool fastFourierTransform(CommandLineParser& cmdParser);
 bool fastWaveletTransform(CommandLineParser& cmdParser);
 bool evalPoints(CommandLineParser& cmdParser);

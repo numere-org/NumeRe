@@ -198,6 +198,19 @@ std::string& DataAccessParser::getDataObject()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns a reference to the data object
+/// identifier. Constant overload
+///
+/// \return const std::string&
+///
+/////////////////////////////////////////////////
+const std::string& DataAccessParser::getDataObject() const
+{
+    return sDataObject;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the index
 /// definitions as a human-readable string.
 ///
@@ -218,6 +231,19 @@ std::string DataAccessParser::getIndexString()
 ///
 /////////////////////////////////////////////////
 Indices& DataAccessParser::getIndices()
+{
+    return idx;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a reference to the stored
+/// indices. Constant overload
+///
+/// \return const Indices&
+///
+/////////////////////////////////////////////////
+const Indices& DataAccessParser::getIndices() const
 {
     return idx;
 }
@@ -261,6 +287,229 @@ std::vector<size_t> DataAccessParser::getDataGridDimensions() const
 {
     return ::getDataGridDimensions(idx, sDataObject);
 }
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief Sort the table reference by simply
+/// reordering the access index for the rows.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void DataView::sortTable()
+{
+    if (!isTable())
+        return;
+
+    Indices& _idx = m_access.getIndices();
+    mu::Array fstCol = NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row, _idx.col.subidx(0, 1),
+                                                                                  m_access.getDataObject());
+
+    _idx.row = _idx.row.get(fstCol.order() - mu::Value(1));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the referenced data
+/// is numerically interpretable.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DataView::isValueLike() const
+{
+    if (isTable())
+        return NumeReKernel::getInstance()->getMemoryManager().isValueLike(m_access.getIndices().col, m_access.getDataObject());
+
+    return m_array.getCommonType() == mu::TYPE_NUMERICAL || m_array.getCommonType() == mu::TYPE_GENERATOR;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Check, whether the referenced data is
+/// valid.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DataView::isValid() const
+{
+    if (isTable())
+        return NumeReKernel::getInstance()->getMemoryManager().isTable(m_access.getDataObject());
+
+    return m_array.size() && m_array.getCommonType() != mu::TYPE_VOID;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the correct axis. Returns a
+/// standard generator, if no axes are available
+/// or no axes have been reserved in advance.
+///
+/// \param axis size_t
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array DataView::getAxis(size_t axis) const
+{
+    if (isTable() && m_axisCount > axis)
+    {
+        const Indices& _idx = m_access.getIndices();
+        return NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row, _idx.col.subidx(axis, 1),
+                                                                          m_access.getDataObject());
+    }
+
+    return mu::Array(new mu::GeneratorValue(0, rows()-1)).makeGenerator();
+}
+
+
+ /////////////////////////////////////////////////
+/// \brief Reserve axisCount number of axes to be
+/// available. Returns true in most cases. Returns
+/// false only if a table is referenced but its
+/// columns do not correspond to a data grid.
+///
+/// \param axisCount size_t
+/// \param asDataGrid bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DataView::reserveAxes(size_t axisCount, bool asDataGrid)
+{
+    if (isTable() && !m_axisCount && cols() > 1)
+    {
+        bool isTuple = cols() == 3 && !asDataGrid;
+        bool isGrid = 2+m_access.getDataGridDimensions()[1] <= cols() && asDataGrid;
+
+        if (axisCount == 1 || (axisCount == 2 && (isGrid || isTuple)))
+        {
+            m_axisCount = axisCount;
+            return true;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the element (i,j)
+///
+/// \param i size_t
+/// \param j size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DataView::get(size_t i, size_t j) const
+{
+    if (isTable())
+    {
+        const Indices& _idx = m_access.getIndices();
+        return NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row[i], _idx.col[j+m_axisCount],
+                                                                          m_access.getDataObject());
+    }
+
+    return m_array.get(i, j);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get an Array of elements
+///
+/// \param rows const VectorIndex&
+/// \param cols const VectorIndex&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array DataView::get(const VectorIndex& rows, const VectorIndex& cols) const
+{
+    if (isTable())
+    {
+        const Indices& _idx = m_access.getIndices();
+        return NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row.get(rows), _idx.col.subidx(m_axisCount, 1).get(cols),
+                                                                          m_access.getDataObject());
+    }
+
+    return m_array.call("submat", rows.getVector(), cols.getVector());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate the sum of the referenced
+/// data source.
+///
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DataView::sum() const
+{
+    if (isTable())
+        return NumeReKernel::getInstance()->getMemoryManager().sum(m_access.getDataObject(),
+                                                                   m_access.getIndices().row, m_access.getIndices().col.subidx(m_axisCount));
+
+    return m_array.call("sum").front();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate the minimal value of the
+/// referenced data source.
+///
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DataView::min() const
+{
+    if (isTable())
+        return NumeReKernel::getInstance()->getMemoryManager().min(m_access.getDataObject(),
+                                                                   m_access.getIndices().row, m_access.getIndices().col.subidx(m_axisCount));
+
+    return m_array.call("min").front();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate the maximal value of the
+/// referenced data source.
+///
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DataView::max() const
+{
+    if (isTable())
+        return NumeReKernel::getInstance()->getMemoryManager().max(m_access.getDataObject(),
+                                                                   m_access.getIndices().row, m_access.getIndices().col.subidx(m_axisCount));
+
+    return m_array.call("max").front();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate the median value of the
+/// referenced data source.
+///
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DataView::med() const
+{
+    if (isTable())
+        return NumeReKernel::getInstance()->getMemoryManager().med(m_access.getDataObject(),
+                                                                   m_access.getIndices().row, m_access.getIndices().col.subidx(m_axisCount));
+
+    return m_array.call("med").front();
+}
+
+
+
+
+
 
 
 static void resolveTables(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options);

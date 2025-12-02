@@ -49,11 +49,173 @@ class DataAccessParser
         DataAccessParser& operator=(const DataAccessParser& copied) = default;
         void evalIndices(bool asMatrix = true);
         std::string& getDataObject();
+        const std::string& getDataObject() const;
         std::string getIndexString();
         Indices& getIndices();
+        const Indices& getIndices() const;
         bool isCluster() const;
         bool isMatrix() const;
         std::vector<size_t> getDataGridDimensions() const;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class provides a view to either a
+/// referenced table instance or to an Array of
+/// values. It is intended to abstrahize away the
+/// slight differences between accesses to a
+/// table or an Array.
+/////////////////////////////////////////////////
+class DataView
+{
+    private:
+        mu::Array m_array;
+        DataAccessParser m_access;
+        std::string m_dataName;
+        size_t m_axisCount;
+
+    public:
+        DataView(const mu::Array& arr, const std::string& dataName) : m_array(arr), m_dataName(dataName), m_axisCount(0) { }
+        DataView(const DataAccessParser& acc) : m_access(acc), m_axisCount(0)
+        {
+            m_dataName = m_access.getDataObject() + "(";
+        }
+        DataView(const DataAccessParser&& acc) : m_access(acc), m_axisCount(0)
+        {
+            m_dataName = m_access.getDataObject() + "(";
+        }
+        DataView(const DataView&) = default;
+        DataView(DataView&&) = default;
+
+        void sortTable();
+
+        /////////////////////////////////////////////////
+        /// \brief Evaluates the indices, if they have
+        /// open ends depending on whether a matrix or
+        /// just multiple columns are accepted. Only
+        /// necessary, if a table is referenced.
+        ///
+        /// \param asMatrix bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void evalIndices(bool asMatrix = false)
+        {
+            if (isTable())
+                m_access.evalIndices(asMatrix);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of dimensions
+        /// available in the referenced data source.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t getDims() const
+        {
+            if (isTable())
+                return m_access.getIndices().col.size() > 1 ? 2ull : 1ull;
+
+            return m_array.getDims();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of rows referenced
+        /// in the data source.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t rows() const
+        {
+            if (isTable())
+                return m_access.getIndices().row.size();
+
+            return m_array.rows();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of columns
+        /// referenced in the data source.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t cols() const
+        {
+            if (isTable())
+                return m_access.getIndices().col.size() - m_axisCount;
+
+            return m_array.cols();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if a table has been
+        /// referenced.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isTable() const
+        {
+            return m_access.getDataObject().length();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a human-readable version of the
+        /// referenced data source.
+        ///
+        /// \return const std::string&
+        ///
+        /////////////////////////////////////////////////
+        const std::string& getDataName() const
+        {
+            return m_dataName;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the table access indices. Only
+        /// meaningful for table accesses.
+        ///
+        /// \return const Indices&
+        ///
+        /////////////////////////////////////////////////
+        const Indices& getTableIndices() const
+        {
+            return m_access.getIndices();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the internal array. Only
+        /// meaningful, if an internal array is present.
+        ///
+        /// \return const mu::Array&
+        ///
+        /////////////////////////////////////////////////
+        const mu::Array& getArray() const
+        {
+            return m_array;
+        }
+
+        bool isValueLike() const;
+        bool isValid() const;
+
+        mu::Array getAxis(size_t axis) const;
+        bool reserveAxes(size_t axisCount, bool asDataGrid = true);
+
+        size_t getAxisCount() const
+        {
+            return m_axisCount;
+        }
+
+        mu::Value get(size_t i, size_t j) const;
+        mu::Array get(const VectorIndex& rows, const VectorIndex& cols) const;
+
+        mu::Value sum() const;
+        mu::Value min() const;
+        mu::Value max() const;
+        mu::Value med() const;
 };
 
 

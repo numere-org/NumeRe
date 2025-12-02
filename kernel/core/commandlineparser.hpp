@@ -147,6 +147,7 @@ class CommandLineParser
         std::string getExprAsFileName(std::string sFileExt, const std::string& sBasePath = "") const;
         std::string getExprForFileOperation() const;
         DataAccessParser getExprAsDataObject() const;
+        DataView getExprAsDataView() const;
         std::string getExprAsMathExpression(bool parseDataObjects = false) const;
         std::string parseExprAsString() const;
         std::vector<mu::Array> parseExpr() const;

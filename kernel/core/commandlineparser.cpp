@@ -348,6 +348,42 @@ DataAccessParser CommandLineParser::getExprAsDataObject() const
 
 
 /////////////////////////////////////////////////
+/// \brief Parses the expression to a
+/// DataView, which will either contain a
+/// DataAccessParser, if the expression contains
+/// a table or the result of the mathematical
+/// expression.
+///
+/// \return DataView
+///
+/////////////////////////////////////////////////
+DataView CommandLineParser::getExprAsDataView() const
+{
+    NumeReKernel* instance = NumeReKernel::getInstance();
+    std::string sExpr = m_expr;
+
+    // Call functions first
+    if (!instance->getDefinitions().call(sExpr))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
+
+    if (sExpr.find("??") != std::string::npos)
+        sExpr = promptForUserInput(sExpr);
+
+    if (instance->getMemoryManager().isTable(sExpr, true))
+        return DataView(DataAccessParser(sExpr, false));
+
+    // Resolve table accesses
+    if (instance->getMemoryManager().containsTables(sExpr))
+        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
+
+    StripSpaces(sExpr);
+
+    instance->getParser().SetExpr(sExpr);
+    return DataView(instance->getParser().Eval(), sExpr);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Prepares the expression by calling
 /// custom function definitions and resolving
 /// vector braces so that the expression may be

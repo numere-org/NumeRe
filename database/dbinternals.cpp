@@ -327,11 +327,14 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::sqlite::data
     {
         qtl::sqlite::statement stmt = db.open_command(statement.stmt);
 
+        bool paramIsMat = statement.params.size() == 1ull && statement.params[0].cols() > 1;
+        size_t nParamCount = paramIsMat ? statement.params[0].cols() : statement.params.size();
+
         for (size_t i = 0; i < statement.affectedRows(); i++)
         {
-            for (size_t j = 0; j < statement.params.size(); j++)
+            for (size_t j = 0; j < nParamCount; j++)
             {
-                const mu::Value& val = statement.params[j].get(i);
+                const mu::Value& val = paramIsMat ? statement.params[0].get(i, j) : statement.params[j].get(i);
 
                 if (val.getType() == mu::TYPE_VOID || val.getType() == mu::TYPE_NEUTRAL)
                     stmt.bind_param(j, nullptr);
@@ -434,7 +437,11 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
             return result;
         }
 
-        std::vector<std::any> paramStorage(statement.params.size());
+        bool paramIsMat = statement.params.size() == 1ull && statement.params[0].cols() > 1;
+        size_t nParamCount = paramIsMat ? statement.params[0].cols() : statement.params.size();
+
+        std::vector<std::any> paramStorage(nParamCount);
+
         qtl::mysql::statement stmt = db.open_command(statement.stmt);
         size_t numParams = stmt.get_parameter_count();
 
@@ -444,9 +451,9 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
             // resized for every data set
             stmt.resize_binders(numParams);
 
-            for (size_t j = 0; j < std::min(statement.params.size(), numParams); j++)
+            for (size_t j = 0; j < std::min(nParamCount, numParams); j++)
             {
-                const mu::Value& val = statement.params[j].get(i);
+                const mu::Value& val = paramIsMat ? statement.params[0].get(i, j) : statement.params[j].get(i);
 
                 if (val.getType() == mu::TYPE_VOID || val.getType() == mu::TYPE_NEUTRAL)
                     stmt.bind_param(j, nullptr);
@@ -810,16 +817,21 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
 
     try
     {
-        std::vector<std::any> paramStorage(statement.params.size());
+        bool paramIsMat = statement.params.size() == 1ull && statement.params[0].cols() > 1;
+        size_t nParamCount = paramIsMat ? statement.params[0].cols() : statement.params.size();
+
+        std::vector<std::any> paramStorage(nParamCount);
+
         qtl::odbc::statement stmt = db.open_command(statement.stmt);
         size_t numParams = stmt.get_parameter_count();
+
         stmt.resize_binders(numParams);
 
         for (size_t i = 0; i < statement.affectedRows(); i++)
         {
-            for (size_t j = 0; j < std::min(statement.params.size(), numParams); j++)
+            for (size_t j = 0; j < std::min(nParamCount, numParams); j++)
             {
-                const mu::Value& val = statement.params[j].get(i);
+                const mu::Value& val = paramIsMat ? statement.params[0].get(i, j) : statement.params[j].get(i);
 
                 if (val.getType() == mu::TYPE_VOID || val.getType() == mu::TYPE_NEUTRAL)
                     stmt.bind_param(j, nullptr);
