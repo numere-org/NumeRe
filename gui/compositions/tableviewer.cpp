@@ -49,7 +49,7 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_CELL_LEFT_DCLICK   (TableViewer::OnCellDoubleClick)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
     EVT_GRID_LABEL_LEFT_DCLICK  (TableViewer::OnLabelDoubleClick)
-    EVT_MENU_RANGE              (ID_MENU_SAVE, ID_MENU_TABLE_END, TableViewer::OnMenu)
+    EVT_MENU_RANGE              (TableViewer::ID_MENU_SAVE, TableViewer::ID_MENU_TABLE_END, TableViewer::OnMenu)
     EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
     EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
 END_EVENT_TABLE()
@@ -81,19 +81,19 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     // Prepare the context menu
     wxMenu* columnMenu = new wxMenu();
 
-    columnMenu->Append(ID_MENU_SORT_COL_ASC, _guilang.get("GUI_TABLE_SORT_ASC"));
-    columnMenu->Append(ID_MENU_SORT_COL_DESC, _guilang.get("GUI_TABLE_SORT_DESC"));
-    columnMenu->Append(ID_MENU_SORT_COL_CLEAR, _guilang.get("GUI_TABLE_SORT_CLEAR"));
+    columnMenu->Append(TableViewer::ID_MENU_SORT_COL_ASC, _guilang.get("GUI_TABLE_SORT_ASC"));
+    columnMenu->Append(TableViewer::ID_MENU_SORT_COL_DESC, _guilang.get("GUI_TABLE_SORT_DESC"));
+    columnMenu->Append(TableViewer::ID_MENU_SORT_COL_CLEAR, _guilang.get("GUI_TABLE_SORT_CLEAR"));
     columnMenu->AppendSeparator();
-    columnMenu->Append(ID_MENU_FILTER, _guilang.get("GUI_TABLE_FILTER"));
-    columnMenu->Append(ID_MENU_DELETE_FILTER, _guilang.get("GUI_TABLE_DELETE_FILTER"));
+    columnMenu->Append(TableViewer::ID_MENU_FILTER, _guilang.get("GUI_TABLE_FILTER"));
+    columnMenu->Append(TableViewer::ID_MENU_DELETE_FILTER, _guilang.get("GUI_TABLE_DELETE_FILTER"));
     columnMenu->AppendSeparator();
-    columnMenu->Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE"));
+    columnMenu->Append(TableViewer::ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE"));
 
-    m_popUpMenu.Append(ID_MENU_COLUMNS, _guilang.get("GUI_TABLE_COLUMN"), columnMenu);
-    m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
+    m_popUpMenu.Append(TableViewer::ID_MENU_COLUMNS, _guilang.get("GUI_TABLE_COLUMN"), columnMenu);
+    m_popUpMenu.Append(TableViewer::ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
     m_popUpMenu.AppendSeparator();
-    m_popUpMenu.Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
+    m_popUpMenu.Append(TableViewer::ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
 
     // prepare the status bar
     m_statusBar = statusbar;
@@ -1636,50 +1636,53 @@ void TableViewer::createMenuBar()
 
     wxMenuBar* menuBar = m_parentPanel->getMenuBar();
 
+    if (menuBar->GetMenuCount())
+        return;
+
     // Create the file menu
     wxMenu* menuFile = new wxMenu();
 
-    menuFile->Append(ID_MENU_SAVE, _guilang.get("GUI_MENU_SAVEFILE"));
-    menuFile->Append(ID_MENU_SAVE_AS, _guilang.get("GUI_MENU_SAVEFILEAS"));
+    menuFile->Append(TableViewer::ID_MENU_SAVE, _guilang.get("GUI_MENU_SAVEFILE"));
+    menuFile->Append(TableViewer::ID_MENU_SAVE_AS, _guilang.get("GUI_MENU_SAVEFILEAS"));
 
     menuBar->Append(menuFile, _guilang.get("GUI_MENU_FILE"));
 
     // Create the edit menu
     wxMenu* menuEdit = new wxMenu();
 
-    menuEdit->Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS") + "\tCtrl-C");
-    menuEdit->Append(ID_MENU_CUT, _guilang.get("GUI_CUT_TABLE_CONTENTS") + "\tCtrl-X");
-    menuEdit->Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS") + "\tCtrl-V");
-    menuEdit->Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE") + "\tCtrl-Shift-V");
+    menuEdit->Append(TableViewer::ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS") + "\tCtrl-C");
+    menuEdit->Append(TableViewer::ID_MENU_CUT, _guilang.get("GUI_CUT_TABLE_CONTENTS") + "\tCtrl-X");
+    menuEdit->Append(TableViewer::ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS") + "\tCtrl-V");
+    menuEdit->Append(TableViewer::ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE") + "\tCtrl-Shift-V");
     menuEdit->AppendSeparator();
-    menuEdit->Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
-    menuEdit->Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
-    menuEdit->Append(ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
+    menuEdit->Append(TableViewer::ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
+    menuEdit->Append(TableViewer::ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
+    menuEdit->Append(TableViewer::ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
     menuEdit->AppendSeparator();
-    menuEdit->Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
-    menuEdit->Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
-    menuEdit->Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+    menuEdit->Append(TableViewer::ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
+    menuEdit->Append(TableViewer::ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
+    menuEdit->Append(TableViewer::ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
 
     menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
     // Create the columns submenu
     wxMenu* columnMenu = new wxMenu();
 
-    columnMenu->Append(ID_MENU_SORT_COL_ASC, _guilang.get("GUI_TABLE_SORT_ASC"));
-    columnMenu->Append(ID_MENU_SORT_COL_DESC, _guilang.get("GUI_TABLE_SORT_DESC"));
-    columnMenu->Append(ID_MENU_SORT_COL_CLEAR, _guilang.get("GUI_TABLE_SORT_CLEAR"));
+    columnMenu->Append(TableViewer::ID_MENU_SORT_COL_ASC, _guilang.get("GUI_TABLE_SORT_ASC"));
+    columnMenu->Append(TableViewer::ID_MENU_SORT_COL_DESC, _guilang.get("GUI_TABLE_SORT_DESC"));
+    columnMenu->Append(TableViewer::ID_MENU_SORT_COL_CLEAR, _guilang.get("GUI_TABLE_SORT_CLEAR"));
     columnMenu->AppendSeparator();
-    columnMenu->Append(ID_MENU_FILTER, _guilang.get("GUI_TABLE_FILTER"));
-    columnMenu->Append(ID_MENU_DELETE_FILTER, _guilang.get("GUI_TABLE_DELETE_FILTER"));
+    columnMenu->Append(TableViewer::ID_MENU_FILTER, _guilang.get("GUI_TABLE_FILTER"));
+    columnMenu->Append(TableViewer::ID_MENU_DELETE_FILTER, _guilang.get("GUI_TABLE_DELETE_FILTER"));
     columnMenu->AppendSeparator();
-    columnMenu->Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE") + "\tCtrl-T");
+    columnMenu->Append(TableViewer::ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE") + "\tCtrl-T");
 
     // Create the tools menu
     wxMenu* menuTools = new wxMenu();
 
-    menuTools->Append(ID_MENU_RELOAD, _guilang.get("GUI_TABLE_RELOAD") + "\tCtrl-R");
+    menuTools->Append(TableViewer::ID_MENU_RELOAD, _guilang.get("GUI_TABLE_RELOAD") + "\tCtrl-R");
     menuTools->Append(wxID_ANY, _guilang.get("GUI_TABLE_COLUMN"), columnMenu);
-    menuTools->Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS") + "\tCtrl-Shift-F");
+    menuTools->Append(TableViewer::ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS") + "\tCtrl-Shift-F");
 
     menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
 
@@ -2726,6 +2729,48 @@ void TableViewer::enableQuotationMarks(bool enable)
 {
     if (isGridNumeReTable)
         static_cast<GridNumeReTable*>(GetTable())->enableQuotationMarks(enable);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Refresh the status bar (e.g. because a
+/// tab has been changed).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::refreshStatusBar()
+{
+    wxGridCellCoords coords(GetCursorRow(), GetCursorColumn());
+
+    if (coords.GetCol() == -1 || coords.GetRow() == -1)
+        return;
+
+    // Simple case: only one cell
+    if (!(GetSelectedCells().size()
+        || GetSelectedCols().size()
+        || GetSelectedRows().size()
+        || GetSelectionBlockTopLeft().size()
+        || GetSelectionBlockBottomRight().size()))
+    {
+        updateStatusBar(wxGridCellCoordsContainer(coords, coords), &coords);
+        return;
+    }
+
+    // More difficult: multiple selections
+    if (GetSelectedCells().size())
+        updateStatusBar(wxGridCellCoordsContainer(GetSelectedCells(), this), &coords);
+    else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
+    {
+        // block layout
+        wxGridCellCoordsArray topleftarray = GetSelectionBlockTopLeft();
+        wxGridCellCoordsArray bottomrightarray = GetSelectionBlockBottomRight();
+        updateStatusBar(wxGridCellCoordsContainer(topleftarray[0], bottomrightarray[0], this), &coords);
+    }
+    else if (GetSelectedCols().size())
+        updateStatusBar(wxGridCellCoordsContainer(GetSelectedCols(), GetRows(), false), &coords);
+    else
+        updateStatusBar(wxGridCellCoordsContainer(GetSelectedRows(), GetCols(), true), &coords);
 }
 
 

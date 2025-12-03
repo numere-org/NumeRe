@@ -28,6 +28,7 @@
 
 extern Language _guilang;
 class TextField;
+class NumeReWindow;
 
 /////////////////////////////////////////////////
 /// \brief Generic table panel, which also
@@ -45,11 +46,12 @@ class TablePanel : public wxPanel
         bool finished;
 
         NumeReTerminal* m_terminal;
+        wxFrame* m_topLevelFrame;
 
     public:
         TableViewer* grid;
 
-        TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly = true);
+        TablePanel(wxWindow* parent, wxFrame* toplevel, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow, bool readOnly = true);
         void update(const NumeRe::TableMetaData& meta);
         void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
         NumeReTerminal* GetTerminal() {return m_terminal;};
@@ -75,7 +77,7 @@ class TablePanel : public wxPanel
 class TableEditPanel : public TablePanel
 {
     public:
-        TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
+        TableEditPanel(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow);
 
         void OnButtonOk(wxCommandEvent& event);
         void OnButtonCancel(wxCommandEvent& event);

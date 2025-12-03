@@ -135,6 +135,7 @@ class TableViewer : public wxGrid
         void conditionalFormat(const wxGridCellCoordsContainer& cells, const CellValueShader& shader);
         bool isSilentSelection();
         void enableQuotationMarks(bool enable = true);
+        void refreshStatusBar();
 
         mu::Array getSelectedValues();
         int GetInternalRows(int gridrow) const;

@@ -41,16 +41,17 @@ END_EVENT_TABLE()
 /// \brief Constructor for the generic table
 /// panel.
 ///
-/// \param parent wxFrame*
+/// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param statusbar wxStatusBar*
+/// \param topWindow NumeReWindow*
 /// \param readOnly bool
 ///
 /////////////////////////////////////////////////
-TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly) : wxPanel(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC | wxTAB_TRAVERSAL)
+TablePanel::TablePanel(wxWindow* parent, wxFrame* topLevel, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow, bool readOnly) : wxPanel(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC | wxTAB_TRAVERSAL)
 {
-    NumeReWindow* window = static_cast<NumeReWindow*>(parent->GetParent());
-    SyntaxStyles uiTheme = window->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+    m_topLevelFrame = topLevel;
+    SyntaxStyles uiTheme = topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
     statusbar->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
     SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
 
@@ -69,7 +70,7 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
                                    wxTE_READONLY | wxBORDER_THEME);
     m_lastSaveText = new wxStaticText(this, wxID_ANY, _guilang.get("GUI_TABLEPANEL_LASTSAVE"));
 
-    grid = new TableViewer(this, wxID_ANY, statusbar, this, window, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    grid = new TableViewer(this, wxID_ANY, statusbar, this, topWindow, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetTableReadOnly(readOnly);
     grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
 
@@ -154,12 +155,12 @@ void TablePanel::dismissMessage()
 /////////////////////////////////////////////////
 wxMenuBar* TablePanel::getMenuBar()
 {
-    wxMenuBar* menuBar = static_cast<wxFrame*>(m_parent)->GetMenuBar();
+    wxMenuBar* menuBar = m_topLevelFrame->GetMenuBar();
 
     if (!menuBar)
     {
         menuBar = new wxMenuBar();
-        static_cast<wxFrame*>(m_parent)->SetMenuBar(menuBar);
+        m_topLevelFrame->SetMenuBar(menuBar);
     }
 
     return menuBar;
@@ -174,7 +175,7 @@ wxMenuBar* TablePanel::getMenuBar()
 /////////////////////////////////////////////////
 wxFrame* TablePanel::getFrame()
 {
-    return static_cast<wxFrame*>(m_parent);
+    return m_topLevelFrame;
 }
 
 
@@ -220,12 +221,13 @@ void TablePanel::OnClose(wxCloseEvent& event)
 /// which creates also the buttons at the top of
 /// the window.
 ///
-/// \param parent wxFrame*
+/// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param statusbar wxStatusBar*
+/// \param topWindow NumeReWindow*
 ///
 /////////////////////////////////////////////////
-TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar) : TablePanel(parent, id, statusbar, false)
+TableEditPanel::TableEditPanel(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow) : TablePanel(parent, static_cast<wxFrame*>(parent), id, statusbar, topWindow, false)
 {
     wxBoxSizer* buttonsizer = new wxBoxSizer(wxHORIZONTAL);
 

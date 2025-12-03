@@ -68,7 +68,7 @@
 #include "compositions/viewerframe.hpp"
 #include "compositions/imagepanel.hpp"
 #include "compositions/helpviewer.hpp"
-#include "compositions/tableviewer.hpp"
+#include "compositions/tablebrowser.hpp"
 #include "compositions/tableeditpanel.hpp"
 #include "compositions/wxTermContainer.h"
 #include "compositions/debugviewer.hpp"
@@ -2051,6 +2051,34 @@ void NumeReWindow::openExternally(wxFileName filename)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function displays the help
+/// page for the selected documentation ID.
+///
+/// \param sDocId const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReWindow::ShowHelp(const wxString& sDocId)
+{
+    wxWindow* openedBrowser = findWindow(WT_DOCVIEWER);
+
+    if (openedBrowser)
+    {
+        DocumentationBrowser* browser = static_cast<DocumentationBrowser*>(openedBrowser);
+
+        if (browser->IsIconized())
+            browser->Restore();
+
+        return browser->createNewPage(sDocId);
+    }
+
+    DocumentationBrowser* browser = new DocumentationBrowser(this, _guilang.get("DOC_HELP_HEADLINE", "%s"), this);
+    registerWindow(browser, WT_DOCVIEWER);
+    return browser->SetStartPage(sDocId);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function opens a HTML
 /// document (a documentation article) in the
 /// documentation viewer.
@@ -2090,16 +2118,23 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 /////////////////////////////////////////////////
 void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName,
-                                         m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
-    registerWindow(frame, WT_TABLEVIEWER);
-    frame->SetSize(800,600);
-    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, this, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
-    grid->SetData(_stringTable, tableDisplayName, sIntName);
-    frame->SetSize(std::min((size_t)800u, grid->GetWidth()), std::max(std::min((size_t)600u, grid->GetHeight()+50), (size_t)300u));
-    frame->SetIcon(getStandardIcon());
-    frame->Show();
-    frame->SetFocus();
+    wxWindow* openedBrowser = findWindow(WT_TABLEVIEWER);
+    TableBrowser* browser;
+
+    if (!openedBrowser)
+    {
+        browser = new TableBrowser(this, this);
+        registerWindow(browser, WT_TABLEVIEWER);
+    }
+    else
+    {
+        browser = static_cast<TableBrowser*>(openedBrowser);
+
+        if (browser->IsIconized())
+            browser->Restore();
+    }
+
+    browser->openTable(_stringTable, tableDisplayName, sIntName);
 }
 
 
@@ -2115,18 +2150,23 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
 /////////////////////////////////////////////////
 void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName,
-                                         m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
-    registerWindow(frame, WT_TABLEVIEWER);
-    frame->SetSize(800,600);
-    TablePanel* panel = new TablePanel(frame, wxID_ANY, frame->CreateStatusBar(3));
-    panel->SetTerminal(m_terminal);
-    panel->grid->SetData(_table, tableDisplayName, sIntName);
-    frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()+200), std::max(std::min((size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
-    frame->SetIcon(getStandardIcon());
-    frame->Show();
-    frame->SetFocus();
-    panel->ready();
+    wxWindow* openedBrowser = findWindow(WT_TABLEVIEWER);
+    TableBrowser* browser;
+
+    if (!openedBrowser)
+    {
+        browser = new TableBrowser(this, this);
+        registerWindow(browser, WT_TABLEVIEWER);
+    }
+    else
+    {
+        browser = static_cast<TableBrowser*>(openedBrowser);
+
+        if (browser->IsIconized())
+            browser->Restore();
+    }
+
+    browser->openTable(_table, tableDisplayName, sIntName);
 }
 
 
@@ -2144,7 +2184,7 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName, wxFRAME_FLOAT_ON_PARENT);
     frame->SetSize(800,600);
-    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
+    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3), this);
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_stringTable, tableDisplayName, "");
     frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()), std::max(std::min((size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
@@ -2169,7 +2209,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDispl
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName, wxFRAME_FLOAT_ON_PARENT);
     frame->SetSize(800,600);
-    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
+    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3), this);
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_table, tableDisplayName, "");
     frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()+200), std::max(std::min((size_t)(size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
@@ -7762,34 +7802,6 @@ void NumeReWindow::OnAskForNewFile()
 void NumeReWindow::OnHelp()
 {
     ShowHelp("numere");
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function displays the help
-/// page for the selected documentation ID.
-///
-/// \param sDocId const wxString&
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool NumeReWindow::ShowHelp(const wxString& sDocId)
-{
-    wxWindow* openedBrowser = findWindow(WT_DOCVIEWER);
-
-    if (openedBrowser)
-    {
-        DocumentationBrowser* browser = static_cast<DocumentationBrowser*>(openedBrowser);
-
-        if (browser->IsIconized())
-            browser->Restore();
-
-        return browser->createNewPage(sDocId);
-    }
-
-    DocumentationBrowser* browser = new DocumentationBrowser(this, _guilang.get("DOC_HELP_HEADLINE", "%s"), this);
-    registerWindow(browser, WT_DOCVIEWER);
-    return browser->SetStartPage(sDocId);
 }
 
 
