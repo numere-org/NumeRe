@@ -289,6 +289,19 @@ void Documentation::addEntry(const DocumentationEntry& entry, const std::vector<
 /////////////////////////////////////////////////
 int Documentation::findPositionInDocumentationIndex(const std::string& sTopic) const
 {
+    // Is this a UUID?
+    if (sTopic.length() == 38 && sTopic.front() == '{' && sTopic.back() == '}')
+    {
+        // Search by UUID
+        for (size_t i = 0; i < vDocIndexTable.size(); i++)
+        {
+            if (vDocIndexTable[i].sUUID == sTopic)
+                return i;
+        }
+
+        return -1;
+    }
+
     int nIndex = -1;
     auto iter = mDocumentationIndex.begin();
     auto firstIndex = mDocumentationIndex.end();
@@ -366,6 +379,26 @@ int Documentation::findPositionUsingIdxKeys(const std::string& sIdxKeys) const
     }
 
     return nIndex;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Make the candidate string to be shown
+/// if candidates are required.
+///
+/// \param id int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Documentation::makeCandidate(int id) const
+{
+    std::vector<std::string> vDoc = getHelpArticle(vDocIndexTable[id].sUUID);
+    size_t extract = 1;
+
+    if (vDoc[extract] == "<syntax>")
+        extract = std::find(vDoc.begin(), vDoc.end(), "</syntax>")+1-vDoc.begin();
+
+    return "<item node=\"*\"><a href=\"nhlp://" + vDocIndexTable[id].sUUID + "?type=doc\">" + vDocIndexTable[id].sTitle + "</a>: " + vDoc[extract] + "</item>";
 }
 
 
@@ -582,7 +615,7 @@ void Documentation::removeFromDocIndex(const string& _sID)
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> Documentation::getHelpArticle(const std::string& sTopic)
+std::vector<std::string> Documentation::getHelpArticle(const std::string& sTopic) const
 {
     std::vector<std::string> vReturn;
 
@@ -644,12 +677,12 @@ std::vector<std::string> Documentation::getHelpArticle(const std::string& sTopic
 /// for the corresponding tree in the
 /// documentation browser.
 ///
-/// \return std::vector<std::string>
+/// \return std::vector<DocIndexEntry>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> Documentation::getDocIndex() const
+std::vector<DocIndexEntry> Documentation::getDocIndex() const
 {
-    std::vector<std::string> vReturn;
+    std::vector<DocIndexEntry> vReturn;
 
     // Go through the index table and extract the
     // key list
@@ -661,16 +694,26 @@ std::vector<std::string> Documentation::getDocIndex() const
         for (const auto& iter : mDocumentationIndex)
         {
             if (iter.second == (int)i)
-                sKeyWords += " " + iter.first;
+            {
+                if (sKeyWords.length())
+                    sKeyWords += " ";
+
+                sKeyWords += iter.first;
+            }
         }
 
         EndlessVector<std::string> keylist = getAllArguments(vDocIndexTable[i].sIdxKeys);
+        DocIndexEntry entry;
+        entry.sUUID = vDocIndexTable[i].sUUID;
+        entry.sSecondaryKeyWords = sKeyWords;
 
         for (const std::string& key : keylist)
         {
+            entry.sKey = key;
+
             // Append the keywords to the key
-            if (std::find(vReturn.begin(), vReturn.end(), key+sKeyWords) == vReturn.end())
-                vReturn.push_back(key+sKeyWords);
+            if (std::find(vReturn.begin(), vReturn.end(), entry) == vReturn.end())
+                vReturn.push_back(entry);
         }
     }
 
@@ -688,7 +731,7 @@ std::vector<std::string> Documentation::getDocIndex() const
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Documentation::getHelpIdxKey(const std::string& sTopic)
+std::string Documentation::getHelpIdxKey(const std::string& sTopic) const
 {
     int nIndex = findPositionInDocumentationIndex(sTopic);
     std::string sReturn = "";
@@ -713,7 +756,7 @@ std::string Documentation::getHelpIdxKey(const std::string& sTopic)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Documentation::getHelpArticleID(const std::string& sTopic)
+std::string Documentation::getHelpArticleID(const std::string& sTopic) const
 {
     int nIndex = findPositionInDocumentationIndex(sTopic);
 
@@ -733,7 +776,7 @@ std::string Documentation::getHelpArticleID(const std::string& sTopic)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Documentation::getHelpArticleTitle(const std::string& _sIdxKey)
+std::string Documentation::getHelpArticleTitle(const std::string& _sIdxKey) const
 {
     int nIndex = findPositionInDocumentationIndex(_sIdxKey);
 
@@ -741,5 +784,63 @@ std::string Documentation::getHelpArticleTitle(const std::string& _sIdxKey)
         return "<<NONE>>";
 
     return vDocIndexTable[nIndex].sTitle;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a list of possible matches
+/// based upon the selected topic.
+///
+/// \param sTopic const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> Documentation::getCandidates(const std::string& sTopic) const
+{
+    // Is this a UUID?
+    if (sTopic.length() == 38 && sTopic.front() == '{' && sTopic.back() == '}')
+    {
+        // Search by UUID
+        for (size_t i = 0; i < vDocIndexTable.size(); i++)
+        {
+            if (vDocIndexTable[i].sUUID == sTopic)
+                return {makeCandidate(i)};
+        }
+
+        return {};
+    }
+
+    std::vector<std::string> candidates;
+    auto iter = mDocumentationIndex.begin();
+    auto firstIndex = mDocumentationIndex.end();
+    auto secondIndex = mDocumentationIndex.end();
+
+    for (int i = sTopic.length(); i > sTopic.length() / 2; i--)
+    {
+        if (firstIndex != mDocumentationIndex.end())
+            iter = firstIndex;
+        else
+            iter = mDocumentationIndex.begin();
+
+        for (; iter != secondIndex; ++iter)
+        {
+            if (iter->first[0] < sTopic[0])
+                continue;
+
+            if (iter->first[0] == sTopic[0] && firstIndex == mDocumentationIndex.end())
+                firstIndex = iter;
+
+            if (iter->first[0] > sTopic[0])
+            {
+                secondIndex = iter;
+                break;
+            }
+
+            if (iter->first == sTopic.substr(0, i))
+                candidates.push_back(makeCandidate(iter->second));
+        }
+    }
+
+    return candidates;
 }
 

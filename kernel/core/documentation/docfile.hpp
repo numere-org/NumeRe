@@ -29,6 +29,7 @@
 struct DocumentationEntry
 {
     std::string sArticleId;
+    std::string sUUID;
     std::string sDocFilePath;
     std::string sTitle;
     std::string sIdxKeys;

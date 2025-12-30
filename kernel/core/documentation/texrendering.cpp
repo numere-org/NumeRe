@@ -216,7 +216,7 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
 
                 if (sAnchorRef.starts_with("nhlp://"))
                 {
-                    sAnchorRef = NumeReKernel::getInstance()->getSettings().getHelpIdxKey(sAnchorRef.substr(7, sAnchorRef.find('?')-7));
+                    sAnchorRef = NumeReKernel::getInstance()->getDocumentation().getHelpIdxKey(sAnchorRef.substr(7, sAnchorRef.find('?')-7));
 
                     if (sAnchorRef == "<<NONE>>")
                         sAnchor = sAnchorText;

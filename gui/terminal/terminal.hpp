@@ -240,14 +240,15 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		    wxCriticalSectionLocker lock(m_kernelCS);
 		    m_nDebuggerCode = NumeReKernel::DEBUGGER_LEAVE;
 		}
-		std::string getDocumentation(const std::string& sCommand);
-		std::vector<std::string> getDocIndex();
+
 		std::map<std::string, std::string> getPluginLanguageStrings();
 		std::map<std::string, std::string> getFunctionLanguageStrings();
+
 		void UpdateLibrary()
 		{
 			m_updateProcedureLibrary = true;
 		}
+
         NumeReVariables getVariableList();
         NumeReVariables getVariableListForAutocompletion();
 

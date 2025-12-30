@@ -30,6 +30,23 @@
 
 struct DocumentationEntry;
 
+struct DocIndexEntry
+{
+    std::string sUUID;
+    std::string sKey;
+    std::string sSecondaryKeyWords;
+
+    bool operator<(const DocIndexEntry& other) const
+    {
+        return sKey < other.sKey;
+    }
+
+    bool operator==(const DocIndexEntry& other) const
+    {
+        return sKey == other.sKey && sUUID == other.sUUID;
+    }
+};
+
 /////////////////////////////////////////////////
 /// \brief This class handles the documentation
 /// index and provides lookup functionalities to
@@ -39,11 +56,12 @@ class Documentation : public FileSystem
 {
     private:
         std::map<std::string,int> mDocumentationIndex;
-        std::vector<DocumentationEntry> vDocIndexTable;
+        mutable std::vector<DocumentationEntry> vDocIndexTable;
 
         void addEntry(const DocumentationEntry& entry, const std::vector<std::string>& keyWords);
         int findPositionInDocumentationIndex(const std::string& sTopic) const;
         int findPositionUsingIdxKeys(const std::string& sIdxKeys) const;
+        std::string makeCandidate(int id) const;
 
     public:
         Documentation();
@@ -52,11 +70,13 @@ class Documentation : public FileSystem
         void createDocumentationIndex(bool bLoadUserLangFiles = true);
         void addFileToDocumentationIndex(const std::string& sFileName);
         void removeFromDocIndex(const std::string& _sID);
-        std::vector<std::string> getHelpArticle(const std::string& sTopic);
-        std::vector<std::string> getDocIndex() const;
-        std::string getHelpIdxKey(const std::string& sTopic);
-        std::string getHelpArticleID(const std::string& sTopic);
-        std::string getHelpArticleTitle(const std::string& _sIdxKey);
+        std::vector<std::string> getHelpArticle(const std::string& sTopic) const;
+        std::vector<DocIndexEntry> getDocIndex() const;
+        std::string getHelpIdxKey(const std::string& sTopic) const;
+        std::string getHelpArticleID(const std::string& sTopic) const;
+        std::string getHelpArticleTitle(const std::string& _sIdxKey) const;
+        std::vector<std::string> getCandidates(const std::string& sTopic) const;
+
         static std::string getArgAtPos(const std::string& sCmd, size_t pos);
 };
 

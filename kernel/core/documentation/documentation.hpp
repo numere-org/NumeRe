@@ -21,11 +21,19 @@
 #define DOCUMENTATION_HPP
 
 #include <string>
-#include "../settings.hpp"
 
-void doc_Help(const std::string&, Settings&);
-std::string doc_HelpAsHTML(const std::string&, bool, Settings& _option);
-void doc_SearchFct(const std::string& sToLookFor, Settings& _option);
+struct NhlpParams
+{
+    bool openSelf = true;
+    bool generateFile = false;
+    bool listCandidates = false;
+    std::string type;
+    std::string key;
+};
+
+void doc_Help(const std::string&);
+std::string doc_HelpAsHTML(const std::string&, const NhlpParams& params = NhlpParams());
+void doc_SearchFct(const std::string& sToLookFor);
 
 
 #endif

@@ -507,7 +507,7 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
     docFile.print(sHelpfileName);
 
     NumeReKernel::getInstance()->getProcedureInterpreter().addHelpIndex(sInstallID, sHelpID);
-    NumeReKernel::getInstance()->getSettings().addFileToDocumentationIndex(sHelpfileName);
+    NumeReKernel::getInstance()->getDocumentation().addFileToDocumentationIndex(sHelpfileName);
     sScriptCommand.clear();
 }
 

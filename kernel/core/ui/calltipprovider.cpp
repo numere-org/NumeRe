@@ -845,6 +845,58 @@ namespace NumeRe
 
     /////////////////////////////////////////////////
     /// \brief Get the calltip for the selected
+    /// method used for showing the documentation.
+    ///
+    /// \param sToken std::string
+    /// \param sType const std::string&
+    /// \return CallTip
+    ///
+    /////////////////////////////////////////////////
+    CallTip CallTipProvider::getMethodForDocumentation(std::string sToken, const std::string& sType) const
+    {
+        static const char* pref = "PARSERFUNCS_LISTFUNC_METHOD_";
+        std::string sBaseId = pref + toUpperCase(sToken) + "_";
+
+        if (!_lang.containsString(sBaseId + "*"))
+            return CallTip();
+
+        if (sType == "vect" && _lang.containsString(sBaseId + "[VECT]"))
+            sToken = "VECT." + _lang.get(sBaseId + "[VECT]");
+        else if (sType == "string" && _lang.containsString(sBaseId + "[STRING]"))
+            sToken = "STRING." + _lang.get(sBaseId + "[STRING]");
+        else if (sType == "dict" && _lang.containsString(sBaseId + "[DICT]"))
+            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "cat" && _lang.containsString(sBaseId + "[CAT]"))
+            sToken = "CATEGORY." + _lang.get(sBaseId + "[CAT]");
+        else if (sType == "table" && _lang.containsString(sBaseId + "[DATA]"))
+            sToken = "TABLE()." + _lang.get(sBaseId + "[DATA]");
+        else if (sType.starts_with("object."))
+        {
+            std::string sSelector = toUpperCase(sType.substr(7));
+
+            if (_lang.containsString(sBaseId + "[" + sSelector + "]"))
+                sToken = sSelector + "." + _lang.get(sBaseId + "[" + sSelector + "]");
+        }
+        else if (_lang.containsString(sBaseId + "[" + toUpperCase(sType) + "]"))
+            sToken = toUpperCase(sType) + "." + _lang.get(sBaseId + "[" + toUpperCase(sType) + "]");
+        else if (sType == "*")
+        {
+            std::string sKey = _lang.getKey(sBaseId + "*");
+            size_t p = sKey.rfind('[')+1;
+            sToken = sKey.substr(p, sKey.length()-1 - p) + "." + _lang.get(sKey);
+        }
+        else
+            return CallTip();
+
+        CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);
+        _cTip.nStart = _cTip.sDefinition.find('.')+1;
+
+        return _cTip;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the calltip for the selected
     /// predefined symbol.
     ///
     /// \param sToken std::string

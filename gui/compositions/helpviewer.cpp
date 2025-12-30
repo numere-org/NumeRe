@@ -21,7 +21,10 @@
 #include "helpviewer.hpp"
 #include "../documentationbrowser.hpp"
 #include "../NumeReWindow.h"
+#include "../stringconv.hpp"
+#include "../../kernel/core/documentation/documentation.hpp"
 #include <wx/html/htmprint.h>
+#include <wx/tokenzr.h>
 
 extern wxPrintData* g_printData;
 extern wxPageSetupData* g_pageSetupData;
@@ -67,15 +70,12 @@ bool HelpViewer::SetPage(const wxString& source)
 bool HelpViewer::ShowPageOnItem(wxString docID)
 {
     wxString pageContent;
-    bool openself = true;
 
     // Determine the type of the content: is it a link, a html page
     // or a search keyword
     if (docID.substr(0,10) == "history://")
     {
         // History link: only for legacy reasons
-        //if (docID.find("?frame=new") != string::npos)
-        //    openself = false;
 
         docID.erase(0,10);
 
@@ -84,41 +84,56 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
 
         // Redirect to the corresponding public interface functions
         if (docID == "back")
-        {
             return HistoryGoBack();
-        }
         else if (docID == "forward")
-        {
             return HistoryGoForward();
-        }
         else
             return false;
     }
     else if (docID.substr(0,7) == "nhlp://")
     {
         // Regular link
-        //
-        // Determine first, if the link shall be opened in the current
-        // window or in a new one
-        if (docID.find("?frame=new") != std::string::npos)
-            openself = false;
+        wxArrayString paramList;
+        NhlpParams params;
 
-        // Extract the search keyword from the link
-        docID.erase(0,7);
-
+        // Decode the parameter list
         if (docID.find('?') != std::string::npos)
+        {
+            paramList = wxStringTokenize(docID.substr(docID.find('?')+1), "&");
             docID.erase(docID.find('?'));
 
-        // If the target is not the current window, redirect the the
-        // link to the main window, which will create a new window
-        if (!openself)
-            return m_browser->createNewPage(docID);
+            // translate the key-value-pairs
+            for (size_t i = 0; i < paramList.size(); i++)
+            {
+                wxString value;
+
+                if (paramList[i].StartsWith("frame=", &value))
+                    params.openSelf = value != "new";
+
+                if (paramList[i].StartsWith("candidates=", &value))
+                    params.listCandidates = value == "true";
+
+                if (paramList[i].StartsWith("type=", &value))
+                    params.type = value.ToStdString();
+
+                if (paramList[i].StartsWith("key=", &value))
+                    params.key = value.ToStdString();
+            }
+        }
+
+        // Extract the search keyword from the link
+        docID.erase(0, 7);
 
         // Get the page content from the kernel
-        pageContent = m_mainFrame->GetDocContent(docID);
+        pageContent = wxFromUtf8(doc_HelpAsHTML(wxToUtf8(docID), params).c_str());
 
         if (!pageContent.length())
             return false;
+
+        // If the target is not the current window, redirect the the
+        // link to the main window, which will create a new window
+        if (!params.openSelf)
+            return m_browser->createNewPage(pageContent);
 
         // Open the page
 		if (m_nHistoryPointer+1 != vHistory.size())
@@ -140,7 +155,7 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
     {
         // This is a search keyword, get the contents from
         // the kernel
-        pageContent = m_mainFrame->GetDocContent(docID);
+        pageContent = wxFromUtf8(doc_HelpAsHTML(wxToUtf8(docID)).c_str());
 
         if (!pageContent.length())
             return false;
@@ -185,13 +200,9 @@ bool HelpViewer::HistoryGoBack()
         // Depending on the type of the content, assign it directly
         // or ask the kernel for the page contents
         if (pageContent.substr(0,15) == "<!DOCTYPE html>")
-        {
             return this->SetPage(pageContent);
-        }
         else if  (pageContent.length())
-        {
-            return this->SetPage(m_mainFrame->GetDocContent(pageContent));
-        }
+            return this->SetPage(wxFromUtf8(doc_HelpAsHTML(wxToUtf8(pageContent)).c_str()));
     }
 
     return false;
@@ -216,13 +227,9 @@ bool HelpViewer::HistoryGoForward()
         // Depending on the type of the content, assign it directly
         // or ask the kernel for the page contents
         if (pageContent.substr(0,15) == "<!DOCTYPE html>")
-        {
             return this->SetPage(pageContent);
-        }
         else if  (pageContent.length())
-        {
-            return this->SetPage(m_mainFrame->GetDocContent(pageContent));
-        }
+            return this->SetPage(wxFromUtf8(doc_HelpAsHTML(wxToUtf8(pageContent)).c_str()));
     }
 
     return false;
@@ -300,16 +307,11 @@ bool HelpViewer::Print()
     // Depending on the type of the content of the history,
     // assign it directly or obtain the page data from the
     // kernel
-    if (htmlText.substr(0,15) == "<!DOCTYPE html>")
-    {
-        printout->SetHtmlText(htmlText);
-        printoutForPrinting->SetHtmlText(htmlText);
-    }
-    else
-    {
-        printout->SetHtmlText(m_mainFrame->GetDocContent(htmlText));
-        printoutForPrinting->SetHtmlText(m_mainFrame->GetDocContent(htmlText));
-    }
+    if (htmlText.substr(0, 15) != "<!DOCTYPE html>")
+        htmlText = wxFromUtf8(doc_HelpAsHTML(wxToUtf8(htmlText)).c_str());
+
+    printout->SetHtmlText(htmlText);
+    printoutForPrinting->SetHtmlText(htmlText);
 
     // Create a new preview object
     wxPrintPreview *preview = new wxPrintPreview(printout, printoutForPrinting, g_printData);

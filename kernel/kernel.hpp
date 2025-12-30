@@ -29,6 +29,7 @@
 #include "core/plugins.hpp"
 #include "core/script.hpp"
 #include "core/settings.hpp"
+#include "core/documentation/doc_helper.hpp"
 
 #include "core/datamanagement/container.hpp"
 #include "core/datamanagement/memorymanager.hpp"
@@ -136,6 +137,7 @@ class NumeReKernel
         Procedure _procedure;
         NumeReDebugger _debugger;
         NumeRe::WindowManager _manager;
+        Documentation _documentation;
 
         // private member functions for special tasks
         void printResult(const std::string& sLine, bool bScriptRunning);
@@ -296,14 +298,17 @@ class NumeReKernel
             return _manager;
         }
 
+        Documentation& getDocumentation()
+        {
+            return _documentation;
+        }
+
         void displaySplash();
         std::map<std::string,std::string> getPluginLanguageStrings();
         std::map<std::string,std::string> getFunctionLanguageStrings();
         std::vector<std::string> getPluginCommands();
         int ReadOpenFileFlag();
         std::string ReadAnswer();
-        std::string getDocumentation(const std::string& sCommand);
-        std::vector<std::string> getDocIndex();
         NumeReVariables getVariableList();
         NumeReVariables getVariableListForAutocompletion();
         bool SettingsModified();

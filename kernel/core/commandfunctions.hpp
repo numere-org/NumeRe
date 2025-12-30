@@ -2130,17 +2130,16 @@ static CommandReturnValues saveDataObject(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_find(string& sCmd)
 {
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
     if (cmdParser.getExpr().length())
-        doc_SearchFct(cmdParser.getExpr(), _option);
+        doc_SearchFct(cmdParser.getExpr());
     else if (cmdParser.getParameterList().length())
-        doc_SearchFct(cmdParser.getParameterList(), _option);
+        doc_SearchFct(cmdParser.getParameterList());
     else
     {
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ"));
-        doc_Help("find", _option);
+        doc_Help("find");
     }
 
     return COMMAND_PROCESSED;
@@ -2194,7 +2193,7 @@ static CommandReturnValues cmd_diff(string& sCmd)
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("diff", NumeReKernel::getInstance()->getSettings());
+        doc_Help("diff");
 
     return COMMAND_PROCESSED;
 }
@@ -2211,7 +2210,6 @@ static CommandReturnValues cmd_diff(string& sCmd)
 static CommandReturnValues cmd_extrema(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "extrema", CommandLineParser::CMD_EXPR_set_PAR);
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (cmdParser.getExpr().length())
     {
@@ -2221,12 +2219,12 @@ static CommandReturnValues cmd_extrema(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
         else
-            doc_Help("extrema", _option);
+            doc_Help("extrema");
 
         return COMMAND_PROCESSED;
     }
     else
-        doc_Help("extrema", _option);
+        doc_Help("extrema");
 
     return COMMAND_PROCESSED;
 }
@@ -2246,7 +2244,7 @@ static CommandReturnValues cmd_pulse(string& sCmd)
 
     if (!analyzePulse(cmdParser))
     {
-        doc_Help("pulse", NumeReKernel::getInstance()->getSettings());
+        doc_Help("pulse");
         return COMMAND_PROCESSED;
     }
 
@@ -2274,7 +2272,7 @@ static CommandReturnValues cmd_eval(string& sCmd)
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("eval", NumeReKernel::getInstance()->getSettings());
+        doc_Help("eval");
 
     return COMMAND_PROCESSED;
 }
@@ -2291,7 +2289,6 @@ static CommandReturnValues cmd_eval(string& sCmd)
 static CommandReturnValues cmd_zeroes(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "zeroes", CommandLineParser::CMD_EXPR_set_PAR);
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (cmdParser.getExpr().length())
     {
@@ -2301,10 +2298,10 @@ static CommandReturnValues cmd_zeroes(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
         else
-            doc_Help("zeroes", _option);
+            doc_Help("zeroes");
     }
     else
-        doc_Help("zeroes", _option);
+        doc_Help("zeroes");
 
     return COMMAND_PROCESSED;
 }
@@ -2430,7 +2427,7 @@ static CommandReturnValues cmd_plotting(string& sCmd)
 
     }
     else
-        doc_Help(sCommand, _option);
+        doc_Help(sCommand);
 
     return COMMAND_PROCESSED;
 }
@@ -2654,7 +2651,7 @@ static CommandReturnValues cmd_get(string& sCmd)
     }
 
     // Will only reach this point, if no setting has been found
-    doc_Help("get", _option);
+    doc_Help("get");
     return COMMAND_PROCESSED;
 }
 
@@ -2676,7 +2673,7 @@ static CommandReturnValues cmd_undefine(string& sCmd)
     if (sCmd.length() > 7)
         undefineFunctions(sCmd.substr(sCmd.find(' ', nPos) + 1), _functions, _option);
     else
-        doc_Help("define", _option);
+        doc_Help("define");
 
     return COMMAND_PROCESSED;
 }
@@ -2753,7 +2750,6 @@ static CommandReturnValues cmd_readline(string& sCmd)
 static CommandReturnValues cmd_read(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "read", CommandLineParser::CMD_DAT_PAR);
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (cmdParser.getExpr().length())
     {
@@ -2762,7 +2758,7 @@ static CommandReturnValues cmd_read(string& sCmd)
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("read", _option);
+        doc_Help("read");
 
     return COMMAND_PROCESSED;
 }
@@ -2787,7 +2783,7 @@ static CommandReturnValues cmd_window(string& sCmd)
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("window", NumeReKernel::getInstance()->getSettings());
+        doc_Help("window");
 
     return COMMAND_PROCESSED;
 }
@@ -2812,7 +2808,7 @@ static CommandReturnValues cmd_database(string& sCmd)
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("database", NumeReKernel::getInstance()->getSettings());
+        doc_Help("database");
 
     return COMMAND_PROCESSED;
 }
@@ -2845,10 +2841,10 @@ static CommandReturnValues cmd_new(string& sCmd)
         _data.setUserdefinedFuncs(_functions.getNamesOfDefinedFunctions());
 
         if (!newObject(sCmd, _parser, _data, _option))
-            doc_Help("new", _option);
+            doc_Help("new");
     }
     else
-        doc_Help("new", _option);
+        doc_Help("new");
 
     return COMMAND_PROCESSED;
 }
@@ -2869,7 +2865,7 @@ static CommandReturnValues cmd_edit(string& sCmd)
     if (sCmd.length() > 5)
         editObject(cmdParser);
     else
-        doc_Help("edit", NumeReKernel::getInstance()->getSettings());
+        doc_Help("edit");
 
     return COMMAND_PROCESSED;
 }
@@ -2894,7 +2890,7 @@ static CommandReturnValues cmd_taylor(string& sCmd)
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("taylor", NumeReKernel::getInstance()->getSettings());
+        doc_Help("taylor");
 
     return COMMAND_PROCESSED;
 }
@@ -2939,7 +2935,7 @@ static CommandReturnValues cmd_odesolve(string& sCmd)
         Odesolver::solve(cmdParser);
     }
     else
-        doc_Help("odesolver", NumeReKernel::getInstance()->getSettings());
+        doc_Help("odesolver");
 
     return COMMAND_PROCESSED;
 }
@@ -3114,7 +3110,7 @@ static CommandReturnValues cmd_ifndefined(string& sCmd)
         }
     }
     else
-        doc_Help("ifndef", _option);
+        doc_Help("ifndef");
 
     return COMMAND_PROCESSED;
 }
@@ -3372,7 +3368,7 @@ static CommandReturnValues cmd_write(string& sCmd)
     if (cmdParser.getExpr().length() && cmdParser.hasParam("file"))
         writeToFile(cmdParser);
     else
-        doc_Help("write", NumeReKernel::getInstance()->getSettings());
+        doc_Help("write");
 
     return COMMAND_PROCESSED;
 }
@@ -3434,7 +3430,7 @@ static CommandReturnValues cmd_warn(string& sCmd)
         NumeReKernel::issueWarning(sMessage);
     }
     else
-        doc_Help("warn", _option);
+        doc_Help("warn");
 
     return COMMAND_PROCESSED;
 }
@@ -3476,7 +3472,7 @@ static CommandReturnValues cmd_stfa(string& sCmd)
     CommandLineParser cmdParser(sCmd, "stfa", CommandLineParser::CMD_DAT_PAR);
 
     if (!shortTimeFourierAnalysis(cmdParser))
-        doc_Help("stfa", NumeReKernel::getInstance()->getSettings());
+        doc_Help("stfa");
     else if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", cmdParser.getReturnValueStatement()));
 
@@ -3496,10 +3492,8 @@ static CommandReturnValues cmd_spline(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "spline", CommandLineParser::CMD_DAT_PAR);
 
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
     if (!calculateSplines(cmdParser))
-        doc_Help("spline", _option);
+        doc_Help("spline");
 
     return COMMAND_PROCESSED;
 }
@@ -3707,7 +3701,7 @@ static CommandReturnValues cmd_set(string& sCmd)
     else if (findSettingOption(sCmd, "save"))
         _option.save(_option.getExePath());
     else
-        doc_Help("set", _option);
+        doc_Help("set");
 
     return COMMAND_PROCESSED;
 }
@@ -3949,13 +3943,12 @@ static CommandReturnValues cmd_hist(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_help(string& sCmd)
 {
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
     Match _mMatch = findCommand(sCmd);
 
     if (_mMatch.nPos + _mMatch.sString.length() < sCmd.length())
-        doc_Help(sCmd.substr(_mMatch.nPos + _mMatch.sString.length()), _option);
+        doc_Help(sCmd.substr(_mMatch.nPos + _mMatch.sString.length()));
     else
-        doc_Help("brief", _option);
+        doc_Help("brief");
 
     return COMMAND_PROCESSED;
 }
@@ -4166,7 +4159,7 @@ static CommandReturnValues cmd_redefine(string& sCmd)
             NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
     }
     else
-        doc_Help("define", _option);
+        doc_Help("define");
 
     return COMMAND_PROCESSED;
 }
@@ -4506,7 +4499,7 @@ static CommandReturnValues cmd_define(string& sCmd)
         }
     }
     else
-        doc_Help("define", _option);
+        doc_Help("define");
 
     return COMMAND_PROCESSED;
 }
@@ -4526,7 +4519,7 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (!createDatagrid(cmdParser))
-        doc_Help("datagrid", _option);
+        doc_Help("datagrid");
     else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS", cmdParser.getReturnValueStatement()));
 
@@ -4825,7 +4818,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             load_data(_data, _option, _parser);
     }
     else
-        doc_Help("load", _option);
+        doc_Help("load");
 
     return COMMAND_PROCESSED;
 }

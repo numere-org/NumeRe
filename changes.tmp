@@ -43,3 +43,4 @@ Applied	The methods "DICT.encodexml" and  "DICT.encodejson" do now have an optio
 Cleaned	If you do not enter the correct package identifier during "install", possible candidates are now listed and you can select from those.
 Applied	Vectorial variables and expressions can now be plotted just like regular expressions.
 Applied	Some commands do now accept matrices as their inputs in addition to tables: "diff", "eval", "datagrid", "fft", "fft2d", "fwt", "audio", "detect", "extrema", "zeroes", "fit" and "database". Note that this does not automatically include the algorithmic extension to multiple dimensions.
+Cleaned	If there are multiple candidates for possible documentation articles, a clickable list shows them now.

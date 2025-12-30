@@ -51,6 +51,9 @@ static void parseHeader(const std::string& sCombinedArticle, DocumentationEntry&
     if (article->Attribute("id"))
         docEntry.sArticleId = article->Attribute("id");
 
+    // Add a random-based {UUID} for uniqueness. The article ID might be shared.
+    docEntry.sUUID = "{" + getUuidV4() + "}";
+
     tinyxml2::XMLElement* iter = article->FirstChildElement("title");
 
     // Get title and IDX keys

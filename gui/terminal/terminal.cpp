@@ -319,35 +319,6 @@ void NumeReTerminal::clearBreakpoints(const std::string& _sFilename)
 
 
 /////////////////////////////////////////////////
-/// \brief Gets the desired documentation article
-/// as a HTML string.
-///
-/// \param sCommand const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string NumeReTerminal::getDocumentation(const std::string& sCommand)
-{
-	wxCriticalSectionLocker lock(m_kernelCS);
-	return _kernel.getDocumentation(sCommand);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Gets the contents of the documentation
-/// index as a vector.
-///
-/// \return std::vector<std::string>
-///
-/////////////////////////////////////////////////
-std::vector<std::string> NumeReTerminal::getDocIndex()
-{
-    wxCriticalSectionLocker lock(m_kernelCS);
-    return _kernel.getDocIndex();
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This will return the language strings
 /// for the plugins used by the language class
 /// for filling the symbols tree.

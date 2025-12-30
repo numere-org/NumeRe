@@ -30,7 +30,7 @@
 #include "htmlrendering.hpp"
 #include "texrendering.hpp"
 
-static std::string doc_HelpAsTeX(const std::string& __sTopic, Settings& _option);
+static std::string doc_HelpAsTeX(const std::string& __sTopic);
 
 
 /////////////////////////////////////////////////
@@ -143,7 +143,7 @@ static void replaceArgumentOccurences(const std::string& sArgument, std::string&
     while ((nPos = sString.find(sArgument, nPos)) != std::string::npos)
     {
         // check, whether the found match is an actual variable
-        if (StringView(sString).is_delimited_sequence(nPos, sArgument.length()))
+        if (StringView(sString).is_delimited_sequence(nPos, sArgument.length(), StringView::STRING_DELIMITER))
         {
             // replace VAR with <code>VAR</code> and increment the
             // position index by the variable length + 13
@@ -194,15 +194,75 @@ static void applyCodeHighlighting(std::vector<std::string>& vDoc, const std::str
 
 
 /////////////////////////////////////////////////
-/// \brief Tries to get the function
-/// documentation strings from the language file
-/// by the use of a CallTipProvider instance.
+/// \brief Create an entry for a function
+/// documentation match candidate.
+///
+/// \param link const std::string&
+/// \param key const std::string&
+/// \param documentation std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string doc_makeCandidate(const std::string& link, const std::string& key, std::string documentation)
+{
+    StripSpaces(documentation);
+    return "<item node=\"*\"><a href=\"nhlp://" + link + "\">" + key + "()</a>: " + (documentation.length() > 155 ? documentation.substr(0, 150) + "(...)" : documentation) + "</item>";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Find all possible function
+/// documentation match candidates to the passed
+/// keyword.
 ///
 /// \param sToken std::string
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken)
+static std::vector<std::string> doc_findFunctionCandidates(std::string sToken)
+{
+    static NumeRe::CallTipProvider tipProvider(std::string::npos, false);
+    static std::vector<std::string> methodKeys = split(_lang.get("GUI_TREE_METHOD_KEYLIST"), ' ');
+
+    if (sToken.find('(') != std::string::npos)
+        sToken.erase(sToken.find('('));
+
+    std::vector<std::string> candidates;
+
+    NumeRe::CallTip _ctip = tipProvider.getFunction(sToken);
+
+    if (_ctip.sDefinition.length())
+        candidates.push_back(doc_makeCandidate(sToken + "?type=func", sToken, _ctip.sDocumentation));
+
+    _ctip = tipProvider.getProcedure(sToken);
+
+    if (_ctip.sDefinition.length())
+        candidates.push_back(doc_makeCandidate(sToken + "?type=procedure", sToken, _ctip.sDocumentation));
+
+    for (const std::string& methodkey : methodKeys)
+    {
+        _ctip = tipProvider.getMethodForDocumentation(sToken, methodkey);
+
+        if (_ctip.sDefinition.length())
+            candidates.push_back(doc_makeCandidate(sToken + "?type=method&key=" + methodkey, methodkey + "." + sToken, _ctip.sDocumentation));
+    }
+
+    return candidates;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Tries to get the function
+/// documentation strings from the language file
+/// by the use of a CallTipProvider instance.
+///
+/// \param sToken std::string
+/// \param type const std::string&
+/// \param key const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken, const std::string& type = "", const std::string& key = "")
 {
     static NumeRe::CallTipProvider tipProvider(std::string::npos, false);
 
@@ -210,7 +270,10 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         sToken.erase(sToken.find('('));
 
     std::vector<std::string> vDoc;
-    NumeRe::CallTip _ctip = tipProvider.getFunction(sToken);
+    NumeRe::CallTip _ctip;
+
+    if (!type.length() || type == "func")
+        _ctip = tipProvider.getFunction(sToken);
 
     if (_ctip.sDefinition.length())
     {
@@ -224,7 +287,8 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         return vDoc;
     }
 
-    _ctip = tipProvider.getProcedure(sToken);
+    if (!type.length() && type == "procedure")
+        _ctip = tipProvider.getProcedure(sToken);
 
     if (_ctip.sDefinition.length())
     {
@@ -238,7 +302,10 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         return vDoc;
     }
 
-    _ctip = tipProvider.getMethod(sToken, "*");
+    if (!type.length())
+        _ctip = tipProvider.getMethod(sToken, "*");
+    else if (type == "method")
+        _ctip = tipProvider.getMethodForDocumentation(sToken, key);
 
     if (_ctip.sDefinition.length())
     {
@@ -264,6 +331,29 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
 
 
 /////////////////////////////////////////////////
+/// \brief Gather all documentation keyword
+/// candidates.
+///
+/// \param sTopic const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+static std::vector<std::string> doc_getCandidates(const std::string& sTopic)
+{
+    const Documentation& _documentation = NumeReKernel::getInstance()->getDocumentation();
+
+    std::vector<std::string> vCandidates = doc_findFunctionCandidates(sTopic);
+    std::vector<std::string> vDocCandidates = _documentation.getCandidates(sTopic);
+
+    vCandidates.insert(vCandidates.end(), vDocCandidates.begin(), vDocCandidates.end());
+    std::sort(vCandidates.begin(), vCandidates.end());
+    auto last = std::unique(vCandidates.begin(), vCandidates.end());
+    vCandidates.erase(last, vCandidates.end());
+    return vCandidates;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function shows the content of a
 /// documentation article based upon the passed
 /// topic. The content is displayed in terminal
@@ -272,18 +362,26 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
 /// (depending on an additional parameter).
 ///
 /// \param __sTopic const std::string&
-/// \param _option Settings&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void doc_Help(const std::string& __sTopic, Settings& _option)
+void doc_Help(const std::string& __sTopic)
 {
-    std::string sTopic = __sTopic;
+    if (!NumeReKernel::getInstance())
+        return;
 
-    if (findParameter(sTopic, "html"))
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+    const Documentation& _documentation = NumeReKernel::getInstance()->getDocumentation();
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
+    std::string sTopic = __sTopic;
+    bool generateHtmlFile = findParameter(sTopic, "html");
+    bool generateTeX = findParameter(sTopic, "tex");
+
+    if (generateHtmlFile)
         eraseToken(sTopic, "html", false);
 
-    if (findParameter(sTopic, "tex"))
+    if (generateTeX)
         eraseToken(sTopic, "tex", false);
 
     // --> Zunaechst einmal muessen wir anfuehrende oder abschliessende Leerzeichen entfernen <--
@@ -303,29 +401,21 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
     if (sTopic.length() > 2 && sTopic.front() == '"' && sTopic.back() == '"')
         sTopic = toInternalString(sTopic);
 
-    // Check for function documentation first
-    if (!findParameter(__sTopic, "tex") && doc_findFunctionDocumentation(sTopic).size())
+    if (generateTeX)
     {
-        bool generateFile = (bool)findParameter(__sTopic, "html");
-        std::string sHTML = doc_HelpAsHTML(sTopic, generateFile, _option);
-        NumeReKernel::setDocumentation(sHTML);
-        return;
-    }
+        std::string sTeX = doc_HelpAsTeX(sTopic);
 
-    std::vector<std::string> vDocArticle = _option.getHelpArticle(sTopic);
+        if (!sTeX.length())
+        {
+            make_hline();
+            NumeReKernel::print(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic));
+            make_hline();
+            return;
+        }
 
-    if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
-    {
-        make_hline();
-        NumeReKernel::print(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic));
-        make_hline();
-    }
-    else if (findParameter(__sTopic, "tex"))
-    {
-        std::string sTeX = doc_HelpAsTeX(sTopic, _option);
-
-        _option.declareFileType(".tex");
-        std::string sFilename = _option.ValidizeAndPrepareName("<>/docs/texexport/"+_option.getHelpArticleID(sTopic) + ".tex",".tex");
+        _fSys.declareFileType(".tex");
+        std::string sFilename = _fSys.ValidizeAndPrepareName("<>/docs/texexport/" + _documentation.getHelpArticleID(sTopic) + ".tex",
+                                                             ".tex");
         std::ofstream fTeX;
         fTeX.open(sFilename);
 
@@ -336,17 +426,28 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
         fTeX << ansiToUtf8(sTeX);
 
         if (_option.systemPrints())
-            NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
+            NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT",
+                                          _documentation.getHelpArticleTitle(_documentation.getHelpIdxKey(sTopic)), sFilename));
     }
     else
     {
-        bool generateFile = (bool)findParameter(__sTopic, "html");
-        std::string sHTML = doc_HelpAsHTML(sTopic, generateFile, _option);
+        NhlpParams par;
+        par.generateFile = generateHtmlFile;
+        std::string sHTML = doc_HelpAsHTML(sTopic, par);
 
-        if (generateFile)
+        if (!sHTML.length())
         {
-            _option.declareFileType(".html");
-            std::string sFilename = _option.ValidizeAndPrepareName("<>/docs/htmlexport/"+_option.getHelpArticleID(sTopic) + ".html",".html");
+            make_hline();
+            NumeReKernel::print(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic));
+            make_hline();
+            return;
+        }
+
+        if (par.generateFile)
+        {
+            _fSys.declareFileType(".html");
+            std::string sFilename = _fSys.ValidizeAndPrepareName("<>/docs/htmlexport/" + _documentation.getHelpArticleID(sTopic) + ".html",
+                                                                 ".html");
             std::ofstream fHTML;
             fHTML.open(sFilename);
 
@@ -357,12 +458,12 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
             fHTML << sHTML;
 
             if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
+                NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT",
+                                              _documentation.getHelpArticleTitle(_documentation.getHelpIdxKey(sTopic)), sFilename));
         }
         else
             NumeReKernel::setDocumentation(sHTML);
     }
-
 }
 
 
@@ -375,23 +476,45 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
 /// documentation viewer.
 ///
 /// \param __sTopic const std::string&
-/// \param generateFile bool
-/// \param _option Settings&
+/// \param params const NhlpParams&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Settings& _option)
+std::string doc_HelpAsHTML(const std::string& __sTopic, const NhlpParams& params)
 {
+    if (!NumeReKernel::getInstance())
+        return "";
+
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+    const Documentation& _documentation = NumeReKernel::getInstance()->getDocumentation();
     std::string sTopic = __sTopic;
     StripSpaces(sTopic);
 
+    // Get possible candidates
+    if (!params.type.length() && (sTopic.front() != '{' && sTopic.back() != '}'))
+    {
+        std::vector<std::string> vCandidates = doc_getCandidates(sTopic);
+
+        if (vCandidates.size() > 1)
+        {
+            vCandidates.insert(vCandidates.begin(),
+                               {_lang.get("DOC_HELP_CANDIDATES", sTopic), _lang.get("DOC_HELP_CANDIDATES_INTRO"), "<list>"});
+            vCandidates.push_back("</list>");
+            vCandidates.push_back(_lang.get("DOC_HELP_CANDIDATES_OUTRO"));
+            return renderHTML(std::move(vCandidates), params.generateFile, _option);
+        }
+    }
+
     // Get the article contents
-    std::vector<std::string> vDocArticle = doc_findFunctionDocumentation(sTopic);
+    std::vector<std::string> vDocArticle = doc_findFunctionDocumentation(sTopic, params.type, params.key);
 
     if (!vDocArticle.size())
-        vDocArticle = _option.getHelpArticle(toLowerCase(sTopic));
+        vDocArticle = _documentation.getHelpArticle(toLowerCase(sTopic));
 
-    return renderHTML(std::move(vDocArticle), generateFile, _option);
+    if (!vDocArticle.size() || vDocArticle.front() == "NO_ENTRY_FOUND")
+        return "";
+
+    return renderHTML(std::move(vDocArticle), params.generateFile, _option);
 }
 
 
@@ -407,20 +530,19 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string doc_HelpAsTeX(const std::string& __sTopic, Settings& _option)
+static std::string doc_HelpAsTeX(const std::string& __sTopic)
 {
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+    const Documentation& _documentation = NumeReKernel::getInstance()->getDocumentation();
     std::string sTopic = __sTopic;
     StripSpaces(sTopic);
-    std::string sIndex;
 
     // Get the article contents
-    std::vector<std::string> vDocArticle = doc_findFunctionDocumentation(sTopic);
+    std::vector<std::string> vDocArticle = _documentation.getHelpArticle(toLowerCase(sTopic));
+    std::string sIndex = _documentation.getHelpIdxKey(toLowerCase(sTopic));
 
-    if (!vDocArticle.size())
-    {
-        vDocArticle = _option.getHelpArticle(toLowerCase(sTopic));
-        sIndex = _option.getHelpIdxKey(toLowerCase(sTopic));
-    }
+    if (!vDocArticle.size() || vDocArticle.front() == "NO_ENTRY_FOUND")
+        return "";
 
     return renderTeX(std::move(vDocArticle), sIndex, _option);
 }
@@ -432,13 +554,13 @@ static std::string doc_HelpAsTeX(const std::string& __sTopic, Settings& _option)
 /// database.
 ///
 /// \param sToLookFor const std::string&
-/// \param _option Settings&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void doc_SearchFct(const std::string& sToLookFor, Settings& _option)
+void doc_SearchFct(const std::string& sToLookFor)
 {
     static NumeRe::DataBase findDataBase;
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
     static std::vector<double> vWeighting({3.0, 2.0, 1.0});
 
     // Load the database if not done already

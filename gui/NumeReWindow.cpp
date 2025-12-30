@@ -538,34 +538,6 @@ void NumeReWindow::AddToHistory(const wxString& sCommand)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function returns the HTML
-/// string containing the documentation for the
-/// selected topic/doc id.
-///
-/// \param docid wxString
-/// \return wxString
-///
-/////////////////////////////////////////////////
-wxString NumeReWindow::GetDocContent(wxString docid)
-{
-    return m_terminal->getDocumentation(docid.ToStdString());
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function returns the
-/// documentation index as a vector.
-///
-/// \return std::vector<std::string>
-///
-/////////////////////////////////////////////////
-std::vector<std::string> NumeReWindow::GetDocIndex()
-{
-    return m_terminal->getDocIndex();
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function is a simple helper
 /// to force that the history displays the last
 /// line at start-up.
@@ -1194,7 +1166,6 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
             std::string command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
-            //openHTML(m_terminal->getDocumentation(command));
             ShowHelp(command);
             break;
         }

@@ -21,10 +21,13 @@
 #include "NumeReWindow.h"
 #include "../common/Options.h"
 #include "../common/datastructures.h"
+#include "stringconv.hpp"
 #include "controls/treesearchctrl.hpp"
 #include "controls/treedata.hpp"
 #include "compositions/treepanel.hpp"
+#include "terminal/terminal.hpp"
 #include "../kernel/core/ui/language.hpp"
+#include "../kernel/core/documentation/documentation.hpp"
 #include "wxProportionalSplitterWindow.h"
 #include <vector>
 #include <string>
@@ -174,7 +177,7 @@ void DocumentationBrowser::prepareToolbar(NumeReWindow* mainwindow)
 void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 {
     // Get the documentation index from the kernel
-    std::vector<std::string> vIndex = mainwindow->GetDocIndex();
+    std::vector<DocIndexEntry> vIndex = NumeReKernel::getInstance()->getDocumentation().getDocIndex();
 
     // Search for the icon ID of the document icon and prepare the tree root
     int iconId = m_manager->GetIconIndex("DOCUMENT");
@@ -183,9 +186,9 @@ void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
     // Append the index items using the document icon
     for (size_t i = 0; i < vIndex.size(); i++)
         m_doctree->AppendItem(root,
-                              vIndex[i].substr(0, vIndex[i].find(' ')),
+                              vIndex[i].sKey,
                               iconId, iconId,
-                              new ToolTipTreeData(vIndex[i].substr(vIndex[i].find(' ')+1)));
+                              new ToolTipTreeData(vIndex[i].sUUID + " " + vIndex[i].sSecondaryKeyWords));
 
     // Expand the top-level node
     m_doctree->Expand(root);
@@ -230,7 +233,8 @@ void DocumentationBrowser::OnTreeClick(wxTreeEvent& event)
 
     if (viewer)
     {
-        viewer->ShowPageOnItem(m_doctree->GetItemText(event.GetItem()));
+        ToolTipTreeData* data = static_cast<ToolTipTreeData*>(m_doctree->GetItemData(event.GetItem()));
+        viewer->ShowPageOnItem(data->tooltip.substr(0, data->tooltip.find(' ')));
         setCurrentTabText(viewer->GetOpenedPageTitle());
     }
 }
@@ -290,7 +294,7 @@ bool DocumentationBrowser::createNewPage(const wxString& docId)
 
     // Find an already opened page with the same title
     if (docId.substr(0, 15) != "<!DOCTYPE html>")
-        title = mainFrame->GetDocContent(docId); // Get the page content from the kernel
+        title = wxFromUtf8(doc_HelpAsHTML(wxToUtf8(docId)).c_str()); // Get the page content from the kernel
     else
         title = docId;
 

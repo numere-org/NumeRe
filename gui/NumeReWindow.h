@@ -188,8 +188,6 @@ class NumeReWindow : public wxFrame
         void EvaluateCommandLine(wxArrayString& wxArgV);
         wxString getProgramFolder();
         void AddToHistory(const wxString& sCommand);
-        wxString GetDocContent(wxString docid);
-        std::vector<std::string> GetDocIndex();
         void forceHistoryPageDown();
 
         std::string m_UnrecoverableFiles;

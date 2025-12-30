@@ -144,6 +144,7 @@ void NumeReKernel::synchronizePathSettings()
     _script.setPath(_option.getScriptPath(), false, sExePath);
     _pData.setPath(_option.getPlotPath(), false, sExePath);
     _procedure.setPath(_option.getProcPath(), false, sExePath);
+    _documentation.setPath(sExePath + "/docs", false, sExePath);
 
     // Set tokens
     _out.setTokens(sTokens);
@@ -152,6 +153,7 @@ void NumeReKernel::synchronizePathSettings()
     _pData.setTokens(sTokens);
     _procedure.setTokens(sTokens);
     _fSys.setTokens(sTokens);
+    _documentation.setTokens(sTokens);
 }
 
 
@@ -227,6 +229,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _functions.setTokens(_option.getTokenPaths());
     _procedure.setTokens(_option.getTokenPaths());
     _option.setTokens(_option.getTokenPaths());
+    _documentation.setTokens(_option.getTokenPaths());
     _lang.setTokens(_option.getTokenPaths());
 
     // Set the current line length
@@ -256,8 +259,8 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _procedure.createRevisionsFolder();
 
     // Create the default paths, if they are not present
-    _option.setPath(_option.getExePath() + "/docs/plugins", true, sPath);
-    _option.setPath(_option.getExePath() + "/docs", true, sPath);
+    _documentation.setPath(_option.getExePath() + "/docs/plugins", true, sPath);
+    _documentation.setPath(_option.getExePath() + "/docs", true, sPath);
     _option.setPath(_option.getExePath() + "/user/lang", true, sPath);
     _option.setPath(_option.getExePath() + "/user/docs", true, sPath);
     _option.setPath(_option.getSavePath() + "/docs", true, sPath);
@@ -267,7 +270,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 
     // Load the documentation index file
     g_logger.info("Loading documentation index.");
-    _option.createDocumentationIndex(_option.useCustomLangFiles());
+    _documentation.createDocumentationIndex(_option.useCustomLangFiles());
 
     // Load the language strings
     g_logger.info("Loading kernel language files.");
@@ -2015,7 +2018,7 @@ bool NumeReKernel::uninstallPlugin(const std::string& sLine, const std::string& 
                 while (sPlugin.length())
                 {
                     // Remove the reference from the help index
-                    _option.removeFromDocIndex(getNextArgument(sPlugin, true));
+                    _documentation.removeFromDocIndex(getNextArgument(sPlugin, true));
                 }
             }
 
@@ -2697,36 +2700,6 @@ int NumeReKernel::ReadOpenFileFlag()
     int nFlag = nOpenFileFlag;
     nOpenFileFlag = 0;
     return nFlag;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function returns the
-/// documentation for the passed command string
-/// as HTML string prepared for the help browser.
-///
-/// \param sCommand const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string NumeReKernel::getDocumentation(const std::string& sCommand)
-{
-    return doc_HelpAsHTML(sCommand, false, _option);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function returns the
-/// documentation index as a string vector, which
-/// can be used to fill the tree in the
-/// documentation browser.
-///
-/// \return std::vector<std::string>
-///
-/////////////////////////////////////////////////
-std::vector<std::string> NumeReKernel::getDocIndex()
-{
-    return _option.getDocIndex();
 }
 
 

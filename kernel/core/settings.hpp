@@ -28,7 +28,7 @@
 #endif
 
 #include "ui/error.hpp"
-#include "documentation/doc_helper.hpp"
+#include "io/filesystem.hpp"
 
 #define SETTING_B_DEVELOPERMODE       "internal.developermode"
 #define SETTING_B_DEBUGGER            "internal.debugger"
@@ -682,7 +682,7 @@ class SettingsValue
 /// of the internal (kernel) settings of this
 /// application.
 /////////////////////////////////////////////////
-class Settings : public Documentation
+class Settings : public FileSystem
 {
 	private:
 	    std::string sSettings_ini;

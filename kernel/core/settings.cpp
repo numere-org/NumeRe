@@ -36,7 +36,7 @@ void StripSpaces(std::string&);
 /// Creates and fills the internal setting value
 /// map with their default values.
 /////////////////////////////////////////////////
-Settings::Settings() : Documentation()
+Settings::Settings() : FileSystem()
 {
     m_settings[SETTING_B_DEVELOPERMODE] = SettingsValue(false, SettingsValue::HIDDEN);
     m_settings[SETTING_B_DEBUGGER] = SettingsValue(false, SettingsValue::NONE);
