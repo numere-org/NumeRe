@@ -20,7 +20,7 @@
 #include "editor.h"
 #include "searchcontroller.hpp"
 #include "../../common/Options.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/procedure/includer.hpp"
 
 #define ANNOTATION_NOTE wxSTC_NSCR_PROCEDURE_COMMANDS+1
@@ -29,10 +29,9 @@
 
 #define HIGHLIGHT_ANNOTATION 12
 
-extern Language _guilang;
 using namespace std;
 
-static void replaceDocStrings(std::string& sStr)
+static void replaceDocStrings(wxString& sStr)
 {
     sStr.replace(sStr.find_first_of(" ("), std::string::npos, "()");
 }
@@ -1826,12 +1825,12 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 /////////////////////////////////////////////////
 /// \brief Adds the passed sMessage with the style to the internal cache
 ///
-/// \param sMessage const string&
+/// \param sMessage const wxString&
 /// \param nStyle int
 /// \return AnnotationCount
 ///
 /////////////////////////////////////////////////
-AnnotationCount CodeAnalyzer::addToAnnotation(const string& sMessage, int nStyle)
+AnnotationCount CodeAnalyzer::addToAnnotation(const wxString& sMessage, int nStyle)
 {
 	AnnotationCount annoCount;
 

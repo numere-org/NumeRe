@@ -18,7 +18,7 @@
 
 
 #include "duplicatecodedialog.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../editor/editor.h"
 #include <wx/clipbrd.h>
@@ -32,7 +32,6 @@
 #define SEMANTICS_NUM 4
 #define SEMANTICS_FUNCTION 8
 
-extern Language _guilang;
 
 struct compare_index
 {

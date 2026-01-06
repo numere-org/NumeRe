@@ -27,7 +27,7 @@
 
 
 #include "AboutChameleonDialog.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/versioninformation.hpp"
 #include "../compositions/grouppanel.hpp"
 
@@ -51,7 +51,6 @@ BEGIN_EVENT_TABLE( AboutChameleonDialog, wxDialog )
 
 END_EVENT_TABLE()
 
-extern Language _guilang;
 
 /*!
  * AboutChameleonDialog constructors

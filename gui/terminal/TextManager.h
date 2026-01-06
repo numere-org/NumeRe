@@ -22,7 +22,7 @@
 
 #include <vector>
 #include <deque>
-#include <string>
+#include <wx/string.h>
 
 class GenericTerminal;
 
@@ -195,7 +195,7 @@ struct ViewCursor
 /////////////////////////////////////////////////
 struct RenderedLine
 {
-	std::string sLine;
+	wxString sLine;
 	std::vector<unsigned short> colors;
 	std::vector<LogicalCursor> coords;
 };
@@ -210,7 +210,7 @@ struct RenderedLine
 /////////////////////////////////////////////////
 struct Character
 {
-    char m_char;
+    wxChar m_char;
     int m_style;
 
     enum
@@ -223,18 +223,14 @@ struct Character
     };
 
     Character() : m_char(0), m_style(0) {}
-    Character(char c) : m_char(c), m_style(0) {}
-    Character(char&& c) : m_style(0)
-    {
-        m_char = std::move(c);
-    }
+    Character(wxChar c) : m_char(c), m_style(0) {}
     Character(const Character& c) : m_char(c.m_char), m_style(c.m_style) {}
     Character(Character&& c)
     {
         m_char = std::move(c.m_char);
         m_style = std::move(c.m_style);
     }
-    Character(char c, unsigned char flags) : m_char(c), m_style(flags << 12) {}
+    Character(wxChar c, unsigned char flags) : m_char(c), m_style(flags << 12) {}
 
     Character& operator=(const Character& c)
     {
@@ -250,7 +246,7 @@ struct Character
         return *this;
     }
 
-    Character& operator=(char&& c)
+    Character& operator=(wxChar&& c)
     {
         m_char = std::move(c);
         return *this;
@@ -320,27 +316,27 @@ class CharacterVector : public std::vector<Character>
     private:
         Character m_dummy;
 
-        void assign(const std::string& sText)
+        void assign(const wxString& sText)
         {
             clear();
             append(sText);
         }
 
-        void append(const std::string& sText)
+        void append(const wxString& sText)
         {
             for (size_t i = 0; i < sText.length(); i++)
-                emplace_back(sText[i]);
+                push_back(sText[i].GetValue());
         }
 
     public:
         CharacterVector() : vector<Character>() {}
 
-        CharacterVector(const std::string& sText) : vector<Character>()
+        CharacterVector(const wxString& sText) : vector<Character>()
         {
             append(sText);
         }
 
-        CharacterVector(const std::string& sText, short flags) : vector<Character>()
+        CharacterVector(const wxString& sText, short flags) : vector<Character>()
         {
             append(sText);
 
@@ -351,7 +347,7 @@ class CharacterVector : public std::vector<Character>
             }
         }
 
-        CharacterVector& operator+=(const std::string& sText)
+        CharacterVector& operator+=(const wxString& sText)
         {
             append(sText);
             return *this;
@@ -363,7 +359,7 @@ class CharacterVector : public std::vector<Character>
             return *this;
         }
 
-        CharacterVector& operator=(const std::string& sText)
+        CharacterVector& operator=(const wxString& sText)
         {
             assign(sText);
             return *this;
@@ -417,9 +413,9 @@ class CharacterVector : public std::vector<Character>
             return vector<Character>::back();
         }
 
-        std::string toString() const
+        wxString toString() const
         {
-            std::string sRet;
+            wxString sRet;
 
             // Pre-reserve storage to avoid memory copies
             sRet.reserve(size());
@@ -430,7 +426,7 @@ class CharacterVector : public std::vector<Character>
             return sRet;
         }
 
-        std::string substr(size_t pos, size_t len = std::string::npos) const
+        wxString substr(size_t pos, size_t len = std::string::npos) const
         {
             return toString().substr(pos, len);
         }
@@ -458,7 +454,7 @@ class CharacterVector : public std::vector<Character>
             return size();
         }
 
-        iterator insert(size_t pos, const std::string& sText, short flags = 0)
+        iterator insert(size_t pos, const wxString& sText, short flags = 0)
         {
             return insert(pos, CharacterVector(sText, flags));
         }
@@ -471,9 +467,9 @@ class CharacterVector : public std::vector<Character>
             return std::vector<Character>::insert(begin() + pos, vect.begin(), vect.end());
         }
 
-        void append(size_t n, char c)
+        void append(size_t n, wxChar c)
         {
-            append(std::string(n, c));
+            append(wxString(n, c));
         }
 };
 
@@ -492,15 +488,15 @@ class TextManager
 		TextManager(GenericTerminal* parent = nullptr, int width = 80, int height = 24, int maxWidth = 160, int maxHeight = 300);
 		~TextManager();
 
-		void printOutput(const std::string& sLine);
-		void insertInput(const std::string& sLine, size_t logicalpos = std::string::npos);
+		void printOutput(const wxString& sLine);
+		void insertInput(const wxString& sLine, size_t logicalpos = std::string::npos);
 
 		ViewCursor toViewCursor(const LogicalCursor& logCursor) const;
 		ViewCursor getCurrentViewPos() const;
 		LogicalCursor toLogicalCursor(const ViewCursor& viewCursor) const;
 		LogicalCursor getCurrentLogicalPos() const;
 
-		std::string getRenderedString(size_t viewLine) const;
+		wxString getRenderedString(size_t viewLine) const;
 		std::vector<unsigned short> getRenderedColors(size_t viewLine) const;
 
 		size_t tab();
@@ -513,21 +509,21 @@ class TextManager
 		void unselectAll();
 		bool isSelected(const ViewCursor& viewCursor) const;
 		bool isSelectedLogical(const LogicalCursor& cursor) const;
-		std::string getSelectedText() const;
-		std::string getCurrentInputLine() const;
-		std::string getPreviousLine() const;
+		wxString getSelectedText() const;
+		wxString getCurrentInputLine() const;
+		wxString getPreviousLine() const;
 
 		int GetSize() const;
 		int GetMaxSize() const;
 		int GetHeight() const;
 		int GetNumLinesScrolled() const;
 		int GetLinesReceived() const;
-		std::string GetInputHistory(bool vcursorup = true);
-		std::string GetTextRange(int y, int x0, int x1) const;
-		std::string GetWordAt(int y, int x) const;
-		std::string GetWordStartAt(int y, int x) const;
-		char GetCharAdjusted(int y, int x) const;
-		char GetCharLogical(const LogicalCursor& cursor) const;
+		wxString GetInputHistory(bool vcursorup = true);
+		wxString GetTextRange(int y, int x0, int x1) const;
+		wxString GetWordAt(int y, int x) const;
+		wxString GetWordStartAt(int y, int x) const;
+		wxChar GetCharAdjusted(int y, int x) const;
+		wxChar GetCharLogical(const LogicalCursor& cursor) const;
 		bool IsUserText(int y, int x) const;
 		bool IsEditable(int y, int x) const;
 		bool IsEditableLogical(const LogicalCursor& logCursor) const;
@@ -547,7 +543,7 @@ class TextManager
 		void Resize(int width, int height);
 		void Reset();
 
-		std::string operator[](int index);
+		wxString operator[](int index);
 
 		int AdjustIndex(int index) const;
 
@@ -574,7 +570,7 @@ class TextManager
 		void updateColors(bool isErrorLine = false);
 		void renderLayout();
 		void synchronizeRenderedBlock(int linesToDelete);
-		size_t findNextLinebreak(const std::string& currentLine, size_t currentLinebreak) const;
+		size_t findNextLinebreak(const wxString& currentLine, size_t currentLinebreak) const;
 
 		enum
 		{

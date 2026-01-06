@@ -20,7 +20,7 @@
 #include "../IconManager.h"
 #include "../globals.hpp"
 #include "../compositions/grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/versioninformation.hpp"
 #include "../../common/datastructures.h"
@@ -270,7 +270,6 @@ wxArrayString PackageListSearchCtrl::getChildCandidates(const wxString& enteredT
 #define LOCALCOLOUR NEWERCOLOUR
 //#define LOCALCOLOUR wxColour(160,255,160)
 
-extern Language _guilang;
 
 BEGIN_EVENT_TABLE(PackageRepoBrowser, ViewerFrame)
     EVT_BUTTON(ID_REPODLG_INSTALL, PackageRepoBrowser::OnInstall)

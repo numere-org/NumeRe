@@ -595,7 +595,6 @@ class Assertion
 };
 
 
-extern Language _lang;
 extern Assertion _assertionHandler;
 
 #endif // ERROR_HPP

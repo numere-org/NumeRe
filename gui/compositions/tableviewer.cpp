@@ -20,7 +20,7 @@
 #include "../NumeReWindow.h"
 #include "gridtable.hpp"
 #include "tableeditpanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
 #include "../../kernel/core/io/file.hpp"
@@ -38,8 +38,6 @@
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
 
-
-extern Language _guilang;
 
 BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_KEY_DOWN                (TableViewer::OnKeyDown)

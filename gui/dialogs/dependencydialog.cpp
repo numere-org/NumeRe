@@ -20,10 +20,9 @@
 #include "../NumeReWindow.h"
 #include "../../kernel/kernel.hpp"
 #include "../../kernel/core/utils/tools.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/ui/winlayout.hpp"
 
-extern Language _guilang;
 
 using namespace std;
 

@@ -25,7 +25,6 @@
 #include "../ui/language.hpp"
 #include "../utils/filecheck.hpp"
 
-extern Language _lang;
 
 std::string removeQuotationMarks(const std::string&);
 

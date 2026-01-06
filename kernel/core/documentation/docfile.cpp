@@ -58,7 +58,7 @@ static void parseHeader(const std::string& sCombinedArticle, DocumentationEntry&
 
     // Get title and IDX keys
     if (iter && iter->Attribute("string"))
-        docEntry.sTitle = utf8ToAnsi(iter->Attribute("string"));
+        docEntry.sTitle = iter->Attribute("string");
 
     if (iter && iter->Attribute("idxkey"))
         docEntry.sIdxKeys = iter->Attribute("idxkey");

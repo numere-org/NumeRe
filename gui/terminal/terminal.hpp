@@ -74,8 +74,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 
 		TerminalCallTip* m_callTip;
 
-		unsigned char
-		m_curChar;
+		wxChar m_curChar;
 
 		bool
 		m_selecting,
@@ -97,17 +96,13 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		m_boldFont,
 		m_boldUnderlinedFont;
 
-		wxDC
-		* m_curDC;
+		wxDC* m_curDC;
 
-		wxMemoryDC
-		m_memDC;
+		wxMemoryDC m_memDC;
 
-		wxBitmap
-		* m_bitmap;
+		wxBitmap* m_bitmap;
 
-		wxTimer
-		m_timer;
+		wxTimer m_timer;
 
 		NumeReWindow* m_wxParent;
 
@@ -135,7 +130,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 	private:
 		virtual std::string generateAutoCompList(const std::string& sWordStart, std::string sPreDefList) override;
 		virtual std::string getVariableType(const std::string& sVarName) override;
-		void pipe_command(const std::string& sCommand);
+		void pipe_command(const wxString& sCommand);
 		BOLDSTYLE
 		m_boldStyle;
 
@@ -143,7 +138,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void scrollToInput();
 		void MarkSelection(bool bRectangular = false);
 		void DoDrawCursor(int fg_color, int bg_color, int flags,
-						  int x, int y, unsigned char c);
+						  int x, int y, wxChar c);
 
         // Private event handler functions
 		void OnChar(wxKeyEvent& event);
@@ -173,7 +168,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		bool m_bTableEditCanceled;
 		bool m_isBusy;
 		int m_nDebuggerCode;
-		std::string m_sCommandLine;
+		wxString m_sCommandLine;
 		std::string m_sAnswer;
 
 	public:
@@ -187,7 +182,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		virtual ~NumeReTerminal();
 
 		// Kernel communication functions
-		void pass_command(const std::string& command, bool isEvent);
+		void pass_command(const wxString& command, bool isEvent);
 		NumeRe::Table getTable(const std::string& sTableName);
 		NumeRe::Container<std::string> getStringTable(const std::string& sStringTableName);
 		Settings getKernelSettings();
@@ -211,10 +206,10 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 			wxCriticalSectionLocker lock(m_kernelCS);
 			m_bTableEditCanceled = true;
 		}
-		void addBreakpoint(const std::string& _sFilename, size_t nLine, const Breakpoint& bp);
-		Breakpoint getBreakpoint(const std::string& _sFilename, size_t nLine);
-        void removeBreakpoint(const std::string& _sFilename, size_t nLine);
-        void clearBreakpoints(const std::string& _sFilename);
+		void addBreakpoint(const wxString& _sFilename, size_t nLine, const Breakpoint& bp);
+		Breakpoint getBreakpoint(const wxString& _sFilename, size_t nLine);
+        void removeBreakpoint(const wxString& _sFilename, size_t nLine);
+        void clearBreakpoints(const wxString& _sFilename);
 
         bool IsBusy()
 		{
@@ -265,18 +260,18 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void copyText();
 		void pasteText();
 		void cutText();
-		void insertRawText(std::string sText);
+		void insertRawText(wxString sText);
 
 		// Text printing functions
-		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const std::string& sText) override;
-		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c) override;
+		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const wxString& sText) override;
+		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxChar c) override;
 
 		virtual void Calltip(int x, int y, NumeRe::CallTip& _cTip) override;
         virtual void CalltipCancel() override;
 
 		virtual void ClearChars(int bg_color, int x, int y, int w, int h) override;
-		virtual void ProcessInput(int len, const std::string& sData) override;
-		virtual void ProcessOutput(int len, const std::string& sData) override;
+		virtual void ProcessInput(int len, const wxString& sData) override;
+		virtual void ProcessOutput(int len, const wxString& sData) override;
 
 		// Terminal control functions
 		void ScrollTerminal(int numLines, bool scrollUp = true);

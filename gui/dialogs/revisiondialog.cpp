@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "revisiondialog.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../NumeReWindow.h"
 #include "../editor/editor.h"
 #include "../wxProportionalSplitterWindow.h"
@@ -30,8 +30,6 @@ BEGIN_EVENT_TABLE(RevisionDialog, wxDialog)
     EVT_TREE_ITEM_ACTIVATED(-1, RevisionDialog::OnItemActivated)
     EVT_MENU_RANGE(ID_REVISIONDIALOG_SHOW, ID_REVISIONDIALOG_REFRESH, RevisionDialog::OnMenuEvent)
 END_EVENT_TABLE()
-
-extern Language _guilang;
 
 
 /////////////////////////////////////////////////

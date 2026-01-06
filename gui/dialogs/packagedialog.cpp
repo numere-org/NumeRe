@@ -19,7 +19,7 @@
 #include "packagedialog.hpp"
 #include "../compositions/grouppanel.hpp"
 #include "../globals.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/ui/winlayout.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../externals/tinyxml2/tinyxml2.h"
@@ -37,8 +37,6 @@
 #define INCLUDEDOCS "_doctemplate"
 #define DOCFILE "_docfile"
 #define POSTINSTALL "_postinstall"
-
-extern Language _guilang;
 
 
 BEGIN_EVENT_TABLE(PackageDialog, wxDialog)

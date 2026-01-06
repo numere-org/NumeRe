@@ -29,7 +29,7 @@
 #endif
 
 #include "../../common/CommonHeaders.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 
 #include <wx/datetime.h>
@@ -130,7 +130,6 @@ int CompareInts(int n1, int n2)
 }
 
 
-extern Language _guilang;
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -416,7 +415,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     {
         if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
             && GetFileNameAndPath().ToStdString().length())
-            m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+            m_terminal->clearBreakpoints(GetFileNameAndPath());
 
         m_simpleFileName = fn.GetFullName();
     }
@@ -609,28 +608,15 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
     // determine and set EOL mode
     int eolMode = -1;
 
-    //wxString eolName;
-
     if (fileContents.find("\r\n") != std::string::npos)
-    {
         eolMode = wxSTC_EOL_CRLF;
-        //eolName = _("CR+LF (Windows)");
-    }
     else if (fileContents.find("\r") != std::string::npos)
-    {
 		eolMode = wxSTC_EOL_CR;
-		//eolName = _("CR (Macintosh)");
-    }
     else if (fileContents.find("\n") != std::string::npos)
-    {
 		eolMode = wxSTC_EOL_LF;
-		//eolName = _("LF (Unix)");
-    }
 
     if (eolMode != -1)
-    {
         SetEOLMode(eolMode);
-    }
 
     m_bLoadingFile = false;
     UpdateSyntaxHighlighting(true);
@@ -1732,9 +1718,9 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
             SyntaxBlockDefinition blockDef = vBlockDefs[id];
 
             // Construct the tooltip
-            std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                              + toUpperCase(blockDef.startWord)
-                                                                              + "_*"), lastpos)) + "\n  [...]\n";
+            wxString sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                           + toUpperCase(blockDef.startWord)
+                                                                           + "_*"), lastpos)) + "\n  [...]\n";
 
             if (selection != blockDef.startWord)
                 nLength = sBlock.length() + countUmlauts(sBlock);
@@ -1835,7 +1821,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
         else
             AdvCallTipCancel();
 
-        AdvCallTipShow(startPosition, _cTip.sDefinition + (_cTip.sDocumentation.length() ? "\n" + _cTip.sDocumentation : ""));
+        AdvCallTipShow(startPosition, _cTip.sDefinition + (_cTip.sDocumentation.length() ? "\n" + wxFromUtf8(_cTip.sDocumentation) : ""));
         CallTipSetHighlight(_cTip.nStart, _cTip.nEnd);
     }
 }
@@ -2876,8 +2862,8 @@ static char applyFunctionHeuristics(const std::string& func)
         return 't';
 
     // Find the key for the corresponding language string
-    std::string sKey = _guilang.getKey("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(func) + "_[*]");
-    std::string sRetVal = _guilang.get(sKey);
+    std::string sKey = _guilang.getKey("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(func) + "_[*]").ToStdString();
+    wxString sRetVal = _guilang.get(sKey);
     sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find(')')+1));
     sRetVal.erase(sRetVal.find_first_of(" -"));
 
@@ -2907,8 +2893,8 @@ static char applyFunctionHeuristics(const std::string& func)
 static char applyCommandHeuristics(const std::string& command)
 {
     // Find the key for the corresponding language string
-    std::string sKey = _guilang.getKey("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(command) + "_[*]");
-    std::string sRetVal = _guilang.get(sKey);
+    std::string sKey = _guilang.getKey("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(command) + "_[*]").ToStdString();
+    wxString sRetVal = _guilang.get(sKey);
 
     if (sRetVal.find("->") == std::string::npos)
         return 0; // s.th.s is clearly wrong here
@@ -4630,7 +4616,7 @@ void NumeReEditor::applyStrikeThrough()
 void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 {
     if (GetFileNameAndPath().ToStdString().length())
-        m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+        m_terminal->clearBreakpoints(GetFileNameAndPath());
 
     m_bLastSavedRemotely = fileIsRemote;
     m_fileNameAndPath = filename;
@@ -5672,7 +5658,7 @@ void NumeReEditor::OnClearBreakpoints(wxCommandEvent& event)
         this->MarkerDeleteHandle(markerHandle);
     }
 
-    m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+    m_terminal->clearBreakpoints(GetFileNameAndPath());
     ResetRightClickLocation();
 }
 
@@ -7909,7 +7895,7 @@ void NumeReEditor::EditBreakpoint(int linenum)
         return;
 
     // Get the current breakpoint definition
-    Breakpoint bp = m_terminal->getBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+    Breakpoint bp = m_terminal->getBreakpoint(GetFileNameAndPath(), linenum);
 
     // Get the expression from the user
     wxString newCondition = wxGetTextFromUser(_guilang.get("GUI_MENU_EDITOR_EDITBP_TEXT"),
@@ -7922,7 +7908,7 @@ void NumeReEditor::EditBreakpoint(int linenum)
     // Create and update the internal breakpoint
     // TODO: we might want to check the expression for requirement fulfillment
     bp = Breakpoint(newCondition.ToStdString());
-    m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, bp);
+    m_terminal->addBreakpoint(GetFileNameAndPath(), linenum, bp);
 
     // Enable the correct type of breakpoint on the margin
     if (MarkerOnLine(linenum, bp.m_isConditional ? MARKER_BREAKPOINT : MARKER_CONDITIONALBREAKPOINT))
@@ -7947,7 +7933,7 @@ void NumeReEditor::RemoveBreakpoint(int linenum)
     // LineFromHandle on debug start and clean up then
     MarkerDelete(linenum, MARKER_BREAKPOINT);
     MarkerDelete(linenum, MARKER_CONDITIONALBREAKPOINT);
-    m_terminal->removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+    m_terminal->removeBreakpoint(GetFileNameAndPath(), linenum);
 }
 
 
@@ -7964,14 +7950,14 @@ void NumeReEditor::RemoveBreakpoint(int linenum)
 void NumeReEditor::SynchronizeBreakpoints()
 {
     // Clear all breakpoints stored internally
-    m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+    m_terminal->clearBreakpoints(GetFileNameAndPath());
     int line = 0;
 
     // Re-set the existing breakpoints
     while ((line = MarkerNext(line, 1 << MARKER_BREAKPOINT)) != -1)
     {
         if (isBreakPointAllowed(line))
-            m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line, Breakpoint(true));
+            m_terminal->addBreakpoint(GetFileNameAndPath(), line, Breakpoint(true));
         else
             MarkerDelete(line, MARKER_BREAKPOINT);
 
@@ -9070,19 +9056,21 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 /// \brief Counts the german umlauts in the current
 /// string.
 ///
-/// \param sStr const string&
+/// \param sStr const wxString&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int NumeReEditor::countUmlauts(const string& sStr)
+int NumeReEditor::countUmlauts(const wxString& sStr)
 {
     static Umlauts _umlauts;
     int nUmlauts = 0;
+
     for (size_t i = 0; i < sStr.length(); i++)
     {
         if (_umlauts.isUmlaut(sStr[i]))
             nUmlauts++;
     }
+
     return nUmlauts;
 }
 
@@ -9091,16 +9079,16 @@ int NumeReEditor::countUmlauts(const string& sStr)
 /// \brief Re-alignes the passed language string
 /// to fit into a call tip.
 ///
-/// \param sLine string
+/// \param sLine wxString
 /// \param lastpos size_t&
-/// \return string
+/// \return wxString
 ///
 /////////////////////////////////////////////////
-string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
+wxString NumeReEditor::realignLangString(wxString sLine, size_t& lastpos)
 {
     lastpos = sLine.find(' ');
 
-    if (lastpos == string::npos)
+    if (lastpos == std::string::npos)
         return sLine;
 
     // Find the first non-whitespace character
@@ -9130,23 +9118,23 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 /// \brief Adds linebreaks to the call tip language
 /// strings.
 ///
-/// \param sLine const string&
+/// \param sLine const wxString&
 /// \param onlyDocumentation bool
-/// \return string
+/// \return wxString
 ///
 /// This member function adds linebreaks at the
 /// maximal line length of 100 characters. It is
 /// used for the tooltips of functions, commands
 /// and procedures
 /////////////////////////////////////////////////
-string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /* = false*/)
+wxString NumeReEditor::addLinebreaks(const wxString& sLine, bool onlyDocumentation /* = false*/)
 {
     const size_t nMAXLINE = 100;
 
-    string sReturn = sLine;
+    wxString sReturn = sLine;
 
     // Remove escaped dollar signs
-    while (sReturn.find("\\$") != string::npos)
+    while (sReturn.find("\\$") != std::string::npos)
         sReturn.erase(sReturn.find("\\$"), 1);
 
     size_t nDescStart = sReturn.find("- ");
@@ -9177,7 +9165,7 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
         {
             nLastLineBreak = i;
 
-            std::string sCandidate = sReturn.substr(i+1, 15);
+            std::string sCandidate = sReturn.substr(i+1, 15).ToStdString();
 
             if (std::regex_search(sCandidate, match, expr) && match.position(0) == 0)
                 addIndent = match.length(0)-4;

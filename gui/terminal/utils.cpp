@@ -1,11 +1,9 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include <wx/log.h>
-
-extern Language _guilang;
 
 using namespace std;
 
@@ -42,6 +40,7 @@ void GenericTerminal::update_changes ()
 	// prevent recursion for scrolls which cause exposures
 	if (doing_update)
 		return;
+
 #ifdef DO_LOG
     wxLogDebug("Updating Terminal");
 #endif
@@ -53,8 +52,8 @@ void GenericTerminal::update_changes ()
 	{
 	    // Get the rendered string and the rendered color bitlists for
 	    // the current line
-		string line = tm.getRenderedString(i);
-		vector<unsigned short> colors = tm.getRenderedColors(i);
+		wxString line = tm.getRenderedString(i);
+		std::vector<unsigned short> colors = tm.getRenderedColors(i);
 		size_t lastPos = 0;
 
 		// Print all characters together, which have the same color
@@ -63,7 +62,7 @@ void GenericTerminal::update_changes ()
 		{
 			if (colors[j] != colors[j - 1])
 			{
-				string sSubstr = line.substr(lastPos, j - lastPos);
+				wxString sSubstr = line.substr(lastPos, j - lastPos);
 				c = colors[j - 1];
 				DrawText((c >> 4) & 0xf, (c >> 8) & 0xf, c, lastPos, i, sSubstr);
 				lastPos = j;
@@ -73,7 +72,7 @@ void GenericTerminal::update_changes ()
 		// Manually print the last token
 		if (line.length())
 		{
-			string sSubstr = line.substr(lastPos);
+			wxString sSubstr = line.substr(lastPos);
 			c = colors[lastPos];
 			DrawText((c >> 4) & 0xf, (c >> 8) & 0xf, c, lastPos, i, sSubstr);
 		}
@@ -87,16 +86,18 @@ void GenericTerminal::update_changes ()
 	{
 	    // Get its x coordinate and ensure that it is valid
 		x = termCursor.x;
+
 		if ( x >= width )
 			x = width - 1;
 
         // Get color and the character at the position of the cursor
 		c = tm.GetColorAdjusted(termCursor.y, x);
-		unsigned char cursorChar = tm.GetCharAdjusted(termCursor.y, x);
+		wxChar cursorChar = tm.GetCharAdjusted(termCursor.y, x);
 
 		// Draw the cursor
         DrawCursor((c >> 4) & 0xf, (c >> 8) & 0xf, c & 15, x, termCursor.y, cursorChar);
 	}
+
 	doing_update = 0;
 }
 
@@ -202,7 +203,7 @@ void GenericTerminal::handle_calltip(int x, int y)
     // if the position is on a relevant syntax element
     // create a calltip for this element, otherwise
     // dismiss it
-    std::string sLine = tm.getRenderedString(y);
+    wxString sLine = tm.getRenderedString(y);
     std::vector<unsigned short> vColors = tm.getRenderedColors(y);
 
     if ((int)vColors.size() <= x || x < 0)
@@ -223,7 +224,7 @@ void GenericTerminal::handle_calltip(int x, int y)
         while (x >= 0)
         {
             if (((vColors[x] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && (sLine[x] == '(' || sLine[x] == '{'))
-                isInParens = getMatchingParenthesis(StringView(sLine, x)) >= cursor_x-x;
+                isInParens = getMatchingParenthesis(StringView(sLine.ToStdString(), x)) >= cursor_x-x;
 
             // Functions and commands
             if (hasContextToolTip((vColors[x] >> 4) & 0xf, isInParens))
@@ -255,7 +256,7 @@ void GenericTerminal::handle_calltip(int x, int y)
     while (posEnd < vColors.size() && vColors[posEnd] == vColors[x])
         posEnd++;
 
-    std::string sSyntaxElement = sLine.substr(posStart, posEnd - posStart);
+    std::string sSyntaxElement = sLine.substr(posStart, posEnd - posStart).ToStdString();
     NumeRe::CallTip _cTip;
 
     // Determine the type of the color
@@ -308,7 +309,7 @@ void GenericTerminal::handle_calltip(int x, int y)
 std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
 {
     // Get the rendered line and the corresponding syntax colors
-    std::string sLine = tm.getRenderedString(y);
+    wxString sLine = tm.getRenderedString(y);
     std::vector<unsigned short> vColors = tm.getRenderedColors(y);
     bool isVect = false;
     std::string varType = "";
@@ -324,7 +325,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
         while (posStart > 0 && vColors[posStart-1] == vColors[x-1] && isalnum(sLine[posStart-1]))
             posStart--;
 
-        varType = getVariableType(sLine.substr(posStart, x - posStart));
+        varType = getVariableType(sLine.substr(posStart, x - posStart).ToStdString());
         isVect = varType.find('{') != std::string::npos || varType == "cluster";
 
         if (varType.front() == '{')
@@ -336,7 +337,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
     {
         // Examine method return values
         size_t p = sLine.rfind('.', x-1);
-        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1), get_method_root_type(p, y).first);
+        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1).ToStdString(), get_method_root_type(p, y).first);
 
         if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
         {
@@ -424,7 +425,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
                 while (posStart > 0 && vColors[posStart-1] == vColors[x0-1])
                     posStart--;
 
-                std::string sSymbolName = sLine.substr(posStart, x0 - posStart);
+                std::string sSymbolName = sLine.substr(posStart, x0 - posStart).ToStdString();
                 std::string sReturnValue;
 
                 // Determine the type of the color

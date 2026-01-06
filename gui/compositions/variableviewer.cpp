@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "variableviewer.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/structures.hpp"
 #include "../../common/datastructures.h"
@@ -32,7 +32,6 @@
 #define VALUECOLUMN 3
 #define SIZECOLUMN 4
 
-extern Language _guilang;
 using namespace wxcode;
 
 struct VarData : public wxTreeItemData

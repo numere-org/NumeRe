@@ -537,7 +537,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
                     {
                         for (int curline = docline+1; curline < m_editor->LineFromPosition(procedures[i]); curline++)
                         {
-                            std::string curdocline = m_editor->GetLine(curline).ToStdString();
+                            std::string curdocline = wxToUtf8(m_editor->GetLine(curline));
                             curdocline.erase(0, curdocline.find_first_not_of("#*!"));
                             curdocline.erase(curdocline.find_first_of("\r\n"));
 
@@ -564,7 +564,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
                         {
                             for (int curline = m_editor->LineFromPosition(procedures[i])+1; curline < docline; curline++)
                             {
-                                std::string curdocline = m_editor->GetLine(curline).ToStdString();
+                                std::string curdocline = wxToUtf8(m_editor->GetLine(curline));
                                 curdocline.erase(0, curdocline.find_first_not_of("#*!"));
                                 curdocline.erase(curdocline.find_first_of("\r\n"));
 
@@ -636,9 +636,9 @@ std::string SearchController::CleanDocumentation(std::string sDocumentation)
         {
             // Insert a headline above the first parameter
             if (nPos > 5 && sDocumentation.substr(nPos-5, 5) != "\n    ")
-                sDocumentation.insert(nPos, "\n    " + toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
+                sDocumentation.insert(nPos, "\n    " + toUpperCase(wxToUtf8(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS"))) + "\n    ");
             else
-                sDocumentation.insert(nPos, toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
+                sDocumentation.insert(nPos, toUpperCase(wxToUtf8(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS"))) + "\n    ");
 
             while ((nPos = sDocumentation.find("\\param ")) != string::npos)
             {
@@ -679,7 +679,7 @@ std::string SearchController::CleanDocumentation(std::string sDocumentation)
 
         // Replace \remark
         while ((nPos = sDocumentation.find("\\remark ")) != string::npos)
-            sDocumentation.replace(nPos, 7, toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_REMARK"))+":");
+            sDocumentation.replace(nPos, 7, toUpperCase(wxToUtf8(_guilang.get("GUI_EDITOR_CALLTIP_PROC_REMARK")))+":");
 
         // Remove doubled exclamation marks
         while ((nPos = sDocumentation.find("!!")) != string::npos)

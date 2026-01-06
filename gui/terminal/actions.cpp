@@ -59,7 +59,7 @@ void GenericTerminal::normal_input()
 void GenericTerminal::normal_output()
 {
     // Get the output data
-    std::string sInput = sInput_Data;
+    wxString sInput = sInput_Data;
 
 #ifdef DO_LOG
     wxLogDebug("%s", sInput.c_str());
@@ -78,7 +78,7 @@ void GenericTerminal::normal_output()
         if (nPos != std::string::npos)
         {
             // Evalute the control character
-            switch (sInput[nPos])
+            switch (sInput[nPos].GetValue())
             {
                 case '\n':
                     tm.newLine();
@@ -154,7 +154,7 @@ std::string GenericTerminal::getProcNameSpace()
         nNameSpacePos--;
 
     // Get the text between the start and the current autocompletion start
-    sNameSpace = toLowerCase(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos));
+    sNameSpace = toLowerCase(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos).ToStdString());
 
     // If the obtained namespace contains the (possible) procedure
     // name, then erase this part, because we only want to have the
@@ -228,7 +228,7 @@ void GenericTerminal::tab()
         bool isMethod = false;
 
         // Get the word start from the terminal
-        sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x));
+        sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x).ToStdString());
 
         // There are different autocompletion lists for procedures and every other syntax element
         if (((tm.GetColorAdjusted(termCursor.y, termCursor.x - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
@@ -493,14 +493,15 @@ bool GenericTerminal::cursor_up()
     if (!tm.IsEditable(termCursor.y - 1, termCursor.x))
     {
         // Get the last history entry
-        std::string sHistory = tm.GetInputHistory(true);
+        wxString sHistory = tm.GetInputHistory(true);
 
         // Get the current user input line
-        std::string currentLine = tm.getCurrentInputLine();
+        wxString currentLine = tm.getCurrentInputLine();
 
         while (sHistory.length())
         {
             wxLogDebug(std::to_string(nCursorUpDownStartPos).c_str());
+
             if (sHistory != currentLine && sHistory.substr(0, nCursorUpDownStartPos) == currentLine.substr(0, nCursorUpDownStartPos))
             {
                 erase_usercontent_line();
@@ -509,8 +510,10 @@ bool GenericTerminal::cursor_up()
                 normal_input();
                 return true;
             }
+
             sHistory = tm.GetInputHistory(true);
         }
+
         return false;
     }
 
@@ -548,10 +551,10 @@ bool GenericTerminal::cursor_down()
     if (!tm.IsEditable(termCursor.y + 1, termCursor.x))
     {
         // Get the last history entry
-        std::string sHistory = tm.GetInputHistory(false);
+        wxString sHistory = tm.GetInputHistory(false);
 
         // Get the current user input line
-        std::string currentLine = tm.getCurrentInputLine();
+        wxString currentLine = tm.getCurrentInputLine();
 
         while (sHistory.length())
         {
@@ -563,6 +566,7 @@ bool GenericTerminal::cursor_down()
                 normal_input();
                 return true;
             }
+
             sHistory = tm.GetInputHistory(false);
         }
 

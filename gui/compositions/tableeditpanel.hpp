@@ -24,9 +24,8 @@
 #include <wx/infobar.h>
 #include "tableviewer.hpp"
 #include "../terminal/terminal.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 
-extern Language _guilang;
 class TextField;
 class NumeReWindow;
 

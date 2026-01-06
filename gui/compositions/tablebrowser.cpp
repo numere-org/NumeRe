@@ -21,9 +21,7 @@
 #include "tableeditpanel.hpp"
 #include "tableviewer.hpp"
 #include "../NumeReWindow.h"
-#include "../../kernel/core/ui/language.hpp"
-
-extern Language _guilang;
+#include "../guilang.hpp"
 
 
 BEGIN_EVENT_TABLE(TableBrowser, ViewerFrame)

@@ -20,8 +20,6 @@
 #include "../ui/language.hpp"
 #include "../utils/tools.hpp"
 
-extern Language _lang;
-
 
 /////////////////////////////////////////////////
 /// \brief Return the table column's contents as

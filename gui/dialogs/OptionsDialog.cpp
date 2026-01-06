@@ -24,7 +24,7 @@
 
 #include "../../common/CommonHeaders.h"
 #include "../../common/Options.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 
 #include <wx/checklst.h>
 #include <wx/valtext.h>
@@ -36,7 +36,6 @@
 
 #include "../compositions/grouppanel.hpp"
 
-extern Language _guilang;
 /*!
  * OptionsDialog type definition
  */
@@ -414,7 +413,7 @@ void OptionsDialog::CreateStylePage()
     fontSizer->Add(m_fontPickerHistory, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT| wxBOTTOM, 0);
 
 
-    wxStaticText* defaultFontStaticText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0);
+    wxStaticText* defaultFontStaticText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _guilang.get("GUI_OPTIONS_DEFAULTFONT"), wxDefaultPosition, wxDefaultSize, 0);
     plotFontSizer->Add(defaultFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 0);
 
     wxArrayString defaultFont;

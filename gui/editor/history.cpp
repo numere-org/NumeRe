@@ -19,7 +19,7 @@
 
 
 #include "../../common/CommonHeaders.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 
 #include <wx/datetime.h>
@@ -42,8 +42,6 @@ BEGIN_EVENT_TABLE(NumeReHistory, wxStyledTextCtrl)
 	EVT_MENU            (ID_COPY_FROM_HISTORY, NumeReHistory::OnMenuEvent)
 END_EVENT_TABLE()
 
-
-extern Language _guilang;
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -412,7 +410,7 @@ void NumeReHistory::saveHistory()
 void NumeReHistory::sendToTerminal(const wxString& line)
 {
     if (line.length())
-        m_terminal->pass_command(line.ToStdString(), false);
+        m_terminal->pass_command(line, false);
 }
 
 

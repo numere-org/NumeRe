@@ -47,8 +47,7 @@ inline std::string wxToUtf8(const wxString& s)
 /////////////////////////////////////////////////
 inline wxString wxFromUtf8(const std::string& s)
 {
-    return s;
-    //return wxString::FromUTF8(s.c_str(), s.length());
+    return wxString::FromUTF8(s.c_str(), s.length());
 }
 
 #endif // STRINGCONV_HPP

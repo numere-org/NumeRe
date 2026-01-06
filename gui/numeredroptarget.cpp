@@ -154,8 +154,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             {
                 // Files are either executed or loaded to
                 // memory, if dragged onto the console
-                std::string sExecutables;
-                std::string sLoadables;
+                wxString sExecutables;
+                wxString sLoadables;
 
                 // clear out the passed filenames
                 for (size_t i = 0; i < filenames.size(); i++)
@@ -380,15 +380,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 // current position (not the selected one)
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
-                std::string sAnsiText = textdata->GetText().ToStdString();
 
-                if (!sAnsiText.length() && textdata->GetText().length())
-                {
-                    wxMessageBox(_guilang.get("GUI_DLG_CONVERSION_ERROR"), _guilang.get("GUI_DLG_CONVERSION"), wxCENTER | wxICON_ERROR | wxOK, top);
-                    return wxDragError;
-                }
-
-                top->getTerminal()->insertRawText(sAnsiText);
+                top->getTerminal()->insertRawText(textdata->GetText());
                 top->getTerminal()->SetFocus();
                 defaultDragResult = wxDragCopy;
             }

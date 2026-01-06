@@ -19,10 +19,9 @@
 #include "renamesymbolsdialog.hpp"
 #include "../globals.hpp"
 #include "../compositions/grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 
-extern Language _guilang;
 
 // Constructor
 RenameSymbolsDialog::RenameSymbolsDialog(wxWindow* parent, const std::vector<wxString>& vChangeLog, wxWindowID id, const wxString& title, const wxString& defaultval) : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxCAPTION | wxRESIZE_BORDER | wxSTAY_ON_TOP)

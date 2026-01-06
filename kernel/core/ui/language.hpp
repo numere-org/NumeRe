@@ -36,7 +36,7 @@
 /////////////////////////////////////////////////
 class Language : public FileSystem
 {
-    private:
+    protected:
         std::map<std::string,std::string> mLangStrings;
         std::string sYES;
         std::string sNO;
@@ -204,6 +204,9 @@ class Language : public FileSystem
             return sNO;
         }
 };
+
+
+extern Language _lang;
 
 #endif // LANGUAGE_HPP
 

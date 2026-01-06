@@ -18,7 +18,7 @@
 
 #include "newfiledialog.hpp"
 #include "../compositions/grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../globals.hpp"
 
 #define IMAGESIZEPIX 64
@@ -31,7 +31,6 @@ BEGIN_EVENT_TABLE(NewFileDialog, wxDialog)
     EVT_CLOSE(NewFileDialog::OnClose)
 END_EVENT_TABLE()
 
-extern Language _guilang;
 
 /////////////////////////////////////////////////
 /// \brief Constructor for the new file dialog.

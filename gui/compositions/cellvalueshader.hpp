@@ -24,12 +24,11 @@
 #include <wx/clrpicker.h>
 #include <wx/statline.h>
 #include "grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "cellfilter.hpp"
 
 extern double g_pixelScale;
-extern Language _guilang;
 
 
 /////////////////////////////////////////////////

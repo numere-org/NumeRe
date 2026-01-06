@@ -162,7 +162,7 @@ static std::vector<std::string> loadDocumentationArticle(const std::string& sFil
         // Extract the title
         if (sLine.find("<title ") != std::string::npos)
         {
-            vReturn.push_back(utf8parser(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7)));
+            vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
             sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
             StripSpaces(sLine);
 
@@ -176,7 +176,7 @@ static std::vector<std::string> loadDocumentationArticle(const std::string& sFil
             sLine.erase(0, sLine.find("<contents>")+10);
 
             if (sLine.length())
-                vReturn.push_back(utf8parser(sLine));
+                vReturn.push_back(sLine);
 
             while (!fDocument.eof())
             {
@@ -194,12 +194,12 @@ static std::vector<std::string> loadDocumentationArticle(const std::string& sFil
                     sLine.erase(sLine.find("</contents>"));
 
                     if (sLine.length())
-                        vReturn.push_back(utf8parser(sLine));
+                        vReturn.push_back(sLine);
 
                     return vReturn;
                 }
 
-                vReturn.push_back(utf8parser(sLine));
+                vReturn.push_back(sLine);
             }
         }
     }

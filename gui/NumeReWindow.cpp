@@ -64,6 +64,7 @@
 #include "documentationbrowser.hpp"
 #include "graphviewer.hpp"
 #include "textsplashscreen.hpp"
+#include "stringconv.hpp"
 
 #include "compositions/viewerframe.hpp"
 #include "compositions/imagepanel.hpp"
@@ -125,7 +126,6 @@ std::string prepareStringsForDialog(const std::string& sString)
 }
 // Create the stack trace object here
 
-Language _guilang;
 FindReplaceDialog* g_findReplace;
 double g_pixelScale = 1.0;
 
@@ -1140,13 +1140,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_INSERT_IN_CONSOLE_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
-            std::string command;
+            wxString command;
             if (data->isCommand)
-                command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString() + " ";
+                command = (data->tooltip).substr(0, (data->tooltip).find(' ')) + " ";
             else if (data->isFunction)
-                command = (data->tooltip).substr(0, (data->tooltip).find('(')+1).ToStdString();
+                command = (data->tooltip).substr(0, (data->tooltip).find('(')+1);
             else if (data->isConstant)
-                command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
+                command = (data->tooltip).substr(0, (data->tooltip).find(' '));
             else if (data->isMethod)
             {
                 size_t dot = (data->tooltip).find('.');
@@ -2521,7 +2521,7 @@ void NumeReWindow::showListEditDialog(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::pass_command(const wxString& command, bool isEvent)
 {
-    m_terminal->pass_command(command.ToStdString(), isEvent);
+    m_terminal->pass_command(command, isEvent);
 }
 
 
@@ -3708,9 +3708,9 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
     {
         NumeReEditor* edit = m_book->getEditor(pageNr);
 
-        g_logger.info("Closing file '" + edit->GetFileNameAndPath().ToStdString() + "'.");
+        g_logger.info("Closing file '" + wxToUtf8(edit->GetFileNameAndPath()) + "'.");
         wxFileName currentFileName;
-        m_terminal->clearBreakpoints(edit->GetFileNameAndPath().ToStdString());
+        m_terminal->clearBreakpoints(edit->GetFileNameAndPath());
 
         currentFileName = edit->GetFileName();
         m_book->DeletePage (pageNr);
@@ -4030,7 +4030,7 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
         showConsole();
-        m_terminal->pass_command(path.ToStdString(), false);
+        m_terminal->pass_command(path, false);
     }
     else if (filename.GetExt() == "npkp")
         OnCreatePackage(filename.GetFullPath());
@@ -6125,8 +6125,8 @@ void NumeReWindow::prepareFunctionTree()
                                                         m_iconManager->GetIconIndex("WORKPLACE"), -1, rootData);
 
     wxTreeItemId currentNode;
-    std::vector<std::string> vDirList;
-    std::vector<std::string> vKeyList = tokenize(_guilang.get("GUI_TREE_CMD_KEYLIST"));
+    std::vector<wxString> vDirList;
+    std::vector<std::string> vKeyList = tokenize(_guilang.get("GUI_TREE_CMD_KEYLIST").ToStdString());
 
     // commands
     for (size_t i = 0; i < vKeyList.size(); i++)
@@ -6149,7 +6149,7 @@ void NumeReWindow::prepareFunctionTree()
     m_functionTree->Toggle(commandNode);
 
     // functions
-    vKeyList = tokenize(_guilang.get("GUI_TREE_FUNC_KEYLIST"));
+    vKeyList = tokenize(_guilang.get("GUI_TREE_FUNC_KEYLIST").ToStdString());
 
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
@@ -6171,7 +6171,7 @@ void NumeReWindow::prepareFunctionTree()
     m_functionTree->Toggle(functionNode);
 
     // methods
-    vKeyList = tokenize(_guilang.get("GUI_TREE_METHOD_KEYLIST"));
+    vKeyList = tokenize(_guilang.get("GUI_TREE_METHOD_KEYLIST").ToStdString());
 
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
@@ -6203,7 +6203,7 @@ void NumeReWindow::prepareFunctionTree()
     m_functionTree->Toggle(methodNode);
 
     // Constants
-    vKeyList = tokenize(_guilang.get("GUI_TREE_CONST_KEYLIST"));
+    vKeyList = tokenize(_guilang.get("GUI_TREE_CONST_KEYLIST").ToStdString());
 
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
@@ -6231,16 +6231,16 @@ void NumeReWindow::prepareFunctionTree()
 /// \brief This member function prepares the
 /// tooltip shown by the symbols tree.
 ///
-/// \param sTooltiptext const std::string&
-/// \return std::string
+/// \param sTooltiptext const wxString&
+/// \return wxString
 ///
 /////////////////////////////////////////////////
-std::string NumeReWindow::prepareTooltip(const std::string& sTooltiptext)
+wxString NumeReWindow::prepareTooltip(const wxString& sTooltiptext)
 {
     size_t nClosingParens = sTooltiptext.find(')');
-    std::string sTooltip = sTooltiptext;
+    wxString sTooltip = sTooltiptext;
 
-    if (sTooltiptext.front() == '.')
+    if (sTooltiptext.GetChar(0) == '.')
     {
         nClosingParens = sTooltip.find("  ");
         sTooltip.replace(nClosingParens, sTooltip.find_first_not_of(' ', nClosingParens)-nClosingParens, "  ->  ");
@@ -7275,7 +7275,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
     if (!sFileName.length())
         return;
 
-    std::string command = replacePathSeparator(sFileName);
+    wxString command = replacePathSeparator(sFileName);
     std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
     if (command.rfind(".nprc") != std::string::npos)
@@ -7289,7 +7289,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         {
             command.erase(0, vPaths[PROCPATH].length());
 
-            while (command.front() == '/')
+            while (command.GetChar(0) == '/')
                 command.erase(0, 1);
 
             while (command.find('/') != std::string::npos)
@@ -7310,7 +7310,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
             command.erase(0, vPaths[SCRIPTPATH].length());
 
-        while (command.front() == '/')
+        while (command.GetChar(0) == '/')
             command.erase(0, 1);
 
         // Define the command including the line to execute from
@@ -7346,7 +7346,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
             command = "<procpath>" + command.substr(vPaths[PROCPATH].length());
 
-        while (command.front() == '/')
+        while (command.GetChar(0) == '/')
             command.erase(0, 1);
 
         command = "window \"" + command + "\"";

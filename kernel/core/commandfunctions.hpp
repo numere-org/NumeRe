@@ -3209,7 +3209,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
     make_hline();
     NumeReKernel::printPreFmt("|-> Version: " + getVersion());
     NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + printBuildDate() + "\n");
-    NumeReKernel::print("Copyright (c) 2013-" + getBuildYear() + utf8ToAnsi(", Erik HÄNEL et al."));
+    NumeReKernel::print("Copyright (c) 2013-" + getBuildYear() + ", Erik HÄNEL et al.");
     NumeReKernel::printPreFmt("|   <dev@numere.org>\n" );
     NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
     make_hline(-80);

@@ -350,9 +350,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		bool isStyleType(StyleType _type, int nPos);
 
-		int countUmlauts(const std::string& sStr);
-		std::string realignLangString(std::string sLine, size_t& lastpos);
-		std::string addLinebreaks(const std::string& sLine, bool onlyDocumentation = false);
+		int countUmlauts(const wxString& sStr);
+		wxString realignLangString(wxString sLine, size_t& lastpos);
+		wxString addLinebreaks(const wxString& sLine, bool onlyDocumentation = false);
 
 		void markModified(int nLine);
 		void markSaved();

@@ -36,8 +36,6 @@
 
 #define DEFAULT_PRECISION 14
 
-extern Language _lang;
-
 namespace NumeRe
 {
     // This function determines the correct class to be used for the filename

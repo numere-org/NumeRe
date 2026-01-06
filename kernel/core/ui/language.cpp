@@ -25,6 +25,8 @@
 
 
 bool fileExists(const std::string&);
+Language _lang;
+
 
 /////////////////////////////////////////////////
 /// \brief Contructor of the language class.
@@ -110,9 +112,6 @@ std::map<std::string,std::string> Language::getLangFileContent(std::string sFile
             g_logger.error("Erroneous language string '" + sLine + "' has been found in '" + sFile + "'.");
             continue;
         }
-
-        // Convert UTF-8 encoded text to CP1252
-        sLine = utf8ToAnsi(sLine);
 
         // Replace included tab characters with
         // whitespaces

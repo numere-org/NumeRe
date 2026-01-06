@@ -32,13 +32,11 @@
 #include "wx.h"
 
 #include "../common/datastructures.h"
-#include "../kernel/core/ui/language.hpp"
+#include "guilang.hpp"
 #include "../kernel/core/utils/stringtools.hpp"
 
 #include "terminal/terminal.hpp"
 #include "graphviewer.hpp"
-
-extern Language _guilang;
 
 //-----------------------------------------------------------------------------
 class mglCanvasWX : public mglCanvasWnd

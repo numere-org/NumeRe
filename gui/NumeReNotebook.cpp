@@ -109,7 +109,7 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
     size_t pos = 0;
     std::string path = replacePathSeparator(text.ToStdString());
     std::string ext = path.substr(path.find_last_of("/.")+1);
-    std::string filetype = _guilang.get("COMMON_FILETYPE_" + toUpperCase(ext));
+    wxString filetype = _guilang.get("COMMON_FILETYPE_" + toUpperCase(ext));
 
     if (filetype == "COMMON_FILETYPE_" + toUpperCase(ext))
         filetype = _guilang.get("GUI_STATUSBAR_UNKNOWN", toUpperCase(ext));
