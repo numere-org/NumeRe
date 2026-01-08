@@ -21,6 +21,7 @@
 #include "../../kernel/core/datamanagement/container.hpp"
 #include "../NumeReWindow.h"
 #include "../../common/Options.h"
+#include "../stringconv.hpp"
 
 #define ID_TABLEEDIT_OK 10101
 #define ID_TABLEEDIT_CANCEL 10102
@@ -99,7 +100,7 @@ TablePanel::TablePanel(wxWindow* parent, wxFrame* topLevel, wxWindowID id, wxSta
 /////////////////////////////////////////////////
 void TablePanel::update(const NumeRe::TableMetaData& meta)
 {
-    m_commentField->SetMarkupText(meta.comment);
+    m_commentField->SetMarkupText(wxFromUtf8(meta.comment));
     m_sourceField->SetValue(meta.source);
     m_lastSaveText->SetLabel(_guilang.get("GUI_TABLEPANEL_LASTSAVE", toString(meta.lastSavedTime, GET_WITH_TEXT)));
 }
@@ -114,7 +115,7 @@ void TablePanel::update(const NumeRe::TableMetaData& meta)
 /////////////////////////////////////////////////
 std::string TablePanel::getComment() const
 {
-    return m_commentField->GetValue().ToStdString();
+    return wxToUtf8(m_commentField->GetValue());
 }
 
 

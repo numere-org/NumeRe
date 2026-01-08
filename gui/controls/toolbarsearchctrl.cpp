@@ -20,6 +20,7 @@
 #include "../NumeReWindow.h"
 #include "../terminal/terminal.hpp"
 #include "../editor/editor.h"
+#include "../stringconv.hpp"
 
 #include <wx/event.h>
 
@@ -35,7 +36,7 @@
 /////////////////////////////////////////////////
 bool ToolBarSearchCtrl::selectItem(const wxString& value)
 {
-    size_t record = searchDB.findRecord(value.ToStdString());
+    size_t record = searchDB.findRecord(wxToUtf8(value));
 
     if (record == std::string::npos)
         return false;
@@ -76,7 +77,7 @@ bool ToolBarSearchCtrl::selectItem(const wxString& value)
 /////////////////////////////////////////////////
 wxString ToolBarSearchCtrl::getDragDropText(const wxString& value)
 {
-    size_t record = searchDB.findRecord(value.ToStdString());
+    size_t record = searchDB.findRecord(wxToUtf8(value));
 
     if (record == std::string::npos)
         return "";
@@ -107,7 +108,7 @@ wxArrayString ToolBarSearchCtrl::getCandidates(const wxString& enteredText)
     wxArrayString candidates;
 
     // Find the matches in the database
-    std::map<double,std::vector<size_t>> matches = searchDB.findRecordsUsingRelevance(enteredText.ToStdString(), std::vector<double>({3.0, 2.0, 1.0}));
+    std::map<double,std::vector<size_t>> matches = searchDB.findRecordsUsingRelevance(wxToUtf8(enteredText), std::vector<double>({3.0, 2.0, 1.0}));
 
     if (!matches.size())
         return candidates;

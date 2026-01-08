@@ -1365,7 +1365,7 @@ mu::Value TableViewer::get(int row, int col)
     if (isGridNumeReTable)
         return *static_cast<mu::Value*>(GetTable()->GetValueAsCustom(row, col, "mu::Value"));
 
-    std::string cellValue = GetCellValue(row, col).ToStdString();
+    std::string cellValue = wxToUtf8(GetCellValue(row, col));
 
     if (cellValue.front() != '"')
     {
@@ -1379,7 +1379,7 @@ mu::Value TableViewer::get(int row, int col)
             return mu::Value(StrToTime(cellValue));
     }
 
-    return mu::Value(toInternalString(cellValue));;
+    return mu::Value(toInternalString(cellValue));
 }
 
 

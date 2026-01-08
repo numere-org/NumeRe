@@ -186,7 +186,7 @@ class GenericTerminal
         virtual void DrawText(int fg_color, int bg_color, int flags,
                               int x, int y, const wxString& sText) = 0;
         virtual void DrawCursor(int fg_color, int bg_color, int flags,
-                                int x, int y, wxChar c) = 0;
+                                int x, int y, wxUniChar c) = 0;
 
         virtual void Calltip(int x, int y, NumeRe::CallTip& _cTip) {}
         virtual void CalltipCancel() {}
@@ -203,7 +203,7 @@ class GenericTerminal
 
         virtual int IsSelected(int x, int y);
         virtual void Select(int x, int y, int select);
-        virtual wxChar GetChar(int x, int y);
+        virtual wxUniChar GetChar(int x, int y);
         wxString get_selected_text();
 };
 

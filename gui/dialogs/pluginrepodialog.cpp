@@ -816,7 +816,7 @@ void PackageRepoBrowser::OnUninstall(wxCommandEvent& event)
     if (item.IsOk())
     {
         wxString sName = m_listCtrl->GetItemText(item);
-        m_terminal->pass_command("uninstall \"" + sName.ToStdString() + "\"", false);
+        m_terminal->pass_command("uninstall \"" + sName + "\"", false);
         m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "");
         m_listCtrl->SetItemBackgroundColour(item, *wxWHITE);
         m_installButton->Enable();

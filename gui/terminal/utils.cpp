@@ -224,7 +224,7 @@ void GenericTerminal::handle_calltip(int x, int y)
         while (x >= 0)
         {
             if (((vColors[x] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && (sLine[x] == '(' || sLine[x] == '{'))
-                isInParens = getMatchingParenthesis(StringView(sLine.ToStdString(), x)) >= cursor_x-x;
+                isInParens = getMatchingParenthesis(StringView(sLine.ToAscii().data(), x)) >= cursor_x-x;
 
             // Functions and commands
             if (hasContextToolTip((vColors[x] >> 4) & 0xf, isInParens))
@@ -256,7 +256,7 @@ void GenericTerminal::handle_calltip(int x, int y)
     while (posEnd < vColors.size() && vColors[posEnd] == vColors[x])
         posEnd++;
 
-    std::string sSyntaxElement = sLine.substr(posStart, posEnd - posStart).ToStdString();
+    std::string sSyntaxElement = sLine.substr(posStart, posEnd - posStart).ToAscii().data();
     NumeRe::CallTip _cTip;
 
     // Determine the type of the color
@@ -325,7 +325,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
         while (posStart > 0 && vColors[posStart-1] == vColors[x-1] && isalnum(sLine[posStart-1]))
             posStart--;
 
-        varType = getVariableType(sLine.substr(posStart, x - posStart).ToStdString());
+        varType = getVariableType(sLine.substr(posStart, x - posStart).ToAscii().data());
         isVect = varType.find('{') != std::string::npos || varType == "cluster";
 
         if (varType.front() == '{')
@@ -337,7 +337,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
     {
         // Examine method return values
         size_t p = sLine.rfind('.', x-1);
-        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1).ToStdString(), get_method_root_type(p, y).first);
+        std::string sReturnValue = m_tipProvider.getMethodReturnValue(sLine.substr(p+1, x-p-1).ToAscii().data(), get_method_root_type(p, y).first);
 
         if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
         {
@@ -425,7 +425,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
                 while (posStart > 0 && vColors[posStart-1] == vColors[x0-1])
                     posStart--;
 
-                std::string sSymbolName = sLine.substr(posStart, x0 - posStart).ToStdString();
+                std::string sSymbolName = sLine.substr(posStart, x0 - posStart).ToAscii().data();
                 std::string sReturnValue;
 
                 // Determine the type of the color

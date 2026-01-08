@@ -223,10 +223,10 @@ GenericTerminal::Select(int x, int y, int select)
 ///
 /// \param x int
 /// \param y int
-/// \return wxChar
+/// \return wxUniChar
 ///
 /////////////////////////////////////////////////
-wxChar GenericTerminal::GetChar(int x, int y)
+wxUniChar GenericTerminal::GetChar(int x, int y)
 {
 	if (x >= 0 && x < Width() && y >= 0 && y < Height())
 		return tm.GetCharAdjusted(y, x);

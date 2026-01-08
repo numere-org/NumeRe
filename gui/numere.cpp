@@ -177,7 +177,7 @@ bool NumeReApp::OnInit()
         splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 0, nullptr,
                                     wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
     else
-        g_logger.error("The splash at '" + splashPath.ToStdString() + "' could not be found or loaded.");
+        g_logger.error("The splash at '" + wxToUtf8(splashPath) + "' could not be found or loaded.");
 
     g_findReplace = nullptr;
 

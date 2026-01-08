@@ -78,11 +78,11 @@ void TextManager::printOutput(const wxString& sLine)
     // Copy the line and determine, whether the current line
     // contains the error signature (character #15)
     wxString _sLine = sLine;
-    bool isErrorLine = _sLine.find((wxChar)15) != std::string::npos;
+    bool isErrorLine = _sLine.find((wxUniChar)15) != std::string::npos;
 
     // Remove the error signature
-    while (_sLine.find((wxChar)15) != std::string::npos)
-        _sLine.erase(_sLine.find((wxChar)15), 1);
+    while (_sLine.find((wxUniChar)15) != std::string::npos)
+        _sLine.erase(_sLine.find((wxUniChar)15), 1);
 
     // Append the line to the current line
     m_managedText.back() += CharacterVector(_sLine, KERNEL_TEXT);
@@ -335,9 +335,9 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
     // correspondingly. Otherwise style it with the usual
     // lexer function
     if (isErrorLine)
-        sColors = syntax->highlightError(m_managedText.back().toString().ToStdString());
+        sColors = syntax->highlightError(m_managedText.back().toString().ToAscii().data());
     else
-        sColors = syntax->highlightLine(m_managedText.back().toString().ToStdString());
+        sColors = syntax->highlightLine(m_managedText.back().toString().ToAscii().data());
 
     // Convert the string characters to the correct color codes
     for (size_t i = 0; i < sColors.length(); i++)
@@ -1305,11 +1305,11 @@ wxString TextManager::GetWordStartAt(int y, int x) const
 ///  @param  y    int  The line within the viewport that the character is on
 ///  @param  x    int  The character position within that line
 ///
-///  @return wxChar The character at that position
+///  @return wxUniChar The character at that position
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-wxChar TextManager::GetCharAdjusted(int y, int x) const
+wxUniChar TextManager::GetCharAdjusted(int y, int x) const
 {
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
     return GetCharLogical(cursor);
@@ -1320,10 +1320,10 @@ wxChar TextManager::GetCharAdjusted(int y, int x) const
 /// \brief Returns the character at the logical position
 ///
 /// \param cursor const LogicalCursor&
-/// \return wxChar
+/// \return wxUniChar
 ///
 /////////////////////////////////////////////////
-wxChar TextManager::GetCharLogical(const LogicalCursor& cursor) const
+wxUniChar TextManager::GetCharLogical(const LogicalCursor& cursor) const
 {
     if (!cursor)
         return ' ';

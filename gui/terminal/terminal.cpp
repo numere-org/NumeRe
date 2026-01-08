@@ -1682,7 +1682,7 @@ void NumeReTerminal::insertRawText(wxString sText)
     // Replace line comments with block comments, where necessary
     for (size_t i = 0; i < sText.length(); i++)
     {
-        if (isQuotationMark(sText.ToStdString(), i))
+        if (isQuotationMark(sText.ToAscii().data(), i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -1810,8 +1810,8 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 
 	// Draw the actual text
 	m_curDC->DrawText(sText, x, y);
-	if (flags & BOLD && m_boldStyle == OVERSTRIKE)
-		m_curDC->DrawText(sText, x + 1, y);
+	/*if (flags & BOLD && m_boldStyle == OVERSTRIKE)
+		m_curDC->DrawText(sText, x + 1, y);*/
 }
 
 
@@ -1824,14 +1824,14 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 ///  @param  flags    int            Modifier flags
 ///  @param  x        int            The x position of the cursor, in characters
 ///  @param  y        int            The y position of the cursor, in characters
-///  @param  c        wxChar         The character the cursor is over
+///  @param  c        wxUniChar         The character the cursor is over
 ///
 ///  @return void
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxChar c)
+NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxUniChar c)
 {
     // Do nothing, if the terminal is scrolled up
 	if (GenericTerminal::IsScrolledUp())
@@ -1909,14 +1909,14 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
 ///  @param  flags    int            Modifiers for drawing the cursor
 ///  @param  x        int            The x position in character cells
 ///  @param  y        int            The y position in character cells
-///  @param  c        wxChar         The character that underlies the cursor
+///  @param  c        wxUniChar         The character that underlies the cursor
 ///
 ///  @return void
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-NumeReTerminal::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxChar c)
+NumeReTerminal::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxUniChar c)
 {
     // Set cursor-related member variables
 	m_curX = x;

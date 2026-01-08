@@ -334,7 +334,7 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
             {
                 // Restore the right-clicked revision. Display
                 // a message box to confirm the overwrite
-                int ret = wxMessageBox(_guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE", revID.ToStdString()), _guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE_HEAD"), wxOK | wxCANCEL | wxCENTER | wxICON_QUESTION, this);
+                int ret = wxMessageBox(_guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE", revID), _guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE_HEAD"), wxOK | wxCANCEL | wxCENTER | wxICON_QUESTION, this);
 
                 if (ret == wxOK)
                 {

@@ -74,7 +74,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 
 		TerminalCallTip* m_callTip;
 
-		wxChar m_curChar;
+		wxUniChar m_curChar;
 
 		bool
 		m_selecting,
@@ -138,7 +138,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void scrollToInput();
 		void MarkSelection(bool bRectangular = false);
 		void DoDrawCursor(int fg_color, int bg_color, int flags,
-						  int x, int y, wxChar c);
+						  int x, int y, wxUniChar c);
 
         // Private event handler functions
 		void OnChar(wxKeyEvent& event);
@@ -264,7 +264,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 
 		// Text printing functions
 		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const wxString& sText) override;
-		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxChar c) override;
+		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxUniChar c) override;
 
 		virtual void Calltip(int x, int y, NumeRe::CallTip& _cTip) override;
         virtual void CalltipCancel() override;

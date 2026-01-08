@@ -1165,7 +1165,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_HELP_ON_ITEM:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
-            std::string command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
+            std::string command = wxToUtf8((data->tooltip).substr(0, (data->tooltip).find(' ')));
             ShowHelp(command);
             break;
         }
@@ -3108,7 +3108,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     }
     else if (_filetype == FILE_DIFF)
     {
-        g_logger.info("Creating new editor for '" + defaultfilename.ToStdString() + "'");
+        g_logger.info("Creating new editor for '" + wxToUtf8(defaultfilename) + "'");
 
         if (m_book->isDefaultPage(m_book->GetSelection()))
         {
@@ -3764,8 +3764,8 @@ bool NumeReWindow::CloseAllFiles()
 
         if (edit->GetFileNameAndPath().length())
         {
-            g_logger.info("Adding file '" + edit->GetFileNameAndPath().ToStdString() + "' to the session backup.");
-            file->SetText(edit->GetFileNameAndPath().ToStdString().c_str());
+            g_logger.info("Adding file '" + wxToUtf8(edit->GetFileNameAndPath()) + "' to the session backup.");
+            file->SetText(wxToUtf8(edit->GetFileNameAndPath()).c_str());
         }
         else
             file->SetText("<NEWFILE>");
@@ -3912,7 +3912,7 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
         //saveMessage += fileName;
 
         //saveMessage << " has unsaved changes. ";
-        saveMessage = _guilang.get("GUI_UNSAVEDFILE", fileName.ToStdString());
+        saveMessage = _guilang.get("GUI_UNSAVEDFILE", fileName);
         /*
         if(closingFile)
         {
@@ -4026,7 +4026,7 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 /////////////////////////////////////////////////
 void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
-    if (filename.GetExt() != "txt"&& NumeRe::canLoadFile(filename.GetFullPath().ToStdString()))
+    if (filename.GetExt() != "txt" && NumeRe::canLoadFile(filename.GetFullPath().ToStdString()))
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
         showConsole();
@@ -4132,7 +4132,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, size_t nLine, int nOpenF
         }
         else
         {
-            g_logger.info("Loading file '" + fnames[n].ToStdString() + "'.");
+            g_logger.info("Loading file '" + wxToUtf8(fnames[n]) + "'.");
             FileFilterType _fileType;
 
             if (fnames[n].rfind(".nscr") != std::string::npos)
@@ -4551,7 +4551,7 @@ bool NumeReWindow::SaveTab(int tab)
     sPath.erase(sPath.rfind('/'));
     FileSystem _fSys;
     _fSys.setPath(sPath, true, getProgramFolder().ToStdString());
-    g_logger.info("Saving " + filename.ToStdString() + " ...");
+    g_logger.info("Saving " + wxToUtf8(filename) + " ...");
 
     if (!edit->SaveFile(filename))
     {
@@ -4565,7 +4565,7 @@ bool NumeReWindow::SaveTab(int tab)
 
     m_book->SetTabText(tab, filename);
     m_book->Refresh();
-    g_logger.info(filename.ToStdString() + " was saved successfully.");
+    g_logger.info(wxToUtf8(filename) + " was saved successfully.");
 
     return true;
 }
@@ -4871,9 +4871,9 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             //
             // Mark the procedure library as to be
             // refreshed
-            if (modifiedFiles[i].second.ToStdString().ends_with(".nprc")
-                || modifiedFiles[i].second.ToStdString().ends_with(".nscr")
-                || modifiedFiles[i].second.ToStdString().ends_with(".nlyt"))
+            if (modifiedFiles[i].second.EndsWith(".nprc")
+                || modifiedFiles[i].second.EndsWith(".nscr")
+                || modifiedFiles[i].second.EndsWith(".nlyt"))
                 refreshProcedureLibrary = true;
 
             // Ignore files, which have been saved by NumeRe
@@ -4884,12 +4884,12 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             if (iter != m_filesLastSaveTime.end()
                 && (iter->second == 0 || time(0) - iter->second < 5))
             {
-                g_logger.info("Ignored '" + modifiedFiles[i].second.ToStdString()
+                g_logger.info("Ignored '" + wxToUtf8(modifiedFiles[i].second)
                               + "' due to last modification time difference: " + toString((int)(time(0) - iter->second)));
                 continue;
             }
             else if (iter != m_filesLastSaveTime.end())
-                g_logger.info("Reloading '" + modifiedFiles[i].second.ToStdString()
+                g_logger.info("Reloading '" + wxToUtf8(modifiedFiles[i].second)
                               + "' due to last modification time difference: " + toString((int)(time(0) - iter->second)));
 
             // Ignore also files, whose modification time differs
@@ -4916,7 +4916,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             if (manager.hasRevisions(modifiedFiles[i].second) && m_options->GetKeepBackupFile())
             {
                 std::unique_ptr<FileRevisions> revisions(manager.getRevisions(modifiedFiles[i].second));
-                g_logger.info("Adding external revision to '" + modifiedFiles[i].second.ToStdString() + "'.");
+                g_logger.info("Adding external revision to '" + wxToUtf8(modifiedFiles[i].second) + "'.");
 
                 if (revisions)
                     revisions->addExternalRevision(modifiedFiles[i].second);
@@ -6376,7 +6376,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         if (data->isCommand)
         {
             popupMenu.AppendSeparator();
-            popupMenu.Append(ID_MENU_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", m_functionTree->GetItemText(clickedItem).ToStdString()));
+            popupMenu.Append(ID_MENU_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", m_functionTree->GetItemText(clickedItem)));
         }
 
         wxPoint p = event.GetPoint();
@@ -6738,7 +6738,7 @@ wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 /////////////////////////////////////////////////
 void NumeReWindow::LoadFilesToTree(wxString fromPath, wxString fileMask, wxTreeItemId treeid)
 {
-    g_logger.info("Loading files from '" + fromPath.ToStdString() + "' into file tree.");
+    g_logger.info("Loading files from '" + wxToUtf8(fromPath) + "' into file tree.");
     wxDir currentDir(fromPath);
     DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileMask);
     currentDir.Traverse(_traverser);
@@ -6774,7 +6774,7 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
 
         if (pos < 0)
         {
-            wxMessageBox(_guilang.get("GUI_SEARCH_END", findString.ToStdString()),
+            wxMessageBox(_guilang.get("GUI_SEARCH_END", findString),
                 _guilang.get("GUI_SEARCH_END_HEAD"), wxOK | wxICON_EXCLAMATION, this);
         }
     }
@@ -6803,7 +6803,7 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
         int count = ReplaceAllStrings(findString, replaceString, flags);
 
         g_findReplace->toggleSkipFocus();
-        wxMessageBox(_guilang.get("GUI_REPLACE_END", toString(count), findString.ToStdString(), replaceString.ToStdString()), _guilang.get("GUI_REPLACE_END_HEAD"), wxOK, this);
+        wxMessageBox(_guilang.get("GUI_REPLACE_END", toString(count), findString, replaceString), _guilang.get("GUI_REPLACE_END_HEAD"), wxOK, this);
         g_findReplace->toggleSkipFocus();
     }
     else if (type == wxEVT_COMMAND_FIND_CLOSE)
@@ -7032,7 +7032,7 @@ void NumeReWindow::reloadFileIfOpen(const wxString& fname, bool force)
         if (edit && edit->GetFileNameAndPath() == fname)
         {
             if (!fname.EndsWith("numere.log"))
-                g_logger.info("Reloading '" + fname.ToStdString() + "' to editor.");
+                g_logger.info("Reloading '" + wxToUtf8(fname) + "' to editor.");
 
             wxString fileContents;
             wxString fileNameNoPath;
@@ -7048,7 +7048,7 @@ void NumeReWindow::reloadFileIfOpen(const wxString& fname, bool force)
             if (edit->IsModified() && !force)
             {
                 m_book->SetSelection(j);
-                int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", fname.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
+                int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", fname), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
 
                 if (answer == wxYES)
                 {
@@ -7374,7 +7374,7 @@ void NumeReWindow::OnCalculateDependencies()
         return;
 
     if (m_book->getCurrentEditor()->getFileType() != FILE_NPRC
-        && !m_book->getCurrentEditor()->GetFilenameString().ToStdString().ends_with(".nlyt"))
+        && !m_book->getCurrentEditor()->GetFilenameString().EndsWith(".nlyt"))
         return;
 
     ProcedureLibrary& procLib = m_terminal->getKernel().getProcedureLibrary();
@@ -7383,7 +7383,7 @@ void NumeReWindow::OnCalculateDependencies()
     {
         DependencyDialog dlg(this,
                              wxID_ANY,
-                             _guilang.get("GUI_DEPDLG_HEAD", m_book->getCurrentEditor()->GetFilenameString().ToStdString()),
+                             _guilang.get("GUI_DEPDLG_HEAD", m_book->getCurrentEditor()->GetFilenameString()),
                              m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString(), procLib);
         dlg.ShowModal();
     }
@@ -7482,7 +7482,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             }
 
             edit->AddText("\treturn;\r\n<endinstall>\r\n");
-            edit->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
+            edit->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier) + "\"\r\n");
             edit->UpdateSyntaxHighlighting(true);
             edit->ApplyAutoIndentation(0, edit->GetNumberOfLines());
 
@@ -7493,12 +7493,12 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             // Save the file directly
             edit->SaveFileLocal();
 
-            std::string sPackageName = dlg.getPackageName().ToStdString();
+            wxString sPackageName = dlg.getPackageName();
 
             if (wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),
                                       _guilang.get("GUI_PKGDLG_UPDATEINSTALLED_HEAD"), wxYES_NO | wxICON_QUESTION, this))
             {
-                std::string sPackage = installinfo.ToStdString();
+                std::string sPackage = wxToUtf8(installinfo);
                 replaceAll(sPackage, "\r\n", " ");
                 replaceAll(sPackage, "\t", " ");
                 replaceAll(sPackage, "<info>", "");

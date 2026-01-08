@@ -210,7 +210,7 @@ struct RenderedLine
 /////////////////////////////////////////////////
 struct Character
 {
-    wxChar m_char;
+    wxUniChar m_char;
     int m_style;
 
     enum
@@ -223,14 +223,14 @@ struct Character
     };
 
     Character() : m_char(0), m_style(0) {}
-    Character(wxChar c) : m_char(c), m_style(0) {}
+    Character(wxUniChar c) : m_char(c), m_style(0) {}
     Character(const Character& c) : m_char(c.m_char), m_style(c.m_style) {}
     Character(Character&& c)
     {
         m_char = std::move(c.m_char);
         m_style = std::move(c.m_style);
     }
-    Character(wxChar c, unsigned char flags) : m_char(c), m_style(flags << 12) {}
+    Character(wxUniChar c, unsigned char flags) : m_char(c), m_style(flags << 12) {}
 
     Character& operator=(const Character& c)
     {
@@ -246,7 +246,7 @@ struct Character
         return *this;
     }
 
-    Character& operator=(wxChar&& c)
+    Character& operator=(wxUniChar&& c)
     {
         m_char = std::move(c);
         return *this;
@@ -325,7 +325,7 @@ class CharacterVector : public std::vector<Character>
         void append(const wxString& sText)
         {
             for (size_t i = 0; i < sText.length(); i++)
-                push_back(sText[i].GetValue());
+                push_back(sText[i]);
         }
 
     public:
@@ -421,7 +421,7 @@ class CharacterVector : public std::vector<Character>
             sRet.reserve(size());
 
             for (size_t i = 0; i < size(); i++)
-                sRet.append(1u, operator[](i).m_char);
+                sRet.append(1u, (wxUniChar)operator[](i).m_char);
 
             return sRet;
         }
@@ -467,7 +467,7 @@ class CharacterVector : public std::vector<Character>
             return std::vector<Character>::insert(begin() + pos, vect.begin(), vect.end());
         }
 
-        void append(size_t n, wxChar c)
+        void append(size_t n, wxUniChar c)
         {
             append(wxString(n, c));
         }
@@ -522,8 +522,8 @@ class TextManager
 		wxString GetTextRange(int y, int x0, int x1) const;
 		wxString GetWordAt(int y, int x) const;
 		wxString GetWordStartAt(int y, int x) const;
-		wxChar GetCharAdjusted(int y, int x) const;
-		wxChar GetCharLogical(const LogicalCursor& cursor) const;
+		wxUniChar GetCharAdjusted(int y, int x) const;
+		wxUniChar GetCharLogical(const LogicalCursor& cursor) const;
 		bool IsUserText(int y, int x) const;
 		bool IsEditable(int y, int x) const;
 		bool IsEditableLogical(const LogicalCursor& logCursor) const;

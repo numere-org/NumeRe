@@ -392,7 +392,7 @@ void EditorNotebook::OnTabRightClicked(wxAuiNotebookEvent& event)
     if (pageNum < 0 || isDefaultPage(pageNum))
 		return;
 
-    g_logger.debug("Clicked on page " + toString(pageNum) + " with title " + GetPageText(pageNum).ToStdString());
+    g_logger.debug("Clicked on page " + toString(pageNum) + " with title " + wxToUtf8(GetPageText(pageNum)));
 
     VersionControlSystemManager manager(m_top_parent);
     wxString filename = getEditor(pageNum)->GetFileNameAndPath();

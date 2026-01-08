@@ -19,6 +19,7 @@
 #include "recentfilemanager.hpp"
 #include "../externals/tinyxml2/tinyxml2.h"
 #include "../kernel/core/io/logger.hpp"
+#include "../gui/stringconv.hpp"
 #include <fstream>
 
 
@@ -115,7 +116,7 @@ void RecentFilesManager::renameFile(const wxString& oldName, const wxString& new
 
     if (iter != m_fileList.end())
     {
-        g_logger.info("Renaming '" + oldName.ToStdString() + "' to '" + newName.ToStdString() + "' in the list of recent files.");
+        g_logger.info("Renaming '" + wxToUtf8(oldName) + "' to '" + wxToUtf8(newName) + "' in the list of recent files.");
         iter->name = newName;
         iter->name.Replace("\\", "/");
     }
@@ -138,7 +139,7 @@ void RecentFilesManager::deleteFile(const wxString& fileName)
 
     if (iter != m_fileList.end())
     {
-        g_logger.info("Removing '" + fileName.ToStdString() + "' from the list of recent files.");
+        g_logger.info("Removing '" + wxToUtf8(fileName) + "' from the list of recent files.");
         m_fileList.erase(iter);
     }
 }
@@ -199,7 +200,7 @@ void RecentFilesManager::exportList(const wxString& fileName)
     {
         tinyxml2::XMLElement* file = doc.NewElement("file");
 
-        file->SetText(m_fileList[i].name.ToStdString().c_str());
+        file->SetText(wxToUtf8(m_fileList[i].name).c_str());
         file->SetAttribute("opened", (int64_t)m_fileList[i].opened);
 
         files->InsertEndChild(file);

@@ -440,15 +440,13 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         }
     }
     else if (wxFileExists(filename))
-    {
         wxCopyFile(filename, filename + ".backup", true);
-    }
 
     bool bWriteSuccess = false;
 
     // Write the file depending on its type
-    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || filename.find("numere.history") != string::npos)
-        bWriteSuccess = SaveNumeReFile(filename);
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || filename.find("numere.history") != std::string::npos)
+        bWriteSuccess = SaveGeneralFile(filename);
     else
         bWriteSuccess = SaveGeneralFile(filename);
 
@@ -466,7 +464,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != (int64_t)GetText().length())
+    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != (int64_t)GetLength())
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -476,7 +474,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && GetTextLength())
+    else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && filecheck.Length() != (int64_t)GetLength())
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -529,9 +527,9 @@ bool NumeReEditor::SaveNumeReFile(const wxString& filename)
         return false;
 
     // write the contents of the file linewise
-    for (int i = 0; i < this->GetLineCount(); i++)
+    for (int i = 0; i < GetLineCount(); i++)
     {
-        file << this->GetLine(i).ToStdString();
+        file << wxToUtf8(GetLine(i));
     }
 
     // flush the files content explicitly
@@ -552,24 +550,21 @@ bool NumeReEditor::SaveNumeReFile(const wxString& filename)
 bool NumeReEditor::SaveGeneralFile(const wxString& filename)
 {
     // Create file and check, if it has been opened successfully
-    wxFile file (filename, wxFile::write);
+    wxFile file(filename, wxFile::write);
 
     if (!file.IsOpened())
-    {
         return false;
-    }
 
     // Get text and write it to the file
     wxString buf = GetText();
-    bool okay = file.Write(buf.ToStdString().c_str(), buf.ToStdString().length());
+    bool okay = file.Write(buf, wxConvUTF8);
 
     file.Close();
 
     // Notify caller that there was an error during writing
     if (!okay)
-    {
         return false;
-    }
+
     return true;
 }
 
