@@ -22,7 +22,7 @@
 #include <wx/txtstrm.h>
 #include <wx/wfstream.h>
 #include <memory>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 #include <wx/encconv.h>
 
@@ -371,7 +371,7 @@ wxString FileRevisions::createMerge(const wxString& diffFile)
 /////////////////////////////////////////////////
 wxString FileRevisions::readExternalFile(const wxString& filePath)
 {
-    std::ifstream file_in;
+    boost::nowide::ifstream file_in;
     std::string sFileContents;
     std::string sLine;
 
@@ -462,7 +462,7 @@ size_t FileRevisions::createNewTag(const wxString& revString, const wxString& co
     wxTempFileOutputStream out(m_revisionPath.GetFullPath());
 
     wxZipInputStream inzip(*in);
-    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL, wxConvUTF8);
     wxTextOutputStream txt(outzip);
 
     std::unique_ptr<wxZipEntry> entry;

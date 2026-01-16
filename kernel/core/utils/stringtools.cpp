@@ -2409,7 +2409,7 @@ std::string encode_base_n(const std::string& sToEncode, bool isFile, int n)
 
     if (isFile)
     {
-        std::ifstream file(sToEncode);
+        boost::nowide::ifstream file(sToEncode);
 
 #ifndef PARSERSTANDALONE
         if (!file.good())

@@ -22,7 +22,7 @@
 #include "../../kernel.hpp"
 
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <regex>
 
 
@@ -328,7 +328,7 @@ namespace NumeRe
         else
         {
             CallTip _cTip;
-            std::ifstream procedure_in;
+            boost::nowide::ifstream procedure_in;
             std::string sBuffer;
             bool bBlockComment = false;
             std::string sDocumentation;

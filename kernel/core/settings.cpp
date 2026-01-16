@@ -20,7 +20,7 @@
 #include "settings.hpp"
 #include "../kernel.hpp"
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 int StrToInt(const std::string&);
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing);
@@ -208,7 +208,7 @@ Settings::Settings(const Settings& _settings) : Settings()
 /////////////////////////////////////////////////
 void Settings::save(const std::string& _sWhere, bool bMkBackUp)
 {
-    std::fstream Settings_ini;
+    boost::nowide::fstream Settings_ini;
     std::string sExecutablePath = _sWhere + "\\" + sSettings_ini;
 
     if (bMkBackUp)
@@ -628,7 +628,7 @@ void Settings::prepareFilePaths(const std::string& _sExePath)
 /////////////////////////////////////////////////
 void Settings::load(const std::string& _sWhere)
 {
-    std::ifstream Settings_ini;
+    boost::nowide::ifstream Settings_ini;
 	std::string s;
 
     std::string sExecutablePath = _sWhere + "\\" + sSettings_ini;

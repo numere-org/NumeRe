@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #include "database.hpp"
 #include "../ui/error.hpp"
@@ -40,7 +40,7 @@ namespace NumeRe
         std::vector<std::string> vDBEntries;
         std::string sLine;
         std::string sFile = ValidFileName(m_dataBaseFile, ".ndb");
-        std::ifstream fDB;
+        boost::nowide::ifstream fDB;
 
         // open the ifstream
         fDB.open(sFile);

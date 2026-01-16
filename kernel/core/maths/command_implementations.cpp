@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <memory>
 #include <regex>
+#include <boost/nowide/fstream.hpp>
 
 #include "command_implementations.hpp"
 #include "parser_functions.hpp"
@@ -4635,7 +4636,7 @@ void urlExecute(CommandLineParser& cmdParser)
                 sFileName = cmdParser.getFileParameterValueForSaving(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
 
                 // Open the file binary and clean it
-                std::ofstream file(sFileName, std::ios_base::trunc | std::ios_base::binary);
+                boost::nowide::ofstream file(sFileName, std::ios_base::trunc | std::ios_base::binary);
 
                 // Stream the response to the file
                 if (file.good())

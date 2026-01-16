@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <filesystem>
+#include <boost/nowide/fstream.hpp>
 
 #include "fileops.hpp"
 #include "../utils/tools.hpp"
@@ -309,8 +310,8 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
 bool generateTemplate(const std::string& sFile, const std::string& sTempl, const std::vector<std::string>& vTokens, Settings& _option)
 {
-    std::ifstream iTempl_in;
-    std::ofstream oFile_out;
+    boost::nowide::ifstream iTempl_in;
+    boost::nowide::ofstream oFile_out;
     std::string sLine;
     std::string sToken;
 

@@ -20,7 +20,7 @@
 #define NUMERE_FILE_HPP
 
 #include <string>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <cmath>
 #include <vector>
 #include <utility>
@@ -68,7 +68,7 @@ namespace NumeRe
     class GenericFile : public FileSystem
     {
         protected:
-            std::fstream fFileStream;
+            boost::nowide::fstream fFileStream;
             std::string sFileExtension;
             std::string sFileName;
             std::string sTableName;

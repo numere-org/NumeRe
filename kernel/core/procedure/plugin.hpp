@@ -27,7 +27,7 @@
 #define PLUGIN_HPP
 
 #include <iostream>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <string>
 
 #include "../io/filesystem.hpp"
@@ -114,7 +114,7 @@ class Package
 class PackageManager : public FileSystem
 {
     private:
-        std::fstream fPlugins;
+        boost::nowide::fstream fPlugins;
         std::vector<Package> vPackageInfo;
         std::string sPluginDefinitionFile;
 

@@ -663,7 +663,7 @@ void DependencyDialog::CreateDotFile()
         return;
 
     // Open the file stream
-    ofstream file(saveDialog.GetPath().ToStdString().c_str());
+    boost::nowide::ofstream file(wxToUtf8(saveDialog.GetPath()));
 
     // If the stream could be opened, stream the prepared contents
     // of the DOT file to the opened file

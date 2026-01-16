@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #include "doc_helper.hpp"
 #include "docfile.hpp"
@@ -31,11 +31,11 @@ using namespace std;
 /// article file.
 ///
 /// \param sLine std::string&
-/// \param fDocument std::ifstream&
+/// \param fDocument boost::nowide::ifstream&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void stripComments(std::string& sLine, std::ifstream& fDocument)
+static void stripComments(std::string& sLine, boost::nowide::ifstream& fDocument)
 {
     while (sLine.find("<!--") != std::string::npos)
     {
@@ -71,11 +71,11 @@ static void stripComments(std::string& sLine, std::ifstream& fDocument)
 ///
 /// \param sLine std::string&
 /// \param sArticleID const std::string&
-/// \param fDocument std::ifstream&
+/// \param fDocument boost::nowide::ifstream&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void findArticleById(std::string& sLine, const std::string& sArticleID, std::ifstream& fDocument)
+static void findArticleById(std::string& sLine, const std::string& sArticleID, boost::nowide::ifstream& fDocument)
 {
     while (sLine.find("<article ") != std::string::npos && !fDocument.eof())
     {
@@ -120,7 +120,7 @@ static void findArticleById(std::string& sLine, const std::string& sArticleID, s
 /////////////////////////////////////////////////
 static std::vector<std::string> loadDocumentationArticle(const std::string& sFileName, const std::string& sArticleID)
 {
-    std::ifstream fDocument;
+    boost::nowide::ifstream fDocument;
     fDocument.open(sFileName.c_str(), std::ios_base::in);
 
     if (fDocument.fail())

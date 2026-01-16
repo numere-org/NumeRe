@@ -48,7 +48,7 @@
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
 #include <wx/artprov.h>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <wx/clipbrd.h>
 #include <array>
 
@@ -120,9 +120,9 @@
 std::string removeMaskedStrings(const std::string& sString);
 std::string removeQuotationMarks(const std::string&);
 
-std::string prepareStringsForDialog(const std::string& sString)
+wxString prepareStringsForDialog(const std::string& sString)
 {
-    return removeMaskedStrings(removeQuotationMarks(sString));
+    return wxFromUtf8(removeMaskedStrings(removeQuotationMarks(sString)));
 }
 // Create the stack trace object here
 
@@ -744,7 +744,7 @@ void NumeReWindow::prepareSession()
         // the session recovery
         m_loadingFilesDuringStartup = true;
         tinyxml2::XMLDocument session;
-        std::ifstream if_session;
+        boost::nowide::ifstream if_session;
         std::vector<std::string> vSessionFile;
         if_session.open((getProgramFolder().ToStdString()+"\\numere.session").c_str());
 
@@ -2221,9 +2221,7 @@ void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDis
 void NumeReWindow::showWindow(NumeRe::Window& window)
 {
     if (window.getType() == NumeRe::WINDOW_GRAPH)
-    {
         showGraph(window);
-    }
     else if (window.getType() == NumeRe::WINDOW_MODAL)
     {
         if (window.getWindowSettings().nControls & NumeRe::CTRL_FILEDIALOG)
@@ -2281,17 +2279,17 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
 void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     std::string sExpression = window.getWindowSettings().sExpression;
-    std::string sDir = prepareStringsForDialog(getNextArgument(sExpression, true));
-    std::string sDefFile = prepareStringsForDialog(getNextArgument(sExpression, true));
-    std::string sWildCard = prepareStringsForDialog(getNextArgument(sExpression, true));
-    wxFileDialog dialog(this, window.getWindowSettings().sTitle, sDir, sDefFile, sWildCard);
+    wxString sDir = prepareStringsForDialog(getNextArgument(sExpression, true));
+    wxString sDefFile = prepareStringsForDialog(getNextArgument(sExpression, true));
+    wxString sWildCard = prepareStringsForDialog(getNextArgument(sExpression, true));
+    wxFileDialog dialog(this, wxFromUtf8(window.getWindowSettings().sTitle), sDir, sDefFile, sWildCard);
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
-        window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
+        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(dialog.GetPath()));
 }
 
 
@@ -2306,14 +2304,14 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
 void NumeReWindow::showDirDialog(NumeRe::Window& window)
 {
     std::string sExpression = window.getWindowSettings().sExpression;
-    wxDirDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
+    wxDirDialog dialog(this, wxFromUtf8(window.getWindowSettings().sTitle), prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
-        window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
+        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(dialog.GetPath()));
 }
 
 
@@ -2328,7 +2326,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     std::string sExpression = window.getWindowSettings().sExpression;
-    wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
+    wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
@@ -2338,7 +2336,7 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
     {
         wxString value = dialog.GetValue();
         value.Replace("\"", "\\\"");
-        window.updateWindowInformation(NumeRe::STATUS_OK, value.ToStdString());
+        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(value));
     }
 }
 
@@ -2377,7 +2375,7 @@ void NumeReWindow::showMessageBox(NumeRe::Window& window)
     if (nControls & NumeRe::CTRL_ICONERROR)
         style |= wxICON_ERROR;
 
-    int ret = wxMessageBox(prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, style, this);
+    int ret = wxMessageBox(prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), style, this);
 
     if (ret == wxOK)
         window.updateWindowInformation(NumeRe::STATUS_OK, "ok");
@@ -2408,7 +2406,7 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
         choices.Add(prepareStringsForDialog(getNextArgument(sExpression, true)));
     }
 
-    wxSingleChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
+    wxSingleChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), choices);
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
@@ -2417,7 +2415,7 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
     else
     {
         choices[dialog.GetSelection()].Replace("\"", "\\\"");
-        window.updateWindowInformation(NumeRe::STATUS_OK, choices[dialog.GetSelection()].ToStdString());
+        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(choices[dialog.GetSelection()]));
     }
 }
 
@@ -2440,7 +2438,7 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
         choices.Add(prepareStringsForDialog(getNextArgument(sExpression, true)));
     }
 
-    wxMultiChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
+    wxMultiChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), choices);
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
@@ -2455,7 +2453,7 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
         for (size_t i = 0; i < selections.size(); i++)
         {
             choices[selections[i]].Replace("\"", "\\\"");
-            sExpression += choices[selections[i]].ToStdString() + "\",\"";
+            sExpression += wxToUtf8(choices[selections[i]]) + "\",\"";
         }
 
         if (sExpression.length())
@@ -2484,7 +2482,7 @@ void NumeReWindow::showListEditDialog(NumeRe::Window& window)
         choices.Add(prepareStringsForDialog(getNextArgument(sExpression, true)));
     }
 
-    ListEditDialog dialog(this, choices, window.getWindowSettings().sTitle, prepareStringsForDialog(window.getWindowSettings().sMessage));
+    ListEditDialog dialog(this, choices, wxFromUtf8(window.getWindowSettings().sTitle), prepareStringsForDialog(window.getWindowSettings().sMessage));
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
@@ -2499,7 +2497,7 @@ void NumeReWindow::showListEditDialog(NumeRe::Window& window)
         for (size_t i = 0; i < listEntries.size(); i++)
         {
             listEntries[i].Replace("\"", "\\\"");
-            sExpression += listEntries[i].ToStdString() + "\",\"";
+            sExpression += wxToUtf8(listEntries[i]) + "\",\"";
         }
 
         if (sExpression.length())
@@ -4631,7 +4629,7 @@ bool NumeReWindow::SaveAll(bool refreshLibrary)
 /////////////////////////////////////////////////
 std::vector<std::string> NumeReWindow::getFileForInstaller(const std::string& sFileName)
 {
-    std::ifstream file(sFileName.c_str());
+    boost::nowide::ifstream file(sFileName.c_str());
     std::string sTargetFileName = sFileName;
 
     std::vector<std::string> vPaths = m_terminal->getPathSettings();

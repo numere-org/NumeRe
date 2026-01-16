@@ -87,7 +87,7 @@ static std::string loadAuthToken()
         return "";
     }
 
-    std::ifstream auth(sAuthFile);
+    boost::nowide::ifstream auth(sAuthFile);
 
     if (!auth.good())
         return "";

@@ -311,7 +311,7 @@ void CellFilterDialog::OnButtonClick(wxCommandEvent& event)
 
         // Extract the value and convert multiple values into
         // a vector
-        std::string val = m_lt_gt_value->GetValue().ToStdString();
+        std::string val = wxToUtf8(m_lt_gt_value->GetValue());
         std::vector<std::string> vecVal;
 
         if (val.front() == '{' && val.back() == '}')

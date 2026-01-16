@@ -1497,8 +1497,8 @@ void moveFile(const string& sFile, const string& sNewFileName)
 void copyFile(const string& sFile, const string& sTarget)
 {
     // Open two file streams to copy the contents
-    ifstream File(sFile.c_str(), ios_base::binary);
-    ofstream NewFile(sTarget.c_str(), ios_base::binary);
+    boost::nowide::ifstream File(sFile, ios_base::binary);
+    boost::nowide::ofstream NewFile(sTarget, ios_base::binary);
 
     if (!File.good())
         throw SyntaxError(SyntaxError::CANNOT_OPEN_SOURCE, "", SyntaxError::invalid_position, sFile);
@@ -1526,7 +1526,7 @@ void writeTeXMain(const string& sTeXFile)
     }
 
     // --> Fuege vor ".tex" den String "main"  ein <--
-    ofstream TexMain((sTeXFile.substr(0, sTeXFile.find(".tex")) + "main.tex").c_str());
+    boost::nowide::ofstream TexMain(sTeXFile.substr(0, sTeXFile.find(".tex")) + "main.tex");
     if (!TexMain.good())
         throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, "", SyntaxError::invalid_position, sTeXFile.substr(0, sTeXFile.find(".tex")) + "main.tex");
 
@@ -2421,7 +2421,7 @@ vector<string> getFolderList(const string& sDirectory, int nFlags)
 /////////////////////////////////////////////////
 void reduceLogFilesize(const string& sFileName)
 {
-    fstream fFile;
+    boost::nowide::fstream fFile;
     size_t nLines = 0;
     string sTemp;
     const size_t MAXLINES = 100000;
@@ -2446,7 +2446,7 @@ void reduceLogFilesize(const string& sFileName)
     // If the number of lines is larger than the predefined lines
     if (nLines >= MAXLINES)
     {
-        fstream fTemp;
+        boost::nowide::fstream fTemp;
 
         // Open a temporary file in binary mode and check, whether the file is good
         fTemp.open("$~tempfile.txt", ios_base::binary | ios_base::out);
@@ -3475,11 +3475,8 @@ bool fileExists(const std::string& sFilename)
 {
     if (sFilename.length())
     {
-        std::string _sFile = sFilename;
-        _sFile = fromSystemCodePage(_sFile);
-
         // Open the ifstream (ifstream doesn't create a file)
-        std::ifstream ifFile(_sFile.c_str());
+        boost::nowide::ifstream ifFile(sFilename);
         return ifFile.good(); // If the stream is good(), the file exists
     }
     else

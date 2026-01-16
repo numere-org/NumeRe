@@ -330,7 +330,7 @@ std::string DetachedLogger::get_session_log(size_t revId) const
         return "";
 
     // Read the whole log
-    std::ifstream currentLog(m_sLogFile);
+    boost::nowide::ifstream currentLog(m_sLogFile);
 
     if (!currentLog.good())
         return "";

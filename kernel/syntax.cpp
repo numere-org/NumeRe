@@ -92,7 +92,7 @@ void NumeReSyntax::loadSyntax(const std::string& _sPath)
     if (_sPath.length() && !sPath.length())
         sPath = _sPath;
 
-    std::ifstream file_in;
+    boost::nowide::ifstream file_in;
     std::string sLine;
 
     // Open the file and check, whether the file stream is valid

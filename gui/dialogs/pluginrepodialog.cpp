@@ -27,7 +27,7 @@
 #include "../../network/http.h"
 #include "../controls/searchctrl.hpp"
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <vector>
 #include <algorithm>
 
@@ -432,7 +432,7 @@ void PackageRepoBrowser::DetectInstalledPackages()
     {
         if (!vRemotePackage[i])
         {
-            wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), vInstalled[i].getName());
+            wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), wxFromUtf8(vInstalled[i].getName()));
             m_listCtrl->SetItemText(currPackage, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion + " (Local)");
             m_listCtrl->SetItemText(currPackage, REPOCOLUMN, "---");
             m_listCtrl->SetItemBold(currPackage, true);
@@ -440,7 +440,7 @@ void PackageRepoBrowser::DetectInstalledPackages()
             m_listCtrl->SetItemImage(currPackage, PACKAGCOLUMN, m_icons->GetIconIndex("nscr"));
 
             wxTreeItemId currPackageInfo = m_listCtrl->AppendItem(currPackage, "Author");
-            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, vInstalled[i].getAuthor());
+            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(vInstalled[i].getAuthor()));
 
             currPackageInfo = m_listCtrl->AppendItem(currPackage, "Type");
             m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, vInstalled[i].sType.find("PLUGIN") != std::string::npos ? "Plugin" : "Package");
@@ -453,9 +453,9 @@ void PackageRepoBrowser::DetectInstalledPackages()
             if (!sDesc.length() || sDesc == "Description")
                 sDesc = "[No description. Please provide a description using the \"desc=DESC\" install info field.]";
 
-            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sDesc);
-            m_listCtrl->SetItemToolTip(currPackageInfo, sDesc);
-            m_listCtrl->SetItemToolTip(currPackage, sDesc);
+            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(sDesc));
+            m_listCtrl->SetItemToolTip(currPackageInfo, wxFromUtf8(sDesc));
+            m_listCtrl->SetItemToolTip(currPackage, wxFromUtf8(sDesc));
 
             if (sDesc.front() == '[')
                 m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
@@ -463,8 +463,8 @@ void PackageRepoBrowser::DetectInstalledPackages()
             if (!vInstalled[i].getKeyWords().length() || vInstalled[i].getKeyWords() != "NONE")
             {
                 currPackageInfo = m_listCtrl->AppendItem(currPackage, "Keywords");
-                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, vInstalled[i].getKeyWords());
-                m_listCtrl->SetItemToolTip(currPackageInfo, vInstalled[i].getKeyWords());
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(vInstalled[i].getKeyWords()));
+                m_listCtrl->SetItemToolTip(currPackageInfo, wxFromUtf8(vInstalled[i].getKeyWords()));
             }
 
             if (!vInstalled[i].getChangesLog().length() || vInstalled[i].getChangesLog() != "NONE")
@@ -473,12 +473,12 @@ void PackageRepoBrowser::DetectInstalledPackages()
                 replaceAll(sChangesLog, "\\\"", "\"");
                 replaceAll(sChangesLog, "\\n", "\n");
                 currPackageInfo = m_listCtrl->AppendItem(currPackage, "Changelog");
-                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sChangesLog);
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(sChangesLog));
 
                 if (sChangesLog.length() > CHANGELOGLENGTH)
                     sChangesLog = sChangesLog.substr(0, CHANGELOGLENGTH) + "[...]";
 
-                m_listCtrl->SetItemToolTip(currPackageInfo, sChangesLog);
+                m_listCtrl->SetItemToolTip(currPackageInfo, wxFromUtf8(sChangesLog));
             }
 
             std::string sLicense = vInstalled[i].getLicense();
@@ -486,7 +486,7 @@ void PackageRepoBrowser::DetectInstalledPackages()
             currPackageInfo = m_listCtrl->AppendItem(currPackage, "License");
 
             if (sLicense.length() && sLicense != "???")
-                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sLicense);
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(sLicense));
             else
             {
                 m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, "[License unknown. Please provide a license using the \"license=LICENSE\" install info field.]");
@@ -688,7 +688,7 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     m_listCtrl->SetItemImage(currPackage, PACKAGCOLUMN, m_icons->GetIconIndex("nscr"));
 
     wxTreeItemId currPackageInfo = m_listCtrl->AppendItem(currPackage, "Author");
-    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.author);
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(pkgInfo.author));
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "Type");
     m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.type);
@@ -712,9 +712,9 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     if (!sDesc.length())
         sDesc = "[No description. Please provide a description using the \"desc=DESC\" install info field.]";
 
-    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sDesc);
-    m_listCtrl->SetItemToolTip(currPackageInfo, sDesc);
-    m_listCtrl->SetItemToolTip(currPackage, sDesc);
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(sDesc));
+    m_listCtrl->SetItemToolTip(currPackageInfo, wxFromUtf8(sDesc));
+    m_listCtrl->SetItemToolTip(currPackage, wxFromUtf8(sDesc));
 
     if (sDesc.front() == '[')
         m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
@@ -722,8 +722,8 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     if (pkgInfo.keyWords.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, "Keywords");
-        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.keyWords);
-        m_listCtrl->SetItemToolTip(currPackageInfo, pkgInfo.keyWords);
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(pkgInfo.keyWords));
+        m_listCtrl->SetItemToolTip(currPackageInfo, wxFromUtf8(pkgInfo.keyWords));
     }
 
     std::string sChangesLog = pkgInfo.changeLog;
@@ -731,18 +731,18 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     if (sChangesLog.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, "Changelog");
-        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sChangesLog);
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(sChangesLog));
 
         if (sChangesLog.length() > CHANGELOGLENGTH)
             sChangesLog = sChangesLog.substr(0, CHANGELOGLENGTH) + "[...]";
 
-        m_listCtrl->SetItemToolTip(currPackageInfo, sChangesLog);
+        m_listCtrl->SetItemToolTip(currPackageInfo, wxFromUtf8(sChangesLog));
     }
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "License");
 
     if (pkgInfo.license.length())
-        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.license);
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, wxFromUtf8(pkgInfo.license));
     else
     {
         m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN,
@@ -910,7 +910,7 @@ std::string PackageRepoBrowser::getEntry(const wxTreeItemId& item, const std::st
             return "";
     }
 
-    return m_listCtrl->GetItemText(child, REPOCOLUMN).ToStdString();
+    return wxToUtf8(m_listCtrl->GetItemText(child, REPOCOLUMN));
 }
 
 

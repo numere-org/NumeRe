@@ -247,9 +247,9 @@ wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
 /////////////////////////////////////////////////
 struct EventHandler
 {
-    wxString onchange;
-    wxString onclick;
-    wxString onactivate;
+    std::string onchange;
+    std::string onclick;
+    std::string onactivate;
 
     EventHandler() {}
 };

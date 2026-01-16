@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #include "packagerepo.hpp"
 #include "http.h"
@@ -305,7 +305,7 @@ bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sT
 {
     std::string contents = url::get(sPackageUrl);
 
-    std::ofstream file(sTargetFile.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+    boost::nowide::ofstream file(sTargetFile.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 
     if (file.good())
     {

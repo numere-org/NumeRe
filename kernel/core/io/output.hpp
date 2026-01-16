@@ -19,6 +19,7 @@
 
 #include <string>
 #include <ctime>
+#include <boost/nowide/fstream.hpp>
 
 #include "../ui/error.hpp"
 #include "filesystem.hpp"
@@ -49,7 +50,7 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 		bool bPrintTeX;                         // Ausgabe in eine TeX-Datei
 		bool bPrintCSV;
 		int64_t nTotalNumRows;
-		std::ofstream file_out;						// Ein Objekt eines Dateistreams
+		boost::nowide::ofstream file_out;						// Ein Objekt eines Dateistreams
 		std::string getDate(bool bForFile);			// Eine Methode, die das aktuelle Datum als String zurueckgibt.
 		std::string replaceTeXControls(const std::string& _sText);
 

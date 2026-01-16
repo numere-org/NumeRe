@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 
 #include "styledtextfile.hpp"
@@ -65,7 +65,7 @@ static void split(std::istream& stream, std::vector<std::pair<size_t, std::strin
 /////////////////////////////////////////////////
 void StyledTextFile::load()
 {
-    std::ifstream file(sFileName);
+    boost::nowide::ifstream file(sFileName);
 
     split(file, vFileContents);
 }

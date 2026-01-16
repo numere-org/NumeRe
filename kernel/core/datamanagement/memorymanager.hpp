@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <string>
 #include <vector>
 
@@ -46,7 +46,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 		std::vector<Memory*> vMemory;
 		std::map<std::string, std::pair<size_t, size_t>> mCachesMap;
 		bool bSaveMutex;
-		std::fstream cache_file;
+		boost::nowide::fstream cache_file;
 		std::string sCache_file;
 		std::string sPredefinedFuncs;
 		std::string sUserdefinedFuncs;

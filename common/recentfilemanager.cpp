@@ -20,7 +20,7 @@
 #include "../externals/tinyxml2/tinyxml2.h"
 #include "../kernel/core/io/logger.hpp"
 #include "../gui/stringconv.hpp"
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 
 /////////////////////////////////////////////////
@@ -157,7 +157,7 @@ void RecentFilesManager::importList(const wxString& fileName)
 {
     tinyxml2::XMLDocument doc;
 
-    if (doc.LoadFile(fileName.ToStdString().c_str()) != tinyxml2::XML_SUCCESS)
+    if (doc.LoadFile(fileName.ToAscii()) != tinyxml2::XML_SUCCESS)
         return;
 
     const tinyxml2::XMLElement* files = doc.RootElement();
@@ -206,7 +206,7 @@ void RecentFilesManager::exportList(const wxString& fileName)
         files->InsertEndChild(file);
     }
 
-    doc.SaveFile(fileName.ToStdString().c_str());
+    doc.SaveFile(fileName.ToAscii());
 }
 
 

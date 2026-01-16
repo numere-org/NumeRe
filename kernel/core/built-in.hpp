@@ -18,7 +18,7 @@
 
 #define _USE_MATH_DEFINES
 #include <iostream>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 #include <string>
 #include <conio.h>

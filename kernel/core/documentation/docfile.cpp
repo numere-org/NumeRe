@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #include "docfile.hpp"
 #include "../../../externals/tinyxml2/tinyxml2.h"
@@ -278,7 +278,7 @@ DocumentationFile::DocumentationFile(const std::vector<std::string>& vFileConten
 std::vector<std::string> DocumentationFile::loadFromFile(const std::string& sFileName)
 {
     std::vector<std::string> vFileContents;
-    std::ifstream file(sFileName);
+    boost::nowide::ifstream file(sFileName);
 
     if (!file.good())
         throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, sFileName);
@@ -338,7 +338,7 @@ void DocumentationFile::parse(const std::vector<std::string>& vFileContents, con
 /////////////////////////////////////////////////
 void DocumentationFile::print(const std::string& sFileName)
 {
-    std::ofstream file(sFileName, std::ios_base::out | std::ios_base::trunc);
+    boost::nowide::ofstream file(sFileName, std::ios_base::out | std::ios_base::trunc);
 
     if (!file.good())
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);

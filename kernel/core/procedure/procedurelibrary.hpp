@@ -18,7 +18,7 @@
 
 #include "procedureelement.hpp"
 #include <string>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <map>
 #include <vector>
 

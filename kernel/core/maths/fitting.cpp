@@ -20,6 +20,7 @@
 #include "../../kernel.hpp"
 #include "fitcontroller.hpp"
 #include "../interval.hpp"
+#include <boost/nowide/fstream.hpp>
 
 
 /////////////////////////////////////////////////
@@ -94,7 +95,7 @@ bool fitDataSet(CommandLineParser& cmdParser)
     double dChisq = 0.0;
     Indices _idx;
 
-    std::ofstream oFitLog;
+    boost::nowide::ofstream oFitLog;
     std::string sFitLog = "<savepath>/numerefit.log";
     sFitLog = _data.ValidFileName(sFitLog, ".log");
 
@@ -1617,7 +1618,7 @@ static std::string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData
 /////////////////////////////////////////////////
 static void createTeXExport(Fitcontroller& _fControl, const std::string& sTeXExportFile, const std::string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const std::vector<double>& vInitialVals, size_t nSize, const std::string& sFitAnalysis, const std::string& sFuncDisplay, const std::string& sFittedFunction, double dChisq)
 {
-    std::ofstream oTeXExport;
+    boost::nowide::ofstream oTeXExport;
 
     oTeXExport.open(sTeXExportFile.c_str(), std::ios_base::trunc);
 

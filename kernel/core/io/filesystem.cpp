@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include <iostream>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 #include <windows.h>
 #include <shobjidl.h>
@@ -96,7 +96,8 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
             if (sFilePath.starts_with(sTokens[i][0]))
             {
                 if (sFilePath[sTokens[i][0].length()] != '/')
-                    sFilePath = sTokens[i][1] + "/" + sFilePath.substr(sTokens[i][0].length());
+                    sFilePath = sTokens[i][1] + "/"
+                        + sFilePath.substr(sTokens[i][0].length());
                 else
                     sFilePath = sTokens[i][1] + sFilePath.substr(sTokens[i][0].length());
 
@@ -120,7 +121,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
 
     for (size_t i = 0; i < sFilePath.length(); i++)
     {
-        if (sFilePath[i] == (char)142)
+        /*if (sFilePath[i] == (char)142)
             sFilePath[i] = (char)0xC4;
         else if (sFilePath[i] == (char)132)
             sFilePath[i] = (char)0xE4;
@@ -134,7 +135,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
             sFilePath[i] = (char)0xFC;
         else if (sFilePath[i] == (char)225)
             sFilePath[i] = (char)0xDF;
-        else if (sFilePath[i] == '~')
+        else */if (sFilePath[i] == '~')
         {
 #ifndef PARSERSTANDALONE
             NumeReKernel::issueWarning("INTERNAL ISSUE: Replaced a tilde character in \"" + sFilePath + "\" with a slash. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
@@ -169,9 +170,9 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
 {
     if (_sFileName.find_first_of("*?") != std::string::npos)
     {
-        WIN32_FIND_DATA FindFileData;
+        WIN32_FIND_DATAW FindFileData;
         HANDLE hFind = INVALID_HANDLE_VALUE;
-        hFind = FindFirstFile(_sFileName.c_str(), &FindFileData);
+        hFind = FindFirstFileW(boost::nowide::widen(_sFileName).c_str(), &FindFileData);
         std::string sNewFileName = "";
 
         if (hFind == INVALID_HANDLE_VALUE)
@@ -181,13 +182,13 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
         {
             if (!isFile && FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                sNewFileName = FindFileData.cFileName;
+                sNewFileName = boost::nowide::narrow(FindFileData.cFileName);
                 break;
             }
             else if (isFile && FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 continue;
 
-            sNewFileName = FindFileData.cFileName;
+            sNewFileName = boost::nowide::narrow(FindFileData.cFileName);
 
             if (sNewFileName.length() > 4
                 && sNewFileName.find('.') != std::string::npos
@@ -198,7 +199,7 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
             else
                 sNewFileName += ".*";
         }
-        while (FindNextFile(hFind, &FindFileData) != 0);
+        while (FindNextFileW(hFind, &FindFileData) != 0);
 
         FindClose(hFind);
 
@@ -246,7 +247,8 @@ HANDLE FileSystem::initializeFileHandle(std::string& sDir, void* FindFileData) c
     if (sDir[0] == '.')
     {
         // Only a dot -> root path
-        hFind = FindFirstFile((sExecutablePath + "\\" + sDir).c_str(), (WIN32_FIND_DATA*)FindFileData);
+        hFind = FindFirstFileW(boost::nowide::widen(sExecutablePath + "\\" + sDir).c_str(),
+                               (WIN32_FIND_DATAW*)FindFileData);
         sDir = replacePathSeparator(sExecutablePath + "/" + sDir);
         sDir.erase(sDir.rfind('/') + 1);
     }
@@ -258,7 +260,8 @@ HANDLE FileSystem::initializeFileHandle(std::string& sDir, void* FindFileData) c
         // If the path has a length then initialize the file handle
         if (sDir.length())
         {
-            hFind = FindFirstFile(sDir.c_str(), (WIN32_FIND_DATA*)FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(sDir).c_str(),
+                                   (WIN32_FIND_DATAW*)FindFileData);
             sDir = replacePathSeparator(sDir);
             sDir.erase(sDir.rfind('/') + 1);
         }
@@ -266,7 +269,8 @@ HANDLE FileSystem::initializeFileHandle(std::string& sDir, void* FindFileData) c
     else
     {
         // an arbitrary path
-        hFind = FindFirstFile(sDir.c_str(), (WIN32_FIND_DATA*)FindFileData);
+        hFind = FindFirstFileW(boost::nowide::widen(sDir).c_str(),
+                               (WIN32_FIND_DATAW*)FindFileData);
         if (sDir.find('/') != std::string::npos)
             sDir.erase(sDir.rfind('/') + 1);
     }
@@ -492,10 +496,8 @@ int FileSystem::createFolders(const std::string& _sPath) const
 {
     // Create the folder (returns false, if there's more
     // than one folder to be created)
-    if (CreateDirectory(_sPath.c_str(), nullptr))
-    {
+    if (CreateDirectoryW(boost::nowide::widen(_sPath).c_str(), nullptr))
         return 1;
-    }
 
     // If there's more than one folder to be created
     // create them recursively here
@@ -504,19 +506,15 @@ int FileSystem::createFolders(const std::string& _sPath) const
         for (size_t i = 0; i < _sPath.length(); i++)
         {
             if (_sPath[i] == '/' || _sPath[i] == '\\')
-            {
-                CreateDirectory(_sPath.substr(0,i).c_str(), nullptr);
-            }
+                CreateDirectoryW(boost::nowide::widen(_sPath.substr(0,i)).c_str(), nullptr);
         }
 
-        CreateDirectory(_sPath.c_str(), nullptr);
+        CreateDirectoryW(boost::nowide::widen(_sPath).c_str(), nullptr);
     }
 
     // Note that the folder might already exist
     if (GetLastError() == ERROR_ALREADY_EXISTS)
-    {
         return -1;
-    }
 
     return 1;
 }
@@ -698,9 +696,9 @@ std::string FileSystem::resolveLink(const std::string& sLink)
 {
 #ifdef NR_HAVE_GSL2
     HRESULT hres;
-    IShellLink* psl;
-    CHAR szGotPath[MAX_PATH];
-    WIN32_FIND_DATA wfd;
+    IShellLinkW* psl;
+    WCHAR szGotPath[MAX_PATH];
+    WIN32_FIND_DATAW wfd;
 
     std::string sFilePath;
 
@@ -708,7 +706,8 @@ std::string FileSystem::resolveLink(const std::string& sLink)
 
     // Get a pointer to the IShellLink interface. It is assumed that CoInitialize
     // has already been called.
-    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkA, (LPVOID*)&psl);
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+                            IID_IShellLinkA, (LPVOID*)&psl);
 
     if (SUCCEEDED(hres))
     {
@@ -738,10 +737,10 @@ std::string FileSystem::resolveLink(const std::string& sLink)
                 if (SUCCEEDED(hres))
                 {
                     // Get the path to the link target.
-                    hres = psl->GetPath(szGotPath, MAX_PATH, (WIN32_FIND_DATA*)&wfd, SLGP_SHORTPATH);
+                    hres = psl->GetPath(szGotPath, MAX_PATH, (WIN32_FIND_DATAW*)&wfd, SLGP_SHORTPATH);
 
                     if (SUCCEEDED(hres))
-                        sFilePath = szGotPath;
+                        sFilePath = boost::nowide::narrow(szGotPath);
                 }
             }
 
@@ -803,7 +802,7 @@ std::string FileSystem::relativeToAbsolute(std::string relPath)
 int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
 {
 
-    sExecutablePath = fromSystemCodePage(_sExePath);
+    sExecutablePath = _sExePath;
 
     if (sExecutablePath[0] == '"')
         sExecutablePath = sExecutablePath.substr(1);
@@ -811,7 +810,7 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
     if (sExecutablePath[sExecutablePath.length()-1] == '"')
         sExecutablePath = sExecutablePath.substr(0,sExecutablePath.length()-1);
 
-    sPath = fromSystemCodePage(_sPath);
+    sPath = _sPath;
 
     if (sPath.find('<') != std::string::npos)
     {
@@ -871,7 +870,6 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
     if (sPath.back() == '"')
         sPath.pop_back();
 
-
     if (bMkDir)
     {
         int nReturn = createFolders(sPath);
@@ -880,7 +878,6 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
     }
 
     sPath = "\"" + sPath + "\"";
-
     return 1;
 }
 
@@ -897,7 +894,8 @@ void FileSystem::createRevisionsFolder()
 {
     std::string sRevisionsPath = sPath.substr(1, sPath.length()-2) + "/.revisions";
     createFolders(sRevisionsPath);
-    SetFileAttributesA(sRevisionsPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+    SetFileAttributesW(boost::nowide::widen(sRevisionsPath).c_str(),
+                       FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 }
 
 
@@ -912,6 +910,7 @@ std::string FileSystem::getPath() const
 {
     if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')
         return sPath.substr(1,sPath.length()-2);
+
     return sPath;
 }
 
@@ -954,7 +953,7 @@ std::vector<std::string> FileSystem::getFileList(const std::string& sDirectory, 
             sDir += "*";
 
         // Declare the Windows structures;
-        WIN32_FIND_DATA FindFileData;
+        WIN32_FIND_DATAW FindFileData;
         HANDLE hFind = initializeFileHandle(sDir, &FindFileData);
 
         // Ensure that the structures were initialized correctly
@@ -969,19 +968,19 @@ std::vector<std::string> FileSystem::getFileList(const std::string& sDirectory, 
             if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 continue;
 
-            if (std::string(FindFileData.cFileName).ends_with(".lnk") && (nFlags & FOLLOW_LINKS))
+            if (std::wstring(FindFileData.cFileName).ends_with(L".lnk") && (nFlags & FOLLOW_LINKS))
             {
                 // Handle links
-                std::string sLinkTarget = replacePathSeparator(resolveLink(sDir + FindFileData.cFileName));
+                std::string sLinkTarget = replacePathSeparator(resolveLink(sDir + boost::nowide::narrow(FindFileData.cFileName)));
                 FileInfo info = getFileInfo(sLinkTarget);
 
                 if (info.fileAttributes & FileInfo::ATTR_DIRECTORY)
                 {
                     // Push back the link file
                     if (nFlags & FULLPATH)
-                        vFileList.push_back(sDir + FindFileData.cFileName);
+                        vFileList.push_back(sDir + boost::nowide::narrow(FindFileData.cFileName));
                     else
-                        vFileList.push_back(FindFileData.cFileName);
+                        vFileList.push_back(boost::nowide::narrow(FindFileData.cFileName));
                 }
                 else
                 {
@@ -996,12 +995,12 @@ std::vector<std::string> FileSystem::getFileList(const std::string& sDirectory, 
             {
                 // Push back filenames
                 if (nFlags & FULLPATH)
-                    vFileList.push_back(sDir + FindFileData.cFileName);
+                    vFileList.push_back(sDir + boost::nowide::narrow(FindFileData.cFileName));
                 else
-                    vFileList.push_back(FindFileData.cFileName);
+                    vFileList.push_back(boost::nowide::narrow(FindFileData.cFileName));
             }
         }
-        while (FindNextFile(hFind, &FindFileData) != 0);
+        while (FindNextFileW(hFind, &FindFileData) != 0);
 
         // Close the handle
         FindClose(hFind);
@@ -1051,7 +1050,7 @@ std::vector<std::string> FileSystem::getFolderList(const std::string& sDirectory
             sDir += "*";
 
         // Declare the Windows structures;
-        WIN32_FIND_DATA FindFileData;
+        WIN32_FIND_DATAW FindFileData;
         HANDLE hFind = initializeFileHandle(sDir, &FindFileData);
 
         // Ensure that the structures were initialized correctly
@@ -1062,7 +1061,7 @@ std::vector<std::string> FileSystem::getFolderList(const std::string& sDirectory
         // read the contents of FindFileData
         do
         {
-            std::string name = FindFileData.cFileName;
+            std::string name = boost::nowide::narrow(FindFileData.cFileName);
 
             // Use directories
             if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -1095,7 +1094,7 @@ std::vector<std::string> FileSystem::getFolderList(const std::string& sDirectory
                 continue;
 
         }
-        while (FindNextFile(hFind, &FindFileData) != 0);
+        while (FindNextFileW(hFind, &FindFileData) != 0);
 
         // Close the handle
         FindClose(hFind);
@@ -1209,13 +1208,13 @@ FileInfo FileSystem::getFileInfo(const std::string& sFilePath) const
     fInfo.name = vFileParts[2];
     fInfo.ext = vFileParts[3];
 
-    WIN32_FIND_DATA FindFileData;
+    WIN32_FIND_DATAW FindFileData;
     HANDLE hFind = INVALID_HANDLE_VALUE;
 
     if (isFile(sFilePath))
-        hFind = FindFirstFile(ValidFileName(sFilePath, ".dat", false).c_str(), &FindFileData);
+        hFind = FindFirstFileW(boost::nowide::widen(ValidFileName(sFilePath, ".dat", false)).c_str(), &FindFileData);
     else
-        hFind = FindFirstFile(ValidFolderName(sFilePath, true, false).c_str(), &FindFileData);
+        hFind = FindFirstFileW(boost::nowide::widen(ValidFolderName(sFilePath, true, false)).c_str(), &FindFileData);
 
     // Only fill in the remainig information, if a corresponding
     // file could be found

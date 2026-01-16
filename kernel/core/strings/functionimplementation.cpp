@@ -3226,7 +3226,7 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
             // Ensure that the file actually exist
             if (fileExists(sFileName))
             {
-                std::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
+                boost::nowide::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
                 ret.emplace_back(sha256(file));
             }
             else

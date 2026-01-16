@@ -210,7 +210,7 @@ wxString SearchController::FindMarkedInclude(int charpos)
 	else
 		m_editor->m_clickedInclude = m_terminal->getPathSettings()[SCRIPTPATH] + "/" + clickedWord + ".nscr";
 
-	return replacePathSeparator(clickedWord.ToStdString());
+	return replacePathSeparator(wxToUtf8(clickedWord));
 }
 
 
@@ -347,7 +347,7 @@ wxString SearchController::FindNameSpaceOfProcedure(int charpos)
 		// are any, and decode it
 		if (namespaces.size())
         {
-            sNameSpace = decodeNameSpace(m_editor->GetLine(m_editor->LineFromPosition(namespaces.back())).ToStdString(), "this");
+            sNameSpace = decodeNameSpace(wxToUtf8(m_editor->GetLine(m_editor->LineFromPosition(namespaces.back()))), "this");
         }
 	}
 
@@ -397,7 +397,7 @@ wxString SearchController::FindProceduresInCurrentFile(wxString sFirstChars, wxS
 	if (sSelectedNameSpace.length())
 		return sThisFileProcedures;
 
-	return sThisFileProcedures + m_editor->_syntax->getNameSpaceAutoCompList(sFirstChars.ToStdString());
+	return sThisFileProcedures + m_editor->_syntax->getNameSpaceAutoCompList(wxToUtf8(sFirstChars));
 }
 
 
@@ -426,7 +426,7 @@ wxString SearchController::FindProcedureDefinition()
 		return FindProcedureDefinitionInLocalFile(procedurename);
 	}
 	else
-        pathname = Procedure::nameSpaceToPath(pathname.ToStdString(), m_editor->GetFilePath().ToStdString());
+        pathname = Procedure::nameSpaceToPath(wxToUtf8(pathname), wxToUtf8(m_editor->GetFilePath()));
 
 	// Find the namespace in absolute procedure paths
 	while (procedurename.find('\'') != string::npos)
@@ -442,7 +442,7 @@ wxString SearchController::FindProcedureDefinition()
 		procedurename.insert(0, 1, '$');
 
 	// Find procedure in a global procedure file
-	NumeRe::CallTip _procDef = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition(pathname.ToStdString(), procedurename.ToStdString()));
+	NumeRe::CallTip _procDef = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition(wxToUtf8(pathname), wxToUtf8(procedurename)));
 
 	if (_procDef.sDocumentation.length())
         return _procDef.sDefinition + "\n" + _procDef.sDocumentation;
@@ -475,7 +475,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
 
     // Go through the whole file and search for all occurences of the procedure
     // command
-    vector<int> procedures = FindAll("procedure", wxSTC_NSCR_COMMAND, 0, m_editor->GetLastPosition(), false);
+    std::vector<int> procedures = FindAll("procedure", wxSTC_NSCR_COMMAND, 0, m_editor->GetLastPosition(), false);
 
     // Examine each occurence
     for (size_t i = 0; i < procedures.size(); i++)
@@ -484,19 +484,19 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
 
         if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
         {
-            if (getMatchingParenthesis(procedureline.substr(procedureline.find("$" + procedurename)).ToStdString()) == string::npos)
+            if (getMatchingParenthesis(wxToUtf8(procedureline.substr(procedureline.find("$" + procedurename)))) == string::npos)
                 return "";
 
             // Extraxt the procedure definition
-            string sProcDef = procedureline.substr(procedureline.find("$" + procedurename), getMatchingParenthesis(procedureline.substr(procedureline.find("$" + procedurename)).ToStdString()) + 1).ToStdString();
+            std::string sProcDef = wxToUtf8(procedureline.substr(procedureline.find("$" + procedurename), getMatchingParenthesis(wxToUtf8(procedureline.substr(procedureline.find("$" + procedurename)))) + 1));
             size_t nFirstParens = sProcDef.find('(');
-            string sArgList = sProcDef.substr(nFirstParens + 1, getMatchingParenthesis(sProcDef.substr(nFirstParens)) - 1);
+            std::string sArgList = sProcDef.substr(nFirstParens + 1, getMatchingParenthesis(sProcDef.substr(nFirstParens)) - 1);
             sProcDef.erase(nFirstParens + 1);
 
             // Handle the argument list
             while (sArgList.length())
             {
-                string currentarg = getNextArgument(sArgList, true);
+                std::string currentarg = getNextArgument(sArgList, true);
 
                 if (currentarg.front() == '_')
                     currentarg.erase(0, 1);
@@ -510,9 +510,9 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
             sProcDef += ") :: local";
 
             // Handle the flags
-            if (procedureline.find("::") != string::npos)
+            if (procedureline.find("::") != std::string::npos)
             {
-                string sFlags = procedureline.substr(procedureline.find("::") + 2).ToStdString();
+                std::string sFlags = wxToUtf8(procedureline.substr(procedureline.find("::") + 2));
 
                 if (sFlags.find("##") != string::npos)
                     sFlags.erase(sFlags.find("##"));

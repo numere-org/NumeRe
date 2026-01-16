@@ -26,7 +26,7 @@
 #include <string>
 #include <cmath>
 #include <iomanip>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #include "../ui/error.hpp"
 #include "../ParserLib/muParser.h"
@@ -58,7 +58,7 @@ class Procedure : public FlowCtrl, public PackageManager
         friend class NumeReDebugger;
         friend class ProcedureVarFactory; // For FlowCtrl Enums
 
-        std::fstream fProcedure;
+        boost::nowide::fstream fProcedure;
         std::string sProcNames;
         std::string sCurrentProcedureName;
         int nCurrentLine;
@@ -82,7 +82,7 @@ class Procedure : public FlowCtrl, public PackageManager
         void resetProcedure(mu::Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(StringView sProc);
         bool handleVariableDefinitions(std::string& sProcCommandLine, const std::string& sCommand);
-        int handleIncludeSyntax(std::string& sProcCommandLine, std::ifstream& fInclude, bool bReadingFromInclude);
+        int handleIncludeSyntax(std::string& sProcCommandLine, boost::nowide::ifstream& fInclude, bool bReadingFromInclude);
         void extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName);
 
         virtual int procedureCmdInterface(StringView sLine, bool compiling) override;

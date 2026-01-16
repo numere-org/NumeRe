@@ -22,6 +22,7 @@
 #include "../utils/tools.hpp"
 #include "../procedure/dependency.hpp"
 #include "../ui/winlayout.hpp"
+#include <boost/nowide/fstream.hpp>
 
 #include <regex>
 
@@ -99,7 +100,7 @@ std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
     std::string sFileContents;
     std::string sLaTeXFileName = createLaTeXFileName(sFileName) + ".tex";
     std::string sMainProc = createMainProcedure(sFileName);
-    std::ofstream file_out;
+    boost::nowide::ofstream file_out;
 
     bool bTextMode = true;
     int startpos = 0;
@@ -936,7 +937,7 @@ std::string DocumentationGenerator::constructKeyWords(std::string sKeyWordList) 
 /////////////////////////////////////////////////
 void DocumentationGenerator::createStyleFile() const
 {
-    std::ifstream fHeaderTemplate;
+    boost::nowide::ifstream fHeaderTemplate;
 
     // Open the header template
     fHeaderTemplate.open((NumeReKernel::getInstance()->getSettings().getExePath() + "/lang/tmpl_header.tex").c_str());
@@ -980,7 +981,7 @@ void DocumentationGenerator::createStyleFile() const
         sTemplate.replace(pos, 15, constructKeyWords(m_syntax->getSpecial()));
 
     // Now open the target header file
-    std::ofstream fHeader;
+    boost::nowide::ofstream fHeader;
     fHeader.open((getPath() + "/numereheader.tex").c_str());
 
     // Ensure that the file is writable
@@ -1005,7 +1006,7 @@ void DocumentationGenerator::createStyleFile() const
 /////////////////////////////////////////////////
 std::string DocumentationGenerator::createMainFile(const std::string& sFileName, const std::vector<std::string>& vIncludesList, const std::vector<std::string>& vFiles) const
 {
-    std::ofstream fMain;
+    boost::nowide::ofstream fMain;
     std::string sLaTeXMainFile = createLaTeXFileName(sFileName) + "_main.tex";
 
     fMain.open(sLaTeXMainFile.c_str());

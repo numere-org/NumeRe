@@ -27,7 +27,7 @@
 #include <wx/stream.h>
 #include <wx/dir.h>
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <cstring>
 #include <memory>
 
@@ -47,7 +47,7 @@ namespace Archive
     /////////////////////////////////////////////////
     Type detectType(const std::string& sArchiveFileName)
     {
-        std::ifstream file(sArchiveFileName, std::ios_base::binary);
+        boost::nowide::ifstream file(sArchiveFileName, std::ios_base::binary);
 
         static const std::string ZIPHEADER("\x50\x4b\x03\x04");
         static const std::string GZHEADER("\x1f\x8b\x08");
@@ -108,7 +108,7 @@ namespace Archive
     /////////////////////////////////////////////////
     static std::string getGZipFileName(const std::string& sArchiveFileName)
     {
-        std::ifstream gzip(sArchiveFileName, std::ios_base::binary);
+        boost::nowide::ifstream gzip(sArchiveFileName, std::ios_base::binary);
 
         if (!gzip.good() || gzip.eof())
             return "";

@@ -664,7 +664,7 @@ bool sortData(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool writeToFile(CommandLineParser& cmdParser)
 {
-    fstream fFile;
+    boost::nowide::fstream fFile;
     string sFileName;
 
     bool bAppend = false;
@@ -738,7 +738,7 @@ bool writeToFile(CommandLineParser& cmdParser)
     else
     {
         if (!fileExists(sFileName))
-            ofstream fTemp(sFileName.c_str());
+            boost::nowide::ofstream fTemp(sFileName.c_str());
 
         fFile.open(sFileName.c_str());
     }

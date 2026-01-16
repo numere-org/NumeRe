@@ -18,7 +18,7 @@
 
 #include <vector>
 #include <map>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <regex>
 #include "documentation.hpp"
 #include "../../kernel.hpp"
@@ -416,7 +416,7 @@ void doc_Help(const std::string& __sTopic)
         _fSys.declareFileType(".tex");
         std::string sFilename = _fSys.ValidizeAndPrepareName("<>/docs/texexport/" + _documentation.getHelpArticleID(sTopic) + ".tex",
                                                              ".tex");
-        std::ofstream fTeX;
+        boost::nowide::ofstream fTeX;
         fTeX.open(sFilename);
 
         if (fTeX.fail())
@@ -448,7 +448,7 @@ void doc_Help(const std::string& __sTopic)
             _fSys.declareFileType(".html");
             std::string sFilename = _fSys.ValidizeAndPrepareName("<>/docs/htmlexport/" + _documentation.getHelpArticleID(sTopic) + ".html",
                                                                  ".html");
-            std::ofstream fHTML;
+            boost::nowide::ofstream fHTML;
             fHTML.open(sFilename);
 
             if (fHTML.fail())

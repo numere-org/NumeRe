@@ -24,7 +24,7 @@
 #include "http.h"
 #include "../kernel/core/utils/tools.hpp"
 #include "curlcpp.hpp"
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 
 // Further possible features enabled in cURL:
@@ -229,12 +229,12 @@ namespace url
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
     /// \param httpHeader const std::vector<std::string>&
-    /// \param filestream std::ifstream*
+    /// \param filestream boost::nowide::ifstream*
     /// \param filesize size_t
     /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CurlCpp put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::ifstream* filestream, size_t filesize)
+    static CurlCpp put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, boost::nowide::ifstream* filestream, size_t filesize)
     {
         CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
 
@@ -370,7 +370,7 @@ namespace url
     /////////////////////////////////////////////////
     size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
     {
-        std::ifstream filestream(sFileName.c_str(), std::ios_base::binary);
+        boost::nowide::ifstream filestream(sFileName, std::ios_base::binary);
 
         if (!filestream.good())
             throw Error("Cannot open file '" + sFileName + "'.");

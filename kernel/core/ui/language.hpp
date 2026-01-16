@@ -23,7 +23,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 
 #include "../io/filesystem.hpp"

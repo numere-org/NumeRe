@@ -66,7 +66,7 @@ Language::Language(const Language& _lang) : FileSystem()
 std::map<std::string,std::string> Language::getLangFileContent(std::string sFile) const
 {
     std::map<std::string,std::string> mLangFileContent;
-    std::ifstream fFile_in;
+    boost::nowide::ifstream fFile_in;
     std::string sLine;
 
     try

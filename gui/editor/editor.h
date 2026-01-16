@@ -76,7 +76,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		bool LoadLocalFile (const wxString& filename);
 		bool LoadFileText(wxString fileContents);
 		bool SaveFile(const wxString& filename);
-		bool SaveNumeReFile(const wxString& filename);
 		bool SaveGeneralFile(const wxString& filename);
 		bool SaveFileLocal();
 
