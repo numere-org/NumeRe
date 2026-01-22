@@ -511,7 +511,6 @@ mu::Array strfnc_ascii(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isblank(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -528,9 +527,7 @@ mu::Array strfnc_isblank(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isblank(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (isblank(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -553,7 +550,6 @@ mu::Array strfnc_isblank(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isalnum(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -570,9 +566,7 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isalnum(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isalnum(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -595,7 +589,6 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isalpha(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -612,9 +605,7 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isalpha(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isalpha(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -637,7 +628,6 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_iscntrl(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -654,9 +644,7 @@ mu::Array strfnc_iscntrl(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (iscntrl(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (iscntrl(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -718,7 +706,6 @@ mu::Array strfnc_isdigit(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isgraph(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -735,9 +722,7 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isgraph(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isgraph(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -760,7 +745,6 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_islower(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -777,8 +761,7 @@ mu::Array strfnc_islower(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (islower(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (islower(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -801,7 +784,6 @@ mu::Array strfnc_islower(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isprint(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -818,9 +800,7 @@ mu::Array strfnc_isprint(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isprint(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isprint(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -843,7 +823,6 @@ mu::Array strfnc_isprint(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_ispunct(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -860,9 +839,7 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (ispunct(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (ispunct(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -885,7 +862,6 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isspace(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -902,9 +878,7 @@ mu::Array strfnc_isspace(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isspace(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (isspace(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -927,7 +901,6 @@ mu::Array strfnc_isspace(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isupper(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -944,8 +917,7 @@ mu::Array strfnc_isupper(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isupper(a.get(i).getStr()[j])
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isupper(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -3226,7 +3198,8 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
             // Ensure that the file actually exist
             if (fileExists(sFileName))
             {
-                boost::nowide::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
+                std::fstream file(boost::nowide::widen(sFileName).c_str(),
+                                  std::ios_base::in | std::ios_base::binary);
                 ret.emplace_back(sha256(file));
             }
             else

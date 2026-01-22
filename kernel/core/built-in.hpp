@@ -17,28 +17,8 @@
 ******************************************************************************/
 
 #define _USE_MATH_DEFINES
-#include <iostream>
-#include <boost/nowide/fstream.hpp>
-#include <sstream>
 #include <string>
-#include <conio.h>
-#include <windows.h>
-#include <cmath>
-#include <vector>
 
-#include "ui/error.hpp"
-#include "datamanagement/memorymanager.hpp"
-#include "settings.hpp"
-#include "io/output.hpp"
-#include "plugins.hpp"
-#include "ParserLib/muParser.h"
-#include "utils/tools.hpp"
-#include "maths/parser_functions.hpp"
-#include "maths/define.hpp"
-#include "plotting/plotdata.hpp"
-#include "script.hpp"
-#include "documentation/documentation.hpp"
-#include "maths/odesolver.hpp"
 
 #ifndef COMMANDHANDLER_HPP
 #define COMMANDHANDLER_HPP

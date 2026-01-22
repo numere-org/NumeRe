@@ -25,6 +25,7 @@
 #include "built-in.hpp"
 #include "maths/command_implementations.hpp"
 #include "maths/matrixoperations.hpp"
+#include "maths/odesolver.hpp"
 #include "plotting/plotting.hpp"
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
@@ -33,6 +34,7 @@
 #include "utils/filecheck.hpp"
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
+#include "documentation/documentation.hpp"
 #include "../../database/database.hpp"
 #include "ParserLib/muValueImpl.hpp"
 

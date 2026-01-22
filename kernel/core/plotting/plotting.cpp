@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <wx/image.h>
+#include <boost/nowide/convert.hpp>
 
 #include "plotting.hpp"
 #include "plotasset.hpp"
@@ -1083,7 +1084,7 @@ bool Plot::createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, b
         // Apply the title line to the graph
         if (_pData.getSettings(PlotData::STR_PLOTTITLE).length())
         {
-            _graph->Title(fromSystemCodePage(_pData.getSettings(PlotData::STR_PLOTTITLE)).c_str(), "", -1.5);
+            _graph->Title(boost::nowide::widen(_pData.getSettings(PlotData::STR_PLOTTITLE)).c_str(), "", -1.5);
             if (!_pData.getAnimateSamples())
                 _pData.setTitle("");
         }
@@ -1294,7 +1295,7 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
             if (sConvLegends != "\"\"")
             {
-                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
+                _graph->AddLegend(boost::nowide::widen(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
                                   _pInfo.sContStyles[_pInfo.nStyle].c_str());
                 nLegends++;
             }
@@ -1721,7 +1722,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 }
 
                 nLegends++;
-                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend)).c_str(), sLegendStyle.c_str());
+                _graph->AddLegend(boost::nowide::widen(replaceToTeX(sLegend)).c_str(), sLegendStyle.c_str());
             }
 
             if (nCurrentStyle == _pInfo.nStyleMax - 1)
@@ -1771,7 +1772,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         double ypos = line.dPos + 0.01 * AutoRangeY;
 
         _graph->Line(mglPoint(_pInfo.ranges[XRANGE].min(), line.dPos), mglPoint(_pInfo.ranges[XRANGE].max(), line.dPos), line.sStyle.c_str(), 100);
-        _graph->Puts(xpos, ypos, fromSystemCodePage(line.sDesc).c_str(), ":kL");
+        _graph->Putsw(xpos, ypos, boost::nowide::widen(line.sDesc).c_str(), ":kL");
     }
 
     for (const Line& line : _pData.getVLines())
@@ -1785,7 +1786,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                                     _pInfo.ranges[YRANGE].max());
 
         _graph->Line(mglPoint(line.dPos, _pInfo.ranges[YRANGE].min()), mglPoint(line.dPos, _pInfo.ranges[YRANGE].max()), line.sStyle.c_str());
-        _graph->Puts(textpos, textdir, fromSystemCodePage(line.sDesc).c_str(), ":kL");
+        _graph->Putsw(textpos, textdir, boost::nowide::widen(line.sDesc).c_str(), ":kL");
     }
 
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
@@ -2673,10 +2674,14 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                 dTextSize = StrToDb(sStyle.substr(sStyle.find_first_of("0123456789"), 1));
 
             if (nFunctions >= 4)
-                _graph->Puts(mglPoint(vResults[0], vResults[1]),
-                             mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str(), dTextSize);
+                _graph->Putsw(mglPoint(vResults[0], vResults[1]),
+                              mglPoint(vResults[2], vResults[3]),
+                              boost::nowide::widen(sTextString).c_str(),
+                              sStyle.c_str(), dTextSize);
             else if (nFunctions >= 2)
-                _graph->Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str(), dTextSize);
+                _graph->Putsw(mglPoint(vResults[0], vResults[1]),
+                              boost::nowide::widen(sTextString).c_str(),
+                              sStyle.c_str(), dTextSize);
             else
                 continue;
         }
@@ -3098,10 +3103,14 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                 dTextSize = StrToDb(sStyle.substr(sStyle.find_first_of("0123456789"), 1));
 
             if (nFunctions >= 6)
-                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]),
-                             mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str(), dTextSize);
+                _graph->Putsw(mglPoint(vResults[0], vResults[1], vResults[2]),
+                              mglPoint(vResults[3], vResults[4], vResults[5]),
+                              boost::nowide::widen(sTextString).c_str(),
+                              sStyle.c_str(), dTextSize);
             else if (nFunctions >= 3)
-                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str(), dTextSize);
+                _graph->Putsw(mglPoint(vResults[0], vResults[1], vResults[2]),
+                              boost::nowide::widen(sTextString).c_str(),
+                              sStyle.c_str(), dTextSize);
             else
                 continue;
         }
@@ -3240,7 +3249,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
                     if (sConvLegends != "\"\"")
                     {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
+                        _graph->AddLegend(boost::nowide::widen(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
                                           _pInfo.sLineStyles[_pInfo.nStyle].c_str());
                         nLegends++;
                     }
@@ -3259,7 +3268,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
                 if (sConvLegends != "\"\"")
                 {
-                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
+                    _graph->AddLegend(boost::nowide::widen(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
                                       getLegendStyle(_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                     nLegends++;
                 }
@@ -3282,7 +3291,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             {
                 nLegends++;
                 std::string sLegendStyle;
-                std::string sLegend = fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2)));
+                std::string sLegend = replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2));
 
                 if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
                 {
@@ -3300,7 +3309,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 else
                     sLegendStyle = getLegendStyle(_pInfo.sPointStyles[_pInfo.nStyle]);
 
-                _graph->AddLegend(sLegend.c_str(), sLegendStyle.c_str());
+                _graph->AddLegend(boost::nowide::widen(sLegend).c_str(), sLegendStyle.c_str());
             }
 
         }
@@ -6851,7 +6860,7 @@ void Plot::CoordSettings()
                                                   _pInfo.ranges[YRANGE].min(), _pInfo.ranges[YRANGE].max());
                                 _graph->SetOrigin(_axis.ivl.max(), _pInfo.ranges[YRANGE].max() + _pInfo.ranges[YRANGE].range()*0.05);
                                 _graph->Axis("x", _axis.sStyle.c_str());
-                                _graph->Label('x', fromSystemCodePage("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
+                                _graph->Label('x', boost::nowide::widen("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
                             }
 
                             _axis = _pData.getAddAxis(YCOORD);
@@ -6863,7 +6872,7 @@ void Plot::CoordSettings()
                                 _graph->SetOrigin(_pInfo.ranges[XRANGE].max() + _pInfo.ranges[XRANGE].range()*0.05 / dAspect, _axis.ivl.max());
 
                                 _graph->Axis("y", _axis.sStyle.c_str());
-                                _graph->Label('y', fromSystemCodePage("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
+                                _graph->Label('y', boost::nowide::widen("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
                             }
 
                             _graph->SetRanges(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[XRANGE].max(),
@@ -6916,13 +6925,13 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
+                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
 
                         if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
                             || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
-                            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
+                            _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
                         else
-                            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
+                            _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -6976,9 +6985,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), -0.5);
-                        _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
-                        _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
+                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), -0.5);
+                        _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
+                        _graph->Label('z', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -7031,9 +7040,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), -0.4);
-                        _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
-                        _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), -0.9); // -0.4
+                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), -0.4);
+                        _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
+                        _graph->Label('z', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), -0.9); // -0.4
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -7081,8 +7090,8 @@ void Plot::CoordSettings()
                             || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                             || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
-                        _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
+                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
+                        _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
                     }
 
                     _pInfo.ranges[XRANGE].reset(0.0, _pInfo.ranges[XRANGE].max());
@@ -7270,9 +7279,9 @@ void Plot::CoordSettings()
                     || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                     || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                 {
-                    _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
-                    _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
-                    _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
+                    _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
+                    _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
+                    _graph->Label('z', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
                 }
             }
         }
@@ -7540,9 +7549,9 @@ void Plot::CoordSettings()
                 || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                 || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
         {
-            _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
-            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
-            _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
+            _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
+            _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
+            _graph->Label('z', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
         }
     }
 }

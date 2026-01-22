@@ -1858,8 +1858,6 @@ AnnotationCount CodeAnalyzer::addToAnnotation(const wxString& sMessage, int nSty
 	}
 
 	m_sCurrentLine += sMessage;
-	chartoadd += m_editor->countUmlauts(sMessage);
-
 	m_sStyles.append(sMessage.length() + chartoadd, nStyle);
 
 	// Increment the total counter

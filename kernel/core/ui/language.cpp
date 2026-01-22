@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 
+#include <boost/nowide/fstream.hpp>
 
 #include "language.hpp"
 #include "../utils/stringtools.hpp"

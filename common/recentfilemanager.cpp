@@ -169,7 +169,7 @@ void RecentFilesManager::importList(const wxString& fileName)
 
     while (file)
     {
-        RecentFile recent(file->GetText());
+        RecentFile recent(wxFromUtf8(file->GetText()));
         recent.opened = file->Int64Attribute("opened", 0);
 
         m_fileList.push_back(recent);

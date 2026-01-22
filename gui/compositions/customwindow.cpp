@@ -856,7 +856,7 @@ void CustomWindow::layout()
 
     // Evaluate the title information
     if (layoutGroup->Attribute("title"))
-        SetTitle(layoutGroup->Attribute("title"));
+        SetTitle(wxFromUtf8(layoutGroup->Attribute("title")));
     else
         SetTitle("NumeRe: Custom Window");
 
@@ -864,7 +864,7 @@ void CustomWindow::layout()
     // the standard icon
     if (layoutGroup->Attribute("icon"))
     {
-        wxFileName iconfile(layoutGroup->Attribute("icon"));
+        wxFileName iconfile(wxFromUtf8(layoutGroup->Attribute("icon")));
 
         if (iconfile.GetExt() == "ico")
             SetIcon(wxIcon(layoutGroup->Attribute("icon"), wxBITMAP_TYPE_ICO));
@@ -893,7 +893,7 @@ void CustomWindow::layout()
 
     if (layoutGroup->Attribute("statustext"))
     {
-        wxString statusText = layoutGroup->Attribute("statustext");
+        wxString statusText = wxFromUtf8(layoutGroup->Attribute("statustext"));
         setStatusText(getChoices(statusText));
     }
 

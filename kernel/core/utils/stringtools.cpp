@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <iterator>
 #include <boost/tokenizer.hpp>
+#include <boost/locale.hpp>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -585,10 +586,10 @@ std::string condenseText(const std::string& sText)
 /////////////////////////////////////////////////
 std::string truncString(const std::string& sText, size_t nMaxChars)
 {
-    if (sText.length() <= nMaxChars)
+    if (countUnicodePoints(sText) <= nMaxChars)
         return sText;
 
-    return sText.substr(0, nMaxChars-3) + "...";
+    return sText.substr(0, findClosestCharStart(sText, nMaxChars-3)) + "...";
 }
 
 
@@ -613,14 +614,15 @@ std::string strfill(const std::string& sString, size_t nWidth, char cFill, bool 
         return "";
 
     std::string sReturn = sString;
+    size_t length = countUnicodePoints(sString);
 
     // Fill the string
-    if (sString.length() < nWidth)
-        sReturn.insert(0, nWidth-sReturn.length(), cFill);
+    if (length < nWidth)
+        sReturn.insert(0, nWidth-length, cFill);
 
     // Limit the output size if required
-    if (limit && sString.length() > nWidth)
-        sReturn = sString.substr(0, nWidth - 3) + "...";
+    if (limit && length > nWidth)
+        sReturn = sString.substr(0, findClosestCharStart(sString, nWidth - 3)) + "...";
 
     return sReturn;
 }
@@ -641,9 +643,13 @@ std::string strlfill(const std::string& sString, size_t nWidth, char cFill)
 {
     if (!nWidth)
         return "";
+
     std::string sReturn = sString;
-    if (sString.length() < nWidth)
-        sReturn.append(nWidth-sReturn.length(), cFill);
+    size_t length = sString.length();
+
+    if (length < nWidth)
+        sReturn.append(nWidth-length, cFill);
+
     return sReturn;
 }
 
@@ -1121,19 +1127,11 @@ std::string toExternalString(std::string sStr)
 /////////////////////////////////////////////////
 std::string toLowerCase(const std::string& sUpperCase)
 {
-    std::string sLowerCase = sUpperCase;
-    static Umlauts _umlauts;
-    constexpr int charDiff = (int)'a' - (int)'A';
+    boost::locale::generator gen;
+#warning TODO (numere#1#01/21/26): What to do with the locales?
+    std::locale loc = gen("en_US.UTF-8");
 
-    for (size_t i = 0; i < sLowerCase.length(); i++)
-    {
-        // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen A und Z liegt
-        if ((int)sLowerCase[i] >= (int)'A' && (int)sLowerCase[i] <= (int)'Z')
-            sLowerCase[i] = (char)((int)sLowerCase[i] + charDiff);
-        else
-            sLowerCase[i] = _umlauts.toLower(sLowerCase[i]);
-    }
-    return sLowerCase;
+    return boost::locale::to_lower(sUpperCase, loc);
 }
 
 
@@ -1147,30 +1145,11 @@ std::string toLowerCase(const std::string& sUpperCase)
 /////////////////////////////////////////////////
 std::string toUpperCase(const std::string& sLowerCase)
 {
-    std::string sUpperCase = sLowerCase;
-    static Umlauts _umlauts;
-    const int EQUAL = 0;
-    constexpr int charDiff = (int)'A' - (int)'a';
+    boost::locale::generator gen;
+    std::locale loc = gen("en_US.UTF-8");
 
-    for (size_t i = 0; i < sUpperCase.length(); i++)
-    {
-        // Handle escape characters like linebreaks or tabulator characters
-        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.compare(i, 2, "\\n") == EQUAL || sUpperCase.compare(i, 2, "\\t") == EQUAL))
-        {
-            i++;
-            continue;
-        }
-        else if (sUpperCase.compare(i, 2, "\\n") == EQUAL)
-            sUpperCase.replace(i, 2, "N");
-        else if (sUpperCase.compare(i, 2, "\\t") == EQUAL)
-            sUpperCase.replace(i, 2, "T");
-        else if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
-            sUpperCase[i] = (char)((int)sUpperCase[i] + charDiff);
-        else
-            sUpperCase[i] = _umlauts.toUpper(sUpperCase[i]);
-    }
-
-    return sUpperCase;
+#warning TODO (numere#1#01/21/26): Boost::locale needs to be rebuild with ICU support
+    return boost::locale::to_upper(sLowerCase, loc);
 }
 
 
@@ -1945,6 +1924,166 @@ std::string ansiToUtf8(const std::string& sString)
     }
 
     return sUtf8String;
+}
+
+
+#define UTF8_TWOBYTE 192
+#define UTF8_THREEBYTE 224
+#define UTF8_FOURBYTE 240
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the number of Unicode code
+/// points in the UTF8 encoded string. This is
+/// typical less than the number of bytes. It
+/// does not correspond to the number of user-
+/// perceivable glyphs.
+///
+/// \param sString const std::string&
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t countUnicodePoints(const std::string& sString)
+{
+    size_t cnt = 0;
+
+    for (unsigned char c : sString)
+    {
+        if (c >= UTF8_FOURBYTE)
+            cnt += 3;
+        else if (c >= UTF8_THREEBYTE)
+            cnt += 2;
+        else if (c >= UTF8_TWOBYTE)
+            cnt++;
+    }
+
+    return sString.length() - cnt;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Find the byte position of the closest
+/// character start. Prefers positions to the
+/// left, if both are equal in distance.
+///
+/// \param sString const std::string&
+/// \param pos size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t findClosestCharStart(const std::string& sString, size_t pos)
+{
+    if ((unsigned char)sString[pos] <= 127 || (unsigned char)sString[pos] >= UTF8_TWOBYTE)
+        return pos;
+    size_t pl = pos;
+    size_t pr = pos;
+
+    // Find character start to the left
+    while (pl > 0
+           && (unsigned char)sString[pl] > 127
+           && (unsigned char)sString[pl] < UTF8_TWOBYTE)
+        pl--;
+
+    // Find character start to the right
+    while (pr+1 < sString.length()
+           && (unsigned char)sString[pr] > 127
+           && (unsigned char)sString[pr] < UTF8_TWOBYTE)
+        pr++;
+
+    // Find closest
+    if (pr - pos >= pos - pl)
+        return pl;
+
+    return pr;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Determine, whether the passed byte
+/// sequence is a valid UTF8 byte sequence.
+///
+/// \param sString const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isValidUtf8Sequence(const std::string& sString)
+{
+    // Lambda for detecting a continuation byte
+    auto isUtf8ContinuationByte = [](unsigned char c){return c >= 128 && c < UTF8_TWOBYTE;};
+
+    for (size_t i = 0; i < sString.length(); i++)
+    {
+        // Single byte is fine
+        if ((unsigned char)sString[i] <= 127)
+            continue;
+
+        // Two-byte case
+        if ((unsigned char)sString[i] >= UTF8_TWOBYTE
+            && (unsigned char)sString[i] < UTF8_THREEBYTE)
+        {
+            // Enough remaining bytes?
+            if (i+1 >= sString.length())
+                return false;
+
+            // Following byte incorrect?
+            if (!isUtf8ContinuationByte(sString[i+1]))
+                return false;
+
+            // If there is a byte right after, is it incorrect?
+            if (i+2 < sString.length()
+                && isUtf8ContinuationByte(sString[i+2]))
+                return false;
+
+            // Advance one byte
+            i++;
+        }
+
+        // Three-byte case
+        if ((unsigned char)sString[i] >= UTF8_THREEBYTE
+            && (unsigned char)sString[i] < UTF8_FOURBYTE)
+        {
+            // Enough remaining bytes?
+            if (i+2 >= sString.length())
+                return false;
+
+            // Following bytes incorrect?
+            if (!isUtf8ContinuationByte(sString[i+1])
+                || !isUtf8ContinuationByte(sString[i+2]))
+                return false;
+
+            // If there is a byte right after, is it incorrect?
+            if (i+3 < sString.length()
+                && isUtf8ContinuationByte(sString[i+3]))
+                return false;
+
+            // Advance two bytes
+            i += 2;
+        }
+
+        // Four-byte case
+        if ((unsigned char)sString[i] >= UTF8_FOURBYTE)
+        {
+            // Enough remaining bytes?
+            if (i+3 >= sString.length())
+                return false;
+
+            // Following bytes incorrect?
+            if (!isUtf8ContinuationByte(sString[i+1])
+                || !isUtf8ContinuationByte(sString[i+2])
+                || !isUtf8ContinuationByte(sString[i+2]))
+                return false;
+
+            // If there is a byte right after, is it incorrect?
+            if (i+4 < sString.length()
+                && isUtf8ContinuationByte(sString[i+4]))
+                return false;
+
+            // Advance three bytes
+            i += 3;
+        }
+    }
+
+    return true;
 }
 
 

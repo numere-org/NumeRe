@@ -250,6 +250,7 @@
 			<Add library="oleaut32" />
 			<Add library="secur32" />
 			<Add library="../../TDM-GCC-64/lib/libboost_nowide-mgw10-mt-x64-1_82.a" />
+			<Add library="../../TDM-GCC-64/lib/libboost_locale-mgw10-mt-x64-1_82.a" />
 			<Add directory="$(wx)/lib/gcc_lib" />
 			<Add directory="$(lib)" />
 			<Add directory="$(bin)" />

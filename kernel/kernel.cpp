@@ -963,8 +963,8 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
     make_hline(80);
     std::string sAppName = toUpperCase(_lang.get("COMMON_APPNAME"));
 
-    printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
-    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - getVersion().length())
+    printPreFmt("| " + sAppName + strfill("|\n", 79 - countUnicodePoints(sAppName)));
+    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - countUnicodePoints(getVersion()))
                 + printBuildDate() + " |\n");
     printPreFmt("| Copyright (c) 2013-" + getBuildYear() + ", Erik A. Hänel et al."
                 + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");

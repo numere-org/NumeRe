@@ -379,7 +379,7 @@ inline std::string sectionHeadline(const std::string& sString, char cHeadLineSep
     else
         sSectionHeadline += " ";
 
-    sSectionHeadline.append(NumeReKernel::nLINE_LENGTH-sSectionHeadline.length()+1, cHeadLineSep);
+    sSectionHeadline.append(NumeReKernel::nLINE_LENGTH-countUnicodePoints(sSectionHeadline), cHeadLineSep);
     sSectionHeadline += "\n";
     return sSectionHeadline;
 }

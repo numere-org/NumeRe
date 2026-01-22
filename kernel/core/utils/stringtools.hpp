@@ -507,6 +507,9 @@ std::string replaceControlCharacters(std::string sToModify);
 std::string utf8parser(const std::string& sString);
 std::string utf8ToAnsi(const std::string& sString);
 std::string ansiToUtf8(const std::string& sString);
+size_t countUnicodePoints(const std::string& sString);
+size_t findClosestCharStart(const std::string& sString, size_t pos);
+bool isValidUtf8Sequence(const std::string& sString);
 std::string markupToHtml(const std::string& sString);
 
 std::string replacePathSeparator(const std::string& __sPath);

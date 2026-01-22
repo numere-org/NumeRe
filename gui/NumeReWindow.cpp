@@ -2259,7 +2259,7 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showGraph(NumeRe::Window& window)
 {
-    GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + window.getGraph()->getTitle(), window.getGraph(), m_terminal);
+    GraphViewer* viewer = new GraphViewer(this, wxFromUtf8("NumeRe: " + window.getGraph()->getTitle()), window.getGraph(), m_terminal);
     registerWindow(viewer, WT_GRAPH);
 
     viewer->SetIcon(getStandardIcon());

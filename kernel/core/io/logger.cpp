@@ -262,7 +262,7 @@ bool DetachedLogger::open(const std::string& sLogFile)
             m_startAfterCrash = sLine != LOGGER_SHUTDOWN_LINE;
         }
 
-        m_logFile.clear();
+        m_logFile.close();
     }
 
     for (size_t i = 0; i < m_buffer.size(); i++)

@@ -1687,7 +1687,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
                                                                            + "_*"), lastpos)) + "\n  [...]\n";
 
             if (selection != blockDef.startWord)
-                nLength = sBlock.length() + countUmlauts(sBlock);
+                nLength = sBlock.length();
 
             // Include middle words
             if (blockDef.middleWord1.length())
@@ -1697,7 +1697,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
                                                                        + "_*"), lastpos2)) + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1)
-                    nLength = sBlock.length() + countUmlauts(sBlock);
+                    nLength = sBlock.length();
             }
 
             // Include middle words
@@ -1708,7 +1708,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
                                                      + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
-                    nLength = sBlock.length() + countUmlauts(sBlock);
+                    nLength = sBlock.length();
             }
 
             // Add the last word
@@ -4644,22 +4644,29 @@ bool NumeReEditor::canOpen(const wxFileName& filename)
 
     // Check for text-only std::isspace || std::isgraph
     boost::nowide::ifstream file(wxToUtf8(filename.GetFullPath()));
-    size_t readChars = 0;
-    static Umlauts uml;
+    size_t nReadBytes = 0;
+    std::string sReadBytes;
 
     if (!file.good())
         return false;
 
-    while (file.good() && readChars < 200)
+    while (file.good() && nReadBytes < 200)
     {
         std::ios::int_type c = file.get();
-        readChars++;
+        nReadBytes++;
 
         if (c == EOF)
             return true;
 
-        if (!std::isspace(c) && !std::isgraph(c) && !uml.isUmlaut(c))
+        // This might be a unicode point start, check the previously read string
+        /*if ((c <= 127 || (unsigned)c >= 192)
+            && !isValidUtf8Sequence(sReadBytes))
+            return false;*/
+
+        if (c < 32 && c != 9 && c != 10 && c != 13)
             return false;
+
+        sReadBytes += (char)c;
     }
 
     return true;
@@ -4676,7 +4683,7 @@ bool NumeReEditor::canOpen(const wxFileName& filename)
 //////////////////////////////////////////////////////////////////////////////
 wxString NumeReEditor::GetFileNameAndPath()
 {
-    wxString nameAndPath = m_fileNameAndPath.GetFullPath();//m_bLastSavedRemotely ? wxPATH_UNIX : wxPATH_DOS);
+    wxString nameAndPath = m_fileNameAndPath.GetFullPath();
     return nameAndPath;
 }
 
@@ -9017,29 +9024,6 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
             return false;
     }
     return false;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Counts the german umlauts in the current
-/// string.
-///
-/// \param sStr const wxString&
-/// \return int
-///
-/////////////////////////////////////////////////
-int NumeReEditor::countUmlauts(const wxString& sStr)
-{
-    static Umlauts _umlauts;
-    int nUmlauts = 0;
-
-    for (size_t i = 0; i < sStr.length(); i++)
-    {
-        if (_umlauts.isUmlaut(sStr[i]))
-            nUmlauts++;
-    }
-
-    return nUmlauts;
 }
 
 

@@ -1473,6 +1473,12 @@ namespace NumeRe
         sTableName = readStringField();
         sComment = readStringField();
 
+        if (fileVersionRead < 5.0)
+        {
+            sTableName = ansiToUtf8(sTableName);
+            sComment = ansiToUtf8(sComment);
+        }
+
         // Read now the three empty fields of the
         // header. We created special functions for
         // reading and deleting arbitary data types
@@ -1636,6 +1642,8 @@ namespace NumeRe
     void NumeReDataFile::readColumn(TblColPtr& col)
     {
         std::pair<std::string,std::string> headAndUnit = findAndParseUnit(readStringField());
+        headAndUnit.first = ansiToUtf8(headAndUnit.first);
+        headAndUnit.second = ansiToUtf8(headAndUnit.second);
         std::string sDataType = readStringField();
 
         if (sDataType == "DTYPE=NONE")
@@ -1705,6 +1713,9 @@ namespace NumeRe
     void NumeReDataFile::readColumnV4(TblColPtr& col)
     {
         std::pair<std::string,std::string> headAndUnit = findAndParseUnit(readStringField());
+        headAndUnit.first = ansiToUtf8(headAndUnit.first);
+        headAndUnit.second = ansiToUtf8(headAndUnit.second);
+
         std::string sDataType = readStringField();
 
         if (sDataType == "DTYPE=NONE")
@@ -1804,6 +1815,8 @@ namespace NumeRe
             {
                 fileData->at(i)->m_sHeadLine[j] = cHeadLine[i][j];
             }
+
+            fileData->at(i)->m_sHeadLine = ansiToUtf8(fileData->at(i)->m_sHeadLine);
         }
 
         // Read the appended zeros field, which

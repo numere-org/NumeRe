@@ -425,6 +425,10 @@ void OptionsDialog::CreateStylePage()
     defaultFont.Add("heroscn");
     defaultFont.Add("schola");
     defaultFont.Add("termes");
+    defaultFont.Add("stix");
+    defaultFont.Add("stix2");
+    defaultFont.Add("noto");
+    defaultFont.Add("notosf");
 
     m_defaultFont = new wxComboBox(group->GetStaticBox(), ID_PRINTSTYLE, "pagella", wxDefaultPosition, wxSize(200,-1), defaultFont, wxCB_READONLY );
     m_defaultFont->SetStringSelection("pagella");

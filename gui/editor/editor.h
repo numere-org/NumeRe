@@ -349,7 +349,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		bool isStyleType(StyleType _type, int nPos);
 
-		int countUmlauts(const wxString& sStr);
 		wxString realignLangString(wxString sLine, size_t& lastpos);
 		wxString addLinebreaks(const wxString& sLine, bool onlyDocumentation = false);
 

@@ -21,6 +21,7 @@
 
 #include <string>
 #include <boost/nowide/fstream.hpp>
+#include <fstream>
 #include <cmath>
 #include <vector>
 #include <utility>
@@ -68,7 +69,7 @@ namespace NumeRe
     class GenericFile : public FileSystem
     {
         protected:
-            boost::nowide::fstream fFileStream;
+            std::fstream fFileStream;
             std::string sFileExtension;
             std::string sFileName;
             std::string sTableName;
@@ -100,7 +101,7 @@ namespace NumeRe
                 if (fFileStream.is_open())
                     fFileStream.close();
 
-                fFileStream.open(sFileName.c_str(), mode);
+                fFileStream.open(boost::nowide::widen(sFileName).c_str(), mode);
 
                 if (!fFileStream.good())
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);

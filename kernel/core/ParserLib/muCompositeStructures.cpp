@@ -2079,7 +2079,7 @@ namespace mu
         if (!is_open())
             return 0;
 
-        return std::filesystem::file_size(std::filesystem::path(m_fileName));
+        return std::filesystem::file_size(std::filesystem::path(boost::nowide::widen(m_fileName)));
     }
 
 
