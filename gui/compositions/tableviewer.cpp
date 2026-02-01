@@ -1919,7 +1919,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
             }
 
             if (_stringTable.get(i, j).length())
-                SetCellValue(i, j, _stringTable.get(i, j));
+                SetCellValue(i, j, wxFromUtf8(_stringTable.get(i, j)));
         }
     }
 

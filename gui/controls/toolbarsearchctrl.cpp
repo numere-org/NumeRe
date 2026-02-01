@@ -41,13 +41,13 @@ bool ToolBarSearchCtrl::selectItem(const wxString& value)
     if (record == std::string::npos)
         return false;
 
-    std::string sTermInput = searchDB.getElement(record, 3);
+    wxString sTermInput = wxFromUtf8(searchDB.getElement(record, 3));
 
     if (sTermInput.substr(0, 5) == "help ")
         m_mainframe->ShowHelp(sTermInput.substr(5));
     else if (sTermInput.substr(0, 1) == ".")
         m_mainframe->ShowHelp(sTermInput.substr(1));
-    else if (sTermInput.front() != '"' && sTermInput.find("(") != std::string::npos)
+    else if (sTermInput.GetChar(0) != '"' && sTermInput.find("(") != std::string::npos)
         m_mainframe->ShowHelp(sTermInput);
     else
     {
@@ -82,7 +82,7 @@ wxString ToolBarSearchCtrl::getDragDropText(const wxString& value)
     if (record == std::string::npos)
         return "";
 
-    wxString text = searchDB.getElement(record, 3);
+    wxString text = wxFromUtf8(searchDB.getElement(record, 3));
 
     if (text.substr(0, 5) == "help ")
         text.erase(0, text.find_first_not_of(' ', 4));
@@ -118,7 +118,7 @@ wxArrayString ToolBarSearchCtrl::getCandidates(const wxString& enteredText)
     for (auto iter = matches.rbegin(); iter != matches.rend(); ++iter)
     {
         for (size_t i = 0; i < iter->second.size(); i++)
-            candidates.Add(searchDB.getElement(iter->second[i], 0) + "~" + searchDB.getElement(iter->second[i], 1));
+            candidates.Add(wxFromUtf8(searchDB.getElement(iter->second[i], 0)) + "~" + wxFromUtf8(searchDB.getElement(iter->second[i], 1)));
     }
 
     return candidates;

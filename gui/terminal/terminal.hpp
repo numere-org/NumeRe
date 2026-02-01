@@ -263,6 +263,8 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void insertRawText(wxString sText);
 
 		// Text printing functions
+		int GetScreenCharPosition(int x, int y);
+		int GetCharFromScreenPosition(int x, int y);
 		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const wxString& sText) override;
 		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxUniChar c) override;
 

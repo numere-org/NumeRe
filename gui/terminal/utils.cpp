@@ -54,6 +54,7 @@ void GenericTerminal::update_changes ()
 	    // the current line
 		wxString line = tm.getRenderedString(i);
 		std::vector<unsigned short> colors = tm.getRenderedColors(i);
+
 		size_t lastPos = 0;
 
 		// Print all characters together, which have the same color

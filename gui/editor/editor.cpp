@@ -4643,7 +4643,8 @@ bool NumeReEditor::canOpen(const wxFileName& filename)
         return false;
 
     // Check for text-only std::isspace || std::isgraph
-    boost::nowide::ifstream file(wxToUtf8(filename.GetFullPath()));
+    boost::nowide::ifstream file(wxToUtf8(filename.GetFullPath()),
+                                 std::ios_base::in | std::ios_base::binary);
     size_t nReadBytes = 0;
     std::string sReadBytes;
 

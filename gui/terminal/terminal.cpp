@@ -818,7 +818,7 @@ NumeReTerminal::GetDefColors(wxColour colors[16], NumeReTerminal::BOLDSTYLE bold
 				colors[NumeReSyntax::SYNTAX_COMMENT] = m_options->GetSyntaxStyle(Options::COMMENT).foreground;
 				break;
             default:
-                colors[i] = *wxBLACK;
+                colors[i] = wxColour(192,192,192); //*wxBLACK;
 		}
 	}
 }
@@ -1366,12 +1366,19 @@ NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 {
 	SetFocus();
 	ClearSelection();
-	m_selx1 = m_selx2 = event.GetX() / m_charWidth;
+
+	wxClientDC dc(this);
+    m_curDC = &dc;
+    m_curDC->SetFont(m_normalFont);
+    // Get the character position
+	m_selx1 = m_selx2 = GetCharFromScreenPosition(event.GetX(), event.GetY());
+    m_curDC = nullptr;
+
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
 	m_selecting = true;
 	MarkSelection();
 	Refresh(false);
-	this->CaptureMouse();
+	CaptureMouse();
 }
 
 
@@ -1386,10 +1393,10 @@ NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void NumeReTerminal::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 {
-	if (this->GetCapture() == this)
+	if (GetCapture() == this)
 	{
 		m_selecting = false;
-		this->ReleaseMouse();
+		ReleaseMouse();
 		Refresh();
 	}
 }
@@ -1409,11 +1416,13 @@ void
 NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 {
 	m_selecting = false;
-	if (this->GetCapture() == this)
+
+	if (GetCapture() == this)
 	{
-		this->ReleaseMouse();
+		ReleaseMouse();
 		Refresh(false);
 	}
+
 	move_cursor_editable_area(m_selx2, m_sely2);
 }
 
@@ -1431,33 +1440,34 @@ NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 void
 NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 {
-	if (m_selecting)
-	{
-	    int x2Old = m_selx2;
-	    int y2Old = m_sely2;
+	if (!m_selecting)
+        return;
 
-	    // Get the text coordinates of the mouse
-		m_selx2 = event.GetX() / m_charWidth;
+    int x2Old = m_selx2;
+    int y2Old = m_sely2;
 
-		if (m_selx2 >= Width())
-			m_selx2 = Width() - 1;
+    // Get the text coordinates of the mouse
+    wxClientDC dc(this);
+    m_curDC = &dc;
+    m_curDC->SetFont(m_normalFont);
+    // Get the character position
+    m_selx2 = GetCharFromScreenPosition(event.GetX(), event.GetY());
+    m_curDC = nullptr;
+    m_sely2 = event.GetY() / m_charHeight;
 
-		m_sely2 = event.GetY() / m_charHeight;
+    if (m_sely2 >= Height())
+        m_sely2 = Height() - 1;
 
-		if (m_sely2 >= Height())
-			m_sely2 = Height() - 1;
+    // Mark the selections
+    if (event.AltDown())
+        MarkSelection(true);
+    else
+        MarkSelection();
 
-        // Mark the selections
-		if (event.AltDown())
-			MarkSelection(true);
-		else
-			MarkSelection();
-
-        // Update the terminal
-		// GenericTerminal::Update();
-		if (x2Old != m_selx2 || y2Old != m_sely2)
-            Refresh(false);
-	}
+    // Update the terminal
+    // GenericTerminal::Update();
+    if (x2Old != m_selx2 || y2Old != m_sely2)
+        Refresh(false);
 }
 
 
@@ -1735,6 +1745,99 @@ void NumeReTerminal::insertRawText(wxString sText)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the (relative) pixel position of
+/// the character indicated by x and y. Requires
+/// that m_curDC points to a valid device context
+/// and is set to a non-bold font.
+///
+/// \param x int
+/// \param y int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReTerminal::GetScreenCharPosition(int x, int y)
+{
+    if (!m_curDC)
+        return x * m_charWidth;
+
+    if (!x)
+        return 0;
+
+    x--; // bc. the values are widths and do not start at zero
+
+    wxString charsInLine = GetTM()->getRenderedString(y);
+    wxArrayInt widths;
+
+    m_curDC->GetPartialTextExtents(charsInLine, widths);
+
+    if (!widths.size())
+        return x * m_charWidth;
+
+    if (x < (int)widths.size())
+        return widths[x];
+
+    return widths.Last() + (x - (int)widths.size() + 1) * m_charWidth;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the character at the (relative) x
+/// and y screen positions. Requires that m_curDC
+/// points to a valid device context and is set
+/// to a non-bold font.
+///
+/// \param x int
+/// \param y int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReTerminal::GetCharFromScreenPosition(int x, int y)
+{
+    if (!m_curDC)
+    {
+        x /= m_charWidth;
+
+        if (x >= Width())
+            x = Width() - 1;
+
+        return x;
+    }
+
+    // Get the text coordinates of the mouse
+    y /= m_charHeight;
+
+    if (y >= Height())
+        y = Height() - 1;
+
+    wxString charsInLine = GetTM()->getRenderedString(y);
+    wxArrayInt widths;
+
+    m_curDC->GetPartialTextExtents(charsInLine, widths);
+
+    if (!widths.size())
+    {
+        x /= m_charWidth;
+
+        if (x >= Width())
+            x = Width() - 1;
+
+        return x;
+    }
+
+    if (x >= widths.Last())
+        return widths.size() + (x - widths.Last()) / m_charWidth;
+
+    for (int i = widths.size()-1; i >= 0; i--)
+    {
+        if (widths[i] < x)
+            return i+1; // bc. the values are widths and do not start at zero
+    }
+
+    return 0;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual DrawText
 ///  Responsible for actually drawing the terminal text on the widget.  This virtual
@@ -1759,7 +1862,7 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 	// Overwrite the passed colors depending on the flags
 	if (flags & SELECTED)
 	{
-		fg_color = 0;
+		//fg_color = 0;
 		bg_color = 15;
 	}
 
@@ -1773,35 +1876,32 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 	if (!m_curDC)
 		return;
 
+    m_curDC->SetFont(m_normalFont);
+
+	// Convert x-y char coordinates into pixel coordinates
+//	x *= m_charWidth;
+    x = GetScreenCharPosition(x, y);
+	y *= m_charHeight;
+
 	// Set the correct font
 	if (m_boldStyle != FONT)
 	{
 		if (flags & UNDERLINE)
 			m_curDC->SetFont(m_underlinedFont);
-		else
-			m_curDC->SetFont(m_normalFont);
 	}
 	else
 	{
-		if (flags & BOLD)
-		{
-			if (flags & UNDERLINE)
+        if (flags & UNDERLINE)
+        {
+            if (flags & BOLD)
 				m_curDC->SetFont(m_boldUnderlinedFont);
-			else
-				m_curDC->SetFont(m_boldFont);
-		}
-		else
-		{
-			if (flags & UNDERLINE)
+            else
 				m_curDC->SetFont(m_underlinedFont);
-			else
-				m_curDC->SetFont(m_normalFont);
-		}
-	}
+        }
 
-	// Convert x-y char coordinates into pixel coordinates
-	x *= m_charWidth;
-	y *= m_charHeight;
+        else if (flags & BOLD)
+            m_curDC->SetFont(m_boldFont);
+	}
 
 	// Set colors and background mode
 	m_curDC->SetBackgroundMode(wxSOLID);
@@ -1856,35 +1956,32 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
     // Convert the character into wxString
 	wxString str(c);
 
+	m_curDC->SetFont(m_normalFont);
+
+	// Convert x-y char coordinates into pixel coordinates
+//	x *= m_charWidth;
+    x = GetScreenCharPosition(x, y);
+	y *= m_charHeight;
+
 	// Set the correct font
 	if (m_boldStyle != FONT)
 	{
 		if (flags & UNDERLINE)
 			m_curDC->SetFont(m_underlinedFont);
-		else
-			m_curDC->SetFont(m_normalFont);
 	}
 	else
 	{
-		if (flags & BOLD)
-		{
-			if (flags & UNDERLINE)
+        if (flags & UNDERLINE)
+        {
+            if (flags & BOLD)
 				m_curDC->SetFont(m_boldUnderlinedFont);
-			else
-				m_curDC->SetFont(m_boldFont);
-		}
-		else
-		{
-			if (flags & UNDERLINE)
+            else
 				m_curDC->SetFont(m_underlinedFont);
-			else
-				m_curDC->SetFont(m_normalFont);
-		}
-	}
+        }
 
-	// Convert x-y char coordinates into pixel coordinates
-	x *= m_charWidth;
-	y *= m_charHeight;
+        else if (flags & BOLD)
+            m_curDC->SetFont(m_boldFont);
+	}
 
 	// Set colors and background mode
 	m_curDC->SetBackgroundMode(wxSOLID);
@@ -2056,9 +2153,12 @@ void NumeReTerminal::CalltipCancel()
 void
 NumeReTerminal::ClearChars(int bg_color, int x, int y, int w, int h)
 {
-	x *= m_charWidth;
+    w = GetScreenCharPosition(x+w, h);
+    x = GetScreenCharPosition(x, y);
+    w -= x;
+//	x *= m_charWidth;
 	y *= m_charHeight;
-	w *= m_charWidth;
+//	w *= m_charWidth;
 	h *= m_charHeight;
 
 	if (!m_curDC)
