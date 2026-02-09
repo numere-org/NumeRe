@@ -6529,7 +6529,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
             tooltip += "\n";
             tooltip.append(80u, '-');
-            tooltip += "\n" + _cTip.sDefinition + "\n" + _cTip.sDocumentation;
+            tooltip += "\n" + wxFromUtf8(_cTip.sDefinition + "\n" + _cTip.sDocumentation);
         }
         else
         {
@@ -6718,7 +6718,7 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 {
     if (m_options->showExtendedFileInfo())
-        return "\n" + getFileInfo(filename.GetFullPath().ToStdString());
+        return "\n" + wxFromUtf8(getFileInfo(wxToUtf8(filename.GetFullPath())));
 
     return "";
 }

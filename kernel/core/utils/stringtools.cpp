@@ -35,6 +35,7 @@ std::string getNextArgument(std::string& sArgList, bool bCut);
 double intPower(double, int64_t);
 bool isInt(const std::complex<double>& number);
 
+
 // toString function implementations
 // There's an overwrite for mostly every variable type
 //
@@ -1577,517 +1578,6 @@ std::string fromSystemCodePage(std::string sOutput)
 
 
 /////////////////////////////////////////////////
-/// \brief Transforms a UTF8 encoded string into
-/// a Win CP1252 string in the internal code
-/// page representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string utf8parser(const std::string& sString)
-{
-    // Static declaration of constant
-	static const unsigned char NONANSIBITMASK = 128;
-    std::string sWinCp = sString;
-
-    for (size_t i = 0; i < sWinCp.length(); i++)
-    {
-        if (sWinCp[i] & NONANSIBITMASK)
-        {
-            if (sWinCp[i] == (char)0xC2)
-            {
-                // Regl. ANSI > 127
-                sWinCp.erase(i, 1);
-            }
-            else if (sWinCp[i] == (char)0xE2 && sWinCp.length() > i+2)
-            {
-                // These are the about 20 characters, which have other
-                // code points in Win-CP1252 and unicode
-                // U+20.. and U+21..
-
-                // Trademark symbol
-                if (sWinCp[i+1] == (char)0x84 && (sWinCp[i+2] & ~(char)0xC0) == (char)0x22)
-                {
-                    sWinCp.erase(i, 2);
-                    sWinCp[i] = (char)0x99;
-                    continue;
-                }
-
-                // All other cases
-                char sChar = sWinCp[i+2] & ~(char)0xC0;
-                sChar += (sWinCp[i+1] & (char)0x3) << 6;
-                sWinCp.erase(i, 2);
-
-                // Switch as lookup table
-                switch (sChar)
-                {
-                    case (char)0xAC:
-                        sWinCp[i] = (char)0x80;
-                        break;
-                    case (char)0x1A:
-                        sWinCp[i] = (char)0x82;
-                        break;
-                    case (char)0x1E:
-                        sWinCp[i] = (char)0x84;
-                        break;
-                    case (char)0x26:
-                        sWinCp[i] = (char)0x85;
-                        break;
-                    case (char)0x20:
-                        sWinCp[i] = (char)0x86;
-                        break;
-                    case (char)0x21:
-                        sWinCp[i] = (char)0x87;
-                        break;
-                    case (char)0x30:
-                        sWinCp[i] = (char)0x89;
-                        break;
-                    case (char)0x39:
-                        sWinCp[i] = (char)0x8B;
-                        break;
-                    case (char)0x18:
-                        sWinCp[i] = (char)0x91;
-                        break;
-                    case (char)0x19:
-                        sWinCp[i] = (char)0x92;
-                        break;
-                    case (char)0x1C:
-                        sWinCp[i] = (char)0x93;
-                        break;
-                    case (char)0x1D:
-                        sWinCp[i] = (char)0x94;
-                        break;
-                    case (char)0x22:
-                        sWinCp[i] = (char)0x95;
-                        break;
-                    case (char)0x13:
-                        sWinCp[i] = (char)0x96;
-                        break;
-                    case (char)0x14:
-                        sWinCp[i] = (char)0x97;
-                        break;
-                    case (char)0x3A:
-                        sWinCp[i] = (char)0x9B;
-                        break;
-                }
-            }
-            else if (sWinCp[i] >= (char)0xC4 && sWinCp[i] <= (char)0xCB)
-            {
-                // These are the about 20 characters, which have other
-                // code points in Win-CP1252 and unicode
-                // U+01.. and U+02..
-                char sChar = sWinCp[i+1] & ~(char)0xC0;
-                sChar += (sWinCp[i] & (char)0x3) << 6;
-                sWinCp.erase(i, 1);
-
-                // Switch as lookup table
-                switch (sChar)
-                {
-                    case (char)0x92:
-                        sWinCp[i] = (char)0x83;
-                        break;
-                    case (char)0xC6:
-                        sWinCp[i] = (char)0x88;
-                        break;
-                    case (char)0x60:
-                        sWinCp[i] = (char)0x8A;
-                        break;
-                    case (char)0x52:
-                        sWinCp[i] = (char)0x8C;
-                        break;
-                    case (char)0x7D:
-                        sWinCp[i] = (char)0x8E;
-                        break;
-                    case (char)0x7E:
-                        sWinCp[i] = (char)0x9E;
-                        break;
-                    case (char)0x78:
-                        sWinCp[i] = (char)0x9F;
-                        break;
-                    case (char)0xDC:
-                        sWinCp[i] = (char)0x98;
-                        break;
-                    case (char)0x61:
-                        sWinCp[i] = (char)0x9A;
-                        break;
-                    case (char)0x53:
-                        sWinCp[i] = (char)0x9C;
-                        break;
-                }
-            }
-            else if (sWinCp[i] == (char)0xC3)
-            {
-                // Regl. ANSI > 127
-                sWinCp.erase(i, 1);
-                sWinCp[i] += 64;
-            }
-        }
-    }
-
-    return sWinCp;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Transforms a UTF8 encoded string into
-/// a Win CP1252 string in the internal code
-/// page representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string utf8ToAnsi(const std::string& sString)
-{
-    return utf8parser(sString);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Creates an up to three byte sequence
-/// UTF8 character from a two byte unicode
-/// character. The length of the returned
-/// byte sequence is stored in nLength.
-///
-/// \param cHighByte unsigned char
-/// \param cLowByte unsigned char
-/// \param nLength size_t&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string createUTF8FromUnicode(unsigned char cHighByte, unsigned char cLowByte, size_t& nLength)
-{
-    std::string sUTF8;
-
-    // If the high byte is larger than or equal to 0x08, we will
-    // return three bytes, otherwise only two bytes
-    if (cHighByte >= 0x08)
-    {
-        nLength = 3;
-        sUTF8 = "   ";
-        sUTF8[0] = (char)0xE0 | ((cHighByte & (unsigned char)0xF0) >> 4);
-        sUTF8[1] = (char)0x80 | ((cHighByte & (unsigned char)0x0F) << 2) | ((cLowByte & (unsigned char)0xC0) >> 6);
-        sUTF8[2] = (char)0x80 | (cLowByte & ~(char)0xC0);
-    }
-    else
-    {
-        nLength = 2;
-        sUTF8 = "  ";
-        sUTF8[0] = (char)0xC0 | ((cHighByte & (unsigned char)0x07) << 2) | ((cLowByte & (unsigned char)0xC0) >> 6);
-        sUTF8[1] = (char)0x80 | (cLowByte & ~(char)0xC0);
-    }
-
-    return sUTF8;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Transforms a Win CP1253 encoded string
-/// into a UTF8 string in the internal code page
-/// representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string ansiToUtf8(const std::string& sString)
-{
-    // Ensure that element text is available
-    if (!sString.length())
-        return std::string();
-
-    // convert current element into a regular string
-    // object (much easier to handle)
-    std::string sUtf8String = sString;
-
-    // static declarations of constants
-    static const unsigned char NONANSIBITMASK = 128;
-    static const unsigned char TWOBYTEUTF8 = 0xA0;
-
-    // Go through the complete xml text and replace the
-    // characters with the UTF8 encoded unicode value. The
-    // unicode value of Win-CP1252 and unicode is quite similar
-    // except of a set of about 24 characters between NONANSIBITMASK
-    // and TWOBYTEUTF8
-    for (size_t i = 0; i < sUtf8String.length(); i++)
-    {
-        // Only do something, if the character is larger than NONANSIBITMASK
-        if (sUtf8String[i] & NONANSIBITMASK)
-        {
-            if ((unsigned char)sUtf8String[i] >= TWOBYTEUTF8)
-            {
-                // Regular encoding
-                char cp1252Char = sUtf8String[i];
-                sUtf8String.replace(i, 1, "  ");
-                sUtf8String[i] = (char)0xC0 | ((cp1252Char & (unsigned char)0xC0) >> 6);
-                sUtf8String[i+1] = (char)0x80 | (cp1252Char & ~(char)0xC0);
-                i++;
-            }
-            else
-            {
-                // Special code sequences. These have other code points in UTF8
-                // and therefore we have to replace them manually
-                char cp1252Char = sUtf8String[i];
-                size_t nLength = 0;
-
-                // Switch as lookup table
-                switch (cp1252Char)
-                {
-                    case (char)0x80:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0xAC, nLength));
-                        break;
-                    case (char)0x82:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1A, nLength));
-                        break;
-                    case (char)0x83:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x92, nLength));
-                        break;
-                    case (char)0x84:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1E, nLength));
-                        break;
-                    case (char)0x85:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x26, nLength));
-                        break;
-                    case (char)0x86:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x20, nLength));
-                        break;
-                    case (char)0x87:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x21, nLength));
-                        break;
-                    case (char)0x88:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x02, 0xC6, nLength));
-                        break;
-                    case (char)0x89:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x30, nLength));
-                        break;
-                    case (char)0x8A:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x60, nLength));
-                        break;
-                    case (char)0x8B:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x39, nLength));
-                        break;
-                    case (char)0x8C:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x52, nLength));
-                        break;
-                    case (char)0x8E:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x7D, nLength));
-                        break;
-                    case (char)0x91:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x18, nLength));
-                        break;
-                    case (char)0x92:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x19, nLength));
-                        break;
-                    case (char)0x93:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1C, nLength));
-                        break;
-                    case (char)0x94:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1D, nLength));
-                        break;
-                    case (char)0x95:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x22, nLength));
-                        break;
-                    case (char)0x96:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x13, nLength));
-                        break;
-                    case (char)0x97:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x14, nLength));
-                        break;
-                    case (char)0x98:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x02, 0xDC, nLength));
-                        break;
-                    case (char)0x99:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x21, 0x22, nLength));
-                        break;
-                    case (char)0x9A:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x61, nLength));
-                        break;
-                    case (char)0x9B:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x3A, nLength));
-                        break;
-                    case (char)0x9C:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x53, nLength));
-                        break;
-                    case (char)0x9E:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x7E, nLength));
-                        break;
-                    case (char)0x9F:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x78, nLength));
-                        break;
-                }
-
-                i += nLength-1;
-
-            }
-        }
-    }
-
-    return sUtf8String;
-}
-
-
-#define UTF8_TWOBYTE 192
-#define UTF8_THREEBYTE 224
-#define UTF8_FOURBYTE 240
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the number of Unicode code
-/// points in the UTF8 encoded string. This is
-/// typical less than the number of bytes. It
-/// does not correspond to the number of user-
-/// perceivable glyphs.
-///
-/// \param sString const std::string&
-/// \return size_t
-///
-/////////////////////////////////////////////////
-size_t countUnicodePoints(const std::string& sString)
-{
-    size_t cnt = 0;
-
-    for (unsigned char c : sString)
-    {
-        if (c >= UTF8_FOURBYTE)
-            cnt += 3;
-        else if (c >= UTF8_THREEBYTE)
-            cnt += 2;
-        else if (c >= UTF8_TWOBYTE)
-            cnt++;
-    }
-
-    return sString.length() - cnt;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Find the byte position of the closest
-/// character start. Prefers positions to the
-/// left, if both are equal in distance.
-///
-/// \param sString const std::string&
-/// \param pos size_t
-/// \return size_t
-///
-/////////////////////////////////////////////////
-size_t findClosestCharStart(const std::string& sString, size_t pos)
-{
-    if ((unsigned char)sString[pos] <= 127 || (unsigned char)sString[pos] >= UTF8_TWOBYTE)
-        return pos;
-    size_t pl = pos;
-    size_t pr = pos;
-
-    // Find character start to the left
-    while (pl > 0
-           && (unsigned char)sString[pl] > 127
-           && (unsigned char)sString[pl] < UTF8_TWOBYTE)
-        pl--;
-
-    // Find character start to the right
-    while (pr+1 < sString.length()
-           && (unsigned char)sString[pr] > 127
-           && (unsigned char)sString[pr] < UTF8_TWOBYTE)
-        pr++;
-
-    // Find closest
-    if (pr - pos >= pos - pl)
-        return pl;
-
-    return pr;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Determine, whether the passed byte
-/// sequence is a valid UTF8 byte sequence.
-///
-/// \param sString const std::string&
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool isValidUtf8Sequence(const std::string& sString)
-{
-    // Lambda for detecting a continuation byte
-    auto isUtf8ContinuationByte = [](unsigned char c){return c >= 128 && c < UTF8_TWOBYTE;};
-
-    for (size_t i = 0; i < sString.length(); i++)
-    {
-        // Single byte is fine
-        if ((unsigned char)sString[i] <= 127)
-            continue;
-
-        // Two-byte case
-        if ((unsigned char)sString[i] >= UTF8_TWOBYTE
-            && (unsigned char)sString[i] < UTF8_THREEBYTE)
-        {
-            // Enough remaining bytes?
-            if (i+1 >= sString.length())
-                return false;
-
-            // Following byte incorrect?
-            if (!isUtf8ContinuationByte(sString[i+1]))
-                return false;
-
-            // If there is a byte right after, is it incorrect?
-            if (i+2 < sString.length()
-                && isUtf8ContinuationByte(sString[i+2]))
-                return false;
-
-            // Advance one byte
-            i++;
-        }
-
-        // Three-byte case
-        if ((unsigned char)sString[i] >= UTF8_THREEBYTE
-            && (unsigned char)sString[i] < UTF8_FOURBYTE)
-        {
-            // Enough remaining bytes?
-            if (i+2 >= sString.length())
-                return false;
-
-            // Following bytes incorrect?
-            if (!isUtf8ContinuationByte(sString[i+1])
-                || !isUtf8ContinuationByte(sString[i+2]))
-                return false;
-
-            // If there is a byte right after, is it incorrect?
-            if (i+3 < sString.length()
-                && isUtf8ContinuationByte(sString[i+3]))
-                return false;
-
-            // Advance two bytes
-            i += 2;
-        }
-
-        // Four-byte case
-        if ((unsigned char)sString[i] >= UTF8_FOURBYTE)
-        {
-            // Enough remaining bytes?
-            if (i+3 >= sString.length())
-                return false;
-
-            // Following bytes incorrect?
-            if (!isUtf8ContinuationByte(sString[i+1])
-                || !isUtf8ContinuationByte(sString[i+2])
-                || !isUtf8ContinuationByte(sString[i+2]))
-                return false;
-
-            // If there is a byte right after, is it incorrect?
-            if (i+4 < sString.length()
-                && isUtf8ContinuationByte(sString[i+4]))
-                return false;
-
-            // Advance three bytes
-            i += 3;
-        }
-    }
-
-    return true;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Convert markup'ed text into an HTML
 /// representation-.
 ///
@@ -2632,6 +2122,38 @@ std::string decode_base_n(const std::string& sToDecode, int n)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation for STR.chr()
+///
+/// \param sString const std::string&
+/// \param nthChar int64_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string chr_impl(const std::string& sString, int64_t nthChar)
+{
+    nthChar = std::max(nthChar, 0LL);
+
+    size_t p = 0;
+    size_t pOld = 0;
+
+    // Find the correct character
+    while (nthChar && p < sString.length())
+    {
+        pOld = p;
+        p += getUtf8ByteLen(sString[p]);
+        nthChar--;
+    }
+
+    // Ensure that we have a valid character position
+    if (nthChar || p >= sString.length())
+        p = pOld;
+
+    // Extract the correct string length
+    return sString.substr(p, getUtf8ByteLen(sString[p]));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation for substr()
 ///
 /// \param sString const std::string&
@@ -2668,14 +2190,26 @@ std::vector<std::string> split_impl(const std::string& sString, const std::strin
         return ret;
     }
 
-    boost::char_separator<char> cSep(c.c_str(), nullptr,
-                                     (keepEmpty ? boost::keep_empty_tokens : boost::drop_empty_tokens));
-    boost::tokenizer<boost::char_separator<char>> tok(sString, cSep);
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(c);
+    size_t p0 = 0;
 
-    for (boost::tokenizer<boost::char_separator<char>>::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    for (size_t i = 0; i < sString.length(); i++)
     {
-        ret.emplace_back(std::string(*iter));
+        size_t len = 0;
+
+        if (getUtf8ByteLen(sString[i]) > 0ull
+            && (len = matchesAny(sString, vUtf8Chars, i)))
+        {
+            if (p0 < i || keepEmpty)
+                ret.emplace_back(sString.substr(p0, i-p0));
+
+            p0 = i+len;
+            i += len-1;
+        }
     }
+
+    if (p0 < sString.length() || keepEmpty)
+        ret.emplace_back(sString.substr(p0));
 
     return ret;
 }
@@ -2740,7 +2274,16 @@ size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_
     if (p >= sString.length())
         p = 0;
 
-    return sString.find_first_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (; p < sString.length(); p++)
+    {
+        if (getUtf8ByteLen(sString[p]) > 0ull
+            && matchesAny(sString, vUtf8Chars, p))
+            return p+1;
+    }
+
+    return 0ull;
 }
 
 
@@ -2761,7 +2304,16 @@ size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size
     if (p >= sString.length())
         p = sString.length();
 
-    return sString.find_last_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (int i = p-1; p >= 0; p--)
+    {
+        if (getUtf8ByteLen(sString[i]) > 0ull
+            && matchesAny(sString, vUtf8Chars, i))
+            return i+1ull;
+    }
+
+    return 0ull;
 }
 
 
@@ -2782,7 +2334,16 @@ size_t str_not_match_impl(const std::string& sString, const std::string& sFind, 
     if (p >= sString.length())
         p = 0;
 
-    return sString.find_first_not_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (; p < sString.length(); p++)
+    {
+        if (getUtf8ByteLen(sString[p]) > 0ull
+            && !matchesAny(sString, vUtf8Chars, p))
+            return p+1;
+    }
+
+    return 0ull;
 }
 
 
@@ -2803,7 +2364,93 @@ size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind,
     if (p >= sString.length())
         p = sString.length();
 
-    return sString.find_last_not_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (int i = p-1; p >= 0; p--)
+    {
+        if (getUtf8ByteLen(sString[i]) > 0ull
+            && !matchesAny(sString, vUtf8Chars, i))
+            return i+1ull;
+    }
+
+    return 0ull;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for STR.normalize()
+///
+/// \param sString const std::string&
+/// \param sMethod const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string normalize_unicode_impl(const std::string& sString, const std::string& sMethod)
+{
+    if (!sString.length())
+        return "";
+
+    boost::locale::generator gen;
+    boost::locale::norm_type type = boost::locale::norm_nfc;
+
+    if (sMethod == "nfd")
+        type = boost::locale::norm_nfd;
+    else if (sMethod == "nfkd")
+        type = boost::locale::norm_nfkd;
+    else if (sMethod == "nfkc")
+        type = boost::locale::norm_nfkc;
+
+    return boost::locale::normalize(sString, type, gen("en_US.UTF-8"));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for STR.collate()
+///
+/// \param sString1 const std::string&
+/// \param sString2 const std::string&
+/// \param level size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+int collate_impl(const std::string& sString1, const std::string& sString2, size_t level)
+{
+    boost::locale::generator gen;
+    boost::locale::collate_level colLevel = boost::locale::collate_level::primary;
+
+    if (level == 2)
+        colLevel = boost::locale::collate_level::secondary;
+    else if (level == 3)
+        colLevel = boost::locale::collate_level::tertiary;
+    else if (level == 4)
+        colLevel = boost::locale::collate_level::quaternary;
+    else if (level == 5)
+        colLevel = boost::locale::collate_level::identical;
+
+    return std::use_facet<boost::locale::collator<char>>(gen("en_US.UTF-8")).compare(colLevel, sString1, sString2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for STR.segments. Not
+/// yet supported by the boost library.
+///
+/// \param sString const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> segments_impl(const std::string& sString)
+{
+    if (!sString.length())
+        return std::vector<std::string>(1, "");
+
+    boost::locale::generator gen;
+
+    // Create mapping of text for token iterator using the global locale.
+    boost::locale::boundary::ssegment_index segIndex(boost::locale::boundary::word, sString.begin(), sString.end(), gen("en_US.UTF-8"));
+
+    // Return all "words" -- chunks of word boundary
+    return std::vector<std::string>(segIndex.begin(), segIndex.end());
 }
 
 

@@ -320,8 +320,7 @@ bool fitDataSet(CommandLineParser& cmdParser)
     // Write the fitting options table to the log file
     oFitLog << getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, true) << std::endl;
 
-    std::string sPMSign = " ";
-    sPMSign[0] = (char)177;
+    std::string sPMSign = "\xC2\xB1";
 
     // Prepare the headline for the fitting parameter table
     if (fitData.bUseErrors)
@@ -994,8 +993,9 @@ static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitL
     if (_dataView.isTable())
     {
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+        std::string sTableName = _dataView.getDataName();
         sDimsForFitLog = _dataView.getTableIndices().col.to_string()
-            + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(_dataView.getDataName());
+            + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(sTableName.substr(0, sTableName.find('(')));
     }
     else
         sDimsForFitLog = "1-" + toString(_dataView.cols())

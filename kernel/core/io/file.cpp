@@ -315,8 +315,6 @@ namespace NumeRe
             nLine++;
         }
 
-        g_logger.info(toString(nComment));
-
         // Decode the table headlines in this member function
         if (nComment)
             decodeTableHeads(vFileContents, nComment);
@@ -1473,7 +1471,7 @@ namespace NumeRe
         sTableName = readStringField();
         sComment = readStringField();
 
-        if (fileVersionRead < 5.0)
+        if (fileVersionRead < 4.09)
         {
             sTableName = ansiToUtf8(sTableName);
             sComment = ansiToUtf8(sComment);
@@ -1686,6 +1684,10 @@ namespace NumeRe
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
+            for (size_t i = 0; i < size; i++)
+            {
+                strings[i] = ansiToUtf8(strings[i]);
+            }
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
         }
@@ -1696,6 +1698,10 @@ namespace NumeRe
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
+            for (size_t i = 0; i < size; i++)
+            {
+                strings[i] = ansiToUtf8(strings[i]);
+            }
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
         }
@@ -1713,8 +1719,12 @@ namespace NumeRe
     void NumeReDataFile::readColumnV4(TblColPtr& col)
     {
         std::pair<std::string,std::string> headAndUnit = findAndParseUnit(readStringField());
-        headAndUnit.first = ansiToUtf8(headAndUnit.first);
-        headAndUnit.second = ansiToUtf8(headAndUnit.second);
+
+        if (fileVersionRead < 4.09)
+        {
+            headAndUnit.first = ansiToUtf8(headAndUnit.first);
+            headAndUnit.second = ansiToUtf8(headAndUnit.second);
+        }
 
         std::string sDataType = readStringField();
 
@@ -1767,6 +1777,15 @@ namespace NumeRe
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
+
+            if (fileVersionRead < 4.09)
+            {
+                for (size_t i = 0; i < size; i++)
+                {
+                    strings[i] = ansiToUtf8(strings[i]);
+                }
+            }
+
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
         }

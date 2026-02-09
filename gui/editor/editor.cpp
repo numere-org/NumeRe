@@ -1785,7 +1785,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
         else
             AdvCallTipCancel();
 
-        AdvCallTipShow(startPosition, _cTip.sDefinition + (_cTip.sDocumentation.length() ? "\n" + wxFromUtf8(_cTip.sDocumentation) : ""));
+        AdvCallTipShow(startPosition, wxFromUtf8(_cTip.sDefinition) + (_cTip.sDocumentation.length() ? "\n" + wxFromUtf8(_cTip.sDocumentation) : ""));
         CallTipSetHighlight(_cTip.nStart, _cTip.nEnd);
     }
 }

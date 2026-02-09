@@ -1288,8 +1288,7 @@ void NumeReTerminal::scrollToInput()
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnKeyDown(wxKeyEvent& event)
+void NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 {
 	if (!(GetMode() & PC) && event.AltDown())
 		event.Skip();
@@ -1334,8 +1333,7 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
+void NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
 	wxPaintDC dc(this);
 
@@ -1361,8 +1359,7 @@ NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnLeftDown(wxMouseEvent& event)
+void NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 {
 	SetFocus();
 	ClearSelection();
@@ -1412,8 +1409,7 @@ void NumeReTerminal::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnLeftUp(wxMouseEvent& event)
+void NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 {
 	m_selecting = false;
 
@@ -1437,8 +1433,7 @@ NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnMouseMove(wxMouseEvent& event)
+void NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 {
 	if (!m_selecting)
         return;

@@ -4425,6 +4425,7 @@
 		</Unit>
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
+		<Unit filename="kernel/core/utils/stringview.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">
 			<Option target="Debug" />
 			<Option target="Profiling" />
@@ -4436,6 +4437,8 @@
 		</Unit>
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />
+		<Unit filename="kernel/core/utils/utf8lib.cpp" />
+		<Unit filename="kernel/core/utils/utf8lib.hpp" />
 		<Unit filename="kernel/core/version.h">
 			<Option target="Debug" />
 			<Option target="Release" />

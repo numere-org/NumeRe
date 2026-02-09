@@ -83,12 +83,12 @@ void GenericTerminal::update_changes ()
 	}
 
 	// Draw the cursor
-	if ( !(mode_flags & CURSORINVISIBLE) )
+	if (!(mode_flags & CURSORINVISIBLE))
 	{
 	    // Get its x coordinate and ensure that it is valid
 		x = termCursor.x;
 
-		if ( x >= width )
+		if (x >= width)
 			x = width - 1;
 
         // Get color and the character at the position of the cursor

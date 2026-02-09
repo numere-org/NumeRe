@@ -25,6 +25,7 @@
 #include <map>
 
 #include "datetimetools.hpp"
+#include "utf8lib.hpp"
 
 // Forward declaration
 class Settings;
@@ -504,12 +505,7 @@ void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewV
 void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
 std::string strRepeat(const std::string& sStr, int nCount);
 std::string replaceControlCharacters(std::string sToModify);
-std::string utf8parser(const std::string& sString);
-std::string utf8ToAnsi(const std::string& sString);
-std::string ansiToUtf8(const std::string& sString);
-size_t countUnicodePoints(const std::string& sString);
-size_t findClosestCharStart(const std::string& sString, size_t pos);
-bool isValidUtf8Sequence(const std::string& sString);
+
 std::string markupToHtml(const std::string& sString);
 
 std::string replacePathSeparator(const std::string& __sPath);
@@ -526,6 +522,7 @@ void strChangeNumberFormat(std::string &sNum, int numFormat);
 std::string encode_base_n(const std::string& sToEncode, bool isFile, int n);
 std::string decode_base_n(const std::string& sToDecode, int n);
 
+std::string chr_impl(const std::string& sString, int64_t nthChar);
 std::string substr_impl(const std::string& sString, size_t p, size_t len = -1);
 std::vector<std::string> split_impl(const std::string& sString, const std::string& c, bool keepEmpty = false);
 size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
@@ -534,6 +531,9 @@ size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_
 size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
 size_t str_not_match_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
 size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
+std::string normalize_unicode_impl(const std::string& sString, const std::string& sMethod);
+int collate_impl(const std::string& sString1, const std::string& sString2, size_t level);
+std::vector<std::string> segments_impl(const std::string& sString);
 
 bool isQuotationMark(const std::string& sString, size_t pos);
 bool isQuotationMark(StringView sString, size_t pos);
