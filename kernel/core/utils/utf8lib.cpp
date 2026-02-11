@@ -61,7 +61,7 @@ size_t getUtf8ByteLen(char c)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string utf8parser(const std::string& sString)
+std::string utf8ToAnsi(const std::string& sString)
 {
     // Static declaration of constant
 	static const unsigned char NONANSIBITMASK = 128;
@@ -202,21 +202,6 @@ std::string utf8parser(const std::string& sString)
     }
 
     return sWinCp;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Transforms a UTF8 encoded string into
-/// a Win CP1252 string in the internal code
-/// page representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string utf8ToAnsi(const std::string& sString)
-{
-    return utf8parser(sString);
 }
 
 

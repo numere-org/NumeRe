@@ -1493,38 +1493,6 @@ int detectTimeDateFormat(const std::string& sStr)
 
 
 /////////////////////////////////////////////////
-/// \brief This function is a wrapper for the
-/// usual wcstombs function, which can handle
-/// wstrings.
-///
-/// \param wStr const std::wstring&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string wcstombs(const std::wstring& wStr)
-{
-    std::string sReturn;
-
-    // provide a target character array
-    char* cBuf = new char[wStr.length() * 2 + 1];
-
-    // transform the wstring into the target array
-    size_t nRet = wcstombs(cBuf, wStr.c_str(), wStr.length() * 2 + 1);
-
-    // Write the zero character and copy the contents of the character
-    // array to the target string
-    if (nRet == wStr.length() * 2 + 1)
-        cBuf[wStr.length() * 2] = '\0';
-    if (nRet)
-        sReturn = cBuf;
-
-    // Clear the memory and return the string
-    delete[] cBuf;
-    return sReturn;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Converts an internal to an external
 /// string. Does nothing currently.
 ///

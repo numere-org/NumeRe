@@ -479,7 +479,6 @@ std::string truncString(const std::string& sText, size_t nMaxChars);
 std::string strfill(const std::string& sString, size_t nWidth, char cFill = ' ', bool limit = false);
 std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' ');
 
-std::string wcstombs(const std::wstring& wStr);
 void StripSpaces(std::string&);
 
 std::string toInternalString(std::string sStr);

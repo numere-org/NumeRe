@@ -838,11 +838,11 @@ namespace NumeRe
                                 // insert the linebreak character,
                                 // if needed
                                 if (!vHeadline[j].length())
-                                    vHeadline[j] = utf8parser(vLine[j]);
+                                    vHeadline[j] = vLine[j];
                                 else
                                 {
                                     vHeadline[j] += "\n";
-                                    vHeadline[j] += utf8parser(vLine[j]);
+                                    vHeadline[j] += vLine[j];
                                 }
                             }
 
@@ -2293,9 +2293,8 @@ namespace NumeRe
                 vUnits.push_back(sLabx_substr.substr(sLabx_substr.find("<unit>")+6,
                                                      sLabx_substr.find("</unit>")-sLabx_substr.find("<unit>")-6));
 
-            // Convert UTF8 to WinCP1252 and erase the
+            // Erase the
             // already extracted part from the string
-            vHeadLines.back() = utf8parser(vHeadLines.back());
             sLabx_substr.erase(0, sLabx_substr.find("</channels>")+11);
 
             // Determine the maximal number of rows needed
@@ -2496,9 +2495,9 @@ namespace NumeRe
                 // Just append additional cells at the end, if more than nCols cells
                 // are part of this row
                 if (n >= (size_t)nCols)
-                    vHeadLine.back() = cSep + utf8parser(vTokens[n]);
+                    vHeadLine.back() = cSep + vTokens[n];
                 else
-                    vHeadLine[n] = utf8parser(vTokens[n]);
+                    vHeadLine[n] = vTokens[n];
 
                 StripSpaces(vHeadLine[n]);
             }
@@ -3988,14 +3987,14 @@ namespace NumeRe
                             if (fileData->at(colCount + nOffSet)->m_sHeadLine.length())
                                 fileData->at(colCount + nOffSet)->m_sHeadLine += "\n";
 
-                            fileData->at(colCount + nOffSet)->m_sHeadLine += utf8parser(cell->FirstChildElement("text:p")->GetText());
+                            fileData->at(colCount + nOffSet)->m_sHeadLine += cell->FirstChildElement("text:p")->GetText();
                         }
                     }
                     else
                     {
                         // Some data types need some special pre-processing
                         if (cell->Attribute("office:value-type", "string"))
-                            fileData->at(colCount + nOffSet)->setValue(rowCount, utf8parser(cell->FirstChildElement()->GetText()));
+                            fileData->at(colCount + nOffSet)->setValue(rowCount, cell->FirstChildElement()->GetText());
                         else if (cell->Attribute("office:value-type", "boolean"))
                             fileData->at(colCount + nOffSet)->setValue(rowCount, cell->Attribute("office:boolean-value"));
                         else if (cell->FirstChildElement("text:p"))
@@ -4185,9 +4184,9 @@ namespace NumeRe
                     _cell = _sheet->Cell(i,j);
 
                     if (_cell->Type() == YExcel::BasicExcelCell::STRING)
-                        sEntry = utf8parser(_cell->GetString());
+                        sEntry = _cell->GetString();
                     else if (_cell->Type() == YExcel::BasicExcelCell::WSTRING)
-                        sEntry = utf8parser(wcstombs(_cell->GetWString()));
+                        sEntry = boost::nowide::narrow(_cell->GetWString());
                     else
                         continue;
 
@@ -4249,10 +4248,10 @@ namespace NumeRe
                             fileData->at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetDouble());
                             break;
                         case YExcel::BasicExcelCell::STRING:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(_cell->GetString()));
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetString());
                             break;
                         case YExcel::BasicExcelCell::WSTRING:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(wcstombs(_cell->GetWString())));
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], boost::nowide::narrow(_cell->GetWString()));
                             break;
                         default:
                             fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
@@ -4759,7 +4758,7 @@ namespace NumeRe
 
                         if (_stringelement->FirstChildElement()->FirstChild()
                             && _stringelement->FirstChildElement()->FirstChild()->ToText())
-                            sEntry = utf8parser(_stringelement->FirstChildElement()->FirstChild()->ToText()->Value());
+                            sEntry = _stringelement->FirstChildElement()->FirstChild()->ToText()->Value();
                         else
                             sEntry.clear();
 
@@ -4783,7 +4782,7 @@ namespace NumeRe
                     }
                     else if (_element->FirstChildElement("v") && _element->FirstChildElement("v")->GetText())
                     {
-                        std::string sValue = utf8parser(_element->FirstChildElement("v")->GetText());
+                        std::string sValue = _element->FirstChildElement("v")->GetText();
 
                         // Decode styles
                         if (_element->Attribute("t") && _element->Attribute("t") == std::string("b"))

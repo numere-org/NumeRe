@@ -23,7 +23,6 @@
 #include <vector>
 
 size_t getUtf8ByteLen(char c);
-std::string utf8parser(const std::string& sString);
 std::string utf8ToAnsi(const std::string& sString);
 std::string ansiToUtf8(const std::string& sString);
 size_t countUnicodePoints(StringView sString);

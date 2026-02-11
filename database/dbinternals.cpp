@@ -19,6 +19,7 @@
 #include <variant>
 #include <map>
 #include <sstream>
+#include <boost/nowide/convert.hpp>
 
 #include "dbinternals.hpp"
 #include "../kernel/core/ui/error.hpp"
@@ -1014,12 +1015,7 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
                             case SQL_WVARCHAR:
                             case SQL_WLONGVARCHAR:
                             {
-                                std::wstring buf = stmt.get_wstr_value(j);
-
-                                std::string dest(std::wcstombs(nullptr, buf.data(), 6*buf.length()), ' ');
-                                std::wcstombs(dest.data(), buf.data(), dest.length());
-                                result.set(i, j, mu::Value(dest));
-
+                                result.set(i, j, mu::Value(boost::nowide::narrow(stmt.get_wstr_value(j))));
                                 break;
                             }
                             /*case SQL_GUID:
