@@ -263,17 +263,17 @@ void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeN
 wxString GridNumeReTable::GetValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols())
-        return wxFromUtf8(_table.getCleanHeadPart(col, row));
+        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, row)));
     else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
     {
         std::string sValue = toInternalString(_table.getValueAsString(getRow(row), col));
         replaceAll(sValue, "\t", "    ");
-        return wxFromUtf8(sValue);
+        return wxFromUtf8(ensureValidUtf8(sValue));
     }
     else
-        return wxFromUtf8(_table.getValueAsString(getRow(row), col));
+        return wxFromUtf8(ensureValidUtf8(_table.getValueAsString(getRow(row), col)));
 }
 
 
@@ -290,11 +290,11 @@ wxString GridNumeReTable::GetValue(int row, int col)
 wxString GridNumeReTable::GetEditableValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols())
-        return wxFromUtf8(_table.getCleanHeadPart(col, row));
+        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, row)));
     else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else
-        return wxFromUtf8(replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col)));
+        return wxFromUtf8(ensureValidUtf8(replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col))));
 }
 
 

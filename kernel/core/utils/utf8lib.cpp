@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "utf8lib.hpp"
+#include <boost/algorithm/hex.hpp>
 
 #define UTF8_TWOBYTE 192
 #define UTF8_THREEBYTE 224
@@ -405,10 +406,13 @@ size_t countUnicodePoints(StringView sString)
 
     for (char c : sString)
     {
-        cnt += getUtf8ByteLen(c);
+        size_t len = getUtf8ByteLen(c);
+
+        if (len > 1)
+            cnt += len-1;
     }
 
-    return cnt;
+    return sString.length() - cnt;
 }
 
 
@@ -469,6 +473,52 @@ size_t findClosestCharStart(StringView sString, size_t pos)
 
 
 /////////////////////////////////////////////////
+/// \brief Determine, whether the byte at the
+/// position pos indicates a starting point for a
+/// valid UTF8 char.
+///
+/// \param sString const std::string&
+/// \param pos size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+static size_t isValidUtf8CharStart(const std::string& sString, size_t pos)
+{
+    size_t byteLen = getUtf8ByteLen(sString[pos]);
+
+    // Free continuation bytes are not allowed
+    if (byteLen == 0ull)
+        return 0ull;
+
+    // Single byte is fine
+    if (byteLen == 1ull)
+        return byteLen;
+
+    // Multi-byte case
+    if (byteLen >= 2ull)
+    {
+        // Enough remaining bytes?
+        if (pos+(byteLen-1) >= sString.length())
+            return 0ull;
+
+        // Following bytes incorrect?
+        for (size_t contBytes = 1; contBytes < byteLen; contBytes++)
+        {
+            if (getUtf8ByteLen(sString[pos+contBytes]) > 0ull)
+                return 0ull;
+        }
+
+        // If there is a byte right after, is it incorrect?
+        if (pos+byteLen < sString.length()
+            && getUtf8ByteLen(sString[pos+byteLen]) == 0ull)
+            return 0ull;
+    }
+
+    return byteLen;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Determine, whether the passed byte
 /// sequence is a valid UTF8 byte sequence.
 ///
@@ -480,41 +530,52 @@ bool isValidUtf8Sequence(const std::string& sString)
 {
     for (size_t i = 0; i < sString.length(); i++)
     {
-        size_t byteLen = getUtf8ByteLen(sString[i]);
+        // Determine, whether the current char is a valid
+        // start and obtain its byte len
+        size_t byteLen = isValidUtf8CharStart(sString, i);
 
         // Free continuation bytes are not allowed
         if (byteLen == 0ull)
             return false;
 
-        // Single byte is fine
-        if (byteLen == 1ull)
-            continue;
-
-        // Multi-byte case
-        if (byteLen >= 2ull)
-        {
-            // Enough remaining bytes?
-            if (i+(byteLen-1) >= sString.length())
-                return false;
-
-            // Following bytes incorrect?
-            for (size_t contBytes = 1; contBytes < byteLen; i++)
-            {
-                if (getUtf8ByteLen(sString[i+contBytes]) > 0ull)
-                    return false;
-            }
-
-            // If there is a byte right after, is it incorrect?
-            if (i+byteLen < sString.length()
-                && getUtf8ByteLen(sString[i+byteLen]) == 0ull)
-                return false;
-
-            // Advance over trailing bytes
-            i += (byteLen-1);
-        }
+        // Advance over trailing bytes
+        i += (byteLen-1);
     }
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Ensure that the passed string does
+/// only contain valid UTF8 by converting the
+/// invalid characters to hex values.
+///
+/// \param sString std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ensureValidUtf8(std::string sString)
+{
+    for (size_t i = 0; i < sString.length(); i++)
+    {
+        // Determine, whether the current char is a valid
+        // start and obtain its byte len
+        size_t byteLen = isValidUtf8CharStart(sString, i);
+
+        // Free continuation bytes are not allowed
+        if (byteLen == 0ull)
+        {
+            sString.replace(i, 1, "\\x" + boost::algorithm::hex(sString.substr(i, 1)));
+            i += 3;
+            continue;
+        }
+
+        // Advance over trailing bytes
+        i += (byteLen-1);
+    }
+
+    return sString;
 }
 
 

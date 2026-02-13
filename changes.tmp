@@ -52,3 +52,4 @@ Added	"stix" and "stix2" has been added as plotting font.
 Cleaned	String functions do now interact on bytes, which are only identical to characters in the ASCII-only case. Notable exception is the usage of characters a function inputs (e.g. "strmatch()"). Those will be handled as characters instead.
 Added	Methods for handling characters and unicode have been added to the string object: "STR.chr()", "STR.unicodelen", "STR.normalize()", "STR.collate()".
 Applied	The function "char()" has been renamed to "byte()", because that provides a better indication of its functionality. The old name is still interpreted as alias, but shall not be used anymore.
+Added	Byte sequences, which do not represent a valud UTF8 encoding, are now represented as HEX encoded value: "\xHH", where "HH" indiciates two hex digits. You can now also use this syntax to add arbitrary byte values into a string, e.g. "\xC3\xA7" will produce a "ç" character.

@@ -973,9 +973,9 @@ namespace mu
         else if (sMethod == "unicodelen")
             return new NumValue(countUnicodePoints(m_val));
         else if (sMethod == "first")
-            return new StrValue(std::string(1, m_val.front()));
+            return new StrValue(chr_impl(m_val, 0));
         else if (sMethod == "last")
-            return new StrValue(std::string(1, m_val.back()));
+            return new StrValue(chr_impl(m_val, countUnicodePoints(m_val)-1));
         else if (sMethod == "segments")
             return new ArrValue(segments_impl(m_val));
         else if (sMethod == "normalize")
@@ -1113,12 +1113,12 @@ namespace mu
         if (chrs > 0)
         {
             if (trunc)
-                return truncString(toExternalString(replaceControlCharacters(m_val)), chrs);
+                return ensureValidUtf8(truncString(toExternalString(replaceControlCharacters(m_val)), chrs));
 
-            return ellipsize(toExternalString(replaceControlCharacters(m_val)), chrs);
+            return ensureValidUtf8(ellipsize(toExternalString(replaceControlCharacters(m_val)), chrs));
         }
 
-        return toExternalString(replaceControlCharacters(m_val));
+        return ensureValidUtf8(toExternalString(replaceControlCharacters(m_val)));
     }
 
 
@@ -1135,9 +1135,9 @@ namespace mu
     std::string StrValue::printVal(size_t digits, size_t chrs) const
     {
         if (chrs > 0)
-            return ellipsize(m_val, chrs);
+            return ensureValidUtf8(ellipsize(m_val, chrs));
 
-        return m_val;
+        return ensureValidUtf8(m_val);
     }
 
 

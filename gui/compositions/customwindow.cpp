@@ -1248,7 +1248,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 label = wxFromUtf8(currentChild->Attribute("label"));
 
             TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, "", style, id, size, alignment, proportion);
-            textctrl->SetMarkupText(wxFromUtf8(toInternalString(wxToUtf8(text)))); // Also correctly convert linebreak characters
+            textctrl->SetMarkupText(wxFromUtf8(ensureValidUtf8(toInternalString(wxToUtf8(text))))); // Also correctly convert linebreak characters
             textctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 
@@ -2050,7 +2050,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                 label = wxFromUtf8(currentChild->Attribute("label"));
 
             TextField* textctrl = _groupPanel->CreateTextInput(currParent, SizerWrapper(currSizer, gbPos, gbSpan), label, "", style, id, size, alignment, proportion);
-            textctrl->SetMarkupText(wxFromUtf8(toInternalString(wxToUtf8(text)))); // Also correctly convert linebreak characters
+            textctrl->SetMarkupText(wxFromUtf8(ensureValidUtf8(toInternalString(wxToUtf8(text))))); // Also correctly convert linebreak characters
             textctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 

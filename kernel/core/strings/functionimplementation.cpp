@@ -470,7 +470,7 @@ mu::Array strfnc_firstch(const mu::Array& a)
         if (!a.get(i).getStr().length())
             ret.emplace_back("");
         else
-            ret.emplace_back(std::string(1, a.get(i).getStr().front()));
+            ret.emplace_back(chr_impl(a.get(i).getStr(), 0));
     }
 
     return ret;
@@ -495,7 +495,7 @@ mu::Array strfnc_lastch(const mu::Array& a)
         if (!a.get(i).getStr().length())
             ret.emplace_back("");
         else
-            ret.emplace_back(std::string(1, a.get(i).getStr().back()));
+            ret.emplace_back(chr_impl(a.get(i).getStr(), countUnicodePoints(a.get(i).getStr())-1));
     }
 
     return ret;
@@ -2425,15 +2425,22 @@ mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
             // Examine each value independently
             for (size_t i = 0; i < arr.size(); i++)
             {
-                // Get a quotation mark free copy
-                std::string sArg = arr.get(i).getStr();
+                // Get all characters of this string isolated
+                std::vector<std::string> vChars = splitUtf8Chars(arr.get(i).getStr());
 
                 // Sort and isolate the unique chars
-                std::sort(sArg.begin(), sArg.end());
-                auto iter = std::unique(sArg.begin(), sArg.end());
+                std::sort(vChars.begin(), vChars.end());
+                auto iter = std::unique(vChars.begin(), vChars.end());
 
                 // Append the string with unique characters
-                ret.emplace_back(std::string(sArg.begin(), iter));
+                std::string sUniques;
+
+                for (auto it = vChars.begin(); it != iter; ++it)
+                {
+                    sUniques += *it;
+                }
+
+                ret.emplace_back(sUniques);
             }
         }
     }
@@ -3090,6 +3097,8 @@ mu::Array strfnc_getversioninfo()
 #else
     sVersionInfo.emplace_back("32 bit");
 #endif
+    sVersionInfo.emplace_back("Encoding");
+    sVersionInfo.emplace_back("UTF-8");
 #endif // PARSERSTANDALONE
     return sVersionInfo;
 }

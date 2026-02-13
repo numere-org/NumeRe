@@ -29,6 +29,7 @@ size_t countUnicodePoints(StringView sString);
 size_t findCharStart(StringView sString, size_t pos);
 size_t findClosestCharStart(StringView sString, size_t pos);
 bool isValidUtf8Sequence(const std::string& sString);
+std::string ensureValidUtf8(std::string sString);
 
 std::vector<std::string> splitUtf8Chars(StringView sStr);
 size_t matchesAny(StringView sString, const std::vector<std::string>& vUtf8Chars, size_t p);

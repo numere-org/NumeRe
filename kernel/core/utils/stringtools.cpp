@@ -25,10 +25,9 @@
 #include <fast_float/fast_float.h>
 #include <cstring>
 #include <sstream>
-#include <iomanip>
 #include <iterator>
-#include <boost/tokenizer.hpp>
 #include <boost/locale.hpp>
+#include <boost/algorithm/hex.hpp>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -1097,6 +1096,12 @@ std::string toInternalString(std::string sStr)
             sStr.replace(i, 2, "\\");
         else if (sStr.compare(i, 2, "\\ ") == 0)
             sStr.replace(i, 2, "\\");
+
+        if (sStr.compare(i, 2, "\\x") == 0
+            && sStr.length() > i+3
+            && isxdigit(sStr[i+2])
+            && isxdigit(sStr[i+3]))
+            sStr.replace(i, 4, boost::algorithm::unhex(sStr.substr(i+2, 2)));
     }
 
     return sStr;
@@ -1726,8 +1731,9 @@ std::vector<std::string> split(const std::string& sStr, char cSplit)
 /////////////////////////////////////////////////
 std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 {
-    if (sLongString.length() > nMaxStringLength)
-        return sLongString.substr(0, nMaxStringLength/2-2) + "[...]" + sLongString.substr(sLongString.length()-nMaxStringLength/2+2);
+    if (countUnicodePoints(sLongString) > nMaxStringLength)
+        return sLongString.substr(0, findClosestCharStart(sLongString, nMaxStringLength/2-2)) + "[...]"
+            + sLongString.substr(findClosestCharStart(sLongString, sLongString.length()-nMaxStringLength/2+2));
 
     return sLongString;
 }
@@ -2099,6 +2105,9 @@ std::string decode_base_n(const std::string& sToDecode, int n)
 /////////////////////////////////////////////////
 std::string chr_impl(const std::string& sString, int64_t nthChar)
 {
+    if (!sString.length())
+        return "";
+
     nthChar = std::max(nthChar, 0LL);
 
     size_t p = 0;
