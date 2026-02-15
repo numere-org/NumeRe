@@ -93,7 +93,7 @@ void GenericTerminal::update_changes ()
 
         // Get color and the character at the position of the cursor
 		c = tm.GetColorAdjusted(termCursor.y, x);
-		wxChar cursorChar = tm.GetCharAdjusted(termCursor.y, x);
+		wxUniChar cursorChar = tm.GetCharAdjusted(termCursor.y, x);
 
 		// Draw the cursor
         DrawCursor((c >> 4) & 0xf, (c >> 8) & 0xf, c & 15, x, termCursor.y, cursorChar);

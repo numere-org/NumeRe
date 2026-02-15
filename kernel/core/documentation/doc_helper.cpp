@@ -597,7 +597,7 @@ void Documentation::removeFromDocIndex(const string& _sID)
                 }
             }
 
-            remove(vDocIndexTable[i].sDocFilePath.c_str());
+            boost::nowide::remove(vDocIndexTable[i].sDocFilePath.c_str());
             vDocIndexTable.erase(vDocIndexTable.begin()+i);
             break;
         }

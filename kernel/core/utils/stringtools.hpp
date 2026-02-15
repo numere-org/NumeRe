@@ -481,8 +481,9 @@ std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' '
 
 void StripSpaces(std::string&);
 
-std::string toInternalString(std::string sStr);
 std::string toExternalString(std::string sStr);
+std::string toInternalString(std::string sStr);
+std::string resolveEscapes(std::string sStr);
 
 std::string toLowerCase(const std::string& sUpperCase);
 std::string toUpperCase(const std::string& sLowerCase);

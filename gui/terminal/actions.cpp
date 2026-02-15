@@ -2,6 +2,7 @@
 
 #include "gterm.hpp"
 #include <wx/log.h>
+#include "../stringconv.hpp"
 
 #define GTERM_PC
 // For efficiency, this grabs all printing characters from buffer, up to
@@ -154,7 +155,7 @@ std::string GenericTerminal::getProcNameSpace()
         nNameSpacePos--;
 
     // Get the text between the start and the current autocompletion start
-    sNameSpace = toLowerCase(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos).ToStdString());
+    sNameSpace = toLowerCase(wxToUtf8(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos)));
 
     // If the obtained namespace contains the (possible) procedure
     // name, then erase this part, because we only want to have the
@@ -228,7 +229,7 @@ void GenericTerminal::tab()
         bool isMethod = false;
 
         // Get the word start from the terminal
-        sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x).ToStdString());
+        sAutoCompWordStart = toLowerCase(wxToUtf8(tm.GetWordStartAt(termCursor.y, termCursor.x)));
 
         // There are different autocompletion lists for procedures and every other syntax element
         if (((tm.GetColorAdjusted(termCursor.y, termCursor.x - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)

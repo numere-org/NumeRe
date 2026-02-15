@@ -682,7 +682,7 @@ static mu::Array getChildValues(wxTreeListCtrl* listCtrl, wxTreeListItem parent,
 
             for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
             {
-                item.getStr() += wxToUtf8(listCtrl->GetItemText(next, j));
+                item.getStr() += resolveEscapes(wxToUtf8(listCtrl->GetItemText(next, j)));
 
                 if (j+1 < listCtrl->GetColumnCount())
                     item.getStr() += "\t";
@@ -1355,9 +1355,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             {
                 if (varList[i].find('=') != std::string::npos)
                 {
-                    std::string name = varList[i].substr(0, varList[i].find('=')).ToStdString();
+                    std::string name = wxToUtf8(varList[i].substr(0, varList[i].find('=')));
                     StripSpaces(name);
-                    std::string value = varList[i].substr(varList[i].find('=')+1).ToStdString();
+                    std::string value = wxToUtf8(varList[i].substr(varList[i].find('=')+1));
 
                     if (value.front() == '{' && value.back() == '}')
                         value = value.substr(1, value.length()-2);
@@ -1381,7 +1381,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     m_varTable[name] = v;
                 }
                 else
-                    m_varTable[varList[i].ToStdString()] = mu::Value();
+                    m_varTable[wxToUtf8(varList[i])] = mu::Value();
             }
         }
         else if (sValue == "bitmap")
@@ -2157,9 +2157,9 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             {
                 if (varList[i].find('=') != std::string::npos)
                 {
-                    std::string name = varList[i].substr(0, varList[i].find('=')).ToStdString();
+                    std::string name = wxToUtf8(varList[i].substr(0, varList[i].find('=')));
                     StripSpaces(name);
-                    std::string value = varList[i].substr(varList[i].find('=')+1).ToStdString();
+                    std::string value = wxToUtf8(varList[i].substr(varList[i].find('=')+1));
 
                     if (value.front() == '{' && value.back() == '}')
                         value = value.substr(1, value.length()-2);
@@ -2183,7 +2183,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                     m_varTable[name] = v;
                 }
                 else
-                    m_varTable[varList[i].ToStdString()] = mu::Value();
+                    m_varTable[wxToUtf8(varList[i])] = mu::Value();
             }
         }
         else if (sValue == "bitmap")
@@ -2865,7 +2865,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
     {
         case CustomWindow::BUTTON:
             params.type = "button";
-            params.value = mu::Value(wxToUtf8(static_cast<wxButton*>(object.second)->GetLabel()));
+            params.value = mu::Value(resolveEscapes(wxToUtf8(static_cast<wxButton*>(object.second)->GetLabel())));
             params.label = params.value;
             params.color = toArray(static_cast<wxButton*>(object.second)->GetForegroundColour());
 
@@ -2873,21 +2873,21 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         case CustomWindow::CHECKBOX:
             params.type = "checkbox";
             params.value = mu::Value(static_cast<wxCheckBox*>(object.second)->IsChecked());
-            params.label = mu::Value(wxToUtf8(static_cast<wxCheckBox*>(object.second)->GetLabel()));
+            params.label = mu::Value(resolveEscapes(wxToUtf8(static_cast<wxCheckBox*>(object.second)->GetLabel())));
             params.color = toArray(static_cast<wxCheckBox*>(object.second)->GetBackgroundColour());
 
             break;
         case CustomWindow::TEXT:
             params.type = "statictext";
-            params.value = mu::Value(wxToUtf8(static_cast<wxStaticText*>(object.second)->GetLabel()));
+            params.value = mu::Value(resolveEscapes(wxToUtf8(static_cast<wxStaticText*>(object.second)->GetLabel())));
             params.label = params.value;
             params.color = toArray(static_cast<wxStaticText*>(object.second)->GetForegroundColour());
 
             break;
         case CustomWindow::TEXTCTRL:
             params.type = "textfield";
-            params.value = mu::Value(wxToUtf8(static_cast<TextField*>(object.second)->GetValue()));
-            params.label = mu::Value(wxToUtf8(static_cast<TextField*>(object.second)->GetLabel()));
+            params.value = mu::Value(resolveEscapes(wxToUtf8(static_cast<TextField*>(object.second)->GetValue())));
+            params.label = mu::Value(resolveEscapes(wxToUtf8(static_cast<TextField*>(object.second)->GetLabel())));
             params.color = toArray(static_cast<TextField*>(object.second)->GetBackgroundColour());
 
             if (!static_cast<wxTextCtrl*>(object.second)->IsEditable())
@@ -2896,7 +2896,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             break;
         case CustomWindow::LAMP:
             params.type = "lamp";
-            params.label = mu::Value(wxToUtf8(static_cast<TextField*>(object.second)->GetLabel()));
+            params.label = mu::Value(resolveEscapes(wxToUtf8(static_cast<TextField*>(object.second)->GetLabel())));
             params.color = toArray(static_cast<TextField*>(object.second)->GetBackgroundColour());
             params.value = mu::Value(wxToUtf8(lampStatesFromColor(static_cast<TextField*>(object.second)->GetBackgroundColour())));
 
@@ -2910,8 +2910,8 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         {
             params.type = "radio";
             wxRadioBox* box = static_cast<wxRadioBox*>(object.second);
-            params.value = mu::Value(wxToUtf8(box->GetString(box->GetSelection())));
-            params.label = mu::Value(wxToUtf8(box->GetLabel()));
+            params.value = mu::Value(resolveEscapes(wxToUtf8(box->GetString(box->GetSelection()))));
+            params.label = mu::Value(resolveEscapes(wxToUtf8(box->GetLabel())));
             params.color = toArray(static_cast<wxRadioBox*>(object.second)->GetBackgroundColour());
 
             break;
@@ -2920,11 +2920,11 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         {
             params.type = "dropdown";
             wxChoice* choices = static_cast<wxChoice*>(object.second);
-            params.value = mu::Value(wxToUtf8(choices->GetString(choices->GetSelection())));
+            params.value = mu::Value(resolveEscapes(wxToUtf8(choices->GetString(choices->GetSelection()))));
 
             for (size_t i = 0; i < choices->GetCount(); i++)
             {
-                params.label.push_back(wxToUtf8(choices->GetString(i)));
+                params.label.push_back(resolveEscapes(wxToUtf8(choices->GetString(i))));
             }
 
             params.color = toArray(static_cast<wxChoice*>(object.second)->GetBackgroundColour());
@@ -2937,13 +2937,13 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             wxComboBox* combo = static_cast<wxComboBox*>(object.second);
 
             if (combo->GetSelection() != wxNOT_FOUND)
-                params.value = mu::Value(wxToUtf8(combo->GetString(combo->GetSelection())));
+                params.value = mu::Value(resolveEscapes(wxToUtf8(combo->GetString(combo->GetSelection()))));
             else
-                params.value = mu::Value(wxToUtf8(combo->GetValue()));
+                params.value = mu::Value(resolveEscapes(wxToUtf8(combo->GetValue())));
 
             for (size_t i = 0; i < combo->GetCount(); i++)
             {
-                params.label.push_back(wxToUtf8(combo->GetString(i)));
+                params.label.push_back(resolveEscapes(wxToUtf8(combo->GetString(i))));
             }
 
             params.color = toArray(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
@@ -2960,7 +2960,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         case CustomWindow::SPINCTRL:
             params.type = "spinbut";
             params.value = mu::Value(static_cast<SpinBut*>(object.second)->GetValue());
-            params.label = mu::Value(wxToUtf8(static_cast<SpinBut*>(object.second)->GetLabel()));
+            params.label = mu::Value(resolveEscapes(wxToUtf8(static_cast<SpinBut*>(object.second)->GetLabel())));
             params.color = toArray(static_cast<SpinBut*>(object.second)->GetBackgroundColour());
 
             break;
@@ -2997,7 +2997,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
             for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
             {
-                params.label.push_back(wxToUtf8(listCtrl->GetDataView()->GetColumn(i)->GetTitle()));
+                params.label.push_back(resolveEscapes(wxToUtf8(listCtrl->GetDataView()->GetColumn(i)->GetTitle())));
             }
 
             params.value = getTreeListCtrlValue(listCtrl);
@@ -3012,10 +3012,10 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
             for (size_t page = 0; page < noteBook->GetPageCount(); page++)
             {
-                params.label.push_back(wxToUtf8(noteBook->GetPageText(page)));
+                params.label.push_back(resolveEscapes(wxToUtf8(noteBook->GetPageText(page))));
             }
 
-            params.value = mu::Value(wxToUtf8(noteBook->GetPageText(noteBook->GetSelection())));
+            params.value = mu::Value(resolveEscapes(wxToUtf8(noteBook->GetPageText(noteBook->GetSelection()))));
 
             break;
         }
@@ -3023,12 +3023,12 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
         {
             wxMenuItem* item = static_cast<wxMenuItem*>(object.second);
             params.type = "menuitem";
-            params.label = mu::Value(wxToUtf8(item->GetItemLabel()));
+            params.label = mu::Value(resolveEscapes(wxToUtf8(item->GetItemLabel())));
 
             if (item->IsCheckable())
                 params.value = mu::Value(item->IsChecked());
             else
-                params.value = mu::Value(wxToUtf8(item->GetLabelText(item->GetItemLabel())));
+                params.value = mu::Value(resolveEscapes(wxToUtf8(item->GetLabelText(item->GetItemLabel()))));
 
             params.color = toArray(item->GetTextColour());
             params.state = item->IsEnabled() ? "enabled" : "disabled";
@@ -4284,7 +4284,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             if (col <= 0 || col > currentCols)
                                 continue;
 
-                            table->SetColLabelValue(col-1, labels.get(j).getStr());
+                            table->SetColLabelValue(col-1, wxFromUtf8(labels.get(j).printVal()));
                         }
                     }
 
@@ -4631,7 +4631,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 if (col <= 0 || col > currentCols)
                                     continue;
 
-                                table->SetColLabelValue(col-1, labels.get(j).getStr());
+                                table->SetColLabelValue(col-1, wxFromUtf8(labels.get(j).printVal()));
                             }
                         }
 

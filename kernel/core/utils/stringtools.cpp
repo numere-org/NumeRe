@@ -28,6 +28,7 @@
 #include <iterator>
 #include <boost/locale.hpp>
 #include <boost/algorithm/hex.hpp>
+#include <boost/nowide/fstream.hpp>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -1059,6 +1060,21 @@ std::string floatToVersion(double fVersionDigits)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts an internal string to the
+/// external representation in the terminal.
+///
+/// \param sStr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toExternalString(std::string sStr)
+{
+    replaceAll(sStr, "\"", "\\\"");
+    return "\"" + sStr + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts a string literal to the
 /// internal representation in tables and
 /// clusters.
@@ -1072,6 +1088,20 @@ std::string toInternalString(std::string sStr)
     if (sStr.front() == '"' && sStr.back() == '"')
         sStr = sStr.substr(1, sStr.length()-2);
 
+    return resolveEscapes(sStr);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resolves escaped characters within
+/// the string.
+///
+/// \param sStr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string resolveEscapes(std::string sStr)
+{
     for (size_t i = 0; i < sStr.length(); i++)
     {
         if (sStr.compare(i, 2, "\\t") == 0
@@ -1109,17 +1139,18 @@ std::string toInternalString(std::string sStr)
 
 
 /////////////////////////////////////////////////
-/// \brief Converts an internal string to the
-/// external representation in the terminal.
+/// \brief Helper function to create a central
+/// locale and obtain it.
 ///
-/// \param sStr std::string
-/// \return std::string
+/// \return const std::locale&
 ///
 /////////////////////////////////////////////////
-std::string toExternalString(std::string sStr)
+static const std::locale& getLocale()
 {
-    replaceAll(sStr, "\"", "\\\"");
-    return "\"" + sStr + "\"";
+#warning TODO (numere#1#01/21/26): Boost::locale needs to be rebuild with ICU support
+    static boost::locale::generator gen;
+    static std::locale loc = gen("en_US.UTF-8");
+    return loc;
 }
 
 
@@ -1133,11 +1164,7 @@ std::string toExternalString(std::string sStr)
 /////////////////////////////////////////////////
 std::string toLowerCase(const std::string& sUpperCase)
 {
-    boost::locale::generator gen;
-#warning TODO (numere#1#01/21/26): What to do with the locales?
-    std::locale loc = gen("en_US.UTF-8");
-
-    return boost::locale::to_lower(sUpperCase, loc);
+    return boost::locale::to_lower(sUpperCase, getLocale());
 }
 
 
@@ -1151,11 +1178,7 @@ std::string toLowerCase(const std::string& sUpperCase)
 /////////////////////////////////////////////////
 std::string toUpperCase(const std::string& sLowerCase)
 {
-    boost::locale::generator gen;
-    std::locale loc = gen("en_US.UTF-8");
-
-#warning TODO (numere#1#01/21/26): Boost::locale needs to be rebuild with ICU support
-    return boost::locale::to_upper(sLowerCase, loc);
+    return boost::locale::to_upper(sLowerCase, getLocale());
 }
 
 
@@ -2367,7 +2390,6 @@ std::string normalize_unicode_impl(const std::string& sString, const std::string
     if (!sString.length())
         return "";
 
-    boost::locale::generator gen;
     boost::locale::norm_type type = boost::locale::norm_nfc;
 
     if (sMethod == "nfd")
@@ -2377,7 +2399,7 @@ std::string normalize_unicode_impl(const std::string& sString, const std::string
     else if (sMethod == "nfkc")
         type = boost::locale::norm_nfkc;
 
-    return boost::locale::normalize(sString, type, gen("en_US.UTF-8"));
+    return boost::locale::normalize(sString, type, getLocale());
 }
 
 
@@ -2392,7 +2414,6 @@ std::string normalize_unicode_impl(const std::string& sString, const std::string
 /////////////////////////////////////////////////
 int collate_impl(const std::string& sString1, const std::string& sString2, size_t level)
 {
-    boost::locale::generator gen;
     boost::locale::collate_level colLevel = boost::locale::collate_level::primary;
 
     if (level == 2)
@@ -2404,7 +2425,7 @@ int collate_impl(const std::string& sString1, const std::string& sString2, size_
     else if (level == 5)
         colLevel = boost::locale::collate_level::identical;
 
-    return std::use_facet<boost::locale::collator<char>>(gen("en_US.UTF-8")).compare(colLevel, sString1, sString2);
+    return std::use_facet<boost::locale::collator<char>>(getLocale()).compare(colLevel, sString1, sString2);
 }
 
 
@@ -2421,10 +2442,8 @@ std::vector<std::string> segments_impl(const std::string& sString)
     if (!sString.length())
         return std::vector<std::string>(1, "");
 
-    boost::locale::generator gen;
-
     // Create mapping of text for token iterator using the global locale.
-    boost::locale::boundary::ssegment_index segIndex(boost::locale::boundary::word, sString.begin(), sString.end(), gen("en_US.UTF-8"));
+    boost::locale::boundary::ssegment_index segIndex(boost::locale::boundary::word, sString.begin(), sString.end(), getLocale());
 
     // Return all "words" -- chunks of word boundary
     return std::vector<std::string>(segIndex.begin(), segIndex.end());

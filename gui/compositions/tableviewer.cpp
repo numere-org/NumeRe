@@ -2473,7 +2473,7 @@ void TableViewer::saveTable(bool saveAs)
     // Get the filename from the user
     if (saveAs || !filename.length())
     {
-        wxFileDialog fd(this, _guilang.get("GUI_VARVIEWER_SAVENAME"), vPaths[SAVEPATH], filename,
+        wxFileDialog fd(this, _guilang.get("GUI_VARVIEWER_SAVENAME"), vPaths[SAVEPATH], wxFromUtf8(filename),
                         _guilang.get("COMMON_FILETYPE_NDAT") + " (*.ndat)|*.ndat|"
                         + _guilang.get("COMMON_FILETYPE_DAT") + " (*.dat)|*.dat|"
                         + _guilang.get("COMMON_FILETYPE_TXT") + " (*.txt)|*.txt|"
@@ -2487,7 +2487,7 @@ void TableViewer::saveTable(bool saveAs)
         if (fd.ShowModal() == wxID_CANCEL)
             return;
 
-        filename = fd.GetPath().ToStdString();
+        filename = wxToUtf8(fd.GetPath());
     }
     else
         filename = vPaths[SAVEPATH] + "/" + filename;
@@ -2497,7 +2497,7 @@ void TableViewer::saveTable(bool saveAs)
 
     if (!file)
     {
-        wxMessageBox("Cannot save to this file: " + filename, "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
+        wxMessageBox("Cannot save to this file: " + wxFromUtf8(filename), "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
         return;
     }
 
@@ -2519,7 +2519,7 @@ void TableViewer::saveTable(bool saveAs)
     }
     catch (...)
     {
-        wxMessageBox("Cannot save to this file: " + filename, "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
+        wxMessageBox("Cannot save to this file: " + wxFromUtf8(filename), "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
         return;
     }
 }

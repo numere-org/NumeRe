@@ -23,7 +23,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <boost/nowide/fstream.hpp>
+#include <fstream>
 
 namespace mu
 {
@@ -242,7 +242,7 @@ namespace mu
     class File
     {
         private:
-            mutable boost::nowide::fstream m_stream;
+            mutable std::fstream m_stream;
             std::string m_fileName;
             std::string m_openMode;
 

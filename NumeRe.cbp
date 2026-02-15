@@ -196,6 +196,7 @@
 			<Add option="-D__WXMSW__" />
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
 			<Add option="-D_WIN32_WINNT=0x0601" />
+			<Add option="-DLIBUUID_CPP20_OR_GREATER" />
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
 			<Add directory="externals/stduuid" />
@@ -249,8 +250,8 @@
 			<Add library="winspool" />
 			<Add library="oleaut32" />
 			<Add library="secur32" />
-			<Add library="../../TDM-GCC-64/lib/libboost_nowide-mgw10-mt-x64-1_82.a" />
-			<Add library="../../TDM-GCC-64/lib/libboost_locale-mgw10-mt-x64-1_82.a" />
+			<Add library="boost_nowide-mgw10-mt-x64-1_82" />
+			<Add library="boost_locale-mgw10-mt-x64-1_82" />
 			<Add directory="$(wx)/lib/gcc_lib" />
 			<Add directory="$(lib)" />
 			<Add directory="$(bin)" />

@@ -4811,11 +4811,11 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     m_modifiedFiles.clear();
 
     // Create the relevant objects
-    const wxString fileType[] = {m_options->getSetting(SETTING_S_LOADPATHMASK).stringval(),
-                                 m_options->getSetting(SETTING_S_SAVEPATHMASK).stringval(),
-                                 m_options->getSetting(SETTING_S_SCRIPTPATHMASK).stringval(),
-                                 m_options->getSetting(SETTING_S_PROCPATHMASK).stringval(),
-                                 m_options->getSetting(SETTING_S_PLOTPATHMASK).stringval()};
+    const wxString fileType[] = {wxFromUtf8(m_options->getSetting(SETTING_S_LOADPATHMASK).stringval()),
+                                 wxFromUtf8(m_options->getSetting(SETTING_S_SAVEPATHMASK).stringval()),
+                                 wxFromUtf8(m_options->getSetting(SETTING_S_SCRIPTPATHMASK).stringval()),
+                                 wxFromUtf8(m_options->getSetting(SETTING_S_PROCPATHMASK).stringval()),
+                                 wxFromUtf8(m_options->getSetting(SETTING_S_PLOTPATHMASK).stringval())};
     VersionControlSystemManager manager(this);
     bool refreshProcedureLibrary = false;
     std::vector<std::string> vPaths = m_terminal->getPathSettings();
@@ -4838,7 +4838,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // These event types require refreshing of
             // the created file trees and the procedure
             // library, if necessary
-            std::string sEventpath = replacePathSeparator(modifiedFiles[i].second.ToStdString());
+            std::string sEventpath = replacePathSeparator(wxToUtf8(modifiedFiles[i].second));
 
             for (size_t j = LOADPATH; j < vPaths.size(); j++)
             {
@@ -4935,7 +4935,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
         if (pathsToRefresh[i])
         {
             m_fileTree->DeleteChildren(m_projectFileFolders[i]);
-            LoadFilesToTree(vPaths[i+LOADPATH], fileType[i], m_projectFileFolders[i]);
+            LoadFilesToTree(wxFromUtf8(vPaths[i+LOADPATH]), fileType[i], m_projectFileFolders[i]);
         }
     }
 
@@ -5289,11 +5289,21 @@ void NumeReWindow::EvaluateOptions()
 
         // Fill the contents to the tree
         std::vector<std::string> vPaths = m_terminal->getPathSettings();
-        LoadFilesToTree(vPaths[LOADPATH], m_options->getSetting(SETTING_S_LOADPATHMASK).stringval(), m_projectFileFolders[0]);
-        LoadFilesToTree(vPaths[SAVEPATH], m_options->getSetting(SETTING_S_SAVEPATHMASK).stringval(), m_projectFileFolders[1]);
-        LoadFilesToTree(vPaths[SCRIPTPATH], m_options->getSetting(SETTING_S_SCRIPTPATHMASK).stringval(), m_projectFileFolders[2]);
-        LoadFilesToTree(vPaths[PROCPATH], m_options->getSetting(SETTING_S_PROCPATHMASK).stringval(), m_projectFileFolders[3]);
-        LoadFilesToTree(vPaths[PLOTPATH], m_options->getSetting(SETTING_S_PLOTPATHMASK).stringval(), m_projectFileFolders[4]);
+        LoadFilesToTree(wxFromUtf8(vPaths[LOADPATH]),
+                        wxFromUtf8(m_options->getSetting(SETTING_S_LOADPATHMASK).stringval()),
+                        m_projectFileFolders[0]);
+        LoadFilesToTree(wxFromUtf8(vPaths[SAVEPATH]),
+                        wxFromUtf8(m_options->getSetting(SETTING_S_SAVEPATHMASK).stringval()),
+                        m_projectFileFolders[1]);
+        LoadFilesToTree(wxFromUtf8(vPaths[SCRIPTPATH]),
+                        wxFromUtf8(m_options->getSetting(SETTING_S_SCRIPTPATHMASK).stringval()),
+                        m_projectFileFolders[2]);
+        LoadFilesToTree(wxFromUtf8(vPaths[PROCPATH]),
+                        wxFromUtf8(m_options->getSetting(SETTING_S_PROCPATHMASK).stringval()),
+                        m_projectFileFolders[3]);
+        LoadFilesToTree(wxFromUtf8(vPaths[PLOTPATH]),
+                        wxFromUtf8(m_options->getSetting(SETTING_S_PLOTPATHMASK).stringval()),
+                        m_projectFileFolders[4]);
 
         // Construct the internal procedure tree
         // for the autocompletion feature

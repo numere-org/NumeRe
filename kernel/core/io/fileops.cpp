@@ -86,7 +86,7 @@ bool removeFile(CommandLineParser& cmdParser)
         }
 
         // Delete it
-        std::filesystem::remove_all(sFile);
+        std::filesystem::remove_all(boost::nowide::widen(sFile));
 
         // Delete only the first one
         if (!bAll)

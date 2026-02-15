@@ -1241,7 +1241,7 @@ wxString TextManager::GetWordAt(int y, int x) const
     // Find the start of the word and erase everything in front of it
     for (int pos = cursor.pos; pos >= 0; pos--)
     {
-        if (isalnum(sWord[pos]) || sWord[pos] == '_') ///
+        if (isalnum(sWord[pos]) || sWord[pos] == '_')
             continue;
 
         sWord.erase(0, pos + 1);
@@ -1251,7 +1251,7 @@ wxString TextManager::GetWordAt(int y, int x) const
     // Find the end of the word and return it as a new string
     for (size_t pos = 0; pos < sWord.length(); pos++)
     {
-        if (isalnum(sWord[pos]) || sWord[pos] == '_') ///
+        if (isalnum(sWord[pos]) || sWord[pos] == '_')
             continue;
 
         return sWord.substr(0, pos);
@@ -1287,7 +1287,7 @@ wxString TextManager::GetWordStartAt(int y, int x) const
     // Find the start of the word and return it as a new string
     for (int pos = cursor.pos - 1; pos >= 0; pos--)
     {
-        if (isalnum(sWord[pos]) || sWord[pos] == '_') ///
+        if (isalnum(sWord[pos]) || sWord[pos] == '_')
             continue;
 
         return sWord.substr(pos + 1);

@@ -20,7 +20,7 @@
 #define NUMERE_FILE_HPP
 
 #include <string>
-#include <boost/nowide/fstream.hpp>
+#include <boost/nowide/convert.hpp>
 #include <fstream>
 #include <cmath>
 #include <vector>

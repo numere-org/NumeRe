@@ -19,6 +19,7 @@
 #include "archive.hpp"
 #include "../utils/stringtools.hpp"
 #include "logger.hpp"
+#include "../../../gui/stringconv.hpp"
 
 #include <wx/zipstrm.h>
 #include <wx/tarstrm.h>
@@ -177,7 +178,7 @@ namespace Archive
 
         if (type == ARCHIVE_ZIP)
         {
-            wxFFileOutputStream out(sTargetFile);
+            wxFFileOutputStream out(wxFromUtf8(sTargetFile));
             wxZipOutputStream outzip(out, 6);
 
             for (size_t i = 0; i < vFileList.size(); i++)
@@ -195,8 +196,8 @@ namespace Archive
                         {
                             // Files are simple packed together without additional paths
                             g_logger.debug("Including file: " + vFiles[j]);
-                            wxFFileInputStream file(vFiles[j]);
-                            wxZipEntry* newEntry = new wxZipEntry(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1));
+                            wxFFileInputStream file(wxFromUtf8(vFiles[j]));
+                            wxZipEntry* newEntry = new wxZipEntry(wxFromUtf8(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1)));
 
                             outzip.PutNextEntry(newEntry);
                             outzip.Write(file);
@@ -211,8 +212,8 @@ namespace Archive
                 {
                     // Files are simple packed together without additional paths
                     g_logger.debug("Including file: " + vFileList[i]);
-                    wxFFileInputStream file(vFileList[i]);
-                    wxZipEntry* newEntry = new wxZipEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
+                    wxFFileInputStream file(wxFromUtf8(vFileList[i]));
+                    wxZipEntry* newEntry = new wxZipEntry(wxFromUtf8(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1)));
 
                     outzip.PutNextEntry(newEntry);
                     outzip.Write(file);
@@ -222,7 +223,7 @@ namespace Archive
         }
         else if (type == ARCHIVE_TAR)
         {
-            wxFFileOutputStream out(sTargetFile);
+            wxFFileOutputStream out(wxFromUtf8(sTargetFile));
             wxTarOutputStream outtar(out);
 
             for (size_t i = 0; i < vFileList.size(); i++)
@@ -240,8 +241,8 @@ namespace Archive
                         {
                             // Files are simple packed together without additional paths
                             g_logger.debug("Including file: " + vFiles[j]);
-                            wxFFileInputStream file(vFiles[j]);
-                            wxTarEntry* newEntry = new wxTarEntry(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1));
+                            wxFFileInputStream file(wxFromUtf8(vFiles[j]));
+                            wxTarEntry* newEntry = new wxTarEntry(wxFromUtf8(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1)));
 
                             outtar.PutNextEntry(newEntry);
                             outtar.Write(file);
@@ -256,8 +257,8 @@ namespace Archive
                 {
                     // Files are simple packed together without additional paths
                     g_logger.debug("Including file: " + vFileList[i]);
-                    wxFFileInputStream file(vFileList[i]);
-                    wxTarEntry* newEntry = new wxTarEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
+                    wxFFileInputStream file(wxFromUtf8(vFileList[i]));
+                    wxTarEntry* newEntry = new wxTarEntry(wxFromUtf8(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1)));
 
                     outtar.PutNextEntry(newEntry);
                     outtar.Write(file);
@@ -278,15 +279,15 @@ namespace Archive
                 pack(vFileList, sFile, ARCHIVE_TAR);
             }
 
-            wxFFileOutputStream out(sTargetFile);
+            wxFFileOutputStream out(wxFromUtf8(sTargetFile));
             wxZlibOutputStream outzlib(out, -1, wxZLIB_GZIP);
 
             g_logger.debug("Including file: " + sFile);
-            wxFFileInputStream file(sFile);
+            wxFFileInputStream file(wxFromUtf8(sFile));
             outzlib.Write(file);
 
             if (tempTar)
-                remove(sFile.c_str());
+                boost::nowide::remove(sFile.c_str());
         }
     }
 
@@ -328,13 +329,13 @@ namespace Archive
 
         if (type == ARCHIVE_ZIP)
         {
-            wxFFileInputStream in(sArchiveName);
+            wxFFileInputStream in(wxFromUtf8(sArchiveName));
             wxZipInputStream zip(in);
             std::unique_ptr<wxZipEntry> entry;
 
             while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
             {
-                std::string entryName = replacePathSeparator(entry->GetName().ToStdString());
+                std::string entryName = replacePathSeparator(wxToUtf8(entry->GetName()));
 
                 if (sTargetPath.length())
                 {
@@ -342,7 +343,7 @@ namespace Archive
 
                     g_logger.debug("Entry name: " + entryName);
                     vFiles.push_back(entryName);
-                    wxFileOutputStream stream(sTargetPath + "/" + entry->GetName());
+                    wxFileOutputStream stream(wxFromUtf8(sTargetPath) + "/" + entry->GetName());
                     zip.Read(stream);
                 }
                 else
@@ -351,7 +352,7 @@ namespace Archive
         }
         else if (type == ARCHIVE_TAR)
         {
-            wxFFileInputStream in(sArchiveName);
+            wxFFileInputStream in(wxFromUtf8(sArchiveName));
             wxTarInputStream tar(in);
             std::unique_ptr<wxTarEntry> entry;
 
@@ -360,7 +361,7 @@ namespace Archive
                 if (entry->IsDir())
                     continue;
 
-                std::string entryName = replacePathSeparator(entry->GetName().ToStdString());
+                std::string entryName = replacePathSeparator(wxToUtf8(entry->GetName()));
 
                 if (sTargetPath.length())
                 {
@@ -368,7 +369,7 @@ namespace Archive
 
                     g_logger.debug("Entry name: " + entryName);
                     vFiles.push_back(entryName);
-                    wxFileOutputStream stream(sTargetPath + "/" + entry->GetName());
+                    wxFileOutputStream stream(wxFromUtf8(sTargetPath) + "/" + entry->GetName());
                     tar.Read(stream);
                 }
                 else
@@ -377,7 +378,7 @@ namespace Archive
         }
         else if (type == ARCHIVE_GZ || type == ARCHIVE_ZLIB)
         {
-            wxFFileInputStream in(sArchiveName);
+            wxFFileInputStream in(wxFromUtf8(sArchiveName));
             wxZlibInputStream zlib(in);
 
             std::string sUnpackedName = getGZipFileName(sArchiveName);
@@ -395,7 +396,7 @@ namespace Archive
                 g_logger.debug("Entry name: " + sUnpackedName);
                 vFiles.push_back(sUnpackedName);
 
-                wxFileOutputStream stream(sUnpackedName);
+                wxFileOutputStream stream(wxFromUtf8(sUnpackedName));
                 zlib.Read(stream);
             }
             else

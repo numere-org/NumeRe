@@ -26,6 +26,10 @@
 #include <string>
 #include <map>
 
+/////////////////////////////////////////////////
+/// \brief This class is a specialisation to take
+/// care about the internal standard paths.
+/////////////////////////////////////////////////
 class Filewatcher : public wxFileSystemWatcher
 {
     private:

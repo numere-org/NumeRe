@@ -22,7 +22,6 @@
 
 #include <boost/nowide/fstream.hpp>
 #include <sstream>
-#include <filesystem>
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;

@@ -29,6 +29,7 @@
 #include <json/json.h>
 #include <filesystem>
 #include <sstream>
+#include <boost/nowide/convert.hpp>
 
 namespace mu
 {
@@ -2158,7 +2159,7 @@ namespace mu
         else if (m_openMode.find('a') != std::string::npos)
             mode |= std::ios_base::out | std::ios_base::app;
 
-        m_stream.open(m_fileName, (std::ios_base::openmode)mode);
+        m_stream.open(boost::nowide::widen(m_fileName).c_str(), (std::ios_base::openmode)mode);
 
         if (!m_stream)
         {
@@ -2245,13 +2246,13 @@ namespace mu
     /// objects of type T from the stream in binary
     /// mode.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param n size_t&
     /// \return std::unique_ptr<T[]>
     ///
     /////////////////////////////////////////////////
     template<class T>
-    static std::unique_ptr<T[]> readBytes(boost::nowide::fstream& stream, size_t& n)
+    static std::unique_ptr<T[]> readBytes(std::fstream& stream, size_t& n)
     {
         std::unique_ptr<T[]> data(new T[n]);
         stream.read((char*)data.get(), sizeof(T)*n);
@@ -2315,13 +2316,13 @@ namespace mu
     /// encoded. Allows for reading of whole arrays
     /// at once.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param type const std::string&
     /// \param n size_t
     /// \return BaseValue*
     ///
     /////////////////////////////////////////////////
-    static BaseValue* readBinary(boost::nowide::fstream& stream, const std::string& type, size_t n)
+    static BaseValue* readBinary(std::fstream& stream, const std::string& type, size_t n)
     {
         size_t numTypes = n;
 
@@ -2455,13 +2456,13 @@ namespace mu
     /// objects of type T from the stream in text
     /// mode.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param n size_t&
     /// \return std::unique_ptr<T[]>
     ///
     /////////////////////////////////////////////////
     template<class T>
-    static std::unique_ptr<T[]> readSegments(boost::nowide::fstream& stream, size_t& n)
+    static std::unique_ptr<T[]> readSegments(std::fstream& stream, size_t& n)
     {
         std::unique_ptr<T[]> data(new T[n]);
 
@@ -2485,13 +2486,13 @@ namespace mu
     /// text mode. The object type is string encoded.
     /// Allows for reading of whole arrays at once.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param type const std::string&
     /// \param n size_t
     /// \return BaseValue*
     ///
     /////////////////////////////////////////////////
-    static BaseValue* readText(boost::nowide::fstream& stream, const std::string& type, size_t n)
+    static BaseValue* readText(std::fstream& stream, const std::string& type, size_t n)
     {
         size_t numTypes = n;
 
@@ -2697,13 +2698,13 @@ namespace mu
     /// of type T in the file stream using binary
     /// mode.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param val const T&
     /// \return bool
     ///
     /////////////////////////////////////////////////
     template<class T>
-    static bool writeBinaryImpl(boost::nowide::fstream& stream, const T& val)
+    static bool writeBinaryImpl(std::fstream& stream, const T& val)
     {
         stream.write((char*)&val, sizeof(T));
         return true;
@@ -2713,13 +2714,13 @@ namespace mu
     /////////////////////////////////////////////////
     /// \brief Template specialisation for strings.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param val const std::string&
     /// \return bool
     ///
     /////////////////////////////////////////////////
     template<>
-    bool writeBinaryImpl(boost::nowide::fstream& stream, const std::string& val)
+    bool writeBinaryImpl(std::fstream& stream, const std::string& val)
     {
         stream.write(val.c_str(), val.length());
         return true;
@@ -2730,12 +2731,12 @@ namespace mu
     /// \brief Write the passed value to the stream
     /// in binary mode.
     ///
-    /// \param stream boost::nowide::fstream&
+    /// \param stream std::fstream&
     /// \param val const BaseValue&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    static bool writeBinary(boost::nowide::fstream& stream, const BaseValue& val)
+    static bool writeBinary(std::fstream& stream, const BaseValue& val)
     {
         if (val.m_type == TYPE_ARRAY)
         {

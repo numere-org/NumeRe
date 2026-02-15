@@ -17,42 +17,75 @@
 ******************************************************************************/
 
 #include "filewatcher.hpp"
+#include "../gui/stringconv.hpp"
 std::string replacePathSeparator(const std::string&);
 
 
+/////////////////////////////////////////////////
+/// \brief Determine if a file is in one of the
+/// default paths.
+///
+/// \param path const wxFileName&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Filewatcher::isDefaultPath(const wxFileName& path)
 {
-    std::string sPath = replacePathSeparator(path.GetPath().ToStdString());
+    std::string sPath = replacePathSeparator(wxToUtf8(path.GetPath()));
+
     for (size_t i = 2; i < vDefaultPaths.size(); i++)
     {
         if (sPath.find(vDefaultPaths[i]) != std::string::npos)
             return true;
     }
+
     return false;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Set the default paths and load their
+/// trees.
+///
+/// \param vPaths const std::vector<std::string>&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Filewatcher::SetDefaultPaths(const std::vector<std::string>& vPaths)
 {
     vDefaultPaths = vPaths;
-    if (this->GetWatchedPathsCount())
-        this->RemoveAll();
+
+    if (GetWatchedPathsCount())
+        RemoveAll();
 
     for (size_t i = 2; i < vDefaultPaths.size(); i++)
-        this->AddTree(wxFileName(vDefaultPaths[i] + "/"), wxFSW_EVENT_ALL, "*");
+        AddTree(wxFileName(wxFromUtf8(vDefaultPaths[i]) + "/"), wxFSW_EVENT_ALL, "*");
 
     for (auto iter = mWatchedFiles.begin(); iter != mWatchedFiles.end(); ++iter)
     {
         wxFileSystemWatcher::Add(wxFileName(iter->second + "/"));
     }
+
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Add a path to the watched paths.
+///
+/// \param path const wxFileName&
+/// \param events int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Filewatcher::Add(const wxFileName& path, int events)
 {
     if (isDefaultPath(path))
         return false;
+
     if (mWatchedFiles.find(path.GetFullPath()) != mWatchedFiles.end())
         return false;
+
     for (auto iter = mWatchedFiles.begin(); iter != mWatchedFiles.end(); ++iter)
     {
         if (iter->second == path.GetPath())
@@ -61,27 +94,41 @@ bool Filewatcher::Add(const wxFileName& path, int events)
             return true;
         }
     }
+
     mWatchedFiles[path.GetFullPath()] = path.GetPath();
     return wxFileSystemWatcher::Add(wxFileName(path.GetPath() + "/"), events);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Remove a path from the watched paths.
+///
+/// \param path const wxFileName&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Filewatcher::Remove(const wxFileName& path)
 {
     if (isDefaultPath(path))
         return false;
+
     if (mWatchedFiles.find(path.GetFullPath()) == mWatchedFiles.end())
         return false;
+
     auto iter_found = mWatchedFiles.find(path.GetFullPath());
+
     for (auto iter = mWatchedFiles.begin(); iter != mWatchedFiles.end(); ++iter)
     {
         if (iter == iter_found)
             continue;
+
         if (iter->second == path.GetPath())
         {
             mWatchedFiles.erase(path.GetFullPath());
             return true;
         }
     }
+
     mWatchedFiles.erase(path.GetFullPath());
     return wxFileSystemWatcher::Remove(wxFileName(path.GetPath() + "/"));
 }

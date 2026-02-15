@@ -4646,7 +4646,6 @@ bool NumeReEditor::canOpen(const wxFileName& filename)
     boost::nowide::ifstream file(wxToUtf8(filename.GetFullPath()),
                                  std::ios_base::in | std::ios_base::binary);
     size_t nReadBytes = 0;
-    std::string sReadBytes;
 
     if (!file.good())
         return false;
@@ -4659,15 +4658,10 @@ bool NumeReEditor::canOpen(const wxFileName& filename)
         if (c == EOF)
             return true;
 
-        // This might be a unicode point start, check the previously read string
-        /*if ((c <= 127 || (unsigned)c >= 192)
-            && !isValidUtf8Sequence(sReadBytes))
-            return false;*/
-
+        // Plain text data should not contain any control
+        // characters besides tab and linebreaks
         if (c < 32 && c != 9 && c != 10 && c != 13)
             return false;
-
-        sReadBytes += (char)c;
     }
 
     return true;
@@ -7066,9 +7060,9 @@ void NumeReEditor::OnChangeCase(wxCommandEvent& event)
 
     // Change the case
     if (event.GetId() == ID_UPPERCASE)
-        Replace(nFirstPos, nLastPos, GetSelectedText().Upper());
+        Replace(nFirstPos, nLastPos, wxFromUtf8(toUpperCase(wxToUtf8(GetSelectedText()))));
     else
-        Replace(nFirstPos, nLastPos, GetSelectedText().Lower());
+        Replace(nFirstPos, nLastPos, wxFromUtf8(toLowerCase(wxToUtf8(GetSelectedText()))));
 }
 
 

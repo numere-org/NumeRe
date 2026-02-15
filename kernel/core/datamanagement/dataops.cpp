@@ -245,8 +245,8 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 
         // Clear the complete cache and remove the cache files
         _data.removeTablesFromMemory();
-        remove(sAutoSave.c_str());
-        remove(sCache_file.c_str());
+        boost::nowide::remove(sAutoSave.c_str());
+        boost::nowide::remove(sCache_file.c_str());
 
         // Inform the user, if printing is allowed
         if (_option.systemPrints())

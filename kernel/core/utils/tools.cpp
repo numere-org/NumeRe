@@ -1481,7 +1481,7 @@ void moveFile(const string& sFile, const string& sNewFileName)
     copyFile(sFile, sNewFileName);
 
     // remove old file
-    remove(sFile.c_str());
+    boost::nowide::remove(sFile.c_str());
 }
 
 
@@ -2428,7 +2428,8 @@ void reduceLogFilesize(const string& sFileName)
     const size_t MINLINES = 20000;
 
     // Open the logfile and check, whether the file stream is OK
-    fFile.open(sFileName.c_str(), ios_base::binary | ios_base::in);
+    fFile.open(sFileName, ios_base::binary | ios_base::in);
+
     if (fFile.fail())
         return;
 
@@ -2450,6 +2451,7 @@ void reduceLogFilesize(const string& sFileName)
 
         // Open a temporary file in binary mode and check, whether the file is good
         fTemp.open("$~tempfile.txt", ios_base::binary | ios_base::out);
+
         if (fTemp.fail())
             return;
 
@@ -2457,8 +2459,10 @@ void reduceLogFilesize(const string& sFileName)
         for (size_t i = 0; i < nLines; i++)
         {
             getline(fFile, sTemp);
+
             if (nLines - i > MINLINES)
                 continue;
+
             fTemp << sTemp << endl;
         }
 
@@ -2469,7 +2473,7 @@ void reduceLogFilesize(const string& sFileName)
         // Re-open the file streams with exchanged read/write flags
         // and a truncate flag on the log file
         fTemp.open("$~tempfile.txt", ios_base::binary | ios_base::in);
-        fFile.open(sFileName.c_str(), ios_base::trunc | ios_base::binary | ios_base::out);
+        fFile.open(sFileName, ios_base::trunc | ios_base::binary | ios_base::out);
         fTemp.seekg(0);
 
         // Copy the entire content of the temporary file
