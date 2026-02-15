@@ -3133,7 +3133,7 @@ mu::Array strfnc_getuserinfo()
     userinfo.push_back("FullName");
     userinfo.push_back(getUserDisplayName(false));
     userinfo.push_back("UserId");
-    userinfo.push_back(wxGetUserId().ToStdString());
+    userinfo.push_back(boost::nowide::narrow(wxGetUserId().ToStdWstring()));
     userinfo.push_back("UserProfile");
     userinfo.push_back(replacePathSeparator(getenv("USERPROFILE")));
 #endif

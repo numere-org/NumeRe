@@ -840,7 +840,7 @@ void TableViewer::pasteContents(bool useCursor)
     int nCols = 0;
     int nSkip = 0;
 
-    if (nLines && !useCursor && !isNumerical(vTableData.front().ToStdString()))
+    if (nLines && !useCursor && !isNumerical(wxToUtf8(vTableData.front())))
     {
         nSkip++;
         nLines--;
@@ -1334,7 +1334,7 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
     if (isGridNumeReTable)
         return *static_cast<std::complex<double>*>(GetTable()->GetValueAsCustom(row, col, "complex"));
 
-    std::string cellValue = GetCellValue(row, col).ToStdString();
+    std::string cellValue = wxToUtf8(GetCellValue(row, col));
 
     if (cellValue.front() != '"')
     {
@@ -1705,7 +1705,7 @@ void TableViewer::replaceDecimalSign(wxString& text)
 
     for (size_t i = 0; i < toks.size(); i++)
     {
-        if (isNumerical(toks[i].ToStdString()))
+        if (isNumerical(wxToUtf8(toks[i])))
             toks[i].Replace(",", ".");
 
         if (text.length())
@@ -1820,7 +1820,7 @@ std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // Replace whitespaces with underscores, if the current
         // line also contains tabulator characters and it is a
         // non-numerical line
-        if (!isNumerical(sLine.ToStdString())
+        if (!isNumerical(wxToUtf8(sLine))
             && (tabSeparated || sLine.find("  ") != std::string::npos))
         {
             for (size_t i = 1; i < sLine.length()-1; i++)

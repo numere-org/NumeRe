@@ -69,9 +69,9 @@ int wxCALLBACK ProcedureViewerCompare(wxIntPtr item1, wxIntPtr item2, wxIntPtr p
                 return 0;
             return 1;
         case 3:
-            if (toLowerCase(viewer->vData[item1].procedureDefinition.ToStdString()) < toLowerCase(viewer->vData[item2].procedureDefinition.ToStdString()))
+            if (viewer->vData[item1].procedureDefinition.Lower() < viewer->vData[item2].procedureDefinition.Lower())
                 return -1;
-            else if (toLowerCase(viewer->vData[item1].procedureDefinition.ToStdString()) == toLowerCase(viewer->vData[item2].procedureDefinition.ToStdString()))
+            else if (viewer->vData[item1].procedureDefinition.Lower() == viewer->vData[item2].procedureDefinition.Lower())
                 return 0;
             return 1;
     }

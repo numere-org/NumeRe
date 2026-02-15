@@ -210,7 +210,7 @@ wxString SearchController::FindMarkedInclude(int charpos)
 	else
 		m_editor->m_clickedInclude = m_terminal->getPathSettings()[SCRIPTPATH] + "/" + clickedWord + ".nscr";
 
-	return replacePathSeparator(wxToUtf8(clickedWord));
+	return wxReplacePathSeparator(clickedWord);
 }
 
 

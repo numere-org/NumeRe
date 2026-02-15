@@ -206,7 +206,7 @@ void CodeAnalyzer::run()
 			StripSpaces(sLine);
 			if (sLine.length() && sLine.find_first_not_of(" \n\r\t") != string::npos)
 			{
-				string sSyntaxElement = m_editor->GetFilenameString().ToStdString();
+				string sSyntaxElement = wxToUtf8(m_editor->GetFilenameString());
 				isAlreadyMeasured = true;
 
 				// Calculate the code metrics:
@@ -829,13 +829,14 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                             || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                         {
                             // Store it and break directly
+                            std::string sTextRange = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
+                                                                                     m_editor->WordEndPosition(i, true)));
+
                             if (m_editor->m_fileType == FILE_NPRC)
-                                m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
-                                                                                                    m_editor->WordEndPosition(i, true)).ToStdString(),
+                                m_vLocalVariables.push_back(pair<string,int>(sTextRange,
                                                                              m_editor->GetStyleAt(i)));
 
-                            m_vKnownVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
-                                                                                                m_editor->WordEndPosition(i, true)).ToStdString(),
+                            m_vKnownVariables.push_back(pair<string,int>(sTextRange,
                                                                          m_editor->GetStyleAt(i)));
 
                             i = m_editor->WordEndPosition(i, true);
@@ -1057,7 +1058,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         {
             // Creating this instance might fail
             Includer incl(wxToUtf8(m_editor->GetTextRange(wordstart, m_editor->GetLineEndPosition(m_nCurrentLine))),
-                          m_editor->GetFileName().GetPath().ToStdString());
+                          wxToUtf8(m_editor->GetFileName().GetPath()));
 
             // Go through all included lines in this file
             while (incl.is_open())
@@ -1135,10 +1136,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                         wxString sArg = m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true));
 
                         // Will this argument be overwritten by a declare?
-                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(sArg.ToStdString()))
-                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sArg.ToStdString(), m_sError, _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", sArg.ToStdString())), ANNOTATION_ERROR);
+                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(wxToUtf8(sArg)))
+                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sArg, m_sError,
+                                                                       _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", sArg)), ANNOTATION_ERROR);
 
-                        m_vLocalVariables.push_back(pair<string,int>(sArg.ToStdString(), m_editor->GetStyleAt(i)));
+                        m_vLocalVariables.push_back(pair<string,int>(wxToUtf8(sArg), m_editor->GetStyleAt(i)));
                         i = m_editor->WordEndPosition(i, true);
                     }
                 }

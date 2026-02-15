@@ -181,7 +181,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         // Is the current file a script or a procedure?
                         if (filenames[i].find(".nscr") != std::string::npos)
                         {
-                            std::string sScriptName = replacePathSeparator(filenames[i].ToStdString());
+                            std::string sScriptName = replacePathSeparator(wxToUtf8(filenames[i]));
                             sScriptName.erase(sScriptName.rfind(".nscr"));
 
                             if (sScriptName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
@@ -193,11 +193,11 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             if (sScriptName.find(' ') != std::string::npos)
                                 sScriptName = "\"" + sScriptName + "\"";
 
-                            sExecutables += "start " + sScriptName;
+                            sExecutables += "start " + wxFromUtf8(sScriptName);
                         }
                         else
                         {
-                            std::string sProcName = replacePathSeparator(filenames[i].ToStdString());
+                            std::string sProcName = replacePathSeparator(wxToUtf8(filenames[i]));
                             sProcName.erase(sProcName.rfind(".nprc"));
 
                             if (sProcName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
@@ -213,7 +213,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             else
                                 sProcName = "'" + sProcName + "'";
 
-                            sExecutables += "$" + sProcName + "()";
+                            sExecutables += "$" + wxFromUtf8(sProcName) + "()";
                         }
                     }
                     else
@@ -223,7 +223,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                         // This is another file type. We'll add it to the list
                         // of loadable files and try to load it to memory afterwards
-                        sLoadables += "load \"" + replacePathSeparator(filenames[i].ToStdString()) + "\" -app -ignore";
+                        sLoadables += "load \"" + wxReplacePathSeparator(filenames[i]) + "\" -app -ignore";
                     }
                 }
 
@@ -303,7 +303,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         return wxDragNone;
 
                     fileType type = getFileType(filenames[i]);
-                    std::string sFileName = replacePathSeparator(filenames[i].ToStdString());
+                    std::string sFileName = replacePathSeparator(wxToUtf8(filenames[i]));
 
                     if (type == TEXTFILE || type == BINARYFILE)
                     {
@@ -313,11 +313,11 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             || sFileName.substr(vPaths[SAVEPATH].length()) == vPaths[SAVEPATH])
                             continue;
 
-                        if (wxFileExists(vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/')))
-                            || wxFileExists(vPaths[SAVEPATH] + sFileName.substr(sFileName.rfind('/'))))
+                        if (wxFileExists(wxFromUtf8(vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/'))))
+                            || wxFileExists(wxFromUtf8(vPaths[SAVEPATH] + sFileName.substr(sFileName.rfind('/')))))
                             continue;
 
-                        wxCopyFile(sFileName, vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/')));
+                        wxCopyFile(wxFromUtf8(sFileName), wxFromUtf8(vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/'))));
                     }
                     else if (type == EXECUTABLE)
                     {
@@ -334,10 +334,10 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         else
                             pathID = PROCPATH;
 
-                        if (wxFileExists(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))))
+                        if (wxFileExists(wxFromUtf8(vPaths[pathID] + sFileName.substr(sFileName.rfind('/')))))
                             continue;
 
-                        wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
+                        wxCopyFile(wxFromUtf8(sFileName), wxFromUtf8(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))));
                     }
                     else if (type == IMAGEFILE)
                     {
@@ -348,10 +348,10 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                         PathID pathID = PLOTPATH;
 
-                        if (wxFileExists(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))))
+                        if (wxFileExists(wxFromUtf8(vPaths[pathID] + sFileName.substr(sFileName.rfind('/')))))
                             continue;
 
-                        wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
+                        wxCopyFile(wxFromUtf8(sFileName), wxFromUtf8(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))));
                     }
                 }
 

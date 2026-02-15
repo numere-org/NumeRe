@@ -138,7 +138,7 @@ void DuplicateCodeDialog::SetResult(const std::vector<std::string>& vResult)
 	for (size_t i = 0; i < vResult.size(); i++)
 	{
 		m_resultList->InsertItem(i, vResult[i].substr(0, vResult[i].find('[')));
-		std::string itemtext = m_resultList->GetItemText(i).ToStdString();
+		std::string itemtext = wxToUtf8(m_resultList->GetItemText(i));
 		int line1 = atoi(itemtext.substr(0, itemtext.find('-')).c_str());
 		int line2 = atoi(itemtext.substr(itemtext.find('-') + 1, itemtext.find('=') - itemtext.find('-') - 1).c_str());
 		m_resultList->SetItem(i, 1, vResult[i].substr(vResult[i].find('[')));
@@ -208,7 +208,7 @@ void DuplicateCodeDialog::OnItemRightClick(wxListEvent& event)
 
 void DuplicateCodeDialog::highlightSelection(const wxString& sSelection, bool firstMatch)
 {
-	std::string sItemText = sSelection.ToStdString();
+	std::string sItemText = wxToUtf8(sSelection);
 	int nStart1, nEnd1, nStart2, nEnd2, nSelection;
 
 	nStart1 = StrToInt(sItemText.substr(0, sItemText.find('-')));
@@ -257,7 +257,7 @@ void DuplicateCodeDialog::OnColumnHeaderClick(wxListEvent& event)
 
 	for (int i = 0; i < m_resultList->GetItemCount(); i++)
 	{
-		sCurrentItem = m_resultList->GetItemText(i, nCol).ToStdString();
+		sCurrentItem = wxToUtf8(m_resultList->GetItemText(i, nCol));
 		vIndex.push_back(vData.size());
 		switch (nCol)
 		{

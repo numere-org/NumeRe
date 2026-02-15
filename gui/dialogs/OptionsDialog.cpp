@@ -65,8 +65,6 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
     EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_BACK, OptionsDialog::OnColorPickerChange)
 END_EVENT_TABLE()
 
-std::string replacePathSeparator(const std::string&);
-
 
 
 /////////////////////////////////////////////////
@@ -760,22 +758,22 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
     switch (event.GetId())
     {
         case ID_BTN_LOADPATH:
-            m_LoadPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            m_LoadPath->SetValue(wxReplacePathSeparator(dialog.GetPath()));
             break;
         case ID_BTN_SAVEPATH:
-            m_SavePath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            m_SavePath->SetValue(wxReplacePathSeparator(dialog.GetPath()));
             break;
         case ID_BTN_SCRIPTPATH:
-            m_ScriptPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            m_ScriptPath->SetValue(wxReplacePathSeparator(dialog.GetPath()));
             break;
         case ID_BTN_PROCPATH:
-            m_ProcPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            m_ProcPath->SetValue(wxReplacePathSeparator(dialog.GetPath()));
             break;
         case ID_BTN_PLOTPATH:
-            m_PlotPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            m_PlotPath->SetValue(wxReplacePathSeparator(dialog.GetPath()));
             break;
         case ID_BTN_LATEXPATH:
-            m_LaTeXRoot->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            m_LaTeXRoot->SetValue(wxReplacePathSeparator(dialog.GetPath()));
             break;
     }
 }
@@ -860,23 +858,23 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_MASKDEFAULT].active() = m_useMaskAsDefault->IsChecked();
     mSettings[SETTING_B_TABLEREFS].active() = m_alwaysReferenceTables->IsChecked();
     mSettings[SETTING_B_DECODEARGUMENTS].active() = m_debuggerDecodeArguments->IsChecked();
-    mSettings[SETTING_S_LOADPATH].stringval() = m_LoadPath->GetValue().ToStdString();
-    mSettings[SETTING_S_SAVEPATH].stringval() = m_SavePath->GetValue().ToStdString();
-    mSettings[SETTING_S_SCRIPTPATH].stringval() = m_ScriptPath->GetValue().ToStdString();
-    mSettings[SETTING_S_PROCPATH].stringval() = m_ProcPath->GetValue().ToStdString();
-    mSettings[SETTING_S_PLOTPATH].stringval() = m_PlotPath->GetValue().ToStdString();
-    mSettings[SETTING_S_LOADPATHMASK].stringval() = m_loadFileMask->GetValue().ToStdString();
-    mSettings[SETTING_S_SAVEPATHMASK].stringval() = m_saveFileMask->GetValue().ToStdString();
-    mSettings[SETTING_S_SCRIPTPATHMASK].stringval() = m_scriptFileMask->GetValue().ToStdString();
-    mSettings[SETTING_S_PROCPATHMASK].stringval() = m_procFileMask->GetValue().ToStdString();
-    mSettings[SETTING_S_PLOTPATHMASK].stringval() = m_plotFileMask->GetValue().ToStdString();
-    mSettings[SETTING_S_PLOTFONT].stringval() = m_defaultFont->GetValue().ToStdString();
+    mSettings[SETTING_S_LOADPATH].stringval() = wxToUtf8(m_LoadPath->GetValue());
+    mSettings[SETTING_S_SAVEPATH].stringval() = wxToUtf8(m_SavePath->GetValue());
+    mSettings[SETTING_S_SCRIPTPATH].stringval() = wxToUtf8(m_ScriptPath->GetValue());
+    mSettings[SETTING_S_PROCPATH].stringval() = wxToUtf8(m_ProcPath->GetValue());
+    mSettings[SETTING_S_PLOTPATH].stringval() = wxToUtf8(m_PlotPath->GetValue());
+    mSettings[SETTING_S_LOADPATHMASK].stringval() = wxToUtf8(m_loadFileMask->GetValue());
+    mSettings[SETTING_S_SAVEPATHMASK].stringval() = wxToUtf8(m_saveFileMask->GetValue());
+    mSettings[SETTING_S_SCRIPTPATHMASK].stringval() = wxToUtf8(m_scriptFileMask->GetValue());
+    mSettings[SETTING_S_PROCPATHMASK].stringval() = wxToUtf8(m_procFileMask->GetValue());
+    mSettings[SETTING_S_PLOTPATHMASK].stringval() = wxToUtf8(m_plotFileMask->GetValue());
+    mSettings[SETTING_S_PLOTFONT].stringval() = wxToUtf8(m_defaultFont->GetValue());
     mSettings[SETTING_V_PRECISION].value() = m_precision->GetValue();
     mSettings[SETTING_V_BUFFERSIZE].value() = m_termHistory->GetValue();
     mSettings[SETTING_V_AUTOSAVE].value() = m_autosaveinterval->GetValue();
 
     mSettings[SETTING_V_CARETBLINKTIME].value() = m_caretBlinkTime->GetValue();
-    mSettings[SETTING_S_LATEXROOT].stringval() = m_LaTeXRoot->GetValue().ToStdString();
+    mSettings[SETTING_S_LATEXROOT].stringval() = wxToUtf8(m_LaTeXRoot->GetValue());
     mSettings[SETTING_B_TOOLBARTEXT].active() = m_showToolbarText->IsChecked();
     mSettings[SETTING_B_TOOLBARSTRETCH].active() = m_enableToolbarStretch->IsChecked();
     mSettings[SETTING_B_PATHSONTABS].active() = m_FilePathsInTabs->IsChecked();
@@ -955,7 +953,7 @@ void OptionsDialog::InitializeDialog()
 	std::map<std::string, SettingsValue>& mSettings = m_options->getSettings();
 
 	m_printStyle->SetValue(printStyleString);
-	m_iconStyle->SetValue(mSettings[SETTING_S_TOOLBARICONSTYLE].stringval());
+	m_iconStyle->SetValue(wxFromUtf8(mSettings[SETTING_S_TOOLBARICONSTYLE].stringval()));
 	m_termHistory->SetValue(mSettings[SETTING_V_BUFFERSIZE].value());
 	m_caretBlinkTime->SetValue(mSettings[SETTING_V_CARETBLINKTIME].value());
 	m_showToolbarText->SetValue(mSettings[SETTING_B_TOOLBARTEXT].active());
@@ -983,21 +981,21 @@ void OptionsDialog::InitializeDialog()
     m_useExecuteCommand->SetValue(mSettings[SETTING_B_ENABLEEXECUTE].active());
     m_useMaskAsDefault->SetValue(mSettings[SETTING_B_MASKDEFAULT].active());
     m_alwaysReferenceTables->SetValue(mSettings[SETTING_B_TABLEREFS].active());
-    m_LoadPath->SetValue(mSettings[SETTING_S_LOADPATH].stringval());
-    m_SavePath->SetValue(mSettings[SETTING_S_SAVEPATH].stringval());
-    m_ScriptPath->SetValue(mSettings[SETTING_S_SCRIPTPATH].stringval());
-    m_ProcPath->SetValue(mSettings[SETTING_S_PROCPATH].stringval());
-    m_PlotPath->SetValue(mSettings[SETTING_S_PLOTPATH].stringval());
-    m_loadFileMask->SetValue(mSettings[SETTING_S_LOADPATHMASK].stringval());
-    m_saveFileMask->SetValue(mSettings[SETTING_S_SAVEPATHMASK].stringval());
-    m_scriptFileMask->SetValue(mSettings[SETTING_S_SCRIPTPATHMASK].stringval());
-    m_procFileMask->SetValue(mSettings[SETTING_S_PROCPATHMASK].stringval());
-    m_plotFileMask->SetValue(mSettings[SETTING_S_PLOTPATHMASK].stringval());
-    m_defaultFont->SetValue(mSettings[SETTING_S_PLOTFONT].stringval());
+    m_LoadPath->SetValue(wxFromUtf8(mSettings[SETTING_S_LOADPATH].stringval()));
+    m_SavePath->SetValue(wxFromUtf8(mSettings[SETTING_S_SAVEPATH].stringval()));
+    m_ScriptPath->SetValue(wxFromUtf8(mSettings[SETTING_S_SCRIPTPATH].stringval()));
+    m_ProcPath->SetValue(wxFromUtf8(mSettings[SETTING_S_PROCPATH].stringval()));
+    m_PlotPath->SetValue(wxFromUtf8(mSettings[SETTING_S_PLOTPATH].stringval()));
+    m_loadFileMask->SetValue(wxFromUtf8(mSettings[SETTING_S_LOADPATHMASK].stringval()));
+    m_saveFileMask->SetValue(wxFromUtf8(mSettings[SETTING_S_SAVEPATHMASK].stringval()));
+    m_scriptFileMask->SetValue(wxFromUtf8(mSettings[SETTING_S_SCRIPTPATHMASK].stringval()));
+    m_procFileMask->SetValue(wxFromUtf8(mSettings[SETTING_S_PROCPATHMASK].stringval()));
+    m_plotFileMask->SetValue(wxFromUtf8(mSettings[SETTING_S_PLOTPATHMASK].stringval()));
+    m_defaultFont->SetValue(wxFromUtf8(mSettings[SETTING_S_PLOTFONT].stringval()));
 
     m_precision->SetValue(mSettings[SETTING_V_PRECISION].value());
     m_autosaveinterval->SetValue(mSettings[SETTING_V_AUTOSAVE].value());
-    m_LaTeXRoot->SetValue(mSettings[SETTING_S_LATEXROOT].stringval());
+    m_LaTeXRoot->SetValue(wxFromUtf8(mSettings[SETTING_S_LATEXROOT].stringval()));
 
     for (size_t i = 0; i < m_options->GetStyleIdentifier().size(); i++)
     {

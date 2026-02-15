@@ -346,7 +346,7 @@ void NumeReHistory::loadHistory()
 
     SetReadOnly(false);
 
-    if (fileExists(sFileName.ToStdString()))
+    if (fileExists(wxToUtf8(sFileName)))
     {
         LoadFile(sFileName);
         Colourise(0, -1);

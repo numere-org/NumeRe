@@ -116,7 +116,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	SetCursor(wxCursor(wxCURSOR_IBEAM));
 
     // Start the kernel
-	_kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
+	_kernel.StartUp(this, wxToUtf8(sPath), getSyntax()->getFunctions());
 	m_options->copySettings(_kernel.getKernelSettings());
 	m_useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
 

@@ -50,6 +50,21 @@ inline wxString wxFromUtf8(const std::string& s)
     return wxString::FromUTF8(s.c_str(), s.length());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Perform path separator conversion on
+/// wxStrings.
+///
+/// \param path wxString
+/// \return wxString
+///
+/////////////////////////////////////////////////
+inline wxString wxReplacePathSeparator(wxString path)
+{
+    path.Replace("\\", "/");
+    return path;
+}
+
 #endif // STRINGCONV_HPP
 
 

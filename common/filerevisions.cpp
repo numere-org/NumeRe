@@ -375,7 +375,7 @@ wxString FileRevisions::readExternalFile(const wxString& filePath)
     std::string sFileContents;
     std::string sLine;
 
-    file_in.open(filePath.ToStdString().c_str());
+    file_in.open(wxToUtf8(filePath));
 
     while (file_in.good() && !file_in.eof())
     {

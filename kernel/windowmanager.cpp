@@ -21,6 +21,7 @@
 #include "../externals/tinyxml2/tinyxml2.h"
 #include "core/plotting/graph_helper.hpp"
 #include "windowmanager.hpp"
+#include "../gui/stringconv.hpp"
 
 namespace NumeRe
 {
@@ -437,7 +438,7 @@ namespace NumeRe
             }
             while (!m_closing && m_customWindow->isDialog());
 
-            return m_closing ? "\"\"" : m_customWindow->getDialogResult().ToStdString();
+            return m_closing ? "\"\"" : wxToUtf8(m_customWindow->getDialogResult());
         }
 
         return "\"\"";

@@ -4,12 +4,12 @@
 #include <windows.h>
 #include <shellapi.h>
 
-class Recycler : public SHFILEOPSTRUCTA
+class Recycler : public SHFILEOPSTRUCTW
 {
 	public:
 		Recycler();
 
-		int recycle(const char* pszPath, bool bDelete = false);
+		int recycle(const wchar_t* pszPath, bool bDelete = false);
 };
 
 #endif // RECYCLER_HPP

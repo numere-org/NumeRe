@@ -255,7 +255,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     // Fetch legacy settings, if available
     InitializeProgramOptions();
 
-    _guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
+    _guilang.setTokens("<>="+wxToUtf8(getProgramFolder())+";");
 
     g_logger.info("Loading GUI language files.");
 
@@ -620,7 +620,7 @@ void NumeReWindow::removeFromReloadBlackList(const wxString& sFilename)
 /////////////////////////////////////////////////
 bool NumeReWindow::isOnReloadBlackList(wxString sFilename)
 {
-    sFilename = replacePathSeparator(sFilename.ToStdString());
+    sFilename = wxReplacePathSeparator(sFilename);
 
     for (size_t i = 0; i < vReloadBlackList.size(); i++)
     {
@@ -746,7 +746,7 @@ void NumeReWindow::prepareSession()
         tinyxml2::XMLDocument session;
         boost::nowide::ifstream if_session;
         std::vector<std::string> vSessionFile;
-        if_session.open((getProgramFolder().ToStdString()+"\\numere.session").c_str());
+        if_session.open(wxToUtf8(getProgramFolder())+"\\numere.session");
 
         // Is the session file available and readable? Then
         // recreate the last session from this file
@@ -782,7 +782,7 @@ void NumeReWindow::prepareSession()
             // Is this an XML file?
             if (vSessionFile.front().starts_with("<session"))
             {
-                if (session.LoadFile((getProgramFolder().ToStdString()+"\\numere.session").c_str()) == tinyxml2::XML_SUCCESS)
+                if (session.LoadFile((wxToUtf8(getProgramFolder())+"\\numere.session").c_str()) == tinyxml2::XML_SUCCESS)
                 {
                     tinyxml2::XMLElement* root = session.RootElement();
 
@@ -1096,7 +1096,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
-            OnExecuteFile(data->filename.ToStdString(), id);
+            OnExecuteFile(wxToUtf8(data->filename), id);
             break;
         }
         case ID_MENU_PREVIEW_FILE_FROM_TREE:
@@ -1739,12 +1739,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_INSTALLPLUGINFROMFILE:
         {
-            std::string packageFile = wxFileSelector(_guilang.get("GUI_SELECT_PACKAGE_FOR_INSTALL"),
-                                                     m_terminal->getPathSettings()[SCRIPTPATH] + "/packages",
-                                                     "", "*.nscr", "Packages (*.nscr)|*.nscr", wxFD_OPEN, this).ToStdString();
+            wxString packageFile = wxFileSelector(_guilang.get("GUI_SELECT_PACKAGE_FOR_INSTALL"),
+                                                  wxFromUtf8(m_terminal->getPathSettings()[SCRIPTPATH] + "/packages"),
+                                                  "", "*.nscr", "Packages (*.nscr)|*.nscr", wxFD_OPEN, this);
 
             if (packageFile.length())
-                m_terminal->pass_command("install \"" + replacePathSeparator(packageFile) + "\"", false);
+                m_terminal->pass_command("install \"" + wxReplacePathSeparator(packageFile) + "\"", false);
 
             break;
         }
@@ -1818,7 +1818,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                 compileLaTeX();
             else
             {
-                std::string command = replacePathSeparator((m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString());
+                std::string command = replacePathSeparator(wxToUtf8((m_book->getCurrentEditor()->GetFileName()).GetFullPath()));
                 OnExecuteFile(command, id);
             }
 
@@ -2017,7 +2017,7 @@ void NumeReWindow::openImage(wxFileName filename)
 /////////////////////////////////////////////////
 void NumeReWindow::openExternally(wxFileName filename)
 {
-    ShellExecuteA(NULL, "open", filename.GetFullPath().ToStdString().c_str(), "", "", SW_SHOW);
+    ShellExecuteW(NULL, L"open", filename.GetFullPath().ToStdWstring().c_str(), L"", L"", SW_SHOW);
 }
 
 
@@ -2203,9 +2203,13 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDispl
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
     if (tableDisplayName.find("()") != std::string::npos)
-        openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
+        openTable(m_terminal->getTable(wxToUtf8(tableName)),
+                  wxToUtf8(tableDisplayName),
+                  wxToUtf8(tableName));
     else
-        openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
+        openTable(m_terminal->getStringTable(wxToUtf8(tableName)),
+                  wxToUtf8(tableDisplayName),
+                  wxToUtf8(tableName));
 }
 
 
@@ -2574,15 +2578,17 @@ void NumeReWindow::createLaTeXFile()
     if (!m_book->getCurrentEditor())
         return;
 
-    std::string sFileName = m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString();
+    std::string sFileName = wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath());
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
 
     std::string sDocFile = docGen.createDocumentation(sFileName);
 
     if (sDocFile.length())
-        wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", sDocFile), _guilang.get("GUI_DLG_LATEX_SUCCESS"), wxCENTER | wxOK, this);
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", wxFromUtf8(sDocFile)),
+                     _guilang.get("GUI_DLG_LATEX_SUCCESS"), wxCENTER | wxOK, this);
     else
-        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", sFileName), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", wxFromUtf8(sFileName)),
+                     _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
 }
 
 
@@ -2598,27 +2604,29 @@ void NumeReWindow::runLaTeX()
 {
     if (!m_book->getCurrentEditor())
         return;
-    std::string sFileName = m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString();
+
+    std::string sFileName = wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath());
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
     std::string sMain = docGen.createFullDocumentation(sFileName);
 
     if (!sMain.length())
     {
-        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", sFileName), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", wxFromUtf8(sFileName)),
+                     _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
         return;
     }
 
     sMain += " -interaction=nonstopmode";
 
-    if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
-        ShellExecuteA(NULL,
-                      "open",
-                      (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(),
-                      sMain.c_str(),
-                      sMain.substr(0, sMain.rfind('/')).c_str(),
+    if (fileExists(wxToUtf8(m_options->GetLaTeXRoot() + "/xelatex.exe")))
+        ShellExecuteW(NULL,
+                      L"open",
+                      (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdWstring().c_str(),
+                      wxFromUtf8(sMain).ToStdWstring().c_str(),
+                      wxFromUtf8(sMain.substr(0, sMain.rfind('/'))).ToStdWstring().c_str(),
                       SW_SHOW);
     else
-        wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()),
+        wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", wxToUtf8(m_options->GetLaTeXRoot())),
                      _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
 }
 
@@ -2642,15 +2650,15 @@ void NumeReWindow::compileLaTeX()
     {
         wxFileName filename = m_book->getCurrentEditor()->GetFileName();
 
-        if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
-            ShellExecuteA(NULL,
-                          "open",
-                          (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(),
-                          (filename.GetName().ToStdString() + " -interaction=nonstopmode").c_str(),
-                          filename.GetPath().ToStdString().c_str(),
+        if (fileExists(wxToUtf8(m_options->GetLaTeXRoot() + "/xelatex.exe")))
+            ShellExecuteW(NULL,
+                          L"open",
+                          (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdWstring().c_str(),
+                          (filename.GetName() + " -interaction=nonstopmode").ToStdWstring().c_str(),
+                          filename.GetPath().ToStdWstring().c_str(),
                           SW_SHOW);
         else
-            wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()),
+            wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot()),
                          _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
     }
 }
@@ -2669,7 +2677,8 @@ void NumeReWindow::deleteFile()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
 
-    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
+    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename),
+                              _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
         return;
 
     if (m_clickedTreeItem == m_copiedTreeItem)
@@ -2768,7 +2777,7 @@ void NumeReWindow::renameFile()
 /////////////////////////////////////////////////
 void NumeReWindow::OnCopyAsPath()
 {
-    std::string fileName = replacePathSeparator(getTreePath(m_clickedTreeItem).ToStdString());
+    wxString fileName = wxReplacePathSeparator(getTreePath(m_clickedTreeItem));
 
     if (fileName.length() && wxTheClipboard->Open())
     {
@@ -2915,15 +2924,15 @@ void NumeReWindow::OnRemoveFolder()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
 
-    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
+    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename),
+                              _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
         return;
 
     if (m_clickedTreeItem == m_copiedTreeItem)
         m_copiedTreeItem = 0;
 
     Recycler _recycler;
-    _recycler.recycle(data->filename.ToStdString().c_str());
-    return;
+    _recycler.recycle(data->filename.c_str());
 }
 
 
@@ -2937,7 +2946,7 @@ void NumeReWindow::OnRemoveFolder()
 void NumeReWindow::OnPreview()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
-    std::string fileName = data->filename.ToStdString();
+    std::string fileName = wxToUtf8(data->filename);
 
     if (!NumeRe::canLoadFile(fileName))
     {
@@ -2987,11 +2996,11 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         if (wxArgV[i].find('.') == std::string::npos)
             continue;
 
-        ext = toLowerCase(wxArgV[i].substr(wxArgV[i].rfind('.')).ToStdString());
+        ext = wxArgV[i].substr(wxArgV[i].rfind('.')).Lower();
 
         if (ext == ".exe")
         {
-            g_logger.info("Ignoring executable file '" + wxArgV[i].ToStdString() + "'");
+            g_logger.info("Ignoring executable file '" + wxToUtf8(wxArgV[i]) + "'");
             continue;
         }
 
@@ -3000,7 +3009,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("start \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
+                m_terminal->pass_command("start \"" + wxReplacePathSeparator(wxArgV[i]) + "\"", false);
                 i++;
             }
             else
@@ -3012,7 +3021,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("window \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
+                m_terminal->pass_command("window \"" + wxReplacePathSeparator(wxArgV[i]) + "\"", false);
                 i++;
             }
             else
@@ -3028,7 +3037,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("$'" + replacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.')).ToStdString()) + "'()", false);
+                m_terminal->pass_command("$'" + wxReplacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.'))) + "'()", false);
                 i++;
             }
             else
@@ -3054,7 +3063,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             || ext == ".xlsx"
             || ext == ".labx"
             || ext == ".ndat")
-            m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
+            m_terminal->pass_command("append \"" + wxReplacePathSeparator(wxArgV[i]) + "\"", false);
     }
 
     if (filestoopen.size())
@@ -3174,12 +3183,12 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             }
 
             // Get the file name, if the user didn't hit "Cancel"
-            filename = textentry->GetValue();
+            filename = wxToUtf8(textentry->GetValue());
             delete textentry;
         }
         else
         {
-            filename = defaultfilename.ToStdString();
+            filename = wxToUtf8(defaultfilename);
             isExternal = filename.starts_with(vPaths[PROCPATH]);
         }
 
@@ -3247,22 +3256,24 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         if (_filetype == FILE_NSCR)
         {
             templateFileName = "tmpl_script.nlng";
-            fullFileName = wxFileName(vPaths[SCRIPTPATH] + folder, filename+".nscr");
+            fullFileName = wxFileName(wxFromUtf8(vPaths[SCRIPTPATH] + folder), wxFromUtf8(filename+".nscr"));
         }
         else if (_filetype == FILE_NLYT)
         {
             templateFileName = "tmpl_layout.nlng";
-            fullFileName = wxFileName(vPaths[SCRIPTPATH] + folder, filename+".nlyt");
+            fullFileName = wxFileName(wxFromUtf8(vPaths[SCRIPTPATH] + folder), wxFromUtf8(filename+".nlyt"));
         }
         else if (_filetype == FILE_PLUGIN)
         {
             templateFileName = "tmpl_plugin.nlng";
-            fullFileName = wxFileName(vPaths[SCRIPTPATH] + folder, "plgn_" + filename + ".nscr");
+            fullFileName = wxFileName(wxFromUtf8(vPaths[SCRIPTPATH] + folder), wxFromUtf8("plgn_" + filename + ".nscr"));
         }
         else if (_filetype == FILE_NPRC)
         {
             templateFileName = "tmpl_procedure.nlng";
-            fullFileName = (isExternal ? wxFileName(folder, filename+".nprc") : wxFileName(vPaths[PROCPATH] + folder, filename+".nprc"));
+            fullFileName = (isExternal
+                            ? wxFileName(wxFromUtf8(folder), wxFromUtf8(filename+".nprc"))
+                            : wxFileName(wxFromUtf8(vPaths[PROCPATH] + folder), wxFromUtf8(filename+".nprc")));
         }
         else if (_filetype == FILE_NAPP)
         {
@@ -3272,9 +3283,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
             // Get the template list
             if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\tmpl_app_start.nlng"))
-                vFiles = getFileList(getProgramFolder().ToStdString() + "/user/lang/tmpl_app_gui_[*].nlng");
+                vFiles = getFileList(wxToUtf8(getProgramFolder()) + "/user/lang/tmpl_app_gui_[*].nlng");
             else
-                vFiles = getFileList(getProgramFolder().ToStdString() + "/lang/tmpl_app_gui_[*].nlng");
+                vFiles = getFileList(wxToUtf8(getProgramFolder()) + "/lang/tmpl_app_gui_[*].nlng");
 
             // Ensure we have the templates available
             if (!vFiles.size())
@@ -3658,7 +3669,7 @@ void NumeReWindow::EvaluateTab()
         }
     }
 
-    std::string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
+    std::string command = replacePathSeparator(wxToUtf8(edit->GetFileName().GetFullPath()));
     OnExecuteFile(command, ID_MENU_EXECUTE);
 }
 
@@ -3791,7 +3802,7 @@ bool NumeReWindow::CloseAllFiles()
     if (m_appClosing && !m_sessionSaved && m_options->GetSaveSession())
     {
         g_logger.debug("Writing session file.");
-        session.SaveFile((getProgramFolder().ToStdString()+"/numere.session").c_str());
+        session.SaveFile((wxToUtf8(getProgramFolder())+"/numere.session").c_str());
 
         m_sessionSaved = true;
     }
@@ -4024,9 +4035,9 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 /////////////////////////////////////////////////
 void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
-    if (filename.GetExt() != "txt" && NumeRe::canLoadFile(filename.GetFullPath().ToStdString()))
+    if (filename.GetExt() != "txt" && NumeRe::canLoadFile(wxToUtf8(filename.GetFullPath())))
     {
-        wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
+        wxString path = "load \"" + wxReplacePathSeparator(filename.GetFullPath()) + "\" -app -ignore";
         showConsole();
         m_terminal->pass_command(path, false);
     }
@@ -4544,11 +4555,10 @@ bool NumeReWindow::SaveTab(int tab)
     wxString filename = edit->GetFileNameAndPath();
 
     // Make the folder, if it doesn't exist
-    std::string sPath = filename.ToStdString();
-    sPath = replacePathSeparator(sPath);
+    wxString sPath = wxReplacePathSeparator(filename);
     sPath.erase(sPath.rfind('/'));
     FileSystem _fSys;
-    _fSys.setPath(sPath, true, getProgramFolder().ToStdString());
+    _fSys.setPath(wxToUtf8(sPath), true, wxToUtf8(getProgramFolder()));
     g_logger.info("Saving " + wxToUtf8(filename) + " ...");
 
     if (!edit->SaveFile(filename))
@@ -6329,7 +6339,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         if (fname_ext.find('.') != std::string::npos)
             fname_ext = fname_ext.substr(fname_ext.rfind('.')).Lower() + ";";
 
-        if (NumeRe::canLoadFile(data->filename.ToStdString()))
+        if (NumeRe::canLoadFile(wxToUtf8(data->filename)))
         {
             popupMenu.Append(ID_MENU_PREVIEW_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_PREVIEW"));
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_LOAD"));
@@ -6525,7 +6535,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
         if (pathname.GetExt() == "nprc")
         {
-            NumeRe::CallTip _cTip = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition((pathname.GetPath() + "\\" + pathname.GetName()).ToStdString(), "$" + pathname.GetName().ToStdString()), 75);
+            NumeRe::CallTip _cTip = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition(wxToUtf8(pathname.GetPath() + "/" + pathname.GetName()), "$" + wxToUtf8(pathname.GetName())), 75);
 
             tooltip = _guilang.get("COMMON_FILETYPE_NPRC");
 
@@ -6789,7 +6799,7 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
     else if (type == wxEVT_COMMAND_FIND_REPLACE)
     {
         if ((flags & wxFR_MATCHCASE && edit->GetSelectedText() != findString)
-            || (!(flags & wxFR_MATCHCASE) && toLowerCase(edit->GetSelectedText().ToStdString()) != toLowerCase(findString.ToStdString())))
+            || (!(flags & wxFR_MATCHCASE) && edit->GetSelectedText().Lower() != findString.Lower()))
         {
             wxBell();
             return;
@@ -7283,7 +7293,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
     if (!sFileName.length())
         return;
 
-    wxString command = replacePathSeparator(sFileName);
+    std::string command = replacePathSeparator(sFileName);
     std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
     if (command.rfind(".nprc") != std::string::npos)
@@ -7297,7 +7307,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         {
             command.erase(0, vPaths[PROCPATH].length());
 
-            while (command.GetChar(0) == '/')
+            while (command.front() == '/')
                 command.erase(0, 1);
 
             while (command.find('/') != std::string::npos)
@@ -7318,7 +7328,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
             command.erase(0, vPaths[SCRIPTPATH].length());
 
-        while (command.GetChar(0) == '/')
+        while (command.front() == '/')
             command.erase(0, 1);
 
         // Define the command including the line to execute from
@@ -7354,7 +7364,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
             command = "<procpath>" + command.substr(vPaths[PROCPATH].length());
 
-        while (command.GetChar(0) == '/')
+        while (command.front() == '/')
             command.erase(0, 1);
 
         command = "window \"" + command + "\"";
@@ -7365,7 +7375,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         command = "load \"" + command + "\" -app -ignore";
 
     showConsole();
-    m_terminal->pass_command(command, false);
+    m_terminal->pass_command(wxFromUtf8(command), false);
 }
 
 
@@ -7392,7 +7402,7 @@ void NumeReWindow::OnCalculateDependencies()
         DependencyDialog dlg(this,
                              wxID_ANY,
                              _guilang.get("GUI_DEPDLG_HEAD", m_book->getCurrentEditor()->GetFilenameString()),
-                             m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString(), procLib);
+                             wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath()), procLib);
         dlg.ShowModal();
     }
     catch (SyntaxError& e)
@@ -7447,7 +7457,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 std::vector<std::string> contents;
 
                 // Get the file's contents
-                contents = getFileForInstaller(procedures[i].ToStdString());
+                contents = getFileForInstaller(wxToUtf8(procedures[i]));
 
                 // Insert the prepared contents
                 for (size_t j = 0; j < contents.size(); j++)
@@ -7536,16 +7546,16 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
 void NumeReWindow::OnCompareFiles()
 {
     // Search first file
-    std::string file1 = wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
-                                       wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this).ToStdString();
+    std::string file1 = wxToUtf8(wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
+                                                wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this));
 
     // Abort, if the user clicked cancel
     if (!file1.length())
         return;
 
     // Search second file
-    std::string file2 = wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
-                                       wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this).ToStdString();
+    std::string file2 = wxToUtf8(wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
+                                                wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this));
 
     // Abort, if the user clicked cancel
     if (!file2.length())
@@ -7554,12 +7564,12 @@ void NumeReWindow::OnCompareFiles()
     // Calculate the unified diff of both files
     std::string diff = compareFiles(file1, file2);
 
-    wxFileName fn1(file1);
-    wxFileName fn2(file2);
+    wxFileName fn1(wxFromUtf8(file1));
+    wxFileName fn2(wxFromUtf8(file2));
 
     // Show the calculated diff with the names of both files
     // as "file name"
-    ShowRevision(fn1.GetName() + "." + fn1.GetExt() + "-" + fn2.GetName() + "." + fn2.GetExt() + ".diff", diff);
+    ShowRevision(fn1.GetName() + "." + fn1.GetExt() + "-" + fn2.GetName() + "." + fn2.GetExt() + ".diff", wxFromUtf8(diff));
 }
 
 
@@ -7823,7 +7833,7 @@ void NumeReWindow::OnReportIssue(ErrorLocation errLoc)
 /////////////////////////////////////////////////
 void NumeReWindow::OnFindUpdate()
 {
-    Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe", getProgramFolder().ToStdString());
+    Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe", wxToUtf8(getProgramFolder()));
 
     if (!releases.empty())
     {

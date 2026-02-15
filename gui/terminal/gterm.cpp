@@ -6,6 +6,7 @@
 #endif
 
 #include "gterm.hpp"
+#include "../stringconv.hpp"
 #include <wx/stdpaths.h>
 #include <wx/wx.h>
 #include <wx/filename.h>
@@ -157,7 +158,7 @@ GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h), m_useSmart
 
 	// Load the syntax
 	wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-	_syntax.loadSyntax(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR).ToStdString());
+	_syntax.loadSyntax(wxToUtf8(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)));
 
 	// Set the terminal view cursor to top left
 	// To make the cursor valid, we have to instantiate it with zeros

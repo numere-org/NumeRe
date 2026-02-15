@@ -20,6 +20,7 @@
 
 #include "reportissuedialog.hpp"
 #include "../globals.hpp"
+#include "../stringconv.hpp"
 #include "../../kernel/core/io/logger.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../network/githubapi.hpp"
@@ -57,7 +58,7 @@ static std::string getAppFilePath()
     wxStandardPaths systemPaths = wxStandardPaths::Get();
     wxString appPath = systemPaths.GetExecutablePath();
     wxFileName fullProgramPath(appPath);
-    return fullProgramPath.GetPath().ToStdString();
+    return wxToUtf8(fullProgramPath.GetPath());
 }
 
 

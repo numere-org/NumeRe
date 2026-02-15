@@ -248,8 +248,8 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
     if (revisionList->GetSelections(selection) >= 2)
     {
         popUpmenu.Append(ID_REVISIONDIALOG_COMPARE, _guilang.get("GUI_DLG_REVISIONDIALOG_COMPARE",
-                                                                 revisionList->GetItemText(selection.front()).ToStdString(),
-                                                                 revisionList->GetItemText(selection.back()).ToStdString()));
+                                                                 revisionList->GetItemText(selection.front()),
+                                                                 revisionList->GetItemText(selection.back())));
         popUpmenu.AppendSeparator();
     }
 

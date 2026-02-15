@@ -205,7 +205,7 @@ void DefaultPage::loadLatestRelease()
         return;
 
     Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe",
-                                               wxStandardPaths::Get().GetExecutablePath().ToStdString());
+                                               wxToUtf8(wxStandardPaths::Get().GetExecutablePath()));
 
     if (releases.empty())
     {

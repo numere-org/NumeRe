@@ -3,30 +3,27 @@
 
 Recycler::Recycler()
 {
-	memset((SHFILEOPSTRUCT*)this, 0, sizeof(SHFILEOPSTRUCT));
+	memset((SHFILEOPSTRUCTW*)this, 0, sizeof(SHFILEOPSTRUCTW));
 	fFlags |= FOF_SILENT;
 	fFlags |= FOF_NOERRORUI;
 	fFlags |= FOF_NOCONFIRMATION;
 }
 
-int Recycler::recycle(const char* pszPath, bool bDelete)
+int Recycler::recycle(const wchar_t* pszPath, bool bDelete)
 {
-	TCHAR buf[_MAX_PATH + 1];
-	strcpy(buf, pszPath);
-	buf[strlen(buf) + 1] = 0;
+	wchar_t buf[_MAX_PATH + 1];
+	wcscpy(buf, pszPath);
+	buf[wcslen(buf) + 1] = 0;
 
 	wFunc = FO_DELETE;
 	pFrom = buf;
 	pTo = nullptr;
 
 	if (bDelete)
-	{
 		fFlags &= ~FOF_ALLOWUNDO;
-	}
 	else
-	{
 		fFlags |= FOF_ALLOWUNDO;
-	}
-	return SHFileOperation(this);
+
+	return SHFileOperationW(this);
 }
 

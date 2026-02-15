@@ -39,7 +39,7 @@ std::string replacePathSeparator(const std::string&);
 wxString VersionControlSystemManager::getRevisionPath(const wxString& currentFilePath)
 {
     std::vector<std::string> vDefaultPaths = m_parent->getPathDefs();
-    std::string currentPath = replacePathSeparator(currentFilePath.ToStdString());
+    std::string currentPath = replacePathSeparator(wxToUtf8(currentFilePath));
 
     for (size_t i = LOADPATH; i < vDefaultPaths.size(); i++)
     {
