@@ -2017,7 +2017,7 @@ void NumeReWindow::openImage(wxFileName filename)
 /////////////////////////////////////////////////
 void NumeReWindow::openExternally(wxFileName filename)
 {
-    ShellExecuteW(NULL, L"open", filename.GetFullPath().ToStdWstring().c_str(), L"", L"", SW_SHOW);
+    ShellExecuteW(NULL, L"open", filename.GetFullPath().c_str(), L"", L"", SW_SHOW);
 }
 
 
@@ -2621,9 +2621,9 @@ void NumeReWindow::runLaTeX()
     if (fileExists(wxToUtf8(m_options->GetLaTeXRoot() + "/xelatex.exe")))
         ShellExecuteW(NULL,
                       L"open",
-                      (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdWstring().c_str(),
-                      wxFromUtf8(sMain).ToStdWstring().c_str(),
-                      wxFromUtf8(sMain.substr(0, sMain.rfind('/'))).ToStdWstring().c_str(),
+                      (m_options->GetLaTeXRoot()+"/xelatex.exe").c_str(),
+                      wxFromUtf8(sMain).c_str(),
+                      wxFromUtf8(sMain.substr(0, sMain.rfind('/'))).c_str(),
                       SW_SHOW);
     else
         wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", wxToUtf8(m_options->GetLaTeXRoot())),
@@ -2653,9 +2653,9 @@ void NumeReWindow::compileLaTeX()
         if (fileExists(wxToUtf8(m_options->GetLaTeXRoot() + "/xelatex.exe")))
             ShellExecuteW(NULL,
                           L"open",
-                          (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdWstring().c_str(),
-                          (filename.GetName() + " -interaction=nonstopmode").ToStdWstring().c_str(),
-                          filename.GetPath().ToStdWstring().c_str(),
+                          (m_options->GetLaTeXRoot()+"/xelatex.exe").c_str(),
+                          (filename.GetName() + " -interaction=nonstopmode").c_str(),
+                          filename.GetPath().c_str(),
                           SW_SHOW);
         else
             wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot()),
@@ -7554,7 +7554,7 @@ void NumeReWindow::OnCompareFiles()
         return;
 
     // Search second file
-    std::string file2 = wxToUtf8(wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
+    std::string file2 = wxToUtf8(wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_2"), "", wxEmptyString, wxEmptyString,
                                                 wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this));
 
     // Abort, if the user clicked cancel

@@ -202,12 +202,13 @@ const gsl_rng* getGslRandGenInstance()
 std::string getUserDisplayName(bool informal)
 {
     unsigned long len = UNLEN+1;
-    std::string sUserName(len, '\0');
+    std::wstring sUserNameW(len, '\0');
+    std::string sUserName;
 
-    if (!GetUserNameExA(NameDisplay, sUserName.data(), &len))
+    if (!GetUserNameExW(NameDisplay, sUserNameW.data(), &len))
         return "";
 
-    sUserName.resize(len);
+    sUserName = boost::nowide::narrow(sUserNameW.c_str(), len);
 
     // Return an informal name if a whitespace is found and no
     // comma is used for the inverted NAME, GIVEN-NAME order

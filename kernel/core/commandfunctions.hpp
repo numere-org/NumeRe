@@ -663,7 +663,7 @@ static bool editObject(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 static bool listDirectory(const string& sDir, const string& sParams, const Settings& _option)
 {
-    WIN32_FIND_DATA FindFileData;
+    WIN32_FIND_DATAW FindFileData;
     HANDLE hFind = INVALID_HANDLE_VALUE;
     LARGE_INTEGER Filesize;
     double dFilesize = 0.0;
@@ -704,39 +704,39 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 
         if (sDir == "LOADPATH")
         {
-            hFind = FindFirstFile((_option.getLoadPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getLoadPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getLoadPath();
         }
         else if (sDir == "SAVEPATH")
         {
-            hFind = FindFirstFile((_option.getSavePath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getSavePath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getSavePath();
         }
         else if (sDir == "PLOTPATH")
         {
-            hFind = FindFirstFile((_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getPlotPath();
         }
         else if (sDir == "SCRIPTPATH")
         {
-            hFind = FindFirstFile((_option.getScriptPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getScriptPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getScriptPath();
         }
         else if (sDir == "PROCPATH")
         {
-            hFind = FindFirstFile((_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getProcPath();
         }
         else if (sDir == "WORKPATH")
         {
-            hFind = FindFirstFile((_option.getWorkPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getWorkPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getWorkPath();
         }
         else
         {
             if (sDir[0] == '.')
             {
-                hFind = FindFirstFile((_option.getExePath() + "\\" + sDir + "\\" + sPattern).c_str(), &FindFileData);
+                hFind = FindFirstFileW(boost::nowide::widen(_option.getExePath() + "\\" + sDir + "\\" + sPattern).c_str(), &FindFileData);
                 sDirectory = _option.getExePath() + "/" + sDir;
             }
             else if (sDir[0] == '<')
@@ -756,11 +756,11 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                 else if (sDir.starts_with("<>") || sDir.starts_with("<this>"))
                     sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
 
-                hFind = FindFirstFile((sDirectory + "\\" + sPattern).c_str(), &FindFileData);
+                hFind = FindFirstFileW(boost::nowide::widen(sDirectory + "\\" + sPattern).c_str(), &FindFileData);
             }
             else
             {
-                hFind = FindFirstFile((sDir + "\\" + sPattern).c_str(), &FindFileData);
+                hFind = FindFirstFileW(boost::nowide::widen(sDir + "\\" + sPattern).c_str(), &FindFileData);
                 sDirectory = sDir;
             }
         }
@@ -772,8 +772,8 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
         {
             sFilesize = " Bytes";
             sConnect = "|   ";
-            sConnect += FindFileData.cFileName;
-            sFileName = sDirectory + "/" + FindFileData.cFileName;
+            sConnect += boost::nowide::narrow(FindFileData.cFileName);
+            sFileName = sDirectory + "/" + boost::nowide::narrow(FindFileData.cFileName);
 
             if (sConnect.length() + 3 > nFirstColLength) //31
                 sConnect = sConnect.substr(0, nFirstColLength - 14) + "..." + sConnect.substr(sConnect.length() - 8); //20
@@ -862,7 +862,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 
             NumeReKernel::printPreFmt(sConnect + "\n");
         }
-        while (FindNextFile(hFind, &FindFileData) != 0);
+        while (FindNextFileW(hFind, &FindFileData) != 0);
     }
 
     FindClose(hFind);
