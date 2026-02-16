@@ -1364,14 +1364,10 @@ void NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 	SetFocus();
 	ClearSelection();
 
-	wxClientDC dc(this);
-    m_curDC = &dc;
-    m_curDC->SetFont(m_normalFont);
     // Get the character position
 	m_selx1 = m_selx2 = GetCharFromScreenPosition(event.GetX(), event.GetY());
-    m_curDC = nullptr;
-
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
+
 	m_selecting = true;
 	MarkSelection();
 	Refresh(false);
@@ -1441,13 +1437,8 @@ void NumeReTerminal::OnMouseMove(wxMouseEvent& event)
     int x2Old = m_selx2;
     int y2Old = m_sely2;
 
-    // Get the text coordinates of the mouse
-    wxClientDC dc(this);
-    m_curDC = &dc;
-    m_curDC->SetFont(m_normalFont);
-    // Get the character position
+    // Get the character position from the mouse coordinates
     m_selx2 = GetCharFromScreenPosition(event.GetX(), event.GetY());
-    m_curDC = nullptr;
     m_sely2 = event.GetY() / m_charHeight;
 
     if (m_sely2 >= Height())
@@ -1460,7 +1451,6 @@ void NumeReTerminal::OnMouseMove(wxMouseEvent& event)
         MarkSelection();
 
     // Update the terminal
-    // GenericTerminal::Update();
     if (x2Old != m_selx2 || y2Old != m_sely2)
         Refresh(false);
 }
@@ -1778,9 +1768,8 @@ int NumeReTerminal::GetScreenCharPosition(int x, int y)
 
 /////////////////////////////////////////////////
 /// \brief Get the character at the (relative) x
-/// and y screen positions. Requires that m_curDC
-/// points to a valid device context and is set
-/// to a non-bold font.
+/// and y screen positions. Constructs a local
+/// wxDC to calculate the characters' positions.
 ///
 /// \param x int
 /// \param y int
@@ -1789,15 +1778,8 @@ int NumeReTerminal::GetScreenCharPosition(int x, int y)
 /////////////////////////////////////////////////
 int NumeReTerminal::GetCharFromScreenPosition(int x, int y)
 {
-    if (!m_curDC)
-    {
-        x /= m_charWidth;
-
-        if (x >= Width())
-            x = Width() - 1;
-
-        return x;
-    }
+    wxClientDC dc(this);
+    dc.SetFont(m_normalFont);
 
     // Get the text coordinates of the mouse
     y /= m_charHeight;
@@ -1808,7 +1790,7 @@ int NumeReTerminal::GetCharFromScreenPosition(int x, int y)
     wxString charsInLine = GetTM()->getRenderedString(y);
     wxArrayInt widths;
 
-    m_curDC->GetPartialTextExtents(charsInLine, widths);
+    dc.GetPartialTextExtents(charsInLine, widths);
 
     if (!widths.size())
     {
@@ -1852,29 +1834,23 @@ int NumeReTerminal::GetCharFromScreenPosition(int x, int y)
 void
 NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const wxString& sText)
 {
-	int	t;
+	if (!m_curDC)
+		return;
 
 	// Overwrite the passed colors depending on the flags
 	if (flags & SELECTED)
-	{
-		//fg_color = 0;
 		bg_color = 15;
-	}
 
 	if (flags & INVERSE)
 	{
-		t = fg_color;
+		int t = fg_color;
 		fg_color = bg_color;
 		bg_color = t;
 	}
 
-	if (!m_curDC)
-		return;
-
     m_curDC->SetFont(m_normalFont);
 
 	// Convert x-y char coordinates into pixel coordinates
-//	x *= m_charWidth;
     x = GetScreenCharPosition(x, y);
 	y *= m_charHeight;
 
@@ -1905,8 +1881,6 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 
 	// Draw the actual text
 	m_curDC->DrawText(sText, x, y);
-	/*if (flags & BOLD && m_boldStyle == OVERSTRIKE)
-		m_curDC->DrawText(sText, x + 1, y);*/
 }
 
 
@@ -1932,7 +1906,8 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
 	if (GenericTerminal::IsScrolledUp())
 		return;
 
-	int	t;
+	if (!m_curDC)
+		return;
 
 	// Overwrite the passed colors depending on the flags
 	if (flags & BOLD && m_boldStyle == COLOR)
@@ -1940,21 +1915,16 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
 
 	if (flags & INVERSE)
 	{
-		t = fg_color;
+		int t = fg_color;
 		fg_color = bg_color;
 		bg_color = t;
 	}
 
-	if (!m_curDC)
-		return;
-
     // Convert the character into wxString
 	wxString str(c);
-
 	m_curDC->SetFont(m_normalFont);
 
 	// Convert x-y char coordinates into pixel coordinates
-//	x *= m_charWidth;
     x = GetScreenCharPosition(x, y);
 	y *= m_charHeight;
 
@@ -2148,16 +2118,17 @@ void NumeReTerminal::CalltipCancel()
 void
 NumeReTerminal::ClearChars(int bg_color, int x, int y, int w, int h)
 {
+	if (!m_curDC)
+		return;
+
+    // Handle positions
     w = GetScreenCharPosition(x+w, h);
     x = GetScreenCharPosition(x, y);
     w -= x;
-//	x *= m_charWidth;
-	y *= m_charHeight;
-//	w *= m_charWidth;
-	h *= m_charHeight;
 
-	if (!m_curDC)
-		return;
+    // Handle heights
+	y *= m_charHeight;
+	h *= m_charHeight;
 
 	// Clear the area by drawing a rectangle with the background color
 	m_curDC->SetPen(m_colorPens[bg_color]);
