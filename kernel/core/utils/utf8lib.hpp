@@ -28,6 +28,7 @@ std::string ansiToUtf8(const std::string& sString);
 size_t countUnicodePoints(StringView sString);
 size_t findCharStart(StringView sString, size_t pos);
 size_t findClosestCharStart(StringView sString, size_t pos);
+size_t findNthCharStart(StringView sString, size_t nthChar);
 bool isValidUtf8Sequence(const std::string& sString);
 std::string ensureValidUtf8(std::string sString);
 

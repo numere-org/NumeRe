@@ -368,7 +368,7 @@ class Options : public Settings
 
         static std::string toString(wxFont font)
         {
-            font.SetEncoding(wxFONTENCODING_UTF8);
+            //font.SetEncoding(wxFONTENCODING_UTF8);
             return wxToUtf8(font.GetNativeFontInfoUserDesc());
         }
 

@@ -136,6 +136,37 @@ void TableBrowser::createMenuBar()
 
 
 /////////////////////////////////////////////////
+/// \brief Find the selected table on any of the
+/// available open pages.
+///
+/// \param tableDisplayName const std::string&
+/// \param sIntName const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int TableBrowser::findPage(const std::string& tableDisplayName, const std::string& sIntName)
+{
+    for (int i = 0; i < m_tabs->GetPageCount(); i++)
+    {
+        if (m_tabs->GetPageText(i) == wxFromUtf8(tableDisplayName))
+        {
+            std::string _sIntName;
+
+            if (m_panelTypes[i] == TYPE_TABLEPANEL)
+                _sIntName = static_cast<TablePanel*>(m_tabs->GetPage(i))->grid->GetInternalName();
+            else
+                _sIntName = static_cast<TableViewer*>(m_tabs->GetPage(i))->GetInternalName();
+
+            if (_sIntName == sIntName)
+                return i;
+        }
+    }
+
+    return wxNOT_FOUND;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function displays the
 /// contents of a cluster.
 ///
@@ -147,13 +178,32 @@ void TableBrowser::createMenuBar()
 /////////////////////////////////////////////////
 void TableBrowser::openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    TableViewer* grid = new TableViewer(m_tabs, wxID_ANY, GetStatusBar(), nullptr, m_topWindow, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    int pageNum = findPage(tableDisplayName, sIntName);
+
+    // If the page is already open
+    if (pageNum != wxNOT_FOUND && m_panelTypes[pageNum] == TYPE_TABLEVIEWER)
+    {
+        static_cast<TableViewer*>(m_tabs->GetPage(pageNum))->SetData(_stringTable, tableDisplayName, sIntName);
+
+        if (pageNum != m_tabs->GetSelection())
+            m_tabs->ChangeSelection(pageNum);
+        else
+        {
+            m_tabs->Refresh();
+            m_tabs->Layout();
+        }
+
+        return;
+    }
+
+    TableViewer* grid = new TableViewer(m_tabs, wxID_ANY, GetStatusBar(), nullptr, m_topWindow,
+                                        wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable, tableDisplayName, sIntName);
     SyntaxStyles uiTheme = m_topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
     grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
 
     m_panelTypes.push_back(TYPE_TABLEVIEWER);
-    m_tabs->AddPage(grid, tableDisplayName, true);
+    m_tabs->AddPage(grid, wxFromUtf8(tableDisplayName), true);
 }
 
 
@@ -169,12 +219,30 @@ void TableBrowser::openTable(NumeRe::Container<std::string> _stringTable, const 
 /////////////////////////////////////////////////
 void TableBrowser::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
+    int pageNum = findPage(tableDisplayName, sIntName);
+
+    // If the page is already open
+    if (pageNum != wxNOT_FOUND && m_panelTypes[pageNum] == TYPE_TABLEPANEL)
+    {
+        static_cast<TablePanel*>(m_tabs->GetPage(pageNum))->grid->SetData(_table, tableDisplayName, sIntName);
+
+        if (pageNum != m_tabs->GetSelection())
+            m_tabs->ChangeSelection(pageNum);
+        else
+        {
+            m_tabs->Refresh();
+            m_tabs->Layout();
+        }
+
+        return;
+    }
+
     TablePanel* panel = new TablePanel(m_tabs, this, wxID_ANY, GetStatusBar(), m_topWindow);
     panel->SetTerminal(m_topWindow->getTerminal());
     panel->grid->SetData(_table, tableDisplayName, sIntName);
 
     m_panelTypes.push_back(TYPE_TABLEPANEL);
-    m_tabs->AddPage(panel, tableDisplayName, true);
+    m_tabs->AddPage(panel, wxFromUtf8(tableDisplayName), true);
 
     panel->ready();
 }

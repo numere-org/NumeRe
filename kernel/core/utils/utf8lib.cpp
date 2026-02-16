@@ -473,6 +473,37 @@ size_t findClosestCharStart(StringView sString, size_t pos)
 
 
 /////////////////////////////////////////////////
+/// \brief Find the start byte of the the n-th
+/// character in the passed string.
+///
+/// \param sString StringView
+/// \param nthChar size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t findNthCharStart(StringView sString, size_t nthChar)
+{
+    size_t pos = 0;
+
+    while (nthChar && pos < sString.length())
+    {
+        size_t len = getUtf8ByteLen(sString[pos]);
+
+        if (!len)
+            return std::string::npos;
+
+        pos += len;
+        nthChar--;
+    }
+
+    if (!nthChar && pos < sString.length())
+        return pos;
+
+    return std::string::npos;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Determine, whether the byte at the
 /// position pos indicates a starting point for a
 /// valid UTF8 char.

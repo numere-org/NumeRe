@@ -775,10 +775,11 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
             sConnect += boost::nowide::narrow(FindFileData.cFileName);
             sFileName = sDirectory + "/" + boost::nowide::narrow(FindFileData.cFileName);
 
-            if (sConnect.length() + 3 > nFirstColLength) //31
-                sConnect = sConnect.substr(0, nFirstColLength - 14) + "..." + sConnect.substr(sConnect.length() - 8); //20
+            if (countUnicodePoints(sConnect) + 3 > nFirstColLength) //31
+                sConnect = sConnect.substr(0, findNthCharStart(sConnect, nFirstColLength - 14))
+                    + "..." + sConnect.substr(findNthCharStart(sConnect, sConnect.length() - 8)); //20
 
-            nLength = sConnect.length();
+            nLength = countUnicodePoints(sConnect);
 
             if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
@@ -786,7 +787,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                     continue;
 
                 // Ignore parent and current directory placeholders
-                if (sConnect.substr(sConnect.length() - 2) == ".." || sConnect.substr(sConnect.length() - 1) == ".")
+                if (sConnect.ends_with("..") || sConnect.ends_with("."))
                     continue;
 
                 nCount[1]++;
@@ -801,23 +802,23 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                 Filesize.HighPart = FindFileData.nFileSizeHigh;
                 string sExt = "";
 
-                if (sConnect.find('.') != string::npos)
-                    sExt = toLowerCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
+                if (sConnect.find('.') != std::string::npos)
+                    sExt = toUpperCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
 
                 sConnect.append(nFirstColLength + 7 - nLength, '.');
 
                 // Get the language string for the current file type
                 if (!sExt.length())
                     sConnect += _lang.get("COMMON_FILETYPE_NOEXT");
-                else if (sExt == ".dx" || sExt == ".jcm")
+                else if (sExt == ".DX" || sExt == ".JCM")
                     sConnect += _lang.get("COMMON_FILETYPE_JDX");
-                else if (sExt == ".wave")
+                else if (sExt == ".WAVE")
                     sConnect += _lang.get("COMMON_FILETYPE_WAV");
                 else
                 {
-                    sExt = _lang.get("COMMON_FILETYPE_" + toUpperCase(sExt.substr(1)));
+                    sExt = _lang.get("COMMON_FILETYPE_" + sExt.substr(1));
 
-                    if (sExt.find("COMMON_FILETYPE_") != string::npos)
+                    if (sExt.find("COMMON_FILETYPE_") != std::string::npos)
                         sConnect += sExt.substr(sExt.rfind('_') + 1) + "-" + _lang.get("COMMON_FILETYPE_NOEXT");
                     else
                         sConnect += sExt;
@@ -846,7 +847,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                 }
 
                 sFilesize = toString(dFilesize, 3) + " " + sFilesize;
-                sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), '.');
+                sConnect.append(_option.getWindow() - countUnicodePoints(sConnect) - sFilesize.length(), '.');
                 sConnect += sFilesize;
 
                 if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())

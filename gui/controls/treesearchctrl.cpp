@@ -187,7 +187,7 @@ wxArrayString TreeSearchCtrl::getChildCandidates(const wxString& enteredText, wx
             FileNameTreeData* data = static_cast<FileNameTreeData*>(m_associatedCtrl->GetItemData(node));
             wxString label = m_associatedCtrl->GetItemText(node);
             wxString filePath = data ? data->filename : label;
-            wxString cleaned = removeDefaultPath(wxToUtf8(filePath));
+            wxString cleaned = wxFromUtf8(removeDefaultPath(wxToUtf8(filePath)));
             bool isPath = enteredText.find('/') != std::string::npos;
 
             if ((!isPath && label.Lower().find(enteredText) != std::string::npos)

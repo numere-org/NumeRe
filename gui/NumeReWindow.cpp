@@ -816,9 +816,9 @@ void NumeReWindow::prepareSession()
                                 if (currentEd)
                                     m_book->getCurrentEditor()->SetUnsaved();
                             }
-                            else if (wxFileExists(sFileName))
+                            else if (wxFileExists(wxFromUtf8(sFileName)))
                             {
-                                OpenSourceFile(wxArrayString(1, sFileName));
+                                OpenSourceFile(wxArrayString(1, wxFromUtf8(sFileName)));
                                 currentEd = m_book->getCurrentEditor();
                             }
                             else
@@ -826,7 +826,7 @@ void NumeReWindow::prepareSession()
                                 // If it not exists, inform the user
                                 // that we were not able to load it
                                 if (!modifiedFile)
-                                    m_UnrecoverableFiles += sFileName + "\n";
+                                    m_UnrecoverableFiles += wxFromUtf8(sFileName) + "\n";
                             }
 
                             if (currentEd)
@@ -6793,7 +6793,7 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
         if (pos < 0)
         {
             wxMessageBox(_guilang.get("GUI_SEARCH_END", findString),
-                _guilang.get("GUI_SEARCH_END_HEAD"), wxOK | wxICON_EXCLAMATION, this);
+                         _guilang.get("GUI_SEARCH_END_HEAD"), wxOK | wxICON_EXCLAMATION, this);
         }
     }
     else if (type == wxEVT_COMMAND_FIND_REPLACE)
@@ -6855,6 +6855,8 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
     if (findString.IsEmpty() || !edit)
         return wxNOT_FOUND;
 
+    size_t utf8StrLen = wxToUtf8(findString).length();
+
     int stc_flags = 0;
     if ((flags & wxFR_MATCHCASE) != 0)
     {
@@ -6874,9 +6876,9 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
     }
     else
     {
-        if (labs(edit->GetTargetEnd() - edit->GetTargetStart()) == long(findString.length()))
+        if (labs(edit->GetTargetEnd() - edit->GetTargetStart()) == utf8StrLen)
         {
-            pos -= findString.length() + 1; // doesn't matter if it matches or not, skip it
+            pos -= utf8StrLen + 1; // doesn't matter if it matches or not, skip it
         }
 
         edit->SetTargetStart(wxMax(0, pos));
@@ -6890,8 +6892,8 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
     {
         if (highlight)
         {
-            edit->GotoPos(pos+findString.length());
-            edit->SetSelection(pos, pos + findString.length());
+            edit->GotoPos(pos + utf8StrLen);
+            edit->SetSelection(pos, pos + utf8StrLen);
             edit->EnsureLineVisibility(edit->GetCurrentLine());
             edit->EnsureCaretVisible();
         }

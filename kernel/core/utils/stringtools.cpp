@@ -590,7 +590,7 @@ std::string truncString(const std::string& sText, size_t nMaxChars)
     if (countUnicodePoints(sText) <= nMaxChars)
         return sText;
 
-    return sText.substr(0, findClosestCharStart(sText, nMaxChars-3)) + "...";
+    return sText.substr(0, findNthCharStart(sText, nMaxChars-3)) + "...";
 }
 
 
@@ -615,15 +615,15 @@ std::string strfill(const std::string& sString, size_t nWidth, char cFill, bool 
         return "";
 
     std::string sReturn = sString;
-    size_t length = countUnicodePoints(sString);
+    size_t len = countUnicodePoints(sString);
 
     // Fill the string
-    if (length < nWidth)
-        sReturn.insert(0, nWidth-length, cFill);
+    if (len < nWidth)
+        sReturn.insert(0, nWidth-len, cFill);
 
     // Limit the output size if required
-    if (limit && length > nWidth)
-        sReturn = sString.substr(0, findClosestCharStart(sString, nWidth - 3)) + "...";
+    if (limit && len > nWidth)
+        sReturn = sString.substr(0, findNthCharStart(sString, nWidth - 3)) + "...";
 
     return sReturn;
 }
@@ -1755,8 +1755,8 @@ std::vector<std::string> split(const std::string& sStr, char cSplit)
 std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 {
     if (countUnicodePoints(sLongString) > nMaxStringLength)
-        return sLongString.substr(0, findClosestCharStart(sLongString, nMaxStringLength/2-2)) + "[...]"
-            + sLongString.substr(findClosestCharStart(sLongString, sLongString.length()-nMaxStringLength/2+2));
+        return sLongString.substr(0, findNthCharStart(sLongString, nMaxStringLength/2-2)) + "[...]"
+            + sLongString.substr(findNthCharStart(sLongString, sLongString.length()-nMaxStringLength/2+2));
 
     return sLongString;
 }

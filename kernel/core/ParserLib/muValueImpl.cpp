@@ -2743,6 +2743,26 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Dummy multiplication operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::operator*(const BaseValue& other) const
+    {
+        if (other.m_type == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
+            return clone();
+        else if (other.m_type == TYPE_NEUTRAL)
+            return clone();
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+(static_cast<const RefValue&>(other).get());
+
+        throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.m_type));
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Path combination operator.
     ///
     /// \param other const BaseValue&
@@ -2799,6 +2819,26 @@ namespace mu
             return operator+=(static_cast<const RefValue&>(other).get());
         else if (other.m_type != TYPE_NEUTRAL)
             throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.m_type));
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Dummy multiply with value.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& PathValue::operator*=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
+            return *this;
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+=(static_cast<const RefValue&>(other).get());
+        else if (other.m_type != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.m_type));
 
         return *this;
     }

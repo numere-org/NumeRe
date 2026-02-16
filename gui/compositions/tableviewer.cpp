@@ -1900,7 +1900,15 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
         return;
     }
 
-    CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    if (!GetNumberCols())
+        CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    else
+    {
+        DeleteCols(0, GetNumberCols()-1);
+        DeleteRows(0, GetNumberRows()-1);
+        AppendCols(_stringTable.getCols());
+        AppendRows(_stringTable.getRows());
+    }
 
     // String tables and clusters do not have a headline
     nFirstNumRow = 0;

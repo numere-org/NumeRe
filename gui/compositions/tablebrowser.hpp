@@ -48,6 +48,7 @@ class TableBrowser : public ViewerFrame
         std::vector<PanelType> m_panelTypes;
 
         void createMenuBar();
+        int findPage(const std::string& tableDisplayName, const std::string& sIntName);
 
     public:
         TableBrowser(wxWindow* parent, NumeReWindow* topWindow);
