@@ -4329,7 +4329,7 @@ namespace NumeRe
             }
 
             // Write the headline
-            _cell->SetString(sHeadLine.c_str());
+            _cell->SetWString(boost::nowide::widen(sHeadLine).c_str());
         }
 
         // Now write the actual table
@@ -4354,7 +4354,7 @@ namespace NumeRe
                 if (TableColumn::isValueType(fileData->at(j)->m_type) || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());
                 else
-                    _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
+                    _cell->SetWString(boost::nowide::widen(fileData->at(j)->getValueAsInternalString(i)).c_str());
             }
         }
 

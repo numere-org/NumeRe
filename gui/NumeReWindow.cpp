@@ -2291,9 +2291,9 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
-        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(dialog.GetPath()));
+        window.updateWindowInformation(NumeRe::STATUS_OK, toExternalString(replacePathSeparator(wxToUtf8(dialog.GetPath()))));
 }
 
 
@@ -2313,9 +2313,9 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
-        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(dialog.GetPath()));
+        window.updateWindowInformation(NumeRe::STATUS_OK, toExternalString(replacePathSeparator(wxToUtf8(dialog.GetPath()))));
 }
 
 
@@ -2335,12 +2335,11 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
     {
         wxString value = dialog.GetValue();
-        value.Replace("\"", "\\\"");
-        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(value));
+        window.updateWindowInformation(NumeRe::STATUS_OK, toExternalString(wxToUtf8(value)));
     }
 }
 
@@ -2382,13 +2381,13 @@ void NumeReWindow::showMessageBox(NumeRe::Window& window)
     int ret = wxMessageBox(prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), style, this);
 
     if (ret == wxOK)
-        window.updateWindowInformation(NumeRe::STATUS_OK, "ok");
+        window.updateWindowInformation(NumeRe::STATUS_OK, "\"ok\"");
     else if (ret == wxCANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "cancel");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"cancel\"");
     else if (ret == wxYES)
-        window.updateWindowInformation(NumeRe::STATUS_OK, "yes");
+        window.updateWindowInformation(NumeRe::STATUS_OK, "\"yes\"");
     else
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "no");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"no\"");
 }
 
 
@@ -2415,12 +2414,9 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
-    {
-        choices[dialog.GetSelection()].Replace("\"", "\\\"");
-        window.updateWindowInformation(NumeRe::STATUS_OK, wxToUtf8(choices[dialog.GetSelection()]));
-    }
+        window.updateWindowInformation(NumeRe::STATUS_OK, toExternalString(wxToUtf8(choices[dialog.GetSelection()])));
 }
 
 
@@ -2447,7 +2443,7 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
     {
         wxArrayInt selections = dialog.GetSelections();
@@ -2456,14 +2452,13 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 
         for (size_t i = 0; i < selections.size(); i++)
         {
-            choices[selections[i]].Replace("\"", "\\\"");
-            sExpression += wxToUtf8(choices[selections[i]]) + "\",\"";
+            if (sExpression.length())
+                sExpression += ",";
+
+            sExpression += toExternalString(wxToUtf8(choices[selections[i]]));
         }
 
-        if (sExpression.length())
-            sExpression.erase(sExpression.length()-3);
-
-        window.updateWindowInformation(NumeRe::STATUS_OK, sExpression);
+        window.updateWindowInformation(NumeRe::STATUS_OK, "{" + sExpression + "}");
     }
 }
 
@@ -2500,14 +2495,13 @@ void NumeReWindow::showListEditDialog(NumeRe::Window& window)
 
         for (size_t i = 0; i < listEntries.size(); i++)
         {
-            listEntries[i].Replace("\"", "\\\"");
-            sExpression += wxToUtf8(listEntries[i]) + "\",\"";
+            if (sExpression.length())
+                sExpression += ",";
+
+            sExpression += toExternalString(wxToUtf8(listEntries[i]));
         }
 
-        if (sExpression.length())
-            sExpression.erase(sExpression.length()-3);
-
-        window.updateWindowInformation(NumeRe::STATUS_OK, sExpression);
+        window.updateWindowInformation(NumeRe::STATUS_OK, "{" + sExpression + "}");
     }
 }
 
