@@ -24,7 +24,6 @@
 */
 #include "muParserError.h"
 #include "../ui/language.hpp"
-extern Language _lang;
 
 namespace mu
 {

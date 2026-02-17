@@ -369,6 +369,8 @@ DataView CommandLineParser::getExprAsDataView() const
     if (sExpr.find("??") != std::string::npos)
         sExpr = promptForUserInput(sExpr);
 
+    StripSpaces(sExpr);
+
     if (instance->getMemoryManager().isTable(sExpr, true))
         return DataView(DataAccessParser(sExpr, false));
 

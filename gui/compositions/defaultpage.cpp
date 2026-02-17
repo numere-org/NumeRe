@@ -20,7 +20,7 @@
 #include "../IconManager.h"
 #include "../../common/datastructures.h"
 #include "../../common/recentfilemanager.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../network/githubapi.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/versioninformation.hpp"
@@ -31,7 +31,6 @@
 
 std::string getUserDisplayName(bool informal);
 
-extern Language _guilang;
 extern double g_pixelScale;
 
 BEGIN_EVENT_TABLE(DefaultPage, GroupPanel)
@@ -70,7 +69,7 @@ static wxString getFileContents(const wxString& fileName, const wxArrayString& s
                 return wxEmptyString;
 
             wxString fileContents;
-            file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_CP1252));
+            file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_UTF8));
 
             return fileContents;
         }
@@ -206,7 +205,7 @@ void DefaultPage::loadLatestRelease()
         return;
 
     Json::Value releases = GitHub::getReleases("https://api.github.com/repos/numere-org/NumeRe",
-                                               wxStandardPaths::Get().GetExecutablePath().ToStdString());
+                                               wxToUtf8(wxStandardPaths::Get().GetExecutablePath()));
 
     if (releases.empty())
     {
@@ -261,12 +260,12 @@ void DefaultPage::setRecentFiles(const RecentFilesManager& recentFiles)
     for (int i = recentFiles.size()-1; i >= 0 && nCount < 20; i--, nCount++)
     {
         wxFileName fn(recentFiles[i].name);
-        std::string sFileType = ("COMMON_FILETYPE_" + fn.GetExt().MakeUpper()).ToStdString();
+        wxString sFileType = ("COMMON_FILETYPE_" + fn.GetExt().MakeUpper());
 
-        sFileType = _guilang.get(sFileType);
+        sFileType = _guilang.get(sFileType.ToStdString());
 
-        if (sFileType.starts_with("COMMON_FILETYPE_"))
-            sFileType = _guilang.get("COMMON_FILETYPE_UNKNOWN", fn.GetExt().MakeUpper().ToStdString());
+        if (sFileType.StartsWith("COMMON_FILETYPE_"))
+            sFileType = _guilang.get("COMMON_FILETYPE_UNKNOWN", fn.GetExt().MakeUpper());
 
         if (m_icons)
             m_recentFiles->InsertItem(nCount, recentFiles[i].name, m_icons->GetIconIndex(fn.GetExt()));

@@ -19,12 +19,10 @@
 #include "cellfilter.hpp"
 
 #include "grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 
 extern double g_pixelScale;
-extern Language _guilang;
-
 
 BEGIN_EVENT_TABLE(CellFilterDialog, wxDialog)
     EVT_BUTTON(-1, CellFilterDialog::OnButtonClick)
@@ -313,7 +311,7 @@ void CellFilterDialog::OnButtonClick(wxCommandEvent& event)
 
         // Extract the value and convert multiple values into
         // a vector
-        std::string val = m_lt_gt_value->GetValue().ToStdString();
+        std::string val = wxToUtf8(m_lt_gt_value->GetValue());
         std::vector<std::string> vecVal;
 
         if (val.front() == '{' && val.back() == '}')

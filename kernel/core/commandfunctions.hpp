@@ -25,6 +25,7 @@
 #include "built-in.hpp"
 #include "maths/command_implementations.hpp"
 #include "maths/matrixoperations.hpp"
+#include "maths/odesolver.hpp"
 #include "plotting/plotting.hpp"
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
@@ -33,6 +34,7 @@
 #include "utils/filecheck.hpp"
 #include "io/archive.hpp"
 #include "io/qrcode.hpp"
+#include "documentation/documentation.hpp"
 #include "../../database/database.hpp"
 #include "ParserLib/muValueImpl.hpp"
 
@@ -661,7 +663,7 @@ static bool editObject(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 static bool listDirectory(const string& sDir, const string& sParams, const Settings& _option)
 {
-    WIN32_FIND_DATA FindFileData;
+    WIN32_FIND_DATAW FindFileData;
     HANDLE hFind = INVALID_HANDLE_VALUE;
     LARGE_INTEGER Filesize;
     double dFilesize = 0.0;
@@ -702,39 +704,39 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 
         if (sDir == "LOADPATH")
         {
-            hFind = FindFirstFile((_option.getLoadPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getLoadPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getLoadPath();
         }
         else if (sDir == "SAVEPATH")
         {
-            hFind = FindFirstFile((_option.getSavePath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getSavePath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getSavePath();
         }
         else if (sDir == "PLOTPATH")
         {
-            hFind = FindFirstFile((_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getPlotPath();
         }
         else if (sDir == "SCRIPTPATH")
         {
-            hFind = FindFirstFile((_option.getScriptPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getScriptPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getScriptPath();
         }
         else if (sDir == "PROCPATH")
         {
-            hFind = FindFirstFile((_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getProcPath();
         }
         else if (sDir == "WORKPATH")
         {
-            hFind = FindFirstFile((_option.getWorkPath() + "\\" + sPattern).c_str(), &FindFileData);
+            hFind = FindFirstFileW(boost::nowide::widen(_option.getWorkPath() + "\\" + sPattern).c_str(), &FindFileData);
             sDirectory = _option.getWorkPath();
         }
         else
         {
             if (sDir[0] == '.')
             {
-                hFind = FindFirstFile((_option.getExePath() + "\\" + sDir + "\\" + sPattern).c_str(), &FindFileData);
+                hFind = FindFirstFileW(boost::nowide::widen(_option.getExePath() + "\\" + sDir + "\\" + sPattern).c_str(), &FindFileData);
                 sDirectory = _option.getExePath() + "/" + sDir;
             }
             else if (sDir[0] == '<')
@@ -754,11 +756,11 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                 else if (sDir.starts_with("<>") || sDir.starts_with("<this>"))
                     sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
 
-                hFind = FindFirstFile((sDirectory + "\\" + sPattern).c_str(), &FindFileData);
+                hFind = FindFirstFileW(boost::nowide::widen(sDirectory + "\\" + sPattern).c_str(), &FindFileData);
             }
             else
             {
-                hFind = FindFirstFile((sDir + "\\" + sPattern).c_str(), &FindFileData);
+                hFind = FindFirstFileW(boost::nowide::widen(sDir + "\\" + sPattern).c_str(), &FindFileData);
                 sDirectory = sDir;
             }
         }
@@ -770,13 +772,14 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
         {
             sFilesize = " Bytes";
             sConnect = "|   ";
-            sConnect += FindFileData.cFileName;
-            sFileName = sDirectory + "/" + FindFileData.cFileName;
+            sConnect += boost::nowide::narrow(FindFileData.cFileName);
+            sFileName = sDirectory + "/" + boost::nowide::narrow(FindFileData.cFileName);
 
-            if (sConnect.length() + 3 > nFirstColLength) //31
-                sConnect = sConnect.substr(0, nFirstColLength - 14) + "..." + sConnect.substr(sConnect.length() - 8); //20
+            if (countUnicodePoints(sConnect) + 3 > nFirstColLength) //31
+                sConnect = sConnect.substr(0, findNthCharStart(sConnect, nFirstColLength - 14))
+                    + "..." + sConnect.substr(findNthCharStart(sConnect, sConnect.length() - 8)); //20
 
-            nLength = sConnect.length();
+            nLength = countUnicodePoints(sConnect);
 
             if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
@@ -784,7 +787,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                     continue;
 
                 // Ignore parent and current directory placeholders
-                if (sConnect.substr(sConnect.length() - 2) == ".." || sConnect.substr(sConnect.length() - 1) == ".")
+                if (sConnect.ends_with("..") || sConnect.ends_with("."))
                     continue;
 
                 nCount[1]++;
@@ -799,23 +802,23 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                 Filesize.HighPart = FindFileData.nFileSizeHigh;
                 string sExt = "";
 
-                if (sConnect.find('.') != string::npos)
-                    sExt = toLowerCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
+                if (sConnect.find('.') != std::string::npos)
+                    sExt = toUpperCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
 
                 sConnect.append(nFirstColLength + 7 - nLength, '.');
 
                 // Get the language string for the current file type
                 if (!sExt.length())
                     sConnect += _lang.get("COMMON_FILETYPE_NOEXT");
-                else if (sExt == ".dx" || sExt == ".jcm")
+                else if (sExt == ".DX" || sExt == ".JCM")
                     sConnect += _lang.get("COMMON_FILETYPE_JDX");
-                else if (sExt == ".wave")
+                else if (sExt == ".WAVE")
                     sConnect += _lang.get("COMMON_FILETYPE_WAV");
                 else
                 {
-                    sExt = _lang.get("COMMON_FILETYPE_" + toUpperCase(sExt.substr(1)));
+                    sExt = _lang.get("COMMON_FILETYPE_" + sExt.substr(1));
 
-                    if (sExt.find("COMMON_FILETYPE_") != string::npos)
+                    if (sExt.find("COMMON_FILETYPE_") != std::string::npos)
                         sConnect += sExt.substr(sExt.rfind('_') + 1) + "-" + _lang.get("COMMON_FILETYPE_NOEXT");
                     else
                         sConnect += sExt;
@@ -844,7 +847,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
                 }
 
                 sFilesize = toString(dFilesize, 3) + " " + sFilesize;
-                sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), '.');
+                sConnect.append(_option.getWindow() - countUnicodePoints(sConnect) - sFilesize.length(), '.');
                 sConnect += sFilesize;
 
                 if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())
@@ -860,7 +863,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 
             NumeReKernel::printPreFmt(sConnect + "\n");
         }
-        while (FindNextFile(hFind, &FindFileData) != 0);
+        while (FindNextFileW(hFind, &FindFileData) != 0);
     }
 
     FindClose(hFind);
@@ -3209,7 +3212,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
     make_hline();
     NumeReKernel::printPreFmt("|-> Version: " + getVersion());
     NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + printBuildDate() + "\n");
-    NumeReKernel::print("Copyright (c) 2013-" + getBuildYear() + utf8ToAnsi(", Erik HÄNEL et al."));
+    NumeReKernel::print("Copyright (c) 2013-" + getBuildYear() + ", Erik HÄNEL et al.");
     NumeReKernel::printPreFmt("|   <dev@numere.org>\n" );
     NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
     make_hline(-80);

@@ -137,6 +137,18 @@ class TableViewer : public wxGrid
         void enableQuotationMarks(bool enable = true);
         void refreshStatusBar();
 
+        /////////////////////////////////////////////////
+        /// \brief Return the internal name of the
+        /// displayed table.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string GetInternalName() const
+        {
+            return m_intName;
+        }
+
         mu::Array getSelectedValues();
         int GetInternalRows(int gridrow) const;
         int GetExternalRows(int gridrow) const;

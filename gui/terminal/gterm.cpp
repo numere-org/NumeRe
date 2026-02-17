@@ -6,6 +6,7 @@
 #endif
 
 #include "gterm.hpp"
+#include "../stringconv.hpp"
 #include <wx/stdpaths.h>
 #include <wx/wx.h>
 #include <wx/filename.h>
@@ -27,13 +28,13 @@ void GenericTerminal::Update()
 ///  Processes the input of the GenericTerminal and hands it over to the internal buffer
 ///
 ///  @param  len  int             The number of characters to process.
-///  @param  data unsigned char * The text to process.
+///  @param  data const wxString& The text to process.
 ///
 ///  @return void
 ///
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void GenericTerminal::ProcessInput(int len, const std::string& sData)
+void GenericTerminal::ProcessInput(int len, const wxString& sData)
 {
     // Copy the input
 	data_len = sData.length();
@@ -45,8 +46,6 @@ void GenericTerminal::ProcessInput(int len, const std::string& sData)
 	// Evaluate the input and update the GUI
 	normal_input();
 	update_changes();
-	return;
-
 }
 
 
@@ -56,11 +55,11 @@ void GenericTerminal::ProcessInput(int len, const std::string& sData)
 /// buffer.
 ///
 /// \param len int
-/// \param sData const string&
+/// \param sData const wxString&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void GenericTerminal::ProcessOutput(int len, const std::string& sData)
+void GenericTerminal::ProcessOutput(int len, const wxString& sData)
 {
     // Copy the input
 	data_len += sData.length();
@@ -70,7 +69,6 @@ void GenericTerminal::ProcessOutput(int len, const std::string& sData)
 	normal_output();
 	update_changes();
 	CalltipCancel();
-	return;
 }
 
 
@@ -106,9 +104,7 @@ void GenericTerminal::ResizeTerminal(int _width, int _height)
     // If the current  terminal is not scrolled up
     // use the current view cursor
     if (!IsScrolledUp())
-    {
         cursor = tm.toLogicalCursor(termCursor);
-    }
 
 #ifdef DO_LOG
     wxLogDebug("Resizing terminal: _width = %d, _height = %d", _width, _height);
@@ -122,6 +118,7 @@ void GenericTerminal::ResizeTerminal(int _width, int _height)
     {
         // Use it as the new terminal view cursor
         termCursor = tm.toViewCursor(cursor);
+
         if (!termCursor)
             termCursor = tm.getCurrentViewPos();
     }
@@ -135,6 +132,7 @@ void GenericTerminal::ResizeTerminal(int _width, int _height)
 
         // Update the scroll indicators
         scroll_bot = height - 1;
+
         if (scroll_top >= height)
             scroll_top = 0;
     }
@@ -160,7 +158,7 @@ GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h), m_useSmart
 
 	// Load the syntax
 	wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-	_syntax.loadSyntax(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR).ToStdString());
+	_syntax.loadSyntax(wxToUtf8(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)));
 
 	// Set the terminal view cursor to top left
 	// To make the cursor valid, we have to instantiate it with zeros
@@ -195,6 +193,7 @@ GenericTerminal::IsSelected(int x, int y)
 {
 	if (x >= 0 && x < Width() && y >= 0 && y < Height())
 		return tm.isSelected(ViewCursor(x, y));
+
 	return 0;
 }
 
@@ -215,9 +214,7 @@ void
 GenericTerminal::Select(int x, int y, int select)
 {
 	if (x >= 0 && x < Width() && y >= 0 && y < Height())
-	{
 	    tm.selectText(ViewCursor(x, y), select);
-	}
 }
 
 
@@ -227,10 +224,10 @@ GenericTerminal::Select(int x, int y, int select)
 ///
 /// \param x int
 /// \param y int
-/// \return unsigned char
+/// \return wxUniChar
 ///
 /////////////////////////////////////////////////
-unsigned char GenericTerminal::GetChar(int x, int y)
+wxUniChar GenericTerminal::GetChar(int x, int y)
 {
 	if (x >= 0 && x < Width() && y >= 0 && y < Height())
 		return tm.GetCharAdjusted(y, x);
@@ -242,10 +239,10 @@ unsigned char GenericTerminal::GetChar(int x, int y)
 /////////////////////////////////////////////////
 /// \brief Gets the selected text (if any).
 ///
-/// \return std::string
+/// \return wxString
 ///
 /////////////////////////////////////////////////
-std::string GenericTerminal::get_selected_text()
+wxString GenericTerminal::get_selected_text()
 {
 	return tm.getSelectedText();
 }
@@ -284,6 +281,7 @@ bool GenericTerminal::Scroll(int numLines, bool scrollUp)
 		handle_calltip(termCursor.x, termCursor.y);
 		return true;
 	}
+
 	return false;
 }
 

@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../common/markup.hpp"
 
 BEGIN_EVENT_TABLE(TextField, wxTextCtrl)
@@ -147,7 +147,6 @@ static void layoutError(const wxString& uiElement, wxWindow* parent)
 }
 
 
-extern Language _guilang;
 #define ELEMENT_BORDER 5
 
 /////////////////////////////////////////////////

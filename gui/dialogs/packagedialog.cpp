@@ -19,7 +19,7 @@
 #include "packagedialog.hpp"
 #include "../compositions/grouppanel.hpp"
 #include "../globals.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/ui/winlayout.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../externals/tinyxml2/tinyxml2.h"
@@ -37,8 +37,6 @@
 #define INCLUDEDOCS "_doctemplate"
 #define DOCFILE "_docfile"
 #define POSTINSTALL "_postinstall"
-
-extern Language _guilang;
 
 
 BEGIN_EVENT_TABLE(PackageDialog, wxDialog)
@@ -249,10 +247,10 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
         // of the files set
         for (size_t i = 0; i < files.size(); i++)
         {
-            if (m_fileList->FindItem(-1, replacePathSeparator(files[i].ToStdString()), false) == -1)
+            if (m_fileList->FindItem(-1, wxReplacePathSeparator(files[i]), false) == -1)
             {
                 wxString sExt = files[i].substr(files[i].rfind('.'));
-                m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(sExt));
+                m_fileList->InsertItem(m_fileList->GetItemCount(), wxReplacePathSeparator(files[i]), m_icons->GetIconIndex(sExt));
             }
         }
 
@@ -476,9 +474,9 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
             continue;
 
         if (mainfiles[i].rfind(".nlyt") == std::string::npos)
-            followBranch(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+            followBranch(replacePathSeparator(wxToUtf8(mainfiles[i])), fileSet);
         else
-            findLayoutDependencies(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+            findLayoutDependencies(replacePathSeparator(wxToUtf8(mainfiles[i])), fileSet);
     }
 
     resolveIncludes(fileSet);
@@ -694,11 +692,11 @@ void PackageDialog::loadProjectFile(const wxString& filename)
             if (!fileExists(sFile))
                 allFilesFound = false;
             else
-                prop->SetValueFromString(sFile);
+                prop->SetValueFromString(wxFromUtf8(sFile));
             continue;
         }
 
-        prop->SetValueFromString(infoitem->GetText());
+        prop->SetValueFromString(wxFromUtf8(infoitem->GetText()));
     }
 
     m_fileList->DeleteAllItems();
@@ -715,14 +713,14 @@ void PackageDialog::loadProjectFile(const wxString& filename)
         {
             allFilesFound = false;
 
-            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + sFile, m_icons->GetIconIndex(""));
+            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + wxFromUtf8(sFile), m_icons->GetIconIndex(""));
         }
         else
         {
             if (file->Attribute("lastmodified"))
             {
                 wxString t = file->Attribute("lastmodified");
-                wxFileName fn(sFile);
+                wxFileName fn(wxFromUtf8(sFile));
 
                 if (t != fn.GetModificationTime().ToTimezone(wxDateTime::TimeZone(wxDateTime::GMT0)).FormatISOCombined())
                     changesDetected = true;
@@ -730,7 +728,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
 
             std::string sExt = sFile.substr(sFile.rfind('.'));
 
-            m_fileList->InsertItem(m_fileList->GetItemCount(), sFile, m_icons->GetIconIndex(sExt));
+            m_fileList->InsertItem(m_fileList->GetItemCount(), wxFromUtf8(sFile), m_icons->GetIconIndex(sExt));
         }
 
         file = file->NextSiblingElement();
@@ -802,14 +800,14 @@ void PackageDialog::saveProjectFile(const wxString& filename)
             if (prop->GetValueAsString() == "<AUTO>")
                 infoitem->SetText("0.0.1");
             else
-                infoitem->SetText(prop->GetValueAsString().ToStdString().c_str());
+                infoitem->SetText(wxToUtf8(prop->GetValueAsString()).c_str());
 
             infoitem->SetAttribute("autoincrement", true);
         }
         else if (prop->GetName() == POSTINSTALL || prop->GetName() == DOCFILE)
-            infoitem->SetText(makeRelativePath(prop->GetValueAsString().ToStdString(), vPaths).c_str());
+            infoitem->SetText(makeRelativePath(wxToUtf8(prop->GetValueAsString()), vPaths).c_str());
         else
-            infoitem->SetText(prop->GetValueAsString().ToStdString().c_str());
+            infoitem->SetText(wxToUtf8(prop->GetValueAsString()).c_str());
 
         info->InsertEndChild(infoitem);
     }
@@ -820,7 +818,7 @@ void PackageDialog::saveProjectFile(const wxString& filename)
     for (int i = 0; i < m_fileList->GetItemCount(); i++)
     {
         tinyxml2::XMLElement* file = project.NewElement("file");
-        std::string sFile = m_fileList->GetItemText(i).ToStdString();
+        std::string sFile = wxToUtf8(m_fileList->GetItemText(i));
 
         if (sFile.substr(0, 4) == "(!) ")
             sFile.erase(0, 4);
@@ -831,7 +829,7 @@ void PackageDialog::saveProjectFile(const wxString& filename)
             wxFileName fn(sFile);
             wxDateTime t = fn.GetModificationTime();
             t = t.ToTimezone(wxDateTime::TimeZone(wxDateTime::GMT0));
-            file->SetAttribute("lastmodified", t.FormatISOCombined().ToStdString().c_str());
+            file->SetAttribute("lastmodified", wxToUtf8(t.FormatISOCombined()).c_str());
         }
 
         sFile = makeRelativePath(sFile, vPaths);
@@ -901,9 +899,13 @@ bool PackageDialog::isSaved()
 void PackageDialog::setMainFile(const wxString& mainfile)
 {
     if (mainfile.rfind(".nlyt") == std::string::npos)
-        m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nprc"));
+        m_fileList->InsertItem(m_fileList->GetItemCount(),
+                               wxReplacePathSeparator(mainfile),
+                               m_icons->GetIconIndex(".nprc"));
     else
-        m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nlyt"));
+        m_fileList->InsertItem(m_fileList->GetItemCount(),
+                               wxReplacePathSeparator(mainfile),
+                               m_icons->GetIconIndex(".nlyt"));
 
     markUnsaved();
 }
@@ -1019,13 +1021,12 @@ wxString PackageDialog::getPackageName()
 wxString PackageDialog::getPackageIdentifier()
 {
     // Get the name and transform it to lower case letters
-    std::string identifier = getPackageName().ToStdString();
-    identifier = toLowerCase(identifier);
+    wxString identifier = getPackageName().Lower();
 
     // Replace every non-alphanumeric character with an underscore
     for (size_t i = 0; i < identifier.length(); i++)
     {
-        if (!isalnum(identifier[i]) && identifier[i] != '_')
+        if (!wxIsalnum(identifier[i]) && identifier[i] != '_')
             identifier[i] = '_';
     }
 

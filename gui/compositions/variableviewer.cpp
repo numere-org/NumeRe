@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "variableviewer.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/structures.hpp"
 #include "../../common/datastructures.h"
@@ -32,7 +32,6 @@
 #define VALUECOLUMN 3
 #define SIZECOLUMN 4
 
-extern Language _guilang;
 using namespace wxcode;
 
 struct VarData : public wxTreeItemData
@@ -212,7 +211,7 @@ void VariableViewer::insertVars(wxTreeItemId rootNode, const std::vector<std::st
 /////////////////////////////////////////////////
 wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string sVar)
 {
-    wxString tooltip;
+    std::string tooltip;
 
     wxTreeItemId currentItem = AppendItem(rootNode, sVar.substr(0, sVar.find('\t')));
     tooltip = sVar.substr(0, sVar.find('\t'));
@@ -224,7 +223,7 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
     SetItemText(currentItem, CLASSCOLUMN, " " + sVar.substr(0, sVar.find('\t')));
     sVar.erase(0, sVar.find('\t')+1);
 
-    SetItemText(currentItem, VALUECOLUMN, " " + sVar.substr(0, sVar.find('\t')));
+    SetItemText(currentItem, VALUECOLUMN, " " + wxFromUtf8(sVar.substr(0, sVar.find('\t'))));
 
     // Create the tooltip and set it
     size_t pos = sVar.find('\t');
@@ -234,7 +233,7 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
     else
         tooltip += " = " + sVar.substr(0, 500) + "[...]" + sVar.substr(pos-500, 500);
 
-    SetItemToolTip(currentItem, tooltip);
+    SetItemToolTip(currentItem, wxFromUtf8(tooltip));
 
     // Write values to the size column
     if (!debuggerMode)

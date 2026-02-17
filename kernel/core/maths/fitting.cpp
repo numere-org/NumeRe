@@ -20,6 +20,7 @@
 #include "../../kernel.hpp"
 #include "fitcontroller.hpp"
 #include "../interval.hpp"
+#include <boost/nowide/fstream.hpp>
 
 
 /////////////////////////////////////////////////
@@ -94,7 +95,7 @@ bool fitDataSet(CommandLineParser& cmdParser)
     double dChisq = 0.0;
     Indices _idx;
 
-    std::ofstream oFitLog;
+    boost::nowide::ofstream oFitLog;
     std::string sFitLog = "<savepath>/numerefit.log";
     sFitLog = _data.ValidFileName(sFitLog, ".log");
 
@@ -319,8 +320,7 @@ bool fitDataSet(CommandLineParser& cmdParser)
     // Write the fitting options table to the log file
     oFitLog << getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, true) << std::endl;
 
-    std::string sPMSign = " ";
-    sPMSign[0] = (char)177;
+    std::string sPMSign = "\xC2\xB1";
 
     // Prepare the headline for the fitting parameter table
     if (fitData.bUseErrors)
@@ -993,8 +993,9 @@ static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitL
     if (_dataView.isTable())
     {
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+        std::string sTableName = _dataView.getDataName();
         sDimsForFitLog = _dataView.getTableIndices().col.to_string()
-            + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(_dataView.getDataName());
+            + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(sTableName.substr(0, sTableName.find('(')));
     }
     else
         sDimsForFitLog = "1-" + toString(_dataView.cols())
@@ -1617,7 +1618,7 @@ static std::string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData
 /////////////////////////////////////////////////
 static void createTeXExport(Fitcontroller& _fControl, const std::string& sTeXExportFile, const std::string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const std::vector<double>& vInitialVals, size_t nSize, const std::string& sFitAnalysis, const std::string& sFuncDisplay, const std::string& sFittedFunction, double dChisq)
 {
-    std::ofstream oTeXExport;
+    boost::nowide::ofstream oTeXExport;
 
     oTeXExport.open(sTeXExportFile.c_str(), std::ios_base::trunc);
 

@@ -20,7 +20,7 @@
 #include "../NumeReWindow.h"
 #include "gridtable.hpp"
 #include "tableeditpanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
 #include "../../kernel/core/io/file.hpp"
@@ -38,8 +38,6 @@
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
 
-
-extern Language _guilang;
 
 BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_KEY_DOWN                (TableViewer::OnKeyDown)
@@ -842,7 +840,7 @@ void TableViewer::pasteContents(bool useCursor)
     int nCols = 0;
     int nSkip = 0;
 
-    if (nLines && !useCursor && !isNumerical(vTableData.front().ToStdString()))
+    if (nLines && !useCursor && !isNumerical(wxToUtf8(vTableData.front())))
     {
         nSkip++;
         nLines--;
@@ -1336,7 +1334,7 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
     if (isGridNumeReTable)
         return *static_cast<std::complex<double>*>(GetTable()->GetValueAsCustom(row, col, "complex"));
 
-    std::string cellValue = GetCellValue(row, col).ToStdString();
+    std::string cellValue = wxToUtf8(GetCellValue(row, col));
 
     if (cellValue.front() != '"')
     {
@@ -1367,7 +1365,7 @@ mu::Value TableViewer::get(int row, int col)
     if (isGridNumeReTable)
         return *static_cast<mu::Value*>(GetTable()->GetValueAsCustom(row, col, "mu::Value"));
 
-    std::string cellValue = GetCellValue(row, col).ToStdString();
+    std::string cellValue = wxToUtf8(GetCellValue(row, col));
 
     if (cellValue.front() != '"')
     {
@@ -1381,7 +1379,7 @@ mu::Value TableViewer::get(int row, int col)
             return mu::Value(StrToTime(cellValue));
     }
 
-    return mu::Value(toInternalString(cellValue));;
+    return mu::Value(toInternalString(cellValue));
 }
 
 
@@ -1707,7 +1705,7 @@ void TableViewer::replaceDecimalSign(wxString& text)
 
     for (size_t i = 0; i < toks.size(); i++)
     {
-        if (isNumerical(toks[i].ToStdString()))
+        if (isNumerical(wxToUtf8(toks[i])))
             toks[i].Replace(",", ".");
 
         if (text.length())
@@ -1822,7 +1820,7 @@ std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // Replace whitespaces with underscores, if the current
         // line also contains tabulator characters and it is a
         // non-numerical line
-        if (!isNumerical(sLine.ToStdString())
+        if (!isNumerical(wxToUtf8(sLine))
             && (tabSeparated || sLine.find("  ") != std::string::npos))
         {
             for (size_t i = 1; i < sLine.length()-1; i++)
@@ -1902,7 +1900,15 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
         return;
     }
 
-    CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    if (!GetNumberCols())
+        CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    else
+    {
+        DeleteCols(0, GetNumberCols()-1);
+        DeleteRows(0, GetNumberRows()-1);
+        AppendCols(_stringTable.getCols());
+        AppendRows(_stringTable.getRows());
+    }
 
     // String tables and clusters do not have a headline
     nFirstNumRow = 0;
@@ -1921,7 +1927,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
             }
 
             if (_stringTable.get(i, j).length())
-                SetCellValue(i, j, _stringTable.get(i, j));
+                SetCellValue(i, j, wxFromUtf8(_stringTable.get(i, j)));
         }
     }
 
@@ -2475,7 +2481,7 @@ void TableViewer::saveTable(bool saveAs)
     // Get the filename from the user
     if (saveAs || !filename.length())
     {
-        wxFileDialog fd(this, _guilang.get("GUI_VARVIEWER_SAVENAME"), vPaths[SAVEPATH], filename,
+        wxFileDialog fd(this, _guilang.get("GUI_VARVIEWER_SAVENAME"), vPaths[SAVEPATH], wxFromUtf8(filename),
                         _guilang.get("COMMON_FILETYPE_NDAT") + " (*.ndat)|*.ndat|"
                         + _guilang.get("COMMON_FILETYPE_DAT") + " (*.dat)|*.dat|"
                         + _guilang.get("COMMON_FILETYPE_TXT") + " (*.txt)|*.txt|"
@@ -2489,7 +2495,7 @@ void TableViewer::saveTable(bool saveAs)
         if (fd.ShowModal() == wxID_CANCEL)
             return;
 
-        filename = fd.GetPath().ToStdString();
+        filename = wxToUtf8(fd.GetPath());
     }
     else
         filename = vPaths[SAVEPATH] + "/" + filename;
@@ -2499,7 +2505,7 @@ void TableViewer::saveTable(bool saveAs)
 
     if (!file)
     {
-        wxMessageBox("Cannot save to this file: " + filename, "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
+        wxMessageBox("Cannot save to this file: " + wxFromUtf8(filename), "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
         return;
     }
 
@@ -2521,7 +2527,7 @@ void TableViewer::saveTable(bool saveAs)
     }
     catch (...)
     {
-        wxMessageBox("Cannot save to this file: " + filename, "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
+        wxMessageBox("Cannot save to this file: " + wxFromUtf8(filename), "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
         return;
     }
 }

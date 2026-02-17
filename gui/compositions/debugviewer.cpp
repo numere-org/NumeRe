@@ -18,7 +18,7 @@
 
 #include "debugviewer.hpp"
 #include <wx/statbox.h>
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../NumeReWindow.h"
 
 #define ID_DEBUG_CONTINUE 10201
@@ -27,7 +27,6 @@
 #define ID_DEBUG_STEPOVER 10204
 #define ID_DEBUG_LEAVE 10205
 
-extern Language _guilang;
 
 BEGIN_EVENT_TABLE(DebugViewer, ViewerFrame)
     EVT_CLOSE (DebugViewer::OnClose)

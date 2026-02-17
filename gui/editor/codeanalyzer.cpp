@@ -20,7 +20,7 @@
 #include "editor.h"
 #include "searchcontroller.hpp"
 #include "../../common/Options.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/core/procedure/includer.hpp"
 
 #define ANNOTATION_NOTE wxSTC_NSCR_PROCEDURE_COMMANDS+1
@@ -29,10 +29,9 @@
 
 #define HIGHLIGHT_ANNOTATION 12
 
-extern Language _guilang;
 using namespace std;
 
-static void replaceDocStrings(std::string& sStr)
+static void replaceDocStrings(wxString& sStr)
 {
     sStr.replace(sStr.find_first_of(" ("), std::string::npos, "()");
 }
@@ -124,7 +123,7 @@ void CodeAnalyzer::run()
 		if (m_nCurrentLine < m_editor->LineFromPosition(m_nCurPos))
 		{
 		    // Get the line's contents
-			string sLine = m_editor->GetLine(m_nCurrentLine).ToStdString();
+			string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
 			StripSpaces(sLine);
 
             // catch constant expressions
@@ -164,7 +163,7 @@ void CodeAnalyzer::run()
 			m_nCurrentLine = m_editor->LineFromPosition(m_nCurPos);
 
 			// Get the new line for finding the trailing semicolon
-			sLine = m_editor->GetLine(m_nCurrentLine).ToStdString();
+			sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
 
 			// Ensure that there's no trailing comment
 			if (sLine.rfind("##") != string::npos)
@@ -203,11 +202,11 @@ void CodeAnalyzer::run()
 		// Get code metrics for scripts if not already done
 		if (m_editor->m_fileType == FILE_NSCR && !isAlreadyMeasured)
 		{
-			string sLine = m_editor->GetLine(m_nCurrentLine).ToStdString();
+			string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
 			StripSpaces(sLine);
 			if (sLine.length() && sLine.find_first_not_of(" \n\r\t") != string::npos)
 			{
-				string sSyntaxElement =  m_editor->GetFilenameString().ToStdString();
+				string sSyntaxElement = wxToUtf8(m_editor->GetFilenameString());
 				isAlreadyMeasured = true;
 
 				// Calculate the code metrics:
@@ -244,7 +243,7 @@ void CodeAnalyzer::run()
 		{
 		    if (!isSuppressed)
             {
-                string sWord = m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)).ToStdString();
+                string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)));
 
                 // these commands are needing semicolons
                 // and are the first element in a command line
@@ -260,7 +259,7 @@ void CodeAnalyzer::run()
 		{
 		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
             {
-                string sWord = m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)).ToStdString();
+                string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)));
                 AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sWord + "()", m_editor->WordStartPosition(m_nCurPos, true), sWord.length()), m_sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
                 isSuppressed = true;
             }
@@ -281,7 +280,7 @@ void CodeAnalyzer::run()
 		{
 		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
             {
-                string sWord = m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)).ToStdString();
+                string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)));
                 AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sWord, m_editor->WordStartPosition(m_nCurPos, true), sWord.length()), m_sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
                 isSuppressed = true;
             }
@@ -361,7 +360,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     int wordend = m_editor->WordEndPosition(m_nCurPos, true);
 
 	// Get the current syntax element
-    string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
+    string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
 
     // add a message to "throw"
     if (sSyntaxElement == "throw")
@@ -397,7 +396,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             return AnnotCount;
         }
 
-        string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
         StripSpaces(sArgs);
@@ -441,7 +440,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
 
         // Get everything after the clearance command
-        string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
         while (sArgs.back() == '\r' || sArgs.back() == '\n' || sArgs.back() == ';')
             sArgs.pop_back();
 
@@ -481,7 +480,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         canContinue = false;
 
         // Get everything in the current line after the command
-        string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
         StripSpaces(sArgs);
@@ -560,7 +559,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     nPos = m_editor->GetLineEndPosition(m_nCurrentLine);
 
                 // Get the argument
-                string sArgument = m_editor->GetTextRange(j + 1, nPos).ToStdString();
+                std::string sArgument = wxToUtf8(m_editor->GetTextRange(j + 1, nPos));
                 StripSpaces(sArgument);
 
                 // Is the argument available?
@@ -750,7 +749,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 }
 
                 // Get the argument from the parenthesis
-                string sArgument = m_editor->GetTextRange(j + 1, nPos).ToStdString();
+                std::string sArgument = wxToUtf8(m_editor->GetTextRange(j + 1, nPos));
                 StripSpaces(sArgument);
 
 
@@ -830,13 +829,14 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                             || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                         {
                             // Store it and break directly
+                            std::string sTextRange = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
+                                                                                     m_editor->WordEndPosition(i, true)));
+
                             if (m_editor->m_fileType == FILE_NPRC)
-                                m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
-                                                                                                    m_editor->WordEndPosition(i, true)).ToStdString(),
+                                m_vLocalVariables.push_back(pair<string,int>(sTextRange,
                                                                              m_editor->GetStyleAt(i)));
 
-                            m_vKnownVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
-                                                                                                m_editor->WordEndPosition(i, true)).ToStdString(),
+                            m_vKnownVariables.push_back(pair<string,int>(sTextRange,
                                                                          m_editor->GetStyleAt(i)));
 
                             i = m_editor->WordEndPosition(i, true);
@@ -883,7 +883,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             nStyle = wxSTC_NSCR_CLUSTER;
 
         // extract the arguments and strip the spaces
-        string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        std::string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
 
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
@@ -1009,7 +1009,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         // According Scintilla docu this shall return the start of the next word
         int definitionStart = m_editor->WordEndPosition(wordend, false);
         int definitionEnd = m_editor->WordEndPosition(definitionStart, true);
-        std::string sDefinitionName = m_editor->GetTextRange(definitionStart, definitionEnd).ToStdString();
+        std::string sDefinitionName = wxToUtf8(m_editor->GetTextRange(definitionStart, definitionEnd));
 
         if (m_editor->GetStyleAt(definitionStart) == wxSTC_NSCR_FUNCTION)
         {
@@ -1036,7 +1036,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     if (sSyntaxElement == SYMDEF_COMMAND)
     {
         // extract the declaration and strip the spaces
-        std::string sDefinition = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        std::string sDefinition = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
 
         while (sDefinition.back() == '\r' || sDefinition.back() == '\n')
             sDefinition.pop_back();
@@ -1057,8 +1057,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         try
         {
             // Creating this instance might fail
-            Includer incl(m_editor->GetTextRange(wordstart, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString(),
-                          m_editor->GetFileName().GetPath().ToStdString());
+            Includer incl(wxToUtf8(m_editor->GetTextRange(wordstart, m_editor->GetLineEndPosition(m_nCurrentLine))),
+                          wxToUtf8(m_editor->GetFileName().GetPath()));
 
             // Go through all included lines in this file
             while (incl.is_open())
@@ -1136,10 +1136,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                         wxString sArg = m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true));
 
                         // Will this argument be overwritten by a declare?
-                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(sArg.ToStdString()))
-                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sArg.ToStdString(), m_sError, _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", sArg.ToStdString())), ANNOTATION_ERROR);
+                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(wxToUtf8(sArg)))
+                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sArg, m_sError,
+                                                                       _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", sArg)), ANNOTATION_ERROR);
 
-                        m_vLocalVariables.push_back(pair<string,int>(sArg.ToStdString(), m_editor->GetStyleAt(i)));
+                        m_vLocalVariables.push_back(pair<string,int>(wxToUtf8(sArg), m_editor->GetStyleAt(i)));
                         i = m_editor->WordEndPosition(i, true);
                     }
                 }
@@ -1205,7 +1206,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         int nProcedureEnd = m_editor->FindText(m_nCurPos, m_editor->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
 
         // Get the argument of the return command and strip the spaces
-        string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        std::string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
         StripSpaces(sArgs);
@@ -1288,7 +1289,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     int wordend = m_editor->WordEndPosition(m_nCurPos, true);
 
     // Get the corresponding syntax element
-    string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
+    std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
 
     // Handle method (modifier) calls, also appends a pair of parentheses if needed
     if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD)
@@ -1345,13 +1346,13 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     {
         // Check for missing arguments
         int nPos = m_editor->BraceMatch(wordend);
-        std::string sArgument = m_editor->GetTextRange(wordend + 1, nPos).ToStdString();
+        std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
         EndlessVector<std::string> args = getAllArguments(sArgument);
 
         if (sSyntaxElement.find('.') == std::string::npos)
-            _cTip = _provider.getFunction(m_editor->GetTextRange(wordstart, wordend).ToStdString());
+            _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
         else
-            _cTip = _provider.getMethod(m_editor->GetTextRange(wordstart, wordend).ToStdString(), "");
+            _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), "");
 
         if (args.size() > _cTip.arguments.size() && (!_cTip.arguments.size() || _cTip.arguments.back() != "..."))
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_TOOMANYARGS")), ANNOTATION_ERROR);
@@ -1389,7 +1390,7 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
     int nProcStart = m_nCurPos;
 
     // Try to find the current procedure call
-    string sSyntaxElement = m_editor->m_search->FindMarkedProcedure(m_nCurPos).ToStdString();
+    string sSyntaxElement = wxToUtf8(m_editor->m_search->FindMarkedProcedure(m_nCurPos));
     if (!sSyntaxElement.length())
         return AnnotCount;
 
@@ -1418,7 +1419,7 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
         }
     }
 
-    std::string procDef = m_editor->m_search->FindProcedureDefinition().ToStdString();
+    std::string procDef = wxToUtf8(m_editor->m_search->FindProcedureDefinition());
 
     // Try to find the correspondung procedure definition
     if (!procDef.length())
@@ -1434,7 +1435,7 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
 
         int wordend = m_nCurPos+1;
         int nPos = m_editor->BraceMatch(wordend);
-        std::string sArgument = m_editor->GetTextRange(wordend + 1, nPos).ToStdString();
+        std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
         EndlessVector<std::string> args = getAllArguments(sArgument);
 
         if (args.size() > procArgs.size())
@@ -1479,7 +1480,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
         wordend = m_editor->WordEndPosition(wordend + 1, true);
 
     // Get the corresponding syntax element
-    std::string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
+    std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
 
     // Warn about global variables
     if (m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES) && m_editor->m_fileType == FILE_NPRC)
@@ -1684,7 +1685,7 @@ AnnotationCount CodeAnalyzer::analyseNumbers()
         return AnnotCount;
 
     // Get the number
-    string sCurrentNumber = m_editor->GetTextRange(nNumberStart, m_nCurPos + 1).ToStdString();
+    string sCurrentNumber = wxToUtf8(m_editor->GetTextRange(nNumberStart, m_nCurPos + 1));
 
     // Go inversely through the line and try to find an assignment operator
     for (int i = nNumberStart; i >= nLineStartPos; i--)
@@ -1727,7 +1728,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
     int wordend = m_editor->WordEndPosition(m_nCurPos, true);
 
     // Get the corresponding syntax element
-    std::string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
+    std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
 
     int contextPoint = 0;
 
@@ -1802,7 +1803,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 
         // Get the context content and split it up into
         // the single arguments
-        std::string sContext = m_editor->GetTextRange(contextPoint+1, contextEnd).ToStdString();
+        std::string sContext = wxToUtf8(m_editor->GetTextRange(contextPoint+1, contextEnd));
         EndlessVector<std::string> args = getAllArguments(sContext);
 
         // Check, whether the dimension vars can be found in the
@@ -1826,12 +1827,12 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 /////////////////////////////////////////////////
 /// \brief Adds the passed sMessage with the style to the internal cache
 ///
-/// \param sMessage const string&
+/// \param sMessage const wxString&
 /// \param nStyle int
 /// \return AnnotationCount
 ///
 /////////////////////////////////////////////////
-AnnotationCount CodeAnalyzer::addToAnnotation(const string& sMessage, int nStyle)
+AnnotationCount CodeAnalyzer::addToAnnotation(const wxString& sMessage, int nStyle)
 {
 	AnnotationCount annoCount;
 
@@ -1859,8 +1860,6 @@ AnnotationCount CodeAnalyzer::addToAnnotation(const string& sMessage, int nStyle
 	}
 
 	m_sCurrentLine += sMessage;
-	chartoadd += m_editor->countUmlauts(sMessage);
-
 	m_sStyles.append(sMessage.length() + chartoadd, nStyle);
 
 	// Increment the total counter
@@ -2022,7 +2021,7 @@ int CodeAnalyzer::calculateLinesOfCode(int startline, int endline)
 	// starting and endling line
 	for (int i = startline; i <= endline; i++)
 	{
-		currentline = m_editor->GetLine(i).ToStdString();
+		currentline = wxToUtf8(m_editor->GetLine(i));
 
         // Ignore line comments
 		if (currentline.find("##") != string::npos)

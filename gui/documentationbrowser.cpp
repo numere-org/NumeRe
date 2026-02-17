@@ -26,14 +26,13 @@
 #include "controls/treedata.hpp"
 #include "compositions/treepanel.hpp"
 #include "terminal/terminal.hpp"
-#include "../kernel/core/ui/language.hpp"
+#include "guilang.hpp"
 #include "../kernel/core/documentation/documentation.hpp"
 #include "wxProportionalSplitterWindow.h"
 #include <vector>
 #include <string>
 #include <wx/artprov.h>
 
-extern Language _guilang;
 
 using namespace std;
 

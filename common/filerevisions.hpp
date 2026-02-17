@@ -27,7 +27,7 @@ class FileRevisions
 {
     private:
         wxFileName m_revisionPath;
-        std::vector<wxString> vectorize(wxString fileContent);
+        std::vector<std::string> vectorize(wxString fileContent);
         wxString convertLineEndings(const wxString& content);
         wxString readRevision(const wxString& revString);
         wxString getLastContentModification(const wxString& revString);

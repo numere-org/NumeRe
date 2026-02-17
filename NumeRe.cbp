@@ -196,6 +196,7 @@
 			<Add option="-D__WXMSW__" />
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
 			<Add option="-D_WIN32_WINNT=0x0601" />
+			<Add option="-DLIBUUID_CPP20_OR_GREATER" />
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
 			<Add directory="externals/stduuid" />
@@ -249,6 +250,8 @@
 			<Add library="winspool" />
 			<Add library="oleaut32" />
 			<Add library="secur32" />
+			<Add library="boost_nowide-mgw10-mt-x64-1_82" />
+			<Add library="boost_locale-mgw10-mt-x64-1_82" />
 			<Add directory="$(wx)/lib/gcc_lib" />
 			<Add directory="$(lib)" />
 			<Add directory="$(bin)" />
@@ -2284,6 +2287,30 @@
 			<Option target="Nightly_x64" />
 		</Unit>
 		<Unit filename="gui/graphviewer.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+			<Option target="Nightly_x64" />
+		</Unit>
+		<Unit filename="gui/guilang.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+			<Option target="Nightly_x64" />
+		</Unit>
+		<Unit filename="gui/guilang.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
@@ -4399,6 +4426,7 @@
 		</Unit>
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
+		<Unit filename="kernel/core/utils/stringview.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">
 			<Option target="Debug" />
 			<Option target="Profiling" />
@@ -4410,6 +4438,8 @@
 		</Unit>
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />
+		<Unit filename="kernel/core/utils/utf8lib.cpp" />
+		<Unit filename="kernel/core/utils/utf8lib.hpp" />
 		<Unit filename="kernel/core/version.h">
 			<Option target="Debug" />
 			<Option target="Release" />

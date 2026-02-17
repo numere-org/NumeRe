@@ -44,3 +44,13 @@ Cleaned	If you do not enter the correct package identifier during "install", pos
 Applied	Vectorial variables and expressions can now be plotted just like regular expressions.
 Applied	Some commands do now accept matrices as their inputs in addition to tables: "diff", "eval", "datagrid", "fft", "fft2d", "fwt", "audio", "detect", "extrema", "zeroes", "fit" and "database". Note that this does not automatically include the algorithmic extension to multiple dimensions.
 Cleaned	If there are multiple candidates for possible documentation articles, a clickable list shows them now.
+Cleaned	Files are now expected to be in UTF8 and saved in this encoding.
+Applied	NumeRe supports now UTF8 encoding in code, which means, you can now use any reasonable unicode character. Code identifiers are still limited to the standard ASCII alphabet.
+Cleaned	The terminal now supports non-ASCII characters as well. Additionally, the selection appearance was unified with the editor appearance (only grey background).
+Added	Plots can now support CJK ideographs, if either "noto" or "notosf" is used as plot font. Loading this font can take some seconds due to its file size, so please be patient.
+Added	"stix" and "stix2" has been added as plotting font.
+Cleaned	String functions do now interact on bytes, which are only identical to characters in the ASCII-only case. Notable exception is the usage of characters a function inputs (e.g. "strmatch()"). Those will be handled as characters instead.
+Added	Methods for handling characters and unicode have been added to the string object: "STR.chr()", "STR.unicodelen", "STR.normalize()", "STR.collate()".
+Applied	The function "char()" has been renamed to "byte()", because that provides a better indication of its functionality. The old name is still interpreted as alias, but shall not be used anymore.
+Added	Byte sequences, which do not represent a valud UTF8 encoding, are now represented as HEX encoded value: "\xHH", where "HH" indiciates two hex digits. You can now also use this syntax to add arbitrary byte values into a string, e.g. "\xC3\xA7" will produce a "ç" character.
+Fixed	Made the leaf concatenation of object.path with a (literal) string value actually possible.

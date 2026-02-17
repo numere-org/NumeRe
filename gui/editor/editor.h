@@ -76,7 +76,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		bool LoadLocalFile (const wxString& filename);
 		bool LoadFileText(wxString fileContents);
 		bool SaveFile(const wxString& filename);
-		bool SaveNumeReFile(const wxString& filename);
 		bool SaveGeneralFile(const wxString& filename);
 		bool SaveFileLocal();
 
@@ -350,9 +349,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		bool isStyleType(StyleType _type, int nPos);
 
-		int countUmlauts(const std::string& sStr);
-		std::string realignLangString(std::string sLine, size_t& lastpos);
-		std::string addLinebreaks(const std::string& sLine, bool onlyDocumentation = false);
+		wxString realignLangString(wxString sLine, size_t& lastpos);
+		wxString addLinebreaks(const wxString& sLine, bool onlyDocumentation = false);
 
 		void markModified(int nLine);
 		void markSaved();

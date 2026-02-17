@@ -32,13 +32,11 @@
 #include "wx.h"
 
 #include "../common/datastructures.h"
-#include "../kernel/core/ui/language.hpp"
+#include "guilang.hpp"
 #include "../kernel/core/utils/stringtools.hpp"
 
 #include "terminal/terminal.hpp"
 #include "graphviewer.hpp"
-
-extern Language _guilang;
 
 //-----------------------------------------------------------------------------
 class mglCanvasWX : public mglCanvasWnd
@@ -635,7 +633,7 @@ void wxMGL::DrawCurrentObject(int end_x, int end_y)
     mglPoint endPoint = gr->CalcXYZ(end_x, end_y);
 
     // Get the style from the toolbar
-    std::string style = styling->GetLineText(0).ToStdString();
+    std::string style = styling->GetLineText(0).ToAscii().data();
 
     // Draw the object
     switch (drawMode)
@@ -659,7 +657,7 @@ void wxMGL::DrawCurrentObject(int end_x, int end_y)
             if (dialog.ShowModal() == wxID_OK)
             {
                 text = dialog.GetValue();
-                gr->Puts(startPoint, text.ToStdString().c_str(), style.c_str());
+                gr->Putsw(startPoint, text.ToStdWstring().c_str(), style.c_str());
                 Update();
             }
 

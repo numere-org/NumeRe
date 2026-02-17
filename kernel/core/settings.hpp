@@ -888,15 +888,25 @@ class Settings : public FileSystem
             if (_sPlotFont == "helvetica")
                 _sPlotFont = "heros";
 
+            if (_sPlotFont == "noto")
+                _sPlotFont = "notosanscjk";
+
+            if (_sPlotFont == "notosf")
+                _sPlotFont = "notoserifcjk";
+
             if (_sPlotFont == "pagella"
-                    || _sPlotFont == "adventor"
-                    || _sPlotFont == "bonum"
-                    || _sPlotFont == "chorus"
-                    || _sPlotFont == "cursor"
-                    || _sPlotFont == "heros"
-                    || _sPlotFont == "heroscn"
-                    || _sPlotFont == "schola"
-                    || _sPlotFont == "termes"
+                || _sPlotFont == "adventor"
+                || _sPlotFont == "bonum"
+                || _sPlotFont == "chorus"
+                || _sPlotFont == "cursor"
+                || _sPlotFont == "heros"
+                || _sPlotFont == "heroscn"
+                || _sPlotFont == "schola"
+                || _sPlotFont == "stix"
+                || _sPlotFont == "stix2"
+                || _sPlotFont == "notosanscjk"
+                || _sPlotFont == "notoserifcjk"
+                || _sPlotFont == "termes"
                 )
             {
                 m_settings[SETTING_S_PLOTFONT].stringval() = _sPlotFont;

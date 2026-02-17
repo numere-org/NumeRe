@@ -19,7 +19,8 @@
 #include "recentfilemanager.hpp"
 #include "../externals/tinyxml2/tinyxml2.h"
 #include "../kernel/core/io/logger.hpp"
-#include <fstream>
+#include "../gui/stringconv.hpp"
+#include <boost/nowide/fstream.hpp>
 
 
 /////////////////////////////////////////////////
@@ -115,7 +116,7 @@ void RecentFilesManager::renameFile(const wxString& oldName, const wxString& new
 
     if (iter != m_fileList.end())
     {
-        g_logger.info("Renaming '" + oldName.ToStdString() + "' to '" + newName.ToStdString() + "' in the list of recent files.");
+        g_logger.info("Renaming '" + wxToUtf8(oldName) + "' to '" + wxToUtf8(newName) + "' in the list of recent files.");
         iter->name = newName;
         iter->name.Replace("\\", "/");
     }
@@ -138,7 +139,7 @@ void RecentFilesManager::deleteFile(const wxString& fileName)
 
     if (iter != m_fileList.end())
     {
-        g_logger.info("Removing '" + fileName.ToStdString() + "' from the list of recent files.");
+        g_logger.info("Removing '" + wxToUtf8(fileName) + "' from the list of recent files.");
         m_fileList.erase(iter);
     }
 }
@@ -156,7 +157,7 @@ void RecentFilesManager::importList(const wxString& fileName)
 {
     tinyxml2::XMLDocument doc;
 
-    if (doc.LoadFile(fileName.ToStdString().c_str()) != tinyxml2::XML_SUCCESS)
+    if (doc.LoadFile(fileName.ToAscii()) != tinyxml2::XML_SUCCESS)
         return;
 
     const tinyxml2::XMLElement* files = doc.RootElement();
@@ -168,7 +169,7 @@ void RecentFilesManager::importList(const wxString& fileName)
 
     while (file)
     {
-        RecentFile recent(file->GetText());
+        RecentFile recent(wxFromUtf8(file->GetText()));
         recent.opened = file->Int64Attribute("opened", 0);
 
         m_fileList.push_back(recent);
@@ -199,13 +200,13 @@ void RecentFilesManager::exportList(const wxString& fileName)
     {
         tinyxml2::XMLElement* file = doc.NewElement("file");
 
-        file->SetText(m_fileList[i].name.ToStdString().c_str());
+        file->SetText(wxToUtf8(m_fileList[i].name).c_str());
         file->SetAttribute("opened", (int64_t)m_fileList[i].opened);
 
         files->InsertEndChild(file);
     }
 
-    doc.SaveFile(fileName.ToStdString().c_str());
+    doc.SaveFile(fileName.ToAscii());
 }
 
 

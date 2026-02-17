@@ -25,6 +25,7 @@
 #include "utils/tools.hpp"
 #include "documentation/docfile.hpp"
 
+#include <boost/nowide/fstream.hpp>
 #include <algorithm>
 
 using namespace std;
@@ -525,7 +526,7 @@ void Script::writeLayout(std::string& sScriptCommand)
     // create a valid file name
     std::string sLayoutFileName = getArgAtPos(sScriptCommand, sScriptCommand.find_first_not_of(' ', 6));
     sLayoutFileName = FileSystem::ValidFileName(sLayoutFileName, ".nlyt");
-    ofstream fLayoutFile(sLayoutFileName);
+    boost::nowide::ofstream fLayoutFile(sLayoutFileName);
 
     m_logger.push_line(">> Installing layout: \"" + sLayoutFileName + "\" ...");
 
@@ -741,7 +742,7 @@ bool Script::writeWholeFile()
 
     nLine++;
 
-    std::ofstream wholeFile(sFileName);
+    boost::nowide::ofstream wholeFile(sFileName);
 
     // Now write the buffer to the file while removing the
     // superfluous indent

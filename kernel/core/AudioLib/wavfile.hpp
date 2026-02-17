@@ -20,7 +20,7 @@
 #define WAVFILE_HPP
 
 #include "audiofile.hpp"
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 namespace Audio
 {
@@ -53,7 +53,7 @@ namespace Audio
     {
         private:
             std::string sName;
-            mutable std::fstream m_WavFileStream;
+            mutable boost::nowide::fstream m_WavFileStream;
             WavFileHeader m_Header;
             uint32_t m_DataBlockLength;
             const long long int m_StreamOffset = 44;

@@ -24,12 +24,12 @@
 #include <wx/clrpicker.h>
 #include <wx/statline.h>
 #include "grouppanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
+#include "../stringconv.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "cellfilter.hpp"
 
 extern double g_pixelScale;
-extern Language _guilang;
 
 
 /////////////////////////////////////////////////
@@ -473,7 +473,7 @@ class CellValueShaderDialog : public wxDialog
                     {
                         // Extract the value and convert multiple values into
                         // a vector
-                        std::string val = m_lt_gt_value->GetValue().ToStdString();
+                        std::string val = wxToUtf8(m_lt_gt_value->GetValue());
                         std::vector<std::string> vecVal;
 
                         if (val.front() == '{' && val.back() == '}')
@@ -537,7 +537,7 @@ class CellValueShaderDialog : public wxDialog
                         // Extract the values and colours
                         for (size_t i = 0; i < m_field_count; i++)
                         {
-                            std::string val = m_category_value[i]->GetValue().ToStdString();
+                            std::string val = wxToUtf8(m_category_value[i]->GetValue());
 
                             if (!val.length())
                                 continue;
@@ -577,8 +577,8 @@ class CellValueShaderDialog : public wxDialog
                         USEALLCOLOURS = m_interval_col[1]->IsEnabled();
 
                         // Get the values
-                        std::string val_start = m_interval_start->GetValue().ToStdString();
-                        std::string val_end = m_interval_end->GetValue().ToStdString();
+                        std::string val_start = wxToUtf8(m_interval_start->GetValue());
+                        std::string val_end = wxToUtf8(m_interval_end->GetValue());
 
                         // Set the correct condition
                         cond.m_type = CellFilterCondition::CT_INTERVAL_RE;
@@ -621,8 +621,8 @@ class CellValueShaderDialog : public wxDialog
                         USEALLCOLOURS = m_interval_col_excl[2]->IsEnabled();
 
                         // Get the values
-                        std::string val_start = m_interval_start_excl->GetValue().ToStdString();
-                        std::string val_end = m_interval_end_excl->GetValue().ToStdString();
+                        std::string val_start = wxToUtf8(m_interval_start_excl->GetValue());
+                        std::string val_end = wxToUtf8(m_interval_end_excl->GetValue());
 
                         // Set the correct condition
                         cond.m_type = CellFilterCondition::CT_INTERVAL_RE_EXCL;

@@ -19,7 +19,7 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <string>
 #include <vector>
 
@@ -35,7 +35,7 @@
 class Logger
 {
     protected:
-        std::fstream m_logFile;
+        boost::nowide::fstream m_logFile;
         std::string m_sLogFile;
 
         bool ensure_open();

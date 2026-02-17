@@ -27,7 +27,7 @@
 #include "../common/datastructures.h"
 #include "../common/filewatcher.hpp"
 #include "../kernel/windowmanager.hpp"
-#include "../kernel/core/ui/language.hpp"
+#include "guilang.hpp"
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
@@ -132,9 +132,6 @@ class ProportionalSplitterWindow;
 class wxCHMHelpController;
 class DebugViewer;
 class DefaultPage;
-
-
-extern Language _guilang;
 
 
 /////////////////////////////////////////////////
@@ -338,7 +335,7 @@ class NumeReWindow : public wxFrame
         void setViewerFocus();
 
         void prepareFunctionTree();
-        std::string prepareTooltip(const std::string& sTooltiptext);
+        wxString prepareTooltip(const wxString& sTooltiptext);
 
         wxPrintData* setDefaultPrinterSettings();
         int* SelectIntVar(int variableName);

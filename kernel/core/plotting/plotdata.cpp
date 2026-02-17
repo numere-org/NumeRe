@@ -1611,6 +1611,12 @@ void PlotData::setParams(const std::string& sCmd, int nType)
         if (sTemp == "helvetica")
             sTemp = "heros";
 
+        if (sTemp == "noto")
+            sTemp = "notosanscjk";
+
+        if (sTemp == "notosf")
+            sTemp = "notoserifcjk";
+
         if (sTemp != stringSettings[STR_FONTSTYLE]
             && (sTemp == "pagella"
                 || sTemp == "adventor"
@@ -1620,6 +1626,10 @@ void PlotData::setParams(const std::string& sCmd, int nType)
                 || sTemp == "heros"
                 || sTemp == "heroscn"
                 || sTemp == "schola"
+                || sTemp == "stix"
+                || sTemp == "stix2"
+                || sTemp == "notosanscjk"
+                || sTemp == "notoserifcjk"
                 || sTemp == "termes")
             )
         {

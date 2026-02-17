@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <wx/string.h>
 
 #include "../../kernel/core/symdef.hpp"
 
@@ -62,13 +63,13 @@ class CodeAnalyzer
         Options* m_options;
         SymDefManager m_symdefs;
 
-        std::vector<std::string> m_DRAW_FUNCS;
-        std::vector<std::string> m_STRING_FUNCS;
-        std::vector<std::string> m_STRING_METHODS;
+        std::vector<wxString> m_DRAW_FUNCS;
+        std::vector<wxString> m_STRING_FUNCS;
+        std::vector<wxString> m_STRING_METHODS;
 
-        std::string m_sNote;
-        std::string m_sWarn;
-        std::string m_sError;
+        wxString m_sNote;
+        wxString m_sWarn;
+        wxString m_sError;
 
         std::string m_sCurrentLine;
         std::string m_sStyles;
@@ -95,7 +96,7 @@ class CodeAnalyzer
         AnnotationCount analyseOperators();
         AnnotationCount analyseNumbers();
         AnnotationCount analysePreDefs();
-        AnnotationCount addToAnnotation(const std::string& sMessage, int nStyle);
+        AnnotationCount addToAnnotation(const wxString& sMessage, int nStyle);
 
         std::string highlightFoundOccurence(const std::string& sElement, int nPos, int nLength);
         bool containsAssignment(const std::string& sCurrentLine);

@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 
+#include <boost/nowide/fstream.hpp>
 
 #include "language.hpp"
 #include "../utils/stringtools.hpp"
@@ -25,6 +26,8 @@
 
 
 bool fileExists(const std::string&);
+Language _lang;
+
 
 /////////////////////////////////////////////////
 /// \brief Contructor of the language class.
@@ -64,7 +67,7 @@ Language::Language(const Language& _lang) : FileSystem()
 std::map<std::string,std::string> Language::getLangFileContent(std::string sFile) const
 {
     std::map<std::string,std::string> mLangFileContent;
-    std::ifstream fFile_in;
+    boost::nowide::ifstream fFile_in;
     std::string sLine;
 
     try
@@ -110,9 +113,6 @@ std::map<std::string,std::string> Language::getLangFileContent(std::string sFile
             g_logger.error("Erroneous language string '" + sLine + "' has been found in '" + sFile + "'.");
             continue;
         }
-
-        // Convert UTF-8 encoded text to CP1252
-        sLine = utf8ToAnsi(sLine);
 
         // Replace included tab characters with
         // whitespaces

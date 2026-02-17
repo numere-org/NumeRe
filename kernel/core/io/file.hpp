@@ -20,6 +20,7 @@
 #define NUMERE_FILE_HPP
 
 #include <string>
+#include <boost/nowide/convert.hpp>
 #include <fstream>
 #include <cmath>
 #include <vector>
@@ -100,7 +101,7 @@ namespace NumeRe
                 if (fFileStream.is_open())
                     fFileStream.close();
 
-                fFileStream.open(sFileName.c_str(), mode);
+                fFileStream.open(boost::nowide::widen(sFileName).c_str(), mode);
 
                 if (!fFileStream.good())
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
@@ -1619,7 +1620,7 @@ namespace NumeRe
             int32_t versionMinor;
             int32_t versionBuild;
             const short fileSpecVersionMajor = 4;
-            const short fileSpecVersionMinor = 1;
+            const short fileSpecVersionMinor = 10;
             float fileVersionRead;
             size_t checkPos;
             size_t checkStart;

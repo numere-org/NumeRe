@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 /////////////////////////////////////////////////
 /// \brief A simple structure to define a syntax

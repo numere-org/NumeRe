@@ -1450,7 +1450,7 @@ bool MemoryManager::deleteTable(const string& sTable)
                 if (fileExists(getProgramPath()+"/numere.cache"))
                 {
                     string sCachefile = getProgramPath() + "/numere.cache";
-                    remove(sCachefile.c_str());
+                    boost::nowide::remove(sCachefile.c_str());
                 }
             }
 

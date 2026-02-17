@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "revisiondialog.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../NumeReWindow.h"
 #include "../editor/editor.h"
 #include "../wxProportionalSplitterWindow.h"
@@ -30,8 +30,6 @@ BEGIN_EVENT_TABLE(RevisionDialog, wxDialog)
     EVT_TREE_ITEM_ACTIVATED(-1, RevisionDialog::OnItemActivated)
     EVT_MENU_RANGE(ID_REVISIONDIALOG_SHOW, ID_REVISIONDIALOG_REFRESH, RevisionDialog::OnMenuEvent)
 END_EVENT_TABLE()
-
-extern Language _guilang;
 
 
 /////////////////////////////////////////////////
@@ -250,8 +248,8 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
     if (revisionList->GetSelections(selection) >= 2)
     {
         popUpmenu.Append(ID_REVISIONDIALOG_COMPARE, _guilang.get("GUI_DLG_REVISIONDIALOG_COMPARE",
-                                                                 revisionList->GetItemText(selection.front()).ToStdString(),
-                                                                 revisionList->GetItemText(selection.back()).ToStdString()));
+                                                                 revisionList->GetItemText(selection.front()),
+                                                                 revisionList->GetItemText(selection.back())));
         popUpmenu.AppendSeparator();
     }
 
@@ -336,7 +334,7 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
             {
                 // Restore the right-clicked revision. Display
                 // a message box to confirm the overwrite
-                int ret = wxMessageBox(_guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE", revID.ToStdString()), _guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE_HEAD"), wxOK | wxCANCEL | wxCENTER | wxICON_QUESTION, this);
+                int ret = wxMessageBox(_guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE", revID), _guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE_HEAD"), wxOK | wxCANCEL | wxCENTER | wxICON_QUESTION, this);
 
                 if (ret == wxOK)
                 {

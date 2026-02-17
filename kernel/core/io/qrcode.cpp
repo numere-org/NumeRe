@@ -20,7 +20,7 @@
 #include "../../../externals/QR-Code-generator/cpp/qrcodegen.hpp"
 #include "../../kernel.hpp"
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 
 using qrcodegen::QrCode;
@@ -45,7 +45,7 @@ static void toSvg(const QrCode& qr, int border, const std::string& color, const 
     if (border > INT_MAX / 2 || border * 2 > INT_MAX - qr.getSize())
         throw std::overflow_error("Border too large");
 
-    std::ofstream file(filename);
+    boost::nowide::ofstream file(filename);
 
     if (!file.good())
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, filename, filename);

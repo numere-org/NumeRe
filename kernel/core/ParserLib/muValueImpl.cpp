@@ -20,6 +20,7 @@
 #include "muParserError.h"
 #include "muInternalStructures.hpp"
 #include "../utils/stringtools.hpp"
+#include "../utils/stringview.hpp"
 
 #include <set>
 
@@ -941,7 +942,9 @@ namespace mu
     MethodDefinition StrValue::isMethod(const std::string& sMethod, size_t argc) const
     {
         static const MethodSet methods({{"len", 0}, {"first", 0}, {"last", 0},
-                                        {"at", 1}, {"startsw", 1}, {"endsw", 1},
+                                        {"unicodelen", 0}, {"segments", 0}, {"normalize", 0},
+                                        {"normalize", 1}, {"collate", 1}, {"collate", 2},
+                                        {"at", 1}, {"chr", 1}, {"startsw", 1}, {"endsw", 1},
                                         {"sub", 1}, {"sub", 2}, {"splt", 1}, {"splt", 2},
                                         {"fnd", 1}, {"fnd", 2}, {"rfnd", 1}, {"rfnd", 2},
                                         {"mtch", 1}, {"mtch", 2}, {"rmtch", 1}, {"rmtch", 2},
@@ -967,10 +970,16 @@ namespace mu
     {
         if (sMethod == "len")
             return new NumValue(m_val.length());
+        else if (sMethod == "unicodelen")
+            return new NumValue(countUnicodePoints(m_val));
         else if (sMethod == "first")
-            return new StrValue(std::string(1, m_val.front()));
+            return new StrValue(chr_impl(m_val, 0));
         else if (sMethod == "last")
-            return new StrValue(std::string(1, m_val.back()));
+            return new StrValue(chr_impl(m_val, countUnicodePoints(m_val)-1));
+        else if (sMethod == "segments")
+            return new ArrValue(segments_impl(m_val));
+        else if (sMethod == "normalize")
+            return new StrValue(normalize_unicode_impl(m_val, "nfc"));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1000,6 +1009,8 @@ namespace mu
             else
                 return new StrValue(m_val.substr(p-1, 1));
         }
+        else if (sMethod == "chr" && arg1.m_type == TYPE_NUMERICAL)
+            return new StrValue(chr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1));
         else if (sMethod == "startsw" && arg1.m_type == TYPE_STRING)
         {
             if (!arg1)
@@ -1030,6 +1041,10 @@ namespace mu
             return new NumValue(str_not_match_impl(m_val, static_cast<const StrValue&>(arg1).get()));
         else if (sMethod == "nrmtch" && arg1.m_type == TYPE_STRING)
             return new NumValue(str_not_rmatch_impl(m_val, static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "normalize" && arg1.m_type == TYPE_STRING)
+            return new StrValue(normalize_unicode_impl(m_val, static_cast<const StrValue&>(arg1).get()));
+        else if (sMethod == "collate" && arg1.m_type == TYPE_STRING)
+            return new NumValue(collate_impl(m_val, static_cast<const StrValue&>(arg1).get(), 1));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1074,6 +1089,9 @@ namespace mu
         else if (sMethod == "nrmtch" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
             return new NumValue(str_not_rmatch_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                                     static_cast<const NumValue&>(arg2).get().asI64()-1));
+        else if (sMethod == "collate" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+            return new NumValue(collate_impl(m_val, static_cast<const StrValue&>(arg1).get(),
+                                                    static_cast<const NumValue&>(arg2).get().asI64()));
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -1095,12 +1113,12 @@ namespace mu
         if (chrs > 0)
         {
             if (trunc)
-                return truncString(toExternalString(replaceControlCharacters(m_val)), chrs);
+                return ensureValidUtf8(truncString(toExternalString(replaceControlCharacters(m_val)), chrs));
 
-            return ellipsize(toExternalString(replaceControlCharacters(m_val)), chrs);
+            return ensureValidUtf8(ellipsize(toExternalString(replaceControlCharacters(m_val)), chrs));
         }
 
-        return toExternalString(replaceControlCharacters(m_val));
+        return ensureValidUtf8(toExternalString(replaceControlCharacters(m_val)));
     }
 
 
@@ -1117,9 +1135,9 @@ namespace mu
     std::string StrValue::printVal(size_t digits, size_t chrs) const
     {
         if (chrs > 0)
-            return ellipsize(m_val, chrs);
+            return ensureValidUtf8(ellipsize(m_val, chrs));
 
-        return m_val;
+        return ensureValidUtf8(m_val);
     }
 
 
@@ -2725,6 +2743,26 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Dummy multiplication operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* PathValue::operator*(const BaseValue& other) const
+    {
+        if (other.m_type == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
+            return clone();
+        else if (other.m_type == TYPE_NEUTRAL)
+            return clone();
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+(static_cast<const RefValue&>(other).get());
+
+        throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.m_type));
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Path combination operator.
     ///
     /// \param other const BaseValue&
@@ -2781,6 +2819,26 @@ namespace mu
             return operator+=(static_cast<const RefValue&>(other).get());
         else if (other.m_type != TYPE_NEUTRAL)
             throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.m_type));
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Dummy multiply with value.
+    ///
+    /// \param other const BaseValue&
+    /// \return BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    BaseValue& PathValue::operator*=(const BaseValue& other)
+    {
+        if (other.m_type == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
+            return *this;
+        else if (other.m_type == TYPE_REFERENCE)
+            return operator+=(static_cast<const RefValue&>(other).get());
+        else if (other.m_type != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.m_type));
 
         return *this;
     }

@@ -21,11 +21,9 @@
 #include <wx/dir.h>
 #include <wx/clipbrd.h>
 #include "imagepanel.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../NumeReWindow.h"
 #include "../../common/Options.h"
-
-extern Language _guilang;
 
 
 BEGIN_EVENT_TABLE(ImagePanel, wxPanel)

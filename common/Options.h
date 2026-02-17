@@ -10,6 +10,7 @@
 #include "datastructures.h"
 #include "../kernel/core/settings.hpp"
 #include "../kernel/core/utils/stringtools.hpp"
+#include "../gui/stringconv.hpp"
 
 // copied from stc.h
 // PrintColourMode - force black text on white background for printing.
@@ -206,7 +207,7 @@ class Options : public Settings
 		void SetFormatBeforeSaving(bool formatBeforeSave)
             {m_settings[SETTING_B_FORMATBEFORESAVING].active() = formatBeforeSave;}
 		void SetLaTeXRoot(const wxString& root)
-            {m_settings[SETTING_S_LATEXROOT].stringval() = root.ToStdString();}
+            {m_settings[SETTING_S_LATEXROOT].stringval() = wxToUtf8(root);}
 		void SetKeepBackupFile(bool keepFile)
             {m_settings[SETTING_B_USEREVISIONS].active() = keepFile;}
 		void SetCaretBlinkTime(int nTime)
@@ -235,7 +236,7 @@ class Options : public Settings
 		int GetPrintStyle() const
             {return m_settings.at(SETTING_B_PRINTINCOLOR).active() ? wxSTC_PRINT_COLOURONWHITE : wxSTC_PRINT_BLACKONWHITE;}
 		wxString GetLaTeXRoot() const
-            {return m_settings.at(SETTING_S_LATEXROOT).stringval();}
+            {return wxFromUtf8(m_settings.at(SETTING_S_LATEXROOT).stringval());}
 		bool GetShowToolbarText() const
             {return m_settings.at(SETTING_B_TOOLBARTEXT).active();}
 		bool GetShowPathOnTabs() const
@@ -361,14 +362,14 @@ class Options : public Settings
         static wxFont toFont(const std::string& sFontDescr)
         {
             wxFont font;
-            font.SetNativeFontInfoUserDesc(sFontDescr);
+            font.SetNativeFontInfoUserDesc(wxFromUtf8(sFontDescr));
             return font;
         }
 
         static std::string toString(wxFont font)
         {
-            font.SetEncoding(wxFONTENCODING_CP1252);
-            return font.GetNativeFontInfoUserDesc().ToStdString();
+            //font.SetEncoding(wxFONTENCODING_UTF8);
+            return wxToUtf8(font.GetNativeFontInfoUserDesc());
         }
 
 	private:

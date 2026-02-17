@@ -22,13 +22,14 @@
 #include <wx/txtstrm.h>
 #include <wx/wfstream.h>
 #include <memory>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 #include <wx/encconv.h>
 
 #define COMPRESSIONLEVEL 6
 
 #include "../kernel/core/utils/stringtools.hpp"
+#include "../gui/stringconv.hpp"
 
 /////////////////////////////////////////////////
 /// \brief Constructor. Will try to create the missing folders on-the-fly.
@@ -47,21 +48,21 @@ FileRevisions::FileRevisions(const wxString& revisionPath) : m_revisionPath(revi
 /// \brief Converts a single-string file into a vector of strings
 ///
 /// \param fileContent wxString
-/// \return std::vector<wxString>
+/// \return std::vector<std::string>
 ///
 /// The file is split at the line break character so that each component
 /// of the vector is a single line of the passed file
 /////////////////////////////////////////////////
-std::vector<wxString> FileRevisions::vectorize(wxString fileContent)
+std::vector<std::string> FileRevisions::vectorize(wxString fileContent)
 {
-    std::vector<wxString> vVectorizedFile;
+    std::vector<std::string> vVectorizedFile;
 
     // As long as there are contents left in the
     // current file
     while (fileContent.length())
     {
         // Push the current line to the vector
-        vVectorizedFile.push_back(fileContent.substr(0, fileContent.find('\n')));
+        vVectorizedFile.push_back(wxToUtf8(fileContent.substr(0, fileContent.find('\n'))));
 
         // Erase the current line from the file
         if (fileContent.find('\n') != std::string::npos)
@@ -129,7 +130,7 @@ wxString FileRevisions::readRevision(const wxString& revString)
             // necessary conversion from UTF-8 is done by the text input
             // stream on-the-fly
             while (!zip.Eof())
-                revision += wxString(txt.ReadLine()) + "\r\n";
+                revision += txt.ReadLine() + "\r\n";
 
             // Remove the last line's endings
             revision.erase(revision.length()-2);
@@ -241,11 +242,11 @@ wxString FileRevisions::getLastRevisionRoot(const wxString& revString)
 wxString FileRevisions::diff(const wxString& revision1, const wxString& revisionID1, const wxString& revision2, const wxString& revisionID2)
 {
     // Vectorize the revision root and the current file
-    std::vector<wxString> vVectorizedRoot = vectorize(convertLineEndings(revision1));
-    std::vector<wxString> vVectorizedFile = vectorize(convertLineEndings(revision2));
+    std::vector<std::string> vVectorizedRoot = vectorize(convertLineEndings(revision1));
+    std::vector<std::string> vVectorizedFile = vectorize(convertLineEndings(revision2));
 
     // Calculate the differences between both files
-    dtl::Diff<wxString> diffFile(vVectorizedRoot, vVectorizedFile);
+    dtl::Diff<std::string> diffFile(vVectorizedRoot, vVectorizedFile);
     diffFile.compose();
 
     // Convert the differences into unified form
@@ -261,7 +262,7 @@ wxString FileRevisions::diff(const wxString& revision1, const wxString& revision
     diffFile.printUnifiedFormat(uniDiff);
 
     // Return the contents of the stream
-    return uniDiff.str();
+    return wxFromUtf8(uniDiff.str());
 }
 
 
@@ -298,8 +299,8 @@ wxString FileRevisions::createDiff(const wxString& revisionContent)
 wxString FileRevisions::createMerge(const wxString& diffFile)
 {
     // Vectorizes the passed diff file and the current revision root
-    std::vector<wxString> vVectorizedDiff = vectorize(convertLineEndings(diffFile));
-    std::vector<wxString> vVectorizedRoot;
+    std::vector<std::string> vVectorizedDiff = vectorize(convertLineEndings(diffFile));
+    std::vector<std::string> vVectorizedRoot;
 
     if (vVectorizedDiff.front().substr(0, 4) == "--- ")
         vVectorizedRoot = vectorize(convertLineEndings(getRevision(vVectorizedDiff.front().substr(4))));
@@ -350,7 +351,7 @@ wxString FileRevisions::createMerge(const wxString& diffFile)
 
     // Merge the vectorized file into a single-string file
     for (size_t i = 0; i < vVectorizedRoot.size(); i++)
-        mergedFile += vVectorizedRoot[i] + "\r\n";
+        mergedFile += wxFromUtf8(vVectorizedRoot[i]) + "\r\n";
 
     // Return the merged file with exception of the trailing
     // line break characters
@@ -370,12 +371,11 @@ wxString FileRevisions::createMerge(const wxString& diffFile)
 /////////////////////////////////////////////////
 wxString FileRevisions::readExternalFile(const wxString& filePath)
 {
-    std::ifstream file_in;
-    wxString sFileContents;
+    boost::nowide::ifstream file_in;
+    std::string sFileContents;
     std::string sLine;
-    wxMBConvUTF8 conv;
 
-    file_in.open(filePath.ToStdString().c_str());
+    file_in.open(wxToUtf8(filePath));
 
     while (file_in.good() && !file_in.eof())
     {
@@ -385,7 +385,7 @@ wxString FileRevisions::readExternalFile(const wxString& filePath)
 
     sFileContents.erase(sFileContents.length()-2);
 
-    return sFileContents;
+    return wxFromUtf8(sFileContents);
 }
 
 
@@ -408,7 +408,7 @@ size_t FileRevisions::createNewRevision(const wxString& revContent, const wxStri
     wxTempFileOutputStream out(m_revisionPath.GetFullPath());
 
     wxZipInputStream inzip(*in);
-    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL, wxConvUTF8);
     wxTextOutputStream txt(outzip);
 
     std::unique_ptr<wxZipEntry> entry;
@@ -462,7 +462,7 @@ size_t FileRevisions::createNewTag(const wxString& revString, const wxString& co
     wxTempFileOutputStream out(m_revisionPath.GetFullPath());
 
     wxZipInputStream inzip(*in);
-    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL, wxConvUTF8);
     wxTextOutputStream txt(outzip);
 
     std::unique_ptr<wxZipEntry> entry;
@@ -766,7 +766,7 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
     if (!m_revisionPath.Exists())
     {
         wxFFileOutputStream out(m_revisionPath.GetFullPath());
-        wxZipOutputStream zip(out, COMPRESSIONLEVEL);
+        wxZipOutputStream zip(out, COMPRESSIONLEVEL, wxConvUTF8);
         wxTextOutputStream txt(zip);
 
         wxZipEntry* rev0 = new wxZipEntry("rev0");

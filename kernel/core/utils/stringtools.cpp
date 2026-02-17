@@ -25,14 +25,16 @@
 #include <fast_float/fast_float.h>
 #include <cstring>
 #include <sstream>
-#include <iomanip>
 #include <iterator>
-#include <boost/tokenizer.hpp>
+#include <boost/locale.hpp>
+#include <boost/algorithm/hex.hpp>
+#include <boost/nowide/fstream.hpp>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
 double intPower(double, int64_t);
 bool isInt(const std::complex<double>& number);
+
 
 // toString function implementations
 // There's an overwrite for mostly every variable type
@@ -585,10 +587,10 @@ std::string condenseText(const std::string& sText)
 /////////////////////////////////////////////////
 std::string truncString(const std::string& sText, size_t nMaxChars)
 {
-    if (sText.length() <= nMaxChars)
+    if (countUnicodePoints(sText) <= nMaxChars)
         return sText;
 
-    return sText.substr(0, nMaxChars-3) + "...";
+    return sText.substr(0, findNthCharStart(sText, nMaxChars-3)) + "...";
 }
 
 
@@ -613,14 +615,15 @@ std::string strfill(const std::string& sString, size_t nWidth, char cFill, bool 
         return "";
 
     std::string sReturn = sString;
+    size_t len = countUnicodePoints(sString);
 
     // Fill the string
-    if (sString.length() < nWidth)
-        sReturn.insert(0, nWidth-sReturn.length(), cFill);
+    if (len < nWidth)
+        sReturn.insert(0, nWidth-len, cFill);
 
     // Limit the output size if required
-    if (limit && sString.length() > nWidth)
-        sReturn = sString.substr(0, nWidth - 3) + "...";
+    if (limit && len > nWidth)
+        sReturn = sString.substr(0, findNthCharStart(sString, nWidth - 3)) + "...";
 
     return sReturn;
 }
@@ -641,9 +644,13 @@ std::string strlfill(const std::string& sString, size_t nWidth, char cFill)
 {
     if (!nWidth)
         return "";
+
     std::string sReturn = sString;
-    if (sString.length() < nWidth)
-        sReturn.append(nWidth-sReturn.length(), cFill);
+    size_t length = sString.length();
+
+    if (length < nWidth)
+        sReturn.append(nWidth-length, cFill);
+
     return sReturn;
 }
 
@@ -1053,6 +1060,21 @@ std::string floatToVersion(double fVersionDigits)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts an internal string to the
+/// external representation in the terminal.
+///
+/// \param sStr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toExternalString(std::string sStr)
+{
+    replaceAll(sStr, "\"", "\\\"");
+    return "\"" + sStr + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts a string literal to the
 /// internal representation in tables and
 /// clusters.
@@ -1066,6 +1088,20 @@ std::string toInternalString(std::string sStr)
     if (sStr.front() == '"' && sStr.back() == '"')
         sStr = sStr.substr(1, sStr.length()-2);
 
+    return resolveEscapes(sStr);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resolves escaped characters within
+/// the string.
+///
+/// \param sStr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string resolveEscapes(std::string sStr)
+{
     for (size_t i = 0; i < sStr.length(); i++)
     {
         if (sStr.compare(i, 2, "\\t") == 0
@@ -1090,6 +1126,12 @@ std::string toInternalString(std::string sStr)
             sStr.replace(i, 2, "\\");
         else if (sStr.compare(i, 2, "\\ ") == 0)
             sStr.replace(i, 2, "\\");
+
+        if (sStr.compare(i, 2, "\\x") == 0
+            && sStr.length() > i+3
+            && isxdigit(sStr[i+2])
+            && isxdigit(sStr[i+3]))
+            sStr.replace(i, 4, boost::algorithm::unhex(sStr.substr(i+2, 2)));
     }
 
     return sStr;
@@ -1097,17 +1139,18 @@ std::string toInternalString(std::string sStr)
 
 
 /////////////////////////////////////////////////
-/// \brief Converts an internal string to the
-/// external representation in the terminal.
+/// \brief Helper function to create a central
+/// locale and obtain it.
 ///
-/// \param sStr std::string
-/// \return std::string
+/// \return const std::locale&
 ///
 /////////////////////////////////////////////////
-std::string toExternalString(std::string sStr)
+static const std::locale& getLocale()
 {
-    replaceAll(sStr, "\"", "\\\"");
-    return "\"" + sStr + "\"";
+#warning TODO (numere#1#01/21/26): Boost::locale needs to be rebuild with ICU support
+    static boost::locale::generator gen;
+    static std::locale loc = gen("en_US.UTF-8");
+    return loc;
 }
 
 
@@ -1121,19 +1164,7 @@ std::string toExternalString(std::string sStr)
 /////////////////////////////////////////////////
 std::string toLowerCase(const std::string& sUpperCase)
 {
-    std::string sLowerCase = sUpperCase;
-    static Umlauts _umlauts;
-    constexpr int charDiff = (int)'a' - (int)'A';
-
-    for (size_t i = 0; i < sLowerCase.length(); i++)
-    {
-        // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen A und Z liegt
-        if ((int)sLowerCase[i] >= (int)'A' && (int)sLowerCase[i] <= (int)'Z')
-            sLowerCase[i] = (char)((int)sLowerCase[i] + charDiff);
-        else
-            sLowerCase[i] = _umlauts.toLower(sLowerCase[i]);
-    }
-    return sLowerCase;
+    return boost::locale::to_lower(sUpperCase, getLocale());
 }
 
 
@@ -1147,30 +1178,7 @@ std::string toLowerCase(const std::string& sUpperCase)
 /////////////////////////////////////////////////
 std::string toUpperCase(const std::string& sLowerCase)
 {
-    std::string sUpperCase = sLowerCase;
-    static Umlauts _umlauts;
-    const int EQUAL = 0;
-    constexpr int charDiff = (int)'A' - (int)'a';
-
-    for (size_t i = 0; i < sUpperCase.length(); i++)
-    {
-        // Handle escape characters like linebreaks or tabulator characters
-        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.compare(i, 2, "\\n") == EQUAL || sUpperCase.compare(i, 2, "\\t") == EQUAL))
-        {
-            i++;
-            continue;
-        }
-        else if (sUpperCase.compare(i, 2, "\\n") == EQUAL)
-            sUpperCase.replace(i, 2, "N");
-        else if (sUpperCase.compare(i, 2, "\\t") == EQUAL)
-            sUpperCase.replace(i, 2, "T");
-        else if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
-            sUpperCase[i] = (char)((int)sUpperCase[i] + charDiff);
-        else
-            sUpperCase[i] = _umlauts.toUpper(sUpperCase[i]);
-    }
-
-    return sUpperCase;
+    return boost::locale::to_upper(sLowerCase, getLocale());
 }
 
 
@@ -1513,38 +1521,6 @@ int detectTimeDateFormat(const std::string& sStr)
 
 
 /////////////////////////////////////////////////
-/// \brief This function is a wrapper for the
-/// usual wcstombs function, which can handle
-/// wstrings.
-///
-/// \param wStr const std::wstring&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string wcstombs(const std::wstring& wStr)
-{
-    std::string sReturn;
-
-    // provide a target character array
-    char* cBuf = new char[wStr.length() * 2 + 1];
-
-    // transform the wstring into the target array
-    size_t nRet = wcstombs(cBuf, wStr.c_str(), wStr.length() * 2 + 1);
-
-    // Write the zero character and copy the contents of the character
-    // array to the target string
-    if (nRet == wStr.length() * 2 + 1)
-        cBuf[wStr.length() * 2] = '\0';
-    if (nRet)
-        sReturn = cBuf;
-
-    // Clear the memory and return the string
-    delete[] cBuf;
-    return sReturn;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Converts an internal to an external
 /// string. Does nothing currently.
 ///
@@ -1594,357 +1570,6 @@ std::string fromSystemCodePage(std::string sOutput)
             continue;
     }
     return sOutput;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Transforms a UTF8 encoded string into
-/// a Win CP1252 string in the internal code
-/// page representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string utf8parser(const std::string& sString)
-{
-    // Static declaration of constant
-	static const unsigned char NONANSIBITMASK = 128;
-    std::string sWinCp = sString;
-
-    for (size_t i = 0; i < sWinCp.length(); i++)
-    {
-        if (sWinCp[i] & NONANSIBITMASK)
-        {
-            if (sWinCp[i] == (char)0xC2)
-            {
-                // Regl. ANSI > 127
-                sWinCp.erase(i, 1);
-            }
-            else if (sWinCp[i] == (char)0xE2 && sWinCp.length() > i+2)
-            {
-                // These are the about 20 characters, which have other
-                // code points in Win-CP1252 and unicode
-                // U+20.. and U+21..
-
-                // Trademark symbol
-                if (sWinCp[i+1] == (char)0x84 && (sWinCp[i+2] & ~(char)0xC0) == (char)0x22)
-                {
-                    sWinCp.erase(i, 2);
-                    sWinCp[i] = (char)0x99;
-                    continue;
-                }
-
-                // All other cases
-                char sChar = sWinCp[i+2] & ~(char)0xC0;
-                sChar += (sWinCp[i+1] & (char)0x3) << 6;
-                sWinCp.erase(i, 2);
-
-                // Switch as lookup table
-                switch (sChar)
-                {
-                    case (char)0xAC:
-                        sWinCp[i] = (char)0x80;
-                        break;
-                    case (char)0x1A:
-                        sWinCp[i] = (char)0x82;
-                        break;
-                    case (char)0x1E:
-                        sWinCp[i] = (char)0x84;
-                        break;
-                    case (char)0x26:
-                        sWinCp[i] = (char)0x85;
-                        break;
-                    case (char)0x20:
-                        sWinCp[i] = (char)0x86;
-                        break;
-                    case (char)0x21:
-                        sWinCp[i] = (char)0x87;
-                        break;
-                    case (char)0x30:
-                        sWinCp[i] = (char)0x89;
-                        break;
-                    case (char)0x39:
-                        sWinCp[i] = (char)0x8B;
-                        break;
-                    case (char)0x18:
-                        sWinCp[i] = (char)0x91;
-                        break;
-                    case (char)0x19:
-                        sWinCp[i] = (char)0x92;
-                        break;
-                    case (char)0x1C:
-                        sWinCp[i] = (char)0x93;
-                        break;
-                    case (char)0x1D:
-                        sWinCp[i] = (char)0x94;
-                        break;
-                    case (char)0x22:
-                        sWinCp[i] = (char)0x95;
-                        break;
-                    case (char)0x13:
-                        sWinCp[i] = (char)0x96;
-                        break;
-                    case (char)0x14:
-                        sWinCp[i] = (char)0x97;
-                        break;
-                    case (char)0x3A:
-                        sWinCp[i] = (char)0x9B;
-                        break;
-                }
-            }
-            else if (sWinCp[i] >= (char)0xC4 && sWinCp[i] <= (char)0xCB)
-            {
-                // These are the about 20 characters, which have other
-                // code points in Win-CP1252 and unicode
-                // U+01.. and U+02..
-                char sChar = sWinCp[i+1] & ~(char)0xC0;
-                sChar += (sWinCp[i] & (char)0x3) << 6;
-                sWinCp.erase(i, 1);
-
-                // Switch as lookup table
-                switch (sChar)
-                {
-                    case (char)0x92:
-                        sWinCp[i] = (char)0x83;
-                        break;
-                    case (char)0xC6:
-                        sWinCp[i] = (char)0x88;
-                        break;
-                    case (char)0x60:
-                        sWinCp[i] = (char)0x8A;
-                        break;
-                    case (char)0x52:
-                        sWinCp[i] = (char)0x8C;
-                        break;
-                    case (char)0x7D:
-                        sWinCp[i] = (char)0x8E;
-                        break;
-                    case (char)0x7E:
-                        sWinCp[i] = (char)0x9E;
-                        break;
-                    case (char)0x78:
-                        sWinCp[i] = (char)0x9F;
-                        break;
-                    case (char)0xDC:
-                        sWinCp[i] = (char)0x98;
-                        break;
-                    case (char)0x61:
-                        sWinCp[i] = (char)0x9A;
-                        break;
-                    case (char)0x53:
-                        sWinCp[i] = (char)0x9C;
-                        break;
-                }
-            }
-            else if (sWinCp[i] == (char)0xC3)
-            {
-                // Regl. ANSI > 127
-                sWinCp.erase(i, 1);
-                sWinCp[i] += 64;
-            }
-        }
-    }
-
-    return sWinCp;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Transforms a UTF8 encoded string into
-/// a Win CP1252 string in the internal code
-/// page representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string utf8ToAnsi(const std::string& sString)
-{
-    return utf8parser(sString);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Creates an up to three byte sequence
-/// UTF8 character from a two byte unicode
-/// character. The length of the returned
-/// byte sequence is stored in nLength.
-///
-/// \param cHighByte unsigned char
-/// \param cLowByte unsigned char
-/// \param nLength size_t&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string createUTF8FromUnicode(unsigned char cHighByte, unsigned char cLowByte, size_t& nLength)
-{
-    std::string sUTF8;
-
-    // If the high byte is larger than or equal to 0x08, we will
-    // return three bytes, otherwise only two bytes
-    if (cHighByte >= 0x08)
-    {
-        nLength = 3;
-        sUTF8 = "   ";
-        sUTF8[0] = (char)0xE0 | ((cHighByte & (unsigned char)0xF0) >> 4);
-        sUTF8[1] = (char)0x80 | ((cHighByte & (unsigned char)0x0F) << 2) | ((cLowByte & (unsigned char)0xC0) >> 6);
-        sUTF8[2] = (char)0x80 | (cLowByte & ~(char)0xC0);
-    }
-    else
-    {
-        nLength = 2;
-        sUTF8 = "  ";
-        sUTF8[0] = (char)0xC0 | ((cHighByte & (unsigned char)0x07) << 2) | ((cLowByte & (unsigned char)0xC0) >> 6);
-        sUTF8[1] = (char)0x80 | (cLowByte & ~(char)0xC0);
-    }
-
-    return sUTF8;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Transforms a Win CP1253 encoded string
-/// into a UTF8 string in the internal code page
-/// representation.
-///
-/// \param sString const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string ansiToUtf8(const std::string& sString)
-{
-    // Ensure that element text is available
-    if (!sString.length())
-        return std::string();
-
-    // convert current element into a regular string
-    // object (much easier to handle)
-    std::string sUtf8String = sString;
-
-    // static declarations of constants
-    static const unsigned char NONANSIBITMASK = 128;
-    static const unsigned char TWOBYTEUTF8 = 0xA0;
-
-    // Go through the complete xml text and replace the
-    // characters with the UTF8 encoded unicode value. The
-    // unicode value of Win-CP1252 and unicode is quite similar
-    // except of a set of about 24 characters between NONANSIBITMASK
-    // and TWOBYTEUTF8
-    for (size_t i = 0; i < sUtf8String.length(); i++)
-    {
-        // Only do something, if the character is larger than NONANSIBITMASK
-        if (sUtf8String[i] & NONANSIBITMASK)
-        {
-            if ((unsigned char)sUtf8String[i] >= TWOBYTEUTF8)
-            {
-                // Regular encoding
-                char cp1252Char = sUtf8String[i];
-                sUtf8String.replace(i, 1, "  ");
-                sUtf8String[i] = (char)0xC0 | ((cp1252Char & (unsigned char)0xC0) >> 6);
-                sUtf8String[i+1] = (char)0x80 | (cp1252Char & ~(char)0xC0);
-                i++;
-            }
-            else
-            {
-                // Special code sequences. These have other code points in UTF8
-                // and therefore we have to replace them manually
-                char cp1252Char = sUtf8String[i];
-                size_t nLength = 0;
-
-                // Switch as lookup table
-                switch (cp1252Char)
-                {
-                    case (char)0x80:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0xAC, nLength));
-                        break;
-                    case (char)0x82:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1A, nLength));
-                        break;
-                    case (char)0x83:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x92, nLength));
-                        break;
-                    case (char)0x84:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1E, nLength));
-                        break;
-                    case (char)0x85:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x26, nLength));
-                        break;
-                    case (char)0x86:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x20, nLength));
-                        break;
-                    case (char)0x87:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x21, nLength));
-                        break;
-                    case (char)0x88:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x02, 0xC6, nLength));
-                        break;
-                    case (char)0x89:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x30, nLength));
-                        break;
-                    case (char)0x8A:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x60, nLength));
-                        break;
-                    case (char)0x8B:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x39, nLength));
-                        break;
-                    case (char)0x8C:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x52, nLength));
-                        break;
-                    case (char)0x8E:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x7D, nLength));
-                        break;
-                    case (char)0x91:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x18, nLength));
-                        break;
-                    case (char)0x92:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x19, nLength));
-                        break;
-                    case (char)0x93:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1C, nLength));
-                        break;
-                    case (char)0x94:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1D, nLength));
-                        break;
-                    case (char)0x95:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x22, nLength));
-                        break;
-                    case (char)0x96:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x13, nLength));
-                        break;
-                    case (char)0x97:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x14, nLength));
-                        break;
-                    case (char)0x98:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x02, 0xDC, nLength));
-                        break;
-                    case (char)0x99:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x21, 0x22, nLength));
-                        break;
-                    case (char)0x9A:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x61, nLength));
-                        break;
-                    case (char)0x9B:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x3A, nLength));
-                        break;
-                    case (char)0x9C:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x53, nLength));
-                        break;
-                    case (char)0x9E:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x7E, nLength));
-                        break;
-                    case (char)0x9F:
-                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x78, nLength));
-                        break;
-                }
-
-                i += nLength-1;
-
-            }
-        }
-    }
-
-    return sUtf8String;
 }
 
 
@@ -2129,8 +1754,9 @@ std::vector<std::string> split(const std::string& sStr, char cSplit)
 /////////////////////////////////////////////////
 std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 {
-    if (sLongString.length() > nMaxStringLength)
-        return sLongString.substr(0, nMaxStringLength/2-2) + "[...]" + sLongString.substr(sLongString.length()-nMaxStringLength/2+2);
+    if (countUnicodePoints(sLongString) > nMaxStringLength)
+        return sLongString.substr(0, findNthCharStart(sLongString, nMaxStringLength/2-2)) + "[...]"
+            + sLongString.substr(findNthCharStart(sLongString, sLongString.length()-nMaxStringLength/2+2));
 
     return sLongString;
 }
@@ -2409,7 +2035,7 @@ std::string encode_base_n(const std::string& sToEncode, bool isFile, int n)
 
     if (isFile)
     {
-        std::ifstream file(sToEncode);
+        boost::nowide::ifstream file(sToEncode);
 
 #ifndef PARSERSTANDALONE
         if (!file.good())
@@ -2493,6 +2119,41 @@ std::string decode_base_n(const std::string& sToDecode, int n)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation for STR.chr()
+///
+/// \param sString const std::string&
+/// \param nthChar int64_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string chr_impl(const std::string& sString, int64_t nthChar)
+{
+    if (!sString.length())
+        return "";
+
+    nthChar = std::max(nthChar, 0LL);
+
+    size_t p = 0;
+    size_t pOld = 0;
+
+    // Find the correct character
+    while (nthChar && p < sString.length())
+    {
+        pOld = p;
+        p += getUtf8ByteLen(sString[p]);
+        nthChar--;
+    }
+
+    // Ensure that we have a valid character position
+    if (nthChar || p >= sString.length())
+        p = pOld;
+
+    // Extract the correct string length
+    return sString.substr(p, getUtf8ByteLen(sString[p]));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation for substr()
 ///
 /// \param sString const std::string&
@@ -2529,14 +2190,26 @@ std::vector<std::string> split_impl(const std::string& sString, const std::strin
         return ret;
     }
 
-    boost::char_separator<char> cSep(c.c_str(), nullptr,
-                                     (keepEmpty ? boost::keep_empty_tokens : boost::drop_empty_tokens));
-    boost::tokenizer<boost::char_separator<char>> tok(sString, cSep);
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(c);
+    size_t p0 = 0;
 
-    for (boost::tokenizer<boost::char_separator<char>>::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    for (size_t i = 0; i < sString.length(); i++)
     {
-        ret.emplace_back(std::string(*iter));
+        size_t len = 0;
+
+        if (getUtf8ByteLen(sString[i]) > 0ull
+            && (len = matchesAny(sString, vUtf8Chars, i)))
+        {
+            if (p0 < i || keepEmpty)
+                ret.emplace_back(sString.substr(p0, i-p0));
+
+            p0 = i+len;
+            i += len-1;
+        }
     }
+
+    if (p0 < sString.length() || keepEmpty)
+        ret.emplace_back(sString.substr(p0));
 
     return ret;
 }
@@ -2601,7 +2274,16 @@ size_t strmatch_impl(const std::string& sString, const std::string& sFind, size_
     if (p >= sString.length())
         p = 0;
 
-    return sString.find_first_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (; p < sString.length(); p++)
+    {
+        if (getUtf8ByteLen(sString[p]) > 0ull
+            && matchesAny(sString, vUtf8Chars, p))
+            return p+1;
+    }
+
+    return 0ull;
 }
 
 
@@ -2622,7 +2304,16 @@ size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size
     if (p >= sString.length())
         p = sString.length();
 
-    return sString.find_last_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (int i = p-1; p >= 0; p--)
+    {
+        if (getUtf8ByteLen(sString[i]) > 0ull
+            && matchesAny(sString, vUtf8Chars, i))
+            return i+1ull;
+    }
+
+    return 0ull;
 }
 
 
@@ -2643,7 +2334,16 @@ size_t str_not_match_impl(const std::string& sString, const std::string& sFind, 
     if (p >= sString.length())
         p = 0;
 
-    return sString.find_first_not_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (; p < sString.length(); p++)
+    {
+        if (getUtf8ByteLen(sString[p]) > 0ull
+            && !matchesAny(sString, vUtf8Chars, p))
+            return p+1;
+    }
+
+    return 0ull;
 }
 
 
@@ -2664,7 +2364,89 @@ size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind,
     if (p >= sString.length())
         p = sString.length();
 
-    return sString.find_last_not_of(sFind, p)+1;
+    std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
+
+    for (int i = p-1; p >= 0; p--)
+    {
+        if (getUtf8ByteLen(sString[i]) > 0ull
+            && !matchesAny(sString, vUtf8Chars, i))
+            return i+1ull;
+    }
+
+    return 0ull;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for STR.normalize()
+///
+/// \param sString const std::string&
+/// \param sMethod const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string normalize_unicode_impl(const std::string& sString, const std::string& sMethod)
+{
+    if (!sString.length())
+        return "";
+
+    boost::locale::norm_type type = boost::locale::norm_nfc;
+
+    if (sMethod == "nfd")
+        type = boost::locale::norm_nfd;
+    else if (sMethod == "nfkd")
+        type = boost::locale::norm_nfkd;
+    else if (sMethod == "nfkc")
+        type = boost::locale::norm_nfkc;
+
+    return boost::locale::normalize(sString, type, getLocale());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for STR.collate()
+///
+/// \param sString1 const std::string&
+/// \param sString2 const std::string&
+/// \param level size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+int collate_impl(const std::string& sString1, const std::string& sString2, size_t level)
+{
+    boost::locale::collate_level colLevel = boost::locale::collate_level::primary;
+
+    if (level == 2)
+        colLevel = boost::locale::collate_level::secondary;
+    else if (level == 3)
+        colLevel = boost::locale::collate_level::tertiary;
+    else if (level == 4)
+        colLevel = boost::locale::collate_level::quaternary;
+    else if (level == 5)
+        colLevel = boost::locale::collate_level::identical;
+
+    return std::use_facet<boost::locale::collator<char>>(getLocale()).compare(colLevel, sString1, sString2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for STR.segments. Not
+/// yet supported by the boost library.
+///
+/// \param sString const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> segments_impl(const std::string& sString)
+{
+    if (!sString.length())
+        return std::vector<std::string>(1, "");
+
+    // Create mapping of text for token iterator using the global locale.
+    boost::locale::boundary::ssegment_index segIndex(boost::locale::boundary::word, sString.begin(), sString.end(), getLocale());
+
+    // Return all "words" -- chunks of word boundary
+    return std::vector<std::string>(segIndex.begin(), segIndex.end());
 }
 
 

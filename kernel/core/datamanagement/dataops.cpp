@@ -33,7 +33,6 @@ using namespace std;
 static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const MemoryManager& _data, bool bTranspose);
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose);
 
-extern Language _lang;
 
 
 /////////////////////////////////////////////////
@@ -246,8 +245,8 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 
         // Clear the complete cache and remove the cache files
         _data.removeTablesFromMemory();
-        remove(sAutoSave.c_str());
-        remove(sCache_file.c_str());
+        boost::nowide::remove(sAutoSave.c_str());
+        boost::nowide::remove(sCache_file.c_str());
 
         // Inform the user, if printing is allowed
         if (_option.systemPrints())
@@ -665,7 +664,7 @@ bool sortData(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool writeToFile(CommandLineParser& cmdParser)
 {
-    fstream fFile;
+    boost::nowide::fstream fFile;
     string sFileName;
 
     bool bAppend = false;
@@ -739,7 +738,7 @@ bool writeToFile(CommandLineParser& cmdParser)
     else
     {
         if (!fileExists(sFileName))
-            ofstream fTemp(sFileName.c_str());
+            boost::nowide::ofstream fTemp(sFileName.c_str());
 
         fFile.open(sFileName.c_str());
     }

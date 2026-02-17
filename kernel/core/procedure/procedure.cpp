@@ -2938,7 +2938,7 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
 /// other procedures.
 ///
 /// \param sProcCommandLine string&
-/// \param fInclude ifstream&
+/// \param fInclude boost::nowide::ifstream&
 /// \param bReadingFromInclude bool
 /// \return int
 ///
@@ -2947,7 +2947,7 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
 /// will decode this syntax and open the
 /// corresponding file stream.
 /////////////////////////////////////////////////
-int Procedure::handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude)
+int Procedure::handleIncludeSyntax(string& sProcCommandLine, boost::nowide::ifstream& fInclude, bool bReadingFromInclude)
 {
     int nIncludeType = 0;
 

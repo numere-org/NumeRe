@@ -44,6 +44,7 @@
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include "../globals.hpp"
+#include "../stringconv.hpp"
 
 void WinMessageBeep();
 
@@ -115,7 +116,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	SetCursor(wxCursor(wxCURSOR_IBEAM));
 
     // Start the kernel
-	_kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
+	_kernel.StartUp(this, wxToUtf8(sPath), getSyntax()->getFunctions());
 	m_options->copySettings(_kernel.getKernelSettings());
 	m_useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
 
@@ -255,16 +256,16 @@ void NumeReTerminal::passEditedTable(NumeRe::Table _table)
 /// to the passed file at the indicated line
 /// number.
 ///
-/// \param _sFilename const std::string&
+/// \param _sFilename const wxString&
 /// \param nLine size_t
 /// \param bp const Breakpoint&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::addBreakpoint(const std::string& _sFilename, size_t nLine, const Breakpoint& bp)
+void NumeReTerminal::addBreakpoint(const wxString& _sFilename, size_t nLine, const Breakpoint& bp)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
-    _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine, bp);
+    _kernel.getDebugger().getBreakpointManager().addBreakpoint(wxToUtf8(_sFilename), nLine, bp);
 }
 
 
@@ -273,15 +274,15 @@ void NumeReTerminal::addBreakpoint(const std::string& _sFilename, size_t nLine, 
 /// of the passed file at the indicated line
 /// number.
 ///
-/// \param _sFilename const std::string&
+/// \param _sFilename const wxString&
 /// \param nLine size_t
 /// \return Breakpoint
 ///
 /////////////////////////////////////////////////
-Breakpoint NumeReTerminal::getBreakpoint(const std::string& _sFilename, size_t nLine)
+Breakpoint NumeReTerminal::getBreakpoint(const wxString& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
-    return _kernel.getDebugger().getBreakpointManager().getBreakpoint(_sFilename, nLine);
+    return _kernel.getDebugger().getBreakpointManager().getBreakpoint(wxToUtf8(_sFilename), nLine);
 }
 
 
@@ -290,15 +291,15 @@ Breakpoint NumeReTerminal::getBreakpoint(const std::string& _sFilename, size_t n
 /// breakpoint from the passed file at the
 /// indicated line number.
 ///
-/// \param _sFilename const std::string&
+/// \param _sFilename const wxString&
 /// \param nLine size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::removeBreakpoint(const std::string& _sFilename, size_t nLine)
+void NumeReTerminal::removeBreakpoint(const wxString& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
-    _kernel.getDebugger().getBreakpointManager().removeBreakpoint(_sFilename, nLine);
+    _kernel.getDebugger().getBreakpointManager().removeBreakpoint(wxToUtf8(_sFilename), nLine);
 }
 
 
@@ -306,15 +307,15 @@ void NumeReTerminal::removeBreakpoint(const std::string& _sFilename, size_t nLin
 /// \brief This member function removes all
 /// breakpoints from the passed file.
 ///
-/// \param _sFilename const std::string&
+/// \param _sFilename const wxString&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::clearBreakpoints(const std::string& _sFilename)
+void NumeReTerminal::clearBreakpoints(const wxString& _sFilename)
 {
-    g_logger.debug("Clearing breakpoints for " + _sFilename);
+    g_logger.debug("Clearing breakpoints for " + wxToUtf8(_sFilename));
     wxCriticalSectionLocker lock(m_kernelCS);
-    _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
+    _kernel.getDebugger().getBreakpointManager().clearBreakpoints(wxToUtf8(_sFilename));
 }
 
 
@@ -459,7 +460,7 @@ wxThread::ExitCode NumeReTerminal::Entry()
 			wxCriticalSectionLocker lock(m_kernelCS);
 
 			bCommandAvailable = m_bCommandAvailable;
-			sCommand = m_sCommandLine;
+			sCommand = wxToUtf8(m_sCommandLine);
 			m_bCommandAvailable = false;
 
 			updateLibrary = m_updateProcedureLibrary;
@@ -476,10 +477,7 @@ wxThread::ExitCode NumeReTerminal::Entry()
 
 		// Refreshing the library before any command is executed
 		if (updateLibrary)
-		{
-		    // update the internal procedure library if needed
 			NumeReKernel::ProcLibrary.updateLibrary();
-		}
 
 		// A command is available
 		if (bCommandAvailable)
@@ -488,26 +486,6 @@ wxThread::ExitCode NumeReTerminal::Entry()
 			// enters the function, if a command was passed to the terminal.
 			m_KernelStatus = _kernel.MainLoop(sCommand);
 
-			/*if (m_KernelStatus > 0) // these are valid status values (0 = error, -1 = quit)
-			{
-				wxCriticalSectionLocker lock(m_kernelCS);
-
-				switch (m_KernelStatus)
-				{
-					case NumeReKernel::NUMERE_DONE:
-						m_sAnswer += _kernel.ReadAnswer();
-						break;
-					default:
-						break;
-						//All others
-				}
-			}
-			else
-            if (m_KernelStatus == NumeReKernel::NUMERE_QUIT) //quit
-			{
-				break;
-			}*/
-
 			// Notify the event handler that there's an update
 			wxQueueEvent(GetEventHandler(), new wxThreadEvent());
 		}
@@ -515,17 +493,13 @@ wxThread::ExitCode NumeReTerminal::Entry()
 		// During idle times so that these tasks don't interfere with the main evaluation routine
 		// do the following:
 		if (_kernel.getAutosaveInterval() > 0 && (time(0) - _kernel.getLastSavedTime() >= _kernel.getAutosaveInterval()))
-		{
     		_kernel.Autosave();
-		}
-
 	}
 
 	// The thread will terminate
 	// Close the session and inform the thread handler
 	_kernel.CloseSession();
-	//m_KernelStatus = NumeReKernel::NUMERE_QUIT;
-	//wxQueueEvent(GetEventHandler(), new wxThreadEvent());
+
 	return (wxThread::ExitCode)0;
 }
 
@@ -598,11 +572,6 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 			case NumeReKernel::NUMERE_ANSWER_READ:
 			case NumeReKernel::NUMERE_PENDING_SPECIAL:
 				return;
-			// fallthrough is intended
-			//case NumeReKernel::NUMERE_DONE:
-			//	sAnswer = m_sAnswer + "\n|\n|<- ";
-			//	done = true;
-			//	break;
             // fallthrough is intended
 			case NumeReKernel::NUMERE_ERROR:
 			case NumeReKernel::NUMERE_DONE:
@@ -635,9 +604,7 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 
 	// Toggle the toolbar tools used for stopping and starting tasks
 	if (done)
-	{
 		Ready();
-	}
 
 	// If the kernel asks the application to terminate
 	// do this after 200msec
@@ -662,18 +629,15 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
         {
             case NumeReKernel::NUMERE_EDIT_FILE:
             {
-                if (task.sString.find(".png") != std::string::npos
-                        || task.sString.find(".jpg") != std::string::npos
-                        || task.sString.find(".jpeg") != std::string::npos
-                        || task.sString.find(".gif") != std::string::npos
-                        || task.sString.find(".bmp") != std::string::npos)
-                {
-                    m_wxParent->openImage(wxFileName(task.sString));
-                }
+                if (task.sString.ends_with(".png")
+                    || task.sString.ends_with(".jpg")
+                    || task.sString.ends_with(".jpeg")
+                    || task.sString.ends_with(".gif")
+                    || task.sString.ends_with(".bmp"))
+                    m_wxParent->openImage(wxFileName(wxFromUtf8(task.sString)));
                 else
-                {
-                    m_wxParent->OpenSourceFile(wxArrayString(1, task.sString), task.nLine, _kernel.ReadOpenFileFlag());
-                }
+                    m_wxParent->OpenSourceFile(wxArrayString(1, wxFromUtf8(task.sString)), task.nLine, _kernel.ReadOpenFileFlag());
+
                 break;
             }
             case NumeReKernel::NUMERE_SHOW_WINDOW:
@@ -681,7 +645,7 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
                 m_wxParent->showWindow(task.window);
                 break;
             case NumeReKernel::NUMERE_OPEN_DOC:
-                m_wxParent->ShowHelp(task.sString);
+                m_wxParent->ShowHelp(wxFromUtf8(task.sString));
                 break;
             case NumeReKernel::NUMERE_SHOW_TABLE:
                 m_wxParent->openTable(task.table, task.sString, task.sString);
@@ -733,7 +697,9 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 	if (sAnswer == "|\n|<- " && GetTM()->getPreviousLine() == "|")
         sAnswer = "|<- ";
 
-	ProcessOutput(sAnswer.length(), sAnswer);
+    wxString convAns = wxFromUtf8(sAnswer);
+
+	ProcessOutput(convAns.length(), convAns);
 	Refresh();
 }
 
@@ -852,7 +818,7 @@ NumeReTerminal::GetDefColors(wxColour colors[16], NumeReTerminal::BOLDSTYLE bold
 				colors[NumeReSyntax::SYNTAX_COMMENT] = m_options->GetSyntaxStyle(Options::COMMENT).foreground;
 				break;
             default:
-                colors[i] = *wxBLACK;
+                colors[i] = wxColour(192,192,192); //*wxBLACK;
 		}
 	}
 }
@@ -1032,11 +998,11 @@ std::string NumeReTerminal::getVariableType(const std::string& sVarName)
 /// will get the current input line from the
 /// internal buffer and sent it to the kernel.
 ///
-/// \param sCommand const std::string&
+/// \param sCommand const wxString&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::pipe_command(const std::string& sCommand)
+void NumeReTerminal::pipe_command(const wxString& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 
@@ -1055,12 +1021,12 @@ void NumeReTerminal::pipe_command(const std::string& sCommand)
 /// \brief  Pass the external command to the
 /// kernel without printing it to the console.
 ///
-/// \param command const std::string&
+/// \param command const wxString&
 /// \param isEvent bool Do not add to the history
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::pass_command(const std::string& command, bool isEvent)
+void NumeReTerminal::pass_command(const wxString& command, bool isEvent)
 {
     // Don't do anything if the command is empty
 	if (!command.length())
@@ -1157,7 +1123,7 @@ NumeReTerminal::OnChar(wxKeyEvent& event)
 		// all the way to the bottom
 		scrollToInput();
 
-		int keyCode = (int)event.GetKeyCode();
+		int keyCode = event.GetKeyCode();
 		int len = 1;
 
 		// Clear selection mode
@@ -1180,8 +1146,8 @@ NumeReTerminal::OnChar(wxKeyEvent& event)
         if (filterKeyCodes(keyCode, event.ControlDown()))
             return;
 
-		std::string buf = " ";
-		buf[0] = (char)keyCode;
+		wxString buf = " ";
+		buf[0] = event.GetUnicodeKey();
 
 		GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
         wxClientDC dc(this);
@@ -1213,7 +1179,7 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
         case WXK_RETURN:
             {
                 GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
-                std::string sCommand = GetTM()->getCurrentInputLine();
+                wxString sCommand = GetTM()->getCurrentInputLine();
                 GenericTerminal::cr();
                 GenericTerminal::lf();
                 GetTM()->ChangeEditableState();
@@ -1224,6 +1190,7 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
             }
         case WXK_BACK:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
+
             if (GenericTerminal::bs())
                 Refresh(false);
 
@@ -1235,48 +1202,48 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
             return true;
         case WXK_LEFT:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
+
             if ((ctrlDown && GenericTerminal::ctrl_left()) || GenericTerminal::cursor_left())
-            {
                 Refresh(false);
-            }
+
             return true;
         case WXK_RIGHT:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if ((ctrlDown && GenericTerminal::ctrl_right()) || GenericTerminal::cursor_right())
-            {
                 Refresh(false);
-            }
+
             return true;
         case WXK_UP:
             GenericTerminal::resetAutoComp(RESETTAB);
+
             if (GenericTerminal::cursor_up())
-            {
                 Refresh(false);
-            }
+
             return true;
         case WXK_DOWN:
             GenericTerminal::resetAutoComp(RESETTAB);
+
             if (GenericTerminal::cursor_down())
-            {
                 Refresh(false);
-            }
+
             return true;
         case WXK_HOME:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
+
             if (GenericTerminal::home())
-            {
                 Refresh(false);
-            }
+
             return true;
         case WXK_END:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
+
             if (GenericTerminal::end())
-            {
                 Refresh(false);
-            }
+
             return true;
         case WXK_DELETE:
             GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
+
             if (GenericTerminal::del())
                 Refresh(false);
 
@@ -1284,7 +1251,7 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
     }
 
     // Filter out any other non-ASCII characters
-    if (keyCode >= WXK_START || keyCode < WXK_SPACE)
+    if (/*keyCode >= WXK_START ||*/ keyCode < WXK_SPACE)
         return true;
 
     // No special key code
@@ -1321,8 +1288,7 @@ void NumeReTerminal::scrollToInput()
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnKeyDown(wxKeyEvent& event)
+void NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 {
 	if (!(GetMode() & PC) && event.AltDown())
 		event.Skip();
@@ -1367,8 +1333,7 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
+void NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
 	wxPaintDC dc(this);
 
@@ -1394,17 +1359,19 @@ NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnLeftDown(wxMouseEvent& event)
+void NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 {
 	SetFocus();
 	ClearSelection();
-	m_selx1 = m_selx2 = event.GetX() / m_charWidth;
+
+    // Get the character position
+	m_selx1 = m_selx2 = GetCharFromScreenPosition(event.GetX(), event.GetY());
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
+
 	m_selecting = true;
 	MarkSelection();
 	Refresh(false);
-	this->CaptureMouse();
+	CaptureMouse();
 }
 
 
@@ -1419,10 +1386,10 @@ NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void NumeReTerminal::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 {
-	if (this->GetCapture() == this)
+	if (GetCapture() == this)
 	{
 		m_selecting = false;
-		this->ReleaseMouse();
+		ReleaseMouse();
 		Refresh();
 	}
 }
@@ -1438,15 +1405,16 @@ void NumeReTerminal::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnLeftUp(wxMouseEvent& event)
+void NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 {
 	m_selecting = false;
-	if (this->GetCapture() == this)
+
+	if (GetCapture() == this)
 	{
-		this->ReleaseMouse();
+		ReleaseMouse();
 		Refresh(false);
 	}
+
 	move_cursor_editable_area(m_selx2, m_sely2);
 }
 
@@ -1461,36 +1429,30 @@ NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void
-NumeReTerminal::OnMouseMove(wxMouseEvent& event)
+void NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 {
-	if (m_selecting)
-	{
-	    int x2Old = m_selx2;
-	    int y2Old = m_sely2;
+	if (!m_selecting)
+        return;
 
-	    // Get the text coordinates of the mouse
-		m_selx2 = event.GetX() / m_charWidth;
+    int x2Old = m_selx2;
+    int y2Old = m_sely2;
 
-		if (m_selx2 >= Width())
-			m_selx2 = Width() - 1;
+    // Get the character position from the mouse coordinates
+    m_selx2 = GetCharFromScreenPosition(event.GetX(), event.GetY());
+    m_sely2 = event.GetY() / m_charHeight;
 
-		m_sely2 = event.GetY() / m_charHeight;
+    if (m_sely2 >= Height())
+        m_sely2 = Height() - 1;
 
-		if (m_sely2 >= Height())
-			m_sely2 = Height() - 1;
+    // Mark the selections
+    if (event.AltDown())
+        MarkSelection(true);
+    else
+        MarkSelection();
 
-        // Mark the selections
-		if (event.AltDown())
-			MarkSelection(true);
-		else
-			MarkSelection();
-
-        // Update the terminal
-		// GenericTerminal::Update();
-		if (x2Old != m_selx2 || y2Old != m_sely2)
-            Refresh(false);
-	}
+    // Update the terminal
+    if (x2Old != m_selx2 || y2Old != m_sely2)
+        Refresh(false);
 }
 
 
@@ -1617,8 +1579,7 @@ NumeReTerminal::MarkSelection(bool bRectangular)
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool
-NumeReTerminal::HasSelection()
+bool NumeReTerminal::HasSelection()
 {
 	return (m_selx1 != m_selx2 || m_sely1 != m_sely2);
 }
@@ -1632,12 +1593,9 @@ NumeReTerminal::HasSelection()
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxString
-NumeReTerminal::GetSelection()
+wxString NumeReTerminal::GetSelection()
 {
-	wxString sel = get_selected_text();
-
-	return sel;
+	return get_selected_text();
 }
 
 
@@ -1678,7 +1636,7 @@ void NumeReTerminal::pasteText()
         {
             wxTextDataObject data;
             wxTheClipboard->GetData(data);
-            insertRawText(data.GetText().ToStdString());
+            insertRawText(data.GetText());
             Refresh();
         }
 
@@ -1708,18 +1666,18 @@ void NumeReTerminal::cutText()
 /// to handle things like comments, line breaks
 /// or additional unnecessary characters.
 ///
-/// \param sText std::string
+/// \param sText wxString
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::insertRawText(std::string sText)
+void NumeReTerminal::insertRawText(wxString sText)
 {
     size_t nQuotes = 0;
 
     // Replace line comments with block comments, where necessary
     for (size_t i = 0; i < sText.length(); i++)
     {
-        if (isQuotationMark(sText, i))
+        if (isQuotationMark(sText.ToAscii().data(), i))
             nQuotes++;
 
         if (nQuotes % 2)
@@ -1751,7 +1709,7 @@ void NumeReTerminal::insertRawText(std::string sText)
     }
 
     // Remove CR characters
-    replaceAll(sText, "\r", "");
+    sText.Replace("\r", "");
 
     // Replace line break and tabulator characters,
     // because they won't be parsed correctly
@@ -1772,6 +1730,91 @@ void NumeReTerminal::insertRawText(std::string sText)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the (relative) pixel position of
+/// the character indicated by x and y. Requires
+/// that m_curDC points to a valid device context
+/// and is set to a non-bold font.
+///
+/// \param x int
+/// \param y int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReTerminal::GetScreenCharPosition(int x, int y)
+{
+    if (!m_curDC)
+        return x * m_charWidth;
+
+    if (!x)
+        return 0;
+
+    x--; // bc. the values are widths and do not start at zero
+
+    wxString charsInLine = GetTM()->getRenderedString(y);
+    wxArrayInt widths;
+
+    m_curDC->GetPartialTextExtents(charsInLine, widths);
+
+    if (!widths.size())
+        return x * m_charWidth;
+
+    if (x < (int)widths.size())
+        return widths[x];
+
+    return widths.Last() + (x - (int)widths.size() + 1) * m_charWidth;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the character at the (relative) x
+/// and y screen positions. Constructs a local
+/// wxDC to calculate the characters' positions.
+///
+/// \param x int
+/// \param y int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReTerminal::GetCharFromScreenPosition(int x, int y)
+{
+    wxClientDC dc(this);
+    dc.SetFont(m_normalFont);
+
+    // Get the text coordinates of the mouse
+    y /= m_charHeight;
+
+    if (y >= Height())
+        y = Height() - 1;
+
+    wxString charsInLine = GetTM()->getRenderedString(y);
+    wxArrayInt widths;
+
+    dc.GetPartialTextExtents(charsInLine, widths);
+
+    if (!widths.size())
+    {
+        x /= m_charWidth;
+
+        if (x >= Width())
+            x = Width() - 1;
+
+        return x;
+    }
+
+    if (x >= widths.Last())
+        return widths.size() + (x - widths.Last()) / m_charWidth;
+
+    for (int i = widths.size()-1; i >= 0; i--)
+    {
+        if (widths[i] < x)
+            return i+1; // bc. the values are widths and do not start at zero
+    }
+
+    return 0;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual DrawText
 ///  Responsible for actually drawing the terminal text on the widget.  This virtual
@@ -1782,68 +1825,54 @@ void NumeReTerminal::insertRawText(std::string sText)
 ///  @param  flags    int             Modifiers for drawing the text
 ///  @param  x        int             The x position in character cells
 ///  @param  y        int             The y position in character cells
-///  @param  sText    const std::string&   The std::string containing the characters to draw
+///  @param  sText    const wxString&   The string containing the characters to draw
 ///
 ///  @return void
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const std::string& sText)
+NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const wxString& sText)
 {
-	int
-	t;
+	if (!m_curDC)
+		return;
 
 	// Overwrite the passed colors depending on the flags
 	if (flags & SELECTED)
-	{
-		fg_color = 0;
 		bg_color = 15;
-	}
 
 	if (flags & INVERSE)
 	{
-		t = fg_color;
+		int t = fg_color;
 		fg_color = bg_color;
 		bg_color = t;
 	}
 
-	if (!m_curDC)
-		return;
+    m_curDC->SetFont(m_normalFont);
 
-    // Convert std::string into wxString
-	wxString
-	str(sText);
+	// Convert x-y char coordinates into pixel coordinates
+    x = GetScreenCharPosition(x, y);
+	y *= m_charHeight;
 
 	// Set the correct font
 	if (m_boldStyle != FONT)
 	{
 		if (flags & UNDERLINE)
 			m_curDC->SetFont(m_underlinedFont);
-		else
-			m_curDC->SetFont(m_normalFont);
 	}
 	else
 	{
-		if (flags & BOLD)
-		{
-			if (flags & UNDERLINE)
+        if (flags & UNDERLINE)
+        {
+            if (flags & BOLD)
 				m_curDC->SetFont(m_boldUnderlinedFont);
-			else
-				m_curDC->SetFont(m_boldFont);
-		}
-		else
-		{
-			if (flags & UNDERLINE)
+            else
 				m_curDC->SetFont(m_underlinedFont);
-			else
-				m_curDC->SetFont(m_normalFont);
-		}
-	}
+        }
 
-	// Convert x-y char coordinates into pixel coordinates
-	x *= m_charWidth;
-	y *= m_charHeight;
+        else if (flags & BOLD)
+            m_curDC->SetFont(m_boldFont);
+	}
 
 	// Set colors and background mode
 	m_curDC->SetBackgroundMode(wxSOLID);
@@ -1851,9 +1880,7 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 	m_curDC->SetTextForeground(m_colors[fg_color]);
 
 	// Draw the actual text
-	m_curDC->DrawText(str, x, y);
-	if (flags & BOLD && m_boldStyle == OVERSTRIKE)
-		m_curDC->DrawText(str, x + 1, y);
+	m_curDC->DrawText(sText, x, y);
 }
 
 
@@ -1866,22 +1893,21 @@ NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, co
 ///  @param  flags    int            Modifier flags
 ///  @param  x        int            The x position of the cursor, in characters
 ///  @param  y        int            The y position of the cursor, in characters
-///  @param  c        unsigned char  The character the cursor is over
+///  @param  c        wxUniChar         The character the cursor is over
 ///
 ///  @return void
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
+NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxUniChar c)
 {
     // Do nothing, if the terminal is scrolled up
 	if (GenericTerminal::IsScrolledUp())
-	{
 		return;
-	}
-	int
-	t;
+
+	if (!m_curDC)
+		return;
 
 	// Overwrite the passed colors depending on the flags
 	if (flags & BOLD && m_boldStyle == COLOR)
@@ -1889,47 +1915,38 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
 
 	if (flags & INVERSE)
 	{
-		t = fg_color;
+		int t = fg_color;
 		fg_color = bg_color;
 		bg_color = t;
 	}
 
-	if (!m_curDC)
-		return;
-
     // Convert the character into wxString
-	wxString
-	str((char)c);
+	wxString str(c);
+	m_curDC->SetFont(m_normalFont);
+
+	// Convert x-y char coordinates into pixel coordinates
+    x = GetScreenCharPosition(x, y);
+	y *= m_charHeight;
 
 	// Set the correct font
 	if (m_boldStyle != FONT)
 	{
 		if (flags & UNDERLINE)
 			m_curDC->SetFont(m_underlinedFont);
-		else
-			m_curDC->SetFont(m_normalFont);
 	}
 	else
 	{
-		if (flags & BOLD)
-		{
-			if (flags & UNDERLINE)
+        if (flags & UNDERLINE)
+        {
+            if (flags & BOLD)
 				m_curDC->SetFont(m_boldUnderlinedFont);
-			else
-				m_curDC->SetFont(m_boldFont);
-		}
-		else
-		{
-			if (flags & UNDERLINE)
+            else
 				m_curDC->SetFont(m_underlinedFont);
-			else
-				m_curDC->SetFont(m_normalFont);
-		}
-	}
+        }
 
-	// Convert x-y char coordinates into pixel coordinates
-	x *= m_charWidth;
-	y *= m_charHeight;
+        else if (flags & BOLD)
+            m_curDC->SetFont(m_boldFont);
+	}
 
 	// Set colors and background mode
 	m_curDC->SetBackgroundMode(wxSOLID);
@@ -1938,6 +1955,7 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
 
 	// Draw the actual text
 	m_curDC->DrawText(str, x, y);
+
 	if (flags & BOLD && m_boldStyle == OVERSTRIKE)
 		m_curDC->DrawText(str, x + 1, y);
 }
@@ -1953,14 +1971,14 @@ NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y
 ///  @param  flags    int            Modifiers for drawing the cursor
 ///  @param  x        int            The x position in character cells
 ///  @param  y        int            The y position in character cells
-///  @param  c        unsigned char  The character that underlies the cursor
+///  @param  c        wxUniChar         The character that underlies the cursor
 ///
 ///  @return void
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-NumeReTerminal::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
+NumeReTerminal::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, wxUniChar c)
 {
     // Set cursor-related member variables
 	m_curX = x;
@@ -2100,13 +2118,17 @@ void NumeReTerminal::CalltipCancel()
 void
 NumeReTerminal::ClearChars(int bg_color, int x, int y, int w, int h)
 {
-	x *= m_charWidth;
-	y *= m_charHeight;
-	w *= m_charWidth;
-	h *= m_charHeight;
-
 	if (!m_curDC)
 		return;
+
+    // Handle positions
+    w = GetScreenCharPosition(x+w, h);
+    x = GetScreenCharPosition(x, y);
+    w -= x;
+
+    // Handle heights
+	y *= m_charHeight;
+	h *= m_charHeight;
 
 	// Clear the area by drawing a rectangle with the background color
 	m_curDC->SetPen(m_colorPens[bg_color]);
@@ -2325,11 +2347,11 @@ NumeReTerminal::ResizeTerminal(int width, int height)
 /** \brief Processes text received from the keybord or clipboard
  *
  * \param len int
- * \param sData const std::string&
+ * \param sData const wxString&
  * \return void
  *
  */
-void NumeReTerminal::ProcessInput(int len, const std::string& sData)
+void NumeReTerminal::ProcessInput(int len, const wxString& sData)
 {
 	scrollToInput();
 
@@ -2341,8 +2363,7 @@ void NumeReTerminal::ProcessInput(int len, const std::string& sData)
         ClearSelection();
     }
 
-	wxClientDC
-	dc(this);
+	wxClientDC dc(this);
 
 	m_curDC = &dc;
 	GenericTerminal::ProcessInput(len, sData);
@@ -2353,16 +2374,17 @@ void NumeReTerminal::ProcessInput(int len, const std::string& sData)
 /** \brief Processes text received from the kernel
  *
  * \param len int
- * \param sData const std::string&
+ * \param sData const wxString&
  * \return void
  *
  */
-void NumeReTerminal::ProcessOutput(int len, const std::string& sData)
+void NumeReTerminal::ProcessOutput(int len, const wxString& sData)
 {
 	if (HasSelection())
 		ClearSelection();
-	wxClientDC
-	dc(this);
+
+	wxClientDC dc(this);
+
 	m_curDC = &dc;
 	GenericTerminal::ProcessOutput(len, sData);
 	m_curDC = nullptr;

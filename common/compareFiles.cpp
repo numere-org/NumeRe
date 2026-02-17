@@ -18,7 +18,7 @@
 
 #include "compareFiles.hpp"
 #include "../externals/dtl/dtl/dtl.hpp"
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <sstream>
 
 /////////////////////////////////////////////////
@@ -32,7 +32,7 @@
 static std::vector<std::string> getFileContent(const std::string& file)
 {
     std::vector<std::string> content;
-    std::ifstream fileStream(file, std::ios_base::in | std::ios_base::binary);
+    boost::nowide::ifstream fileStream(file, std::ios_base::in | std::ios_base::binary);
 
     while (fileStream.good() && !fileStream.eof())
     {

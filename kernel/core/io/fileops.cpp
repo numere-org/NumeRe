@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <filesystem>
+#include <boost/nowide/fstream.hpp>
 
 #include "fileops.hpp"
 #include "../utils/tools.hpp"
@@ -25,7 +26,6 @@
 #include "../ui/language.hpp"
 #include "../utils/filecheck.hpp"
 
-extern Language _lang;
 
 std::string removeQuotationMarks(const std::string&);
 
@@ -86,7 +86,7 @@ bool removeFile(CommandLineParser& cmdParser)
         }
 
         // Delete it
-        std::filesystem::remove_all(sFile);
+        std::filesystem::remove_all(boost::nowide::widen(sFile));
 
         // Delete only the first one
         if (!bAll)
@@ -310,8 +310,8 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
 bool generateTemplate(const std::string& sFile, const std::string& sTempl, const std::vector<std::string>& vTokens, Settings& _option)
 {
-    std::ifstream iTempl_in;
-    std::ofstream oFile_out;
+    boost::nowide::ifstream iTempl_in;
+    boost::nowide::ofstream oFile_out;
     std::string sLine;
     std::string sToken;
 

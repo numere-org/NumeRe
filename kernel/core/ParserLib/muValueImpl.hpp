@@ -363,8 +363,11 @@ namespace mu
 
             BaseValue* operator+(const BaseValue& other) const override;
             BaseValue* operator/(const BaseValue& other) const override;
+            BaseValue* operator*(const BaseValue& other) const override;
             BaseValue& operator+=(const BaseValue& other) override;
             BaseValue& operator/=(const BaseValue& other) override;
+            BaseValue& operator*=(const BaseValue& other) override;
+
             bool operator==(const BaseValue& other) const override;
 
             BaseValue* call(const std::string& sMethod) const override;

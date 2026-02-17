@@ -18,11 +18,9 @@
 
 #include "fndrpldialog.hpp"
 #include "../globals.hpp"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../NumeReWindow.h"
 #include "../../common/Options.h"
-
-extern Language _guilang;
 
 
 IMPLEMENT_DYNAMIC_CLASS(FindReplaceDialog, wxDialog)

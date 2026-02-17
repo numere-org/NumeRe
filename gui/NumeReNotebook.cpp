@@ -107,14 +107,14 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
         return;
 
     size_t pos = 0;
-    std::string path = replacePathSeparator(text.ToStdString());
+    std::string path = replacePathSeparator(wxToUtf8(text));
     std::string ext = path.substr(path.find_last_of("/.")+1);
-    std::string filetype = _guilang.get("COMMON_FILETYPE_" + toUpperCase(ext));
+    wxString filetype = _guilang.get("COMMON_FILETYPE_" + toUpperCase(ext));
 
-    if (filetype == "COMMON_FILETYPE_" + toUpperCase(ext))
+    if (filetype == wxFromUtf8("COMMON_FILETYPE_" + toUpperCase(ext)))
         filetype = _guilang.get("GUI_STATUSBAR_UNKNOWN", toUpperCase(ext));
 
-    SetPageToolTip(nTab, path + "\n" + filetype);
+    SetPageToolTip(nTab, wxFromUtf8(path) + "\n" + filetype);
 
     if (m_showIconsOnTabs)
         SetPageImage(nTab, m_manager->GetIconIndex(ext));
@@ -126,7 +126,7 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
     else
         pos = path.rfind('/')+1;
 
-    SetPageText(nTab, path.substr(pos));
+    SetPageText(nTab, wxFromUtf8(path.substr(pos)));
 }
 
 
@@ -392,7 +392,7 @@ void EditorNotebook::OnTabRightClicked(wxAuiNotebookEvent& event)
     if (pageNum < 0 || isDefaultPage(pageNum))
 		return;
 
-    g_logger.debug("Clicked on page " + toString(pageNum) + " with title " + GetPageText(pageNum).ToStdString());
+    g_logger.debug("Clicked on page " + toString(pageNum) + " with title " + wxToUtf8(GetPageText(pageNum)));
 
     VersionControlSystemManager manager(m_top_parent);
     wxString filename = getEditor(pageNum)->GetFileNameAndPath();

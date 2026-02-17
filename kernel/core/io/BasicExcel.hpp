@@ -52,7 +52,7 @@
 #include <functional>
 #include <iostream>
 #include <iomanip>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 #include <map>
 #include <vector>
 #include <cstring>
@@ -98,7 +98,7 @@ public:
 protected:
 	std::vector<char> filename_;
 	std::ios_base::openmode mode_;
-	std::fstream file_;
+	boost::nowide::fstream file_;
 	size_t blockSize_;
 	size_t indexEnd_;
 	size_t fileSize_;

@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #include "database.hpp"
 #include "../ui/error.hpp"
@@ -32,15 +32,15 @@ namespace NumeRe
     /// contents of a database file linewise to a
     /// vector.
     ///
-    /// \return vector<string>
+    /// \return std::vector<std::string>
     ///
     /////////////////////////////////////////////////
-    vector<string> DataBase::getDBFileContent()
+    std::vector<std::string> DataBase::getDBFileContent()
     {
-        vector<string> vDBEntries;
-        string sLine;
-        string sFile = ValidFileName(m_dataBaseFile, ".ndb");
-        ifstream fDB;
+        std::vector<std::string> vDBEntries;
+        std::string sLine;
+        std::string sFile = ValidFileName(m_dataBaseFile, ".ndb");
+        boost::nowide::ifstream fDB;
 
         // open the ifstream
         fDB.open(sFile);
@@ -52,7 +52,7 @@ namespace NumeRe
         while (!fDB.eof())
         {
             // Get a line and strip the spaces
-            getline(fDB, sLine);
+            std::getline(fDB, sLine);
             StripSpaces(sLine);
 
             // If the line has a length and doesn't start with the "#", then append it to the vector
@@ -61,7 +61,7 @@ namespace NumeRe
                 if (sLine[0] == '#')
                     continue;
 
-                vDBEntries.push_back(utf8parser(sLine));
+                vDBEntries.push_back(sLine);
             }
         }
 
@@ -82,19 +82,19 @@ namespace NumeRe
     void DataBase::readDataBase()
     {
         // Read the database to memory
-        vector<string> vDBEntries = getDBFileContent();
-        m_dataBase = vector<vector<string>>(vDBEntries.size(), vector<string>());
+        std::vector<std::string> vDBEntries = getDBFileContent();
+        m_dataBase = std::vector<std::vector<std::string>>(vDBEntries.size(), std::vector<std::string>());
 
         // Go through the database in memory
         for (size_t i = 0; i < vDBEntries.size(); i++)
         {
             // If no field separator was found, simply append the overall line
-            if (vDBEntries[i].find('~') == string::npos)
+            if (vDBEntries[i].find('~') == std::string::npos)
                 m_dataBase[i].push_back(vDBEntries[i]);
             else
             {
                 // Split the database fields at the separators
-                while (vDBEntries[i].find('~') != string::npos)
+                while (vDBEntries[i].find('~') != std::string::npos)
                 {
                     // Append the next field
                     if (vDBEntries[i].substr(0, vDBEntries[i].find('~')).size())
@@ -118,11 +118,11 @@ namespace NumeRe
     /// column of the matrix) or create a new record,
     /// if the searched one may not be found.
     ///
-    /// \param sRecord const string&
+    /// \param sRecord const std::string&
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t DataBase::findOrCreateRecord(const string& sRecord)
+    size_t DataBase::findOrCreateRecord(const std::string& sRecord)
     {
         // Search for the record and return its ID
         for (size_t i = 0; i < m_dataBase.size(); i++)
@@ -133,7 +133,7 @@ namespace NumeRe
 
         // Create a new one, because the searched
         // one is not found
-        m_dataBase.push_back(vector<string>());
+        m_dataBase.push_back(std::vector<std::string>());
         return m_dataBase.size()-1;
     }
 
@@ -158,10 +158,10 @@ namespace NumeRe
     /// database file and read its contents to
     /// memory.
     ///
-    /// \param sDataBaseFile const string&
+    /// \param sDataBaseFile const std::string&
     ///
     /////////////////////////////////////////////////
-    DataBase::DataBase(const string& sDataBaseFile) : DataBase()
+    DataBase::DataBase(const std::string& sDataBaseFile) : DataBase()
     {
         m_dataBaseFile = sDataBaseFile;
         readDataBase();
@@ -183,16 +183,16 @@ namespace NumeRe
 
     /////////////////////////////////////////////////
     /// \brief This constructor instantiates this
-    /// class using a vector<string> as the first
+    /// class using a std::vector<std::string> as the first
     /// column.
     ///
-    /// \param vDataColumn const vector<string>&
+    /// \param vDataColumn const std::vector<std::string>&
     ///
     /////////////////////////////////////////////////
-    DataBase::DataBase(const vector<string>& vDataColumn) : DataBase()
+    DataBase::DataBase(const std::vector<std::string>& vDataColumn) : DataBase()
     {
         m_dataBaseFile = "Copied database";
-        m_dataBase = vector<vector<string>>(vDataColumn.size(), vector<string>(1, ""));
+        m_dataBase = std::vector<std::vector<std::string>>(vDataColumn.size(), std::vector<std::string>(1, ""));
 
         for (size_t i = 0; i < vDataColumn.size(); i++)
             m_dataBase[i][0] = vDataColumn[i];
@@ -207,11 +207,11 @@ namespace NumeRe
     /// used to read a database, if the internal
     /// database is still empty.
     ///
-    /// \param sDataBaseFile const string&
+    /// \param sDataBaseFile const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void DataBase::addData(const string& sDataBaseFile)
+    void DataBase::addData(const std::string& sDataBaseFile)
     {
         // If the internal database is still empty, use the
         // passed file as default database
@@ -241,10 +241,10 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string DataBase::getElement(size_t i, size_t j) const
+    std::string DataBase::getElement(size_t i, size_t j) const
     {
         if (i < m_dataBase.size() && j < m_dataBase[i].size())
             return m_dataBase[i][j];
@@ -261,12 +261,12 @@ namespace NumeRe
     /// indicates that the read field did not exist.
     ///
     /// \param j size_t
-    /// \return vector<string>
+    /// \return std::vector<std::string>
     ///
     /////////////////////////////////////////////////
-    vector<string> DataBase::getColumn(size_t j) const
+    std::vector<std::string> DataBase::getColumn(size_t j) const
     {
-        vector<string> vColumn(m_dataBase.size(), "");
+        std::vector<std::string> vColumn(m_dataBase.size(), "");
 
         // Fill the vector with the elements of the
         // selected column
@@ -284,10 +284,10 @@ namespace NumeRe
     /// DataBase::getElement() in const cases.
     ///
     /// \param i size_t
-    /// \return vector<string>&
+    /// \return std::vector<std::string>&
     ///
     /////////////////////////////////////////////////
-    vector<string>& DataBase::operator[](size_t i)
+    std::vector<std::string>& DataBase::operator[](size_t i)
     {
         if (i < m_dataBase.size())
             return m_dataBase[i];
@@ -336,11 +336,11 @@ namespace NumeRe
     /// record in the first column of the database
     /// table and returns its ID.
     ///
-    /// \param _sRecord const string&
+    /// \param _sRecord const std::string&
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t DataBase::findRecord(const string& _sRecord) const
+    size_t DataBase::findRecord(const std::string& _sRecord) const
     {
         for (size_t i = 0; i < m_dataBase.size(); i++)
         {
@@ -348,7 +348,7 @@ namespace NumeRe
                 return i;
         }
 
-        return string::npos;
+        return std::string::npos;
     }
 
 
@@ -361,18 +361,18 @@ namespace NumeRe
     /// record is searched, set the boolean flag to
     /// true.
     ///
-    /// \param _sSearchString const string&
+    /// \param _sSearchString const std::string&
     /// \param findOnlyFirst bool
-    /// \return map<size_t,vector<size_t>>
+    /// \return std::map<size_t,std::vector<size_t>>
     ///
     /// \remark The search is case insensitive.
     /////////////////////////////////////////////////
-    map<size_t,vector<size_t>> DataBase::find(const string& _sSearchString, bool findOnlyFirst) const
+    std::map<size_t,std::vector<size_t>> DataBase::find(const std::string& _sSearchString, bool findOnlyFirst) const
     {
-        map<size_t,vector<size_t>> mMatches;
+        std::map<size_t,std::vector<size_t>> mMatches;
 
         // Transform the searched string to lower case
-        string lower = toLowerCase(_sSearchString);
+        std::string lower = toLowerCase(_sSearchString);
 
         if (lower.length() && lower != " ")
         {
@@ -381,7 +381,7 @@ namespace NumeRe
             {
                 for (size_t j = 0; j < m_dataBase[i].size(); j++)
                 {
-                    if (toLowerCase(m_dataBase[i][j]).find(lower) != string::npos)
+                    if (toLowerCase(m_dataBase[i][j]).find(lower) != std::string::npos)
                     {
                         // Store the match (will create a new vector automatically)
                         mMatches[i].push_back(j);
@@ -407,16 +407,16 @@ namespace NumeRe
     /// vector. Otherwise all columns are weighted
     /// identical.
     ///
-    /// \param _sSearchString const string&
-    /// \param vWeighting vector<double>
-    /// \return map<double,vector<size_t>>
+    /// \param _sSearchString const std::string&
+    /// \param vWeighting std::vector<double>
+    /// \return std::map<double,std::vector<size_t>>
     ///
     /////////////////////////////////////////////////
-    map<double,vector<size_t>> DataBase::findRecordsUsingRelevance(const string& _sSearchString, vector<double> vWeighting) const
+    std::map<double,std::vector<size_t>> DataBase::findRecordsUsingRelevance(const std::string& _sSearchString, std::vector<double> vWeighting) const
     {
-        vector<string> vKeyWords;
-        string sTemp = _sSearchString;
-        map<double,vector<size_t>> mRelevance;
+        std::vector<std::string> vKeyWords;
+        std::string sTemp = _sSearchString;
+        std::map<double,std::vector<size_t>> mRelevance;
         static std::string sIGNOREWORDS = " " + _lang.get("COMMON_SEARCH_IGNOREWORDS") + " ";
 
         if (sTemp.back() != ' ')
@@ -438,13 +438,13 @@ namespace NumeRe
 
         // Create the result map with the first
         // keyword
-        map<size_t,vector<size_t>> mMatches = find(vKeyWords.front());
+        std::map<size_t,std::vector<size_t>> mMatches = find(vKeyWords.front());
 
         // Search all following keywords and append
         // their results to the existing map
         for (size_t i = 1; i < vKeyWords.size(); i++)
         {
-            map<size_t,vector<size_t>> mCurMatches = find(vKeyWords[i]);
+            std::map<size_t,std::vector<size_t>> mCurMatches = find(vKeyWords[i]);
 
             for (auto iter = mCurMatches.begin(); iter != mCurMatches.end(); ++iter)
             {

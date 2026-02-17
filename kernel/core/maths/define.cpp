@@ -18,6 +18,7 @@
 
 #include "define.hpp"
 #include "../../kernel.hpp"
+#include <boost/nowide/fstream.hpp>
 
 //////////////////////////////////
 // CLASS FUNCTIONDEFINITION
@@ -1043,7 +1044,7 @@ bool FunctionDefinitionManager::reset()
 bool FunctionDefinitionManager::save(const Settings& _option)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
-    std::ofstream ofDefineFile;
+    boost::nowide::ofstream ofDefineFile;
 
     // Do not save anything, if the map is empty
     if (mFunctionsMap.size())
@@ -1091,7 +1092,7 @@ bool FunctionDefinitionManager::save(const Settings& _option)
 bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
-    std::ifstream ifDefinedFile;
+    boost::nowide::ifstream ifDefinedFile;
     std::string sInputLine;
 
     // Open the definition file

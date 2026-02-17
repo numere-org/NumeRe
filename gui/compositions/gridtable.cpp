@@ -19,6 +19,7 @@
 #include "gridtable.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
+#include "../stringconv.hpp"
 
 /////////////////////////////////////////////////
 /// \brief Private helper member to calculate the
@@ -262,17 +263,17 @@ void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeN
 wxString GridNumeReTable::GetValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols())
-        return _table.getCleanHeadPart(col, row);
+        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, row)));
     else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
     {
         std::string sValue = toInternalString(_table.getValueAsString(getRow(row), col));
         replaceAll(sValue, "\t", "    ");
-        return sValue;
+        return wxFromUtf8(ensureValidUtf8(sValue));
     }
     else
-        return _table.getValueAsString(getRow(row), col);
+        return wxFromUtf8(ensureValidUtf8(_table.getValueAsString(getRow(row), col)));
 }
 
 
@@ -289,11 +290,11 @@ wxString GridNumeReTable::GetValue(int row, int col)
 wxString GridNumeReTable::GetEditableValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols())
-        return _table.getCleanHeadPart(col, row);
+        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, row)));
     else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else
-        return replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col));
+        return wxFromUtf8(ensureValidUtf8(replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col))));
 }
 
 
@@ -316,9 +317,9 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 
     // Set the value
     if (row < m_numHeadLines)
-        _table.setHeadPart(col, row, value.ToStdString());
+        _table.setHeadPart(col, row, wxToUtf8(value));
     else
-        _table.setValueAsString(getRow(row), col, value.ToStdString());
+        _table.setValueAsString(getRow(row), col, wxToUtf8(value));
 
     m_numHeadLines = _table.getHeadCount();
 

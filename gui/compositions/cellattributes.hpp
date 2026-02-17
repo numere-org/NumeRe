@@ -939,7 +939,7 @@ class CombinedCellEditor : public wxGridCellEditor
                 wxArrayString cats;
 
                 for (const auto& c : vCategories)
-                    cats.Add(c);
+                    cats.Add(wxFromUtf8(c));
 
                 // Set the categories as choices for the current
                 // cell

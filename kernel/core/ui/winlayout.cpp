@@ -972,10 +972,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     // Insert the return value as a string into the command
     // line and inform the command handler, that a value
     // has to be evaluated
-    if (wininfo.sReturn.find("\\\"") == std::string::npos)
-        cmdParser.setReturnValue("\"" + replacePathSeparator(wininfo.sReturn) + "\"");
-    else
-        cmdParser.setReturnValue("\"" + wininfo.sReturn + "\"");
+    cmdParser.setReturnValue(wininfo.sReturn);
 }
 
 

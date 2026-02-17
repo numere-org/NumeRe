@@ -19,7 +19,7 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 #include <wx/textctrl.h>
-#include <fstream>
+#include <boost/nowide/fstream.hpp>
 
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -27,7 +27,7 @@
 
 
 #include "AboutChameleonDialog.h"
-#include "../../kernel/core/ui/language.hpp"
+#include "../guilang.hpp"
 #include "../../kernel/versioninformation.hpp"
 #include "../compositions/grouppanel.hpp"
 
@@ -51,7 +51,6 @@ BEGIN_EVENT_TABLE( AboutChameleonDialog, wxDialog )
 
 END_EVENT_TABLE()
 
-extern Language _guilang;
 
 /*!
  * AboutChameleonDialog constructors
@@ -219,7 +218,7 @@ void AboutChameleonDialog::CreateControls()
 
     if (wxFileName::Exists(_guilang.ValidFileName("<>/THIRD_PARTY.licenses", ".licenses", false, false)))
     {
-        std::ifstream licenseFile(_guilang.ValidFileName("<>/THIRD_PARTY.licenses", ".licenses", false, false), std::ios::in | std::ios::ate);
+        boost::nowide::ifstream licenseFile(_guilang.ValidFileName("<>/THIRD_PARTY.licenses", ".licenses", false, false), std::ios::in | std::ios::ate);
 
         size_t size = licenseFile.tellg();
         licenseFile.seekg(0, std::ios::beg);

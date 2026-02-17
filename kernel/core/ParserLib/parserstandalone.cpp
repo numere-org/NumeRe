@@ -27,8 +27,6 @@
 #include "../utils/timer.hpp"
 #include "testTypes.hpp"
 
-Language _lang;
-
 void testfunc(const std::vector<int>& oplist)
 {
     arr testArr;

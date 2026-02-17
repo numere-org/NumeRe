@@ -48,7 +48,6 @@
 #define UINT32_MAX 0xffffffffU  /* 4294967295U */
 #define UINT64_MAX 0xffffffffffffffffULL /* 18446744073709551615ULL */
 
-Language _lang;
 mglGraph _fontData;
 extern mu::Variable vAns;
 extern DefaultVariables _defVars;
@@ -849,6 +848,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("to_lowercase", strfnc_to_lowercase);                          // to_lowercase(str)
     _parser.DefineFun("to_ansi", strfnc_utf8ToAnsi);                                 // to_ansi(str)
     _parser.DefineFun("to_utf8", strfnc_ansiToUtf8);                                 // to_utf8(str)
+    _parser.DefineFun("to_codepoints", strfnc_to_codepoints);                        // to_codepoints(str)
+    _parser.DefineFun("from_codepoints", strfnc_from_codepoints);                    // from_codepoints({val})
     _parser.DefineFun("to_html", strfnc_toHtml);                                     // to_html(val)
     _parser.DefineFun("getenvvar", strfnc_getenvvar);                                // getenvvar(str)
     _parser.DefineFun("getfileparts", strfnc_getFileParts);                          // getfileparts(str)
@@ -892,6 +893,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("timeformat", strfnc_timeformat);                              // timeformat(str,time)
     _parser.DefineFun("weekday", strfnc_weekday, true, 1);                           // weekday(d,opts)
     _parser.DefineFun("char", strfnc_char);                                          // char(str,n)
+    _parser.DefineFun("byte", strfnc_char);                                          // byte(str,n)
     _parser.DefineFun("getopt", strfnc_getopt);                                      // getopt(str,n)
     _parser.DefineFun("replace", strfnc_replace);                                    // replace(str,n,m,str)
     _parser.DefineFun("textparse", strfnc_textparse, true, 2);                       // textparse(str,str,p1,p2)
@@ -964,10 +966,10 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
     make_hline(80);
     std::string sAppName = toUpperCase(_lang.get("COMMON_APPNAME"));
 
-    printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
-    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - getVersion().length())
+    printPreFmt("| " + sAppName + strfill("|\n", 79 - countUnicodePoints(sAppName)));
+    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - countUnicodePoints(getVersion()))
                 + printBuildDate() + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + getBuildYear() + toSystemCodePage(", Erik A. H\xe4nel et al.")
+    printPreFmt("| Copyright (c) 2013-" + getBuildYear() + ", Erik A. Hänel et al."
                 + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
     make_hline(80);
 

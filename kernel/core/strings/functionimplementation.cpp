@@ -26,6 +26,7 @@
 #include "../../../database/dbinternals.hpp"
 #include "../../kernel.hpp"
 #include "../../versioninformation.hpp"
+#include <boost/locale.hpp>
 #endif
 
 #include <regex>
@@ -178,6 +179,58 @@ mu::Array strfnc_utf8ToAnsi(const mu::Array& a)
 mu::Array strfnc_ansiToUtf8(const mu::Array& a)
 {
     return mu::apply(ansiToUtf8, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_codepoints()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_to_codepoints(const mu::Array& a)
+{
+    mu::Array ret;
+    ret.copyDims(a);
+
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        mu::Array current;
+        std::u32string u32str = boost::locale::conv::utf_to_utf<char32_t>(a.get(i).getStr());
+        current.reserve(u32str.length());
+
+        for (size_t j = 0; j < u32str.length(); j++)
+        {
+            current.emplace_back((uint32_t)u32str[j]);
+        }
+
+        ret.emplace_back(current);
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the from_codepoints()
+/// function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_from_codepoints(const mu::Array& a)
+{
+    std::u32string u32str;
+
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        u32str.push_back((char32_t)a.get(i).getNum().asUI64());
+    }
+
+    return mu::Value(boost::locale::conv::utf_to_utf<char>(u32str));
 }
 
 
@@ -417,7 +470,7 @@ mu::Array strfnc_firstch(const mu::Array& a)
         if (!a.get(i).getStr().length())
             ret.emplace_back("");
         else
-            ret.emplace_back(std::string(1, a.get(i).getStr().front()));
+            ret.emplace_back(chr_impl(a.get(i).getStr(), 0));
     }
 
     return ret;
@@ -442,7 +495,7 @@ mu::Array strfnc_lastch(const mu::Array& a)
         if (!a.get(i).getStr().length())
             ret.emplace_back("");
         else
-            ret.emplace_back(std::string(1, a.get(i).getStr().back()));
+            ret.emplace_back(chr_impl(a.get(i).getStr(), countUnicodePoints(a.get(i).getStr())-1));
     }
 
     return ret;
@@ -511,7 +564,6 @@ mu::Array strfnc_ascii(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isblank(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -528,9 +580,7 @@ mu::Array strfnc_isblank(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isblank(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (isblank(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -553,7 +603,6 @@ mu::Array strfnc_isblank(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isalnum(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -570,9 +619,7 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isalnum(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isalnum(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -595,7 +642,6 @@ mu::Array strfnc_isalnum(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isalpha(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -612,9 +658,7 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isalpha(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isalpha(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -637,7 +681,6 @@ mu::Array strfnc_isalpha(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_iscntrl(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -654,9 +697,7 @@ mu::Array strfnc_iscntrl(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (iscntrl(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (iscntrl(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -718,7 +759,6 @@ mu::Array strfnc_isdigit(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isgraph(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -735,9 +775,7 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isgraph(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isgraph(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -760,7 +798,6 @@ mu::Array strfnc_isgraph(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_islower(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -777,8 +814,7 @@ mu::Array strfnc_islower(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (islower(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (islower(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -801,7 +837,6 @@ mu::Array strfnc_islower(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isprint(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -818,9 +853,7 @@ mu::Array strfnc_isprint(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isprint(a.get(i).getStr()[j])
-                || _umlauts.lower.find(a.get(i).getStr()[j]) != std::string::npos
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isprint(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -843,7 +876,6 @@ mu::Array strfnc_isprint(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_ispunct(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -860,9 +892,7 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (ispunct(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (ispunct(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -885,7 +915,6 @@ mu::Array strfnc_ispunct(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isspace(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -902,9 +931,7 @@ mu::Array strfnc_isspace(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isspace(a.get(i).getStr()[j])
-                && _umlauts.lower.find(a.get(i).getStr()[j]) == std::string::npos
-                && _umlauts.upper.find(a.get(i).getStr()[j]) == std::string::npos)
+            if (isspace(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -927,7 +954,6 @@ mu::Array strfnc_isspace(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_isupper(const mu::Array& a)
 {
-    static Umlauts _umlauts;
     mu::Array ret;
     ret.copyDims(a);
 
@@ -944,8 +970,7 @@ mu::Array strfnc_isupper(const mu::Array& a)
 
         for (size_t j = 0; j < a.get(i).getStr().length(); j++)
         {
-            if (isupper(a.get(i).getStr()[j])
-                || _umlauts.upper.find(a.get(i).getStr()[j]) != std::string::npos)
+            if (isupper(a.get(i).getStr()[j]))
                 current.emplace_back(true);
             else
                 current.emplace_back(false);
@@ -1570,9 +1595,11 @@ mu::Array strfnc_strmatchall(const mu::Array& chars, const mu::Array& where, con
         else
             pos_last = whereView.get(i).getStr().length()-1;
 
-        for (size_t j = 0; j < charsView.get(i).getStr().length(); j++)
+        std::vector<std::string> vUtf8Chars = splitUtf8Chars(charsView.get(i).getStr());
+
+        for (const std::string& utf8Char : vUtf8Chars)
         {
-            size_t match = whereView.get(i).getStr().find(charsView.get(i).getStr()[j], pos_start);
+            size_t match = whereView.get(i).getStr().find(utf8Char, pos_start);
 
             if (match <= pos_last)
                 current.emplace_back(match+1);
@@ -2332,7 +2359,7 @@ mu::Array strfnc_locate(const mu::Array& arr, const mu::Array& tofind, const mu:
             else if (t == 5)
             {
                 // Search any of the characters in the string
-                if (arg.find_first_of(sView.to_string()) != std::string::npos)
+                if (strmatch_impl(arg.to_string(), sView.to_string()) != std::string::npos)
                     ret.emplace_back(i+1);
             }
             else
@@ -2398,15 +2425,22 @@ mu::Array strfnc_strunique(const mu::Array& arr, const mu::Array& opts)
             // Examine each value independently
             for (size_t i = 0; i < arr.size(); i++)
             {
-                // Get a quotation mark free copy
-                std::string sArg = arr.get(i).getStr();
+                // Get all characters of this string isolated
+                std::vector<std::string> vChars = splitUtf8Chars(arr.get(i).getStr());
 
                 // Sort and isolate the unique chars
-                std::sort(sArg.begin(), sArg.end());
-                auto iter = std::unique(sArg.begin(), sArg.end());
+                std::sort(vChars.begin(), vChars.end());
+                auto iter = std::unique(vChars.begin(), vChars.end());
 
                 // Append the string with unique characters
-                ret.emplace_back(std::string(sArg.begin(), iter));
+                std::string sUniques;
+
+                for (auto it = vChars.begin(); it != iter; ++it)
+                {
+                    sUniques += *it;
+                }
+
+                ret.emplace_back(sUniques);
             }
         }
     }
@@ -2544,11 +2578,11 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
     {
         StringView sView1 = strView.get(i).getStr();
         const std::string& t = tokView.get(i).getStr();
-        std::string s = " \t";
+        std::vector<std::string> separators({" ", "\t"});
 
         // Define default arguments
         if (!sep.isDefault())
-            s = sepView.get(i).getStr();
+            separators = splitUtf8Chars(sepView.get(i).getStr());
 
         size_t nMatch = 0;
 
@@ -2556,8 +2590,8 @@ mu::Array strfnc_findtoken(const mu::Array& sStr, const mu::Array& tok, const mu
         // defined separator characters
         while ((nMatch = sView1.find(t, nMatch)) != std::string::npos)
         {
-            if ((!nMatch || s.find(sView1[nMatch-1]) != std::string::npos)
-                && (nMatch + t.length() >= sView1.length() || s.find(sView1[nMatch+t.length()]) != std::string::npos))
+            if ((!nMatch || matchesAny(sView1, separators, findCharStart(sView1, nMatch-1)))
+                && (nMatch + t.length() >= sView1.length() || matchesAny(sView1, separators, nMatch+t.length())))
             {
                 ret.emplace_back(mu::Value(nMatch+1));
                 break;
@@ -2944,9 +2978,7 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
 
             // Remove surrounding whitespaces
             sStr.strip();
-
-            if (sStr.length() > maxLength)
-                maxLength = sStr.length();
+            maxLength = std::max(maxLength, countUnicodePoints(sStr));
         }
 
         // Fill all string with as many whitespaces as necessary
@@ -2956,15 +2988,16 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
             view.strip();
 
             std::string sStr = view.to_string();
+            size_t len = countUnicodePoints(sStr);
 
             if (a == 1)
-                sStr.insert(0, maxLength - sStr.size(), ' ');
+                sStr.insert(0, maxLength - len, ' ');
             else if (a == -1)
-                sStr.append(maxLength - sStr.size(), ' ');
+                sStr.append(maxLength - len, ' ');
             else if (a == 0)
             {
-                size_t leftSpace = (maxLength - sStr.size()) / 2;
-                size_t rightSpace = maxLength - leftSpace - sStr.size();
+                size_t leftSpace = (maxLength - len) / 2;
+                size_t rightSpace = maxLength - leftSpace - len;
                 sStr.insert(0, leftSpace, ' ');
                 sStr.append(rightSpace, ' ');
             }
@@ -3064,6 +3097,8 @@ mu::Array strfnc_getversioninfo()
 #else
     sVersionInfo.emplace_back("32 bit");
 #endif
+    sVersionInfo.emplace_back("Encoding");
+    sVersionInfo.emplace_back("UTF-8");
 #endif // PARSERSTANDALONE
     return sVersionInfo;
 }
@@ -3098,7 +3133,7 @@ mu::Array strfnc_getuserinfo()
     userinfo.push_back("FullName");
     userinfo.push_back(getUserDisplayName(false));
     userinfo.push_back("UserId");
-    userinfo.push_back(wxGetUserId().ToStdString());
+    userinfo.push_back(boost::nowide::narrow(wxGetUserId().ToStdWstring()));
     userinfo.push_back("UserProfile");
     userinfo.push_back(replacePathSeparator(getenv("USERPROFILE")));
 #endif
@@ -3226,7 +3261,8 @@ mu::Array strfnc_sha256(const mu::Array& sStr, const mu::Array& opts)
             // Ensure that the file actually exist
             if (fileExists(sFileName))
             {
-                std::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
+                std::fstream file(boost::nowide::widen(sFileName).c_str(),
+                                  std::ios_base::in | std::ios_base::binary);
                 ret.emplace_back(sha256(file));
             }
             else
@@ -3659,14 +3695,14 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
         if (!len.isDefault()
             && !cfill.isDefault()
             && fillView.get(i).getStr().length()
-            && (int64_t)v.length() < lenView.get(i).getNum().asI64())
+            && (int64_t)countUnicodePoints(v) < lenView.get(i).getNum().asI64())
         {
             int64_t l = lenView.get(i).getNum().asI64();
             const std::string& sChar = fillView.get(i).getStr();
 
-            while ((int64_t)v.length() < l)
+            while ((int64_t)countUnicodePoints(v) < l)
             {
-                v.insert(0, 1, sChar.front());
+                v.insert(0, sChar);
             }
         }
 

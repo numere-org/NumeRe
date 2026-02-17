@@ -27,9 +27,9 @@
 #endif // PARSERSTANDALONE
 
 #include <json/json.h>
-#include <fstream>
 #include <filesystem>
 #include <sstream>
+#include <boost/nowide/convert.hpp>
 
 namespace mu
 {
@@ -1731,7 +1731,7 @@ namespace mu
             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "loadjson(\"" + fileName + "\")", fileName);
 #endif
 
-        std::ifstream jsonFile(fileName);
+        boost::nowide::ifstream jsonFile(fileName);
 
         if (!jsonFile.good())
             return false;
@@ -2080,7 +2080,7 @@ namespace mu
         if (!is_open())
             return 0;
 
-        return std::filesystem::file_size(std::filesystem::path(m_fileName));
+        return std::filesystem::file_size(std::filesystem::path(boost::nowide::widen(m_fileName)));
     }
 
 
@@ -2159,7 +2159,7 @@ namespace mu
         else if (m_openMode.find('a') != std::string::npos)
             mode |= std::ios_base::out | std::ios_base::app;
 
-        m_stream.open(m_fileName, (std::ios_base::openmode)mode);
+        m_stream.open(boost::nowide::widen(m_fileName).c_str(), (std::ios_base::openmode)mode);
 
         if (!m_stream)
         {
