@@ -416,6 +416,9 @@ void NumeReKernel::defineOperators()
     _parser.DefineOprt("|", oprt_BinOR, prLOGIC, oaLEFT);
     _parser.DefineOprt("&", oprt_BinAND, prLOGIC, oaLEFT);
     _parser.DefineOprt("**", oprt_MatMul, mu::prMUL_DIV, mu::oaRIGHT, true);
+
+    // virtual function
+    _parser.DefineFun("f", oprt_f);
 }
 
 

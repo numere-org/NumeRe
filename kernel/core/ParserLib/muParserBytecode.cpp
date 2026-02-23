@@ -598,7 +598,7 @@ namespace mu
                 tok.Cmd = cmVARCOPY;
                 m_vRPN.pop_back();
                 m_vRPN.back() = tok;
-                --m_iStackPos;
+                //--m_iStackPos; // disabled, because double decrement of target stack position does not seem to be reasonable
                 return;
             }
 		    else if (m_vRPN.back().Cmd == cmVAL)
@@ -607,7 +607,7 @@ namespace mu
                 tok.Cmd = cmVARINIT;
                 m_vRPN.pop_back();
                 m_vRPN.back() = tok;
-                --m_iStackPos;
+                //--m_iStackPos; // disabled, because double decrement of target stack position does not seem to be reasonable
                 return;
             }
 		}

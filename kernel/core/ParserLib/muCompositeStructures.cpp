@@ -1191,6 +1191,25 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Rename a key with a new name.
+    ///
+    /// \param oldName const std::string&
+    /// \param newName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::renameKey(const std::string& oldName, const std::string& newName)
+    {
+        if (m_fields.find(oldName) == m_fields.end() || m_fields.find(newName) != m_fields.end())
+            return false;
+
+        m_fields[newName].reset(m_fields[oldName].release());
+        m_fields.erase(oldName);
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Remove a single element.
     ///
     /// \param fieldName const std::string&
@@ -1269,6 +1288,70 @@ namespace mu
             throw std::out_of_range("Field " + xPath.to_string('.') + " is not a dictstruct instance.");
 
         return static_cast<DictStructValue*>(element->get())->get().remove(xPath.leaf());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Pick a set of fields into a new
+    /// DictStruct instance.
+    ///
+    /// \param fieldNames const std::vector<std::string>&
+    /// \return DictStruct
+    ///
+    /////////////////////////////////////////////////
+    DictStruct DictStruct::pick(const std::vector<std::string>& fieldNames) const
+    {
+        DictStruct ret;
+
+        for (auto& iter : m_fields)
+        {
+            if (std::find(fieldNames.begin(), fieldNames.end(), iter.first) != fieldNames.end())
+                ret.m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Omit some fields in a new DictStruct
+    /// instance.
+    ///
+    /// \param fieldNames const std::vector<std::string>&
+    /// \return DictStruct
+    ///
+    /////////////////////////////////////////////////
+    DictStruct DictStruct::omit(const std::vector<std::string>& fieldNames) const
+    {
+        DictStruct ret;
+
+        for (auto& iter : m_fields)
+        {
+            if (std::find(fieldNames.begin(), fieldNames.end(), iter.first) == fieldNames.end())
+                ret.m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Merge this DictStruct with another
+    /// instance taking duplicate fields from the
+    /// other instance.
+    ///
+    /// \param other const DictStruct&
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<std::string> DictStruct::merge(const DictStruct& other)
+    {
+        for (const auto& iter : other.m_fields)
+        {
+            m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return getFields();
     }
 
 

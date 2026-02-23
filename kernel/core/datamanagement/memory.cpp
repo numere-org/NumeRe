@@ -1499,7 +1499,10 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
 
     if (_values.isMatrix() && !_values.isVector())
     {
-        if (_idx.row.isFullRange(getLines()-1) && _idx.col.isFullRange(getCols()-1))
+        if (getCols() != _values.cols()
+            && getLines() != _values.rows()
+            && _idx.row.isFullRange(getLines()-1)
+            && _idx.col.isFullRange(getCols()-1))
             clear();
 
         _idx.row.setOpenEndIndex(_idx.row.front() + _values.rows() - 1);

@@ -308,7 +308,9 @@ void DataView::sortTable()
     mu::Array fstCol = NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row, _idx.col.subidx(0, 1),
                                                                                   m_access.getDataObject());
 
-    _idx.row = _idx.row.get(fstCol.order() - mu::Value(1));
+    // Because VectorIndex::get() expects a VectorIndex, the mu::Array is casted
+    // implicitly. THIS INCLUDES THE OFFSET OF -1.
+    _idx.row = _idx.row.get(fstCol.order());
 }
 
 

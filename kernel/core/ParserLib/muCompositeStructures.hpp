@@ -222,8 +222,12 @@ namespace mu
             BaseValuePtr* write(const Path& xPath, const BaseValue& value);
             bool addKey(const std::string& fieldName);
             bool addKey(const Path& xPath);
+            bool renameKey(const std::string& oldName, const std::string& newName);
             BaseValue* remove(const std::string& fieldName);
             BaseValue* remove(const Path& xPath);
+            DictStruct pick(const std::vector<std::string>& fieldNames) const;
+            DictStruct omit(const std::vector<std::string>& fieldNames) const;
+            std::vector<std::string> merge(const DictStruct& other);
             size_t clear();
             bool importXml(std::string fileName);
             std::string encodeXml(bool format) const;

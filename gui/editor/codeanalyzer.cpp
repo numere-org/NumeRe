@@ -1860,7 +1860,7 @@ AnnotationCount CodeAnalyzer::addToAnnotation(const wxString& sMessage, int nSty
 	}
 
 	m_sCurrentLine += sMessage;
-	m_sStyles.append(sMessage.length() + chartoadd, nStyle);
+	m_sStyles.append(wxToUtf8(sMessage).length() + chartoadd, nStyle);
 
 	// Increment the total counter
 	if (nStyle == ANNOTATION_NOTE)

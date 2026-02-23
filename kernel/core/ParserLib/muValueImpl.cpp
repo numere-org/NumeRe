@@ -2204,7 +2204,7 @@ namespace mu
     {
         static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"encodejson", 1},
                                         {"encodexml", 0}, {"encodexml", 1},
-                                        {"at", 1}, {"len", 0}, {"contains", 1}});
+                                        {"at", 1}, {"len", 0}, {"contains", 1}, {"pick", -1}, {"omit", -1}});
 
         if (m_val.isField(sMethod) && argc == 0)
             return MethodDefinition(sMethod);
@@ -2303,6 +2303,20 @@ namespace mu
             return new StrValue(m_val.encodeJson((bool)arg1));
         else if (sMethod == "encodexml")
             return new StrValue(m_val.encodeXml((bool)arg1));
+        else if (sMethod == "pick" && arg1.m_type == TYPE_STRING)
+            return new DictStructValue(m_val.pick({static_cast<const StrValue&>(arg1).get()}));
+        else if (sMethod == "pick" && arg1.m_type == TYPE_ARRAY)
+        {
+            const Array& arr = static_cast<const ArrValue&>(arg1).get();
+            return new DictStructValue(m_val.pick(arr.as_str_vector()));
+        }
+        else if (sMethod == "omit" && arg1.m_type == TYPE_STRING)
+            return new DictStructValue(m_val.omit({static_cast<const StrValue&>(arg1).get()}));
+        else if (sMethod == "omit" && arg1.m_type == TYPE_ARRAY)
+        {
+            const Array& arr = static_cast<const ArrValue&>(arg1).get();
+            return new DictStructValue(m_val.omit(arr.as_str_vector()));
+        }
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }
@@ -2320,8 +2334,8 @@ namespace mu
     MethodDefinition DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
         static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1},
-                                        {"decodejson", 1}, {"decodexml", 1}, {"write", -2},
-                                        {"insertkey", -1}, {"insertkey", -2}});
+                                        {"decodejson", 1}, {"decodexml", 1}, {"merge", 1}, {"write", -2},
+                                        {"insertkey", -1}, {"insertkey", -2}, {"renamekey", 2}});
 
         if (m_val.isField(sMethod) && argc <= 1)
             return MethodDefinition(sMethod, -argc);
@@ -2389,6 +2403,9 @@ namespace mu
 
         if (sMethod == "loadjson" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(Numerical(m_val.importJson(static_cast<const PathValue&>(arg1).get().to_string('/'))));
+
+        if (sMethod == "merge" && arg1.m_type == TYPE_DICTSTRUCT)
+            return new ArrValue(m_val.merge(static_cast<const DictStructValue&>(arg1).get()));
 
         if (sMethod == "decodejson" && arg1.m_type == TYPE_STRING)
             return new NumValue(Numerical(m_val.decodeJson(static_cast<const StrValue&>(arg1).get())));
@@ -2517,6 +2534,10 @@ namespace mu
 
             return new ArrValue(ret);
         }
+
+        if (sMethod == "renamekey" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_STRING)
+            return new NumValue(m_val.renameKey(static_cast<const StrValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
+
 
         throw ParserError(ecMETHOD_ERROR, sMethod);
     }

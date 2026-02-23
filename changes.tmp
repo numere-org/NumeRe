@@ -54,3 +54,6 @@ Added	Methods for handling characters and unicode have been added to the string 
 Applied	The function "char()" has been renamed to "byte()", because that provides a better indication of its functionality. The old name is still interpreted as alias, but shall not be used anymore.
 Added	Byte sequences, which do not represent a valud UTF8 encoding, are now represented as HEX encoded value: "\xHH", where "HH" indiciates two hex digits. You can now also use this syntax to add arbitrary byte values into a string, e.g. "\xC3\xA7" will produce a "ç" character.
 Fixed	Made the leaf concatenation of object.path with a (literal) string value actually possible.
+Fixed	Resolved some regression problems
+Added	The functon f(x,v) can be used to make a "virtual" function returning v for each x, which is handy for plotting constant functions (which does not work anymore by simply typing the constant value as function).
+Added	DictStructs got the methods "pick()", "omit()", "renamekey()" and "merge()".

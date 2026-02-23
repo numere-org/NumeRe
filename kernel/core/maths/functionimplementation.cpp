@@ -3871,6 +3871,21 @@ mu::Array oprt_BinAND(const mu::Array& v1, const mu::Array& v2)
 
 
 /////////////////////////////////////////////////
+/// \brief This function makes a value a
+/// "virtual" function for plotting.
+///
+/// \param x const mu::Array&
+/// \param val const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array oprt_f(const mu::Array& x, const mu::Array& val)
+{
+    return val;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a numerical version
 /// of the string is_string() function. Used as a
 /// fallback.

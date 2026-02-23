@@ -853,9 +853,9 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // Determine, whether the function string is empty. If it is and the current
         // plotting style is not a drawing style, then assign the function string to
         // the parser. Otherwise split the function string into the single functions.
-        if (isNotEmptyExpression(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
+        if (isNotEmptyExpression(sFunc))
         {
-            if (!_pInfo.bDraw3D && !_pInfo.bDraw3D)
+            if (!_pInfo.bDraw && !_pInfo.bDraw3D)
             {
                 try
                 {
@@ -4063,7 +4063,8 @@ std::vector<std::string> Plot::separateFunctionsAndData()
         if (_data.containsTables(sToken)
             || (findVariableInExpression(sToken, "x") == std::string::npos
                 && findVariableInExpression(sToken, "y") == std::string::npos
-                && findVariableInExpression(sToken, "z") == std::string::npos))
+                && findVariableInExpression(sToken, "z") == std::string::npos
+                && findVariableInExpression(sToken, "t") == std::string::npos))
         {
             m_types.push_back(PT_DATA);
             m_manager.assets.push_back(PlotAsset());
@@ -4494,11 +4495,11 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 #pragma omp parallel for
                 for (size_t y = 0; y < samples[1]-isBars; y++)
                 {
-                    vVals = getDataFromObject(_accessParser.getDataObject(),
-                                              _idx.row, _idx.col[y+2], false);
+                    mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
+                                                       _idx.row, _idx.col[y+2], false);
 
-                    if (vVals.getCommonType() == mu::TYPE_NUMERICAL
-                        && vVals.getCommonNumericalType() == mu::DATETIME
+                    if (vals.getCommonType() == mu::TYPE_NUMERICAL
+                        && vals.getCommonNumericalType() == mu::DATETIME
                         && !isTimeAxis[ZRANGE])
                     {
                         #pragma omp critical
@@ -4508,9 +4509,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                         }
                     }
 
-                    for (size_t x = 0; x < std::min(samples[0]-isBars, vVals.size()); x++)
+                    for (size_t x = 0; x < std::min(samples[0]-isBars, vals.size()); x++)
                     {
-                        m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);
+                        m_manager.assets[typeCounter].writeData(vals[x].as_cmplx(), 0, x, y);
                     }
                 }
             }
@@ -4624,12 +4625,12 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 #pragma omp parallel for
                 for (size_t y = 0; y < samples[1]; y++)
                 {
-                    vVals = getDataFromObject(_accessParser.getDataObject(),
-                                              _idx.row, _idx.col[y+2], false);
+                    mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
+                                                       _idx.row, _idx.col[y+2], false);
 
-                    for (size_t x = 0; x < std::min(samples[0], vVals.size()); x++)
+                    for (size_t x = 0; x < std::min(samples[0], vals.size()); x++)
                     {
-                        m_manager.assets[typeCounter].writeData(vVals[x].as_cmplx(), 0, x, y);
+                        m_manager.assets[typeCounter].writeData(vals[x].as_cmplx(), 0, x, y);
                     }
                 }
             }
@@ -4874,7 +4875,7 @@ void Plot::createDataLegends()
                 }
             }
             else
-                sTemp = toExternalString(Mangler::demangleExpression(sTemp));
+                sTemp = Mangler::demangleExpression(m_manager.assets[i].legend);
 
             // Prepend backslashes before opening and closing
             // braces
@@ -4892,7 +4893,7 @@ void Plot::createDataLegends()
         }
         else
         {
-            sTemp = toExternalString(Mangler::demangleExpression(sTemp));
+            sTemp = Mangler::demangleExpression(m_manager.assets[i].legend);
 
             // Prepend backslashes before opening and closing
             // braces
@@ -5234,7 +5235,7 @@ void Plot::fillData(double dt_max, int t_animate)
         // hinder such dependencies
         EndlessVector<std::string> expressions = getAllArguments(sFunc);
 
-        for (size_t k = 0; k < vFuncMap.size(); k++)
+        for (size_t k = 0; k < expressions.size(); k++)
         {
             _defVars.vValue[XCOORD][0] = mu::Value(0.0);
             _defVars.vValue[YCOORD][0] = mu::Value(0.0);
