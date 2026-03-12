@@ -146,7 +146,7 @@ using namespace std;
 /////////////////////////////////////////////////
 NumeReEditor::NumeReEditor(NumeReWindow* mframe, wxWindow* parent, wxWindowID id,
                            const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
-                               wxStyledTextCtrl(parent, id, pos, size, style, name)
+                               wxStyledTextCtrl(parent, id, pos, size, style, name), m_codeParser(*mframe->getTerminal()->getProvider())
 {
     m_mainFrame = mframe;
     m_options = m_mainFrame->getOptions();
@@ -404,9 +404,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 {
     // return if no change
     if (!Modified() && filename.IsEmpty())
-    {
         return true;
-    }
 
     wxFileName fn(filename);
 
@@ -496,7 +494,6 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         wxRemoveFile(filename + ".backup");
 
     // Only mark the editor as saved, if the saving process was successful
-    markSaved();
     SetSavePoint();
     UpdateProcedureViewer();
 
@@ -584,6 +581,7 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
 
     m_bLoadingFile = false;
     UpdateSyntaxHighlighting(true);
+    m_codeParser.clear();
     return true;
 }
 
@@ -596,17 +594,14 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool NumeReEditor::Modified ()
+bool NumeReEditor::Modified()
 {
     // return modified state
     bool modified = GetModify();
     bool readonly = !GetReadOnly();
     bool canundo = CanUndo();
 
-
-
-    bool isModified = (modified && readonly && canundo) || m_bSetUnsaved;
-    return isModified;
+    return (modified && readonly && canundo) || m_bSetUnsaved;
 }
 
 
@@ -685,45 +680,38 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
     const wxChar chr = event.GetKey();
     int currentLine = GetCurrentLine();
     int currentPos = GetCurrentPos();
-    int wordstartpos = WordStartPosition(currentPos, true);
 
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
 
     if (chr == WXK_TAB)
     {
-        event.Skip(true);
-
         int startLine = LineFromPosition(GetSelectionStart());
         int endline = LineFromPosition(GetSelectionEnd());
         int newStartPos = PositionFromLine(startLine);
         int newEndPos = PositionFromLine(endline) + LineLength(endline);
         bool doIndent = event.GetShift();
-        int indentWidth = this->GetIndent();
+        int indentWidth = GetIndent();
 
-        this->SetSelection(newStartPos, newEndPos);
+        SetSelection(newStartPos, newEndPos);
 
         for (int i = startLine; i <= endline; i++)
         {
-            int lineIndent = this->GetLineIndentation(i);
+            int lineIndent = GetLineIndentation(i);
 
             if (doIndent)
-                this->SetLineIndentation(i, lineIndent + indentWidth);
+                SetLineIndentation(i, lineIndent + indentWidth);
             else
-                this->SetLineIndentation(i, lineIndent - indentWidth);
+                SetLineIndentation(i, lineIndent - indentWidth);
         }
     }
 
     if (chr == '\n')
     {
         m_nextChar = 0;
-        markModified(currentLine);
         int previousLineInd = 0;
 
         if (currentLine > 0)
-        {
-            markModified(currentLine - 1);
             previousLineInd = GetLineIndentation(currentLine - 1);
-        }
 
         if (previousLineInd == 0)
             return;
@@ -740,6 +728,10 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
 
     if ((isspace(chr) || (ispunct(chr) && chr != '_' && chr != '~')) && AutoCompActive())
         AutoCompCancel();
+
+    // Perform all necessary parsing steps
+    if ((chr == ' ' || chr == ';') && isNumeReFileType() && !m_codeParser.isValidLine(currentLine))
+        parse(currentLine);
 
     if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
     {
@@ -773,6 +765,30 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
     m_currSelection.clear();
     m_nextChar = 0;
 
+    // Handle the autocompletion popup
+    handleAutoComplete(chr);
+
+    // Handle the comment autowrapping feature
+    handleCommentAutoWrap();
+
+    // Update the lexer state
+    Colourise(0, -1);
+    event.Skip();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Private member function handling the
+/// autocompletion popup from OnChar().
+///
+/// \param chr wxChar
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::handleAutoComplete(wxChar chr)
+{
+    int currentPos = GetCurrentPos();
+    int wordstartpos = WordStartPosition(currentPos, true);
     int lenEntered = currentPos - wordstartpos;
     bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active() && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC);
     bool isMethod = false;
@@ -791,7 +807,7 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
 
     if (lenEntered > 1 || isMethod)
     {
-        if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT)
         {
             if (GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
             {
@@ -839,20 +855,20 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
                 {
                     AutoCompSetIgnoreCase(true);
                     AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-                    AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos),
-                                                                                   sSelectedNamespace));
-                    Colourise(0, -1);
-                    event.Skip();
-                    return;
+                    sAutoCompList = m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos),
+                                                                          sSelectedNamespace);
                 }
                 // If namespace == "main~" (or similiar) then clear it's contents
-                else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
-                    sNamespace = "";
-                else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
-                    sSelectedNamespace = "";
+                else
+                {
+                    if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
+                        sNamespace = "";
+                    else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
+                        sSelectedNamespace = "";
 
-                sAutoCompList = _syntax->getProcAutoCompList(wxToUtf8(GetTextRange(wordstartpos, currentPos)),
-                                                             wxToUtf8(sNamespace), wxToUtf8(sSelectedNamespace));
+                    sAutoCompList = _syntax->getProcAutoCompList(wxToUtf8(GetTextRange(wordstartpos, currentPos)),
+                                                                 wxToUtf8(sNamespace), wxToUtf8(sSelectedNamespace));
+                }
             }
             else if (!isStyleType(STYLE_COMMENT, wordstartpos)
                      && !isStyleType(STYLE_STRING, wordstartpos)
@@ -872,9 +888,6 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
                 sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
                                                      _syntax->getAutoCompList(wxToUtf8(GetTextRange(smartSenseWordStart, currentPos)),
                                                                               useSmartSense, varType, isVect));
-
-                if (sAutoCompList.length())
-                    AutoCompShow(lenEntered, sAutoCompList);
             }
         }
         else if (m_fileType == FILE_MATLAB
@@ -903,11 +916,30 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
 
     if (sAutoCompList.length())
         AutoCompShow(lenEntered, sAutoCompList);
+    else
+        AutoCompCancel();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Private member function handling the
+/// comment autowrap from OnChar(),
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::handleCommentAutoWrap()
+{
+    int currentPos = GetCurrentPos();
+    int currentLine = GetCurrentLine();
 
     // if line indicator setting is active, provide autowrapping for comments
     bool isLineIndicatorActive = m_options->getSetting(SETTING_B_LINELENGTH).active();
     bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
     bool isComment = isStyleType(STYLE_COMMENT, currentPos) && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1);
+
+    if (!isComment || !isNumereFile || !isLineIndicatorActive)
+        return;
 
     // The whole wrap shall be considered as a single action undoable with one
     // user interaction
@@ -1002,10 +1034,6 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
     }
 
     EndUndoAction();
-
-    Colourise(0, -1);
-
-    event.Skip();
 }
 
 
@@ -1687,7 +1715,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
                                                                            + "_*"), lastpos)) + "\n  [...]\n";
 
             if (selection != blockDef.startWord)
-                nLength = sBlock.length();
+                nLength = wxToUtf8(sBlock).length();
 
             // Include middle words
             if (blockDef.middleWord1.length())
@@ -1697,7 +1725,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
                                                                        + "_*"), lastpos2)) + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1)
-                    nLength = sBlock.length();
+                    nLength = wxToUtf8(sBlock).length();
             }
 
             // Include middle words
@@ -1708,7 +1736,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
                                                      + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
-                    nLength = sBlock.length();
+                    nLength = wxToUtf8(sBlock).length();
             }
 
             // Add the last word
@@ -1777,6 +1805,24 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
         _cTip = _provider.getPredef(wxToUtf8(selection));
     else if (GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
         _cTip = _provider.getConstant(wxToUtf8(selection));
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_IDENTIFIER
+             || GetStyleAt(charpos) == wxSTC_NSCR_CLUSTER
+             || GetStyleAt(charpos) == wxSTC_NSCR_CUSTOM_FUNCTION)
+    {
+        int lineNum = LineFromPosition(charpos);
+        std::string sSymbol = wxToUtf8(selection);
+
+        if (!m_codeParser.isValidLine(lineNum))
+            parse(lineNum);
+
+        if (!m_codeParser.isSymbol(sSymbol, lineNum, true))
+        {
+            AdvCallTipCancel();
+            return;
+        }
+
+        _cTip = m_codeParser.getSymbol(sSymbol, lineNum, true).print();
+    }
 
     if (_cTip.sDefinition.length())
     {
@@ -1785,7 +1831,8 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
         else
             AdvCallTipCancel();
 
-        AdvCallTipShow(startPosition, wxFromUtf8(_cTip.sDefinition) + (_cTip.sDocumentation.length() ? "\n" + wxFromUtf8(_cTip.sDocumentation) : ""));
+        AdvCallTipShow(startPosition, wxFromUtf8(_cTip.sDefinition)
+                       + (_cTip.sDocumentation.length() ? "\n" + wxFromUtf8(_cTip.sDocumentation) : ""));
         CallTipSetHighlight(_cTip.nStart, _cTip.nEnd);
     }
 }
@@ -2123,7 +2170,7 @@ void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
-    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
+    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_NLYT)
         || m_PopUpActive
         || m_isFunctionContext
         || AutoCompActive()
@@ -4930,11 +4977,15 @@ void NumeReEditor::markModified(int nLine)
     int nMarkSaved = 1 << (MARKER_SAVED);
     int nMarkModified = 1 << (MARKER_MODIFIED);
 
-    while (this->MarkerGet(nLine) & nMarkSaved)
-        this->MarkerDelete(nLine, MARKER_SAVED);
+    while (MarkerGet(nLine) & nMarkSaved)
+    {
+        MarkerDelete(nLine, MARKER_SAVED);
+    }
 
-    if (!(this->MarkerGet(nLine) & nMarkModified))
-        this->MarkerAdd(nLine, MARKER_MODIFIED);
+    if (!(MarkerGet(nLine) & nMarkModified))
+        MarkerAdd(nLine, MARKER_MODIFIED);
+
+    m_codeParser.markDirty(nLine);
 }
 
 
@@ -4953,15 +5004,18 @@ void NumeReEditor::markSaved()
     int nMarkSaved = 1 << (MARKER_SAVED);
     int nNextLine = 0;
 
-    while ((nNextLine = this->MarkerNext(0, nMarkModified)) != -1)
+    while ((nNextLine = MarkerNext(0, nMarkModified)) != -1)
     {
-        this->MarkerDelete(nNextLine, MARKER_MODIFIED);
+        MarkerDelete(nNextLine, MARKER_MODIFIED);
 
-        if (!(this->MarkerGet(nNextLine) & nMarkSaved))
-            this->MarkerAdd(nNextLine, MARKER_SAVED);
+        if (!(MarkerGet(nNextLine) & nMarkSaved))
+            MarkerAdd(nNextLine, MARKER_SAVED);
     }
 
-    this->MarkerDeleteAll(MARKER_MODIFIED);
+    MarkerDeleteAll(MARKER_MODIFIED);
+
+    if (m_codeParser.isDirty())
+        parseAll();
 }
 
 
@@ -4980,18 +5034,46 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent& event)
     if (!m_bLoadingFile && (event.GetModificationType() & wxSTC_MOD_INSERTTEXT || event.GetModificationType() & wxSTC_MOD_DELETETEXT))
     {
         m_modificationHappened = true;
-        int nLine = this->LineFromPosition(event.GetPosition());
+        int nLine = LineFromPosition(event.GetPosition());
         int nLinesAdded = event.GetLinesAdded();
+        bool numereFile = isNumeReFileType();
+        //g_logger.info("Line " + toString(nLine+1) + ": " + toString(nLinesAdded) + " added");
 
         if (nLinesAdded > 0)
         {
+            if (numereFile)
+            {
+                for (int i = 0; i < nLinesAdded; i++)
+                {
+                    m_codeParser.insertLine(nLine);
+                }
+            }
+
             for (int i = 0; i < nLinesAdded; i++)
-                this->markModified(i + nLine);
+            {
+                markModified(nLine+nLinesAdded-1-i);
+            }
+
+            if (numereFile)
+                parse(nLine+1);
         }
         else if (nLinesAdded < 0)
-            this->markModified(nLine);
+        {
+            markModified(nLine);
+
+            if (numereFile)
+            {
+                for (int i = 0; i < -nLinesAdded; i++)
+                {
+                    m_codeParser.deleteLine(nLine + 1);
+                }
+            }
+
+            if (numereFile)
+                parse(nLine);
+        }
         else
-            this->markModified(nLine);
+            markModified(nLine);
     }
 
     event.Skip();
@@ -6560,7 +6642,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
 /// \param nSectionStart int
 /// \param nSectionEnd int
 /// \param sToken const wxString&
-/// \param vMatch const vector<int>&
+/// \param vMatch const std::vector<int>&
 /// \return bool
 ///
 /// This member function determines, whether a
@@ -6569,10 +6651,10 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
 /// (i.e. overwritten). This is used for variables,
 /// which are both input and possible output.
 /////////////////////////////////////////////////
-bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const vector<int>& vMatch)
+bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const std::vector<int>& vMatch)
 {
     // define the set of modifying operators
-    static wxString sModificationOperators = "+= -= /= ^= *= ++ --";
+    static wxString sModificationOperators = "+= -= /= ^= *= **= ++ --";
 
     // Go through all occurences of the current token
     for (size_t i = 0; i < vMatch.size(); i++)
@@ -6823,15 +6905,44 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
     bool searchMethod = GetCharAt(wordstartpos) == '.';
     wxString wordstart = GetTextRange(searchMethod ? wordstartpos+1 : wordstartpos, currpos);
+
     std::pair<int, int> context = std::make_pair(0, GetLineCount());
-
-    if (useSmartSense)
-        context = getCurrentContext(LineFromPosition(currpos));
-
-    size_t nPos = PositionFromLine(context.first);
     bool findAll = !useSmartSense
                 || isStyleType(STYLE_COMMENT, wordstartpos)
                 || isStyleType(STYLE_STRING, wordstartpos);
+
+    int lineNum = LineFromPosition(currpos);
+
+    if (isNumeReFileType())
+    {
+        if (!m_codeParser.isValid())
+            parse(lineNum);
+
+        if (useSmartSense && !findAll && !searchMethod)
+        {
+            std::vector<ParserSymbol> candidates = m_codeParser.getCandidates(wxToUtf8(wordstart), lineNum, true);
+
+            for (const ParserSymbol& symbol : candidates)
+            {
+                if (symbol.m_type == "table")
+                    sScopedList += symbol.m_symbol + "(?" + toString((int)NumeReSyntax::SYNTAX_TABLE) + " ";
+                else if (symbol.m_type == "cluster")
+                    sScopedList += symbol.m_symbol + "{?" + toString((int)NumeReSyntax::SYNTAX_CLUSTER) + " ";
+                else if (symbol.isFunction())
+                    sScopedList += symbol.m_symbol + "(?" + toString((int)NumeReSyntax::SYNTAX_FUNCTION) + " ";
+                else
+                    sScopedList += symbol.m_symbol + "?" + toString((int)NumeReSyntax::SYNTAX_STD) + " ";
+            }
+
+            // Use the static member function from NumeReSyntax to combine those two lists
+            return NumeReSyntax::mergeAutoCompleteLists(sPreDefList, sScopedList);
+        }
+    }
+
+    if (useSmartSense)
+        context = getCurrentContext(lineNum);
+
+    size_t nPos = PositionFromLine(context.first);
 
     int searchFlags = wxSTC_FIND_WORDSTART;
 
@@ -8681,18 +8792,39 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
     std::string varType = "";
     bool isVect = false;
     static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
+    int lineNum = LineFromPosition(pos);
+
+    if (!m_codeParser.isValidLine(lineNum))
+        parse(lineNum);
 
     int style = GetStyleAt(pos-2);
     char c = GetCharAt(pos-2);
+
+    // Jump over square brackets
+    if (style == wxSTC_NSCR_OPERATORS && c == ']' && BraceMatch(pos-2) != wxNOT_FOUND)
+    {
+        pos = BraceMatch(pos-2)+1;
+        style = GetStyleAt(pos-2);
+        c = GetCharAt(pos-2);
+        lineNum = LineFromPosition(pos);
+    }
 
     // Identify the type of the current method host. Is currently quite rudimentary
     // and should be extended with the semi-static parser model
     if (style == wxSTC_NSCR_IDENTIFIER)
     {
         int c_pos = WordStartPosition(pos-2, true);
-        varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
-            || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
-            ? "string" : "*";
+        std::string symbol = wxToUtf8(GetTextRange(c_pos, WordEndPosition(c_pos, true)));
+
+        if (m_codeParser.isSymbol(symbol, lineNum, false))
+            std::tie(varType, isVect) = CodeParser::convertToMethodType(m_codeParser.getSymbol(symbol, lineNum, false).m_type);
+        else
+        {
+            varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
+                || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
+                ? "string" : "*";
+        }
+
         isVect = true;
     }
     else if (style == wxSTC_NSCR_STRING || style == wxSTC_NSCR_STRING_PARSER)
@@ -8710,20 +8842,7 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
             isVect = true;
         }
         else
-        {
-            if (sReturnValue.find("STR") != std::string::npos)
-                varType = "string";
-            else if (sReturnValue.find("CAT") != std::string::npos)
-                varType = "category";
-            else if (sReturnValue.find("DCT") != std::string::npos)
-                varType = "dictstruct";
-            else if (sReturnValue.find("OBJ") != std::string::npos
-                     || sReturnValue.find("ARG") != std::string::npos
-                     || sReturnValue.find("CST") != std::string::npos)
-                varType = "*";
-
-            isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
-        }
+            std::tie(varType, isVect) = CodeParser::convertToMethodType(CodeParser::expandReturnTypes(sReturnValue));
     }
     else if (c == '}')
     {
@@ -8760,21 +8879,7 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
                 isVect = true;
             }
             else
-            {
-                if (sReturnValue.find("STR") != std::string::npos)
-                    varType = "string";
-                else if (sReturnValue.find("CAT") != std::string::npos)
-                    varType = "category";
-                else if (sReturnValue.find("DCT") != std::string::npos)
-                    varType = "dictstruct";
-                else if (sReturnValue.find("OBJ") != std::string::npos)
-                    varType = "object." + sSymbolName;
-                else if (sReturnValue.find("CST") != std::string::npos
-                         || sReturnValue.find("ARG") != std::string::npos)
-                    varType = "*";
-
-                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
-            }
+                std::tie(varType, isVect) = CodeParser::convertToMethodType(CodeParser::expandReturnTypes(sReturnValue));
         }
         else if (prevStyle == wxSTC_NSCR_PROCEDURES)
         {
@@ -8789,24 +8894,25 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
                 if (sReturnValue.find("::") != std::string::npos)
                     sReturnValue.erase(sReturnValue.find("::"));
 
-                if (sReturnValue.find("STR") != std::string::npos)
-                    varType = "string";
-                else if (sReturnValue.find("CAT") != std::string::npos)
-                    varType = "category";
-                else if (sReturnValue.find("DCT") != std::string::npos)
-                    varType = "dictstruct";
-                else if (sReturnValue.find("OBJ") != std::string::npos
-                         || sReturnValue.find("CST") != std::string::npos
-                         || sReturnValue.find("ARG") != std::string::npos)
-                    varType = "*";
-
-                isVect = sReturnValue.find('{') != std::string::npos || sReturnValue.find("CST") != std::string::npos;
+                std::tie(varType, isVect) = CodeParser::convertToMethodType(CodeParser::expandReturnTypes(sReturnValue));
             }
-
         }
         else if (prevStyle == wxSTC_NSCR_STRING_PARSER)
             varType = "string";
-        else if (prevStyle == wxSTC_NSCR_PREDEFS || prevStyle == wxSTC_NSCR_CUSTOM_FUNCTION)
+        else if (prevStyle == wxSTC_NSCR_CUSTOM_FUNCTION)
+        {
+            int symbolStart = WordStartPosition(braceStart-1, true);
+            std::string sSymbolName = wxToUtf8(GetTextRange(symbolStart, braceStart));
+
+            if (m_codeParser.isSymbol(sSymbolName, lineNum, false))
+            {
+                std::tie(varType, isVect) = CodeParser::convertToMethodType(m_codeParser.getSymbol(sSymbolName,
+                                                                                                   lineNum, false).m_type);
+            }
+            else
+                varType = "table";
+        }
+        else if (prevStyle == wxSTC_NSCR_PREDEFS)
         {
             varType = GetTextRange(braceStart, pos-1) == "()"
                 ? "table" : "*";
@@ -8819,6 +8925,191 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
         varType = "*";
 
     return std::make_pair(varType, isVect);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Perform a complete parsing step on the
+/// current file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::parseAll()
+{
+    m_codeParser.clear();
+
+    if (!isNumeReFileType())
+        return;
+
+    m_codeParser.setFileName(wxToUtf8(GetFileNameAndPath()));
+    m_codeParser.setFileLineCount(GetLineCount());
+
+    // Set all local scopes and procedures
+    if (m_fileType == FILE_NPRC)
+    {
+        std::vector<int> scopeStarts = m_search->FindAll("procedure", wxSTC_NPRC_COMMAND, 0, GetLastPosition(), false);
+
+        for (int scopeStart : scopeStarts)
+        {
+            std::pair<int,int> ctx = getCurrentContext(LineFromPosition(scopeStart));
+            m_codeParser.addLocalScope(ParserScope(ctx.first, ctx.second));
+        }
+
+        std::map<std::string, std::string> localProcs;
+
+        for (wxString procdef : m_search->getProceduresInFile())
+        {
+            wxString returns;
+
+            // Split the definition at the flags (if available)
+            // and at the definition string (if available)
+            if (procdef.find("::") != std::string::npos)
+            {
+                wxString flags = procdef.substr(procdef.find("::")+2);
+                procdef.erase(procdef.find("::"));
+
+                if (flags.find("\n") != std::string::npos)
+                    flags.erase(flags.find("\n"));
+
+                if (flags.find("->") != std::string::npos)
+                {
+                    returns = flags.substr(flags.find("->")+2);
+                    flags.erase(flags.find("->"));
+                }
+            }
+            else
+            {
+                if (procdef.find("\n") != std::string::npos)
+                    procdef.erase(procdef.find("\n"));
+
+                if (procdef.find("->") != std::string::npos)
+                {
+                    returns = procdef.substr(procdef.find("->")+2);
+                    procdef.erase(procdef.find("->"));
+                }
+            }
+
+            procdef.Trim(true);
+            procdef.Trim(false);
+            returns.Trim(true);
+            returns.Trim(false);
+
+            localProcs["$thisfile~"+wxToUtf8(procdef.substr(1, procdef.find('(')-1))] = wxToUtf8(returns);
+        }
+
+
+        m_codeParser.setLocalProcedures(localProcs);
+    }
+
+    parseSection(0, GetLineCount());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Run only the necessary parsing steps.
+///
+/// \param requestFromLine int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::parse(int requestFromLine)
+{
+    // If nothing has been parsed yet, parse everything
+    if (!m_codeParser.isValid())
+    {
+        g_logger.info("Starting initial parse ...");
+        parseAll();
+
+        return;
+    }
+
+    // Check, whether the user is currently in a
+    // modified section
+    if (GetCurrentLine() == requestFromLine && MarkerOnLine(requestFromLine, MARKER_MODIFIED))
+    {
+        g_logger.info("Starting single line reparse ...");
+
+        int rootLine = requestFromLine;
+
+        // Check if line is continued and if so go to start of line
+        while (rootLine > 0 && GetLine(rootLine - 1).EndsWith("\\\\"))
+            rootLine--;
+
+        int contLine = rootLine;
+        std::vector<LexedString> lexedTokens = getLexedTokens(rootLine);
+
+        // Attach wrapped lines
+        while (lexedTokens.size()
+               && lexedTokens.back().m_str == "\\\\"
+               && contLine+1 < GetLineCount())
+        {
+            lexedTokens.pop_back();
+            contLine++;
+            std::vector<LexedString> nextTokens = getLexedTokens(contLine);
+            lexedTokens.insert(lexedTokens.end(), nextTokens.begin(), nextTokens.end());
+        }
+
+        m_codeParser.parseSingleLine(rootLine, lexedTokens);
+        g_logger.info("Parsing step completed.");
+        //g_logger.info(m_codeParser.dump());
+
+        return;
+    }
+
+    // In all other cases: check first, whether a full reparse is necessary bc.
+    // too many or too early changes have been aggregated over time
+    if (m_codeParser.needsFullReparse())
+    {
+        g_logger.info("Starting full reparse ...");
+        parseAll();
+
+        return;
+    }
+
+    // Only do this, if only single scopes need reparsing
+    while (m_codeParser.isDirty() && m_codeParser.isValid())
+    {
+        const ParserScope& dirtyScope = m_codeParser.getNextDirtyScope();
+        g_logger.info("Starting single scope reparse ...");
+        parseSection(dirtyScope.m_start, dirtyScope.m_end);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Perform the parsing step on a section
+/// of code lines.
+///
+/// \param startLine int
+/// \param endLine int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::parseSection(int startLine, int endLine)
+{
+    // Insert every line and parse
+    for (int i = startLine; i < endLine; i++)
+    {
+        std::vector<LexedString> lexedTokens = getLexedTokens(i);
+        size_t rootLine = i;
+
+        // Attach wrapped lines
+        while (lexedTokens.size()
+               && lexedTokens.back().m_str == "\\\\"
+               && i+1 < GetLineCount())
+        {
+            lexedTokens.pop_back();
+            i++;
+            std::vector<LexedString> nextTokens = getLexedTokens(i);
+            lexedTokens.insert(lexedTokens.end(), nextTokens.begin(), nextTokens.end());
+        }
+
+        m_codeParser.parse(rootLine, lexedTokens);
+    }
+
+    g_logger.info("Parsing step completed.");
+    g_logger.info(m_codeParser.dump());
 }
 
 
@@ -8843,7 +9134,7 @@ int NumeReEditor::getStartLine(int line)
         line = GetFoldParent(line - 1) + 1;
 
     // Check if line is continued and if so go to start of line
-    while (GetLine(line - 2).find("\\\\") != std::string::npos)
+    while (GetLine(line - 2).EndsWith("\\\\"))
         line--;
 
     return line;
@@ -9295,18 +9586,38 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
     int nLastPos = GetLineEndPosition(nLastLine);
     int nLastStatePosition = nFirstPos;
     wxTextAttr textAttr;
+    auto convertToHtml = [&](wxString textRange, int style)
+    {
+        wxString sHtml;
+        sHtml += "<span style=\"color: rgb("
+            + toString(StyleGetForeground(style).Red()) + ", "
+            + toString(StyleGetForeground(style).Green()) + ", "
+            + toString(StyleGetForeground(style).Blue()) + ");";
+
+        if (StyleGetBackground(style) != *wxWHITE)
+            sHtml += " background-color: rgb("
+                + toString(StyleGetBackground(style).Red()) + ", "
+                + toString(StyleGetBackground(style).Green()) + ", "
+                + toString(StyleGetBackground(style).Blue()) + ");";
+
+        if (StyleGetItalic(style))
+            sHtml += " font-style: italic;";
+
+        if (StyleGetBold(style))
+            sHtml += " font-weight: bold;";
+
+        if (StyleGetUnderline(style))
+            sHtml += " text-decoration: underline;";
+
+        return sHtml + "\">" + textRange + "</span>";
+    };
 
     for (int i = nFirstPos; i < nLastPos; i++)
     {
-        if (GetStyleAt(i) != GetStyleAt(nLastStatePosition) || i+1 == nLastPos)
+        if (GetStyleAt(i) != GetStyleAt(nLastStatePosition))
         {
             int style = GetStyleAt(nLastStatePosition);
-            wxString textRange;
-
-            if (i+1 == nLastPos)
-                textRange = GetTextRange(nLastStatePosition, i+1);
-            else
-                textRange = GetTextRange(nLastStatePosition, i);
+            wxString textRange = GetTextRange(nLastStatePosition, i);
 
             // Replace less and greater characters with the
             // HTML entities
@@ -9320,28 +9631,140 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
                 continue;
             }
 
-            sHtml += "<span style=\"color: rgb(" + toString(StyleGetForeground(style).Red()) + ", " + toString(StyleGetForeground(style).Green()) + ", " + toString(StyleGetForeground(style).Blue()) + ");";
+            sHtml += convertToHtml(textRange, style);
+            nLastStatePosition = i;
+        }
 
-            if (StyleGetBackground(style) != *wxWHITE)
-                sHtml += " background-color: rgb(" + toString(StyleGetBackground(style).Red()) + ", " + toString(StyleGetBackground(style).Green()) + ", " + toString(StyleGetBackground(style).Blue()) + ");";
+        if (i+1 == nLastPos)
+        {
+            int style = GetStyleAt(nLastStatePosition);
+            wxString textRange = GetTextRange(nLastStatePosition, i+1);
 
-            if (StyleGetItalic(style))
-                sHtml += " font-style: italic;";
+            // Replace less and greater characters with the
+            // HTML entities
+            textRange.Replace("<", "&lt;");
+            textRange.Replace(">", "&gt;");
 
-            if (StyleGetBold(style))
-                sHtml += " font-weight: bold;";
+            if (textRange.find_first_not_of(" \r\t\n") == std::string::npos)
+            {
+                sHtml += textRange;
+                nLastStatePosition = i;
+                continue;
+            }
 
-            if (StyleGetUnderline(style))
-                sHtml += " text-decoration: underline;";
-
-            sHtml += "\">" + textRange + "</span>";
+            sHtml += convertToHtml(textRange, style);
             nLastStatePosition = i;
         }
     }
 
     sHtml += "</pre>";
-
     sHtml.Replace("\t", "    ");
 
     return sHtml;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Splits possibly aggregated operators
+/// to their individual atoms.
+///
+/// \param textRange StringView
+/// \param lexedTokens std::vector<LexedString>&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void splitLexedOperators(StringView textRange, std::vector<LexedString>& lexedTokens)
+{
+    static std::array<std::string, 16> validMultiByteOperators({"**=", "*=", "+=", "-=", "/=", "^=", "->", ":=",
+                                                                "==", "!=", "<=", ">=", "&&", "||", "??", "\\\\"});
+
+    while (textRange.length())
+    {
+        bool cont = false;
+
+        for (const std::string& op : validMultiByteOperators)
+        {
+            if (textRange.starts_with(op))
+            {
+                lexedTokens.push_back(LexedString(op, wxSTC_NSCR_OPERATORS));
+                textRange.trim_front(op.length());
+                cont = true;
+                break;
+            }
+        }
+
+        if (cont)
+            continue;
+
+        lexedTokens.push_back(LexedString(textRange.subview(0, 1).to_string(), wxSTC_NSCR_OPERATORS));
+        textRange.trim_front(1);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the selected line separated
+/// into lexed tokens.
+///
+/// \param lineNum int
+/// \return std::vector<LexedString>
+///
+/////////////////////////////////////////////////
+std::vector<LexedString> NumeReEditor::getLexedTokens(int lineNum)
+{
+    std::vector<LexedString> lexedTokens;
+
+    int nFirstPos = PositionFromLine(lineNum);
+    int nLastPos = GetLineEndPosition(lineNum);
+    int nLastStatePosition = nFirstPos;
+
+    for (int i = nFirstPos; i < nLastPos; i++)
+    {
+        if (GetStyleAt(i) != GetStyleAt(nLastStatePosition))
+        {
+            int style = GetStyleAt(nLastStatePosition);
+            std::string textRange = wxToUtf8(GetTextRange(nLastStatePosition, i));
+
+            StripSpaces(textRange);
+
+            if (textRange.find_first_not_of(" \r\t\n") == std::string::npos || textRange == "|>")
+            {
+                nLastStatePosition = i;
+                continue;
+            }
+
+            if (style == wxSTC_NSCR_OPERATORS && textRange.length() > 1)
+                splitLexedOperators(textRange, lexedTokens);
+            else
+                lexedTokens.push_back(LexedString(textRange, style));
+
+            nLastStatePosition = i;
+        }
+    }
+
+    if (nLastStatePosition < nLastPos)
+    {
+        int style = GetStyleAt(nLastStatePosition);
+        std::string textRange = wxToUtf8(GetTextRange(nLastStatePosition, nLastPos));
+
+        StripSpaces(textRange);
+
+        if (textRange.find_first_not_of(" \r\t\n") != std::string::npos)
+        {
+            if (style == wxSTC_NSCR_OPERATORS && textRange.length() > 1)
+                splitLexedOperators(textRange, lexedTokens);
+            else
+                lexedTokens.push_back(LexedString(textRange, style));
+        }
+    }
+
+    return lexedTokens;
+}
+
+
+
+
+
+
+
+

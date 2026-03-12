@@ -165,5 +165,18 @@ bool SymDefManager::isSymbol(const std::string& sSymbol) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get a reference to the internal
+/// symbols map.
+///
+/// \return const std::map<std::string, std::string>&
+///
+/////////////////////////////////////////////////
+const std::map<std::string, std::string>& SymDefManager::getSymbols() const
+{
+    return m_symDefs;
+}
+
+
 
 

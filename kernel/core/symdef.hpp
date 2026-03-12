@@ -39,6 +39,7 @@ class SymDefManager
         void resolveSymbols(std::string& sCommandLine) const;
         void createSymbol(const std::string& sCommandLine);
         bool isSymbol(const std::string& sSymbol) const;
+        const std::map<std::string,std::string>& getSymbols() const;
         void clear();
 };
 

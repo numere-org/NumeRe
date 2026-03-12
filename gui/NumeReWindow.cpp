@@ -1707,6 +1707,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             OnCompareFiles();
             break;
         }
+        case ID_MENU_REPARSE_FILE:
+        {
+            if (m_book->getFocusedEditor())
+                m_book->getFocusedEditor()->parseAll();
+            break;
+        }
         case ID_MENU_CREATE_PACKAGE:
         {
             OnCreatePackage("");
@@ -3092,7 +3098,6 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
         NumeReEditor* edit = m_book->createEditor(noname);
-        //edit->SetSyntax(m_terminal->getSyntax());
 
     #if wxUSE_DRAG_AND_DROP
         edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
@@ -4562,7 +4567,6 @@ bool NumeReWindow::SaveTab(int tab)
     }
 
     m_filesLastSaveTime[filename] = time(0);
-    edit->SetSavePoint();
     edit->UpdateSyntaxHighlighting();
 
     m_book->SetTabText(tab, filename);
@@ -5489,6 +5493,7 @@ void NumeReWindow::UpdateMenuBar()
     menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
     menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
     menuAnalyzer->Append(ID_MENU_COMPARE_FILES, _guilang.get("GUI_MENU_COMPARE_FILES"), _guilang.get("GUI_MENU_COMPARE_FILES_TTP"));
+    menuAnalyzer->Append(ID_MENU_REPARSE_FILE, _guilang.get("GUI_MENU_REPARSE_FILE"), _guilang.get("GUI_MENU_REPARSE_FILE_TTP"));
 
     // Create exporter menu
     wxMenu* menuExporter = new wxMenu();
@@ -5988,6 +5993,7 @@ void NumeReWindow::gotoLine()
         wxMessageBox(_guilang.get("GUI_DLG_GOTO_ERROR"), _guilang.get("GUI_DLG_GOTO"), wxCENTRE | wxICON_ERROR);
     else
     {
+        focusEd->EnsureLineVisibility(line);
         focusEd->GotoLine(line);
         focusEd->SetFocus();
     }

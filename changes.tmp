@@ -57,3 +57,4 @@ Fixed	Made the leaf concatenation of object.path with a (literal) string value a
 Fixed	Resolved some regression problems
 Added	The functon f(x,v) can be used to make a "virtual" function returning v for each x, which is handy for plotting constant functions (which does not work anymore by simply typing the constant value as function).
 Added	DictStructs got the methods "pick()", "omit()", "renamekey()" and "merge()".
+Updated	The parser model of the code editor was reworked from the ground up and should return much better matches now. Note that: this is still in early development and may yield false results. There is a functionality in the Tools menu to re-parse the whole file if necessary.

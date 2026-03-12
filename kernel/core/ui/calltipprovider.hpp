@@ -74,6 +74,7 @@ namespace NumeRe
             CallTip getPredef(std::string sToken) const;
             CallTip getConstant(std::string sToken) const;
 
+            std::string getCommandReturnValue(std::string sToken) const;
             std::string getFunctionReturnValue(std::string sToken) const;
             std::string getMethodReturnValue(std::string sToken, const std::string& sType) const;
             std::string getProcedureReturnValue(std::string sToken) const;

@@ -937,6 +937,25 @@ namespace NumeRe
 
     /////////////////////////////////////////////////
     /// \brief Get the return value of the selected
+    /// command.
+    ///
+    /// \param sToken std::string
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string CallTipProvider::getCommandReturnValue(std::string sToken) const
+    {
+        sToken = getCommand(sToken).sDefinition;
+
+        if (sToken.find("->") != std::string::npos)
+            return sToken.substr(sToken.find_first_not_of("-> ", sToken.find("->")));
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the return value of the selected
     /// function.
     ///
     /// \param sToken std::string

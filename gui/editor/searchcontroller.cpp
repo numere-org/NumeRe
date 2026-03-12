@@ -329,29 +329,32 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
 /////////////////////////////////////////////////
 wxString SearchController::FindNameSpaceOfProcedure(int charpos)
 {
-	wxString sNameSpace;
+	if (m_editor->m_fileType != FILE_NPRC)
+        return "";
 
-	if (m_editor->m_fileType == FILE_NPRC)
-	{
-		int minpos = 0;
-		int maxpos = charpos;
+    int lineNum = m_editor->LineFromPosition(charpos);
 
-		// Find the start of the current procedure
-		minpos = FindCurrentProcedureHead(charpos);
+    if (m_editor->m_codeParser.isValidLine(lineNum))
+        return wxFromUtf8(m_editor->m_codeParser.getCurrentNameSpace(lineNum));
 
-		// Find all occurences of "namespace" between
-		// the minimal and the maximal position
-		vector<int> namespaces = FindAll("namespace", wxSTC_NPRC_COMMAND, minpos, maxpos, false);
+    int minpos = 0;
+    int maxpos = charpos;
 
-		// Use the last namespace command, if there
-		// are any, and decode it
-		if (namespaces.size())
-        {
-            sNameSpace = decodeNameSpace(wxToUtf8(m_editor->GetLine(m_editor->LineFromPosition(namespaces.back()))), "this");
-        }
-	}
+    // Find the start of the current procedure
+    minpos = FindCurrentProcedureHead(charpos);
 
-	return sNameSpace;
+    // Find all occurences of "namespace" between
+    // the minimal and the maximal position
+    vector<int> namespaces = FindAll("namespace", wxSTC_NPRC_COMMAND, minpos, maxpos, false);
+
+    wxString sNameSpace;
+
+    // Use the last namespace command, if there
+    // are any, and decode it
+    if (namespaces.size())
+        return decodeNameSpace(wxToUtf8(m_editor->GetLine(m_editor->LineFromPosition(namespaces.back()))), "this");
+
+    return "";
 }
 
 

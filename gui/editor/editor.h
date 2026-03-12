@@ -22,6 +22,7 @@
 #include "../../common/datastructures.h"
 #include "../../kernel/syntax.hpp"
 #include "../dialogs/duplicatecodedialog.hpp"
+#include "codeparser.hpp"
 
 #ifndef EDITOR_H
 #define EDITOR_H
@@ -204,27 +205,13 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		bool isBreakPointAllowed(int linenum);
 
 		void AddProcedureDocumentation();
-
-		void SetSyntax(NumeReSyntax* __syntax)
-		{
-			if (!_syntax)
-			{
-				_syntax = __syntax;
-			}
-		}
-		void SetTerminal(NumeReTerminal* _terminal)
-		{
-			if (!m_terminal)
-			{
-				m_terminal = _terminal;
-			}
-		}
 		void SetUnsaved();
 
 		void ApplyAutoIndentation(int nFirstLine = 0, int nLastLine = -1);
 		void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
 		void Transpose(int nFirstLine = 0, int nLastLine = -1);
 		wxString ExtractAsHTML(int nFirstLine = 0, int nLastLine = -1);
+		std::vector<LexedString> getLexedTokens(int lineNum);
 
 		void ToggleSettings(int _setting);
 		bool getEditorSetting(EditorSettings _setting);
@@ -309,6 +296,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void FindAndOpenProcedure(const wxString& procedurename);
 		void FindAndOpenInclude(const wxString& includename);
 		std::vector<wxString> getProceduresInFile();
+		void parseAll();
 
 	protected:
 		Options* m_options;
@@ -334,6 +322,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			STYLE_STRING
 		};
 
+		void handleAutoComplete(wxChar chr);
+		void handleCommentAutoWrap();
 
 		void FoldCurrentBlock(int nLine);
 
@@ -386,12 +376,15 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString getNextToken(int& nPos);
 		std::pair<int,int> getCurrentContext(int line);
 		std::pair<std::string,bool> get_method_root_type(int pos);
+		void parse(int requestFromLine);
+		void parseSection(int startLine, int endLine);
 
 		NumeReWindow* m_mainFrame;
 		ProcedureViewer* m_procedureViewer;
 		CodeAnalyzer* m_analyzer;
 		SearchController* m_search;
 		CodeFormatter* m_formatter;
+		CodeParser m_codeParser;
 
 		wxFileName m_fileNameAndPath;
 		wxString m_simpleFileName;
