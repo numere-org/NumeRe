@@ -61,7 +61,6 @@ class CodeAnalyzer
     private:
         NumeReEditor* m_editor;
         Options* m_options;
-        SymDefManager m_symdefs;
 
         std::vector<wxString> m_DRAW_FUNCS;
         std::vector<wxString> m_STRING_FUNCS;
@@ -80,14 +79,34 @@ class CodeAnalyzer
         int m_nCurrentLine;
 
         bool m_hasProcedureDefinition;
-        std::vector<std::pair<std::string,int>> m_vLocalVariables;
-        std::vector<std::pair<std::string,int>> m_vKnownVariables;
+        std::vector<std::vector<int>> m_vCurrentScopes;
 
         const double MINCOMMENTDENSITY = 0.5;
         const double MAXCOMMENTDENSITY = 1.5;
         const int MAXCOMPLEXITYNOTIFY = 15;
         const int MAXCOMPLEXITYWARN = 20;
         const int MAXLINESOFCODE = 100;
+
+        bool CALC_COMPLEXITY;
+        bool CALC_PROCEDURE_LENGTH;
+        bool CALC_LINES_OF_CODE;
+        bool CALC_COMMENT_DENSITY;
+        bool FORCE_SHOW_METRICS;
+        bool CHECK_RESULT_ASSIGNMENT;
+        bool CHECK_RESULT_SUPPRESSION;
+        bool CHECK_CONSTANT_EXPRESSION;
+        bool RECOMMEND_INLINE_IF;
+        bool RECOMMEND_ARGUMENT_UNDERSCORE;
+        bool RECOMMEND_TYPE_ORIENTATION;
+        bool WARN_PROGRESS_RUNTIME;
+        bool WARN_FALLTHROUGH;
+        bool WARN_MISLEADING_TYPE;
+        bool WARN_UNUSED_VARIABLES;
+        bool WARN_GLOBAL_VARIABLES;
+        bool WARN_THISFILE_NAMESPACE;
+        bool WARN_TYPE_MISUSE;
+        bool WARN_VARIABLE_LENGTH;
+        bool WARN_MAGIC_NUMBERS;
 
         AnnotationCount analyseCommands();
         AnnotationCount analyseFunctions(bool isContinuedLine);
@@ -97,8 +116,12 @@ class CodeAnalyzer
         AnnotationCount analyseNumbers();
         AnnotationCount analysePreDefs();
         AnnotationCount addToAnnotation(const wxString& sMessage, int nStyle);
+        AnnotationCount addNote(const wxString& sSymbol, const char* messageId);
+        AnnotationCount addWarning(const wxString& sSymbol, const char* messageId);
+        AnnotationCount addError(const wxString& sSymbol, const char* messageId);
+        AnnotationCount addMetric(const wxString& sSymbol, const char* messageId, const std::string& sValue, int nStyle);
 
-        std::string highlightFoundOccurence(const std::string& sElement, int nPos, int nLength);
+        wxString highlightFoundOccurence(const std::string& sElement, int nPos, int nLength);
         bool containsAssignment(const std::string& sCurrentLine);
         int calculateCyclomaticComplexity(int startline, int endline);
         int calculateLinesOfCode(int startline, int endline);

@@ -29,6 +29,8 @@
 
 #define HIGHLIGHT_ANNOTATION 12
 
+//#include "../../kernel/core/utils/timer.hpp"
+
 using namespace std;
 
 static void replaceDocStrings(wxString& sStr)
@@ -52,9 +54,9 @@ CodeAnalyzer::CodeAnalyzer(NumeReEditor* parent, Options* opts) : m_editor(paren
     std::for_each(m_STRING_METHODS.begin(), m_STRING_METHODS.end(), replaceDocStrings);
     std::for_each(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), replaceDocStrings);
 
-	m_sNote = _guilang.get("GUI_ANALYZER_NOTE");
-	m_sWarn = _guilang.get("GUI_ANALYZER_WARN");
-	m_sError = _guilang.get("GUI_ANALYZER_ERROR");
+    m_sNote = _guilang.get("GUI_ANALYZER_NOTE");
+    m_sWarn = _guilang.get("GUI_ANALYZER_WARN");
+    m_sError = _guilang.get("GUI_ANALYZER_ERROR");
 }
 
 
@@ -72,76 +74,102 @@ void CodeAnalyzer::run()
     if (!m_editor || !m_options)
         return;
 
+    //Timer t("CodeAnalyzer::run(" + wxToUtf8(m_editor->GetFilenameString()) + ")");
+
     // Clear all annotations
-	m_editor->AnnotationClearAll();
-	m_symdefs.clear();
-	m_vKnownVariables.clear();
+    m_editor->AnnotationClearAll();
+    m_vCurrentScopes.clear();
 
-	// Clear the corresponding indicators
+    // Clear the corresponding indicators
     m_editor->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
-	m_editor->IndicatorClearRange(0, m_editor->GetLastPosition());
-	m_editor->IndicatorSetStyle(HIGHLIGHT_ANNOTATION, wxSTC_INDIC_ROUNDBOX);
-	m_editor->IndicatorSetForeground(HIGHLIGHT_ANNOTATION, wxColor(0, 0, 255));
+    m_editor->IndicatorClearRange(0, m_editor->GetLastPosition());
+    m_editor->IndicatorSetStyle(HIGHLIGHT_ANNOTATION, wxSTC_INDIC_ROUNDBOX);
+    m_editor->IndicatorSetForeground(HIGHLIGHT_ANNOTATION, wxColor(0, 0, 255));
 
-	// Ensure that the correct file type is used and that the setting is active
+    // Ensure that the correct file type is used and that the setting is active
     if (!m_editor->getEditorSetting(NumeReEditor::SETTING_USEANALYZER)
         || (m_editor->m_fileType != FILE_NSCR
             && m_editor->m_fileType != FILE_NPRC
             && m_editor->m_fileType != FILE_MATLAB
             && m_editor->m_fileType != FILE_CPP))
-		return;
+        return;
 
     // Determine the annotation style
-	m_editor->AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
+    m_editor->AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
 
-	m_nCurrentLine = -1;
-	m_hasProcedureDefinition = false;
+    if (m_editor->isNumeReFileType() && m_editor->m_codeParser.isDirty())
+        m_editor->parse(0);
 
-	bool isContinuedLine = false;
-	bool isAlreadyMeasured = false;
-	bool isSuppressed = false;
+    m_nCurrentLine = -1;
+    m_hasProcedureDefinition = false;
 
-	m_currentMode.clear();
-	m_sCurrentLine.clear();
-	m_sStyles.clear();
-	string sFirstLine = "";
-	string sFirstStyles = "";
-	int nFirstLine = -1;
+    bool isContinuedLine = false;
+    bool isAlreadyMeasured = false;
+    bool isSuppressed = false;
 
-	AnnotationCount AnnotCount;
+    m_currentMode.clear();
+    m_sCurrentLine.clear();
+    m_sStyles.clear();
+    std::string sFirstLine = "";
+    std::string sFirstStyles = "";
+    int nFirstLine = -1;
 
-	// Go through the whole file
-	for (m_nCurPos = 0; m_nCurPos < m_editor->GetLastPosition(); m_nCurPos++)
-	{
-	    // Ignore comments
+    CALC_COMPLEXITY = m_options->GetAnalyzerOption(Options::COMPLEXITY);
+    CALC_PROCEDURE_LENGTH = m_options->GetAnalyzerOption(Options::PROCEDURE_LENGTH);
+    CALC_LINES_OF_CODE = m_options->GetAnalyzerOption(Options::LINES_OF_CODE);
+    CALC_COMMENT_DENSITY = m_options->GetAnalyzerOption(Options::COMMENT_DENSITY);
+    FORCE_SHOW_METRICS = m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS);
+    CHECK_RESULT_ASSIGNMENT = m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT);
+    CHECK_RESULT_SUPPRESSION = m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION);
+    CHECK_CONSTANT_EXPRESSION = m_options->GetAnalyzerOption(Options::CONSTANT_EXPRESSION);
+    RECOMMEND_INLINE_IF = m_options->GetAnalyzerOption(Options::INLINE_IF);
+    RECOMMEND_ARGUMENT_UNDERSCORE = m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE);
+    RECOMMEND_TYPE_ORIENTATION = m_options->GetAnalyzerOption(Options::TYPE_ORIENTATION);
+    WARN_PROGRESS_RUNTIME = m_options->GetAnalyzerOption(Options::PROGRESS_RUNTIME);
+    WARN_FALLTHROUGH = m_options->GetAnalyzerOption(Options::SWITCH_FALLTHROUGH);
+    WARN_MISLEADING_TYPE = m_options->GetAnalyzerOption(Options::MISLEADING_TYPE);
+    WARN_UNUSED_VARIABLES = m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES);
+    WARN_GLOBAL_VARIABLES = m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES);
+    WARN_THISFILE_NAMESPACE = m_options->GetAnalyzerOption(Options::THISFILE_NAMESPACE);
+    WARN_TYPE_MISUSE = m_options->GetAnalyzerOption(Options::TYPE_MISUSE);
+    WARN_VARIABLE_LENGTH = m_options->GetAnalyzerOption(Options::VARIABLE_LENGTH);
+    WARN_MAGIC_NUMBERS = m_options->GetAnalyzerOption(Options::MAGIC_NUMBERS);
+
+    AnnotationCount AnnotCount;
+
+    // Go through the whole file
+    for (m_nCurPos = 0; m_nCurPos < m_editor->GetLastPosition(); m_nCurPos++)
+    {
+        // Ignore comments
         if (m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_nCurPos)
             || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_nCurPos))
-			continue;
+            continue;
 
-		// It's a new line? Then finalize the contents of the last line
-		// and display the contents as annotation
-		if (m_nCurrentLine < m_editor->LineFromPosition(m_nCurPos))
-		{
-		    // Get the line's contents
-			string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
-			StripSpaces(sLine);
+        // It's a new line? Then finalize the contents of the last line
+        // and display the contents as annotation
+        if (m_nCurrentLine < m_editor->LineFromPosition(m_nCurPos))
+        {
+            // Get the line's contents
+            std::string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
+            StripSpaces(sLine);
 
             // catch constant expressions
-            if (m_options->GetAnalyzerOption(Options::CONSTANT_EXPRESSION)
+            if (CHECK_CONSTANT_EXPRESSION
                 && sLine.length()
-                && sLine.find_first_not_of("\n\r\t") != string::npos
-                && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == string::npos)
-				AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0, sLine.find_last_not_of("0123456789eE+-*/.,;^()")), m_sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
+                && sLine.find_first_not_of("\n\r\t") != std::string::npos
+                && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == std::string::npos)
+                AnnotCount += addWarning(sLine.substr(0, sLine.find_last_not_of("0123456789eE+-*/.,;^()")),
+                                         "GUI_ANALYZER_CONSTEXPR");
 
-			// Handle line continuations
-			if (sLine.find("\\\\") != string::npos)
-				isContinuedLine = true;
-			else
-			{
-				isContinuedLine = false;
-				m_hasProcedureDefinition = false;
-				m_currentMode.clear();
-			}
+            // Handle line continuations
+            if (sLine.find("\\\\") != std::string::npos)
+                isContinuedLine = true;
+            else
+            {
+                isContinuedLine = false;
+                m_hasProcedureDefinition = false;
+                m_currentMode.clear();
+            }
 
             // Find the summary line for the current file and push the
             // current lines contents, if m_editor is the first line,
@@ -160,187 +188,230 @@ void CodeAnalyzer::run()
                 m_editor->AnnotationSetStyles(m_nCurrentLine, m_sStyles);
             }
 
-			m_nCurrentLine = m_editor->LineFromPosition(m_nCurPos);
+            m_nCurrentLine = m_editor->LineFromPosition(m_nCurPos);
+            sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
 
-			// Get the new line for finding the trailing semicolon
-			sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
-
-			// Ensure that there's no trailing comment
-			if (sLine.rfind("##") != string::npos)
+            // Ensure that there's no trailing comment
+            if (sLine.rfind("##") != std::string::npos)
                 sLine.erase(sLine.rfind("##"));
 
             // Remove also block comments
             size_t nBlockStart = 0;
 
-            while ((nBlockStart = sLine.find("#*")) != string::npos)
+            while ((nBlockStart = sLine.find("#*")) != std::string::npos)
             {
-                if (sLine.find("*#", nBlockStart+2) == string::npos)
+                if (sLine.find("*#", nBlockStart+2) == std::string::npos)
                 {
                     sLine.erase(nBlockStart);
                     break;
                 }
                 else
-                {
                     sLine.erase(nBlockStart, sLine.find("*#", nBlockStart+2)+2 - nBlockStart);
-                }
             }
 
-			// Find the last visible character
-			size_t lastVisibleChar = sLine.find_last_not_of(" \t\r\n");
+            // Find the last visible character
+            size_t lastVisibleChar = sLine.find_last_not_of(" \t\r\n");
 
-			// Determine, whether it is a semicolon or a line continuation
-			if (lastVisibleChar != string::npos
+            // Determine, whether it is a semicolon or a line continuation
+            if (lastVisibleChar != std::string::npos
                 && (sLine[lastVisibleChar] == ';' || (lastVisibleChar > 0 && sLine.substr(lastVisibleChar-1, 2) == "\\\\")))
                 isSuppressed = true;
             else
                 isSuppressed = false;
 
-			m_sCurrentLine.clear();
-			m_sStyles.clear();
-		}
+            m_sCurrentLine.clear();
+            m_sStyles.clear();
+        }
 
-		// Get code metrics for scripts if not already done
-		if (m_editor->m_fileType == FILE_NSCR && !isAlreadyMeasured)
-		{
-			string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
-			StripSpaces(sLine);
-			if (sLine.length() && sLine.find_first_not_of(" \n\r\t") != string::npos)
-			{
-				string sSyntaxElement = wxToUtf8(m_editor->GetFilenameString());
-				isAlreadyMeasured = true;
+        int style = m_editor->GetStyleAt(m_nCurPos);
+        int ch = m_editor->GetCharAt(m_nCurPos);
 
-				// Calculate the code metrics:
-				// Complexity
-				int nCyclomaticComplexity = calculateCyclomaticComplexity(m_nCurrentLine, m_editor->LineFromPosition(m_editor->GetLastPosition()));
+        // Get code metrics for scripts if not already done
+        if (m_editor->m_fileType == FILE_NSCR && !isAlreadyMeasured)
+        {
+            std::string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
+            StripSpaces(sLine);
 
-				// LinesOfcode
-				int nLinesOfCode = calculateLinesOfCode(m_nCurrentLine, m_editor->LineFromPosition(m_editor->GetLastPosition()));
-
-				// Number of comments
-				int nNumberOfComments = countNumberOfComments(m_nCurrentLine, m_editor->LineFromPosition(m_editor->GetLastPosition()));
-
-				// comment density
-				double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
-
-				// Compare the metrics with the contants and issue a note or a warning
-				if (m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
-					AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-				else if ((m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
-					AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
-				if ((m_options->GetAnalyzerOption(Options::LINES_OF_CODE) && nLinesOfCode > MAXLINESOFCODE) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
-					AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
-
-				if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity < MINCOMMENTDENSITY) || (dCommentDensity < 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
-					AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-
-				if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity > MAXCOMMENTDENSITY)  || (dCommentDensity >= 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
-					AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-			}
-		}
-
-		// Handle the different style types
-		if (m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, m_nCurPos))
-		{
-		    if (!isSuppressed)
+            if (sLine.length()
+                && sLine.find_first_not_of(" \n\r\t") != std::string::npos)
             {
-                string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)));
+                std::string sSyntaxElement = wxToUtf8(m_editor->GetFilenameString());
+                isAlreadyMeasured = true;
 
-                // these commands are needing semicolons
-                // and are the first element in a command line
-                if (sWord != "matop" && sWord != "mtrxop" && sWord != "assert" && sWord != "explicit" && sWord != "global")
-                    isSuppressed = true;
+                // Calculate the code metrics:
+                // Complexity
+                int nCyclomaticComplexity = calculateCyclomaticComplexity(m_nCurrentLine,
+                                                                          m_editor->GetLineCount()-1);
+
+                // LinesOfcode
+                int nLinesOfCode = calculateLinesOfCode(m_nCurrentLine,
+                                                        m_editor->GetLineCount()-1);
+
+                // Number of comments
+                int nNumberOfComments = countNumberOfComments(m_nCurrentLine,
+                                                              m_editor->GetLineCount()-1);
+
+                // comment density
+                double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
+
+                // Compare the metrics with the contants and issue a note or a warning
+                if (CALC_COMPLEXITY && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
+                    AnnotCount += addMetric(sSyntaxElement,
+                                            "GUI_ANALYZER_HIGHCOMPLEXITY",
+                                            toString(nCyclomaticComplexity),
+                                            ANNOTATION_WARN);
+                else if ((CALC_COMPLEXITY && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+                         || FORCE_SHOW_METRICS)
+                    AnnotCount += addMetric(sSyntaxElement,
+                                            "GUI_ANALYZER_HIGHCOMPLEXITY",
+                                            toString(nCyclomaticComplexity),
+                                            ANNOTATION_NOTE);
+
+                if ((CALC_LINES_OF_CODE && nLinesOfCode > MAXLINESOFCODE)
+                    || FORCE_SHOW_METRICS)
+                    AnnotCount += addMetric(sSyntaxElement,
+                                            "GUI_ANALYZER_MANYLINES",
+                                            toString(nLinesOfCode),
+                                            ANNOTATION_NOTE);
+
+                if ((CALC_COMMENT_DENSITY && dCommentDensity < MINCOMMENTDENSITY)
+                    || (dCommentDensity < 1.0 && FORCE_SHOW_METRICS))
+                    AnnotCount += addMetric(sSyntaxElement,
+                                            "GUI_ANALYZER_LOWCOMMENTDENSITY",
+                                            toString(dCommentDensity * 100.0, 3),
+                                            ANNOTATION_NOTE);
+
+                if ((CALC_COMMENT_DENSITY && dCommentDensity > MAXCOMMENTDENSITY)
+                    || (dCommentDensity >= 1.0 && FORCE_SHOW_METRICS))
+                    AnnotCount += addMetric(sSyntaxElement,
+                                            "GUI_ANALYZER_HIGHCOMMENTDENSITY",
+                                            toString(dCommentDensity * 100.0, 3),
+                                            ANNOTATION_NOTE);
             }
-		    // Handle commands
-		    AnnotCount += analyseCommands();
-		}
+        }
+
+        // Handle the different style types
+        if (m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, m_nCurPos))
+        {
+            std::string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true),
+                                                                m_editor->WordEndPosition(m_nCurPos, true)));
+
+            if (!isSuppressed
+                && sWord != "matop"
+                && sWord != "mtrxop"
+                && sWord != "assert"
+                && sWord != "explicit"
+                && sWord != "global")
+                isSuppressed = true;
+
+            // Handle commands // 200ms
+            AnnotCount += analyseCommands();
+        }
         else if (m_editor->isStyleType(NumeReEditor::STYLE_FUNCTION, m_nCurPos)
                  || ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC)
-                     && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD))
-		{
-		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
+                     && style == wxSTC_NSCR_METHOD))
+        {
+            if (CHECK_RESULT_SUPPRESSION
+                && !isSuppressed)
             {
-                string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)));
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sWord + "()", m_editor->WordStartPosition(m_nCurPos, true), sWord.length()), m_sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
+                std::string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true),
+                                                                    m_editor->WordEndPosition(m_nCurPos, true)));
+
+                AnnotCount += addNote(highlightFoundOccurence(sWord + "()", m_editor->WordStartPosition(m_nCurPos, true), sWord.length()),
+                                      "GUI_ANALYZER_SUPPRESS_OUTPUT");
                 isSuppressed = true;
             }
-		    // Handle standard functions
-		    AnnotCount += analyseFunctions(isContinuedLine);
-		}
-		else if (m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, m_nCurPos))
-		{
-		    // Handle NumeRe procedure calls (NumeRe only)
-		    AnnotCount += analyseProcedures();
-		}
+
+            // Handle standard functions //30ms
+            AnnotCount += analyseFunctions(isContinuedLine);
+        }
+        else if (m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, m_nCurPos))
+        {
+            // Handle NumeRe procedure calls (NumeRe only) // 20ms
+            AnnotCount += analyseProcedures();
+        }
         else if ((m_editor->isStyleType(NumeReEditor::STYLE_IDENTIFIER, m_nCurPos)
                   || m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, m_nCurPos))
-				 && m_editor->GetCharAt(m_nCurPos) != ' '
-				 && m_editor->GetCharAt(m_nCurPos) != '\t'
-				 && m_editor->GetCharAt(m_nCurPos) != '\r'
-				 && m_editor->GetCharAt(m_nCurPos) != '\n')
-		{
-		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
+                 && ch != ' '
+                 && ch != '\t'
+                 && ch != '\r'
+                 && ch != '\n')
+        {
+            if (CHECK_RESULT_SUPPRESSION
+                && !isSuppressed)
             {
-                string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)));
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sWord, m_editor->WordStartPosition(m_nCurPos, true), sWord.length()), m_sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
+                std::string sWord = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true),
+                                                                    m_editor->WordEndPosition(m_nCurPos, true)));
+
+                AnnotCount += addNote(highlightFoundOccurence(sWord, m_editor->WordStartPosition(m_nCurPos, true), sWord.length()),
+                                      "GUI_ANALYZER_SUPPRESS_OUTPUT");
                 isSuppressed = true;
             }
-		    // Handle identifiers (like variable names)
-		    AnnotCount += analyseIdentifiers();
-		}
-		else if (m_editor->isStyleType(NumeReEditor::STYLE_OPERATOR, m_nCurPos))
-		{
-		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && m_editor->GetCharAt(m_nCurPos) == '=' && !isSuppressed)
+
+            // Handle identifiers (like variable names) // 30ms
+            AnnotCount += analyseIdentifiers();
+        }
+        else if (m_editor->isStyleType(NumeReEditor::STYLE_OPERATOR, m_nCurPos))
+        {
+            if (CHECK_RESULT_SUPPRESSION
+                && ch == '='
+                && !isSuppressed)
             {
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence("=", m_nCurPos, 1), m_sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
+                AnnotCount += addNote(highlightFoundOccurence("=", m_nCurPos, 1),
+                                      "GUI_ANALYZER_SUPPRESS_OUTPUT");
                 isSuppressed = true;
             }
-		    // Handle special operators
-		    AnnotCount += analyseOperators();
-		}
-		else if (m_editor->isStyleType(NumeReEditor::STYLE_NUMBER, m_nCurPos))
-		{
-		    // Handle numbers
-		    AnnotCount += analyseNumbers();
-		}
+
+            // Handle special operators
+            AnnotCount += analyseOperators();
+        }
+        else if (m_editor->isStyleType(NumeReEditor::STYLE_NUMBER, m_nCurPos))
+        {
+            // Handle numbers
+            AnnotCount += analyseNumbers();
+        }
         else if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC)
-                 && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_PREDEFS)
+                 && style == wxSTC_NSCR_PREDEFS)
         {
             AnnotCount += analysePreDefs();
         }
-	}
+    }
 
-	// Clear the annotation and style cache
-	m_sCurrentLine.clear();
-	m_sStyles.clear();
+    // Clear the annotation and style cache
+    m_sCurrentLine.clear();
+    m_sStyles.clear();
 
-	// Write the summary lines
-	if (AnnotCount.nNotes)
-		addToAnnotation(_guilang.get("GUI_ANALYZER_NOTE_TOTAL", toString(AnnotCount.nNotes)), ANNOTATION_NOTE);
+    // Write the summary lines
+    if (AnnotCount.nNotes)
+        addToAnnotation(_guilang.get("GUI_ANALYZER_NOTE_TOTAL", toString(AnnotCount.nNotes)),
+                        ANNOTATION_NOTE);
 
-	if (AnnotCount.nWarnings)
-		addToAnnotation(_guilang.get("GUI_ANALYZER_WARN_TOTAL", toString(AnnotCount.nWarnings)), ANNOTATION_WARN);
+    if (AnnotCount.nWarnings)
+        addToAnnotation(_guilang.get("GUI_ANALYZER_WARN_TOTAL", toString(AnnotCount.nWarnings)),
+                        ANNOTATION_WARN);
 
-	if (AnnotCount.nErrors)
-		addToAnnotation(_guilang.get("GUI_ANALYZER_ERROR_TOTAL", toString(AnnotCount.nErrors)), ANNOTATION_ERROR);
+    if (AnnotCount.nErrors)
+        addToAnnotation(_guilang.get("GUI_ANALYZER_ERROR_TOTAL", toString(AnnotCount.nErrors)),
+                        ANNOTATION_ERROR);
 
     // Append the summary line to the first line (if it is not empty)
-	if (m_sCurrentLine.length() && sFirstLine.length())
-	{
-		m_sCurrentLine += "\n" + sFirstLine;
-		m_sStyles += m_sStyles.back() + sFirstStyles;
-	}
-	else if (sFirstLine.length())
-	{
-		m_sCurrentLine = sFirstLine;
-		m_sStyles = sFirstStyles;
-	}
+    if (m_sCurrentLine.length() && sFirstLine.length())
+    {
+        m_sCurrentLine += "\n" + sFirstLine;
+        m_sStyles += m_sStyles.back() + sFirstStyles;
+    }
+    else if (sFirstLine.length())
+    {
+        m_sCurrentLine = sFirstLine;
+        m_sStyles = sFirstStyles;
+    }
 
-	// Write the first line if it is not empty
-	if (m_sCurrentLine.length())
-	{
-		m_editor->AnnotationSetText(nFirstLine, m_sCurrentLine);
-		m_editor->AnnotationSetStyles(nFirstLine, m_sStyles);
-	}
+    // Write the first line if it is not empty
+    if (m_sCurrentLine.length())
+    {
+        m_editor->AnnotationSetText(nFirstLine, m_sCurrentLine);
+        m_editor->AnnotationSetStyles(nFirstLine, m_sStyles);
+    }
 }
 
 
@@ -359,8 +430,23 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     int wordstart = m_editor->WordStartPosition(m_nCurPos, true);
     int wordend = m_editor->WordEndPosition(m_nCurPos, true);
 
-	// Get the current syntax element
-    string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
+    // Get the current syntax element
+    std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
+
+    // Handle blocks with their corresponding end
+    if (m_editor->isBlockStart(sSyntaxElement) != wxNOT_FOUND)
+    {
+        // Try to find the matching block parts
+        vector<int> vMatch = m_editor->BlockMatch(m_nCurPos);
+
+        if (vMatch.size() > 1 && vMatch.back() != wxSTC_INVALID_POSITION)
+            m_vCurrentScopes.push_back(vMatch);
+    }
+    else if (m_editor->isBlockEnd(sSyntaxElement) != wxNOT_FOUND)
+    {
+        if (m_vCurrentScopes.back().back() == wordstart)
+            m_vCurrentScopes.pop_back();
+    }
 
     // add a message to "throw"
     if (sSyntaxElement == "throw")
@@ -380,7 +466,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         // Was a message found?
         if (!canContinue)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, 5), m_sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")), ANNOTATION_NOTE);
+            AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, 5),
+                                  "GUI_ANALYZER_THROW_ADDMESSAGE");
         }
     }
 
@@ -390,45 +477,55 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         if (m_editor->m_fileType == FILE_NSCR)
         {
             // Not usable command here
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                          highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                          m_sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                   "GUI_ANALYZER_NOTALLOWED");
             return AnnotCount;
         }
 
-        string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
+        std::string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
+
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
+
         StripSpaces(sArgs);
 
         // Is there an explicit namespace name? If no, warn the user
         if (!sArgs.length())
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")), ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_NAMESPACE_ALWAYSMAIN");
         }
+
         m_nCurPos = wordend;
 
         // Advance the character pointer and return the number of gathered annotations
         while (m_editor->GetCharAt(m_nCurPos) != ';' && m_editor->GetCharAt(m_nCurPos) != '\r' && m_editor->GetCharAt(m_nCurPos) != '\n')
             m_nCurPos++;
+
         return AnnotCount;
     }
 
     // The progress command needs extra runtime (2-4 times). Inform the user about this issue
-    if (m_options->GetAnalyzerOption(Options::PROGRESS_RUNTIME) && sSyntaxElement == "progress")
+    if (WARN_PROGRESS_RUNTIME && sSyntaxElement == "progress")
     {
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
+        AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                              "GUI_ANALYZER_PROGRESS_RUNTIME");
     }
 
     // The install or the start commands are not allowed in scripts and procedures
     if (sSyntaxElement == "install" || sSyntaxElement == "uninstall" || sSyntaxElement == "start")
     {
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                               "GUI_ANALYZER_NOTALLOWED");
     }
 
     // Store mode-specific commands
     if (sSyntaxElement == "matop" || sSyntaxElement == "mtrxop")
+    {
         m_currentMode = "matop";
+        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                 "GUI_ANALYZER_DEPRECATED");
+    }
     else if (sSyntaxElement == "draw" || sSyntaxElement == "draw3d")
         m_currentMode = "draw";
 
@@ -437,10 +534,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         // some caches may not be removec
         if (sSyntaxElement == "remove" && m_editor->GetStyleAt(m_editor->WordStartPosition(wordend + 1, true)) == wxSTC_NSCR_PREDEFS)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                   "GUI_ANALYZER_CANNOTREMOVEPREDEFS");
 
         // Get everything after the clearance command
-        string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
+        std::string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
         while (sArgs.back() == '\r' || sArgs.back() == '\n' || sArgs.back() == ';')
             sArgs.pop_back();
 
@@ -448,39 +546,41 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         if (!findParameter(sArgs, "ignore")
                 && !findParameter(sArgs, "i")
                 && (sSyntaxElement != "remove" || m_editor->GetStyleAt(m_editor->WordStartPosition(wordend + 1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
+            AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                  "GUI_ANALYZER_APPENDIGNORE");
     }
 
     // check, whether the current command do have an expression
     // Ignore some special commands, which do not need an expression
     if (sSyntaxElement != "hline"
-            && sSyntaxElement != "continue"
-            && sSyntaxElement != "break"
-            && sSyntaxElement != "leave"
-            && sSyntaxElement != "separator"
-            && sSyntaxElement != "else"
-            && m_editor->isBlockEnd(sSyntaxElement) == wxNOT_FOUND
-            && sSyntaxElement != "about"
-            && sSyntaxElement != "abort"
-            && sSyntaxElement != "compose"
-            && sSyntaxElement != "layout"
-            && sSyntaxElement != "group"
-            && sSyntaxElement != "help"
-            && sSyntaxElement != "quit"
-            && sSyntaxElement != "return"
-            && sSyntaxElement != "subplot"
-            && sSyntaxElement != "try"
-            && sSyntaxElement != "catch"
-            && sSyntaxElement != "otherwise"
-            && sSyntaxElement != "throw"
-            && sSyntaxElement != "rethrow"
-            && sSyntaxElement != "namespace" //warning
+        && sSyntaxElement != "continue"
+        && sSyntaxElement != "break"
+        && sSyntaxElement != "leave"
+        && sSyntaxElement != "separator"
+        && sSyntaxElement != "else"
+        && m_editor->isBlockEnd(sSyntaxElement) == wxNOT_FOUND
+        && sSyntaxElement != "about"
+        && sSyntaxElement != "abort"
+        && sSyntaxElement != "compose"
+        && sSyntaxElement != "layout"
+        && sSyntaxElement != "group"
+        && sSyntaxElement != "help"
+        && sSyntaxElement != "quit"
+        && sSyntaxElement != "return"
+        && sSyntaxElement != "subplot"
+        && sSyntaxElement != "try"
+        && sSyntaxElement != "catch"
+        && sSyntaxElement != "otherwise"
+        && sSyntaxElement != "clc"
+        && sSyntaxElement != "throw"
+        && sSyntaxElement != "rethrow"
+        && sSyntaxElement != "namespace" //warning
        )
     {
         canContinue = false;
 
         // Get everything in the current line after the command
-        string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
+        std::string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
         StripSpaces(sArgs);
@@ -497,25 +597,26 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
             // No expression found and not used as a parameter?
             if (!canContinue)
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
+                AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                       "GUI_ANALYZER_EMPTYEXPRESSION");
         }
     }
 
     // There are some command, which will return values.
     // Check, whether there results are stored into a variable
     if (sSyntaxElement == "zeroes"
-            || sSyntaxElement == "extrema"
-            || sSyntaxElement == "integrate"
-            || sSyntaxElement == "load"
-            || sSyntaxElement == "reload"
-            || sSyntaxElement == "append"
-            || sSyntaxElement == "imread"
-            || sSyntaxElement == "eval"
-            || sSyntaxElement == "taylor"
-            || sSyntaxElement == "get"
-            || sSyntaxElement == "read"
-            || sSyntaxElement == "pulse"
-            || sSyntaxElement == "diff")
+        || sSyntaxElement == "extrema"
+        || sSyntaxElement == "integrate"
+        || sSyntaxElement == "load"
+        || sSyntaxElement == "reload"
+        || sSyntaxElement == "append"
+        || sSyntaxElement == "imread"
+        || sSyntaxElement == "eval"
+        || sSyntaxElement == "taylor"
+        || sSyntaxElement == "get"
+        || sSyntaxElement == "read"
+        || sSyntaxElement == "pulse"
+        || sSyntaxElement == "diff")
     {
         canContinue = false;
 
@@ -530,8 +631,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         }
 
         // Was an assignment operator found?
-        if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && !canContinue)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
+        if (CHECK_RESULT_ASSIGNMENT && !canContinue)
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_ASSIGNTOVARIABLE");
     }
 
     // Examine the if, elseif and while commands
@@ -551,7 +653,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     nPos = m_editor->BraceMatch(j);
                     if (nPos < 0)
                     {
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j, 1), m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, j, 1),
+                                               "GUI_ANALYZER_MISSINGPARENTHESIS");
                         break;
                     }
                 }
@@ -565,47 +668,56 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 // Is the argument available?
                 if (!sArgument.length())
                 {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j, 2), m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, j, 2),
+                                           "GUI_ANALYZER_MISSINGARGUMENT");
                     break;
                 }
 
                 // Is it a constant?
-                if (sArgument == "true" || (sArgument.find_first_not_of("1234567890.") == string::npos && sArgument != "0"))
+                if (sArgument == "true" || (sArgument.find_first_not_of("1234567890.") == std::string::npos && sArgument != "0"))
                 {
                     if (sSyntaxElement == "while")
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                 "GUI_ANALYZER_WHILE_ALWAYSTRUE");
                     else if (sSyntaxElement == "switch")
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_SWITCH_CONSTANT")), ANNOTATION_WARN);
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                 "GUI_ANALYZER_SWITCH_CONSTANT");
                     else
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                 "GUI_ANALYZER_IF_ALWAYSTRUE");
                 }
                 else if (sArgument == "false" || sArgument == "0")
                 {
                     if (sSyntaxElement == "while")
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                 "GUI_ANALYZER_WHILE_ALWAYSFALSE");
                     else if (sSyntaxElement == "switch")
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_SWITCH_CONSTANT")), ANNOTATION_WARN);
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                 "GUI_ANALYZER_SWITCH_CONSTANT");
                     else
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                 "GUI_ANALYZER_IF_ALWAYSFALSE");
                 }
                 else if (containsAssignment(sArgument))
                 {
                     // Does it contain an assignment? Warn the user as m_editor is probably not intendet
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                    AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                             "GUI_ANALYZER_ASSIGNMENTINARGUMENT");
                 }
+
                 break;
             }
         }
 
         // There's an faster, inline if-else operator in NumeRe
         // Propose that, if the current if-else block is quite short
-        if (sSyntaxElement == "if" && m_editor->m_fileType != FILE_MATLAB)
+        if (sSyntaxElement == "if" && m_editor->m_fileType != FILE_MATLAB && RECOMMEND_INLINE_IF)
         {
-            vector<int> vBlock = m_editor->BlockMatch(m_nCurPos);
-
             // Was the end of the current block found?
-            if (vBlock.back() != wxSTC_INVALID_POSITION)
+            if (m_vCurrentScopes.size() && m_vCurrentScopes.back().front() == wordstart)
             {
+                const std::vector<int>& vBlock = m_vCurrentScopes.back();
+
                 // Check the length of the current block
                 if (m_editor->LineFromPosition(vBlock.back()) - m_nCurrentLine < 5)
                 {
@@ -614,27 +726,30 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     // Ensure that no commands except of further ifs and elses are used inside of the found block
                     for (int pos = wordend; pos <= vBlock.back(); pos++)
                     {
-                        if (m_editor->GetStyleAt(pos) == wxSTC_NSCR_COMMAND
-                                && m_editor->GetTextRange(m_editor->WordStartPosition(pos, true), m_editor->WordEndPosition(pos, true)) != "if"
-                                && m_editor->GetTextRange(m_editor->WordStartPosition(pos, true), m_editor->WordEndPosition(pos, true)) != "else"
-                                && m_editor->GetTextRange(m_editor->WordStartPosition(pos, true), m_editor->WordEndPosition(pos, true)) != "endif")
+                        if (m_editor->GetStyleAt(pos) == wxSTC_NSCR_COMMAND)
                         {
-                            // Other command found
-                            canContinue = true;
-                            break;
-                        }
-                        else
-                        {
-                            // jump over other elements
-                            pos = m_editor->WordEndPosition(pos, true);
+                            wxString command = m_editor->GetTextRange(m_editor->WordStartPosition(pos, true),
+                                                                      m_editor->WordEndPosition(pos, true));
+                            if (command != "if"
+                                && command != "else"
+                                && command != "endif")
+                            {
+                                // Other command found
+                                canContinue = true;
+                                break;
+                            }
+                            else
+                            {
+                                // jump over other elements
+                                pos = m_editor->WordEndPosition(pos, true);
+                            }
                         }
                     }
 
                     // Was an other command found?
-                    if (m_options->GetAnalyzerOption(Options::INLINE_IF) && !canContinue)
-                    {
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
-                    }
+                    if (!canContinue)
+                        AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                              "GUI_ANALYZER_USEINLINEIF");
                 }
             }
         }
@@ -642,7 +757,12 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         // Ensure that a switch does contain at least one case
         if (sSyntaxElement == "switch")
         {
-            vector<int> vBlock = m_editor->BlockMatch(m_nCurPos);
+            std::vector<int> vBlock;
+
+            if (m_vCurrentScopes.size() && m_vCurrentScopes.back().front() == wordstart)
+                vBlock = m_vCurrentScopes.back();
+            else
+                vBlock = m_editor->BlockMatch(m_nCurPos);
 
             // Examine each match
             for (size_t i = 1; i < vBlock.size(); i++)
@@ -651,22 +771,26 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 if (vBlock[i] == wxSTC_INVALID_POSITION)
                     break;
 
+                wxString command = m_editor->GetTextRange(vBlock[i], m_editor->WordEndPosition(vBlock[i], true));
+
                 // Examine the command
-                if (m_editor->GetTextRange(vBlock[i], m_editor->WordEndPosition(vBlock[i], true)) == "case")
+                if (command == "case")
                 {
                     // Contains a case: everything is alright
                     break;
                 }
-                else if (m_editor->GetTextRange(vBlock[i], m_editor->WordEndPosition(vBlock[i], true)) == "default")
+                else if (command == "default")
                 {
                     // Only a default statement?
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_SWITCH_ONLY_DEFAULT")), ANNOTATION_WARN);
+                    AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                             "GUI_ANALYZER_SWITCH_ONLY_DEFAULT");
                     break;
                 }
-                else if (m_editor->GetTextRange(vBlock[i], m_editor->WordEndPosition(vBlock[i], true)) == "endswitch")
+                else if (command == "endswitch")
                 {
                     // Neither a case nor a default statement?
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_CASE")), ANNOTATION_ERROR);
+                    AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                           "GUI_ANALYZER_SWITCH_MISSING_CASE");
                     break;
                 }
             }
@@ -677,39 +801,49 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     // if one was found. Also check the appended value.
     if (sSyntaxElement == "case" && m_editor->m_fileType != FILE_MATLAB)
     {
-        vector<int> vBlock = m_editor->BlockMatch(m_nCurPos);
-
-        // Search the correct position in the
-        // whole block
-        for (size_t i = 0; i < vBlock.size(); i++)
+        if (WARN_FALLTHROUGH)
         {
-            // Is this the correct position?
-            if (vBlock[i] == wordstart)
+            std::vector<int> vBlock;
+
+            if (m_vCurrentScopes.size()
+                && std::find(m_vCurrentScopes.back().begin(), m_vCurrentScopes.back().end(), wordstart) != m_vCurrentScopes.back().end())
+                vBlock = m_vCurrentScopes.back();
+            else
+                vBlock = m_editor->BlockMatch(m_nCurPos);
+
+            // Search the correct position in the
+            // whole block
+            for (size_t i = 0; i < vBlock.size(); i++)
             {
-                if (vBlock[i+1] != wxSTC_INVALID_POSITION
-                    && m_editor->GetTextRange(vBlock[i+1], m_editor->WordEndPosition(vBlock[i+1], true)) != "endswitch")
+                // Is this the correct position?
+                if (vBlock[i] == wordstart)
                 {
-                    // Search all occurences of the "break"
-                    // command between the two statements
-                    vector<int> vMatches = m_editor->m_search->FindAll("break", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
-
-                    // Search also for "return"s as an alternative
-                    if (!vMatches.size())
-                        vMatches = m_editor->m_search->FindAll("return", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
-
-                    // Search also for "leave"s as an alternative
-                    if (!vMatches.size())
-                        vMatches = m_editor->m_search->FindAll("leave", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
-
-                    // Ensure that there's one "break", "leave" or "return"
-                    // statement
-                    if (m_options->GetAnalyzerOption(Options::SWITCH_FALLTHROUGH) && !vMatches.size())
+                    if (vBlock[i+1] != wxSTC_INVALID_POSITION
+                        && m_editor->GetTextRange(vBlock[i+1], m_editor->WordEndPosition(vBlock[i+1], true)) != "endswitch")
                     {
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_BREAK")), ANNOTATION_WARN);
-                    }
-                }
+                        // Search all occurences of the "break"
+                        // command between the two statements
+                        vector<int> vMatches = m_editor->m_search->FindAll("break", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
 
-                break;
+                        // Search also for "return"s as an alternative
+                        if (!vMatches.size())
+                            vMatches = m_editor->m_search->FindAll("return", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
+
+                        // Search also for "leave"s as an alternative
+                        if (!vMatches.size())
+                            vMatches = m_editor->m_search->FindAll("leave", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
+
+                        // Ensure that there's one "break", "leave" or "return"
+                        // statement
+                        if (!vMatches.size())
+                        {
+                            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                     "GUI_ANALYZER_SWITCH_MISSING_BREAK");
+                        }
+                    }
+
+                    break;
+                }
             }
         }
 
@@ -718,11 +852,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
         // Does the value contain something, which is not a whitespace
         // and not a comment?
-        if (sLine.find_first_not_of(":\r\n#* ") == string::npos || sLine.find(':') == string::npos)
+        if (sLine.find_first_not_of(":\r\n#* ") == std::string::npos || sLine.find(':') == std::string::npos)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_VALUE")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                   "GUI_ANALYZER_SWITCH_MISSING_VALUE");
         }
-
     }
 
     // Examine the for command
@@ -742,9 +876,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 if (nPos < 0)
                 {
                     // Missing parenthesis
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                               highlightFoundOccurence(sSyntaxElement, j, 1),
-                                                               m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                    AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, j, 1),
+                                           "GUI_ANALYZER_MISSINGPARENTHESIS");
                     break;
                 }
 
@@ -756,9 +889,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 // Argument is empty?
                 if (!sArgument.length())
                 {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                               highlightFoundOccurence(sSyntaxElement, j, 2),
-                                                               m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, j, 2),
+                                           "GUI_ANALYZER_MISSINGARGUMENT");
                     break;
                 }
 
@@ -769,10 +901,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     if (nOpPos >= sArgument.length()-2
                         || (!isalpha(sArgument.front()) && sArgument.front() != '_' && sArgument.front() != '{'))
                     {
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                                   highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
-                                                                   m_sError,
-                                                                   _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                               "GUI_ANALYZER_FOR_INTERVALERROR");
                     }
                 }
                 else
@@ -783,10 +913,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     if (nOpPos >= sArgument.length()-1
                         || (!isalpha(sArgument.front()) && sArgument.front() != '_'))
                     {
-                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                                   highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
-                                                                   m_sError,
-                                                                   _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                               "GUI_ANALYZER_FOR_INTERVALERROR");
                     }
 
                     // Examine the optional condition
@@ -794,52 +922,21 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
                     if (args.size() > 1)
                     {
-                        if (args[1] == "true" || (args[1].find_first_not_of("1234567890.") == string::npos && args[1] != "0"))
+                        if (args[1] == "true" || (args[1].find_first_not_of("1234567890.") == std::string::npos && args[1] != "0"))
                         {
-                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                                       highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
-                                                                       m_sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
+                            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
+                                                     "GUI_ANALYZER_IF_ALWAYSTRUE");
                         }
                         else if (args[1] == "false" || args[1] == "0")
                         {
-                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                                       highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
-                                                                       m_sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
+                            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
+                                                     "GUI_ANALYZER_IF_ALWAYSFALSE");
                         }
                         else if (containsAssignment(args[1]))
                         {
                             // Does it contain an assignment? Warn the user as m_editor is probably not intendet
-                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                                       highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
-                                                                       m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
-                        }
-                    }
-                }
-
-                // Store the for index variable in the list of known
-                // local variables
-                if (nOpPos != std::string::npos)
-                {
-                    nOpPos += j+1;
-
-                    for (int i = j+1; i < (int)nOpPos; i++)
-                    {
-                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER
-                            || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION
-                            || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
-                        {
-                            // Store it and break directly
-                            std::string sTextRange = wxToUtf8(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
-                                                                                     m_editor->WordEndPosition(i, true)));
-
-                            if (m_editor->m_fileType == FILE_NPRC)
-                                m_vLocalVariables.push_back(pair<string,int>(sTextRange,
-                                                                             m_editor->GetStyleAt(i)));
-
-                            m_vKnownVariables.push_back(pair<string,int>(sTextRange,
-                                                                         m_editor->GetStyleAt(i)));
-
-                            i = m_editor->WordEndPosition(i, true);
+                            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, j+1+sArgument.find(args[1]), args[1].length()),
+                                                     "GUI_ANALYZER_ASSIGNMENTINARGUMENT");
                         }
                     }
                 }
@@ -860,7 +957,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         // Handle the special case "list -var"
         if (sSyntaxElement == "var"
-            && m_editor->GetTextRange(m_editor->PositionFromLine(m_nCurrentLine), m_editor->GetLineEndPosition(m_nCurrentLine)).find("list") < (size_t)(wordstart - m_editor->PositionFromLine(m_nCurrentLine)))
+            && m_editor->GetTextRange(m_editor->PositionFromLine(m_nCurrentLine),
+                                      m_editor->GetLineEndPosition(m_nCurrentLine)).find("list") < (size_t)(wordstart - m_editor->PositionFromLine(m_nCurrentLine)))
         {
             m_nCurPos = wordend;
             return AnnotCount;
@@ -894,10 +992,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         if (nProcedureEndPosition == -1)
         {
             nProcedureEndPosition = m_editor->GetLastPosition();
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sError,
-                                                       _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                   "GUI_ANALYZER_MISSINGENDPROCEDURE");
         }
 
         // Inform that this command is only executed once within
@@ -910,15 +1006,13 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         }
 
         if (blockStart.second != wxNOT_FOUND)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sWarn,
-                                                       _guilang.get("GUI_ANALYZER_ONLYEXECUTEDONCE")), ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_ONLYEXECUTEDONCE");
 
         // If there are variables available
         if (sArgs.length())
         {
-            string currentArg;
+            std::string currentArg;
 
             // Extract variable by variable
             while (getNextArgument(sArgs, false).length())
@@ -926,10 +1020,10 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 currentArg = getNextArgument(sArgs, true);
 
                 // remove assignments and parentheses and strip the spaces
-                if (currentArg.find('=') != string::npos)
+                if (currentArg.find('=') != std::string::npos)
                     currentArg.erase(currentArg.find('='));
 
-                if (currentArg.find_first_of("({;") != string::npos)
+                if (currentArg.find_first_of("({;") != std::string::npos)
                     currentArg.erase(currentArg.find_first_of("({;"));
 
                 StripSpaces(currentArg);
@@ -938,51 +1032,31 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     continue;
 
                 // Will this variable be overwritten by a declare?
-                if (nStyle == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(currentArg))
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                               currentArg,
-                                                               m_sError,
-                                                               _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", currentArg)), ANNOTATION_ERROR);
+                if (m_editor->m_codeParser.isValid() && m_editor->m_codeParser.isSymbol(currentArg, m_nCurrentLine, false))
+                {
+                    const ParserSymbol& symbol = m_editor->m_codeParser.getSymbol(currentArg, m_nCurrentLine, false);
 
-                // Does this variable has a fitting type?
-                char cType = getVariableType(currentArg);
-                std::string sChars;
-
-                if (sSyntaxElement == "str")
-                    sChars = "s";
-                else if (sSyntaxElement == "var")
-                    sChars = "ndfbxyzt";
-                else if (sSyntaxElement == "obj")
-                    sChars = "o";
-
-                if (m_options->GetAnalyzerOption(Options::MISLEADING_TYPE)
-                    && cType != '\0'
-                    && sChars.find(cType) == std::string::npos)
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                               currentArg,
-                                                               m_sWarn,
-                                                               _guilang.get("GUI_ANALYZER_MISLEADING_TYPE", currentArg)), ANNOTATION_WARN);
-
-                m_vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
-                m_vKnownVariables.push_back(pair<string,int>(currentArg, nStyle));
+                    if (symbol.m_class == ParserSymbol::GLOBALCONST || symbol.m_class == ParserSymbol::GLOBALENUM)
+                        AnnotCount += addError(currentArg, "GUI_ANALYZER_DECLAREOVERWRITES");
+                }
 
                 // Try to find the variable in the remaining code
-                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES)
+                if (WARN_UNUSED_VARIABLES
                     && !m_editor->m_search->FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())
                 {
                     // No variable found
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                               highlightFoundOccurence(currentArg, m_editor->FindText(wordstart, nProcedureEndPosition, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()),
-                                                               m_sWarn,
-                                                               _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                    int declarationPosition = m_editor->FindText(wordstart,
+                                                                 nNextLineStartPosition,
+                                                                 currentArg,
+                                                                 wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+                    AnnotCount += addWarning(highlightFoundOccurence(currentArg, declarationPosition, currentArg.length()),
+                                             "GUI_ANALYZER_UNUSEDVARIABLE");
                 }
             }
         }
-        else // No varibles are available
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sError,
-                                                       _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+        else // No variables are available
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                   "GUI_ANALYZER_NOVARIABLES");
     }
     else if (m_editor->m_fileType == FILE_NSCR
              && (sSyntaxElement == "var"
@@ -994,9 +1068,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                  || sSyntaxElement == "endprocedure"))
     {
         // Not usable command here
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                      highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                      m_sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                               "GUI_ANALYZER_NOTALLOWED");
     }
 
     // Examine definitions
@@ -1012,36 +1085,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         std::string sDefinitionName = wxToUtf8(m_editor->GetTextRange(definitionStart, definitionEnd));
 
         if (m_editor->GetStyleAt(definitionStart) == wxSTC_NSCR_FUNCTION)
-        {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sDefinitionName, definitionStart, sDefinitionName.length()),
-                                                       m_sError,
-                                                       _guilang.get("GUI_ANALYZER_STDFUNC_REDEF", sDefinitionName)), ANNOTATION_ERROR);
-        }
-        else if (m_editor->m_fileType == FILE_NPRC
-                 && m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES))
-        {
-            // Use the definition names as local variables
-            m_vLocalVariables.push_back(pair<string,int>(sDefinitionName, wxSTC_NSCR_CUSTOM_FUNCTION));
-        }
-
-        // increment the position variable to the last position
-        // in the current line, so that we may jump over the definition
-        // in the following
-        m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
-        return AnnotCount;
-    }
-
-    // Examine symbol declarations
-    if (sSyntaxElement == SYMDEF_COMMAND)
-    {
-        // extract the declaration and strip the spaces
-        std::string sDefinition = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
-
-        while (sDefinition.back() == '\r' || sDefinition.back() == '\n')
-            sDefinition.pop_back();
-
-        m_symdefs.createSymbol(sDefinition);
+            AnnotCount += addError(highlightFoundOccurence(sDefinitionName, definitionStart, sDefinitionName.length()),
+                                   "GUI_ANALYZER_STDFUNC_REDEF");
 
         // increment the position variable to the last position
         // in the current line, so that we may jump over the definition
@@ -1059,61 +1104,34 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             // Creating this instance might fail
             Includer incl(wxToUtf8(m_editor->GetTextRange(wordstart, m_editor->GetLineEndPosition(m_nCurrentLine))),
                           wxToUtf8(m_editor->GetFileName().GetPath()));
-
-            // Go through all included lines in this file
-            while (incl.is_open())
-            {
-                std::string sLine = incl.getNextLine();
-                Match _mMatch = findCommand(sLine);
-
-                // Is it a declare?
-                if (_mMatch.sString == SYMDEF_COMMAND)
-                    m_symdefs.createSymbol(sLine.substr(_mMatch.nPos + _mMatch.sString.length()));
-
-                // Is it a define?
-                if (_mMatch.sString == "define"
-                    || _mMatch.sString == "ifndefined"
-                    || _mMatch.sString == "lclfunc"
-                    || _mMatch.sString == "def"
-                    || _mMatch.sString == "ifndef")
-                {
-                    std::string sDefinition = sLine.substr(_mMatch.nPos + _mMatch.sString.length());
-                    StripSpaces(sDefinition);
-
-                    // If there is a declaration available
-                    if (sDefinition.length())
-                    {
-                        // remove assignments and parentheses and strip the spaces
-                        if (sDefinition.find('=') != string::npos)
-                            sDefinition.erase(sDefinition.find('='));
-
-                        if (sDefinition.find_first_of("({") != string::npos)
-                            sDefinition.erase(sDefinition.find_first_of("({"));
-
-                        StripSpaces(sDefinition);
-
-                        m_vLocalVariables.push_back(pair<string,int>(sDefinition, wxSTC_NSCR_CUSTOM_FUNCTION));
-                    }
-                }
-            }
         }
         catch (SyntaxError& e)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sError,
-                                                       _guilang.get("ERR_NR_2022_0_INCLUDE_NOT_EXIST", e.getToken())), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       sSyntaxElement,
+                                                       m_sError,
+                                                       _guilang.get("ERR_NR_2022_0_INCLUDE_NOT_EXIST", e.getToken())),
+                                          ANNOTATION_ERROR);
         }
 
         m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
         return AnnotCount;
     }
-
+//m_nCurPos = wordend;
+//return AnnotCount;
     // Examine the procedure / MATLAB function starting at m_editor position
     // This includes esp. the calculation of the standard coding metrics
     if ((m_editor->m_fileType == FILE_NPRC && sSyntaxElement == "procedure")
         || (m_editor->m_fileType == FILE_MATLAB && sSyntaxElement == "function"))
     {
         // Use the block match function, which is capable of doing both: NumeRe and MATLAB syntax
-        vector<int> vBlock = m_editor->BlockMatch(m_nCurPos);
+        std::vector<int> vBlock;
+
+        if (m_vCurrentScopes.size() && m_vCurrentScopes.back().front() == wordstart)
+            vBlock = m_vCurrentScopes.back();
+        else
+            vBlock = m_editor->BlockMatch(m_nCurPos);
+
         m_hasProcedureDefinition = true;
 
         // If the current file is a procedure file, then decode the
@@ -1124,7 +1142,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             int nArgumentParensStart = m_editor->FindText(m_nCurPos, m_editor->GetLineEndPosition(m_nCurrentLine), "(");
             int nArgumentParensEnd = m_editor->BraceMatch(nArgumentParensStart);
 
-            if (nArgumentParensStart != -1 && nArgumentParensEnd != -1)
+            if (nArgumentParensStart != -1 && nArgumentParensEnd != -1 && m_editor->m_codeParser.isValid())
             {
                 // Decode the list
                 for (int i = nArgumentParensStart+1; i < nArgumentParensEnd; i++)
@@ -1136,11 +1154,14 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                         wxString sArg = m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true));
 
                         // Will this argument be overwritten by a declare?
-                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(wxToUtf8(sArg)))
-                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sArg, m_sError,
-                                                                       _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", sArg)), ANNOTATION_ERROR);
+                        if (m_editor->m_codeParser.isSymbol(wxToUtf8(sArg), m_nCurrentLine, false))
+                        {
+                            const ParserSymbol& symbol = m_editor->m_codeParser.getSymbol(wxToUtf8(sArg), m_nCurrentLine, false);
 
-                        m_vLocalVariables.push_back(pair<string,int>(wxToUtf8(sArg), m_editor->GetStyleAt(i)));
+                            if (symbol.m_class == ParserSymbol::GLOBALCONST || symbol.m_class == ParserSymbol::GLOBALENUM)
+                                AnnotCount += addError(sArg, "GUI_ANALYZER_DECLAREOVERWRITES");
+                        }
+
                         i = m_editor->WordEndPosition(i, true);
                     }
                 }
@@ -1158,13 +1179,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 int nNamingProcedure = m_editor->m_search->FindNamingProcedure();
 
                 if (nNamingProcedure == wxNOT_FOUND)
-                {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
-                }
-                else if (m_options->GetAnalyzerOption(Options::THISFILE_NAMESPACE) && nNamingProcedure != m_nCurrentLine)
-                {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
-                }
+                    AnnotCount += addError(sSyntaxElement, "GUI_ANALYZER_NONAMINGPROCEDURE");
+                else if (WARN_THISFILE_NAMESPACE && nNamingProcedure != m_nCurrentLine)
+                    AnnotCount += addWarning(sSyntaxElement, "GUI_ANALYZER_THISFILEPROCEDURE");
             }
             // Calculate the code metrics:
             // Complexity
@@ -1180,22 +1197,49 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
 
             // Compare the metrics with the contants and issue a note or a warning
-            if (m_options->GetAnalyzerOption(Options::PROCEDURE_LENGTH) && nLinesOfCode < 3)
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+            if (CALC_PROCEDURE_LENGTH)
+            {
+                m_editor->m_search->FindMarkedProcedure(m_nCurPos+11, false);
+                wxString procDef = m_editor->m_search->FindProcedureDefinition();
 
-            if (m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-            else if ((m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+                if (nLinesOfCode < 5
+                    && (procDef.find("::") == std::string::npos
+                        || procDef.find("inline", procDef.find("::")) == std::string::npos))
+                    AnnotCount += addWarning(sSyntaxElement, "GUI_ANALYZER_INLINING");
+            }
 
-            if ((m_options->GetAnalyzerOption(Options::LINES_OF_CODE) && nLinesOfCode > MAXLINESOFCODE) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+            if (CALC_COMPLEXITY && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
+                AnnotCount += addMetric(sSyntaxElement,
+                                        "GUI_ANALYZER_HIGHCOMPLEXITY",
+                                        toString(nCyclomaticComplexity),
+                                        ANNOTATION_WARN);
+            else if ((CALC_COMPLEXITY && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+                     || FORCE_SHOW_METRICS)
+                AnnotCount += addMetric(sSyntaxElement,
+                                        "GUI_ANALYZER_HIGHCOMPLEXITY",
+                                        toString(nCyclomaticComplexity),
+                                        ANNOTATION_NOTE);
 
-            if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity < MINCOMMENTDENSITY) || (dCommentDensity < 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
+            if ((CALC_LINES_OF_CODE && nLinesOfCode > MAXLINESOFCODE)
+                || FORCE_SHOW_METRICS)
+                AnnotCount += addMetric(sSyntaxElement,
+                                        "GUI_ANALYZER_MANYLINES",
+                                        toString(nLinesOfCode),
+                                        ANNOTATION_NOTE);
 
-            if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity > MAXCOMMENTDENSITY) || (dCommentDensity >= 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
+            if ((CALC_COMMENT_DENSITY && dCommentDensity < MINCOMMENTDENSITY)
+                || (dCommentDensity < 1.0 && FORCE_SHOW_METRICS))
+                AnnotCount += addMetric(sSyntaxElement,
+                                        "GUI_ANALYZER_LOWCOMMENTDENSITY",
+                                        toString(dCommentDensity * 100.0, 3),
+                                        ANNOTATION_NOTE);
+
+            if ((CALC_COMMENT_DENSITY && dCommentDensity > MAXCOMMENTDENSITY)
+                || (dCommentDensity >= 1.0 && FORCE_SHOW_METRICS))
+                AnnotCount += addMetric(sSyntaxElement,
+                                        "GUI_ANALYZER_HIGHCOMMENTDENSITY",
+                                        toString(dCommentDensity * 100.0, 3),
+                                        ANNOTATION_NOTE);
         }
     }
 
@@ -1203,63 +1247,62 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     if (m_editor->m_fileType == FILE_NPRC && sSyntaxElement == "return")
     {
         // Try to find the end of the current procedure
-        int nProcedureEnd = m_editor->FindText(m_nCurPos, m_editor->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+        int nProcedureEnd = m_editor->FindText(m_nCurPos,
+                                               m_editor->GetLastPosition(),
+                                               "endprocedure",
+                                               wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
 
         // Get the argument of the return command and strip the spaces
         std::string sArgs = wxToUtf8(m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)));
+
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
+
         StripSpaces(sArgs);
 
         // Ensure that the end of the procedure was found
         if (nProcedureEnd == -1)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                   "GUI_ANALYZER_MISSINGENDPROCEDURE");
         }
 
         // Examine the argument
         if (sArgs.length())
         {
             // Inform the user to add an semicolon to the arguments, if he uses something else than "void"
-            if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && sArgs.back() != ';' && sArgs != "void")
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend + 1, sArgs.length()), m_sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
+            if (CHECK_RESULT_SUPPRESSION && sArgs.back() != ';' && sArgs != "void")
+                AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordend + 1, sArgs.length()),
+                                      "GUI_ANALYZER_RETURN_ADDSEMICOLON");
         }
         else
         {
             // Inform the user that the return value will always be "true", if he doesn't append a value
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
+            AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                  "GUI_ANALYZER_RETURN_ALWAYSTRUE");
         }
     }
-
+//m_nCurPos = wordend;
+//return AnnotCount;
     // Handle blocks with their corresponding end
-    if (m_editor->isBlockStart(sSyntaxElement, true) != wxNOT_FOUND || m_editor->isBlockEnd(sSyntaxElement) != wxNOT_FOUND)
+    if (m_editor->isBlockStart(sSyntaxElement, true) != wxNOT_FOUND
+        || m_editor->isBlockEnd(sSyntaxElement) != wxNOT_FOUND)
     {
         // Try to find the matching block parts
-        vector<int> vMatch = m_editor->BlockMatch(m_nCurPos);
+        std::vector<int> vMatch;
+
+        if (m_vCurrentScopes.size()
+            && std::find(m_vCurrentScopes.back().begin(), m_vCurrentScopes.back().end(), wordstart) != m_vCurrentScopes.back().end())
+            vMatch = m_vCurrentScopes.back();
+        else
+            vMatch = m_editor->BlockMatch(m_nCurPos);
 
         if (vMatch.size() > 1)
         {
             // If there's an invalid position, m_editor means that the current block is unfinished
             if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
-        }
-
-        // Clear the list of local variables
-        if (sSyntaxElement == "endprocedure")
-        {
-            for (const auto& iter : m_vLocalVariables)
-            {
-                std::erase(m_vKnownVariables, iter);
-            }
-
-            m_vLocalVariables.clear();
-        }
-
-        // Remove the last declared local variable
-        if (sSyntaxElement == "endfor" && m_editor->m_fileType == FILE_NPRC && m_vLocalVariables.size())
-        {
-            std::erase(m_vKnownVariables, m_vLocalVariables.back());
-            m_vLocalVariables.pop_back();
+                AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                       "GUI_ANALYZER_UNFINISHEDBLOCK");
         }
     }
 
@@ -1287,87 +1330,118 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     bool canContinue = false;
     int wordstart = m_editor->WordStartPosition(m_nCurPos, true);
     int wordend = m_editor->WordEndPosition(m_nCurPos, true);
+    std::string rootType = "*";
 
     // Get the corresponding syntax element
     std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
 
     // Handle method (modifier) calls, also appends a pair of parentheses if needed
-    if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD)
+    if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC)
+        && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD)
     {
-        if (std::find(m_STRING_METHODS.begin(), m_STRING_METHODS.end(), sSyntaxElement + "()") != m_STRING_METHODS.end() && m_currentMode == "matop")
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement + "()")), ANNOTATION_ERROR);
+        if (std::find(m_STRING_METHODS.begin(), m_STRING_METHODS.end(), sSyntaxElement + "()") != m_STRING_METHODS.end()
+            && m_currentMode == "matop")
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart),
+                                   "GUI_ANALYZER_STRINGFUNCTION");
 
         // ignore modifiers, i.e. method without parentheses
         static std::string sMODIFIER = " " + m_editor->_syntax->getNoArgMethods();
 
-        if (sMODIFIER.find(" " + sSyntaxElement + " ") == string::npos)
+        if (sMODIFIER.find(" " + sSyntaxElement + " ") == std::string::npos)
             sSyntaxElement += "()";
 
-        sSyntaxElement.insert(0, "VAR.");
+        rootType = m_editor->get_method_root_type(m_nCurPos).first;
+
+        if (rootType.length() && rootType != "*")
+            sSyntaxElement.insert(0, rootType + ".");
+        else
+            sSyntaxElement.insert(0, "VAR.");
     }
     else
         sSyntaxElement += "()";
 
     // Is the current function called without a target variable?
-    if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && m_editor->PositionFromLine(m_nCurrentLine) == wordstart && !isContinuedLine && sSyntaxElement != "sleep()")
+    if (CHECK_RESULT_ASSIGNMENT && sSyntaxElement != "sleep()")
     {
-        // The function is called at the first position without a target variable
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
-    }
-    else if (sSyntaxElement != "sleep()")
-    {
-        // Try to find a assignment operator before the function
-        // Other possibilities are commands and procedure calls
-        for (int j = m_editor->PositionFromLine(m_nCurrentLine); j < wordstart; j++)
-        {
-            if (m_editor->GetCharAt(j) == '=' || m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, j) || m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, j) || m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, j))
-            {
-                canContinue = true;
-                break;
-            }
-        }
+        int startPos = m_editor->PositionFromLine(m_nCurrentLine);
 
-        // Was an operator or a command found?
-        if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && !canContinue && !isContinuedLine)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
+        if (startPos == wordstart
+            && !isContinuedLine)
+        {
+            // The function is called at the first position without a target variable
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
+                                     "GUI_ANALYZER_ASSIGNTOVARIABLE");
+        }
+        else
+        {
+            // Try to find a assignment operator before the function
+            // Other possibilities are commands and procedure calls
+            for (int j = startPos; j < wordstart; j++)
+            {
+                if (m_editor->GetCharAt(j) == '='
+                    || m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, j)
+                    || m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, j)
+                    || m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, j))
+                {
+                    canContinue = true;
+                    break;
+                }
+            }
+
+            // Was an operator or a command found?
+            if (!canContinue && !isContinuedLine)
+                AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
+                                         "GUI_ANALYZER_ASSIGNTOVARIABLE");
+        }
     }
 
     // There's a missing parenthesis?
-    if (m_editor->BraceMatch(wordend) < wordend && sSyntaxElement.find('(') != std::string::npos)
+    if (sSyntaxElement.find('(') != std::string::npos)
     {
-        // MATLAB doesn't require a parenthesis pair for empty arguments.
-        // However, issue a warning as it is good practice to visually distinguish between variables and functions
-        if (m_editor->m_fileType == FILE_MATLAB)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_WARN);
-        else
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
-    }
-    else if (sSyntaxElement.find('(') != std::string::npos)
-    {
-        // Check for missing arguments
         int nPos = m_editor->BraceMatch(wordend);
-        std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
-        EndlessVector<std::string> args = getAllArguments(sArgument);
 
-        if (sSyntaxElement.find('.') == std::string::npos)
-            _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
+        if (nPos < wordend)
+        {
+            // MATLAB doesn't require a parenthesis pair for empty arguments.
+            // However, issue a warning as it is good practice to visually distinguish between variables and functions
+            if (m_editor->m_fileType == FILE_MATLAB)
+                AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
+                                         "GUI_ANALYZER_MISSINGPARENTHESIS");
+            else
+                AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
+                                       "GUI_ANALYZER_MISSINGPARENTHESIS");
+        }
         else
-            _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), "");
+        {
+            // Check for missing arguments
+            std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
+            EndlessVector<std::string> args = getAllArguments(sArgument);
 
-        if (args.size() > _cTip.arguments.size() && (!_cTip.arguments.size() || _cTip.arguments.back() != "..."))
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_TOOMANYARGS")), ANNOTATION_ERROR);
-        else if (args.size() < _cTip.nReqArgs)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+            if (sSyntaxElement.find('.') == std::string::npos)
+                _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
+            else
+                _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), rootType);
 
+            //g_logger.info(sSyntaxElement + " | " + rootType + ": " + _cTip.sDefinition + " | " + toString(_cTip.arguments.size()));
+
+            if (args.size() > _cTip.arguments.size()
+                && !(_cTip.arguments.size() && _cTip.arguments.back() == "..."))
+                AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1),
+                                       "GUI_ANALYZER_TOOMANYARGS");
+            else if (args.size() < _cTip.nReqArgs)
+                AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1),
+                                       "GUI_ANALYZER_MISSINGARGUMENT");
+        }
     }
 
     // Examine mode-specific functions
-    if (std::find(m_STRING_FUNCS.begin(), m_STRING_FUNCS.end(), sSyntaxElement) != m_STRING_FUNCS.end() && m_currentMode == "matop")
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
+    if (m_currentMode == "matop" && std::find(m_STRING_FUNCS.begin(), m_STRING_FUNCS.end(), sSyntaxElement) != m_STRING_FUNCS.end())
+        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
+                               "GUI_ANALYZER_STRINGFUNCTION");
 
-    if (std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) != m_DRAW_FUNCS.end() && m_currentMode != "draw")
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_DRAWFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
-
+    if (m_currentMode != "draw" && std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) != m_DRAW_FUNCS.end())
+        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
+                               "GUI_ANALYZER_DRAWFUNCTION");
 
     m_nCurPos = wordend;
 
@@ -1390,7 +1464,8 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
     int nProcStart = m_nCurPos;
 
     // Try to find the current procedure call
-    string sSyntaxElement = wxToUtf8(m_editor->m_search->FindMarkedProcedure(m_nCurPos));
+    std::string sSyntaxElement = wxToUtf8(m_editor->m_search->FindMarkedProcedure(m_nCurPos));
+
     if (!sSyntaxElement.length())
         return AnnotCount;
 
@@ -1401,19 +1476,14 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
     // Validate the procedure name for unwanted characters
     if (!sSyntaxElement.starts_with("$'"))
     {
-        for (size_t i = 0; i < sSyntaxElement.length(); i++)
+        for (size_t i = 1; i < sSyntaxElement.length()-2; i++)
         {
             if (!isalnum(sSyntaxElement[i])
-                && sSyntaxElement[i] != '$'
-                && sSyntaxElement[i] != '/'
-                && sSyntaxElement[i] != ':'
                 && sSyntaxElement[i] != '_'
-                && sSyntaxElement[i] != '\''
-                && sSyntaxElement[i] != '('
-                && sSyntaxElement[i] != ')'
                 && sSyntaxElement[i] != '~')
             {
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDUREINVALIDCHARS", sSyntaxElement)), ANNOTATION_ERROR);
+                AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1),
+                                       "GUI_ANALYZER_PROCEDUREINVALIDCHARS");
                 break;
             }
         }
@@ -1425,9 +1495,10 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
     if (!procDef.length())
     {
         // Procedure definition was not found
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND", sSyntaxElement)), ANNOTATION_ERROR);
+        AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1),
+                               "GUI_ANALYZER_PROCEDURENOTFOUND");
     }
-    else
+    else if (m_editor->m_fileNameAndPath.GetExt().Lower() != "nlyt")
     {
         size_t argParens = procDef.find('(');
         std::string sReqArgs = procDef.substr(argParens+1, getMatchingParenthesis(procDef)-argParens-1);
@@ -1439,17 +1510,15 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
         EndlessVector<std::string> args = getAllArguments(sArgument);
 
         if (args.size() > procArgs.size())
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1), m_sError, _guilang.get("GUI_ANALYZER_TOOMANYARGS")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordend, nPos-wordend+1),
+                                   "GUI_ANALYZER_TOOMANYARGS");
         else
         {
             for (size_t i = 0; i < procArgs.size(); i++)
             {
                 if (procArgs[i].find('=') == std::string::npos && (args.size() <= i || !args[i].length()))
-                {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                               highlightFoundOccurence(procArgs[i], wordend, nPos-wordend+1),
-                                                               m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
-                }
+                    AnnotCount += addError(highlightFoundOccurence(procArgs[i], wordend, nPos-wordend+1),
+                                           "GUI_ANALYZER_MISSINGARGUMENT");
             }
         }
     }
@@ -1483,24 +1552,17 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
     std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
 
     // Warn about global variables
-    if (m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES) && m_editor->m_fileType == FILE_NPRC)
+    if (WARN_GLOBAL_VARIABLES
+        && m_editor->m_fileType == FILE_NPRC
+        && m_editor->m_codeParser.isValidLine(m_nCurrentLine))
     {
         bool bOK = false;
 
-        // Try to find the current identifier in the list
-        // of known local variables
-        for (size_t i = 0; i < m_vLocalVariables.size(); i++)
+        if (m_editor->m_codeParser.isSymbol(sSyntaxElement, m_nCurrentLine, true))
         {
-            if (m_vLocalVariables[i].first == sSyntaxElement && m_vLocalVariables[i].second == m_editor->GetStyleAt(m_nCurPos))
-            {
-                bOK = true;
-                break;
-            }
+            const ParserSymbol& symbol = m_editor->m_codeParser.getSymbol(sSyntaxElement, m_nCurrentLine, true);
+            bOK = symbol.m_class != ParserSymbol::GLOBAL;
         }
-
-        // Check in the symbol declarations
-        if (!bOK)
-            bOK = m_symdefs.isSymbol(sSyntaxElement);
 
         // nothing found
         if (!bOK)
@@ -1509,51 +1571,44 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
 
             // Ignore y* variables from odesolve
             if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve "
-                || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
+                || !(sSyntaxElement[0] == 'y'
+                     && sSyntaxElement.length() > 1
+                     && sSyntaxElement.find_first_not_of("0123456789", 1) == std::string::npos))
+                AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                         "GUI_ANALYZER_GLOBALVARIABLE");
         }
     }
 
     // Warn about global variables
-    if (m_options->GetAnalyzerOption(Options::TYPE_MISUSE) && (m_editor->m_fileType == FILE_NPRC || m_editor->m_fileType == FILE_NSCR))
+    if (WARN_TYPE_MISUSE
+        && (m_editor->m_fileType == FILE_NPRC || m_editor->m_fileType == FILE_NSCR)
+        && m_editor->m_codeParser.isValidLine(m_nCurrentLine))
     {
         bool bOK = false;
+        int style = m_editor->GetStyleAt(m_nCurPos);
 
         // Try to find the current identifier in the list
         // of known local variables
-        for (size_t i = 0; i < m_vKnownVariables.size(); i++)
+        if (m_editor->m_codeParser.isSymbol(sSyntaxElement, m_nCurrentLine, true))
         {
-            if (m_vKnownVariables[i].first == sSyntaxElement)
+            const ParserSymbol& symbol = m_editor->m_codeParser.getSymbol(sSyntaxElement, m_nCurrentLine, true);
+            bOK = ((symbol.m_type == "table" || symbol.m_type == "{value}" || symbol.m_type == "value" || symbol.isFunction()) && style == wxSTC_NSCR_CUSTOM_FUNCTION)
+                || (symbol.m_type == "cluster" && style == wxSTC_NSCR_CLUSTER)
+                || (symbol.m_type != "table" && symbol.m_type != "cluster" && style == wxSTC_NSCR_IDENTIFIER);
+
+            // nothing found
+            if (!bOK)
             {
-                bOK = m_vKnownVariables[i].second == m_editor->GetStyleAt(m_nCurPos);
-                break;
+                wxString currentline = m_editor->GetLine(m_nCurrentLine);
+
+                // Ignore y* variables from odesolve
+                if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve "
+                    || !(sSyntaxElement[0] == 'y'
+                         && sSyntaxElement.length() > 1
+                         && sSyntaxElement.find_first_not_of("0123456789", 1) == std::string::npos))
+                    AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                             "GUI_ANALYZER_TYPE_MISUSE");
             }
-
-            // Add the symbol to the list of known symbols
-            if (i+1 == m_vKnownVariables.size())
-            {
-                m_vKnownVariables.push_back(std::make_pair(sSyntaxElement, m_editor->GetStyleAt(m_nCurPos)));
-                bOK = true;
-                break;
-            }
-        }
-
-        // Add the symbol to the list of known variables, if nothing is in there
-        if (!bOK && !m_vKnownVariables.size())
-        {
-            m_vKnownVariables.push_back(std::make_pair(sSyntaxElement, m_editor->GetStyleAt(m_nCurPos)));
-            bOK = true;
-        }
-
-        // nothing found
-        if (!bOK)
-        {
-            wxString currentline = m_editor->GetLine(m_nCurrentLine);
-
-            // Ignore y* variables from odesolve
-            if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve "
-                || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_TYPE_MISUSE", sSyntaxElement)), ANNOTATION_WARN);
         }
     }
 
@@ -1566,68 +1621,84 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
             && m_editor->GetCharAt(wordstart-1) != '&'
             && m_editor->GetTextRange(wordend, wordend+3) != "()&")
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_WARN_TABLE_REFERENCE", sSyntaxElement)), ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_WARN_TABLE_REFERENCE");
         }
-
-        m_nCurPos = wordend;
-        return AnnotCount;
     }
 
     // Handle very short variable names
-    if (sSyntaxElement.length() < 4 && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
+    if (WARN_VARIABLE_LENGTH
+        && sSyntaxElement.length() < 4
+        && sSyntaxElement.length() > 1
+        && sSyntaxElement.find_first_not_of("\r\n") != std::string::npos
+        && sSyntaxElement.find('.') == std::string::npos)
     {
         // Too short
-        if (m_options->GetAnalyzerOption(Options::VARIABLE_LENGTH) && !(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT", sSyntaxElement)), ANNOTATION_NOTE);
+        if (!(sSyntaxElement.length() == 2 && (isdigit(sSyntaxElement[1]) || sSyntaxElement[0] == 'd')))
+        {
+            if (m_editor->m_codeParser.isValidLine(m_nCurrentLine)
+                && m_editor->m_codeParser.isSymbol(sSyntaxElement, m_nCurrentLine, true))
+            {
+                if (!m_editor->m_codeParser.getSymbol(sSyntaxElement, m_nCurrentLine, true).isFunction())
+                    AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                          "GUI_ANALYZER_VARNAMETOOSHORT");
+            }
+            else
+                AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                      "GUI_ANALYZER_VARNAMETOOSHORT");
+        }
     }
 
     // Handle the variable's names: are they following guidelines?
-    if (sSyntaxElement.length() > 2 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
+    if (sSyntaxElement.length() > 2
+        && sSyntaxElement.find_first_not_of("\r\n") != std::string::npos
+        && sSyntaxElement.find('.') == std::string::npos)
     {
-        size_t shift = 0;
-
-        // We want to start the procedures arguments with an underscore (not possible in MATLAB)
-        while (sSyntaxElement[shift] == '_')
-            shift++;
-
         // Because function names definitions are not highlighted different in MATLAB code, we leave the function
         // at m_editor position
-        if (m_editor->m_fileType == FILE_MATLAB && m_hasProcedureDefinition && m_editor->GetCharAt(wordend) == '(')
+        if (m_editor->m_fileType == FILE_MATLAB
+            && m_hasProcedureDefinition
+            && m_editor->GetCharAt(wordend) == '(')
         {
             m_nCurPos = wordend;
             return AnnotCount;
         }
 
-        if (getVariableType(sSyntaxElement) == '\0')
+        if (m_editor->m_codeParser.isValidLine(m_nCurrentLine) && m_editor->m_codeParser.isSymbol(sSyntaxElement, m_nCurrentLine, true))
         {
-            // var not type-oriented
-            // Add and underscore to indicate the procedures arguments
-            if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE)
-                && m_hasProcedureDefinition
-                && !shift
-                && m_editor->m_fileType != FILE_MATLAB)
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                           highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                           m_sNote,
-                                                           _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+            const ParserSymbol& symbol = m_editor->m_codeParser.getSymbol(sSyntaxElement, m_nCurrentLine, true);
 
-            // variable should begin with lowercase letter indicate its type
-            if (m_options->GetAnalyzerOption(Options::TYPE_ORIENTATION))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                           highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                           m_sNote,
-                                                           _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED", sSyntaxElement)), ANNOTATION_NOTE);
-        }
-        else if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE)
-                 && m_hasProcedureDefinition
-                 && !shift
-                 && m_editor->m_fileType != FILE_MATLAB)
-        {
             // Add and underscore to indicate the procedures arguments
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sNote,
-                                                       _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+            if (RECOMMEND_ARGUMENT_UNDERSCORE
+                && (symbol.m_class == ParserSymbol::ARG || symbol.m_class == ParserSymbol::ARGREF)
+                && (sSyntaxElement.front() != '_'))
+                AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                      "GUI_ANALYZER_INDICATEARGUMENT");
+
+            if ((RECOMMEND_TYPE_ORIENTATION || WARN_MISLEADING_TYPE)
+                && symbol.m_type != "table"
+                && symbol.m_type != "cluster"
+                && !symbol.isFunction())
+            {
+                ParserSymbol typeTest(sSyntaxElement);
+
+                if (typeTest.m_type == "void")
+                {
+                    // var not type-oriented
+                    // variable should begin with lowercase letter indicate its type
+                    if (RECOMMEND_TYPE_ORIENTATION)
+                        AnnotCount += addNote(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                              "GUI_ANALYZER_VARNOTTYPEORIENTED");
+                }
+                else if (typeTest.getHeuristicEquivalent() != symbol.getHeuristicEquivalent())
+                {
+                    // var not type-oriented
+                    // variable should begin with lowercase letter indicate its type
+                    if (WARN_MISLEADING_TYPE)
+                        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                 "GUI_ANALYZER_MISLEADING_TYPE");
+                }
+            }
         }
     }
 
@@ -1650,13 +1721,19 @@ AnnotationCount CodeAnalyzer::analyseOperators()
     AnnotationCount AnnotCount;
 
     // If the current operator is a parenthesis, try to find the matching one
-    if (m_editor->GetCharAt(m_nCurPos) == '(' || m_editor->GetCharAt(m_nCurPos) == '[' || m_editor->GetCharAt(m_nCurPos) == '{'
-            || m_editor->GetCharAt(m_nCurPos) == ')' || m_editor->GetCharAt(m_nCurPos) == ']' || m_editor->GetCharAt(m_nCurPos) == '}')
+    if (m_editor->GetCharAt(m_nCurPos) == '('
+        || m_editor->GetCharAt(m_nCurPos) == '['
+        || m_editor->GetCharAt(m_nCurPos) == '{'
+        || m_editor->GetCharAt(m_nCurPos) == ')'
+        || m_editor->GetCharAt(m_nCurPos) == ']'
+        || m_editor->GetCharAt(m_nCurPos) == '}')
     {
         int nPos = m_editor->BraceMatch(m_nCurPos);
+
         if (nPos < 0)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(string(1, m_editor->GetCharAt(m_nCurPos)), m_nCurPos, 1), m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+            AnnotCount += addError(highlightFoundOccurence(string(1, m_editor->GetCharAt(m_nCurPos)), m_nCurPos, 1),
+                                   "GUI_ANALYZER_MISSINGPARENTHESIS");
         }
     }
 
@@ -1681,11 +1758,11 @@ AnnotationCount CodeAnalyzer::analyseNumbers()
     while (m_editor->isStyleType(NumeReEditor::STYLE_NUMBER, m_nCurPos + 1))
         m_nCurPos++;
 
-    if (!m_options->GetAnalyzerOption(Options::MAGIC_NUMBERS))
+    if (!WARN_MAGIC_NUMBERS)
         return AnnotCount;
 
     // Get the number
-    string sCurrentNumber = wxToUtf8(m_editor->GetTextRange(nNumberStart, m_nCurPos + 1));
+    std::string sCurrentNumber = wxToUtf8(m_editor->GetTextRange(nNumberStart, m_nCurPos + 1));
 
     // Go inversely through the line and try to find an assignment operator
     for (int i = nNumberStart; i >= nLineStartPos; i--)
@@ -1703,7 +1780,8 @@ AnnotationCount CodeAnalyzer::analyseNumbers()
                 break;
 
             // All other operators are indicating the current number as magic number
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sCurrentNumber, nNumberStart, sCurrentNumber.length()), m_sWarn, _guilang.get("GUI_ANALYZER_MAGICNUMBER")), ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sCurrentNumber, nNumberStart, sCurrentNumber.length()),
+                                     "GUI_ANALYZER_MAGICNUMBER");
             break;
         }
     }
@@ -1729,6 +1807,10 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 
     // Get the corresponding syntax element
     std::string sSyntaxElement = wxToUtf8(m_editor->GetTextRange(wordstart, wordend));
+
+    if (sSyntaxElement == "string")
+        AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                 "GUI_ANALYZER_DEPRECATED");
 
     int contextPoint = 0;
 
@@ -1759,11 +1841,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
             || sSyntaxElement == "ndim"
             || sSyntaxElement == "nlines")
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sWarn,
-                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MISUSE", sSyntaxElement)),
-                                          ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_DIMVAR_MISUSE");
         }
 
         return AnnotCount;
@@ -1775,11 +1854,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
     {
         // Should only be used in clusters
         if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CLUSTER && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_IDENTIFIER)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sWarn,
-                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MISUSE", sSyntaxElement)),
-                                          ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_DIMVAR_MISUSE");
     }
     else if (sSyntaxElement == "nrows"
              || sSyntaxElement == "ncols"
@@ -1789,11 +1865,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
         // their order might be mixed up
         if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CUSTOM_FUNCTION
             && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_PREDEFS)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sWarn,
-                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MISUSE", sSyntaxElement)),
-                                          ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_DIMVAR_MISUSE");
 
         // Now, check for mixed up orientations
         int contextEnd = m_editor->BraceMatch(contextPoint);
@@ -1810,11 +1883,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
         // opposite dimension
         if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
             || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
-                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                                       m_sWarn,
-                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MIXUP", sSyntaxElement)),
-                                          ANNOTATION_WARN);
+            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                     "GUI_ANALYZER_DIMVAR_MIXUP");
     }
 
     m_nCurPos = wordend;
@@ -1834,95 +1904,180 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 /////////////////////////////////////////////////
 AnnotationCount CodeAnalyzer::addToAnnotation(const wxString& sMessage, int nStyle)
 {
-	AnnotationCount annoCount;
+    AnnotationCount annoCount;
 
-	// Ensure that the options allow the current type of
-	// annotation
-	if (nStyle == ANNOTATION_NOTE && !m_options->GetAnalyzerOption(Options::USE_NOTES))
+    // Ensure that the options allow the current type of
+    // annotation
+    if (nStyle == ANNOTATION_NOTE && !m_options->GetAnalyzerOption(Options::USE_NOTES))
         return annoCount;
 
-	if (nStyle == ANNOTATION_WARN && !m_options->GetAnalyzerOption(Options::USE_WARNINGS))
+    if (nStyle == ANNOTATION_WARN && !m_options->GetAnalyzerOption(Options::USE_WARNINGS))
         return annoCount;
 
-	if (nStyle == ANNOTATION_ERROR && !m_options->GetAnalyzerOption(Options::USE_ERRORS))
+    if (nStyle == ANNOTATION_ERROR && !m_options->GetAnalyzerOption(Options::USE_ERRORS))
         return annoCount;
 
-	int chartoadd = 0;
-	// Do not show the same message multiple times
-	if (m_sCurrentLine.find(sMessage) != string::npos
-			&& (!m_sCurrentLine.find(sMessage) || m_sCurrentLine[m_sCurrentLine.find(sMessage) - 1] == '\n'))
-		return annoCount;
+    int chartoadd = 0;
+    // Do not show the same message multiple times
+    if (m_sCurrentLine.find(sMessage) != std::string::npos
+        && (!m_sCurrentLine.find(sMessage) || m_sCurrentLine[m_sCurrentLine.find(sMessage) - 1] == '\n'))
+        return annoCount;
 
-	if (m_sCurrentLine.length())
-	{
-		m_sCurrentLine += "\n";
-		chartoadd++;
-	}
+    if (m_sCurrentLine.length())
+    {
+        m_sCurrentLine += "\n";
+        chartoadd++;
+    }
 
-	m_sCurrentLine += sMessage;
-	m_sStyles.append(wxToUtf8(sMessage).length() + chartoadd, nStyle);
+    m_sCurrentLine += sMessage;
+    m_sStyles.append(wxToUtf8(sMessage).length() + chartoadd, nStyle);
 
-	// Increment the total counter
-	if (nStyle == ANNOTATION_NOTE)
-		annoCount.nNotes++;
-	else if (nStyle == ANNOTATION_WARN)
-		annoCount.nWarnings++;
-	else if (nStyle == ANNOTATION_ERROR)
-		annoCount.nErrors++;
+    // Increment the total counter
+    if (nStyle == ANNOTATION_NOTE)
+        annoCount.nNotes++;
+    else if (nStyle == ANNOTATION_WARN)
+        annoCount.nWarnings++;
+    else if (nStyle == ANNOTATION_ERROR)
+        annoCount.nErrors++;
 
-	return annoCount;
+    return annoCount;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper member function to add an
+/// analyzer message of type NOTE.
+///
+/// \param sSymbol const wxString&
+/// \param messageId const char*
+/// \return AnnotationCount
+///
+/////////////////////////////////////////////////
+AnnotationCount CodeAnalyzer::addNote(const wxString& sSymbol, const char* messageId)
+{
+    return addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                        sSymbol,
+                                        m_sNote,
+                                        _guilang.get(messageId, sSymbol)),
+                           ANNOTATION_NOTE);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper member function to add an
+/// analyzer message of type WARNING.
+///
+/// \param sSymbol const wxString&
+/// \param messageId const char*
+/// \return AnnotationCount
+///
+/////////////////////////////////////////////////
+AnnotationCount CodeAnalyzer::addWarning(const wxString& sSymbol, const char* messageId)
+{
+    return addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                        sSymbol,
+                                        m_sWarn,
+                                        _guilang.get(messageId, sSymbol)),
+                           ANNOTATION_WARN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper member function to add an
+/// analyzer message of type ERROR.
+///
+/// \param sSymbol const wxString&
+/// \param messageId const char*
+/// \return AnnotationCount
+///
+/////////////////////////////////////////////////
+AnnotationCount CodeAnalyzer::addError(const wxString& sSymbol, const char* messageId)
+{
+    return addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                        sSymbol,
+                                        m_sError,
+                                        _guilang.get(messageId, sSymbol)),
+                           ANNOTATION_ERROR);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Add a metric with note or warning
+/// level.
+///
+/// \param sSymbol const wxString&
+/// \param messageId const char*
+/// \param sValue const std::string&
+/// \param nStyle int
+/// \return AnnotationCount
+///
+/////////////////////////////////////////////////
+AnnotationCount CodeAnalyzer::addMetric(const wxString& sSymbol, const char* messageId, const std::string& sValue, int nStyle)
+{
+    if (nStyle == ANNOTATION_NOTE)
+        return addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                            sSymbol,
+                                            m_sNote,
+                                            _guilang.get(messageId, sValue)),
+                               ANNOTATION_NOTE);
+
+    return addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                        sSymbol,
+                                        m_sWarn,
+                                        _guilang.get(messageId, sValue)),
+                           ANNOTATION_WARN);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Checks for assignments
 ///
-/// \param sCurrentLine const string&
+/// \param sCurrentLine const std::string&
 /// \return bool
 ///
 /// This member function checks, whether the current line
 /// contains an assignement, i.e. the calculation result
 /// is stored into a target variable
 /////////////////////////////////////////////////
-bool CodeAnalyzer::containsAssignment(const string& sCurrentLine)
+bool CodeAnalyzer::containsAssignment(const std::string& sCurrentLine)
 {
-	if (sCurrentLine.find('=') == string::npos)
-		return false;
+    if (sCurrentLine.find('=') == std::string::npos)
+        return false;
 
-	// Go through the line and check, whether there's
-	// a single equal sign
-	for (size_t i = 1; i < sCurrentLine.length() - 1; i++)
-	{
-		if (sCurrentLine[i] == '='
-				&& sCurrentLine[i - 1] != '<'
-				&& sCurrentLine[i - 1] != '>'
-				&& sCurrentLine[i - 1] != '!'
-				&& sCurrentLine[i - 1] != '='
-				&& sCurrentLine[i + 1] != '='
-				&& !isInQuotes(sCurrentLine, i))
-			return true;
-	}
+    // Go through the line and check, whether there's
+    // a single equal sign
+    for (size_t i = 1; i < sCurrentLine.length() - 1; i++)
+    {
+        if (sCurrentLine[i] == '='
+            && sCurrentLine[i - 1] != '<'
+            && sCurrentLine[i - 1] != '>'
+            && sCurrentLine[i - 1] != '!'
+            && sCurrentLine[i - 1] != '='
+            && sCurrentLine[i + 1] != '='
+            && !isInQuotes(sCurrentLine, i))
+            return true;
+    }
 
-	return false;
+    return false;
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Highlights the occurence in the editor
 ///
-/// \param sElement const string&
+/// \param sElement const std::string&
 /// \param nPos int
 /// \param nLength int
-/// \return string The passed sElement string with an additional white space
+/// \return wxString The passed sElement string with an additional white space
 ///
 /// The found occurence is highlighted in the editor using
 /// an indicator
 /////////////////////////////////////////////////
-string CodeAnalyzer::highlightFoundOccurence(const string& sElement, int nPos, int nLength)
+wxString CodeAnalyzer::highlightFoundOccurence(const std::string& sElement, int nPos, int nLength)
 {
     m_editor->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
     m_editor->IndicatorFillRange(nPos, nLength);
-	return sElement;
+    return wxFromUtf8(sElement);
 }
 
 
@@ -1939,65 +2094,68 @@ string CodeAnalyzer::highlightFoundOccurence(const string& sElement, int nPos, i
 /////////////////////////////////////////////////
 int CodeAnalyzer::calculateCyclomaticComplexity(int startline, int endline)
 {
-	int nCycComplx = 1;
+    int nCycComplx = 1;
 
-	// Go through the block of code indicated by the
-	// starting and endling line
-	for (int i = m_editor->PositionFromLine(startline); i < m_editor->GetLineEndPosition(endline); i++)
-	{
-	    // Examine command occurences, which may be
-	    // flow control statements
-		if (m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, i))
-		{
-			int wordstart = m_editor->WordStartPosition(i, true);
-			int wordend = m_editor->WordEndPosition(i, true);
+    if (!CALC_COMPLEXITY)
+        return nCycComplx;
 
-			if (m_editor->GetTextRange(wordstart, wordend) == "if"
-					|| m_editor->GetTextRange(wordstart, wordend) == "elseif"
-					|| m_editor->GetTextRange(wordstart, wordend) == "while"
-					|| m_editor->GetTextRange(wordstart, wordend) == "case"
-					|| m_editor->GetTextRange(wordstart, wordend) == "try"
-					|| m_editor->GetTextRange(wordstart, wordend) == "for")
-				nCycComplx++;
+    // Go through the block of code indicated by the
+    // starting and endling line
+    for (int i = m_editor->PositionFromLine(startline); i < m_editor->GetLineEndPosition(endline); i++)
+    {
+        // Examine command occurences, which may be
+        // flow control statements
+        if (m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, i))
+        {
+            int wordstart = m_editor->WordStartPosition(i, true);
+            int wordend = m_editor->WordEndPosition(i, true);
 
-			i = wordend;
-		}
+            if (m_editor->GetTextRange(wordstart, wordend) == "if"
+                || m_editor->GetTextRange(wordstart, wordend) == "elseif"
+                || m_editor->GetTextRange(wordstart, wordend) == "while"
+                || m_editor->GetTextRange(wordstart, wordend) == "case"
+                || m_editor->GetTextRange(wordstart, wordend) == "try"
+                || m_editor->GetTextRange(wordstart, wordend) == "for")
+                nCycComplx++;
 
-		// Examine standard function calls, which may be
-		// logical functions
-		if (m_editor->isStyleType(NumeReEditor::STYLE_FUNCTION, i))
-		{
-			int wordstart = m_editor->WordStartPosition(i, true);
-			int wordend = m_editor->WordEndPosition(i, true);
+            i = wordend;
+        }
 
-			if (m_editor->GetTextRange(wordstart, wordend) == "and"
-					|| m_editor->GetTextRange(wordstart, wordend) == "or"
-					|| m_editor->GetTextRange(wordstart, wordend) == "xor")
-				nCycComplx++;
+        // Examine standard function calls, which may be
+        // logical functions
+        if (m_editor->isStyleType(NumeReEditor::STYLE_FUNCTION, i))
+        {
+            int wordstart = m_editor->WordStartPosition(i, true);
+            int wordend = m_editor->WordEndPosition(i, true);
 
-			i = wordend;
-		}
+            if (m_editor->GetTextRange(wordstart, wordend) == "and"
+                || m_editor->GetTextRange(wordstart, wordend) == "or"
+                || m_editor->GetTextRange(wordstart, wordend) == "xor")
+                nCycComplx++;
 
-		// Examine operaters, which may be logical operators
-		if (m_editor->isStyleType(NumeReEditor::STYLE_OPERATOR, i))
-		{
-			int j = i;
+            i = wordend;
+        }
 
-			while (m_editor->isStyleType(NumeReEditor::STYLE_OPERATOR, j))
-				j++;
+        // Examine operaters, which may be logical operators
+        if (m_editor->isStyleType(NumeReEditor::STYLE_OPERATOR, i))
+        {
+            int j = i;
 
-			if (m_editor->GetTextRange(i, j) == "&"
-                    || m_editor->GetTextRange(i, j) == "&&"
-					|| m_editor->GetTextRange(i, j) == "|"
-					|| m_editor->GetTextRange(i, j) == "||"
-					|| m_editor->GetTextRange(i, j) == "|||")
-				nCycComplx++;
+            while (m_editor->isStyleType(NumeReEditor::STYLE_OPERATOR, j))
+                j++;
 
-			i = j;
-		}
-	}
+            if (m_editor->GetTextRange(i, j) == "&"
+                || m_editor->GetTextRange(i, j) == "&&"
+                || m_editor->GetTextRange(i, j) == "|"
+                || m_editor->GetTextRange(i, j) == "||"
+                || m_editor->GetTextRange(i, j) == "|||")
+                nCycComplx++;
 
-	return nCycComplx;
+            i = j;
+        }
+    }
+
+    return nCycComplx;
 }
 
 
@@ -2014,41 +2172,45 @@ int CodeAnalyzer::calculateCyclomaticComplexity(int startline, int endline)
 /////////////////////////////////////////////////
 int CodeAnalyzer::calculateLinesOfCode(int startline, int endline)
 {
-	int nLinesOfCode = 0;
-	string currentline;
+    int nLinesOfCode = 0;
 
-	// Go through the block of code indicated by the
-	// starting and endling line
-	for (int i = startline; i <= endline; i++)
-	{
-		currentline = wxToUtf8(m_editor->GetLine(i));
+    if (!CALC_LINES_OF_CODE)
+        return nLinesOfCode;
+
+    string currentline;
+
+    // Go through the block of code indicated by the
+    // starting and endling line
+    for (int i = startline; i <= endline; i++)
+    {
+        currentline = wxToUtf8(m_editor->GetLine(i));
 
         // Ignore line comments
-		if (currentline.find("##") != string::npos)
-			currentline.erase(currentline.find("##"));
+        if (currentline.find("##") != std::string::npos)
+            currentline.erase(currentline.find("##"));
 
         // Check, whether the line contains at least a single
         // non-whitespace character
-		if (currentline.find_first_not_of(" \t\r\n") != string::npos)
-		{
-		    // Check for block comments
-			for (size_t j = m_editor->PositionFromLine(i); j < currentline.length() + m_editor->PositionFromLine(i); j++)
-			{
-				if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, j)
-                        && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, j)
-						&& m_editor->GetCharAt(j) != ' '
-						&& m_editor->GetCharAt(j) != '\t'
-						&& m_editor->GetCharAt(j) != '\r'
-						&& m_editor->GetCharAt(j) != '\n')
-				{
-					nLinesOfCode++;
-					break;
-				}
-			}
-		}
-	}
+        if (currentline.find_first_not_of(" \t\r\n") != std::string::npos)
+        {
+            // Check for block comments
+            for (size_t j = m_editor->PositionFromLine(i); j < currentline.length() + m_editor->PositionFromLine(i); j++)
+            {
+                if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, j)
+                    && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, j)
+                    && m_editor->GetCharAt(j) != ' '
+                    && m_editor->GetCharAt(j) != '\t'
+                    && m_editor->GetCharAt(j) != '\r'
+                    && m_editor->GetCharAt(j) != '\n')
+                {
+                    nLinesOfCode++;
+                    break;
+                }
+            }
+        }
+    }
 
-	return nLinesOfCode;
+    return nLinesOfCode;
 }
 
 
@@ -2065,34 +2227,39 @@ int CodeAnalyzer::calculateLinesOfCode(int startline, int endline)
 /////////////////////////////////////////////////
 int CodeAnalyzer::countNumberOfComments(int startline, int endline)
 {
-	int nComments = 0;
+    int nComments = 0;
 
-	// Go through the block of code indicated by the
-	// starting and endling line
-	for (int i = m_editor->PositionFromLine(startline); i < m_editor->GetLineEndPosition(endline); i++)
-	{
-	    // Count every line comment and block comment
-		if (m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, i) || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, i))
-		{
-			nComments++;
+    if (!CALC_COMMENT_DENSITY)
+        return nComments;
 
-			// Find the end of the current block comment
-			for (int j = i; j < m_editor->GetLineEndPosition(endline); j++)
-			{
-				if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, j) && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, j))
-				{
-					i = j;
-					break;
-				}
+    // Go through the block of code indicated by the
+    // starting and endling line
+    for (int i = m_editor->PositionFromLine(startline); i < m_editor->GetLineEndPosition(endline); i++)
+    {
+        // Count every line comment and block comment
+        if (m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, i)
+            || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, i))
+        {
+            nComments++;
 
-				// Count the lines contained in the block comment
-				if (j > i + 1 && m_editor->PositionFromLine(m_editor->LineFromPosition(j)) == j)
-					nComments++;
-			}
-		}
-	}
+            // Find the end of the current block comment
+            for (int j = i; j < m_editor->GetLineEndPosition(endline); j++)
+            {
+                if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, j)
+                    && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, j))
+                {
+                    i = j;
+                    break;
+                }
 
-	return nComments;
+                // Count the lines contained in the block comment
+                if (j > i + 1 && m_editor->PositionFromLine(m_editor->LineFromPosition(j)) == j)
+                    nComments++;
+            }
+        }
+    }
+
+    return nComments;
 }
 
 
@@ -2143,7 +2310,7 @@ char CodeAnalyzer::getVariableType(const std::string& sVarName)
 /////////////////////////////////////////////////
 static bool isNumericType(char c)
 {
-    return c == 'n' || c == 'd' || c == 'f' || c == 't';
+    return c == 'n' || c == 'd' || c == 'f';
 }
 
 

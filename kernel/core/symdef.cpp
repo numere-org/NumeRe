@@ -54,8 +54,8 @@ void SymDefManager::resolveSymbols(std::string& sCommandLine) const
         // Find all occurences of the current variable
         while ((pos = findVariableInExpression(sCommandLine, iter->first, pos)) != std::string::npos)
         {
-            sCommandLine.replace(pos, iter->first.length(), iter->second);
-            pos += iter->second.length();
+            sCommandLine.replace(pos, iter->first.length(), iter->second.m_value);
+            pos += iter->second.m_value.length();
         }
     }
 }
@@ -99,7 +99,7 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
             }
 
             if (symbol.length() && definition.length() && symbol != definition)
-                m_symDefs[symbol] = definition;
+                m_symDefs[symbol] = SymDef(definition);
         }
         else if ((pos = symdef.find("->")) != std::string::npos && symdef.find("enum") < pos)
         {
@@ -127,7 +127,7 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
             {
                 // Declare each single symbol
                 if ((pos = sEnum.find('=')) == std::string::npos)
-                    m_symDefs[sEnum] = toString(nEnumVal);
+                    m_symDefs[sEnum] = SymDef(toString(nEnumVal), true);
                 else
                 {
                     // Consider preset cases
@@ -140,7 +140,7 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
                     if (isConvertible(value, CONVTYPE_VALUE))
                         nEnumVal = intCast(StrToCmplx(value));
 
-                    m_symDefs[symbol] = toString(nEnumVal);
+                    m_symDefs[symbol] = SymDef(toString(nEnumVal), true);
                 }
 
                 nEnumVal++;
@@ -169,13 +169,14 @@ bool SymDefManager::isSymbol(const std::string& sSymbol) const
 /// \brief Get a reference to the internal
 /// symbols map.
 ///
-/// \return const std::map<std::string, std::string>&
+/// \return const std::map<std::string, SymDef>&
 ///
 /////////////////////////////////////////////////
-const std::map<std::string, std::string>& SymDefManager::getSymbols() const
+const std::map<std::string, SymDef>& SymDefManager::getSymbols() const
 {
     return m_symDefs;
 }
+
 
 
 

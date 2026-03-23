@@ -44,7 +44,7 @@ class DebugViewer : public ViewerFrame
         int nLineColumn;
         int nModuleColumn;
 
-        void setExpression(const std::string& sLineNumber, const std::string& sExpression);
+        void setExpression(const std::string& sLineNumber, const wxString& sExpression);
 
         void getInformationByStackId(size_t id);
         void OnStackItemActivate(wxListEvent& event);

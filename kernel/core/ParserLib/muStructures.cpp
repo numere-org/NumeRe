@@ -2371,7 +2371,7 @@ namespace mu
             Array ret;
             size_t elems = size();
 
-            for (size_t i = 0; i < args.count()-1; i++)
+            for (size_t i = 1; i < args.count(); i++)
             {
                 elems = std::max(elems, args[i].size());
             }
@@ -2387,7 +2387,7 @@ namespace mu
                 {
                     std::vector<Value> vArgs;
 
-                    for (size_t i = 0; i < args.count()-1; i++)
+                    for (size_t i = 1; i < args.count(); i++)
                     {
                         vArgs.push_back(args[i]);
                     }
@@ -2408,7 +2408,7 @@ namespace mu
                 {
                     std::vector<Value> vArgs;
 
-                    for (size_t j = 0; j < args.count(); j++)
+                    for (size_t j = 1; j < args.count(); j++)
                     {
                         vArgs.push_back(args[j].get(i));
                     }
@@ -2444,7 +2444,7 @@ namespace mu
                     for (size_t i = 0; i < size(); i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0]));
+                                                     Value(args[1])));
                     }
                 }
                 else
@@ -2452,7 +2452,7 @@ namespace mu
                     for (size_t i = 0; i < elems; i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0].get(i)));
+                                                     args[1].get(i)));
                     }
                 }
 
@@ -2463,8 +2463,8 @@ namespace mu
                     for (size_t i = 0; i < size(); i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0],
-                                                     args[1]));
+                                                     Value(args[1]),
+                                                     Value(args[2])));
                     }
                 }
                 else
@@ -2472,8 +2472,8 @@ namespace mu
                     for (size_t i = 0; i < elems; i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0].get(i),
-                                                     args[1].get(i)));
+                                                     args[1].get(i),
+                                                     args[2].get(i)));
                     }
                 }
 
@@ -2484,9 +2484,9 @@ namespace mu
                     for (size_t i = 0; i < size(); i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0],
-                                                     args[1],
-                                                     args[2]));
+                                                     Value(args[1]),
+                                                     Value(args[2]),
+                                                     Value(args[3])));
                     }
                 }
                 else
@@ -2494,9 +2494,9 @@ namespace mu
                     for (size_t i = 0; i < elems; i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0].get(i),
                                                      args[1].get(i),
-                                                     args[2].get(i)));
+                                                     args[2].get(i),
+                                                     args[3].get(i)));
                     }
                 }
 
@@ -2507,10 +2507,10 @@ namespace mu
                     for (size_t i = 0; i < size(); i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0],
-                                                     args[1],
-                                                     args[2],
-                                                     args[3]));
+                                                     Value(args[1]),
+                                                     Value(args[2]),
+                                                     Value(args[3]),
+                                                     Value(args[4])));
                     }
                 }
                 else
@@ -2518,10 +2518,10 @@ namespace mu
                     for (size_t i = 0; i < elems; i++)
                     {
                         ret.emplace_back(get(i).call(delegatedMethod,
-                                                     args[0].get(i),
                                                      args[1].get(i),
                                                      args[2].get(i),
-                                                     args[3].get(i)));
+                                                     args[3].get(i),
+                                                     args[4].get(i)));
                     }
                 }
 

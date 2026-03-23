@@ -2081,8 +2081,9 @@ void NumeReTerminal::Calltip(int x, int y, NumeRe::CallTip& _cTip)
     else
         y = (y+1) * m_charHeight;
 
-    m_callTip->PopUp(wxPoint(x, y), _cTip.sDefinition);
-    m_callTip->Resize(wxSize(m_charWidth * (_cTip.sDefinition.length()+1.5), m_charHeight));
+    wxString sDefinition = wxFromUtf8(_cTip.sDefinition);
+    m_callTip->PopUp(wxPoint(x, y), sDefinition);
+    m_callTip->Resize(wxSize(m_charWidth * (sDefinition.length()+1.5), m_charHeight));
     m_callTip->Highlight(_cTip.nStart, _cTip.nEnd-_cTip.nStart);
 }
 

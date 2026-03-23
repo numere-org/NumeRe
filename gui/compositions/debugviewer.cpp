@@ -182,13 +182,13 @@ void DebugViewer::initializeToolbar()
 /// correspondingly.
 ///
 /// \param sLineNumber const std::string&
-/// \param sExpression const std::string&
+/// \param sExpression const wxString&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DebugViewer::setExpression(const std::string& sLineNumber, const std::string& sExpression)
+void DebugViewer::setExpression(const std::string& sLineNumber, const wxString& sExpression)
 {
-    std::string sColours = m_terminal->getSyntax()->highlightLine("|<- " + sExpression).substr(4);
+    std::string sColours = m_terminal->getSyntax()->highlightLine("|<- " + std::string(sExpression.ToAscii().data())).substr(4);
 
     m_lineNumber->Clear();
     m_lineNumber->SetDefaultStyle(wxTextAttr(wxColour(64, 64, 64)));
@@ -311,10 +311,10 @@ void DebugViewer::getInformationByStackId(size_t id)
 
     // Add line number and expression to the expression
     // text control and change the colour for line number
-    setExpression(vModuleInfo[2], vModuleInfo[0]);
+    setExpression(vModuleInfo[2], wxFromUtf8(vModuleInfo[0]));
 
     // Set the error message
-    m_errorMessage->SetValue(vModuleInfo[3]);
+    m_errorMessage->SetValue(wxFromUtf8(vModuleInfo[3]));
 
     // Update the variable viewer
     m_varViewer->UpdateVariables(vars);

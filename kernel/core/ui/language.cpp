@@ -182,22 +182,17 @@ void Language::loadAndInsert(const std::string& sLanguageFileName)
 /////////////////////////////////////////////////
 void Language::loadStrings(bool bloadUserFiles)
 {
-    std::string sLine;
-    std::map<std::string,std::string> mLangFileContent;
-
-    // Clear already existing strings first
-    if (mLangStrings.size())
-        mLangStrings.clear();
-
     // Load main file
-    mLangFileContent = getLangFileContent("<>/lang/main.nlng");
-    mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
+    mLangStrings = getLangFileContent("<>/lang/main.nlng");
 
     // Load errors file
     loadAndInsert("<>/lang/error.nlng");
 
     // Load NumeRe specific syntax language files
     loadAndInsert("<>/lang/numere.nlng");
+
+    // Load the keybind language files
+    loadAndInsert("<>/lang/menukeybinds.nlng");
 
     // Shall user language files be loaded?
     if (bloadUserFiles)
@@ -213,35 +208,41 @@ void Language::loadStrings(bool bloadUserFiles)
         // Load user NumeRe specific syntax language file, if it exists
         if (fileExists(FileSystem::ValidFileName("<>/user/lang/numere.nlng", ".nlng")))
             loadAndInsert("<>/user/lang/numere.nlng");
+
+        // Load user keybind language file, if it exists
+        if (fileExists(FileSystem::ValidFileName("<>/user/lang/menukeybinds.nlng", ".nlng")))
+            loadAndInsert("<>/user/lang/menukeybinds.nlng");
     }
 
     // Replace all named tokens with their corresponding
     // language string
-    for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
+    for (auto& iter : mLangStrings)
     {
         // Ignore too short strings
-        if ((iter->second).length() < 5)
+        if (iter.second.length() < 5)
             continue;
 
         // Search tokens, check, whether they exist
         // and replace them with their corresponding
         // strings
-        for (size_t i = 0; i < (iter->second).length()-3; i++)
+        for (size_t i = 0; i < iter.second.length()-3; i++)
         {
-            if ((iter->second).substr(i, 2) == "%%" && isalpha((iter->second)[i+3]) && (iter->second).find("%%", i+3) != std::string::npos)
-            {
-                sLine = (iter->second).substr(i+2, (iter->second).find("%%", i+3)-i-2);
+            size_t nClosingBlock;
 
-                if (mLangStrings.find(sLine) != mLangStrings.end())
-                    (iter->second).replace(i, (iter->second).find("%%", i+3)-i+2, mLangStrings[sLine]);
+            if (iter.second.substr(i, 2) == "%%"
+                && isalpha(iter.second[i+3])
+                && (nClosingBlock = iter.second.find("%%", i+3)) != std::string::npos)
+            {
+                auto search_result = mLangStrings.find(iter.second.substr(i+2, nClosingBlock-i-2));
+
+                if (search_result != mLangStrings.end())
+                    iter.second.replace(i, nClosingBlock-i+2, search_result->second);
             }
         }
     }
 
     sYES = mLangStrings["COMMON_YES_NO"].front();
     sNO = mLangStrings["COMMON_YES_NO"].back();
-
-    return;
 }
 
 

@@ -3258,16 +3258,20 @@ mu::Array CustomWindow::getItemSelection(const std::vector<int64_t>& windowItemI
                 }
                 else
                     selection[i] = mu::Value((uint64_t)field->GetInsertionPoint()+1);
+
+                break;
             }
             case CustomWindow::DROPDOWN:
             {
                 wxChoice* choices = static_cast<wxChoice*>(object.second);
                 selection[i] = mu::Value(choices->GetSelection()+1);
+                break;
             }
             case CustomWindow::COMBOBOX:
             {
                 wxComboBox* combo = static_cast<wxComboBox*>(object.second);
                 selection[i] = mu::Value(combo->GetSelection()+1);
+                break;
             }
             case CustomWindow::TABLE:
             {
@@ -3276,18 +3280,21 @@ mu::Array CustomWindow::getItemSelection(const std::vector<int64_t>& windowItemI
                 ret.push_back(mu::Value(table->GetInternalRows(table->GetGridCursorRow())+1));
                 ret.push_back(mu::Value(table->GetGridCursorCol()+1));
                 selection[i] = ret;
+                break;
             }
             case CustomWindow::TREELIST:
             {
                 wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
                 int sel = enumerateListItems(listCtrl, listCtrl->GetSelection());
                 selection[i] = mu::Value(sel+1);
+                break;
             }
             case CustomWindow::NOTEBOOK:
             {
                 wxNotebook* noteBook = static_cast<wxNotebook*>(object.second);
                 int sel = noteBook->GetSelection();
                 selection[i] = mu::Value(sel+1);
+                break;
             }
             case CustomWindow::GAUGE:
             case CustomWindow::SPINCTRL:

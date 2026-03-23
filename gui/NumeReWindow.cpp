@@ -3386,7 +3386,10 @@ void NumeReWindow::loadTemplateToEditor(FileFilterType _filetype, wxString templ
 
     // Modify the page title by adding the "unsaved asterisk"
     m_book->SetPageText(m_currentPage, m_book->GetPageText(m_currentPage) + "*");
-    edit->ToggleSettings(settings);
+
+    // Do not automatically activate the analyzer
+    edit->ToggleSettings(settings & ~NumeReEditor::SETTING_USEANALYZER);
+
     m_book->ChangeSelection(m_currentPage);
     m_book->SetSelection(m_currentPage);
 }

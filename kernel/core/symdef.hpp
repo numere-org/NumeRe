@@ -24,6 +24,19 @@
 #include <map>
 
 /////////////////////////////////////////////////
+/// \brief Represents a single file static
+/// constant.
+/////////////////////////////////////////////////
+struct SymDef
+{
+    std::string m_value;
+    bool m_enum;
+
+    SymDef(const std::string& val = "", bool isEnum = false) : m_value(val), m_enum(isEnum)
+    { }
+};
+
+/////////////////////////////////////////////////
 /// \brief This class handles the file-static
 /// constants, which are more or less macros
 /// similar to #define in C/C++.
@@ -31,7 +44,7 @@
 class SymDefManager
 {
     private:
-        std::map<std::string, std::string> m_symDefs;
+        std::map<std::string, SymDef> m_symDefs;
 
     public:
         SymDefManager() {}
@@ -39,7 +52,7 @@ class SymDefManager
         void resolveSymbols(std::string& sCommandLine) const;
         void createSymbol(const std::string& sCommandLine);
         bool isSymbol(const std::string& sSymbol) const;
-        const std::map<std::string,std::string>& getSymbols() const;
+        const std::map<std::string,SymDef>& getSymbols() const;
         void clear();
 };
 

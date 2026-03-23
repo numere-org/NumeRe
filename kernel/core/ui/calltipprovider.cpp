@@ -81,22 +81,29 @@ namespace NumeRe
         if (_cTip.sDefinition.find(')') < lastpos || _cTip.sDefinition.find('.') < lastpos)
         {
             _cTip.sDefinition.replace(lastpos, firstpos - lastpos, " -> ");
-            size_t argParens = _cTip.sDefinition.find('(');
-            std::string sReqArgs = _cTip.sDefinition.substr(argParens+1, getMatchingParenthesis(_cTip.sDefinition)-argParens-1);
-            _cTip.arguments = getAllArguments(sReqArgs);
 
-            if (_cTip.arguments.size() && _cTip.arguments.back() == "...")
-                _cTip.nReqArgs = 1u;
-            else
+            if (_cTip.sDefinition.find(')') < lastpos)
             {
-                _cTip.nReqArgs = _cTip.arguments.size();
+                // The weird offset fixes the TABLE(). method prefix appearing sometimes
+                size_t argParens = _cTip.sDefinition.find('(', _cTip.sDefinition.find("().")+1);
+                std::string sReqArgs = _cTip.sDefinition.substr(argParens+1,
+                                                                getMatchingParenthesis(StringView(_cTip.sDefinition, argParens))-1);
+                _cTip.arguments = getAllArguments(sReqArgs);
 
-                for (const std::string& arg : _cTip.arguments)
+                if (_cTip.arguments.size() && _cTip.arguments.back() == "...")
+                    _cTip.nReqArgs = 1u;
+                else
                 {
-                    if (arg.find('=') != std::string::npos)
-                        _cTip.nReqArgs--;
+                    _cTip.nReqArgs = _cTip.arguments.size();
+
+                    for (const std::string& arg : _cTip.arguments)
+                    {
+                        if (arg.find('=') != std::string::npos)
+                            _cTip.nReqArgs--;
+                    }
                 }
             }
+
         }
         else if (firstpos - lastpos > 2)
                 _cTip.sDefinition.erase(lastpos, firstpos - lastpos - 1);

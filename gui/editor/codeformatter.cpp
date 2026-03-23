@@ -170,7 +170,7 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
         // Examine flow control statements
         if (m_editor->GetStyleAt(i) == wxSTC_NSCR_COMMAND || m_editor->GetStyleAt(i) == wxSTC_NSCR_PROCEDURE_COMMANDS)
         {
-            wxString word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true));
+            std::string word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true)).ToAscii().data();
 
             if (m_editor->isBlockEnd(word) != wxNOT_FOUND)
                 nIndentCount--;
@@ -185,11 +185,11 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
         // Examine install sections
         if (m_editor->getFileType() == FILE_NSCR && m_editor->GetStyleAt(i) == wxSTC_NSCR_INSTALL)
         {
-            wxString word;
+            std::string word;
 
             if (m_editor->GetCharAt(i) == '<' && m_editor->FindText(i, nLineEnd, ">") != -1)
             {
-                word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 2, true) + 1);
+                word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 2, true) + 1).ToAscii().data();
 
                 if (m_editor->isBlockStart(word, false) != wxNOT_FOUND)
                     nIndentCount++;
@@ -230,7 +230,7 @@ int CodeFormatter::determineIndentationLevelMATLAB(int nLine, int& singleLineInd
     {
         if (m_editor->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
         {
-            wxString word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true));
+            std::string word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true)).ToAscii().data();
 
             if (m_editor->isBlockEnd(word) != wxNOT_FOUND)
                 nIndentCount--;
@@ -443,7 +443,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine)
             while (m_editor->GetStyleAt(i + 1) == wxSTC_NSCR_COMMAND)
                 i++;
 
-            wxString command = m_editor->GetTextRange(nPos1, i + 1);
+            std::string command = m_editor->GetTextRange(nPos1, i + 1).ToAscii().data();
             int nCurrentLineStart = m_editor->PositionFromLine(m_editor->LineFromPosition(nPos1));
             int nCurrentLineEnd = m_editor->GetLineEndPosition(m_editor->LineFromPosition(nPos1));
 

@@ -48,6 +48,7 @@ struct ParserSymbol
 
     std::string m_symbol;
     std::string m_type;
+    std::string m_value;
     bool m_heuristicType;
     SymbolClass m_class;
 
@@ -57,16 +58,18 @@ struct ParserSymbol
     /// \param symbol const std::string&
     /// \param const std::string& type
     /// \param cls SymbolClass
+    /// \param value const std::string&
     ///
     /////////////////////////////////////////////////
-    ParserSymbol(const std::string& symbol, const std::string& type = "void", SymbolClass cls = GLOBAL)
-        : m_symbol(symbol), m_type(type), m_heuristicType(false), m_class(cls)
+    ParserSymbol(const std::string& symbol, const std::string& type = "void", SymbolClass cls = GLOBAL, const std::string& value = "")
+        : m_symbol(symbol), m_type(type), m_value(value), m_heuristicType(false), m_class(cls)
     {
         if (type == "void" || type == "any" || type == "{any}" || !type.length() || (type == "cluster" && cls == ITERATOR))
             resolveTypeByHeuristic();
     }
 
     void resolveTypeByHeuristic();
+    std::string getHeuristicEquivalent() const;
 
     /////////////////////////////////////////////////
     /// \brief Equality operator.
@@ -392,7 +395,7 @@ class CodeParser
         }
 
         // Shall automatically follow includes
-        void parse(int lineNum, const LexedLine& line); // We want to use -1 for nothing
+        void parse(int lineNum, int numWrappedLines, const LexedLine& line); // We want to use -1 for nothing
         void parseSingleLine(int lineNum, const LexedLine& line);
 
         bool isValid() const;

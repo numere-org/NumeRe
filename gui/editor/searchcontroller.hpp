@@ -45,6 +45,7 @@ class SearchController
 
 		std::vector<wxString> getProceduresInFile();
 		std::vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);
+		std::vector<int> FindAll(const wxString& sSymbol, const std::vector<int>& nStyles, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);
 
         wxString FindClickedWord();
 		wxString FindClickedInclude();

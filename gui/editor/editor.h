@@ -107,15 +107,15 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnAutoCompletion(wxStyledTextEvent& event);
 		void OnIdle(wxIdleEvent& event);
 
-		int isBlockStart(const wxString& sWord, bool allowIntermediate = false);
-		int isBlockEnd(const wxString& sWord);
-		int isBlockMiddle(const wxString& sWord);
-		bool hasBlockMiddle(const wxString& sWord);
-		int getBlockID(const wxString& word);
-		wxString getBlockAutoCompletion(const wxString& sWord);
-		wxString getBlockEnd(const wxString& sWord);
-		wxString getBlockStart(const wxString& sWord);
-		std::pair<wxString, int> getBlockStart(int line);
+		int isBlockStart(const std::string& sWord, bool allowIntermediate = false);
+		int isBlockEnd(const std::string& sWord);
+		int isBlockMiddle(const std::string& sWord);
+		bool hasBlockMiddle(const std::string& sWord);
+		int getBlockID(const std::string& word);
+		std::string getBlockAutoCompletion(const std::string& sWord);
+		std::string getBlockEnd(const std::string& sWord);
+		std::string getBlockStart(const std::string& sWord);
+		std::pair<std::string, int> getBlockStart(int line);
 		void ClearDblClkIndicator();
 		void MakeBraceCheck();
 		void MakeBlockCheck();

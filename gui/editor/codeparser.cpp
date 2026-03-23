@@ -68,14 +68,19 @@ void ParserSymbol::resolveTypeByHeuristic()
             m_type = "string";
             m_heuristicType = true;
         }
-        else if (typeChar == 'f' || typeChar == 'n' || typeChar == 'm')
+        else if (typeChar == 'f'
+                 || typeChar == 'n'
+                 || typeChar == 'm'
+                 || typeChar == 'x'
+                 || typeChar == 'y'
+                 || typeChar == 'z')
         {
             m_type = "value";
             m_heuristicType = true;
         }
         else if (typeChar == 'o')
         {
-            m_type = "object";
+            m_type = "object.void";
             m_heuristicType = true;
         }
         else if (typeChar == 't')
@@ -110,6 +115,27 @@ void ParserSymbol::resolveTypeByHeuristic()
         m_type = "value";
         m_heuristicType = true;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the heuristic type equivalent.
+/// Is only intended for type prefix checking.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ParserSymbol::getHeuristicEquivalent() const
+{
+    std::string type = m_type;
+
+    if (type.front() == '{' && type.back() == '}')
+        type = type.substr(1, type.length()-2);
+
+    if (type == "dictstruct" || type == "category" || type.starts_with("object."))
+        return "object.*";
+
+    return type;
 }
 
 
@@ -176,7 +202,8 @@ NumeRe::CallTip ParserSymbol::print() const
 
     size_t startPos = 3 + sScope.length();
 
-    return NumeRe::CallTip("<" + sScope + "> " + m_symbol + suffix + ": " + m_type + (m_heuristicType ? "?" : ""),
+    return NumeRe::CallTip("<" + sScope + "> " + m_symbol + suffix + ": " + m_type + (m_heuristicType ? "?" : "")
+                           + (m_value.length() ? " = " + m_value : std::string()),
                            "",
                            startPos,
                            startPos+suffix.length()+m_symbol.length());
@@ -783,11 +810,12 @@ std::string CodeParser::getExprType(int lineNum, const LexedLine& line, size_t& 
 /// update the internal parsed state.
 ///
 /// \param lineNum int
+/// \param numWrappedLines int
 /// \param line const LexedLine&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CodeParser::parse(int lineNum, const LexedLine& line)
+void CodeParser::parse(int lineNum, int numWrappedLines, const LexedLine& line)
 {
     // Get the correct scope first
     ParserScope& scope = getScope(lineNum);
@@ -796,15 +824,15 @@ void CodeParser::parse(int lineNum, const LexedLine& line)
     {
         scope.dropLineState(lineNum);
         m_globalScope.dropLineState(lineNum);
-        scope.m_validUntil = lineNum+1;
-        m_globalScope.m_validUntil = lineNum+1;
+        scope.m_validUntil = std::max(scope.m_validUntil, lineNum+1+numWrappedLines);
+        m_globalScope.m_validUntil = std::max(m_globalScope.m_validUntil, lineNum+1+numWrappedLines);
         return;
     }
 
     parseSingleLine(lineNum, line);
 
-    scope.m_validUntil = lineNum+1;
-    m_globalScope.m_validUntil = lineNum+1;
+    scope.m_validUntil = std::max(scope.m_validUntil, lineNum+1+numWrappedLines);
+    m_globalScope.m_validUntil = std::max(m_globalScope.m_validUntil, lineNum+1+numWrappedLines);
 }
 
 
@@ -852,7 +880,7 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
             {
                 ParserSymbol& symbol = getMutableSymbol(sSymbol, lineNum, false);
 
-                if (varType != "void" && (symbol.m_type == "void" || symbol.m_heuristicType))
+                if (varType != "void" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
                 {
                     symbol.m_type = varType;
                     symbol.m_heuristicType = false;
@@ -934,16 +962,30 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                         }
                     }
 
-                    const std::map<std::string,std::string>& mSymbols = _symDefs.getSymbols();
+                    const std::map<std::string,SymDef>& mSymbols = _symDefs.getSymbols();
 
                     for (const auto& iter : mSymbols)
                     {
-                        if (std::isdigit(iter.second.front()))
-                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first, "value", ParserSymbol::GLOBALCONST));
-                        else if (iter.second.front() == '"')
-                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first, "string", ParserSymbol::GLOBALCONST));
+                        if (iter.second.m_enum)
+                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first,
+                                                                                    "value",
+                                                                                    ParserSymbol::GLOBALENUM,
+                                                                                    iter.second.m_value));
+                        else if (std::isdigit(iter.second.m_value.front()))
+                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first,
+                                                                                    "value",
+                                                                                    ParserSymbol::GLOBALCONST,
+                                                                                    iter.second.m_value));
+                        else if (iter.second.m_value.front() == '"')
+                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first,
+                                                                                    "string",
+                                                                                    ParserSymbol::GLOBALCONST,
+                                                                                    iter.second.m_value));
                         else
-                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first, "void", ParserSymbol::GLOBALCONST));
+                            m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(iter.first,
+                                                                                    "void",
+                                                                                    ParserSymbol::GLOBALCONST,
+                                                                                    iter.second.m_value));
                     }
                 }
                 catch (...)
@@ -962,10 +1004,23 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                         && line[i+1].m_str == ":=")
                     {
                         const std::string& sConstant = line[i].m_str;
+                        size_t p = i+2;
                         i += 2;
+                        std::string constType = getIdentifierType(lineNum, line, i);
+                        std::string constValue;
+
+                        for (; p <= i; p++)
+                        {
+                            if (constValue.length())
+                                constValue += " ";
+
+                            constValue += line[p].m_str;
+                        }
+
                         m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(sConstant,
-                                                                                getIdentifierType(lineNum, line, i),
-                                                                                ParserSymbol::GLOBALCONST));
+                                                                                constType,
+                                                                                ParserSymbol::GLOBALCONST,
+                                                                                constValue));
                     }
                     else if (line[i].is(wxSTC_NSCR_PREDEFS)
                              && line[i].m_str == "enum"
@@ -974,6 +1029,7 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                              && line[i+2].m_str == "{")
                     {
                         i += 3;
+                        int enumValue = 1;
 
                         for (; i < tokenCount; i++)
                         {
@@ -983,10 +1039,46 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                                 line.advanceToClosingParens(i, "{", "}");
                             else if (line[i].is(wxSTC_NSCR_IDENTIFIER)
                                      && i+1 < tokenCount
-                                     && (line[i+1].m_str == "," || line[i+1].m_str == "=" || line[i+1].m_str == "}"))
+                                     && (line[i+1].m_str == "," || line[i+1].m_str == "}"))
+                            {
+
                                 m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(line[i].m_str,
                                                                                         "value",
-                                                                                        ParserSymbol::GLOBALENUM));
+                                                                                        ParserSymbol::GLOBALENUM,
+                                                                                        toString(enumValue)));
+                                enumValue++;
+                            }
+                            else if (line[i].is(wxSTC_NSCR_IDENTIFIER)
+                                     && i+1 < tokenCount
+                                     && line[i+1].m_str == "=")
+                            {
+                                const std::string& constName = line[i].m_str;
+                                std::string val;
+                                i += 2;
+
+                                for (; i < tokenCount; i++)
+                                {
+                                    val += line[i].m_str;
+
+                                    if (line[i+1].m_str == "," || line[i+1].m_str == "}")
+                                        break;
+                                }
+
+                                if (val.length())
+                                {
+                                    if (m_globalScope.isSymbol(val, lineNum, false))
+                                    {
+                                        const ParserSymbol& symbol =  m_globalScope.getSymbol(val, lineNum, false);
+                                        val = symbol.m_value.length() ? symbol.m_value : val;
+                                    }
+
+                                    m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(constName,
+                                                                                            "value",
+                                                                                            ParserSymbol::GLOBALENUM,
+                                                                                            val));
+                                    enumValue = std::stoi(val)+1;
+                                }
+                            }
                         }
                     }
                 }
@@ -1009,6 +1101,10 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                     bool isIterator = line[pos+3].m_str == "->";
                     pos += 4;
                     varType = getExprType(lineNum, line, pos);
+
+                    if (varType == "table" || varType == "cluster")
+                        varType = "value";
+
                     scope.m_symbols[lineNum].push_back(ParserSymbol(varName,
                                                                     varType.front() == '{' ? varType.substr(1, varType.length()-2) : varType,
                                                                     isIterator ? ParserSymbol::ITERATOR : ParserSymbol::INDEX));
@@ -1101,6 +1197,22 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
 
                 break;
             }
+            else if (sSymbol == "fit" || sSymbol == "fitw")
+            {
+                for (size_t i = 1; i < tokenCount; i++)
+                {
+                    if (line[i].is(wxSTC_NSCR_IDENTIFIER))
+                    {
+                        const std::string& sParameter = line[i].m_str;
+
+                        if (!scope.isSymbol(sParameter, lineNum, false))
+                            scope.m_symbols[lineNum].push_back(ParserSymbol(sParameter,
+                                                                            "value"));
+                    }
+                }
+
+                break;
+            }
             else if (sSymbol == "var" || sSymbol == "str" || sSymbol == "obj")
             {
                 if (sSymbol == "var")
@@ -1108,13 +1220,13 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                 else if (sSymbol == "str")
                     varType = "string";
                 else
-                    varType = "object";
+                    varType = "object.void";
 
                 for (size_t i = 1; i < tokenCount; i++)
                 {
                     if (line[i].is(wxSTC_NSCR_IDENTIFIER))
                     {
-                        const std::string& sArgument = line[i].m_str;
+                        const std::string& sVarSymbol = line[i].m_str;
 
                         if (i+2 < tokenCount
                             && line[i+1].m_str == "=")
@@ -1125,12 +1237,12 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                             if (returnType == "void" || returnType == "any" || returnType == "{any}" || !returnType.length())
                                 returnType = varType;
 
-                            scope.m_symbols[lineNum].push_back(ParserSymbol(sArgument,
+                            scope.m_symbols[lineNum].push_back(ParserSymbol(sVarSymbol,
                                                                             returnType,
                                                                             ParserSymbol::LOCAL));
                         }
                         else
-                            scope.m_symbols[lineNum].push_back(ParserSymbol(sArgument,
+                            scope.m_symbols[lineNum].push_back(ParserSymbol(sVarSymbol,
                                                                             varType,
                                                                             ParserSymbol::LOCAL));
                     }
@@ -1295,7 +1407,10 @@ void CodeParser::markDirty(int lineNum)
         return;
 
     if (m_globalScope.contains(lineNum))
-        getScope(lineNum).m_validUntil = lineNum;
+    {
+        ParserScope& scope = getScope(lineNum);
+        scope.m_validUntil = std::min(scope.m_validUntil, lineNum);
+    }
 }
 
 
@@ -1518,7 +1633,7 @@ std::string CodeParser::getCurrentNameSpace(int lineNum) const
 /////////////////////////////////////////////////
 std::string CodeParser::getThisNameSpace() const
 {
-    std::string sThisNameSpace = m_fileName.substr(0, m_fileName.find_last_of("\\/")+1);
+    std::string sThisNameSpace = replacePathSeparator(m_fileName.substr(0, m_fileName.find_last_of("\\/")+1));
 
     // Get the current default procedure path
     std::string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcPath();

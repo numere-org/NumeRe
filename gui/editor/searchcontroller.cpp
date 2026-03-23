@@ -19,6 +19,7 @@
 #include "searchcontroller.hpp"
 #include "editor.h"
 #include "../terminal/terminal.hpp"
+#include "../../kernel/core/procedure/includer.hpp"
 
 #include <regex>
 
@@ -68,7 +69,8 @@ vector<wxString> SearchController::getProceduresInFile()
 
 
 /////////////////////////////////////////////////
-/// \brief Finds all occurences of a code symbol considering the style
+/// \brief Finds all occurences of a code symbol
+/// considering the style
 ///
 /// \param sSymbol const wxString&
 /// \param nStyle int
@@ -77,9 +79,11 @@ vector<wxString> SearchController::getProceduresInFile()
 /// \param bSearchInComments bool
 /// \return vector<int>
 ///
-/// This member function detects all occurences of a code symbol
-/// between the passed positions. It does take the current style
-/// into account and returns the matches as a vector
+/// This member function detects all occurences
+/// of a code symbol between the passed
+/// positions. It does take the current style
+/// into account and returns the matches as a
+/// vector.
 /////////////////////////////////////////////////
 vector<int> SearchController::FindAll(const wxString& sSymbol, int nStyle, int nStartPos, int nEndPos, bool bSearchInComments)
 {
@@ -102,6 +106,49 @@ vector<int> SearchController::FindAll(const wxString& sSymbol, int nStyle, int n
         // Is it the correct style and no field of a structure?
         if (m_editor->GetCharAt(nCurrentPos-1) != '.'
             && (m_editor->GetStyleAt(nCurrentPos) == nStyle
+                || ((m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, nCurrentPos) || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, nCurrentPos)) && bSearchInComments)
+                || (m_editor->GetStyleAt(nCurrentPos) == wxSTC_NSCR_STRING_PARSER && (m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC))))
+            vMatches.push_back(nCurrentPos);
+    }
+
+    // return the found matches
+    return vMatches;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Finds all occurences of a code symbol
+/// considering the styles
+///
+/// \param sSymbol const wxString&
+/// \param nStyles const std::vector<int>&
+/// \param nStartPos int
+/// \param nEndPos int
+/// \param bSearchInComments bool
+/// \return vector<int>
+///
+/// This member function detects all occurences
+/// of a code symbol between the passed
+/// positions. It does take the current style
+/// into account and returns the matches as a
+/// vector.
+/////////////////////////////////////////////////
+vector<int> SearchController::FindAll(const wxString& sSymbol, const std::vector<int>& nStyles, int nStartPos, int nEndPos, bool bSearchInComments)
+{
+    vector<int> vMatches;
+    int nCurrentPos = 0;
+
+    if (!sSymbol.length())
+        return vMatches;
+
+    // Search the next occurence
+    while ((nCurrentPos = m_editor->FindText(nStartPos, nEndPos, sSymbol, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != wxSTC_INVALID_POSITION)
+    {
+        nStartPos = nCurrentPos+1;
+
+        // Is it the correct style and no field of a structure?
+        if (m_editor->GetCharAt(nCurrentPos-1) != '.'
+            && (std::find(nStyles.begin(), nStyles.end(), m_editor->GetStyleAt(nCurrentPos)) != nStyles.end()
                 || ((m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, nCurrentPos) || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, nCurrentPos)) && bSearchInComments)
                 || (m_editor->GetStyleAt(nCurrentPos) == wxSTC_NSCR_STRING_PARSER && (m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC))))
             vMatches.push_back(nCurrentPos);
@@ -159,7 +206,32 @@ wxString SearchController::FindClickedInclude()
 /////////////////////////////////////////////////
 wxString SearchController::FindMarkedInclude(int charpos)
 {
-	int startPosition = m_editor->WordStartPosition(charpos, true);
+    std::string line = wxToUtf8(m_editor->GetLine(m_editor->LineFromPosition(charpos)));
+
+    if (Includer::is_including_syntax(line))
+    {
+        try
+        {
+            // Creating this instance might fail
+            Includer incl(line, wxToUtf8(m_editor->GetFileName().GetPath()));
+            m_editor->m_clickedInclude = wxFromUtf8(incl.getIncludedFileName());
+            return m_editor->m_clickedInclude;
+        }
+        catch (SyntaxError& e)
+        {
+            //
+        }
+    }
+
+    return "";
+
+
+
+
+
+
+
+	/*int startPosition = m_editor->WordStartPosition(charpos, true);
 	int endPosition = m_editor->WordEndPosition(startPosition + 1, true);
 
 	// Find the first position
@@ -210,7 +282,7 @@ wxString SearchController::FindMarkedInclude(int charpos)
 	else
 		m_editor->m_clickedInclude = m_terminal->getPathSettings()[SCRIPTPATH] + "/" + clickedWord + ".nscr";
 
-	return wxReplacePathSeparator(clickedWord);
+	return wxReplacePathSeparator(clickedWord);*/
 }
 
 
@@ -264,7 +336,8 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
     {
         wxString currentline = m_editor->GetLine(m_editor->LineFromPosition(startPosition));
 
-        if (currentline.find("procedure") != string::npos && currentline[currentline.find_first_not_of(' ', currentline.find("procedure") + 9)] == '$')
+        if (currentline.find("procedure") != string::npos
+            && currentline[currentline.find_first_not_of(' ', currentline.find("procedure") + 9)] == '$')
             return "";
     }
 
@@ -274,9 +347,7 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
     // Insert the namespaces, if we use
     // definition as well
 	if (!ignoreDefinitions && clickedWord.find('~') == string::npos && GetNameOfNamingProcedure() != clickedWord)
-    {
         clickedWord.insert(1, "thisfile~");
-    }
 
     // Search the namespace of the current call
     // and insert it
@@ -294,10 +365,20 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
 		// available
 		if (sNameSpace.length())
 		{
-			if (clickedWord[0] == '$')
-				clickedWord.insert(1, sNameSpace + "~");
-			else
-				clickedWord = "$" + sNameSpace + "~" + clickedWord;
+		    if (sNameSpace.find_first_of(":/\\") != std::string::npos)
+            {
+                if (clickedWord[0] == '$')
+                    clickedWord = "$'" + sNameSpace + "/" + clickedWord.substr(1) + "'";
+                else
+                    clickedWord = "$'" + sNameSpace + "/" + clickedWord + "'";
+            }
+            else
+            {
+                if (clickedWord[0] == '$')
+                    clickedWord.insert(1, sNameSpace + "~");
+                else
+                    clickedWord = "$" + sNameSpace + "~" + clickedWord;
+            }
 		}
 	}
 
