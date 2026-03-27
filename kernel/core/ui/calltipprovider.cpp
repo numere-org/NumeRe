@@ -720,22 +720,23 @@ namespace NumeRe
     /// (global) procedure.
     ///
     /// \param sToken std::string
+    /// \param sThisNameSpace const std::string&
     /// \return CallTip
     ///
     /////////////////////////////////////////////////
-    CallTip CallTipProvider::getProcedure(std::string sToken) const
+    CallTip CallTipProvider::getProcedure(std::string sToken, const std::string& sThisNameSpace) const
     {
         std::string sProcPath = NumeReKernel::getInstance()->getSettings().getProcPath();
         std::string pathname = sToken;
         std::string procedurename = pathname.substr(pathname.rfind('~') + 1); // contains a "$", if it's not used for the "thisfile~" case
 
         // Handle the namespaces
-        if (pathname.find("$this~") != std::string::npos)
+        if (pathname.starts_with("$this~") && !sThisNameSpace.length())
         {
             // This namespace (the current folder)
             return CallTip();
         }
-        else if (pathname.find("$thisfile~") != std::string::npos)
+        else if (pathname.starts_with("$thisfile~"))
         {
             // local namespace
             return CallTip();
@@ -743,22 +744,7 @@ namespace NumeRe
         else
         {
             // All other namespaces
-            if (pathname.find("$main~") != std::string::npos)
-                pathname.erase(pathname.find("$main~") + 1, 5);
-
-            while (pathname.find('~') != std::string::npos)
-                pathname[pathname.find('~')] = '/';
-
-            // Add the root folders to the path name
-            if (pathname[0] == '$' && pathname.find(':') == std::string::npos)
-                pathname.replace(0, 1, sProcPath + "/");
-            else if (pathname.find(':') == std::string::npos)
-                pathname.insert(0, sProcPath);
-            else // pathname.find(':') != string::npos
-            {
-                // Absolute file paths
-                pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
-            }
+            pathname = Procedure::nameSpaceToPath(pathname, sThisNameSpace, "");
         }
 
         // Find the namespace in absolute procedure paths
@@ -1005,12 +991,13 @@ namespace NumeRe
     /// (global) procedure, if it has been documented.
     ///
     /// \param sToken std::string
+    /// \param sThisNameSpace const std::string&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string CallTipProvider::getProcedureReturnValue(std::string sToken) const
+    std::string CallTipProvider::getProcedureReturnValue(std::string sToken, const std::string& sThisNameSpace) const
     {
-        sToken = getProcedure(sToken).sDefinition;
+        sToken = getProcedure(sToken, sThisNameSpace).sDefinition;
 
         if (sToken.find("->") != std::string::npos)
             return sToken.substr(sToken.find_first_not_of("-> ", sToken.find("->")));

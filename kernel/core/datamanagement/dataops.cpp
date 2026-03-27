@@ -630,7 +630,7 @@ bool sortData(CommandLineParser& cmdParser)
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-    vSortIndex = _data.sortElements(_dataView.getDataName(),
+    vSortIndex = _data.sortElements(_dataView.getDataName().substr(0, _dataView.getDataName().length()-1),
                                     _idx.row, _idx.col,
                                     cmdParser.getParameterList());
 

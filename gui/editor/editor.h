@@ -329,7 +329,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void markSections(bool bForceRefresh = false);
 		void markLocalVariables(bool bForceRefresh = false);
-		void markLocalVariableOfType(const wxString& command, bool bForceRefresh);
 		bool isNoAutoIndentionKey(int keycode);
 		void AsynchActions();
 		void AsynchEvaluations();

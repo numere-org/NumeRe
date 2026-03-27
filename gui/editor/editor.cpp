@@ -4381,7 +4381,6 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     updateDefaultHighlightSettings();
     Colourise(0, -1);
     applyStrikeThrough();
-    markLocalVariables(true);
 }
 
 
@@ -5209,140 +5208,47 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
     if (bForceRefresh)
         IndicatorClearRange(0, GetLastPosition());
 
-    if (m_fileType != FILE_NPRC || !m_options->GetHighlightLocalVariables())
+    if (m_fileType != FILE_NPRC || !m_options->GetHighlightLocalVariables() || !m_codeParser.isValid())
         return;
 
-    std::pair<int,int> context = getCurrentContext(GetCurrentLine());
-    IndicatorClearRange(PositionFromLine(context.first),
-                        GetLineEndPosition(context.second) - PositionFromLine(context.first));
+    int startLine = bForceRefresh ? 0 : GetCurrentLine();
+    int endLine = bForceRefresh ? GetLineCount() : GetCurrentLine()+1;
 
-    // Run the algorithm for every possible local variable declarator
-    markLocalVariableOfType("var", bForceRefresh);
-    markLocalVariableOfType("cst", bForceRefresh);
-    markLocalVariableOfType("tab", bForceRefresh);
-    markLocalVariableOfType("str", bForceRefresh);
-    markLocalVariableOfType("obj", bForceRefresh);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This method finds all local variables
-/// of the selected type and highlights their
-/// definitions.
-///
-/// \param command const wxString&
-/// \param bForceRefresh bool
-/// \return void
-///
-/// If the refresh flag is not set, then the
-/// alogrithm will only update the current edited
-/// line of the editor.
-/////////////////////////////////////////////////
-void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceRefresh)
-{
-    std::vector<int> matches;
-    std::pair<int, int> context = std::make_pair(0, GetLineCount());
-
-    // Find the occurences of the variable declaration commands
-    // in the corresponding scope
-    if (!bForceRefresh)
+    for (int i = startLine; i < endLine; i++)
     {
-        context = getCurrentContext(GetCurrentLine());
-        matches = m_search->FindAll(command,
-                                    wxSTC_NPRC_COMMAND,
-                                    PositionFromLine(context.first),
-                                    GetLineEndPosition(context.second),
-                                    false);
-    }
-    else
-        matches = m_search->FindAll(command,
-                                    wxSTC_NPRC_COMMAND,
-                                    0,
-                                    GetLastPosition(),
-                                    false);
-
-    // Run through all found occurences and extract the definitions
-    // of the local variables
-    for (size_t i = 0; i < matches.size(); i++)
-    {
-        context = getCurrentContext(LineFromPosition(i));
-        wxString line = GetTextRange(matches[i]+command.length(), GetLineEndPosition(LineFromPosition(matches[i])));
-        int nPos = line.find_first_not_of(' ') + matches[i] + command.length();
-
-        for (int j = nPos; j < GetLineEndPosition(LineFromPosition(matches[i])) + 1; j++)
+        if (m_codeParser.hasLocalScope(i))
         {
-            char currentChar = GetCharAt(j);
+            const ParserScope& scope = static_cast<const CodeParser&>(m_codeParser).getScope(i);
+            std::pair<int,int> context = scope.getRange();
 
-            // If a separator character was found, highlight
-            // the current word and find the next candidate
-            if (currentChar == ' '
-                || currentChar == '='
-                || currentChar == ','
-                || currentChar == '('
-                || currentChar == '{'
-                || currentChar == ';'
-                || currentChar == '\r'
-                || currentChar == '\n')
+            int startPos = PositionFromLine(context.first);
+            int endPos = GetLineEndPosition(context.second);
+
+            IndicatorClearRange(startPos,
+                                endPos - startPos);
+
+            for (const auto& symbols : scope.m_symbols)
             {
-                std::vector<int> localVars = m_search->FindAll(GetTextRange(nPos, j),
-                                                               GetStyleAt(nPos),
-                                                               nPos,
-                                                               GetLineEndPosition(context.second),
-                                                               false);
-
-                for (int n : localVars)
+                for (const ParserSymbol& symbol : symbols.second)
                 {
-                    IndicatorFillRange(n, j - nPos);
-                }
-
-                if (currentChar == ',')
-                {
-                    // Only a declaration, find the next one
-                    while (GetCharAt(j) == ',' || GetCharAt(j) == ' ')
-                        j++;
-                }
-                else if (currentChar == ';')
-                    break;
-                else
-                {
-                    // This is also an initialization. Find the
-                    // next declaration by jumping over the assigned
-                    // value.
-                    for (int l = j; l < GetLineEndPosition(LineFromPosition(matches[i])); l++)
+                    if (symbol.m_class == ParserSymbol::LOCAL
+                        || symbol.m_class == ParserSymbol::LOCALFUNC)
                     {
-                        if (GetCharAt(l) == ',' && GetStyleAt(l) == wxSTC_NPRC_OPERATORS)
-                        {
-                            while (GetCharAt(l) == ',' || GetCharAt(l) == ' ')
-                                l++;
+                        std::vector<int> localVars = m_search->FindAll(symbol.m_symbol,
+                                                                       {wxSTC_NSCR_IDENTIFIER, wxSTC_NSCR_CLUSTER, wxSTC_NSCR_CUSTOM_FUNCTION},
+                                                                       startPos,
+                                                                       endPos,
+                                                                       false);
 
-                            j = l;
-                            break;
-                        }
-                        else if (GetStyleAt(l) == wxSTC_NPRC_OPERATORS && (GetCharAt(l) == '(' || GetCharAt(l) == '{'))
+                        for (int n : localVars)
                         {
-                            j = -1;
-                            l = BraceMatch(l);
-
-                            if (l == -1)
-                                break;
+                            IndicatorFillRange(n, symbol.m_symbol.length());
                         }
-                        else if (l+1 == GetLineEndPosition(LineFromPosition(matches[i])))
-                            j = -1;
                     }
                 }
-
-                if (j == -1)
-                    break;
-
-                nPos = j;
             }
-            else if (GetStyleAt(j) == wxSTC_NPRC_OPERATORS && (currentChar == '(' || currentChar == '{'))
-            {
-                j = BraceMatch(j);
 
-                if (j == -1)
-                    break;
-            }
+            i = context.second;
         }
     }
 }
@@ -8868,6 +8774,9 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
                 if (sReturnValue.find("::") != std::string::npos)
                     sReturnValue.erase(sReturnValue.find("::"));
 
+                if (sReturnValue.find('\n') != std::string::npos)
+                    sReturnValue.erase(sReturnValue.find('\n'));
+
                 std::tie(varType, isVect) = CodeParser::convertToMethodType(CodeParser::expandReturnTypes(sReturnValue));
             }
         }
@@ -8978,6 +8887,7 @@ void NumeReEditor::parseAll()
     }
 
     parseSection(0, GetLineCount());
+    markLocalVariables(true);
 }
 
 

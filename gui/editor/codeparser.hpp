@@ -64,7 +64,12 @@ struct ParserSymbol
     ParserSymbol(const std::string& symbol, const std::string& type = "void", SymbolClass cls = GLOBAL, const std::string& value = "")
         : m_symbol(symbol), m_type(type), m_value(value), m_heuristicType(false), m_class(cls)
     {
-        if (type == "void" || type == "any" || type == "{any}" || !type.length() || (type == "cluster" && cls == ITERATOR))
+        if (type == "void"
+            || type == "any"
+            || type == "{any}"
+            || !type.length()
+            || (type == "cluster" && cls == ITERATOR)
+            || (type == "value" && cls == LOCAL))
             resolveTypeByHeuristic();
     }
 

@@ -192,8 +192,10 @@ void CodeAnalyzer::run()
             sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
 
             // Ensure that there's no trailing comment
-            if (sLine.rfind("##") != std::string::npos)
-                sLine.erase(sLine.rfind("##"));
+            size_t commentStart = sLine.rfind("##");
+
+            if (commentStart != std::string::npos && !isInQuotes(sLine, commentStart, true))
+                sLine.erase(commentStart);
 
             // Remove also block comments
             size_t nBlockStart = 0;

@@ -194,7 +194,7 @@ void LexedLine::advanceToNextExpression(size_t& pos) const
         if (!m_line[pos].is(wxSTC_NSCR_OPERATORS))
             continue;
 
-        if (m_line[pos].m_str == ",")
+        if (m_line[pos].m_str == "," || m_line[pos].m_str == "}")
             return;
         else if (m_line[pos].m_str == "(")
         {

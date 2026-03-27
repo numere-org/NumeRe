@@ -65,8 +65,8 @@ void ParserSymbol::resolveTypeByHeuristic()
 
         if (typeChar == 's' || typeChar == 'c')
         {
+            m_heuristicType = m_type != "string";
             m_type = "string";
-            m_heuristicType = true;
         }
         else if (typeChar == 'f'
                  || typeChar == 'n'
@@ -75,18 +75,18 @@ void ParserSymbol::resolveTypeByHeuristic()
                  || typeChar == 'y'
                  || typeChar == 'z')
         {
+            m_heuristicType = m_type != "value";
             m_type = "value";
-            m_heuristicType = true;
         }
         else if (typeChar == 'o')
         {
+            m_heuristicType = !m_type.starts_with("object.");
             m_type = "object.void";
-            m_heuristicType = true;
         }
         else if (typeChar == 't')
         {
+            m_heuristicType = m_type != "datetime";
             m_type = "datetime";
-            m_heuristicType = true;
         }
     }
     else if (m_symbol.length() == 1
@@ -101,8 +101,8 @@ void ParserSymbol::resolveTypeByHeuristic()
                  || m_symbol == "l"
                  || m_symbol == "k"))
     {
+        m_heuristicType = m_type != "value";
         m_type = "value";
-        m_heuristicType = true;
     }
     else if (m_symbol.length() == 2
              && (m_symbol.front() == 'x'
@@ -112,8 +112,8 @@ void ParserSymbol::resolveTypeByHeuristic()
                  || m_symbol.front() == 'a')
              && isdigit(m_symbol.back()))
     {
+        m_heuristicType = m_type != "value";
         m_type = "value";
-        m_heuristicType = true;
     }
 }
 
@@ -506,7 +506,7 @@ std::string ParserScope::dump() const
 /////////////////////////////////////////////////
 std::string CodeParser::evaluateBraces(int lineNum, const LexedLine& line, size_t& pos) const
 {
-    std::string varType = "void";
+    std::vector<std::string> varType;
 
     for (; pos < line.size(); pos++)
     {
@@ -519,35 +519,46 @@ std::string CodeParser::evaluateBraces(int lineNum, const LexedLine& line, size_
         if (line[pos].m_str == "{")
         {
             pos++;
-            std::string itemType = evaluateBraces(lineNum, line, pos);
-
-            if (itemType != "void")
-            {
-                if (varType == "void")
-                    varType = "{" + itemType + "}";
-                else if (varType != itemType && varType != "{" + itemType + "}")
-                {
-                    line.advanceToClosingParens(pos, "{", "}");
-                    return "cluster";
-                }
-            }
+            varType.push_back(evaluateBraces(lineNum, line, pos));
+            continue;
         }
 
-        std::string itemType = getIdentifierType(lineNum, line, pos);
+        if (line[pos].m_str != ",")
+            varType.push_back(getExprType(lineNum, line, pos));
 
-        if (itemType.length() && itemType != "void")
+        if (line[pos].m_str == "}")
         {
-            if (varType == "void")
-                varType = "{" + itemType + "}";
-            else if (varType != itemType && varType != "{" + itemType + "}")
-            {
-                line.advanceToClosingParens(pos, "{", "}");
-                return "cluster";
-            }
+            pos++;
+            break;
         }
     }
 
-    return varType;
+    if (!varType.size())
+        return "void";
+
+    std::string type;
+
+    if (varType.size() > 1)
+    {
+        std::vector<std::string> uniqueTypes = varType;
+        auto iter = std::unique(uniqueTypes.begin(), uniqueTypes.end());
+
+        if (iter == uniqueTypes.begin()+1)
+            return "{" + uniqueTypes.front() + "}";
+    }
+
+    for (size_t i = 0; i < varType.size(); i++)
+    {
+        if (type.length())
+            type += ",";
+
+        type += varType[i];
+    }
+
+    if (type.find_first_of("{,") != std::string::npos)
+        return "{" + type + "}";
+
+    return type;
 }
 
 
@@ -598,15 +609,19 @@ std::string CodeParser::evaluateMethods(std::string rootType, int lineNum, const
 /////////////////////////////////////////////////
 std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, size_t& pos) const
 {
+    // Strings
     if (line[pos].is({wxSTC_NSCR_STRING, wxSTC_NSCR_STRING_PARSER}))
         return "string";
 
+    // Numbers
     if (line[pos].is(wxSTC_NSCR_NUMBERS))
         return "value";
 
+    // Logical
     if (line[pos].m_str == "true" || line[pos].m_str == "false")
         return "logical";
 
+    // Identifier
     if (line[pos].is(wxSTC_NSCR_IDENTIFIER)
         && isSymbol(line[pos].m_str, lineNum, false))
     {
@@ -621,6 +636,7 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
         return varType;
     }
 
+    // Prompt
     if (line[pos].m_str == "??")
     {
         if (pos+1 < line.size() && line[pos+1].m_str == "[")
@@ -632,6 +648,7 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
         return "any";
     }
 
+    // Cluster
     if (line[pos].is(wxSTC_NSCR_CLUSTER)
         && isSymbol(line[pos].m_str, lineNum, false))
     {
@@ -641,6 +658,7 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
         return varType;
     }
 
+    // Custom function or table or matrix
     if (line[pos].is(wxSTC_NSCR_CUSTOM_FUNCTION)
         && isSymbol(line[pos].m_str, lineNum, true))
     {
@@ -650,6 +668,7 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
         return varType;
     }
 
+    // Standard function
     if (line[pos].is(wxSTC_NSCR_FUNCTION))
     {
         std::string varType;
@@ -669,12 +688,15 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
         return varType;
     }
 
+    // Command
     if (line[pos].is(wxSTC_NSCR_COMMAND))
         return CodeParser::expandReturnTypes(m_provider.getCommandReturnValue(line[pos].m_str));
 
+    // Constants
     if (line[pos].is(wxSTC_NSCR_CONSTANTS))
         return m_provider.getConstant(line[pos].m_str).sDefinition.find('"') != std::string::npos ? "string" : "value";
 
+    // Procedures
     if (line[pos].is(wxSTC_NSCR_PROCEDURES))
     {
         // Handle namespaces
@@ -685,7 +707,7 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
             sProcName.insert(1, sNameSpace + (sNameSpace.back() == '~' ? "" : "~"));
 
         if (!sProcName.starts_with("$thisfile~"))
-            return CodeParser::expandReturnTypes(m_provider.getProcedureReturnValue(sProcName));
+            return CodeParser::expandReturnTypes(m_provider.getProcedureReturnValue(sProcName, getThisNameSpace()));
 
         // return local proc
         if (m_localScopes.size() && m_localProcedures.size())
@@ -724,6 +746,7 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
     {
         closingBrace += 2;
         std::string varType = getExprType(lineNum, line, closingBrace);
+        //g_logger.info("lineNum=" + toString(lineNum) + ", varType=" + varType);
 
         if (varType.front() == '{' && varType.back())
             types = getAllArguments(varType.substr(1, varType.length()-2));
@@ -748,6 +771,7 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
         {
             const std::string& varName = line[pos].m_str;
             std::string type = types.size() == 1ull ? types.front() : types[varNum];
+            //g_logger.info("lineNum=" + toString(lineNum) + ", type="+type + ", varName="+varName);
 
             if (!isSymbol(varName, lineNum, false))
             {
@@ -758,6 +782,16 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
                 else
                     m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(varName,
                                                                             type));
+            }
+            else
+            {
+                ParserSymbol& symbol = getMutableSymbol(varName, lineNum, false);
+
+                if (type != "void" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
+                {
+                    symbol.m_type = type;
+                    symbol.m_heuristicType = false;
+                }
             }
 
             varNum++;
@@ -837,6 +871,45 @@ void CodeParser::parse(int lineNum, int numWrappedLines, const LexedLine& line)
 
 
 /////////////////////////////////////////////////
+/// \brief Helper function to filter for valid
+/// initialisation types for local variables.
+///
+/// \param sBaseType const std::string&
+/// \param sExprType const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string filterLocalVarInitTypes(const std::string& sBaseType, const std::string& sExprType)
+{
+    if (sExprType == "void" || sExprType == "any" || sExprType == "{any}" || !sExprType.length())
+        return sBaseType;
+
+    if (sBaseType == sExprType || "{" + sBaseType + "}" == sExprType)
+        return sExprType;
+
+    if (sBaseType == "value")
+    {
+        if (sExprType != "datetime"
+            && sExprType != "{datetime}"
+            && sExprType != "logical"
+            && sExprType != "{logical}")
+            return "value";
+    }
+    else if (sBaseType == "string")
+        return "string";
+    else if (sBaseType == "object.void")
+    {
+        if (sExprType != "dictstruct"
+            && sExprType != "category"
+            && !sExprType.starts_with("object."))
+            return "object.void";
+    }
+
+    return sExprType;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Parse the line by extracting type
 /// information based upon the lexed state
 /// without updating the internal parsed state.
@@ -872,8 +945,11 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                 varType = getExprType(lineNum, line, pos);
 
 
-                if (varType == "table" || varType == "any")
+                if (varType == "table" || varType == "any" || varType == "{any}" || !varType.length())
                     varType = "void";
+
+                if (varType.find(',') != std::string::npos)
+                    varType = "cluster";
             }
 
             if (isSymbol(sSymbol, lineNum, false))
@@ -1103,7 +1179,7 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                     varType = getExprType(lineNum, line, pos);
 
                     if (varType == "table" || varType == "cluster")
-                        varType = "value";
+                        varType = "any";
 
                     scope.m_symbols[lineNum].push_back(ParserSymbol(varName,
                                                                     varType.front() == '{' ? varType.substr(1, varType.length()-2) : varType,
@@ -1232,11 +1308,7 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                             && line[i+1].m_str == "=")
                         {
                             i += 2;
-                            std::string returnType = getExprType(lineNum, line, i);
-
-                            if (returnType == "void" || returnType == "any" || returnType == "{any}" || !returnType.length())
-                                returnType = varType;
-
+                            std::string returnType = filterLocalVarInitTypes(varType, getExprType(lineNum, line, i));
                             scope.m_symbols[lineNum].push_back(ParserSymbol(sVarSymbol,
                                                                             returnType,
                                                                             ParserSymbol::LOCAL));
@@ -1739,6 +1811,9 @@ std::pair<std::string, bool> CodeParser::convertToMethodType(const std::string& 
 {
     if (rootType == "any" || rootType == "ARG")
         return std::make_pair("*", true);
+
+    if (rootType == "object.void")
+        return std::make_pair("*", false);
 
     bool isVect = rootType.front() == '{' && rootType.back() == '}';
 

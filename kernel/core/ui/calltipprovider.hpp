@@ -67,7 +67,7 @@ namespace NumeRe
 
             CallTip getCommand(std::string sToken) const;
             CallTip getFunction(std::string sToken) const;
-            CallTip getProcedure(std::string sToken) const;
+            CallTip getProcedure(std::string sToken, const std::string& sThisNameSpace = "") const;
             CallTip getOption(std::string sToken) const;
             CallTip getMethod(std::string sToken, const std::string& sType) const;
             CallTip getMethodForDocumentation(std::string sToken, const std::string& sType) const;
@@ -77,7 +77,7 @@ namespace NumeRe
             std::string getCommandReturnValue(std::string sToken) const;
             std::string getFunctionReturnValue(std::string sToken) const;
             std::string getMethodReturnValue(std::string sToken, const std::string& sType) const;
-            std::string getProcedureReturnValue(std::string sToken) const;
+            std::string getProcedureReturnValue(std::string sToken, const std::string& sThisNameSpace = "") const;
     };
 
 
