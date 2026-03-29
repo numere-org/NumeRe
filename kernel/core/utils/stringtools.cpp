@@ -2306,7 +2306,7 @@ size_t strrmatch_impl(const std::string& sString, const std::string& sFind, size
 
     std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
 
-    for (int i = p-1; p >= 0; p--)
+    for (int i = p-1; i >= 0; i--)
     {
         if (getUtf8ByteLen(sString[i]) > 0ull
             && matchesAny(sString, vUtf8Chars, i))
@@ -2366,7 +2366,7 @@ size_t str_not_rmatch_impl(const std::string& sString, const std::string& sFind,
 
     std::vector<std::string> vUtf8Chars = splitUtf8Chars(sFind);
 
-    for (int i = p-1; p >= 0; p--)
+    for (int i = p-1; i >= 0; i--)
     {
         if (getUtf8ByteLen(sString[i]) > 0ull
             && !matchesAny(sString, vUtf8Chars, i))

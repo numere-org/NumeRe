@@ -4149,8 +4149,10 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         {
             _parser.SetExpr(vDataPlots[i]);
             vVals = _parser.Eval();
+            mu::DataType type = mu::TYPE_VOID;
+            vVals.getType(type);
 
-            if (vVals.getCommonType() != mu::TYPE_NUMERICAL && vVals.getCommonType() != mu::TYPE_GENERATOR)
+            if (type != mu::TYPE_NUMERICAL && type != mu::TYPE_GENERATOR)
                 throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, vDataPlots[i], vDataPlots[i]);
 
             rows = vVals.rows();
@@ -4776,6 +4778,8 @@ void Plot::createDataLegends()
 
             // Strip all spaces and extract the table name
             StripSpaces(sTemp);
+            replaceAll(sTemp, "\\{", "{");
+            replaceAll(sTemp, "\\}", "}");
             DataAccessParser _access = getAccessParserForPlotAndFit(sTemp);
             //_access.evalIndices();
             std::string sTableName = _access.getDataObject();
@@ -5429,15 +5433,17 @@ void Plot::fillData(double dt_max, int t_animate)
 
                 for (int k = 0; k < _pInfo.nFunctions; k++)
                 {
+                    m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                    m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+
+                    std::complex<double> val = vResults[k].get().get(0).as_cmplx();
+
                     for (size_t i = 0; i < 2; i++)
                     {
-                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
-                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
-
                         if (vResults[k].get().size() <= i) // Always fill missing dimensions with zero
-                            m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y);
+                            m_manager.assets[vFuncMap[k]].writeData(val.imag(), i, x, y);
                         else
-                            m_manager.assets[vFuncMap[k]].writeData(vResults[k].get().get(i).getNum().asCF64(), i, x, y);
+                            m_manager.assets[vFuncMap[k]].writeData(vResults[k].get().get(i).as_cmplx(), i, x, y);
                     }
                 }
             }
@@ -5465,13 +5471,16 @@ void Plot::fillData(double dt_max, int t_animate)
 
                     for (int k = 0; k < _pInfo.nFunctions; k++)
                     {
+                        if (m_manager.assets[vFuncMap[k]].type == PT_NONE)
+                            m_manager.assets[vFuncMap[k]].create3DVect(PT_FUNCTION, std::vector<size_t>(3, _pInfo.nSamples));
+
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
+                        m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
+
                         for (int i = 0; i < 3; i++)
                         {
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].front().getNum().asF64(), x, XCOORD);
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
-                            m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
-
-                            if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
+                            if (vResults[k].get().size() <= i) // Always fill missing dimensions with zero
                                 m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
                             else
                                 m_manager.assets[vFuncMap[k]].writeData(vResults[k].get().get(i).getNum().asCF64(), i, x, y, z);

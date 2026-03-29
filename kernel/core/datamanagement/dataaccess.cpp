@@ -433,7 +433,7 @@ mu::Array DataView::get(const VectorIndex& rows, const VectorIndex& cols) const
     if (isTable())
     {
         const Indices& _idx = m_access.getIndices();
-        return NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row.get(rows), _idx.col.subidx(m_axisCount, 1).get(cols),
+        return NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row.get(rows), _idx.col.subidx(m_axisCount).get(cols),
                                                                           m_access.getDataObject());
     }
 

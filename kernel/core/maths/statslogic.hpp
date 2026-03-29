@@ -63,7 +63,7 @@ struct StatsLogic
     /////////////////////////////////////////////////
     void operator()(const mu::Value& newVal)
     {
-        if (mu::isnan(newVal))
+        if (bool(newVal != newVal) || !newVal.isNumerical())
             return;
 
         switch (m_type)
@@ -87,10 +87,10 @@ struct StatsLogic
                 m_val += (newVal - m_compval)*conj(newVal - m_compval)*(newVal - m_compval)*conj(newVal - m_compval);
                 return;
             case OPERATION_MAX:
-                m_val = bool(newVal > m_val) || mu::isnan(m_val) ? newVal : m_val;
+                m_val = (bool(m_val != m_val) || bool(mu::Value(newVal.getNum()) > m_val)) ? mu::Value(newVal.getNum()) : m_val;
                 return;
             case OPERATION_MIN:
-                m_val = bool(newVal < m_val) || mu::isnan(m_val) ? newVal : m_val;
+                m_val = (bool(m_val != m_val) || bool(mu::Value(newVal.getNum()) < m_val)) ? mu::Value(newVal.getNum()) : m_val;
                 return;
             case OPERATION_NUM:
                 m_val += 1.0;

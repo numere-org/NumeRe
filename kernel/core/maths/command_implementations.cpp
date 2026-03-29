@@ -1631,7 +1631,7 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
     }
     else
     {
-        axis.emplace_back(new mu::GeneratorValue(0, values.size()-1));
+        axis.emplace_back(new mu::GeneratorValue(1, values.size()));
         axis.makeGenerator();
         order.emplace_back(new mu::GeneratorValue(0, values.size()-1));
         order.makeGenerator();
@@ -1639,30 +1639,33 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 
     for (size_t i = 1; i < values.size(); i++)
     {
-        mu::Value product = values.get(order.get(i).as_idx())*values.get(order.get(i-1).as_idx());
+        size_t curr = order.get(i).as_idx();
+        size_t prev = order.get(i-1).as_idx();
 
-        if (mu::isnan(values.get(order.get(i-1).as_idx()))
+        mu::Value product = values.get(curr)*values.get(prev);
+
+        if (mu::isnan(values.get(prev))
             || bool(product > mu::Value(0.0)))
             continue;
 
         if (!nMode)
         {
-            if (values.get(order.get(i).as_idx()) == mu::Value(0.0))
+            if (values.get(curr) == mu::Value(0.0))
             {
-                vResults.push_back(axis.get(order.get(i).as_idx()));
+                vResults.push_back(axis.get(curr));
                 i++;
             }
-            else if (values.get(order.get(i-1).as_idx()) == mu::Value(0.0))
-                vResults.push_back(axis.get(order.get(i-1).as_idx()));
+            else if (values.get(prev) == mu::Value(0.0))
+                vResults.push_back(axis.get(prev));
             else if (product < mu::Value(0.0))
-                vResults.push_back(Linearize(values.get(order.get(i-1).as_idx()).getNum().asF64(),
-                                             axis.get(order.get(i-1).as_idx()).getNum().asF64(),
-                                             values.get(order.get(i).as_idx()).getNum().asF64(),
-                                             axis.get(order.get(i).as_idx()).getNum().asF64()));
+                vResults.push_back(Linearize(axis.get(prev).getNum().asF64(),
+                                             values.get(prev).getNum().asF64(),
+                                             axis.get(curr).getNum().asF64(),
+                                             values.get(curr).getNum().asF64()));
         }
         else
         {
-            if (values.get(order.get(i).as_idx()) == mu::Value(0.0) && values.get(order.get(i-1).as_idx()) == mu::Value(0.0))
+            if (values.get(curr) == mu::Value(0.0) && values.get(prev) == mu::Value(0.0))
             {
                 for (size_t j = i + 1; j < values.size(); j++)
                 {
@@ -1689,18 +1692,18 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 
                 continue;
             }
-            else if (values.get(order.get(i).as_idx()) == mu::Value(0.0)
-                     && mu::Value(nMode) * values.get(order.get(i-1).as_idx()) < mu::Value(0.0))
-                vResults.push_back(axis.get(order.get(i).as_idx()));
-            else if (values.get(order.get(i-1).as_idx()) == mu::Value(0.0)
-                     && mu::Value(nMode) * values.get(order.get(i).as_idx()) > mu::Value(0.0))
-                vResults.push_back(axis.get(order.get(i-1).as_idx()));
+            else if (values.get(curr) == mu::Value(0.0)
+                     && mu::Value(nMode) * values.get(prev) < mu::Value(0.0))
+                vResults.push_back(axis.get(curr));
+            else if (values.get(prev) == mu::Value(0.0)
+                     && mu::Value(nMode) * values.get(curr) > mu::Value(0.0))
+                vResults.push_back(axis.get(prev));
             else if (product < mu::Value(0.0)
-                     && mu::Value(nMode) * values.get(order.get(i-1).as_idx()) < mu::Value(0.0))
-                vResults.push_back(Linearize(values.get(order.get(i-1).as_idx()).getNum().asF64(),
-                                             axis.get(order.get(i-1).as_idx()).getNum().asF64(),
-                                             values.get(order.get(i).as_idx()).getNum().asF64(),
-                                             axis.get(order.get(i).as_idx()).getNum().asF64()));
+                     && mu::Value(nMode) * values.get(prev) < mu::Value(0.0))
+                vResults.push_back(Linearize(axis.get(prev).getNum().asF64(),
+                                             values.get(prev).getNum().asF64(),
+                                             axis.get(curr).getNum().asF64(),
+                                             values.get(curr).getNum().asF64()));
         }
     }
 
@@ -2672,6 +2675,10 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     _fft.lines = _dataView.rows();
     _fft.cols = _dataView.cols();
 
+    // Limit the number of columns for the usual FFT case
+    if (!bIs2DFFT)
+        _fft.cols = std::min(3, _fft.cols);
+
     _dataView.reserveAxes(1+bIs2DFFT);
 
     if (_fft.lines % 2 && _fft.lines > 1e3)
@@ -3310,19 +3317,9 @@ bool createDatagrid(CommandLineParser& cmdParser)
         if (!_dataView.isValueLike())
             throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-        // Check the indices
-        /*if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());*/
-
         // the indices are vectors
         mu::Array vVector;
         vZVals.reserve(bTranspose ? _dataView.cols() : _dataView.rows());
-
-        /*if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getCols(szDatatable)-1);
-
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0), szDatatable)-1);*/
 
         // Get the data. Choose the order of reading depending on the "transpose" command line option
         if (!bTranspose)
@@ -3349,7 +3346,6 @@ bool createDatagrid(CommandLineParser& cmdParser)
         // Expand the z vector into a matrix for the datagrid if necessary
         expandVectorToDatagrid(ivl, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
     }
-
 
     // Store the results in the target cache
     if (_iTargetIndex.row.isOpenEnd())
@@ -3760,6 +3756,8 @@ bool analyzePulse(CommandLineParser& cmdParser)
     if (!_dataView.isValueLike())
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
+    _dataView.evalIndices();
+
     size_t nRows = _dataView.rows();
     _dataView.reserveAxes(1);
 
@@ -4056,7 +4054,7 @@ void boneDetection(CommandLineParser& cmdParser)
     {
         for (size_t j = 0; j < nCols; j++)
         {
-            _mData.a[i+j*nRows] = _dataView.get(i, j+2).getNum().asF64();
+            _mData.a[i+j*nRows] = _dataView.get(i, j).getNum().asF64();
         }
     }
 

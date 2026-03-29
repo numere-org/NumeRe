@@ -2586,7 +2586,14 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]));
+                try
+                {
+                    operation[j](readMem(_vLine[i], _vCol[j]));
+                }
+                catch (...)
+                {
+                    //
+                }
             }
         }
     }
@@ -2615,7 +2622,14 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]));
+                try
+                {
+                    operation[j](readMem(_vLine[i], _vCol[j]));
+                }
+                catch (...)
+                {
+                    //
+                }
             }
         }
     }
@@ -2721,7 +2735,7 @@ std::complex<double> Memory::max(const VectorIndex& _vLine, const VectorIndex& _
 
     for (const auto& val : vLogic)
     {
-        if (mu::isnan(dMax) || dMax < val.m_val)
+        if (dMax != dMax || dMax < val.m_val)
             dMax = val.m_val;
     }
 
@@ -2756,7 +2770,7 @@ std::complex<double> Memory::min(const VectorIndex& _vLine, const VectorIndex& _
 
     for (const auto& val : vLogic)
     {
-        if (mu::isnan(dMin) || dMin > val.m_val)
+        if (dMin != dMin || dMin > val.m_val)
             dMin = val.m_val;
     }
 

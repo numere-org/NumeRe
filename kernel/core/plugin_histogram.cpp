@@ -127,6 +127,9 @@ static void prepareIntervalsForHist(const std::string& sCmd, Interval& range, do
     else if (mu::isnan(range.back()))
         range.reset(range.front(), dDataMax);
 
+    if (mu::isnan(range.front()) || mu::isnan(range.back()))
+        throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+
     // Ensure that the selected interval is part of
     // the data interval
     if (!mu::isnan(range.front()) && !mu::isnan(range.back()))

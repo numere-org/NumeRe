@@ -287,7 +287,7 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         return vDoc;
     }
 
-    if (!type.length() && type == "procedure")
+    if (!type.length() || type == "procedure")
         _ctip = tipProvider.getProcedure(sToken);
 
     if (_ctip.sDefinition.length())
@@ -423,7 +423,7 @@ void doc_Help(const std::string& __sTopic)
             throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, "", SyntaxError::invalid_position, sFilename);
 
         // content schreiben
-        fTeX << ansiToUtf8(sTeX);
+        fTeX << sTeX;
 
         if (_option.systemPrints())
             NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT",

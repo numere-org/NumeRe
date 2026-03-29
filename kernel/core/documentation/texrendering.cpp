@@ -322,6 +322,7 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
 
     replaceAll(sDocParagraph, "&amp;", "\\&");
     replaceAll(sDocParagraph, "<br/>", "\\\\");
+    replaceAll(sDocParagraph, "<hr />", "\\par\\noindent\\rule{\\textwidth}{1pt}");
 }
 
 

@@ -446,7 +446,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     }
     else if (m_editor->isBlockEnd(sSyntaxElement) != wxNOT_FOUND)
     {
-        if (m_vCurrentScopes.back().back() == wordstart)
+        if (m_vCurrentScopes.size() && m_vCurrentScopes.back().back() == wordstart)
             m_vCurrentScopes.pop_back();
     }
 
