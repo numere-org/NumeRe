@@ -495,12 +495,16 @@ namespace mu
     /////////////////////////////////////////////////
     Array ParserBase::evalIfElse(const Array& cond, const Array& true_case, const Array& false_case)
     {
-        size_t elems = std::max({cond.size(), true_case.size(), false_case.size()});
-        Array ret(elems);
+        MatrixView condView(cond);
+        MatrixView trueView(true_case);
+        MatrixView falseView(false_case);
+
+        Array ret = condView.prepare(trueView, falseView);
+        size_t elems = condView.size();
 
         for (size_t i = 0; i < elems; i++)
         {
-            ret.get(i) = cond.get(i) ? true_case.get(i) : false_case.get(i);
+            ret.push_back(bool(condView.get(i)) ? trueView.get(i) : falseView.get(i));
         }
 
         return ret;

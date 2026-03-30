@@ -1136,7 +1136,14 @@ class VectorIndex
         void setOpenEndIndex(int nLast) const
         {
             if (vStorage.back() == OPEN_END)
-                vStorage.back() = nLast;
+            {
+                if (expand)
+                    vStorage.back() = nLast > vStorage.front() ? nLast : INVALID;
+                else if (vStorage.size() > 1 && nLast > vStorage[vStorage.size()-2])
+                    vStorage.back() = nLast;
+                else
+                    vStorage.pop_back();
+            }
         }
 
         /////////////////////////////////////////////////

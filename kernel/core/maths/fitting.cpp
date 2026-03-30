@@ -841,8 +841,11 @@ static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitL
     if (!_dataView.isValueLike())
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _dataView.getDataName(), cmdParser.getExpr());
 
-    _dataView.reserveAxes(1 + (fitData.nFitVars & 2), false);
+    _dataView.reserveAxes(1 + bool(fitData.nFitVars & 2), _dataView.cols() > 1 + (fitData.nFitVars & 2) + 2*fitData.bUseErrors);
     nColumns = _dataView.cols();
+
+    if (!(fitData.nFitVars & 2))
+        nColumns = std::min(nColumns, 2+fitData.bUseErrors);
 
     // Extract the x axis
     xArray = _dataView.getAxis(0);
@@ -911,6 +914,10 @@ static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitL
                 }
             }
         }
+
+        // Define the dimension of the fit data set
+        // Has to be 2 or 3
+        nDim = 2 + fitData.bUseErrors;
     }
     else
     {
@@ -984,10 +991,11 @@ static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitL
                 }
             }
         }
-    }
 
-    // Define the dimension of the fit data set, which loosely corresponds to the number of columns
-    nDim = std::min(nColumns, 3) + 1 + (fitData.nFitVars & 2);
+        // Define the dimension of the fit data set
+        // Has to be either 3 or 5 (w/errors)
+        nDim = 3 + 2*fitData.bUseErrors;
+    }
 
     // Prepare the message for the fit log
     if (_dataView.isTable())
@@ -998,7 +1006,7 @@ static int getDataForFit(CommandLineParser& cmdParser, std::string& sDimsForFitL
             + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _data.getDataFileName(sTableName.substr(0, sTableName.find('(')));
     }
     else
-        sDimsForFitLog = "1-" + toString(_dataView.cols())
+        sDimsForFitLog = "1-" + toString(nColumns)
             + " " + _lang.get("PARSERFUNCS_FIT_FROM") + " " + _dataView.getDataName();
 
     return nDim;
@@ -1255,6 +1263,9 @@ static std::string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitD
 
         sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
     }
+    else
+        // Do not hide errors due to wrong combinations
+        throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay, sFuncDisplay);
 
     return sFunctionDefString;
 }

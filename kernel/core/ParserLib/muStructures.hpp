@@ -1282,7 +1282,7 @@ namespace mu
                         throw std::length_error("Dimension mismatch.");
                 }
 
-                if (idx[0] >= m_dimSizes[0])
+                if (idx[0] >= getSize(0))
                 {
                     std::string dims;
 
@@ -1303,7 +1303,7 @@ namespace mu
                 {
                     if (idx[n])
                     {
-                        if (idx[n] >= m_dimSizes[n])
+                        if (idx[n] >= getSize(n))
                         {
                             std::string dims;
 

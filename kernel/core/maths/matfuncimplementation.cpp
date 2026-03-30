@@ -1669,6 +1669,13 @@ mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B)
     if (!(A.rows() && B.rows()) || !(A.cols() && B.cols()))
         throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, A.printDims() + ", " + B.printDims());
 
+    auto voidGuard = [](const mu::Value& val)
+        {
+            if (val.isVoid())
+                return mu::Value(0.0);
+            return val;
+        };
+
     int n = std::max(A.rows(), B.rows());
     int m = std::max(A.cols(), B.cols());
 
@@ -1690,8 +1697,8 @@ mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B)
                 {
                     // calculate the correlation of the current
                     // shift indicated by the other two loops
-                    mCorrelation.get(i1, j1) += A.get(i2 + std::max(0, i1-n+1), j2 + std::max(0, j1-m+1))
-                                               * B.get(i2 + std::max(0, n-i1-1), j2 + std::max(0, m-j1-1));
+                    mCorrelation.get(i1, j1) += voidGuard(A.get(i2 + std::max(0, i1-n+1), j2 + std::max(0, j1-m+1)))
+                                               * voidGuard(B.get(i2 + std::max(0, n-i1-1), j2 + std::max(0, m-j1-1)));
                 }
             }
         }
@@ -1983,15 +1990,17 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
     mu::DimSizes dimSizes = A.getDimSizes();
     dimSizes[uniqueDim] = 1ull;
 
-    std::vector<size_t> uniqueCopies;
+    std::vector<size_t> uniqueSlices;
+    size_t sliceSize = mu::getNumElements(dimSizes);
 
     for (size_t i = 0; i < uniqueDimSize; i++)
     {
-        bool insert = true;
+        bool insertSlice = true;
 
-        for (size_t j = 0; j < i && insert; j++)
+        for (size_t j = 0; j < i && insertSlice; j++)
         {
             mu::IndexIterator iterator(dimSizes);
+            size_t equalCount = 0;
 
             do
             {
@@ -2001,21 +2010,23 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
                 iter_i[uniqueDim] = i;
                 iter_j[uniqueDim] = j;
 
-                if (A.get(iter_i) == A.get(iter_j))
-                {
-                    insert = false;
-                }
+                equalCount += bool(A.get(iter_i) == A.get(iter_j));
 
-            } while (iterator.next() && insert);
+            } while (iterator.next());
+
+            insertSlice = equalCount != sliceSize;
         }
 
-        if (insert)
-            uniqueCopies.push_back(i);
+        if (insertSlice)
+            uniqueSlices.push_back(i);
     }
 
-    mu::Array ret(mu::getNumElements(dimSizes)*uniqueCopies.size());
+    mu::Array ret(sliceSize*uniqueSlices.size());
+    mu::DimSizes uniqueDims = dimSizes;
+    uniqueDims[uniqueDim] = uniqueSlices.size();
+    ret.setDimSizes(uniqueDims);
 
-    for (size_t i = 0; i < uniqueCopies.size(); i++)
+    for (size_t i = 0; i < uniqueSlices.size(); i++)
     {
         mu::IndexIterator iterator(dimSizes);
 
@@ -2024,16 +2035,13 @@ mu::Array matfnc_unique(const mu::Array& A, const mu::Array& dim)
             mu::IndexTuple source = iterator.index();
             mu::IndexTuple target = iterator.index();
 
-            source[uniqueDim] = uniqueCopies[i];
+            source[uniqueDim] = uniqueSlices[i];
             target[uniqueDim] = i;
 
             ret.get(target) = A.get(source);
 
         } while (iterator.next());
     }
-
-    dimSizes[uniqueDim] = uniqueCopies.size();
-    ret.setDimSizes(dimSizes);
 
     return ret;
 }
