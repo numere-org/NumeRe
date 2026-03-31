@@ -361,7 +361,7 @@ mu::Array unit_mph(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1°C.
+/// \brief Conversion function for 1Â°C.
 ///
 /// \param v const mu::Array&
 /// \return mu::Array
@@ -374,7 +374,7 @@ mu::Array unit_Celsius(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1°F.
+/// \brief Conversion function for 1Â°F.
 ///
 /// \param v const mu::Array&
 /// \return mu::Array
@@ -1159,7 +1159,7 @@ struct Unit
 /////////////////////////////////////////////////
 mu::Array UnitFunction::operator()(const mu::Array& val)
 {
-    // °C and °F are affine transforms and do not follow the
+    // Â°C and Â°F are affine transforms and do not follow the
     // generic convention
     if (m_nonlinear)
     {
@@ -1267,6 +1267,34 @@ std::string UnitConversion::formatUnit(UnitConversionMode mode)
 
 
 
+/////////////////////////////////////////////////
+/// \brief Local helper function to have a
+/// std::string::find_first_of of UTF8 chars.
+///
+/// \param sString StringView
+/// \param vUtf8Chars const std::vector<std::string>&
+/// \param p size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+static size_t u8NextTokenStart(StringView sString, const std::vector<std::string>& vUtf8Chars, size_t p = 0)
+{
+    if (!sString.length())
+        return std::string::npos;
+
+    if (p >= sString.length())
+        p = 0;
+
+    for (; p < sString.length(); p++)
+    {
+        if (getUtf8ByteLen(sString[p]) > 0ull
+            && matchesAny(sString, vUtf8Chars, p))
+            return p;
+    }
+
+    return std::string::npos;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Tokenize the passed unit combination
@@ -1280,18 +1308,19 @@ std::string UnitConversion::formatUnit(UnitConversionMode mode)
 static std::vector<Unit> tokenizeUnit(StringView sUnit)
 {
     std::vector<StringView> vTokens;
+    static std::vector<std::string> vTokenBoundaries = splitUtf8Chars(std::string(" *^/Â²Â³"));
 
     // Tokenize. Misses the functionality to detect and handle parentheses
     while (sUnit.length())
     {
-        size_t nOperator = sUnit.find_first_of(" *^/");
+        size_t nOperator = u8NextTokenStart(sUnit, vTokenBoundaries);
         size_t nParens = sUnit.find('(');
 
         // Jump over parentheses
         if (nOperator != std::string::npos
             && nOperator > nParens
             && getMatchingParenthesis(sUnit.subview(nParens)) != std::string::npos)
-            nOperator = sUnit.find_first_of(" *^/", getMatchingParenthesis(sUnit.subview(nParens))+nParens+1);
+            nOperator = u8NextTokenStart(sUnit, vTokenBoundaries, getMatchingParenthesis(sUnit.subview(nParens))+nParens+1);
 
         if (nOperator)
             vTokens.push_back(sUnit.subview(0, nOperator));
@@ -1315,6 +1344,13 @@ static std::vector<Unit> tokenizeUnit(StringView sUnit)
         else
         {
             // Only save the division operator. Multiplications are obvious
+            if (sUnit.match("Â²", nOperator) || sUnit.match("Â³", nOperator))
+            {
+                vTokens.push_back(sUnit.subview(nOperator, 2));
+                sUnit.trim_front(nOperator+2);
+                continue;
+            }
+
             if (sUnit[nOperator] == '/')
                 vTokens.push_back(sUnit.subview(nOperator, 1));
 
@@ -1336,6 +1372,16 @@ static std::vector<Unit> tokenizeUnit(StringView sUnit)
                 vSingleUnits.push_back(Unit{.m_unit{vTokens[i+1]}, .m_exp{-1*StrToDb(vTokens[i+2].subview(1).to_string())}});
                 i += 2;
             }
+            else if (vTokens.size() > i+2 && vTokens[i+2] == "Â²")
+            {
+                vSingleUnits.push_back(Unit{.m_unit{vTokens[i+1]}, .m_exp{-2.0}});
+                i += 2;
+            }
+            else if (vTokens.size() > i+2 && vTokens[i+2] == "3")
+            {
+                vSingleUnits.push_back(Unit{.m_unit{vTokens[i+1]}, .m_exp{-3.0}});
+                i += 2;
+            }
             else
             {
                 vSingleUnits.push_back(Unit{.m_unit{vTokens[i+1]}, .m_exp{-1.0}});
@@ -1346,6 +1392,18 @@ static std::vector<Unit> tokenizeUnit(StringView sUnit)
         {
             // Handle simple exponents
             vSingleUnits.push_back(Unit{.m_unit{vTokens[i]}, .m_exp{StrToDb(vTokens[i+1].subview(1).to_string())}});
+            i++;
+        }
+        else if (vTokens.size() > i+1 && vTokens[i+1] == "Â²")
+        {
+            // Handle simple exponents
+            vSingleUnits.push_back(Unit{.m_unit{vTokens[i]}, .m_exp{2.0}});
+            i++;
+        }
+        else if (vTokens.size() > i+1 && vTokens[i+1] == "Â³")
+        {
+            // Handle simple exponents
+            vSingleUnits.push_back(Unit{.m_unit{vTokens[i]}, .m_exp{3.0}});
             i++;
         }
         else
@@ -1403,72 +1461,114 @@ static std::vector<Unit> tokenizeUnit(StringView sUnit)
 /////////////////////////////////////////////////
 static double detectSiScaling(StringView& sUnit)
 {
-    if (sUnit.length() > 1 && (std::isalpha(sUnit[1]) || sUnit[1] == '°'))
+    if (sUnit.starts_with("Âµ") && sUnit.length() > 2)
     {
-        switch (sUnit.front())
+        sUnit.trim_front(2);
+        return 1e-6;
+    }
+
+    if (sUnit.length() > 1 && (std::isalpha(sUnit[1]) || sUnit[1] == 'Â°'))
+    {
+        if (sUnit.starts_with("E"))
         {
-            case 'E':
-                sUnit.trim_front(1);
-                return 1e18;
-            case 'P':
-                sUnit.trim_front(1);
-                return 1e15;
-            case 'T':
-                sUnit.trim_front(1);
-                return 1e12;
-            case 'G':
-                sUnit.trim_front(1);
-                return 1e9;
-            case 'M':
-                sUnit.trim_front(1);
-                return 1e6;
-            case 'k':
-                sUnit.trim_front(1);
-                return 1e3;
-            case 'h':
-                sUnit.trim_front(1);
-                return 1e2;
-            case 'd':
-            {
-                if (sUnit.length() > 2 && sUnit.starts_with("da") && (std::isalpha(sUnit[2]) || sUnit[2] == '°'))
-                {
-                    sUnit.trim_front(2);
-                    return 1e1;
-                }
+            sUnit.trim_front(1);
+            return 1e18;
+        }
 
-                sUnit.trim_front(1);
-                return 1e-1;
-            }
-            case 'c':
-                sUnit.trim_front(1);
-                return 1e-2;
-            case 'm':
-            {
-                if (sUnit.length() > 2 && sUnit.starts_with("mu") && (std::isalpha(sUnit[2]) || sUnit[2] == '°'))
-                {
-                    sUnit.trim_front(2);
-                    return 1e-6;
-                }
+        if (sUnit.starts_with("P"))
+        {
+            sUnit.trim_front(1);
+            return 1e15;
+        }
 
-                sUnit.trim_front(1);
-                return 1e-3;
-            }
-            case 'µ':
-            case 'u': // e.g. um instead if µm
-                sUnit.trim_front(1);
-                return 1e-6;
-            case 'n':
-                sUnit.trim_front(1);
-                return 1e-9;
-            case 'p':
-                sUnit.trim_front(1);
-                return 1e-12;
-            case 'f':
-                sUnit.trim_front(1);
-                return 1e-15;
-            case 'a':
-                sUnit.trim_front(1);
-                return 1e-18;
+        if (sUnit.starts_with("T"))
+        {
+            sUnit.trim_front(1);
+            return 1e12;
+        }
+
+        if (sUnit.starts_with("G"))
+        {
+            sUnit.trim_front(1);
+            return 1e9;
+        }
+
+        if (sUnit.starts_with("M"))
+        {
+            sUnit.trim_front(1);
+            return 1e6;
+        }
+
+        if (sUnit.starts_with("k"))
+        {
+            sUnit.trim_front(1);
+            return 1e3;
+        }
+
+        if (sUnit.starts_with("h"))
+        {
+            sUnit.trim_front(1);
+            return 1e2;
+        }
+
+        if (sUnit.starts_with("da") && sUnit.length() > 2 && (std::isalpha(sUnit[2]) || sUnit[2] == 'Â°'))
+        {
+            sUnit.trim_front(2);
+            return 1e1;
+        }
+
+        if (sUnit.starts_with("d"))
+        {
+            sUnit.trim_front(1);
+            return 1e-1;
+        }
+
+        if (sUnit.starts_with("c"))
+        {
+            sUnit.trim_front(1);
+            return 1e-2;
+        }
+
+        if (sUnit.starts_with("mu") && sUnit.length() > 2 && (std::isalpha(sUnit[2]) || sUnit[2] == 'Â°'))
+        {
+            sUnit.trim_front(2);
+            return 1e-6;
+        }
+
+        if (sUnit.starts_with("m"))
+        {
+            sUnit.trim_front(1);
+            return 1e-3;
+        }
+
+        if (sUnit.starts_with("u")) // e.g. um instead if Âµm
+        {
+            sUnit.trim_front(1);
+            return 1e-6;
+        }
+
+        if (sUnit.starts_with("n"))
+        {
+            sUnit.trim_front(1);
+            return 1e-9;
+        }
+
+        if (sUnit.starts_with("p"))
+        {
+            sUnit.trim_front(1);
+            return 1e-12;
+        }
+
+        if (sUnit.starts_with("f"))
+        {
+            sUnit.trim_front(1);
+            return 1e-15;
+        }
+
+        if (sUnit.starts_with("a"))
+        {
+            sUnit.trim_front(1);
+            return 1e-18;
         }
     }
 
@@ -1599,13 +1699,13 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
         return {UnitFunction{.m_unit{"m"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{1e-2}},
                 UnitFunction{.m_unit{"s"}, .m_exp{-2*unit.m_exp}, .m_sourceExp{-unit.m_exp}}};
 
-    if (sUnit == "°C" || sUnit == "degC")
+    if (sUnit == "Â°C" || sUnit == "degC")
         return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{unit_Celsius}}};
 
-    if (sUnit == "°F" || sUnit == "degF")
+    if (sUnit == "Â°F" || sUnit == "degF")
         return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_nonlinear{true}, .m_conv{unit_Fahrenheit}}};
 
-    if (sUnit == "°" || sUnit == "deg")
+    if (sUnit == "Â°" || sUnit == "deg")
         return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_conv{unit_deg}}};
 
     if (sUnit == "pH")
@@ -1621,13 +1721,13 @@ static std::vector<UnitFunction> getUnitFunction(Unit unit)
     // Try to detect additional scaling factors
     double scale = detectSiScaling(sUnit);
 
-    if (sUnit == "°C" || sUnit == "degC")
+    if (sUnit == "Â°C" || sUnit == "degC")
         return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_nonlinear{true}, .m_conv{unit_Celsius}}};
 
-    if (sUnit == "°F" || sUnit == "degF")
+    if (sUnit == "Â°F" || sUnit == "degF")
         return {UnitFunction{.m_unit{"K"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_nonlinear{true}, .m_conv{unit_Fahrenheit}}};
 
-    if (sUnit == "°" || sUnit == "deg")
+    if (sUnit == "Â°" || sUnit == "deg")
         return {UnitFunction{.m_unit{"rad"}, .m_exp{unit.m_exp}, .m_sourceExp{unit.m_exp}, .m_scale{scale}, .m_conv{unit_deg}}};
 
     if (sUnit == "eV")
@@ -1819,7 +1919,7 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
         }
         else if (compVal >= fact(6, exp, unitScale))
         {
-            converter.m_metricPrefix = exp > 0 ? "M" : "µ";
+            converter.m_metricPrefix = exp > 0 ? "M" : "Âµ";
             converter.m_finalScale /= fact(6, exp, unitScale);
         }
         else if (compVal >= fact(4, exp, unitScale)) // The prefixes for k and m will be used for a slightly larger regime
@@ -1838,7 +1938,7 @@ UnitConversion getUnitConversion(StringView sUnit, UnitConversionMode mode)
         }
         else if (compVal >= fact(-6, exp, unitScale))
         {
-            converter.m_metricPrefix = exp > 0 ? "µ" : "M";
+            converter.m_metricPrefix = exp > 0 ? "Âµ" : "M";
             converter.m_finalScale /= fact(-6, exp, unitScale);
         }
         else if (compVal >= fact(-9, exp, unitScale))

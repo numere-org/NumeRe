@@ -4895,9 +4895,10 @@ void Plot::createDataLegends()
             // Replace the data expression with the parsed headlines
             m_manager.assets[i].legend = sTemp;
         }
-        else
+        /*else
         {
-            sTemp = Mangler::demangleExpression(m_manager.assets[i].legend);
+//            sTemp = Mangler::demangleExpression(m_manager.assets[i].legend);
+            sTemp = m_manager.assets[i].legend;
 
             // Prepend backslashes before opening and closing
             // braces
@@ -4912,7 +4913,7 @@ void Plot::createDataLegends()
 
             // Replace the data expression with the parsed headlines
             m_manager.assets[i].legend = sTemp;
-        }
+        }*/
     }
 }
 

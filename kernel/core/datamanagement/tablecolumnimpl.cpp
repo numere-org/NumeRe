@@ -213,6 +213,12 @@ mu::Value DateTimeColumn::get(size_t elem) const
 /////////////////////////////////////////////////
 void DateTimeColumn::set(size_t elem, const mu::Value& val)
 {
+    if (val.isVoid())
+    {
+        setValue(elem, NAN);
+        return;
+    }
+
     if (val.isNumerical())
         setValue(elem, val.getNum().asCF64());
     else
@@ -647,6 +653,12 @@ mu::Value LogicalColumn::get(size_t elem) const
 /////////////////////////////////////////////////
 void LogicalColumn::set(size_t elem, const mu::Value& val)
 {
+    if (val.isVoid())
+    {
+        setValue(elem, NAN);
+        return;
+    }
+
     if (val.isNumerical())
         setValue(elem, val.getNum().asCF64());
     else
@@ -1075,6 +1087,12 @@ mu::Value StringColumn::get(size_t elem) const
 /////////////////////////////////////////////////
 void StringColumn::set(size_t elem, const mu::Value& val)
 {
+    if (val.isVoid())
+    {
+        setValue(elem, "");
+        return;
+    }
+
     if (val.isNumerical())
         setValue(elem, val.getNum().asCF64());
     else
@@ -1587,6 +1605,12 @@ mu::Value CategoricalColumn::get(size_t elem) const
 /////////////////////////////////////////////////
 void CategoricalColumn::set(size_t elem, const mu::Value& val)
 {
+    if (val.isVoid())
+    {
+        setValue(elem, NAN);
+        return;
+    }
+
     if (val.isString() || val.isCategory())
         setValue(elem, val.getStr());
     else

@@ -1531,8 +1531,13 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
     }
     else // vectors are accepted here for backwards compatibility
     {
+        // Prefer writing columns
+        if (_idx.row.size() > 1)
+            _idx.col.setOpenEndIndex(VectorIndex::INVALID);
+        else
+            _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
+
         _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
-        _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
 
         if (_idx.row.size() > 1)
             nDirection = COLS;

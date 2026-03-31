@@ -146,6 +146,12 @@ class GenericValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual void set(size_t elem, const mu::Value& val) override
         {
+            if (val.isVoid())
+            {
+                setValue(elem, NAN);
+                return;
+            }
+
             if (val.isNumerical())
                 setValue(elem, val.getNum().asCF64());
             else
