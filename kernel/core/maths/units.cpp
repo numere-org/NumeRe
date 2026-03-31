@@ -1283,7 +1283,7 @@ static size_t u8NextTokenStart(StringView sString, const std::vector<std::string
         return std::string::npos;
 
     if (p >= sString.length())
-        p = 0;
+        return std::string::npos;
 
     for (; p < sString.length(); p++)
     {
@@ -1377,7 +1377,7 @@ static std::vector<Unit> tokenizeUnit(StringView sUnit)
                 vSingleUnits.push_back(Unit{.m_unit{vTokens[i+1]}, .m_exp{-2.0}});
                 i += 2;
             }
-            else if (vTokens.size() > i+2 && vTokens[i+2] == "3")
+            else if (vTokens.size() > i+2 && vTokens[i+2] == "³")
             {
                 vSingleUnits.push_back(Unit{.m_unit{vTokens[i+1]}, .m_exp{-3.0}});
                 i += 2;
