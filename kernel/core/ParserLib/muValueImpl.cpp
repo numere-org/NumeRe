@@ -981,7 +981,7 @@ namespace mu
         else if (sMethod == "normalize")
             return new StrValue(normalize_unicode_impl(m_val, "nfc"));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -1046,7 +1046,7 @@ namespace mu
         else if (sMethod == "collate" && arg1.m_type == TYPE_STRING)
             return new NumValue(collate_impl(m_val, static_cast<const StrValue&>(arg1).get(), 1));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -1093,7 +1093,7 @@ namespace mu
             return new NumValue(collate_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                                     static_cast<const NumValue&>(arg2).get().asI64()));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -1386,7 +1386,7 @@ namespace mu
         else if (sMethod == "val")
             return new NumValue(m_val.val);
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -2266,7 +2266,7 @@ namespace mu
             return nullptr;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -2318,7 +2318,7 @@ namespace mu
             return new DictStructValue(m_val.omit(arr.as_str_vector()));
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -2364,7 +2364,7 @@ namespace mu
         if (m_val.isField(sMethod))
             return new RefValue(m_val.read(sMethod));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -2434,7 +2434,7 @@ namespace mu
         if (m_val.isField(sMethod))
             return new RefValue(m_val.write(sMethod, arg1));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -2476,7 +2476,7 @@ namespace mu
                 for (size_t i = 0; i < elems; i++)
                 {
                     if (!m_val.isField(arr1.get(i).getStr()))
-                        throw ParserError(ecMETHOD_ERROR, sMethod);
+                        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
 
                     ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), *arr2.get(i).get())));
                 }
@@ -2489,7 +2489,7 @@ namespace mu
                 for (size_t i = 0; i < elems; i++)
                 {
                     if (!m_val.isField(arr1.get(i).getStr()))
-                        throw ParserError(ecMETHOD_ERROR, sMethod);
+                        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
 
                     ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), arg2)));
                 }
@@ -2539,7 +2539,7 @@ namespace mu
             return new NumValue(m_val.renameKey(static_cast<const StrValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
 
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -2918,7 +2918,7 @@ namespace mu
         else if (sMethod == "depth")
             return new NumValue(m_val.depth());
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -2948,7 +2948,7 @@ namespace mu
         else if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL)
             return new PathValue(m_val.getSegment(static_cast<const NumValue&>(arg1).get().asUI64()-1));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -2972,7 +2972,7 @@ namespace mu
             return new PathValue(m_val.getSegment(static_cast<const NumValue&>(arg1).get().asUI64()-1,
                                                   static_cast<const NumValue&>(arg2).get().asUI64()));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -2995,7 +2995,7 @@ namespace mu
         else if (sMethod == "clear")
             return new NumValue(m_val.clear());
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3015,7 +3015,7 @@ namespace mu
         if (sMethod == "remove" && arg1.m_type == TYPE_NUMERICAL)
             return new StrValue(m_val.remove(static_cast<const NumValue&>(arg1).get().asUI64()-1));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3045,7 +3045,7 @@ namespace mu
             return new PathValue(m_val.remove(static_cast<const NumValue&>(arg1).get().asUI64()-1,
                                               static_cast<const NumValue&>(arg2).get().asUI64()));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3234,7 +3234,7 @@ namespace mu
         else if (sMethod == "mode")
             return new StrValue(m_val.getOpenMode());
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3254,7 +3254,7 @@ namespace mu
         else if (sMethod == "flush")
             return new NumValue(m_val.flush());
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3284,7 +3284,7 @@ namespace mu
         else if (sMethod == "write")
             return new NumValue(m_val.write(arg1));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3315,7 +3315,7 @@ namespace mu
         else if (sMethod == "write" && arg2.m_type == TYPE_STRING)
             return new NumValue(m_val.write(arg1, static_cast<const StrValue&>(arg2).get()));
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3484,7 +3484,7 @@ namespace mu
         else if (sMethod == "len")
             return new NumValue(m_stack.size());
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3519,7 +3519,7 @@ namespace mu
             return new NumValue(false);
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3542,7 +3542,7 @@ namespace mu
             return new RefValue(&m_stack.back());
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3729,7 +3729,7 @@ namespace mu
             return new ArrValue(vals);
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3775,7 +3775,7 @@ namespace mu
             return new NumValue(false);
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 
@@ -3803,7 +3803,7 @@ namespace mu
             return new RefValue(&m_queue.front());
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
     }
 
 

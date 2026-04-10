@@ -60,3 +60,4 @@ Added	DictStructs got the methods "pick()", "omit()", "renamekey()" and "merge()
 Updated	The parser model of the code editor was reworked from the ground up and should return much better matches now. Note that: this is still in early development and may yield false results. There is a functionality in the Tools menu to re-parse the whole file if necessary.
 Applied	The static code analyzer was improved in performance and precision by using the new parser model of the editor.
 Cleaned	The menu keybinds are now managed in a separate language file.
+Added	An initial version of a PostgreSQL database interface is available with some limitations in the supported data types.

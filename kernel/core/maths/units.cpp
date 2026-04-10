@@ -1467,7 +1467,7 @@ static double detectSiScaling(StringView& sUnit)
         return 1e-6;
     }
 
-    if (sUnit.length() > 1 && (std::isalpha(sUnit[1]) || sUnit[1] == '°'))
+    if (sUnit.length() > 1 && (std::isalpha(sUnit[1]) || sUnit.match("°", 1)))
     {
         if (sUnit.starts_with("E"))
         {
@@ -1511,7 +1511,7 @@ static double detectSiScaling(StringView& sUnit)
             return 1e2;
         }
 
-        if (sUnit.starts_with("da") && sUnit.length() > 2 && (std::isalpha(sUnit[2]) || sUnit[2] == '°'))
+        if (sUnit.starts_with("da") && sUnit.length() > 2 && (std::isalpha(sUnit[2]) || sUnit.match("°", 2)))
         {
             sUnit.trim_front(2);
             return 1e1;
@@ -1529,7 +1529,7 @@ static double detectSiScaling(StringView& sUnit)
             return 1e-2;
         }
 
-        if (sUnit.starts_with("mu") && sUnit.length() > 2 && (std::isalpha(sUnit[2]) || sUnit[2] == '°'))
+        if (sUnit.starts_with("mu") && sUnit.length() > 2 && (std::isalpha(sUnit[2]) || sUnit.match("°", 2)))
         {
             sUnit.trim_front(2);
             return 1e-6;

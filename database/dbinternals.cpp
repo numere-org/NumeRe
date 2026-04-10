@@ -27,7 +27,7 @@
 
 #include "../externals/qtl/include/qtl_sqlite.hpp"
 #include "../externals/qtl/include/qtl_mysql.hpp"
-//#include "../externals/qtl/include/qtl_postgres.hpp"
+#include "../externals/qtl/include/qtl_postgres.hpp"
 #include "../externals/qtl/include/qtl_odbc.hpp"
 
 // Just the prototype to avoid conflicts with the PostGreSQL date type
@@ -44,8 +44,7 @@ void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNe
 /////////////////////////////////////////////////
 struct DatabaseInstance
 {
-    //std::variant<qtl::sqlite::database, qtl::mysql::database, qtl::postgres::database> database;
-    std::variant<qtl::sqlite::database, qtl::mysql::database, qtl::odbc::database> database;
+    std::variant<qtl::sqlite::database, qtl::mysql::database, qtl::postgres::database, qtl::odbc::database> database;
     std::string host;
     DatabaseType type = DB_NONE;
 };
@@ -215,17 +214,18 @@ int64_t openDbConnection(const std::string& host, const std::string& user, const
     }
     else if (type == DB_POSTGRES)
     {
-        /*qtl::postgres::database db;
+        qtl::postgres::database db;
+        std::string connection = "PostgreSQL/"+createConnectionAlias(host, user, password, dbname, port);
+        g_logger.info("Connecting with: " + connection);
 
         if (!db.open(host.c_str(), user.c_str(), password.c_str(), !port ? 5432 : port, dbname.c_str()))
-        {*/
-            std::string connection = "PosGreSQL/"+createConnectionAlias(host, user, password, dbname, port);
-
-            throw SyntaxError(SyntaxError::DATABASE_ERROR_POSTGRES, connection, SyntaxError::invalid_position, "NOT IMPLEMENTED");
-        /*}
+            throw SyntaxError(SyntaxError::DATABASE_ERROR_POSTGRES, connection, SyntaxError::invalid_position, db.errmsg());
+        else
+            g_logger.info("Connected to " + host + " via PostgreSQL");
 
         activeInstances[id].type = type;
-        activeInstances[id].database = std::move(db);*/
+        activeInstances[id].host = host;
+        activeInstances[id].database = std::move(db);
     }
     else if (type == DB_ODBC)
     {
@@ -296,7 +296,7 @@ bool closeDbConnection(int64_t dbId)
         else if (iter->second.type == DB_MYSQL)
             g_logger.info("Closing MySQL connection with " + iter->second.host);
         else if (iter->second.type == DB_POSTGRES)
-            g_logger.info("Closing PostGreSQL connection with " + iter->second.host);
+            g_logger.info("Closing PostgreSQL connection with " + iter->second.host);
         else if (iter->second.type == DB_ODBC)
             g_logger.info("Closing ODBC connection with " + iter->second.host);
         else
@@ -533,14 +533,11 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
                             binder->bind(std::any_cast<MYSQL_TIME&>(paramStorage[j]), MYSQL_TYPE_DATETIME);
                             break;
                         }
-
                     }
                 }
                 else
                     throw SyntaxError(SyntaxError::DATABASE_ERROR_MYSQL, "MySQL@" + host + "/SQLSTMT=" + statement.stmt,
                                       SyntaxError::invalid_position, "Parameter ?" + toString((long long int)j+1) + " has an unsupported type: " + val.getTypeAsString());
-
-
             }
 
             stmt.execute();
@@ -662,144 +659,279 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
     return result;
 }
 
-/*
+
+/////////////////////////////////////////////////
+/// \brief Apply byte swapping to 32 bit floats.
+///
+/// \param f float
+/// \return float
+///
+/////////////////////////////////////////////////
+static float bswapF32(float f)
+{
+    uint32_t i = *reinterpret_cast<uint32_t*>(&f);
+    i = __builtin_bswap32(i);
+    return *reinterpret_cast<float*>(&i);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply byte swapping to 64 bit floats.
+///
+/// \param f double
+/// \return double
+///
+/////////////////////////////////////////////////
+static double bswapF64(double f)
+{
+    uint64_t i = *reinterpret_cast<uint64_t*>(&f);
+    i = __builtin_bswap64(i);
+    return *reinterpret_cast<double*>(&i);
+}
+
+
+
+/////////////////////////////////////////////////
+/// \brief Execute a SQL statement on a
+/// PostGreSQL database.
+///
+/// \param statement const SqlStatement&
+/// \param db qtl::mysql::database&
+/// \param host const std::string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 static NumeRe::Table executeSql(const SqlStatement& statement, qtl::postgres::database& db, const std::string& host)
 {
+    NumeRe::Table result;
+    static const sys_time_point REF_DATE = getTimePointFromYMD(2000,1,1);
+    static const sys_time_point ZERO_DATE = getTimePointFromYMD(1970,1,1);
     try
     {
-        qtl::postgres::statement stmt = db.open_command(sqlCommand);
-        stmt.execute();
-        qtl::postgres::result& res = stmt.get_result();
-        int columnCount = res.get_column_count();
-        std::cout << "Execution returned " << columnCount << " column(s)." << std::endl;
+        bool paramIsMat = statement.params.size() == 1ull && statement.params[0].cols() > 1;
+        size_t nParamCount = paramIsMat ? statement.params[0].cols() : statement.params.size();
+        size_t nRowCount = 1ull;
 
-        if (columnCount)
+        if (statement.params.size())
+            nRowCount = paramIsMat ? statement.params[0].rows() : std::max_element(statement.params.begin(),
+                                                                                   statement.params.end(),
+                                                                                   [](const mu::Array& arr1, const mu::Array& arr2)
+                                                                                   {
+                                                                                       return arr1.rows() < arr2.rows();
+                                                                                   })->rows();
+        qtl::postgres::statement stmt = db.open_command(statement.stmt);
+        stmt.resize_binders(nParamCount);
+
+        for (size_t i = 0; i < nRowCount; i++)
         {
-            std::vector<Oid> types;
-
-            for (int i = 0; i < columnCount; i++)
+            for (size_t j = 0; j < nParamCount; j++)
             {
-                std::cout << res.get_column_name(i) << "\t";
-                types.push_back(res.get_column_type(i));
-            }
+                const mu::Value& val = paramIsMat ? statement.params[0].get(i, j) : statement.params[j].get(i);
 
-            std::cout << std::endl;
-            std::cout << "--------------------------------------------------------------------------" << std::endl;
-
-            for (int64_t i = 0; i < res.get_row_count(); i++)
-            {
-                for (int j = 0; j < columnCount; j++)
+                if (val.getType() == mu::TYPE_VOID || val.getType() == mu::TYPE_NEUTRAL)
+                    stmt.bind_param(j, nullptr);
+                else if (val.getType() == mu::TYPE_STRING || val.getType() == mu::TYPE_CATEGORY)
+                    stmt.bind_param(j, val.getStr());
+                /*{
+                    paramStorage[j] = val.getStr();
+                    stmt.bind_param(j, std::any_cast<const std::string&>(paramStorage[j]).c_str(),
+                                    val.getStr().length());
+                }*/
+                else if (val.getType() == mu::TYPE_NUMERICAL)
                 {
-                    const char* value = res.get_value(i, j);
-                    Oid type = types[j];
-                    switch (types[j])
-                    {
-                        case BOOLOID:
-                            std::cout << *(bool*)res.get_value(i, j);
-                            break;
-                        case CHAROID:
-                        case TEXTOID:
-                        case NAMEOID:
-                        case VARCHAROID:
-                            std::cout << res.get_value(i, j);
-                            break;
-                        case FLOAT4OID:
-                            std::cout << *(float*)res.get_value(i, j);
-                            break;
-                        case FLOAT8OID:
-                            std::cout << *(double*)res.get_value(i, j);
-                            break;
-                        case INT2OID:
-                            std::cout << qtl::postgres::detail::ntoh(*(int16_t*)res.get_value(i, j));
-                            break;
-                        case INT4OID:
-                            std::cout << qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j));
-                            break;
-                        case INT8OID:
-                            std::cout << qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j));
-                            break;
-                        case DATEOID: // Days since 1.1.2000
-                            std::cout << qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j));
-                            break;
-                        case TIMEOID: // microseconds
-                            std::cout << qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j));
-                            break;
-                        case TIMESTAMPOID: // somehow microseconds since 1.1.2000
-                            std::cout << qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j));
-                            break;
-                        case TIMESTAMPTZOID:
-                            std::cout << qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j));
-                            break;
-  //                      case qtl::postgres::object_traits<timestamp>::type_id:
-  //                          value = field_cast<timestamp>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<interval>::type_id:
-  //                          value = field_cast<interval>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<date>::type_id:
-  //                          value = field_cast<date>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<std::vector<uint8_t>>::type_id:
-  //                          value = field_cast<std::vector<uint8_t>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<bool>::array_type_id:
-  //                          value = field_cast<std::vector<bool>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<char>::array_type_id:
-  //                          std::cout << res.get_value(i, j);
-  //                          break;
-  //                      case qtl::postgres::object_traits<float>::array_type_id:
-  //                          value = field_cast<std::vector<float>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<double>::array_type_id:
-  //                          value = field_cast<std::vector<double>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<int16_t>::array_type_id:
-  //                          value = field_cast<std::vector<int16_t>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<int32_t>::array_type_id:
-  //                          value = field_cast<std::vector<int32_t>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<int64_t>::array_type_id:
-  //                          value = field_cast<std::vector<int64_t>>(index);
-  //                          break;
-  //                      case qtl::postgres::qtl::postgres::object_traits<Oid>::array_type_id:
-  //                          value = field_cast<std::vector<Oid>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<std::string>::array_type_id:
-  //                          value = field_cast<std::vector<std::string>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<timestamp>::array_type_id:
-  //                          value = field_cast<std::vector<timestamp>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<interval>::array_type_id:
-  //                          value = field_cast<std::vector<interval>>(index);
-  //                          break;
-  //                      case qtl::postgres::object_traits<date>::array_type_id:
-  //                          value = field_cast<std::vector<date>>(index);
-  //                          break;
-                        default:
-                            std::cout << "NOT IMPLEMENTED";
-                            break;
-                    }
-                    std::cout << "\t";
+                    const mu::Numerical& numVal = val.getNum();
 
+                    switch (numVal.getType())
+                    {
+                        case mu::LOGICAL:
+                            stmt.bind_param(j, (bool)numVal.asUI64());
+                            break;
+                        case mu::UI8:
+                            stmt.bind_param(j, (int16_t)numVal.asUI64());
+                            break;
+                        case mu::UI16:
+                            stmt.bind_param(j, (int16_t)numVal.asUI64());
+                            break;
+                        case mu::UI32:
+                            stmt.bind_param(j, (int32_t)numVal.asUI64());
+                            break;
+                        case mu::UI64:
+                            stmt.bind_param(j, (int64_t)numVal.asUI64());
+                            break;
+                        case mu::I8:
+                            stmt.bind_param(j, (int16_t)numVal.asI64());
+                            break;
+                        case mu::I16:
+                            stmt.bind_param(j, (int16_t)numVal.asI64());
+                            break;
+                        case mu::I32:
+                            stmt.bind_param(j, (int32_t)numVal.asI64());
+                            break;
+                        case mu::I64:
+                            stmt.bind_param(j, numVal.asI64());
+                            break;
+                        case mu::F32:
+                        case mu::CF32:
+                            stmt.bind_param(j, bswapF32(numVal.asF64()));
+                            break;
+                        case mu::F64:
+                        case mu::CF64:
+                        case mu::DURATION:
+                            stmt.bind_param(j, bswapF64(numVal.asF64()));
+                            break;
+                        case mu::DATETIME:
+                        {
+                            qtl::postgres::timestamp ts;
+                            ts.value = std::chrono::duration_cast<std::chrono::microseconds>(to_timePoint(numVal.asF64()) - REF_DATE).count();
+                            stmt.bind_param(j, ts);
+                            break;
+                        }
+                    }
                 }
-                std::cout << std::endl;
+                else
+                    throw SyntaxError(SyntaxError::DATABASE_ERROR_POSTGRES, "PostgreSQL@" + host + "/SQLSTMT=" + statement.stmt,
+                                      SyntaxError::invalid_position, "Parameter $" + toString((long long int)j+1) + " has an unsupported type: " + val.getTypeAsString());
             }
 
-            std::cout << "--------------------------------------------------------------------------" << std::endl;
-        }
+            stmt.execute();
+            qtl::postgres::result& res = stmt.get_result();
+            int columnCount = res.get_column_count();
 
-        std::cout << "DONE.\n" << std::endl;
+            if (columnCount)
+            {
+                std::vector<PGSQL::Oid> types;
+                result.setSize(0, columnCount);
+
+                for (int i = 0; i < columnCount; i++)
+                {
+                    result.setHead(i, res.get_column_name(i));
+                    types.push_back(res.get_column_type(i));
+                }
+
+                size_t row = 0;
+
+                do
+                {
+                    int64_t rowCount = res.get_row_count();
+
+                    for (int64_t i = 0; i < rowCount; i++)
+                    {
+                        for (int j = 0; j < columnCount; j++)
+                        {
+                            if (res.is_null(i, j))
+                                continue;
+
+                            switch (types[j])
+                            {
+                                case BOOLOID:
+                                    result.set(row, j, *(bool*)res.get_value(i, j));
+                                    break;
+                                case CHAROID:
+                                case TEXTOID:
+                                case NAMEOID:
+                                case VARCHAROID:
+                                    result.set(row, j, res.get_value(i, j));
+                                    break;
+                                case FLOAT4OID:
+                                    result.set(row, j, bswapF32(*(float*)res.get_value(i, j)));
+                                    break;
+                                case FLOAT8OID:
+                                    result.set(row, j, bswapF64(*(double*)res.get_value(i, j)));
+                                    break;
+                                case INT2OID:
+                                    result.set(row, j, qtl::postgres::detail::ntoh(*(int16_t*)res.get_value(i, j)));
+                                    break;
+                                case INT4OID:
+                                    result.set(row, j, qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j)));
+                                    break;
+                                case INT8OID:
+                                    result.set(row, j, qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j)));
+                                    break;
+                                case DATEOID: // Days since 1.1.2000
+                                    result.set(row, j, REF_DATE + std::chrono::days(qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j))));
+                                    break;
+                                case TIMEOID: // microseconds
+                                    result.set(row, j, ZERO_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    break;
+                                case TIMETZOID: // microseconds
+                                    result.set(row, j, ZERO_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    break;
+                                case TIMESTAMPOID: // somehow microseconds since 1.1.2000
+                                    result.set(row, j, REF_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    break;
+                                case TIMESTAMPTZOID:
+                                    result.set(row, j, REF_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    break;
+          //                      case qtl::postgres::object_traits<timestamp>::type_id:
+          //                          value = field_cast<timestamp>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<interval>::type_id:
+          //                          value = field_cast<interval>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<date>::type_id:
+          //                          value = field_cast<date>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<std::vector<uint8_t>>::type_id:
+          //                          value = field_cast<std::vector<uint8_t>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<bool>::array_type_id:
+          //                          value = field_cast<std::vector<bool>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<char>::array_type_id:
+          //                          std::cout << res.get_value(i, j);
+          //                          break;
+          //                      case qtl::postgres::object_traits<float>::array_type_id:
+          //                          value = field_cast<std::vector<float>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<double>::array_type_id:
+          //                          value = field_cast<std::vector<double>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<int16_t>::array_type_id:
+          //                          value = field_cast<std::vector<int16_t>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<int32_t>::array_type_id:
+          //                          value = field_cast<std::vector<int32_t>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<int64_t>::array_type_id:
+          //                          value = field_cast<std::vector<int64_t>>(index);
+          //                          break;
+          //                      case qtl::postgres::qtl::postgres::object_traits<Oid>::array_type_id:
+          //                          value = field_cast<std::vector<Oid>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<std::string>::array_type_id:
+          //                          value = field_cast<std::vector<std::string>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<timestamp>::array_type_id:
+          //                          value = field_cast<std::vector<timestamp>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<interval>::array_type_id:
+          //                          value = field_cast<std::vector<interval>>(index);
+          //                          break;
+          //                      case qtl::postgres::object_traits<date>::array_type_id:
+          //                          value = field_cast<std::vector<date>>(index);
+          //                          break;
+                                default:
+                                    result.set(row, j, "NOT IMPLEMENTED");
+                                    break;
+                            }
+                        }
+
+                        row++;
+                    }
+                } while (stmt.next_result());
+            }
+            else
+                stmt.reset();
+        }
     }
     catch (qtl::postgres::error& e)
     {
-        std::cout << e.what() << "\n" << std::endl;
+        throw SyntaxError(SyntaxError::DATABASE_ERROR_POSTGRES, "PostgreSQL@" + host + "/SQLSTMT=" + statement.stmt,
+                          SyntaxError::invalid_position, e.what());
     }
-}
 
-*/
+    return result;
+}
 
 
 /////////////////////////////////////////////////
@@ -1065,8 +1197,8 @@ NumeRe::Table executeSql(int64_t dbId, const SqlStatement& statement)
             return executeSql(statement, std::get<qtl::sqlite::database>(iter->second.database), iter->second.host);
         else if (iter->second.type == DB_MYSQL)
             return executeSql(statement, std::get<qtl::mysql::database>(iter->second.database), iter->second.host);
-        //else if (iter->second.type == DB_POSTGRES)
-        //    return executeSql(statement, std::get<qtl::postgres::database>(iter->second.database), iter->second.host);
+        else if (iter->second.type == DB_POSTGRES)
+            return executeSql(statement, std::get<qtl::postgres::database>(iter->second.database), iter->second.host);
         else if (iter->second.type == DB_ODBC)
             return executeSql(statement, std::get<qtl::odbc::database>(iter->second.database), iter->second.host);
 

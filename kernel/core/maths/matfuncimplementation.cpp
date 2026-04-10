@@ -3392,7 +3392,7 @@ mu::Array matfnc_squeeze(const mu::Array& A)
         return A;
 
     mu::Array B = A;
-    B.apply("sqz");
+    B.makeMutable().apply("sqz");
 
     return B;
 }

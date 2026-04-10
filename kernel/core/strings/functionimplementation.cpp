@@ -195,6 +195,7 @@ mu::Array strfnc_to_codepoints(const mu::Array& a)
     mu::Array ret;
     ret.copyDims(a);
 
+#ifndef PARSERSTANDALONE
     for (size_t i = 0; i < a.size(); i++)
     {
         mu::Array current;
@@ -208,6 +209,7 @@ mu::Array strfnc_to_codepoints(const mu::Array& a)
 
         ret.emplace_back(current);
     }
+#endif
 
     return ret;
 }
@@ -223,6 +225,7 @@ mu::Array strfnc_to_codepoints(const mu::Array& a)
 /////////////////////////////////////////////////
 mu::Array strfnc_from_codepoints(const mu::Array& a)
 {
+#ifndef PARSERSTANDALONE
     std::u32string u32str;
 
     for (size_t i = 0; i < a.size(); i++)
@@ -231,6 +234,7 @@ mu::Array strfnc_from_codepoints(const mu::Array& a)
     }
 
     return mu::Value(boost::locale::conv::utf_to_utf<char>(u32str));
+#endif
 }
 
 

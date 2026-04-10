@@ -334,7 +334,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::call(const std::string& sMethod) const
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -350,7 +350,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1) const
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -367,7 +367,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2) const
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -385,7 +385,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -404,7 +404,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -420,7 +420,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                std::vector<BaseValue*> args) const
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -453,7 +453,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::apply(const std::string& sMethod)
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -471,7 +471,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1)
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -490,7 +490,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2)
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -510,7 +510,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -531,7 +531,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 
@@ -547,7 +547,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                 std::vector<BaseValue*> args)
     {
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
     }
 
 

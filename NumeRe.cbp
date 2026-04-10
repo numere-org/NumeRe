@@ -252,9 +252,10 @@
 			<Add library="secur32" />
 			<Add library="boost_nowide-mgw10-mt-x64-1_82" />
 			<Add library="boost_locale-mgw10-mt-x64-1_82" />
+			<Add directory="$(bin)" />
 			<Add directory="$(wx)/lib/gcc_lib" />
 			<Add directory="$(lib)" />
-			<Add directory="$(bin)" />
+			<Add directory="D:/TDM-GCC-64/bin/postgres-specific" />
 		</Linker>
 		<Unit filename="NumeRe.rc">
 			<Option compilerVar="WINDRES" />

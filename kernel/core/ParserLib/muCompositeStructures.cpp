@@ -24,6 +24,8 @@
 
 #ifndef PARSERSTANDALONE
 #include "../../kernel.hpp"
+#else
+#include <boost/nowide/fstream.hpp>
 #endif // PARSERSTANDALONE
 
 #include <json/json.h>

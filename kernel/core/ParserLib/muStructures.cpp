@@ -864,7 +864,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value::operator bool() const
     {
-        return get() && bool(*get());
+        return !isVoid() && bool(*get()) && isValid();
     }
 
 
@@ -876,7 +876,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value Value::operator!() const
     {
-        return get() && !*get();
+        return isVoid() || !*get() || !isValid();
     }
 
 
@@ -2096,7 +2096,7 @@ namespace mu
         static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
-                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"delegate", 1}, {"order", 0},
+                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"order", 0},
                                         {"order", -1}, {"delegate", -MethodDefinition::multiargcount},
                                         {"submat", -MethodDefinition::multiargcount}});
 
@@ -2169,9 +2169,9 @@ namespace mu
         else if (sMethod == "unwrap")
             return unWrap();
         else if (sMethod == "rows")
-            return rows();
+            return Value(rows());
         else if (sMethod == "cols")
-            return cols();
+            return Value(cols());
         else if (front().isMethod(sMethod, 0))
         {
             Array ret;
@@ -2185,7 +2185,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getCommonTypeAsString() + "." + sMethod);
     }
 
 
@@ -2226,7 +2226,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2263,7 +2263,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2298,7 +2298,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2334,7 +2334,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2422,7 +2422,7 @@ namespace mu
             def = front().isMethod(delegatedMethod, argc);
 
             if (!def)
-                throw ParserError(ecMETHOD_ERROR, sMethod);
+                throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
 
             if (def.receiveArray())
                 ret.reserve(size());
@@ -2528,7 +2528,7 @@ namespace mu
                 return ret;
             }
 
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
         }
 
         MethodDefinition def = front().isMethod(sMethod, MethodDefinition::multiargcount);
@@ -2573,7 +2573,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2614,7 +2614,7 @@ namespace mu
     Array Array::apply(const std::string& sMethod)
     {
         if (isConst())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecMETHOD_ERROR, "const " + getCommonTypeAsString() + "." + sMethod);
 
         if (sMethod == "sqz")
         {
@@ -2644,7 +2644,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, getCommonTypeAsString() + "." + sMethod);
     }
 
 
@@ -2659,7 +2659,7 @@ namespace mu
     Array Array::apply(const std::string& sMethod, const Array& arg1)
     {
         if (isConst())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecMETHOD_ERROR, "const " + getCommonTypeAsString() + "." + sMethod);
 
         if (sMethod == "sel")
         {
@@ -2689,7 +2689,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2705,7 +2705,7 @@ namespace mu
     Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2)
     {
         if (isConst())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecMETHOD_ERROR, "const " + getCommonTypeAsString() + "." + sMethod);
 
         MethodDefinition def = front().isApplyingMethod(sMethod, 2);
 
@@ -2727,7 +2727,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2744,7 +2744,7 @@ namespace mu
     Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3)
     {
         if (isConst())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecMETHOD_ERROR, "const " + getCommonTypeAsString() + "." + sMethod);
 
         MethodDefinition def = front().isApplyingMethod(sMethod, 3);
 
@@ -2766,7 +2766,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2784,7 +2784,7 @@ namespace mu
     Array Array::apply(const std::string& sMethod, const Array& arg1, const Array& arg2, const Array& arg3, const Array& arg4)
     {
         if (isConst())
-            throw ParserError(ecMETHOD_ERROR, sMethod);
+            throw ParserError(ecMETHOD_ERROR, "const " + getCommonTypeAsString() + "." + sMethod);
 
         MethodDefinition def = front().isApplyingMethod(sMethod, 4);
 
@@ -2806,7 +2806,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -2945,7 +2945,7 @@ namespace mu
             return ret;
         }
 
-        throw ParserError(ecMETHOD_ERROR, sMethod);
+        throw ParserError(ecMETHOD_ERROR, front().getTypeAsString() + "." + sMethod);
     }
 
 
@@ -5328,7 +5328,9 @@ namespace mu
 
         for (size_t i = 0; i < arr.size(); i++)
         {
-            if (!arr.get(i))
+            const mu::Value& val = arr.get(i);
+
+            if (!val)
                 return false;
         }
 
@@ -5348,7 +5350,9 @@ namespace mu
     {
         for (size_t i = 0; i < arr.size(); i++)
         {
-            if (arr.get(i))
+            const mu::Value& val = arr.get(i);
+
+            if (val)
                 return true;
         }
 

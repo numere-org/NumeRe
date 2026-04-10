@@ -607,6 +607,11 @@ namespace mu
                 }
                 else
                 {
+                    // Because generators cannot really be resized,
+                    // we clear first
+                    if (getCommonType() == TYPE_GENERATOR)
+                        clear();
+
                     size_t elems = other.size();
                     resize(elems);
 
@@ -632,6 +637,8 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(Array&& other)
             {
+                // If the moved-from array is a reference originating from an index operation
+                // the auto-expansion of embedded arrays is deactivated
                 if (other.count() == 1 && other.first().isArray() && !other.first().isRef()) // was front()
                 {
                     Array& fst = other.first().getArray(); // was front()
@@ -856,6 +863,9 @@ namespace mu
             /////////////////////////////////////////////////
             size_t cols() const
             {
+                if (!size())
+                    return 0ull;
+
                 if (m_dimSizes.size() < 2ull)
                     return 1ull;
 
@@ -871,6 +881,9 @@ namespace mu
             /////////////////////////////////////////////////
             size_t layers() const
             {
+                if (!size())
+                    return 0ull;
+
                 if (m_dimSizes.size() < 3ull)
                     return 1ull;
 
@@ -907,6 +920,9 @@ namespace mu
             {
                 if (isMatrix() || other.isMatrix())
                     return matrixAdd(*this, other);
+
+                if (size() == 1 && front().isArray())
+                    return front().getArray() + other;
 
                 Array ret;
                 size_t elements = std::max(size(), other.size());
@@ -953,6 +969,9 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixSub(*this, other);
 
+                if (size() == 1 && front().isArray())
+                    return front().getArray() - other;
+
                 Array ret;
 
                 size_t elements = std::max(size(), other.size());
@@ -978,6 +997,9 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixDiv(*this, other);
 
+                if (size() == 1 && front().isArray())
+                    return front().getArray() / other;
+
                 Array ret;
                 size_t elements = std::max(size(), other.size());
                 ret.reserve(elements);
@@ -1002,6 +1024,9 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixMul(*this, other);
 
+                if (size() == 1 && front().isArray())
+                    return front().getArray() * other;
+
                 Array ret;
                 size_t elements = std::max(size(), other.size());
                 ret.reserve(elements);
@@ -1025,6 +1050,9 @@ namespace mu
             {
                 if (isMatrix() || other.isMatrix())
                     return matrixPow(*this, other);
+
+                if (size() == 1 && front().isArray())
+                    return front().getArray() ^ other;
 
                 Array ret;
                 size_t elements = std::max(size(), other.size());

@@ -91,9 +91,12 @@ namespace mu
             case TYPE_STRING:
                 return "string";
             case TYPE_ARRAY:
+            case TYPE_CLUSTER:
                 return "cluster";
             case TYPE_REFERENCE:
                 return "reference";
+            case TYPE_DICTSTRUCT:
+                return "dictstruct";
             case TYPE_OBJECT:
                 return "object";
         }

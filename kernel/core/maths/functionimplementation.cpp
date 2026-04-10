@@ -6859,7 +6859,12 @@ mu::Array tstfnc_verifyRange(const mu::Array& result, const mu::Array& lowerBoun
     }
 
     if (sDiagString.length())
-        mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower <= result && result <= upper\nFailing components:\n" + sDiagString);
+    {
+        if (incl)
+            mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower <= result && result <= upper\nFailing components:\n" + sDiagString);
+        else
+            mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower < result && result < upper\nFailing components:\n" + sDiagString);
+    }
 
     return testResult;
 }
