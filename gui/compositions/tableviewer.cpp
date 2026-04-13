@@ -385,8 +385,6 @@ void TableViewer::OnEnter(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void TableViewer::OnCellChange(wxGridEvent& event)
 {
-    SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
-
     if (event.GetRow()+1 == GetRows())
     {
         AppendRows();
@@ -399,6 +397,7 @@ void TableViewer::OnCellChange(wxGridEvent& event)
         updateFrame();
     }
 
+    SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
     UpdateColumnAlignment(GetGridCursorCol());
     event.Veto();
 }
@@ -537,6 +536,9 @@ int TableViewer::findLastElement(int nCol)
 /////////////////////////////////////////////////
 void TableViewer::updateFrame()
 {
+    if (isGridNumeReTable)
+        return;
+
     wxFont font = this->GetCellFont(0,0);
     font.SetWeight(wxFONTWEIGHT_NORMAL);
 
