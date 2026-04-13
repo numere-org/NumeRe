@@ -1152,7 +1152,14 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                                                                                             "value",
                                                                                             ParserSymbol::GLOBALENUM,
                                                                                             val));
-                                    enumValue = std::stoi(val)+1;
+                                    try
+                                    {
+                                        enumValue = std::stoi(val)+1;
+                                    }
+                                    catch (...)
+                                    {
+                                        enumValue++;
+                                    }
                                 }
                             }
                         }

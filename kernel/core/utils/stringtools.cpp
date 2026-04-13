@@ -1607,11 +1607,20 @@ std::string markupToHtml(const std::string& sString)
                 cellValue += "</i>";
 
             if (markupTokens[i-1].line == Markup::H1)
+            {
+                cellValue.pop_back(); // remove the trailing line break
                 cellValue += "</h1>";
+            }
             else if (markupTokens[i-1].line == Markup::H2)
+            {
+                cellValue.pop_back(); // remove the trailing line break
                 cellValue += "</h2>";
+            }
             else if (markupTokens[i-1].line == Markup::H3)
+            {
+                cellValue.pop_back(); // remove the trailing line break
                 cellValue += "</h3>";
+            }
             else if (markupTokens[i-1].line == Markup::UL)
                 cellValue += "</li></ul>";
         }
@@ -1680,11 +1689,20 @@ std::string markupToHtml(const std::string& sString)
 
     // Close remaining open sections
     if (markupTokens.back().line == Markup::H1)
+    {
+        cellValue.pop_back(); // remove the trailing line break
         cellValue += "</h1>";
+    }
     else if (markupTokens.back().line == Markup::H2)
+    {
+        cellValue.pop_back(); // remove the trailing line break
         cellValue += "</h2>";
+    }
     else if (markupTokens.back().line == Markup::H3)
+    {
+        cellValue.pop_back(); // remove the trailing line break
         cellValue += "</h3>";
+    }
     else if (markupTokens.back().line == Markup::UL)
         cellValue += "</li></ul>";
 

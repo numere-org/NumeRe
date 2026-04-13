@@ -517,7 +517,6 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
             }
         }
 
-        wxString sItem;
         item = listCtrl->AppendItem(parentItem, wxFromUtf8(fields[i]));
 
         if (elem->m_type == mu::TYPE_ARRAY)
@@ -531,7 +530,7 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
             continue;
         }
         else
-            sItem = wxFromUtf8(elem->printVal(0, 0));
+            listCtrl->SetItemText(item, 1, wxFromUtf8(elem->printVal(0, 0)));
 
         //size_t currCol = 1u;
         bool check = false;
@@ -570,7 +569,6 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, 
     for (size_t i = 0; i < fields.size(); i++)
     {
         const mu::BaseValue* elem = dict.read(fields[i]);
-        wxString sItem;
         item = listCtrl->AppendItem(parentItem, wxFromUtf8(fields[i]));
 
         if (elem->m_type == mu::TYPE_ARRAY)
@@ -584,7 +582,7 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, 
             continue;
         }
         else
-            sItem = wxFromUtf8(elem->printVal(0, 0));
+            listCtrl->SetItemText(item, 1, wxFromUtf8(elem->printVal(0, 0)));
 
         //size_t currCol = 1u;
         bool check = false;
