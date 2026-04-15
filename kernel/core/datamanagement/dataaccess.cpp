@@ -906,7 +906,8 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
 
         // check the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position,
+                              _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // Evaluate the indices
         if (_idx.row.isOpenEnd())
@@ -931,9 +932,11 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
             for (size_t j = 0; j < _idx.col.size(); j++)
                 var->push_back(_data.getHeadLineElement(_idx.col[j], _access.sCacheName));
         }
-
-        // Get new data and update the stored elements in the internal representation
-        _data.copyElementsInto(_parser.GetInternalVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
+        else
+        {
+            // Get new data and update the stored elements in the internal representation
+            _data.copyElementsInto(_parser.GetInternalVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
+        }
     }
 
     // Update the equation (probably there are cached elements, which could not be cached)
