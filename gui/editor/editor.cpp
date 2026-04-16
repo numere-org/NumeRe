@@ -671,6 +671,41 @@ static wxChar getBracePartner(wxChar chr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Check, whether the char lies within
+/// the defined range.
+///
+/// \param chr wxChar
+/// \param lower wxChar
+/// \param upper wxChar
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isIn(wxChar chr, wxChar lower, wxChar upper)
+{
+    return chr >= lower && chr <= upper;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Determine, whether the current char
+/// shall trigger a re-parse of the current line.
+///
+/// \param chr wxChar
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isReparseChar(wxChar chr)
+{
+    // 32-35, 37-47, 58-63, 91-94,123-125
+    return isIn(chr, 32, 35)
+        || isIn(chr, 37, 47)
+        || isIn(chr, 58, 63)
+        || isIn(chr, 91, 94)
+        || isIn(chr, 123, 125);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public OnChar
 ///  Handles auto-indentation and such whenever the user enters a character
@@ -737,7 +772,7 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
         AutoCompCancel();
 
     // Perform all necessary parsing steps
-    if ((chr == ' ' || chr == ';') && isNumeReFileType() && !m_codeParser.isValidLine(currentLine))
+    if (isNumeReFileType() && isReparseChar(chr) && !m_codeParser.isValidLine(currentLine))
         parse(currentLine);
 
     if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
@@ -6793,7 +6828,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
 
     if (isNumeReFileType())
     {
-        if (!m_codeParser.isValid())
+        if (!m_codeParser.isValidLine(lineNum))
             parse(lineNum);
 
         if (useSmartSense && !findAll && !searchMethod)
@@ -8913,6 +8948,15 @@ void NumeReEditor::parse(int requestFromLine)
     // modified section
     if (GetCurrentLine() == requestFromLine && MarkerOnLine(requestFromLine, MARKER_MODIFIED))
     {
+        const ParserScope& scope = static_cast<const CodeParser&>(m_codeParser).getScope(requestFromLine);
+
+        // Ensure that the previous section of the code is correctly parsed
+        if (scope.getRange().first < requestFromLine && !scope.isValidLine(requestFromLine-1))
+        {
+            g_logger.info("Starting reparsing of previous code lines ...");
+            parseSection(scope.getRange().first, requestFromLine);
+        }
+
         g_logger.info("Starting single line reparse ...");
 
         int rootLine = requestFromLine;
