@@ -61,3 +61,5 @@ Updated	The parser model of the code editor was reworked from the ground up and 
 Applied	The static code analyzer was improved in performance and precision by using the new parser model of the editor.
 Cleaned	The menu keybinds are now managed in a separate language file.
 Added	An initial version of a PostgreSQL database interface is available with some limitations in the supported data types.
+Fixed	Mixed braces, brackets and parentheses, which do not close in the correct and opposite order as they have been opened, are now much better detected and flagged as an error.
+Added	The escape sequences "\uHHHH" (U+0000 up to U+FFFF) and "\UHHHHHHHH" (U+00000000 up to U+0010FFFF) can be used to supply an arbitrary unicode point encoded as hex string. Not all glyphs are supported within the terminal using the default font and will be displayed using a placeholder char (U+FFFD).

@@ -726,7 +726,7 @@ static std::map<std::string, std::string> getTeXCodePageSpecial()
 /////////////////////////////////////////////////
 static void handleTeXIndicesAndExponents(std::string& sReturn, const std::map<std::string,std::string>& mCodePage)
 {
-    static std::string sDelimiter = "+-*/, #()&|!_'";
+    std::string sDelimiter = "+-*/, #()&|!_'";
 
     // Handle the exponents
     for (size_t i = 0; i < sReturn.length() - 1; i++)
@@ -833,7 +833,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
             continue;
         }
 
-        sReturn.replace(nPos, nPos+6, "\\Gamma(");
+        sReturn.replace(nPos, 6, "\\Gamma(");
         nPos += 7;
     }
 
@@ -1005,6 +1005,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
 
     // --> Entferne die Leerzeichen am Anfang und Ende und gib sReturn zurueck <--
     StripSpaces(sReturn);
+
     return sReturn;
 }
 
@@ -2935,9 +2936,7 @@ string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
 /////////////////////////////////////////////////
 bool validateParenthesisNumber(StringView sCmd)
 {
-    int nParCount = 0;
-    int nVectCount = 0;
-    int nBracketCount = 0;
+    std::vector<char> openParentheses;
     int nQuotes = 0;
 
     // Go through the whole string
@@ -2951,24 +2950,42 @@ bool validateParenthesisNumber(StringView sCmd)
         // If we're not in quotation marks
         if (!(nQuotes % 2))
         {
-            // Count the opening and closing parentheses
-            if (sCmd[i] == '(')
-                nParCount++;
-            else if (sCmd[i] == ')')
-                nParCount--;
-            else if (sCmd[i] == '{')
-                nVectCount++;
-            else if (sCmd[i] == '}')
-                nVectCount--;
-            else if (sCmd[i] == '[')
-                nBracketCount++;
-            else if (sCmd[i] == ']')
-                nBracketCount--;
+            // Push all open parenthesis type
+            if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
+            {
+                openParentheses.push_back(sCmd[i]);
+                continue;
+            }
+
+            // Pop only matching parenthesis types
+            if (sCmd[i] == ')')
+            {
+                if (openParentheses.size() && openParentheses.back() == '(')
+                    openParentheses.pop_back();
+                else
+                    return false;
+            }
+
+            if (sCmd[i] == ']')
+            {
+                if (openParentheses.size() && openParentheses.back() == '[')
+                    openParentheses.pop_back();
+                else
+                    return false;
+            }
+
+            if (sCmd[i] == '}')
+            {
+                if (openParentheses.size() && openParentheses.back() == '{')
+                    openParentheses.pop_back();
+                else
+                    return false;
+            }
         }
     }
 
     // If one of the counters is nonzero, something is wrong
-    return !((bool)nParCount || (bool)nVectCount || (bool)nBracketCount);
+    return !openParentheses.size();
 }
 
 

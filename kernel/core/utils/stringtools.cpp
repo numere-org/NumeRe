@@ -1093,6 +1093,31 @@ std::string toInternalString(std::string sStr)
 
 
 /////////////////////////////////////////////////
+/// \brief Determine, whether the selected
+/// substring does only contain hex digits.
+///
+/// \param sStr const std::string&
+/// \param pos size_t
+/// \param len size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isHexSubString(const std::string& sStr, size_t pos, size_t len)
+{
+    if (sStr.length() < pos+len)
+        return false;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (!isxdigit(sStr[pos+i]))
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Resolves escaped characters within
 /// the string.
 ///
@@ -1129,9 +1154,30 @@ std::string resolveEscapes(std::string sStr)
 
         if (sStr.compare(i, 2, "\\x") == 0
             && sStr.length() > i+3
-            && isxdigit(sStr[i+2])
-            && isxdigit(sStr[i+3]))
+            && isHexSubString(sStr, i+2, 2))
             sStr.replace(i, 4, boost::algorithm::unhex(sStr.substr(i+2, 2)));
+
+        if (sStr.compare(i, 2, "\\u") == 0
+            && sStr.length() > i+5
+            && isHexSubString(sStr, i+2, 4))
+        {
+            std::string bytes = boost::algorithm::unhex(sStr.substr(i+2, 4));
+            std::u32string u32str(1ull, char32_t(reinterpret_cast<const uint8_t&>(bytes[0]))*256
+                                        + char32_t(reinterpret_cast<const uint8_t&>(bytes[1])));
+            sStr.replace(i, 6, boost::locale::conv::utf_to_utf<char>(u32str));
+        }
+
+        if (sStr.compare(i, 2, "\\U") == 0
+            && sStr.length() > i+9
+            && isHexSubString(sStr, i+2, 8))
+        {
+            std::string bytes = boost::algorithm::unhex(sStr.substr(i+2, 8));
+            std::u32string u32str(1ull, char32_t(reinterpret_cast<const uint8_t&>(bytes[0]))*256*256*256
+                                        + char32_t(reinterpret_cast<const uint8_t&>(bytes[1]))*256*256
+                                        + char32_t(reinterpret_cast<const uint8_t&>(bytes[2]))*256
+                                        + char32_t(reinterpret_cast<const uint8_t&>(bytes[3])));
+            sStr.replace(i, 10, boost::locale::conv::utf_to_utf<char>(u32str));
+        }
     }
 
     return sStr;

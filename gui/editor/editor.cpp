@@ -3328,6 +3328,97 @@ void NumeReEditor::getMatchingBlock(int nPos)
 
 
 /////////////////////////////////////////////////
+/// \brief Helper to define the matching closing
+/// brace char.
+///
+/// \param ch char
+/// \return char
+///
+/////////////////////////////////////////////////
+static char BraceOpposite(char ch)
+{
+	switch (ch)
+	{
+	case '(':
+		return ')';
+	case ')':
+		return '(';
+	case '[':
+		return ']';
+	case ']':
+		return '[';
+	case '{':
+		return '}';
+	case '}':
+		return '{';
+	default:
+		return '\0';
+	}
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Find the matching brace to the brace
+/// at position pos. Returns wxNOT_FOUND, if the
+/// char at pos is not a brace or a matching
+/// brace cannot be found.
+///
+/// \param pos int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReEditor::BraceMatch(int pos)
+{
+    char chBrace = GetCharAt(pos);
+    char chSeek = BraceOpposite(chBrace);
+
+    if (chSeek == '\0')
+        return wxNOT_FOUND;
+
+    int styBrace = GetStyleAt(pos);
+
+    int direction = -1;
+
+    if (chBrace == '(' || chBrace == '[' || chBrace == '{')
+        direction = 1;
+
+    std::vector<char> openParentheses(1ull, chBrace);
+
+    pos += direction;
+
+    while ((pos >= 0) && (pos < GetTextLength()))
+    {
+        char chAtPos = GetCharAt(pos);
+        char styAtPos = GetStyleAt(pos);
+
+        if (styAtPos == styBrace && isBrace(chAtPos))
+        {
+            bool openBrace = isOpeningBrace(chAtPos);
+
+            if ((direction == 1 && openBrace)
+                || (direction == -1 && !openBrace))
+                openParentheses.push_back(chAtPos);
+            else if ((direction == -1 && openBrace)
+                     || (direction == 1 && !openBrace))
+            {
+                if (BraceOpposite(chAtPos) != openParentheses.back())
+                    return wxNOT_FOUND;
+
+                openParentheses.pop_back();
+            }
+
+            if (!openParentheses.size())
+                return pos;
+        }
+
+        pos += direction;
+    }
+
+    return wxNOT_FOUND;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Finds all matching flow control statements.
 ///
 /// \param nPos int

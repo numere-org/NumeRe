@@ -1668,9 +1668,7 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
     {
         // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
         if (_script.isValid() && _script.isOpen())
-        {
             sLine = _script.getNextScriptCommand();
-        }
 
         // --> Leerzeichen und Tabulatoren entfernen <--
         StripSpaces(sLine);
@@ -1714,9 +1712,8 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
 
         // Ensure that the number of parentheses is matching
         if (findCommand(sLine).sString != "help"
-                && findCommand(sLine).sString != "find"
-                && findCommand(sLine).sString != "search"
-                && (sLine.find('(') != std::string::npos || sLine.find('{') != std::string::npos))
+            && findCommand(sLine).sString != "find"
+            && findCommand(sLine).sString != "search")
         {
             if (!validateParenthesisNumber(sLine))
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));

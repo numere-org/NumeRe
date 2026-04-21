@@ -489,8 +489,9 @@ size_t findNthCharStart(StringView sString, size_t nthChar)
     {
         size_t len = getUtf8ByteLen(sString[pos]);
 
+        // We'll do a fallback character search here
         if (!len)
-            return std::string::npos;
+            return nthChar;
 
         pos += len;
         nthChar--;

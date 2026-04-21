@@ -100,7 +100,7 @@ TablePanel::TablePanel(wxWindow* parent, wxFrame* topLevel, wxWindowID id, wxSta
 /////////////////////////////////////////////////
 void TablePanel::update(const NumeRe::TableMetaData& meta)
 {
-    m_commentField->SetMarkupText(wxFromUtf8(meta.comment));
+    m_commentField->SetMarkupText(wxFromUtf8(ensureValidUtf8(meta.comment)));
     m_sourceField->SetValue(meta.source);
     m_lastSaveText->SetLabel(_guilang.get("GUI_TABLEPANEL_LASTSAVE", toString(meta.lastSavedTime, GET_WITH_TEXT)));
 }

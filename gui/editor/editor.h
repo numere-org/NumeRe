@@ -134,6 +134,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void getMatchingBrace(int nPos);
 		void getMatchingBlock(int nPos);
+		int BraceMatch(int pos);
 		std::vector<int> BlockMatch(int nPos);
 		std::vector<int> BlockMatchNSCR(int nPos);
 		std::vector<int> BlockMatchMATLAB(int nPos);
