@@ -113,7 +113,6 @@ wxString FileRevisions::readRevision(const wxString& revString)
 {
     wxFFileInputStream in(m_revisionPath.GetFullPath());
     wxZipInputStream zip(in);
-    wxTextInputStream txt(zip, " \t", wxConvUTF8); // Convert from UTF-8 to Unicode on-the-fly
 
     std::unique_ptr<wxZipEntry> entry;
 
@@ -124,24 +123,27 @@ wxString FileRevisions::readRevision(const wxString& revString)
         // Found it?
         if (entry->GetName() == revString)
         {
-            wxString revision;
+            std::string revision;
+            revision.reserve(entry->GetSize());
 
-            // Read the whole entry and append windows line endings. The
-            // necessary conversion from UTF-8 is done by the text input
-            // stream on-the-fly
-            while (!zip.Eof())
-                revision += txt.ReadLine() + "\r\n";
+            // Read the whole entry
+            while (!zip.Eof() && zip.IsOk())
+            {
+                int c = zip.GetC();
 
-            // Remove the last line's endings
-            revision.erase(revision.length()-2);
+                if (c == wxEOF)
+                    break;
+
+                revision += c;
+            }
 
             // If the ZIP comment equals "DIFF", we need to merge
             // the changes in this revision into the current
             // revision root
             if (entry->GetComment() == "DIFF")
-                revision = createMerge(revision);
+                return createMerge(wxFromUtf8(revision));
 
-            return revision;
+            return wxFromUtf8(revision);
         }
     }
 

@@ -3160,7 +3160,15 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                           CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
 
     // Apply curvilinear coordinates
-    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS), masked ? 2 : 1);
+    CoordinateSystem coords = (CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS);
+
+    if (coords == POLAR_PZ)
+        coords = POLAR_RP;
+
+    if (coords == SPHERICAL_PT)
+        coords = SPHERICAL_RP;
+
+    m_manager.applyCoordSys(coords, masked ? 2 : 1);
 
     for (size_t n = 0; n < m_manager.assets.size(); n++)
     {

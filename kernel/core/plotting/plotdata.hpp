@@ -232,6 +232,26 @@ class PlotData : public FileSystem
             return stringSettings[setting];
         }
 
+        void setSettings(LogicalPlotSetting setting, bool logValue)
+        {
+            logicalSettings[setting] = logValue;
+        }
+
+        void setSettings(IntPlotSetting setting, int intValue)
+        {
+            intSettings[setting] = intValue;
+        }
+
+        void setSettings(FloatPlotSetting setting, double floatValue)
+        {
+            floatSettings[setting] = floatValue;
+        }
+
+        void setSettings(StringPlotSetting setting, const std::string& stringValue)
+        {
+            stringSettings[setting] = stringValue;
+        }
+
         inline bool getRangeSetting(int i = 0) const
         {
             if (i < 3 && i >= 0)

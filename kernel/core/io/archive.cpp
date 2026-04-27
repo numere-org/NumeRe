@@ -293,6 +293,56 @@ namespace Archive
 
 
     /////////////////////////////////////////////////
+    /// \brief Enumerate the number of ZIP entries in
+    /// the current file.
+    ///
+    /// \param sArchiveName const std::string&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    static size_t enumerateZipEntries(const std::string& sArchiveName)
+    {
+        wxFFileInputStream in(wxFromUtf8(sArchiveName));
+        wxZipInputStream zip(in);
+        std::unique_ptr<wxZipEntry> entry;
+
+        size_t nEntries = 0;
+
+        while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
+        {
+            nEntries++;
+        }
+
+        return nEntries;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Enumerate the number of TAR entries in
+    /// the current file.
+    ///
+    /// \param sArchiveName const std::string&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    static size_t enumerateTarEntries(const std::string& sArchiveName)
+    {
+        wxFFileInputStream in(wxFromUtf8(sArchiveName));
+        wxTarInputStream tar(in);
+        std::unique_ptr<wxTarEntry> entry;
+
+        size_t nEntries = 0;
+
+        while (entry.reset(tar.GetNextEntry()), entry.get() != nullptr)
+        {
+            nEntries++;
+        }
+
+        return nEntries;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Unpacks an archive file format into
     /// its folder structure at the specified
     /// location. The archive file type is detected
@@ -326,22 +376,38 @@ namespace Archive
 
         FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
         std::vector<std::string> vFiles;
+        size_t nTotalEntries = 0;
+        size_t nCurrentEntry = 0;
+        time_t tTimeControl = time(nullptr);
+        bool systemPrints = NumeReKernel::getInstance()->getSettings().systemPrints();
+
+        wxFFileInputStream in(wxFromUtf8(sArchiveName));
 
         if (type == ARCHIVE_ZIP)
         {
-            wxFFileInputStream in(wxFromUtf8(sArchiveName));
             wxZipInputStream zip(in);
             std::unique_ptr<wxZipEntry> entry;
 
+            nTotalEntries = enumerateZipEntries(sArchiveName);
+            vFiles.reserve(nTotalEntries);
+
             while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
             {
+                nCurrentEntry++;
+
+                if (time(nullptr) - tTimeControl > 1 && systemPrints)
+                    make_progressBar(nCurrentEntry, 1, nTotalEntries, "bar");
+
                 std::string entryName = replacePathSeparator(wxToUtf8(entry->GetName()));
 
                 if (sTargetPath.length())
                 {
                     entryName = _fSys.ValidizeAndPrepareName(sTargetPath + "/" + entryName, "");
-
                     g_logger.debug("Entry name: " + entryName);
+
+                    if (entry->IsDir())
+                        continue;
+
                     vFiles.push_back(entryName);
                     wxFileOutputStream stream(wxFromUtf8(sTargetPath) + "/" + entry->GetName());
                     zip.Read(stream);
@@ -352,12 +418,19 @@ namespace Archive
         }
         else if (type == ARCHIVE_TAR)
         {
-            wxFFileInputStream in(wxFromUtf8(sArchiveName));
             wxTarInputStream tar(in);
             std::unique_ptr<wxTarEntry> entry;
 
+            nTotalEntries = enumerateTarEntries(sArchiveName);
+            vFiles.reserve(nTotalEntries);
+
             while (entry.reset(tar.GetNextEntry()), entry.get() != nullptr)
             {
+                nCurrentEntry++;
+
+                if (time(nullptr) - tTimeControl > 1 && systemPrints)
+                    make_progressBar(nCurrentEntry, 1, nTotalEntries, "bar");
+
                 if (entry->IsDir())
                     continue;
 
@@ -378,7 +451,6 @@ namespace Archive
         }
         else if (type == ARCHIVE_GZ || type == ARCHIVE_ZLIB)
         {
-            wxFFileInputStream in(wxFromUtf8(sArchiveName));
             wxZlibInputStream zlib(in);
 
             std::string sUnpackedName = getGZipFileName(sArchiveName);
