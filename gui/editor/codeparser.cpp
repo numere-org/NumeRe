@@ -511,10 +511,7 @@ std::string CodeParser::evaluateBraces(int lineNum, const LexedLine& line, size_
     for (; pos < line.size(); pos++)
     {
         if (line[pos].m_str == "}")
-        {
-            pos++;
             break;
-        }
 
         if (line[pos].m_str == "{")
         {
@@ -527,10 +524,7 @@ std::string CodeParser::evaluateBraces(int lineNum, const LexedLine& line, size_
             varType.push_back(getExprType(lineNum, line, pos));
 
         if (line[pos].m_str == "}")
-        {
-            pos++;
             break;
-        }
     }
 
     if (!varType.size())

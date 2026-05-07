@@ -34,7 +34,7 @@ bool Breakpoint::isActive(bool needsLocks)
     if (!m_enabled)
         return false;
 
-    g_logger.info("Breakpoint condition: " + m_condition);
+    g_logger.debug("Breakpoint condition: " + m_condition);
 
     if (m_condition == "true" || m_condition == "1")
         return true;

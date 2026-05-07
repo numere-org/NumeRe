@@ -1604,9 +1604,24 @@ mu::Array numfnc_is_unique(const mu::MultiArgFuncParams& arr)
 /////////////////////////////////////////////////
 mu::Array numfnc_zip(const mu::MultiArgFuncParams& arr)
 {
-    // Do nothing, if only one array has been passed
     if (arr.count() == 1)
+    {
+        // Did we got a cluster? Then we'll simply recurse
+        if (arr[0].count() > 1 && arr[0].getCommonType() == mu::TYPE_CLUSTER)
+        {
+            std::vector<mu::Array> tuples;
+
+            for (const mu::Value& val : arr[0])
+            {
+                tuples.push_back(val);
+            }
+
+            return numfnc_zip(mu::MultiArgFuncParams(&tuples[0], tuples.size()));
+        }
+
+        // Do nothing, if only one array has been passed
         return arr[0];
+    }
 
     mu::Array zippedTuples;
 
@@ -4333,8 +4348,17 @@ mu::Array numfnc_swapBytes(const mu::Array& arr)
     {
         const mu::Value& v = arr.get(i);
 
+        if (v.isArray())
+        {
+            ret.emplace_back(numfnc_swapBytes(v.getArray()));
+            continue;
+        }
+
         if (v.getType() != mu::TYPE_NUMERICAL)
+        {
             ret.emplace_back(v);
+            continue;
+        }
 
         const mu::Numerical& numVal = v.getNum();
 

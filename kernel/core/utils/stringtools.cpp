@@ -1147,6 +1147,9 @@ std::string resolveEscapes(std::string sStr)
         if (sStr.compare(i, 2, "\\\"") == 0)
             sStr.replace(i, 2, "\"");
 
+        if (sStr.compare(i, 2, "\\0") == 0)
+            sStr.replace(i, 2, std::string(1ull, '\0'));
+
         if (sStr.compare(i, 2, "\\\\") == 0)
             sStr.replace(i, 2, "\\");
         else if (sStr.compare(i, 2, "\\ ") == 0)
@@ -1958,6 +1961,9 @@ std::string replaceControlCharacters(std::string sToModify)
     replaceAll(sToModify, "\n", "\\n");
     replaceAll(sToModify, "\t", "\\t");
     replaceAll(sToModify, "\r", "\\r");
+    static std::string sNullChar(1ull, '\0');
+    static std::string sEscapedNullChar("\\0");
+    replaceAll(sToModify, StringView(sNullChar), StringView(sEscapedNullChar));
 
     return sToModify;
 }

@@ -94,6 +94,10 @@
 				<Linker>
 					<Add option="-s" />
 				</Linker>
+				<ExtraCommands>
+					<Add before="powershell /c (Get-Item kernel\versioninformation.cpp).LastWriteTime = (Get-Date)" />
+					<Mode after="always" />
+				</ExtraCommands>
 			</Target>
 			<Target title="Deep Debug_x64">
 				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -176,6 +180,10 @@
 				<Linker>
 					<Add option="-s" />
 				</Linker>
+				<ExtraCommands>
+					<Add before="powershell /c (Get-Item kernel\versioninformation.cpp).LastWriteTime = (Get-Date)" />
+					<Mode after="always" />
+				</ExtraCommands>
 			</Target>
 			<Environment>
 				<Variable name="bin" value="$(TARGET_COMPILER_DIR)bin" />

@@ -65,3 +65,4 @@ Fixed	Mixed braces, brackets and parentheses, which do not close in the correct 
 Added	The escape sequences "\uHHHH" (U+0000 up to U+FFFF) and "\UHHHHHHHH" (U+00000000 up to U+0010FFFF) can be used to supply an arbitrary unicode point encoded as hex string. Not all glyphs are supported within the terminal using the default font and will be displayed using a placeholder char (U+FFFD).
 Added	The functions "to_codepoints()" and "from_codepoints()" can be used to convert a string to numerical unicode values and back.
 Added	"unpack" will now show a progress bar, if the unpacking process lasts longer than 2 seconds.
+Applied	"zip()" will now accept also a single cluster and apply the operation to the embedded clusters. This makes it its own inverse.
