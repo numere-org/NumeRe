@@ -437,7 +437,8 @@ mu::Array DataView::get(const VectorIndex& rows, const VectorIndex& cols) const
                                                                           m_access.getDataObject());
     }
 
-    return m_array.call("submat", rows.getVector(), cols.getVector());
+    std::vector<mu::Array> indices({rows.getVector(), cols.getVector()});
+    return m_array.call("submat", mu::MultiArgFuncParams(&indices[0], 2));
 }
 
 

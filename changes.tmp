@@ -66,3 +66,5 @@ Added	The escape sequences "\uHHHH" (U+0000 up to U+FFFF) and "\UHHHHHHHH" (U+00
 Added	The functions "to_codepoints()" and "from_codepoints()" can be used to convert a string to numerical unicode values and back.
 Added	"unpack" will now show a progress bar, if the unpacking process lasts longer than 2 seconds.
 Applied	"zip()" will now accept also a single cluster and apply the operation to the embedded clusters. This makes it its own inverse.
+Fixed	Tabulator characters can now be used within issue reports and will now correctly be transmitted to Github.
+Fixed	Datagrids can now be created from plain matrices.
