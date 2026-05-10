@@ -2271,22 +2271,6 @@ void taylor(CommandLineParser& cmdParser)
 
 
 /////////////////////////////////////////////////
-/// \brief This static function is a helper
-/// function for fastFourierTransform() and
-/// detects phase overflows, which can be
-/// reconstructed during calculations.
-///
-/// \param cmplx std::complex<double>[3]
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool detectPhaseOverflow(std::complex<double> cmplx[3])
-{
-    return (fabs(std::arg(cmplx[2]) - std::arg(cmplx[1])) >= M_PI) && ((std::arg(cmplx[2]) - std::arg(cmplx[1])) * (std::arg(cmplx[1]) - std::arg(cmplx[0])) < 0);
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Calculates an axis index, which
 /// performs the necessary data flips used for
 /// the shifted fft axis.
@@ -2407,7 +2391,6 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
     if (!_fft.bInverseTrafo)
     {
         size_t nElements = _fftData.GetNx();
-        double dPhaseOffset = 0.0;
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _idx.row.front() + nElements);
@@ -2430,17 +2413,7 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             if (!_fft.bComplex)
             {
                 _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, std::abs(_fftData.a[i]));
-
-                // Stitch phase overflows into a continous array
-                if (i > 2 && detectPhaseOverflow(&_fftData.a[i-2]))
-                {
-                    if (std::arg(_fftData.a[i - 1]) - std::arg(_fftData.a[i - 2]) < 0.0)
-                        dPhaseOffset -= 2 * M_PI;
-                    else if (std::arg(_fftData.a[i - 1]) - std::arg(_fftData.a[i - 2]) > 0.0)
-                        dPhaseOffset += 2 * M_PI;
-                }
-
-                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[2], sTargetTable, std::arg(_fftData.a[i]) + dPhaseOffset);
+                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[2], sTargetTable, std::arg(_fftData.a[i]));
             }
             else
             {

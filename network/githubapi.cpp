@@ -34,6 +34,7 @@ static std::string strToJson(std::string sPlain)
     replaceAll(sPlain, "\\", "\\\\");
     replaceAll(sPlain, "\"", "\\\"");
     replaceAll(sPlain, "\n", "\\n");
+    replaceAll(sPlain, "\t", "\\t");
 
     return sPlain;
 }

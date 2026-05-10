@@ -4774,6 +4774,8 @@ void Plot::createDataLegends()
         // Extraxt the current label and
         // remove the surrounding quotation marks
         std::string sTemp = toInternalString(m_manager.assets[i].legend);
+        bool isBarPlot = (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
+                            && !_pData.getSettings(PlotData::LOG_BOXPLOT);
 
         // Try to find a data object in the current label
         if (_data.containsTables(sTemp)
@@ -4804,13 +4806,13 @@ void Plot::createDataLegends()
                     if (!(_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR)))
                     {
                         // Handle here barcharts
-                        if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
+                        if (isBarPlot)
                         {
                             sTemp.clear();
                             vCols.setOpenEndIndex(_data.getCols(sTableName)-1);
 
                             // Don't use the first one
-                            for (size_t i = 0; i < vCols.size(); i++)
+                            for (size_t i = 1; i < vCols.size(); i++)
                             {
                                 if (sTemp.length())
                                     sTemp += "\n";
@@ -4852,12 +4854,12 @@ void Plot::createDataLegends()
                     if (!(_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR)))
                     {
                         // Handle here barcharts
-                        if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
+                        if (isBarPlot)
                         {
                             sTemp.clear();
 
                             // Don't use the first one
-                            for (size_t i = 0; i < vCols.size(); i++)
+                            for (size_t i = 1; i < vCols.size(); i++)
                             {
                                 if (sTemp.length())
                                     sTemp += "\n";
@@ -4887,7 +4889,26 @@ void Plot::createDataLegends()
                 }
             }
             else
-                sTemp = Mangler::demangleExpression(m_manager.assets[i].legend);
+            {
+                // Any higher order of nodes can appear during bar charts
+                if (_pInfo.sCommand != "plot3d" && isBarPlot)
+                {
+                    sTemp.clear();
+
+                    // Don't use the first one
+                    for (size_t i = 1; i < vCols.size(); i++)
+                    {
+                        if (sTemp.length())
+                            sTemp += "\n";
+
+                        sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                    }
+
+                    sTemp = toExternalString(sTemp);
+                }
+                else
+                    sTemp = Mangler::demangleExpression(m_manager.assets[i].legend);
+            }
 
             // Prepend backslashes before opening and closing
             // braces
