@@ -5421,13 +5421,27 @@ bool NumeReEditor::isWrappedLine(int line)
     if (line <= 0)
         return false;
 
-    wxString lastLine = GetLine(line-1);
-    lastLine.erase(lastLine.find_last_not_of("\r\n\t ")+1);
-
     if (m_fileType == FILE_MATLAB)
+    {
+        wxString lastLine = GetLine(line-1);
+        lastLine.erase(lastLine.find_last_not_of("\r\n\t ")+1);
         return lastLine.EndsWith("...");
+    }
     else if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        return lastLine.EndsWith("\\\\");
+    {
+        std::vector<LexedString> vLexedTokens = getLexedTokens(line-1);
+
+        // Remove trailing comments
+        while (vLexedTokens.size()
+               && vLexedTokens.back().is({wxSTC_NSCR_COMMENT_LINE, wxSTC_NSCR_DOCCOMMENT_LINE}))
+        {
+            vLexedTokens.pop_back();
+        }
+
+        // It is a wrapped line, if the previous line ended with two consecutive backslashes
+        if (vLexedTokens.size())
+            return vLexedTokens.back().m_str == "\\\\";
+    }
 
     return false;
 }
