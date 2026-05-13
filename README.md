@@ -84,3 +84,7 @@ We use these tools and frameworks (we also provide a complete setup as a compile
 ## Building NumeRe
 
 We have a [dedicated page](https://github.com/numere-org/NumeRe/wiki/HowTo:-Build-NumeRe) with information about how to build NumeRe. There are multiple ways, but we do recommend to use our prepared compiler suite.
+
+## AI Disclaimer
+
+We do neither use AI tools for development nor for code review. Our used IDE Code::Blocks is (as of writing) completely AI free. We do not accept any AI written code. Furthermore, there are no AI functionalities within NumeRe (Levenberg-Marquart-Fitting does not count). We explicitly refuse permissions for any kind of AI training using any of our files or other kind of data.
