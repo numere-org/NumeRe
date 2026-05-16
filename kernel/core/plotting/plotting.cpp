@@ -1223,8 +1223,21 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
     // Apply curvilinear coordinates
     if (!_pData.getSettings(PlotData::LOG_PARAMETRIC))
-        m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS),
-                                (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)) ? 2 : 1);
+    {
+        if (_pInfo.sCommand.starts_with("dens") || _pInfo.sCommand.starts_with("grad"))
+        {
+            CoordinateSystem coords = (CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS);
+
+            if (coords != CARTESIAN)
+                coords = POLAR_RP;
+
+            m_manager.applyCoordSys(coords,
+                                    (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)) ? 2 : 1);
+        }
+        else
+            m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS),
+                                    (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)) ? 2 : 1);
+    }
 
     for (int n = 0; n < (int)m_manager.assets.size(); n++)
     {
@@ -1949,7 +1962,15 @@ void Plot::create3dPlot()
         m_manager.weightedRange(ALLRANGES, dataInterval[0]);
 
         // Apply curvilinear coordinates
-        m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
+        CoordinateSystem coords = (CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS);
+
+        if (coords == POLAR_PZ || coords == POLAR_RZ)
+            coords = POLAR_RP;
+
+        if (coords == SPHERICAL_PT || coords == SPHERICAL_RT)
+            coords = SPHERICAL_RP;
+
+        m_manager.applyCoordSys(coords);
 
         if (!isnan(_pInfo.ranges[CRANGE].front()))
             dataInterval[0] = _pInfo.ranges[CRANGE];
@@ -3162,10 +3183,10 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
     // Apply curvilinear coordinates
     CoordinateSystem coords = (CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS);
 
-    if (coords == POLAR_PZ)
+    if (coords == POLAR_PZ || coords == POLAR_RZ)
         coords = POLAR_RP;
 
-    if (coords == SPHERICAL_PT)
+    if (coords == SPHERICAL_PT || coords == SPHERICAL_RT)
         coords = SPHERICAL_RP;
 
     m_manager.applyCoordSys(coords, masked ? 2 : 1);
@@ -4720,10 +4741,10 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
     // Ensure that we have at least minimal axis intervals
     if (dataRanges[XRANGE].range() == 0.0 && vDataPlots.size())
-        dataRanges[XRANGE].expand(0.1);
+        dataRanges[XRANGE].expand(1.1); // Changed from 0.1 to eliminate the problematic axis extension for constant axis values
 
     if (dataRanges[YRANGE].range() == 0.0 && vDataPlots.size() && !isPlot1D(_pInfo.sCommand))
-        dataRanges[YRANGE].expand(0.1);
+        dataRanges[YRANGE].expand(1.1); // Changed from 0.1 to eliminate the problematic axis extension for constant axis values
 
     // Auto-apply time axes
     for (size_t i = 0; i <= CRANGE; i++)
@@ -5117,7 +5138,10 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
             || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
             || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ)
         {
-            if (_pInfo.sCommand.find("3d") == string::npos && !_pInfo.b2DVect)
+            if (_pInfo.sCommand.find("3d") == std::string::npos
+                && !_pInfo.b2DVect
+                && !_pInfo.sCommand.starts_with("dens")
+                && !_pInfo.sCommand.starts_with("grad"))
             {
                 int nRCoord = ZCOORD;
                 int nPhiCoord = XCOORD;
@@ -5127,12 +5151,21 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
                     nRCoord = XCOORD;
                     nPhiCoord = YRANGE;
                 }
-                else if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
+                else if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ
+                         && (_pInfo.b2D
+                             || _pInfo.sCommand == "plot3d"
+                             || _pInfo.b3D
+                             || _pInfo.b3DVect
+                             || _pInfo.b2DVect))
                 {
                     nRCoord = XCOORD;
                     nPhiCoord = ZCOORD;
                 }
-                else if (!(_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
+                else if (!(_pInfo.b2D
+                           || _pInfo.sCommand == "plot3d"
+                           || _pInfo.b3D
+                           || _pInfo.b3DVect
+                           || _pInfo.b2DVect))
                     nRCoord = YRANGE;
 
                 if (!_pData.getRangeSetting(nRCoord))
@@ -5153,7 +5186,10 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
                  || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
                  || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
         {
-            if (_pInfo.sCommand.find("3d") == string::npos)
+            if (_pInfo.sCommand.find("3d") == std::string::npos
+                && !_pInfo.b2DVect
+                && !_pInfo.sCommand.starts_with("dens")
+                && !_pInfo.sCommand.starts_with("grad"))
             {
                 int nRCoord = ZCOORD;
                 int nPhiCoord = XCOORD;
@@ -5165,13 +5201,22 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
                     nPhiCoord = YCOORD;
                     nThetaCoord = ZCOORD;
                 }
-                else if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
+                else if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT
+                         && (_pInfo.b2D
+                             || _pInfo.sCommand == "plot3d"
+                             || _pInfo.b3D
+                             || _pInfo.b3DVect
+                             || _pInfo.b2DVect))
                 {
                     nRCoord = XCOORD;
                     nPhiCoord = ZCOORD;
                     nThetaCoord = YCOORD;
                 }
-                else if (!(_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
+                else if (!(_pInfo.b2D
+                           || _pInfo.sCommand == "plot3d"
+                           || _pInfo.b3D
+                           || _pInfo.b3DVect
+                           || _pInfo.b2DVect))
                 {
                     nRCoord = YCOORD;
                     nThetaCoord = ZCOORD;
@@ -6927,7 +6972,9 @@ void Plot::CoordSettings()
                 else
                 {
                     if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
-                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
+                        || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ
+                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
+                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
                     {
                         _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE), 0.0);
                         _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(),
@@ -6947,7 +6994,9 @@ void Plot::CoordSettings()
                     applyGrid();
 
                     if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
-                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
+                        || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ
+                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
+                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
                     {
                         _graph->SetFunc("x*cos(y)", "x*sin(y)");
                         _graph->SetRange('y', 0.0, 2.0 * M_PI);
@@ -6965,7 +7014,7 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
+                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), 0.0);
 
                         if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
                             || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
@@ -7025,9 +7074,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), -0.5);
-                        _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
-                        _graph->Label('z', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
+                        _graph->Label('x', boost::nowide::widen(_pData.get3dAxisLabel(XCOORD)).c_str(), -0.5);
+                        _graph->Label('y', boost::nowide::widen(_pData.get3dAxisLabel(YCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
+                        _graph->Label('z', boost::nowide::widen(_pData.get3dAxisLabel(ZCOORD)).c_str(), 0.0);
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -7080,9 +7129,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), -0.4);
-                        _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
-                        _graph->Label('z', boost::nowide::widen(_pData.getAxisLabel(YCOORD)).c_str(), -0.9); // -0.4
+                        _graph->Label('x', boost::nowide::widen(_pData.get3dAxisLabel(XCOORD)).c_str(), -0.4);
+                        _graph->Label('y', boost::nowide::widen(_pData.get3dAxisLabel(YCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
+                        _graph->Label('z', boost::nowide::widen(_pData.get3dAxisLabel(ZCOORD)).c_str(), -0.9); // -0.4
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -7098,7 +7147,8 @@ void Plot::CoordSettings()
                         _graph->Axis("xyz");
                 }
             }
-            else if (isVect2D(_pInfo.sCommand)) // vect
+            else if (isVect2D(_pInfo.sCommand)
+                     || (isMesh2D(_pInfo.sCommand) && (_pInfo.sCommand.starts_with("dens") || _pInfo.sCommand.starts_with("grad")))) // vect
             {
                 if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
                 {
@@ -7126,12 +7176,12 @@ void Plot::CoordSettings()
                     _graph->SetRange('y', 0.0, 2.0 * M_PI);
 
                     if (!_pData.getSettings(PlotData::LOG_SCHEMATIC)
-                            || findParameter(_pInfo.sPlotParams, "xlabel", '=')
-                            || findParameter(_pInfo.sPlotParams, "ylabel", '=')
-                            || findParameter(_pInfo.sPlotParams, "zlabel", '='))
+                        || findParameter(_pInfo.sPlotParams, "xlabel", '=')
+                        || findParameter(_pInfo.sPlotParams, "ylabel", '=')
+                        || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', boost::nowide::widen(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
-                        _graph->Label('y', boost::nowide::widen(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
+                        _graph->Label('x', boost::nowide::widen(_pData.get3dAxisLabel(XCOORD)).c_str(), 0.0);
+                        _graph->Label('y', boost::nowide::widen(_pData.get3dAxisLabel(YCOORD)).c_str(), 0.0);
                     }
 
                     _pInfo.ranges[XRANGE].reset(0.0, _pInfo.ranges[XRANGE].max());

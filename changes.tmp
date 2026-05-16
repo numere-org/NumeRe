@@ -1,1 +1,2 @@
 Fixed	The autoindentation now also can handle wrapped lines with additonal trailing line comments.
+Fixed	Curvilinear coordinates do now work more consistent across the plotting types.

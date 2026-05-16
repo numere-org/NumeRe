@@ -191,6 +191,7 @@ class PlotData : public FileSystem
         void setParams(const std::string& __sCmd, int nType = ALL);
         std::string getParams(bool asstr = false) const;
         std::string getAxisLabel(size_t axis) const;
+        std::string get3dAxisLabel(size_t axis) const;
         void setSamples(int _nSamples);
         void setFileName(std::string _sFileName);
         void setTitle(const std::string& sTitle);

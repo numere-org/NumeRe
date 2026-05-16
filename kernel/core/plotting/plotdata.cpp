@@ -2593,13 +2593,58 @@ std::string PlotData::getAxisLabel(size_t axis) const
     else
     {
         static std::map<CoordinateSystem,AxisLabels> mLabels = getLabelDefinitions();
+        CoordinateSystem coords = (CoordinateSystem)intSettings[INT_COORDS];
 
         if (axis == XCOORD)
-            return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].x;
+            return mLabels[coords].x;
         else if (axis == YCOORD)
-            return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].y;
+            return mLabels[coords].y;
         else if (axis == ZCOORD)
-            return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].z;
+            return mLabels[coords].z;
+    }
+
+    return "";
+}
+
+/////////////////////////////////////////////////
+/// \brief Return the axis label associated to
+/// the selected axis in the 3d plotting case.
+///
+/// \param axis size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string PlotData::get3dAxisLabel(size_t axis) const
+{
+    if (!bDefaultAxisLabels[axis])
+        return replaceToTeX(sAxisLabels[axis]);
+    else if (intSettings[INT_COMPLEXMODE] == CPLX_PLANE)
+    {
+        if (axis == XCOORD)
+            return "Re \\i z";
+        else if (axis == YCOORD)
+            return "Im \\i z";
+        else if (axis == ZCOORD)
+            return "|\\i z|";
+    }
+    else
+    {
+        static std::map<CoordinateSystem,AxisLabels> mLabels = getLabelDefinitions();
+
+        CoordinateSystem coords = (CoordinateSystem)intSettings[INT_COORDS];
+
+        if (coords == POLAR_PZ || coords == POLAR_RZ)
+            coords = POLAR_RP;
+
+        if (coords == SPHERICAL_PT || coords == SPHERICAL_RT)
+            coords = SPHERICAL_RP;
+
+        if (axis == XCOORD)
+            return mLabels[coords].x;
+        else if (axis == YCOORD)
+            return mLabels[coords].y;
+        else if (axis == ZCOORD)
+            return mLabels[coords].z;
     }
 
     return "";
