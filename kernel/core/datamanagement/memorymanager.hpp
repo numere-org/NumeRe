@@ -413,6 +413,11 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vMemory[findTable(sTable)]->findCols(vCols, enableRegEx, autoCreate);
         }
 
+        std::vector<size_t> findLayers(const std::string& sTable, const std::vector<std::string>& vLayers, bool enableRegEx, bool autoCreate = false) const
+        {
+            return vMemory[findTable(sTable)]->findLayers(vLayers, enableRegEx, autoCreate);
+        }
+
         std::vector<size_t> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
                                          const mu::Array& vValues) const
         {
@@ -511,6 +516,26 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 
 		    if (iter != mCachesMap.end())
                 return vMemory[findTable(sTable)]->getCols(_bFull);
+
+            return 0;
+		}
+
+		inline int getLayers(StringView sTable, bool _bFull = false) const
+		{
+		    size_t idx = mapStringViewFind(sTable);
+
+		    if (idx != (size_t)-1)
+                return vMemory[idx]->getLayers(_bFull);
+
+            return 0;
+		}
+
+		inline int getLayers(const std::string& sTable, bool _bFull = false) const
+		{
+		    auto iter = mCachesMap.find(sTable);
+
+		    if (iter != mCachesMap.end())
+                return vMemory[findTable(sTable)]->getLayers(_bFull);
 
             return 0;
 		}

@@ -115,7 +115,7 @@ class DataView
         size_t getDims() const
         {
             if (isTable())
-                return m_access.getIndices().col.size() > 1 ? 2ull : 1ull;
+                return 1ull + size_t(m_access.getIndices().col.size() > 1) + size_t(m_access.getIndices().layer.size() > 1);
 
             return m_array.getDims();
         }
@@ -148,6 +148,21 @@ class DataView
                 return m_access.getIndices().col.size() - m_axisCount;
 
             return m_array.cols();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of layers
+        /// referenced in the data source.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t layers() const
+        {
+            if (isTable())
+                return m_access.getIndices().layer.size();
+
+            return m_array.layers();
         }
 
         /////////////////////////////////////////////////

@@ -131,6 +131,7 @@ class Memory : public Sorter
 		int getElemsInColumn(size_t col) const;
 		int getFilledElemsInColumn(size_t col) const;
 		int getCols(bool _bFull = false) const;
+		int getLayers(bool _bFull = false) const;
         size_t getSize() const;
 
 
@@ -215,6 +216,7 @@ class Memory : public Sorter
         std::vector<std::complex<double>> minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<std::complex<double>> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<size_t> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
+        std::vector<size_t> findLayers(const std::vector<std::string>& vLayerNames, bool enableRegEx, bool autoCreate);
         std::vector<size_t> countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const;
         mu::Array getIndex(size_t col, const mu::Array& vValues) const;
         double getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;

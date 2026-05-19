@@ -181,6 +181,14 @@ void DataAccessParser::evalIndices(bool asMatrix)
         else
             idx.col.setRange(0, _data.getCols(sDataObject) - 1);
     }
+
+    if (idx.layer.isOpenEnd())
+    {
+        if (bIsCluster)
+            idx.layer = VectorIndex(idx.layer.front());
+        else
+            idx.layer.setRange(0, _data.getLayers(sDataObject) - 1);
+    }
 }
 
 
@@ -219,7 +227,7 @@ const std::string& DataAccessParser::getDataObject() const
 /////////////////////////////////////////////////
 std::string DataAccessParser::getIndexString()
 {
-    return idx.row.to_string() + ", " + idx.col.to_string();
+    return idx.row.to_string() + ", " + idx.col.to_string() + ", " + idx.layer.to_string();
 }
 
 

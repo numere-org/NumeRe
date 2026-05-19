@@ -1286,22 +1286,25 @@ struct Indices
 {
     VectorIndex row;
     VectorIndex col;
+    VectorIndex layer;
     std::string sCompiledAccessEquation;
 
     Indices() { }
-    Indices(const Indices& _idx) : row(_idx.row), col(_idx.col), sCompiledAccessEquation(_idx.sCompiledAccessEquation)
+    Indices(const Indices& _idx) : row(_idx.row), col(_idx.col), layer(_idx.layer), sCompiledAccessEquation(_idx.sCompiledAccessEquation)
     {
     }
     Indices(Indices&& _idx)
     {
         std::swap(_idx.row, row);
         std::swap(_idx.col, col);
+        std::swap(_idx.layer, layer);
         std::swap(_idx.sCompiledAccessEquation, sCompiledAccessEquation);
     }
     Indices& operator=(const Indices& _idx)
     {
         row = _idx.row;
         col = _idx.col;
+        layer = _idx.layer;
         sCompiledAccessEquation = _idx.sCompiledAccessEquation;
         return *this;
     }
