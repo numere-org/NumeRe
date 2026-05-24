@@ -353,6 +353,8 @@ namespace mu
             case AUTO:
             case CF64:
                 return "value.cf64";
+            case INVALID:
+                return "void";
         }
 
         return "value.cf64";
@@ -368,9 +370,9 @@ namespace mu
     /// \param data int8_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int8_t data) : m_type(I8)
+    Numerical::Numerical(int8_t data)
     {
-        i64 = data;
+        writeInt(data, I8);
     }
 
 
@@ -380,9 +382,9 @@ namespace mu
     /// \param data uint8_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint8_t data) : m_type(UI8)
+    Numerical::Numerical(uint8_t data)
     {
-        ui64 = data;
+        writeUint(data, UI8);
     }
 
 
@@ -392,9 +394,9 @@ namespace mu
     /// \param data int16_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int16_t data) : m_type(I16)
+    Numerical::Numerical(int16_t data)
     {
-        i64 = data;
+        writeInt(data, I16);
     }
 
 
@@ -404,9 +406,9 @@ namespace mu
     /// \param data uint16_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint16_t data) : m_type(UI16)
+    Numerical::Numerical(uint16_t data)
     {
-        ui64 = data;
+        writeUint(data, UI16);
     }
 
 
@@ -416,9 +418,9 @@ namespace mu
     /// \param data int32_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int32_t data) : m_type(I32)
+    Numerical::Numerical(int32_t data)
     {
-        i64 = data;
+        writeInt(data, I32);
     }
 
 
@@ -428,9 +430,9 @@ namespace mu
     /// \param data uint32_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint32_t data) : m_type(UI32)
+    Numerical::Numerical(uint32_t data)
     {
-        ui64 = data;
+        writeUint(data, UI32);
     }
 
 
@@ -443,9 +445,9 @@ namespace mu
     /// \param type NumericalType
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int64_t data, NumericalType type) : m_type(type)
+    Numerical::Numerical(int64_t data, NumericalType type)
     {
-        i64 = data;
+        writeInt(data, type);
         resultPromote();
     }
 
@@ -459,9 +461,9 @@ namespace mu
     /// \param type NumericalType
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint64_t data, NumericalType type) : m_type(type)
+    Numerical::Numerical(uint64_t data, NumericalType type)
     {
-        ui64 = data;
+        writeUint(data, type);
         resultPromote();
     }
 
@@ -472,9 +474,9 @@ namespace mu
     /// \param data float
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(float data) : m_type(F32)
+    Numerical::Numerical(float data)
     {
-        cf64 = data;
+        writeFloat(data, F32);
     }
 
 
@@ -484,9 +486,9 @@ namespace mu
     /// \param data double
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(double data) : m_type(F64)
+    Numerical::Numerical(double data)
     {
-        cf64 = data;
+        writeFloat(data, F64);
     }
 
 
@@ -496,9 +498,9 @@ namespace mu
     /// \param data bool
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(bool data) : m_type(LOGICAL)
+    Numerical::Numerical(bool data)
     {
-        ui64 = data;
+        writeUint(data, LOGICAL);
     }
 
 
@@ -509,9 +511,9 @@ namespace mu
     /// \param data const std::complex<float>&
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(const std::complex<float>& data) : m_type(CF32)
+    Numerical::Numerical(const std::complex<float>& data)
     {
-        cf64 = data;
+        writeComplex(data, CF32);
     }
 
 
@@ -527,17 +529,21 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical::Numerical(const std::complex<double>& data, NumericalType type)
     {
-        cf64 = data;
-
         if (type == AUTO)
         {
             if (data.imag() == 0.0)
-                m_type = F64;
+                writeFloat(data.real(), F64);
             else
-                m_type = CF64;
+                writeComplex(data, CF64);
         }
+        else if (type == CF32 || type == CF64)
+            writeComplex(data, type);
+        else if (type <= UI64)
+            writeUint(intCast(data.real()), type);
+        else if (type <= I64)
+            writeInt(intCast(data.real()), type);
         else
-            m_type = type;
+            writeFloat(data.real(), type);
     }
 
 
@@ -548,9 +554,115 @@ namespace mu
     /// \param time const sys_time_point&
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(const sys_time_point& time) : m_type(DATETIME)
+    Numerical::Numerical(const sys_time_point& time)
     {
-        cf64 = to_double(time);
+        writeFloat(to_double(time), DATETIME);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor with a special case
+    /// for complex values.
+    ///
+    /// \param num const Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical::Numerical(const Numerical& num)
+    {
+        if (num.m_type == CF32 || num.m_type == CF64)
+            writeComplex(num.asCF64(), num.m_type);
+        else
+        {
+            m_storage = num.m_storage;
+            m_type = num.m_type;
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor with a special case
+    /// for complex values.
+    ///
+    /// \param num Numerical&&
+    ///
+    /////////////////////////////////////////////////
+    Numerical::Numerical(Numerical&& num)
+    {
+        m_storage = num.m_storage;
+        m_type = num.m_type;
+
+        if (num.m_type == CF32 || num.m_type == CF64)
+            num.m_type = INVALID;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy-assignment operator.
+    ///
+    /// \param num const Numerical&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical& Numerical::operator=(const Numerical& num)
+    {
+        clear();
+
+        if (num.m_type == CF32 || num.m_type == CF64)
+            writeComplex(num.asCF64(), num.m_type);
+        else
+        {
+            m_storage = num.m_storage;
+            m_type = num.m_type;
+        }
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Move-assignment operator.
+    ///
+    /// \param num Numerical&&
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical& Numerical::operator=(Numerical&& num)
+    {
+        clear();
+
+        m_storage = num.m_storage;
+        m_type = num.m_type;
+
+        if (num.m_type == CF32 || num.m_type == CF64)
+            num.m_type = INVALID;
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Destructor.
+    /////////////////////////////////////////////////
+    Numerical::~Numerical()
+    {
+        clear();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function clears the
+    /// internal contents.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Numerical::clear()
+    {
+        if (m_type == CF32 || m_type == CF64)
+            delete reinterpret_cast<std::complex<double>*>(m_storage);
+
+        m_storage = 0;
+        m_type = INVALID;
     }
 
 
@@ -637,6 +749,8 @@ namespace mu
     {
         if (m_type >= I8 && m_type <= I32)
         {
+            int64_t i64 = asI64();
+
             if (m_type == I8 && i64 >= INT8_MIN && i64 <= INT8_MAX)
                 m_type = I8;
             else if (m_type <= I16 && i64 >= INT16_MIN && i64 <= INT16_MAX)
@@ -648,6 +762,8 @@ namespace mu
         }
         else if (m_type >= UI8 && m_type <= UI32)
         {
+            uint64_t ui64 = asUI64();
+
             if (m_type == UI8 && ui64 <= UINT8_MAX)
                 m_type = UI8;
             else if (m_type <= UI16 && ui64 <= UINT16_MAX)
@@ -670,12 +786,15 @@ namespace mu
     int64_t Numerical::asI64() const
     {
         if (m_type <= UI64)
-            return ui64;
+            return m_storage;
 
         if (m_type <= I64)
-            return i64;
+            return *reinterpret_cast<const int64_t*>(&m_storage);
 
-        return intCast(cf64);
+        if (m_type <= DATETIME)
+            return intCast(*reinterpret_cast<const double*>(&m_storage));
+
+        return intCast(*reinterpret_cast<const std::complex<double>*>(m_storage));
     }
 
 
@@ -689,12 +808,15 @@ namespace mu
     uint64_t Numerical::asUI64() const
     {
         if (m_type <= UI64)
-            return ui64;
+            return m_storage;
 
         if (m_type <= I64)
-            return (uint64_t)i64;
+            return (uint64_t)*reinterpret_cast<const int64_t*>(&m_storage);
 
-        return (uint64_t)intCast(cf64);
+        if (m_type <= DATETIME)
+            return (uint64_t)intCast(*reinterpret_cast<const double*>(&m_storage));
+
+        return (uint64_t)intCast(*reinterpret_cast<const std::complex<double>*>(m_storage));
     }
 
 
@@ -708,12 +830,15 @@ namespace mu
     double Numerical::asF64() const
     {
         if (m_type <= UI64)
-            return ui64;
+            return m_storage;
 
         if (m_type <= I64)
-            return i64;
+            return *reinterpret_cast<const int64_t*>(&m_storage);
 
-        return cf64.real();
+        if (m_type <= DATETIME)
+            return *reinterpret_cast<const double*>(&m_storage);
+
+        return reinterpret_cast<const std::complex<double>*>(m_storage)->real();
     }
 
 
@@ -727,12 +852,15 @@ namespace mu
     std::complex<double> Numerical::asCF64() const
     {
         if (m_type <= UI64)
-            return ui64;
+            return m_storage;
 
         if (m_type <= I64)
-            return i64;
+            return *reinterpret_cast<const int64_t*>(&m_storage);
 
-        return cf64;
+        if (m_type <= DATETIME)
+            return *reinterpret_cast<const double*>(&m_storage);
+
+        return *reinterpret_cast<const std::complex<double>*>(m_storage);
     }
 
 
@@ -771,12 +899,12 @@ namespace mu
     Numerical Numerical::operator-() const
     {
         if (m_type <= UI64)
-            return Numerical(-ui64, (NumericalType)(m_type-I64));
+            return Numerical(-asUI64(), (NumericalType)(m_type-I64));
 
         if (m_type <= I64)
-            return Numerical(-i64, m_type);
+            return Numerical(-asI64(), m_type);
 
-        return Numerical(-cf64, m_type);
+        return Numerical(-asCF64(), m_type);
     }
 
 
@@ -812,17 +940,17 @@ namespace mu
     Numerical Numerical::operator/(const Numerical& other) const
     {
         if (m_type <= UI64)
-            return autoType(ui64 / other.asCF64());
+            return autoType(asUI64() / other.asCF64());
 
         if (m_type <= I64)
-            return autoType(i64 / other.asCF64());
+            return autoType(asI64() / other.asCF64());
 
         NumericalType promotion = fastPromoteMulDiv(m_type, other.m_type);
 
         if ((promotion == DURATION || promotion == DATETIME) && other.m_type != DURATION && other.m_type != DATETIME)
-            return Numerical(cf64 / other.asCF64(), promotion);
+            return Numerical(asCF64() / other.asCF64(), promotion);
 
-        return autoType(cf64 / other.asCF64());
+        return autoType(asCF64() / other.asCF64());
     }
 
 
@@ -874,21 +1002,21 @@ namespace mu
 
         if (promotion == LOGICAL && asI64() && other.asI64())
         {
-            i64 = 2;
-            m_type = I8;
+            writeInt(2, I8);
             return *this;
         }
 
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
-            i64 = asI64() + other.asI64();
+            writeInt(asI64() + other.asI64(), promotion);
         else if (conversion == Numerical::UINT)
-            ui64 = asUI64() + other.asUI64();
+            writeUint(asUI64() + other.asUI64(), promotion);
+        else if (promotion <= DATETIME)
+            writeFloat(asF64() + other.asF64(), promotion);
         else
-            cf64 = asCF64() + other.asCF64();
+            writeComplex(asCF64() + other.asCF64(), promotion);
 
-        m_type = promotion;
         resultPromote();
         return *this;
     }
@@ -907,13 +1035,14 @@ namespace mu
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
-            i64 = asI64() - other.asI64();
+            writeInt(asI64() - other.asI64(), promotion);
         else if (conversion == Numerical::UINT)
-            ui64 = asUI64() - other.asUI64();
+            writeUint(asUI64() - other.asUI64(), promotion);
+        else if (promotion <= DATETIME)
+            writeFloat(asF64() - other.asF64(), promotion);
         else
-            cf64 = asCF64() - other.asCF64();
+            writeComplex(asCF64() - other.asCF64(), promotion);
 
-        m_type = promotion;
         resultPromote();
         return *this;
     }
@@ -946,13 +1075,14 @@ namespace mu
         Numerical::InternalType conversion = getConversion(promotion);
 
         if (conversion == Numerical::INT)
-            i64 = asI64() * other.asI64();
+            writeInt(asI64() * other.asI64(), promotion);
         else if (conversion == Numerical::UINT)
-            ui64 = asUI64() * other.asUI64();
+            writeUint(asUI64() * other.asUI64(), promotion);
+        else if (promotion <= DATETIME)
+            writeFloat(asF64() * other.asF64(), promotion);
         else
-            cf64 = asCF64() * other.asCF64();
+            writeComplex(asCF64() * other.asCF64(), promotion);
 
-        m_type = promotion;
         resultPromote();
         return *this;
     }
@@ -981,19 +1111,15 @@ namespace mu
     void Numerical::flipSign()
     {
         if (m_type == LOGICAL)
-        {
-            m_type = I8;
-            i64 = -ui64;
-        }
+            writeInt(-asUI64(), I8);
         else if (m_type <= UI64)
-        {
-            m_type = NumericalType(m_type + I8);
-            i64 = -ui64;
-        }
+            writeInt(-asUI64(), NumericalType(m_type + I8));
         else if (m_type <= I64)
-            i64 = -i64;
+            writeInt(-asI64(), m_type);
+        else if (m_type <= DURATION)
+            writeFloat(-asF64(), m_type);
         else
-            cf64 = -cf64;
+            writeComplex(-asCF64(), m_type);
     }
 
 
@@ -1022,12 +1148,12 @@ namespace mu
     Numerical::operator bool() const
     {
         if (m_type <= UI64)
-            return ui64 != 0;
+            return asUI64() != 0;
 
         if (m_type <= I64)
-            return i64 != 0;
+            return asI64() != 0;
 
-        return cf64 != 0.0;
+        return asCF64() != 0.0;
     }
 
 
@@ -1186,22 +1312,28 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Numerical::print(size_t digits) const
     {
+        if (m_type == INVALID)
+            return "void";
+
         if (m_type == LOGICAL)
-            return toString((bool)ui64);
+            return toString((bool)asUI64());
 
-        if (m_type == DURATION && !isnan(cf64))
-            return formatDuration(cf64.real());
+        if (m_type == DURATION && !std::isnan(asF64()))
+            return formatDuration(asF64());
 
-        if (m_type == DATETIME && !isnan(cf64))
-            return toString(to_timePoint(cf64.real()), 0);
+        if (m_type == DATETIME && !std::isnan(asF64()))
+            return toString(to_timePoint(asF64()), 0);
 
         if (m_type <= UI64)
-            return toString(ui64);
+            return toString(asUI64());
 
         if (m_type <= I64)
-            return toString(i64);
+            return toString(asI64());
 
-        return toString(cf64, (cf64.imag() != 0.0 ? 2 : 1) * (digits > 0 ? digits : 7));
+        if (m_type <= DATETIME)
+            return toString(asF64(), digits > 0 ? digits : 7);
+
+        return toString(asCF64(), (asCF64().imag() != 0.0 ? 2 : 1) * (digits > 0 ? digits : 7));
     }
 
 
@@ -1216,23 +1348,31 @@ namespace mu
     /////////////////////////////////////////////////
     std::string Numerical::printVal(size_t digits) const
     {
+        if (m_type == INVALID)
+            return "void";
+
         if (m_type == LOGICAL)
-            return toString((bool)ui64);
+            return toString((bool)asUI64());
 
-        if (m_type == DURATION && !isnan(cf64))
-            return formatDuration(cf64.real());
+        if (m_type == DURATION && !std::isnan(asF64()))
+            return formatDuration(asF64());
 
-        if (m_type == DATETIME && !isnan(cf64))
-            return toString(to_timePoint(cf64.real()), 0);
+        if (m_type == DATETIME && !std::isnan(asF64()))
+            return toString(to_timePoint(asF64()), 0);
 
         if (m_type <= UI64)
-            return toString(ui64);
+            return toString(asUI64());
 
         if (m_type <= I64)
-            return toString(i64);
+            return toString(asI64());
+
+        if (m_type <= DATETIME)
+            return toString(asF64(), digits > 0 ? digits : 7);
 
         // Is one of the components zero, then try to find an
         // integer optimisation
+        std::complex<double> cf64 = asCF64();
+
         if (cf64.imag() == 0.0)
         {
             if (fabs(rint(cf64.real()) - cf64.real()) < 1e-14 && fabs(cf64.real()) >= 1.0)
