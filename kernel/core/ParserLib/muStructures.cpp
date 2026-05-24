@@ -64,7 +64,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value::Value(BaseValue* other)
     {
-        if (other && other->m_type == TYPE_ARRAY)
+        if (other && other->getPlainType() == TYPE_ARRAY)
         {
             ArrValue* arrVal = static_cast<ArrValue*>(other);
 
@@ -380,7 +380,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isVoid() const
     {
-        return !get() || get()->m_type == TYPE_NEUTRAL || get()->m_type == TYPE_INVALID;
+        return !get() || get()->getPlainType() == TYPE_NEUTRAL || get()->getType() == TYPE_INVALID;
     }
 
 
@@ -483,7 +483,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isRef() const
     {
-        return get() && get()->m_type == TYPE_REFERENCE;
+        return get() && get()->getPlainType() == TYPE_REFERENCE;
     }
 
 
@@ -496,7 +496,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isGenerator() const
     {
-        return get() && get()->m_type == TYPE_GENERATOR;
+        return get() && get()->getPlainType() == TYPE_GENERATOR;
     }
 
 
@@ -510,9 +510,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_STRING)
+            if (get()->getPlainType() == TYPE_STRING)
                 return static_cast<StrValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().name;
             else if (isRef() && get()->getType() == TYPE_STRING)
                 return static_cast<StrValue&>(getRef().get()).get();
@@ -534,9 +534,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_STRING)
+            if (get()->getPlainType() == TYPE_STRING)
                 return static_cast<const StrValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().name;
             else if (isRef() && get()->getType() == TYPE_STRING)
                 return static_cast<const StrValue&>(getRef().get()).get();
@@ -584,9 +584,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
+            if (get()->getPlainType() == TYPE_NUMERICAL)
                 return static_cast<NumValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().val;
             else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
                 return static_cast<NumValue&>(getRef().get()).get();
@@ -608,9 +608,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
+            if (get()->getPlainType() == TYPE_NUMERICAL)
                 return static_cast<const NumValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val;
             else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
                 return static_cast<const NumValue&>(getRef().get()).get();
@@ -632,7 +632,7 @@ namespace mu
     /////////////////////////////////////////////////
     Category& Value::getCategory()
     {
-        if (get() && get()->m_type == TYPE_CATEGORY)
+        if (get() && get()->getPlainType() == TYPE_CATEGORY)
             return static_cast<CatValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_CATEGORY)
             return static_cast<CatValue&>(getRef().get()).get();
@@ -649,7 +649,7 @@ namespace mu
     /////////////////////////////////////////////////
     const Category& Value::getCategory() const
     {
-        if (get() && get()->m_type == TYPE_CATEGORY)
+        if (get() && get()->getPlainType() == TYPE_CATEGORY)
             return static_cast<const CatValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_CATEGORY)
             return static_cast<const CatValue&>(getRef().get()).get();
@@ -666,7 +666,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Value::getArray()
     {
-        if (get() && get()->m_type == TYPE_ARRAY)
+        if (get() && get()->getPlainType() == TYPE_ARRAY)
             return static_cast<ArrValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_ARRAY)
             return static_cast<ArrValue&>(getRef().get()).get();
@@ -683,7 +683,7 @@ namespace mu
     /////////////////////////////////////////////////
     const Array& Value::getArray() const
     {
-        if (get() && get()->m_type == TYPE_ARRAY)
+        if (get() && get()->getPlainType() == TYPE_ARRAY)
             return static_cast<const ArrValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_ARRAY)
             return static_cast<const ArrValue&>(getRef().get()).get();
@@ -700,7 +700,7 @@ namespace mu
     /////////////////////////////////////////////////
     DictStruct& Value::getDictStruct()
     {
-        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+        if (get() && get()->getPlainType() == TYPE_DICTSTRUCT)
             return static_cast<DictStructValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<DictStructValue&>(getRef().get()).get();
@@ -717,7 +717,7 @@ namespace mu
     /////////////////////////////////////////////////
     const DictStruct& Value::getDictStruct() const
     {
-        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+        if (get() && get()->getPlainType() == TYPE_DICTSTRUCT)
             return static_cast<const DictStructValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<const DictStructValue&>(getRef().get()).get();
@@ -734,7 +734,7 @@ namespace mu
     /////////////////////////////////////////////////
     Object& Value::getObject()
     {
-        if (get() && get()->m_type == TYPE_OBJECT)
+        if (get() && get()->getPlainType() == TYPE_OBJECT)
             return *static_cast<Object*>(get());
         else if (isRef() && get()->getType() == TYPE_OBJECT)
             return static_cast<Object&>(getRef().get());
@@ -751,7 +751,7 @@ namespace mu
     /////////////////////////////////////////////////
     const Object& Value::getObject() const
     {
-        if (get() && get()->m_type == TYPE_OBJECT)
+        if (get() && get()->getPlainType() == TYPE_OBJECT)
             return *static_cast<const Object*>(get());
         else if (isRef() && get()->getType() == TYPE_OBJECT)
             return static_cast<const Object&>(getRef().get());
@@ -768,7 +768,7 @@ namespace mu
     /////////////////////////////////////////////////
     RefValue& Value::getRef()
     {
-        if (get() && get()->m_type == TYPE_REFERENCE)
+        if (get() && get()->getPlainType() == TYPE_REFERENCE)
             return *static_cast<RefValue*>(get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
@@ -783,7 +783,7 @@ namespace mu
     /////////////////////////////////////////////////
     const RefValue& Value::getRef() const
     {
-        if (get() && get()->m_type == TYPE_REFERENCE)
+        if (get() && get()->getPlainType() == TYPE_REFERENCE)
             return *static_cast<const RefValue*>(get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
@@ -798,7 +798,7 @@ namespace mu
     /////////////////////////////////////////////////
     const GeneratorValue& Value::getGenerator() const
     {
-        if (get() && get()->m_type == TYPE_GENERATOR)
+        if (get() && get()->getPlainType() == TYPE_GENERATOR)
             return *static_cast<const GeneratorValue*>(get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());

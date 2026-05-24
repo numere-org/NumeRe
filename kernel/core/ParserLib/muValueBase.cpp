@@ -43,7 +43,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator+(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " + " + getTypeAsString(other.getType()));
     }
 
 
@@ -55,7 +55,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator-() const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(getType()));
     }
 
 
@@ -68,7 +68,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator-(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " - " + getTypeAsString(other.getType()));
     }
 
 
@@ -81,7 +81,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator/(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " / " + getTypeAsString(other.getType()));
     }
 
 
@@ -94,7 +94,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator*(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " * " + getTypeAsString(other.getType()));
     }
 
 
@@ -107,7 +107,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::operator^(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " ^ " + getTypeAsString(other.getType()));
     }
 
 
@@ -120,7 +120,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator+=(const BaseValue& other)
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " + " + getTypeAsString(other.getType()));
     }
 
 
@@ -133,7 +133,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator-=(const BaseValue& other)
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " - " + getTypeAsString(other.getType()));
     }
 
 
@@ -146,7 +146,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator/=(const BaseValue& other)
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " / " + getTypeAsString(other.getType()));
     }
 
 
@@ -159,7 +159,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator*=(const BaseValue& other)
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " * " + getTypeAsString(other.getType()));
     }
 
 
@@ -172,7 +172,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& BaseValue::operator^=(const BaseValue& other)
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " ^ " + getTypeAsString(other.getType()));
     }
 
 
@@ -184,7 +184,7 @@ namespace mu
     /////////////////////////////////////////////////
     void BaseValue::flipSign()
     {
-        throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, "-" + getTypeAsString(getType()));
     }
 
 
@@ -197,7 +197,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::pow(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " ^ " + getTypeAsString(other.getType()));
     }
 
 
@@ -237,7 +237,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool BaseValue::operator==(const BaseValue& other) const
     {
-        return m_type == other.m_type;
+        return getType() == other.getType();
     }
 
 
@@ -264,7 +264,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool BaseValue::operator<(const BaseValue& other) const
     {
-        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
+        throw ParserError(ecNOT_IMPLEMENTED, getTypeAsString(getType()) + " < " + getTypeAsString(other.getType()));
     }
 
 
@@ -334,7 +334,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::call(const std::string& sMethod) const
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -350,7 +350,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1) const
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -367,7 +367,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2) const
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -385,7 +385,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -404,7 +404,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -420,7 +420,7 @@ namespace mu
     BaseValue* BaseValue::call(const std::string& sMethod,
                                std::vector<BaseValue*> args) const
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -453,7 +453,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* BaseValue::apply(const std::string& sMethod)
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -471,7 +471,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1)
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -490,7 +490,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2)
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -510,7 +510,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -531,7 +531,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -547,7 +547,7 @@ namespace mu
     BaseValue* BaseValue::apply(const std::string& sMethod,
                                 std::vector<BaseValue*> args)
     {
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getType()) + "." + sMethod);
     }
 
 
@@ -606,7 +606,6 @@ namespace mu
     /////////////////////////////////////////////////
     Object::Object(const std::string& objectType) : m_objectType(objectType)
     {
-        m_type = TYPE_OBJECT;
     }
 
 
@@ -618,7 +617,6 @@ namespace mu
     /////////////////////////////////////////////////
     Object::Object(const Object& other)
     {
-        m_type = TYPE_OBJECT;
         m_objectType = other.m_objectType;
         m_methods = other.m_methods;
         m_applyingMethods = other.m_applyingMethods;
@@ -647,7 +645,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Object::operator==(const BaseValue& other) const
     {
-        if (m_type == other.m_type)
+        if (other.getPlainType() == TYPE_OBJECT)
             return m_objectType == static_cast<const Object&>(other).m_objectType;
 
         return false;
@@ -721,9 +719,7 @@ namespace mu
     /////////////////////////////////////////////////
     RefValue::RefValue(const BaseValue& other) : BaseValue()
     {
-        m_type = TYPE_REFERENCE;
-
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             m_ptr = static_cast<const RefValue&>(other).m_ptr;
     }
 
@@ -737,9 +733,9 @@ namespace mu
     /////////////////////////////////////////////////
     RefValue& RefValue::operator=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_REFERENCE && !isNull() && !static_cast<const RefValue&>(other).isNull())
+        if (other.getPlainType() == TYPE_REFERENCE && !isNull() && !static_cast<const RefValue&>(other).isNull())
             m_ptr->reset(static_cast<const RefValue&>(other).get().clone());
-        else if (other.m_type == TYPE_REFERENCE && isNull())
+        else if (other.getPlainType() == TYPE_REFERENCE && isNull())
             m_ptr = static_cast<const RefValue&>(other).m_ptr;
         else
             m_ptr->reset(other.clone());
@@ -1066,7 +1062,7 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1) const
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return get().call(sMethod, static_cast<const RefValue&>(arg1).get());
 
         return get().call(sMethod, arg1);
@@ -1085,10 +1081,10 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return get().call(sMethod,
-                               arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                               arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                               arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                               arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
         return get().call(sMethod, arg1, arg2);
     }
@@ -1107,11 +1103,11 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE || arg3.getPlainType() == TYPE_REFERENCE)
             return get().call(sMethod,
-                               arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                               arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                               arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
+                               arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                               arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                               arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
 
         return get().call(sMethod, arg1, arg2, arg3);
     }
@@ -1131,12 +1127,15 @@ namespace mu
     BaseValue* RefValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE
+            || arg2.getPlainType() == TYPE_REFERENCE
+            || arg3.getPlainType() == TYPE_REFERENCE
+            || arg4.getPlainType() == TYPE_REFERENCE)
             return get().call(sMethod,
-                              arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                              arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                              arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
-                              arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+                              arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                              arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                              arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                              arg4.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return get().call(sMethod, arg1, arg2, arg3, arg4);
     }
@@ -1156,7 +1155,7 @@ namespace mu
     {
         for (size_t i = 0; i < args.size(); i++)
         {
-            while (args[i]->m_type == TYPE_REFERENCE)
+            while (args[i]->getPlainType() == TYPE_REFERENCE)
                 args[i] = &static_cast<RefValue*>(args[i])->get();
         }
 
@@ -1203,7 +1202,7 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1)
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return get().apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
         return get().apply(sMethod, arg1);
@@ -1222,10 +1221,10 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return get().apply(sMethod,
-                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                                arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                                arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
         return get().apply(sMethod, arg1, arg2);
     }
@@ -1244,11 +1243,11 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE || arg3.getPlainType() == TYPE_REFERENCE)
             return get().apply(sMethod,
-                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                                arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
+                                arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                                arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                                arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
 
         return get().apply(sMethod, arg1, arg2, arg3);
     }
@@ -1268,12 +1267,15 @@ namespace mu
     BaseValue* RefValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE
+            || arg2.getPlainType() == TYPE_REFERENCE
+            || arg3.getPlainType() == TYPE_REFERENCE
+            || arg4.getPlainType() == TYPE_REFERENCE)
             return get().apply(sMethod,
-                                arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                                arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                                arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
-                                arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+                                arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                                arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                                arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                                arg4.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return get().apply(sMethod, arg1, arg2, arg3, arg4);
     }
@@ -1293,7 +1295,7 @@ namespace mu
     {
         for (size_t i = 0; i < args.size(); i++)
         {
-            while (args[i]->m_type == TYPE_REFERENCE)
+            while (args[i]->getPlainType() == TYPE_REFERENCE)
                 args[i] = &static_cast<RefValue*>(args[i])->get();
         }
 
@@ -1342,9 +1344,7 @@ namespace mu
     /////////////////////////////////////////////////
     GeneratorValue::GeneratorValue(const BaseValue& other)
     {
-        m_type = TYPE_GENERATOR;
-
-        if (other.m_type == TYPE_GENERATOR)
+        if (other.getPlainType() == TYPE_GENERATOR)
         {
             const GeneratorValue& generator = static_cast<const GeneratorValue&>(other);
             m_firstVal = generator.m_firstVal;
@@ -1352,7 +1352,7 @@ namespace mu
             m_step = generator.m_step;
             m_size = generator.m_size;
         }
-        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_GENERATOR)
+        else if (other.getPlainType() == TYPE_REFERENCE && other.getType() == TYPE_GENERATOR)
         {
             const GeneratorValue& generator = static_cast<const GeneratorValue&>(static_cast<const RefValue&>(other).get());
             m_firstVal = generator.m_firstVal;
@@ -1374,7 +1374,7 @@ namespace mu
     /////////////////////////////////////////////////
     GeneratorValue& GeneratorValue::operator=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_GENERATOR)
+        if (other.getPlainType() == TYPE_GENERATOR)
         {
             const GeneratorValue& generator = static_cast<const GeneratorValue&>(other);
             m_firstVal = generator.m_firstVal;
@@ -1382,7 +1382,7 @@ namespace mu
             m_step = generator.m_step;
             m_size = generator.m_size;
         }
-        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_GENERATOR)
+        else if (other.getPlainType() == TYPE_REFERENCE && other.getType() == TYPE_GENERATOR)
             return operator=(static_cast<const RefValue&>(other).get());
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);

@@ -778,7 +778,7 @@ namespace mu
                 element = read(pathElement.name);
             else
             {
-                if (element->m_type != TYPE_DICTSTRUCT || !static_cast<const DictStructValue*>(element)->get().isField(pathElement.name))
+                if (element->getPlainType() != TYPE_DICTSTRUCT || !static_cast<const DictStructValue*>(element)->get().isField(pathElement.name))
                     return false;
 
                 element = static_cast<const DictStructValue*>(element)->get().read(pathElement.name);
@@ -789,11 +789,11 @@ namespace mu
 
             // First and last element are identical in the scalar case and do not need an
             // array. All others do
-            if (pathElement.needArray() && element->m_type != TYPE_ARRAY)
+            if (pathElement.needArray() && element->getPlainType() != TYPE_ARRAY)
                 return false;
 
             // If the element is an array, select the correct element
-            if (element->m_type == TYPE_ARRAY)
+            if (element->getPlainType() == TYPE_ARRAY)
             {
                 const Array& arr = static_cast<const ArrValue*>(element)->get();
 
@@ -874,7 +874,7 @@ namespace mu
                 element = read(pathElement.name);
             else
             {
-                if (element->get()->m_type != TYPE_DICTSTRUCT)
+                if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
                     throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
 
                 element = static_cast<DictStructValue*>(element->get())->get().read(pathElement.name);
@@ -885,11 +885,11 @@ namespace mu
 
             // First and last element are identical in the scalar case and do not need an
             // array. All others do
-            if (pathElement.needArray() && element->get()->m_type != TYPE_ARRAY)
+            if (pathElement.needArray() && element->get()->getPlainType() != TYPE_ARRAY)
                 throw std::runtime_error("Field " + xPath.getSegment(0, i+1).to_string('.') + " is not a cluster.");
 
             // If the element is an array, select the correct element
-            if (element->get()->m_type == TYPE_ARRAY)
+            if (element->get()->getPlainType() == TYPE_ARRAY)
             {
                 Array& arr = static_cast<ArrValue*>(element->get())->get();
 
@@ -1002,9 +1002,9 @@ namespace mu
                     element->reset(new ArrValue());
 
                 // Ensure correct typeness
-                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                if (element->get() && element->get()->getPlainType() != TYPE_DICTSTRUCT && element->get()->getPlainType() != TYPE_ARRAY)
                     throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
-                else if (element->get()->m_type == TYPE_ARRAY)
+                else if (element->get()->getPlainType() == TYPE_ARRAY)
                 {
                     // If we have an array, we want to have the correct element as a dictstruct
                     Array& arr = static_cast<ArrValue*>(element->get())->get();
@@ -1018,7 +1018,7 @@ namespace mu
                     {
                         if (!element->get())
                             element->reset(new DictStructValue());
-                        else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                        else if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
                             throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
                     }
                     else
@@ -1028,7 +1028,7 @@ namespace mu
                         return element;
                     }
                 }
-                else if (element->get()->m_type == TYPE_DICTSTRUCT)
+                else if (element->get()->getPlainType() == TYPE_DICTSTRUCT)
                 {
                     BaseValue* dict = element->release();
                     Array arr{Value(dict)};
@@ -1048,16 +1048,16 @@ namespace mu
                     element->reset(new DictStructValue());
 
                 // Ensure correct typeness
-                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                if (element->get() && element->get()->getPlainType() != TYPE_DICTSTRUCT && element->get()->getPlainType() != TYPE_ARRAY)
                     throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
-                else if (element->get()->m_type == TYPE_ARRAY)
+                else if (element->get()->getPlainType() == TYPE_ARRAY)
                 {
                     // If we have an array, we want to have the first element as a dictstruct
                     element = &(static_cast<ArrValue*>(element->get())->get().get(0));
 
                     if (!element->get())
                         element->reset(new DictStructValue());
-                    else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                    else if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
                         throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
                 }
             }
@@ -1133,9 +1133,9 @@ namespace mu
                     element->reset(new ArrValue());
 
                 // Ensure correct typeness
-                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                if (element->get() && element->get()->getPlainType() != TYPE_DICTSTRUCT && element->get()->getPlainType() != TYPE_ARRAY)
                     throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
-                else if (element->get()->m_type == TYPE_ARRAY)
+                else if (element->get()->getPlainType() == TYPE_ARRAY)
                 {
                     // If we have an array, we want to have the correct element as a dictstruct
                     Array& arr = static_cast<ArrValue*>(element->get())->get();
@@ -1149,11 +1149,11 @@ namespace mu
                     {
                         if (!element->get())
                             element->reset(new DictStructValue());
-                        else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                        else if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
                             throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
                     }
                 }
-                else if (element->get()->m_type == TYPE_DICTSTRUCT)
+                else if (element->get()->getPlainType() == TYPE_DICTSTRUCT)
                 {
                     BaseValue* dict = element->release();
                     Array arr{Value(dict)};
@@ -1173,16 +1173,16 @@ namespace mu
                     element->reset(new DictStructValue());
 
                 // Ensure correct typeness
-                if (element->get() && element->get()->m_type != TYPE_DICTSTRUCT && element->get()->m_type != TYPE_ARRAY)
+                if (element->get() && element->get()->getPlainType() != TYPE_DICTSTRUCT && element->get()->getPlainType() != TYPE_ARRAY)
                     throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " has an invalid type.");
-                else if (element->get()->m_type == TYPE_ARRAY)
+                else if (element->get()->getPlainType() == TYPE_ARRAY)
                 {
                     // If we have an array, we want to have the first element as a dictstruct
                     element = &(static_cast<ArrValue*>(element->get())->get().get(0));
 
                     if (!element->get())
                         element->reset(new DictStructValue());
-                    else if (element->get()->m_type != TYPE_DICTSTRUCT)
+                    else if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
                         throw std::runtime_error("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
                 }
             }
@@ -1257,7 +1257,7 @@ namespace mu
                 element = read(pathElement.name);
             else
             {
-                if (element->get()->m_type != TYPE_DICTSTRUCT)
+                if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
                     throw std::out_of_range("Field " + xPath.getSegment(0, i).to_string('.') + " is not a dictstruct instance.");
 
                 element = static_cast<DictStructValue*>(element->get())->get().read(pathElement.name);
@@ -1268,11 +1268,11 @@ namespace mu
 
             // First and last element are identical in the scalar case and do not need an
             // array. All others do
-            if (pathElement.needArray() && element->get()->m_type != TYPE_ARRAY)
+            if (pathElement.needArray() && element->get()->getPlainType() != TYPE_ARRAY)
                 throw std::out_of_range("Field " + xPath.getSegment(0, i+1).to_string('.') + " is not a cluster.");
 
             // If the element is an array, select the correct element
-            if (element->get()->m_type == TYPE_ARRAY)
+            if (element->get()->getPlainType() == TYPE_ARRAY)
             {
                 Array& arr = static_cast<ArrValue*>(element->get())->get();
 
@@ -1286,7 +1286,7 @@ namespace mu
             }
         }
 
-        if (element->get()->m_type != TYPE_DICTSTRUCT)
+        if (element->get()->getPlainType() != TYPE_DICTSTRUCT)
             throw std::out_of_range("Field " + xPath.to_string('.') + " is not a dictstruct instance.");
 
         return static_cast<DictStructValue*>(element->get())->get().remove(xPath.leaf());
@@ -1549,9 +1549,9 @@ namespace mu
             {
                 const BaseValue* val = dict.read("attrs");
 
-                if (val->m_type == TYPE_ARRAY)
+                if (val->getPlainType() == TYPE_ARRAY)
                     sNodes = encodeXml(static_cast<const ArrValue*>(val)->get(), format, level+1);
-                else if (val->m_type == TYPE_DICTSTRUCT)
+                else if (val->getPlainType() == TYPE_DICTSTRUCT)
                 {
                     const DictStruct& attrs = static_cast<const DictStructValue*>(val)->get();
 
@@ -1569,9 +1569,9 @@ namespace mu
             {
                 const BaseValue* val = dict.read("nodes");
 
-                if (val->m_type == TYPE_ARRAY)
+                if (val->getPlainType() == TYPE_ARRAY)
                     sNodes = encodeXml(static_cast<const ArrValue*>(val)->get(), format, level+1);
-                else if (val->m_type == TYPE_DICTSTRUCT)
+                else if (val->getPlainType() == TYPE_DICTSTRUCT)
                     sNodes = encodeXml(static_cast<const DictStructValue*>(val)->get(), format, level+1);
             }
 
@@ -1601,17 +1601,17 @@ namespace mu
             const BaseValue* val = dict.read(field);
             sXmlString += sIndent;
 
-            if (val->m_type == TYPE_ARRAY)
+            if (val->getPlainType() == TYPE_ARRAY)
             {
                 const Array& a = static_cast<const ArrValue*>(val)->get();
                 sXmlString += "<" + field + " type=\"" + a.getCommonTypeAsString() + "\" size=\"" + a.printDims() + "\">" + sTermatingChar
                     + encodeXml(a, format, level+1) + sIndent + "</" + field + ">" + sTermatingChar;
             }
-            else if (val->m_type == TYPE_DICTSTRUCT)
+            else if (val->getPlainType() == TYPE_DICTSTRUCT)
                 sXmlString += "<" + field + " type=\"dictstruct\">" + sTermatingChar
                     + encodeXml(static_cast<const DictStructValue*>(val)->get(), format, level+1)
                     + sIndent + "</" + field + ">" + sTermatingChar;
-            else if (val->m_type == TYPE_OBJECT)
+            else if (val->getPlainType() == TYPE_OBJECT)
                 sXmlString += "<" + field + " type=\"object." + static_cast<const Object*>(val)->getObjectType() + "\">"
                     + val->printVal(0, 0) + "</" + field + ">" + sTermatingChar;
             else
@@ -1644,7 +1644,7 @@ namespace mu
             // Ignore that
             const BaseValue* val = read("DOM");
 
-            if (val->m_type == TYPE_ARRAY)
+            if (val->getPlainType() == TYPE_ARRAY)
                 return mu::encodeXml(static_cast<const ArrValue*>(val)->get(), format, 0);
 
             return mu::encodeXml(static_cast<const DictStructValue*>(val)->get(), format, 0);
@@ -1906,11 +1906,11 @@ namespace mu
 
             const BaseValue* val = dict.read(field);
 
-            if (val->m_type == TYPE_ARRAY)
+            if (val->getPlainType() == TYPE_ARRAY)
                 sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const ArrValue*>(val)->get(), format, level+1);
-            else if (val->m_type == TYPE_DICTSTRUCT)
+            else if (val->getPlainType() == TYPE_DICTSTRUCT)
                 sJsonString += "\"" + field + "\": " + encodeJson(static_cast<const DictStructValue*>(val)->get(), format, level+1);
-            else if (val->m_type == TYPE_NUMERICAL
+            else if (val->getPlainType() == TYPE_NUMERICAL
                      && (static_cast<const NumValue*>(val)->get().getType() == DATETIME
                          || static_cast<const NumValue*>(val)->get().getType() == DURATION))
                 sJsonString += "\"" + field + "\": \"" + val->print(0, 0, false) + "\"";
@@ -1945,7 +1945,7 @@ namespace mu
             // Ignore that
             const BaseValue* val = read("DOM");
 
-            if (val->m_type == TYPE_ARRAY)
+            if (val->getPlainType() == TYPE_ARRAY)
                 return mu::encodeJson(static_cast<const ArrValue*>(val)->get(), format, 1);
 
             return mu::encodeJson(static_cast<const DictStructValue*>(val)->get(), format, 1);
@@ -2823,7 +2823,7 @@ namespace mu
     /////////////////////////////////////////////////
     static bool writeBinary(std::fstream& stream, const BaseValue& val)
     {
-        if (val.m_type == TYPE_ARRAY)
+        if (val.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr = static_cast<const ArrValue&>(val).get();
 
@@ -2835,7 +2835,7 @@ namespace mu
 
             return true;
         }
-        else if (val.m_type == TYPE_GENERATOR)
+        else if (val.getPlainType() == TYPE_GENERATOR)
         {
             const GeneratorValue& gen = static_cast<const GeneratorValue&>(val);
 
@@ -2847,14 +2847,14 @@ namespace mu
 
             return true;
         }
-        else if (val.m_type == TYPE_CATEGORY)
+        else if (val.getPlainType() == TYPE_CATEGORY)
         {
             const Category& cat = static_cast<const CatValue&>(val).get();
             NumValue value(cat.val);
 
             return writeBinaryImpl(stream, cat.name) && writeBinary(stream, value);
         }
-        else if (val.m_type == TYPE_DICTSTRUCT)
+        else if (val.getPlainType() == TYPE_DICTSTRUCT)
         {
             const DictStruct& dict = static_cast<const DictStructValue&>(val).get();
 
@@ -2868,12 +2868,12 @@ namespace mu
 
             return true;
         }
-        else if (val.m_type == TYPE_STRING)
+        else if (val.getPlainType() == TYPE_STRING)
         {
             const std::string& sStr = static_cast<const StrValue&>(val).get();
             return writeBinaryImpl(stream, sStr);
         }
-        else if (val.m_type == TYPE_NUMERICAL)
+        else if (val.getPlainType() == TYPE_NUMERICAL)
         {
             const Numerical& num = static_cast<const NumValue&>(val).get();
 
@@ -2933,6 +2933,7 @@ namespace mu
                 case DURATION:
                 case DATETIME:
                 case AUTO:
+                case INVALID:
                     break;
             }
         }
@@ -2957,13 +2958,13 @@ namespace mu
         if (!is_open() || m_openMode.find_first_of("aw+") == std::string::npos)
             return false;
 
-        if (val.m_type == TYPE_REFERENCE)
+        if (val.getPlainType() == TYPE_REFERENCE)
             return write(static_cast<const RefValue&>(val).get());
 
         if (m_openMode.find("b") != std::string::npos)
             return writeBinary(m_stream, val);
 
-        if (val.m_type == TYPE_ARRAY)
+        if (val.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr = static_cast<const ArrValue&>(val).get();
 
@@ -2975,7 +2976,7 @@ namespace mu
                     m_stream << sSeparator;
             }
         }
-        else if (val.m_type == TYPE_GENERATOR)
+        else if (val.getPlainType() == TYPE_GENERATOR)
         {
             const GeneratorValue& gen = static_cast<const GeneratorValue&>(val);
 

@@ -8221,6 +8221,12 @@ wxThread::ExitCode NumeReEditor::Entry()
             break;
         }
 
+        // Do not use folding block ends as starting points
+        if (!(GetFoldLevel(i) & wxSTC_FOLDLEVELHEADERFLAG)
+            && (GetFoldLevel(i) & wxSTC_FOLDLEVELNUMBERMASK) != wxSTC_FOLDLEVELBASE
+            && GetLastChild(i, -1) == i)
+            continue;
+
         // Search for all possible duplications in the remaining document.
         // We don't have to search before the current line, because we would
         // have found this duplication earlier.
@@ -8334,8 +8340,8 @@ double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlag
 
     // Get the code lines transformed into semantic
     // code
-    string sSemLine1 = this->getSemanticLine(nLine1, nDuplicateFlags);
-    string sSemLine2 = this->getSemanticLine(nLine2, nDuplicateFlags);
+    std::string sSemLine1 = getSemanticLine(nLine1, nDuplicateFlags);
+    std::string sSemLine2 = getSemanticLine(nLine2, nDuplicateFlags);
 
     // It is possible that the lines are semantical identical although they may contain different vars
     if (!sSemLine1.length() && sSemLine2.length())

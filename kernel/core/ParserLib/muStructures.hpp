@@ -105,7 +105,7 @@ namespace mu
                     reset(nullptr);
                 else if (isRef())
                     getRef() = *other.get();
-                else if (!get() || (get()->m_type != other->m_type))
+                else if (!get() || (get()->getPlainType() != other->getPlainType()))
                     reset(other->clone());
                 else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
                     reset(other->clone());
@@ -126,7 +126,7 @@ namespace mu
             {
                 if (!other.get())
                     reset(nullptr);
-                else if (!get() || (get()->m_type != other->m_type))
+                else if (!get() || (get()->getPlainType() != other->getPlainType()))
                     reset(other->clone());
                 else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
                     reset(other->clone());
@@ -300,7 +300,7 @@ namespace mu
                     reset(other->clone());
                 else if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->getType()))
+                    if (nonRecursiveOps(get()->getPlainType(), other->getType()))
                         return operator=(*this + other);
 
                     *get() += *other.get();
@@ -323,7 +323,7 @@ namespace mu
 
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->getType()))
+                    if (nonRecursiveOps(get()->getPlainType(), other->getType()))
                         return operator=(*this - other);
 
                     *get() -= *other.get();
@@ -343,7 +343,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    DataType thisType = get()->m_type;
+                    DataType thisType = get()->getPlainType();
                     DataType otherType = other->getType();
 
                     if (nonRecursiveOps(thisType, otherType) || thisType == TYPE_STRING)
@@ -366,7 +366,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    DataType thisType = get()->m_type;
+                    DataType thisType = get()->getPlainType();
                     DataType otherType = other->getType();
 
                     if (nonRecursiveOps(thisType, otherType)
@@ -390,7 +390,7 @@ namespace mu
             {
                 if (get() && other.get())
                 {
-                    if (nonRecursiveOps(get()->m_type, other->getType()))
+                    if (nonRecursiveOps(get()->getPlainType(), other->getType()))
                         return operator=(*this ^ other);
 
                     *get() ^= *other.get();

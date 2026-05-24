@@ -40,6 +40,10 @@ namespace mu
         BaseValue& operator=(const BaseValue& other) override;
         BaseValue& operator=(const NeutralValue& other);
         BaseValue* clone() const override;
+        DataType getPlainType() const override
+        {
+            return TYPE_NEUTRAL;
+        }
 
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
@@ -69,6 +73,11 @@ namespace mu
         BASE_VALUE_DECL(NumValue, TYPE_NUMERICAL, Numerical, m_val)
 
         NumValue(double val, bool makeInvalid);
+
+        DataType getType() const override
+        {
+            return m_val.getType() == INVALID ? TYPE_INVALID : TYPE_NUMERICAL;
+        }
 
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
