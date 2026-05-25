@@ -496,7 +496,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isGenerator() const
     {
-        return get() && get()->getPlainType() == TYPE_GENERATOR;
+        return get() && get()->getType() == TYPE_GENERATOR;
     }
 
 
@@ -800,6 +800,8 @@ namespace mu
     {
         if (get() && get()->getPlainType() == TYPE_GENERATOR)
             return *static_cast<const GeneratorValue*>(get());
+        else if (isRef() && get()->getType() == TYPE_GENERATOR)
+            return static_cast<const GeneratorValue&>(getRef().get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
     }
@@ -3885,6 +3887,21 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Add a value to the shared buffer and
+    /// return a reference to its buffer position.
+    ///
+    /// \param val Value&&
+    /// \return Value&
+    ///
+    /////////////////////////////////////////////////
+    Value& Array::buffered(Value&& val) const
+    {
+        m_buffer.push_back(val);
+        return m_buffer.back();
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Generate the i-th value and return a
     /// reference to its buffered value.
     ///
@@ -3905,17 +3922,21 @@ namespace mu
 
             if (val.isGenerator())
             {
-                if (val.getGenerator().size() <= i)
-                    i -= val.getGenerator().size();
+                const GeneratorValue& gen = val.getGenerator();
+
+                if (gen.size() <= i)
+                    i -= gen.size();
                 else
-                {
-                    m_buffer.push_back(val.getGenerator().at(i));
+                    return buffered(gen.at(i));
+            }
+            else if (val.isArray() && val.getArray().count() == 1 && val.getArray().first().isGenerator())
+            {
+                const GeneratorValue& gen = val.getArray().first().getGenerator();
 
-                    if (m_buffer.size() > 10)
-                        m_buffer.pop_front();
-
-                    return m_buffer.back();
-                }
+                if (gen.size() <= i)
+                    i -= gen.size();
+                else
+                    return buffered(gen.at(i));
             }
             else if (i)
                 i--;
@@ -3948,17 +3969,21 @@ namespace mu
 
             if (val.isGenerator())
             {
-                if (val.getGenerator().size() <= i)
-                    i -= val.getGenerator().size();
+                const GeneratorValue& gen = val.getGenerator();
+
+                if (gen.size() <= i)
+                    i -= gen.size();
                 else
-                {
-                    m_buffer.push_back(val.getGenerator().at(i));
+                    return buffered(gen.at(i));
+            }
+            else if (val.isArray() && val.getArray().count() == 1 && val.getArray().first().isGenerator())
+            {
+                const GeneratorValue& gen = val.getArray().first().getGenerator();
 
-                    if (m_buffer.size() > 10)
-                        m_buffer.pop_front();
-
-                    return m_buffer.back();
-                }
+                if (gen.size() <= i)
+                    i -= gen.size();
+                else
+                    return buffered(gen.at(i));
             }
             else if (i)
                 i--;
@@ -5308,6 +5333,7 @@ namespace mu
     const std::string Value::m_defString;
     const Numerical Value::m_defVal;
     const Value Array::m_default(TYPE_NEUTRAL);
+    boost::circular_buffer<Value> Array::m_buffer(1000);
 
 
 

@@ -23,6 +23,7 @@
 #include <memory>
 #include <list>
 #include <numeric>
+#include <boost/circular_buffer.hpp>
 
 #include "muTypes.hpp"
 #include "muCompositeStructures.hpp"
@@ -1566,10 +1567,13 @@ namespace mu
 
         protected:
             mutable DataType m_commonType;
-            static const Value m_default;
             bool m_isConst;
-            mutable std::list<Value> m_buffer;
             mutable DimSizes m_dimSizes;
+
+            static const Value m_default;
+            static boost::circular_buffer<Value> m_buffer;
+
+            Value& buffered(Value&& val) const;
 
             /////////////////////////////////////////////////
             /// \brief Check, whether the index is inside of
