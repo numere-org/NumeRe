@@ -505,12 +505,12 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
 
         if (fields[i] == "nodes")
         {
-            if (elem->m_type == mu::TYPE_ARRAY)
+            if (elem->getType() == mu::TYPE_ARRAY)
             {
                 populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), parentItem);
                 continue;
             }
-            else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+            else if (elem->getType() == mu::TYPE_DICTSTRUCT)
             {
                 populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), parentItem);
                 continue;
@@ -519,12 +519,12 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
 
         item = listCtrl->AppendItem(parentItem, wxFromUtf8(fields[i]));
 
-        if (elem->m_type == mu::TYPE_ARRAY)
+        if (elem->getType() == mu::TYPE_ARRAY)
         {
             populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), item);
             continue;
         }
-        else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+        else if (elem->getType() == mu::TYPE_DICTSTRUCT)
         {
             populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), item);
             continue;
@@ -571,12 +571,12 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, 
         const mu::BaseValue* elem = dict.read(fields[i]);
         item = listCtrl->AppendItem(parentItem, wxFromUtf8(fields[i]));
 
-        if (elem->m_type == mu::TYPE_ARRAY)
+        if (elem->getType() == mu::TYPE_ARRAY)
         {
             populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), item);
             continue;
         }
-        else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+        else if (elem->getType() == mu::TYPE_DICTSTRUCT)
         {
             populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), item);
             continue;
@@ -3954,7 +3954,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                 {
                     const mu::DictStruct& dict = _options.get(0).getDictStruct();
 
-                    if (dict.isField("min-cols") && dict.read("min-cols")->m_type == mu::TYPE_NUMERICAL)
+                    if (dict.isField("min-cols") && dict.read("min-cols")->getType() == mu::TYPE_NUMERICAL)
                     {
                         int64_t c = table->GetNumberCols();
                         int64_t t = static_cast<const mu::NumValue*>(dict.read("min-cols"))->get().asI64();
@@ -3963,7 +3963,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             table->AppendCols(t-c+1);
                     }
 
-                    if (dict.isField("min-rows") && dict.read("min-rows")->m_type == mu::TYPE_NUMERICAL)
+                    if (dict.isField("min-rows") && dict.read("min-rows")->getType() == mu::TYPE_NUMERICAL)
                     {
                         int64_t r = table->GetNumberRows();
                         int64_t t = static_cast<const mu::NumValue*>(dict.read("min-rows"))->get().asI64();
@@ -3984,7 +3984,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         int64_t currentCols = table->GetNumberCols()-1;
                         const mu::BaseValue* val = dict.read("fitsize-cols");
 
-                        if (val->m_type == mu::TYPE_ARRAY)
+                        if (val->getType() == mu::TYPE_ARRAY)
                         {
                             const mu::Array& selectedCols = static_cast<const mu::ArrValue*>(val)->get();
 
@@ -3998,7 +3998,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 cols.Add(selected-1);
                             }
                         }
-                        else if (val->m_type == mu::TYPE_NUMERICAL)
+                        else if (val->getType() == mu::TYPE_NUMERICAL)
                         {
                             int64_t c = static_cast<const mu::NumValue*>(val)->get().asI64();
 
@@ -4031,10 +4031,10 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                             if (!condFormat.isField("cols")
                                 || !condFormat.isField("format")
-                                || condFormat.read("format")->m_type != mu::TYPE_ARRAY)
+                                || condFormat.read("format")->getType() != mu::TYPE_ARRAY)
                                 return false;
 
-                            if (condFormat.read("cols")->m_type == mu::TYPE_ARRAY)
+                            if (condFormat.read("cols")->getType() == mu::TYPE_ARRAY)
                             {
                                 const mu::Array& selectedCols = static_cast<const mu::ArrValue*>(condFormat.read("cols"))->get();
 
@@ -4048,7 +4048,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                     cols.Add(selected-1);
                                 }
                             }
-                            else if (condFormat.read("cols")->m_type == mu::TYPE_NUMERICAL)
+                            else if (condFormat.read("cols")->getType() == mu::TYPE_NUMERICAL)
                             {
                                 int64_t c = static_cast<const mu::NumValue*>(condFormat.read("cols"))->get().asI64();
 
@@ -4200,8 +4200,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                             if (!cellFormat.isField("cells")
                                 || !cellFormat.isField("format")
-                                || cellFormat.read("cells")->m_type != mu::TYPE_ARRAY
-                                || cellFormat.read("format")->m_type != mu::TYPE_DICTSTRUCT)
+                                || cellFormat.read("cells")->getType() != mu::TYPE_ARRAY
+                                || cellFormat.read("format")->getType() != mu::TYPE_DICTSTRUCT)
                                 return false;
 
                             const mu::Array& cellsDef = static_cast<const mu::ArrValue*>(cellFormat.read("cells"))->get();
@@ -4274,7 +4274,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (dict.isField("col-labels") && dict.read("col-labels")->m_type == mu::TYPE_DICTSTRUCT)
+                    if (dict.isField("col-labels") && dict.read("col-labels")->getType() == mu::TYPE_DICTSTRUCT)
                     {// "col-labels", {{COLS},{LABELS}}, ...
                         const mu::DictStruct& labelDef = static_cast<const DictStructValue*>(dict.read("col-labels"))->get();
                         int64_t currentCols = table->GetNumberCols()-1;

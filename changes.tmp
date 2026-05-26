@@ -1,2 +1,4 @@
 Fixed	The autoindentation now also can handle wrapped lines with additonal trailing line comments.
 Fixed	Curvilinear coordinates do now work more consistent across the plotting types.
+Cleaned	The duplicate code detection feature does not use end points of control flow statements as starting points any longer.
+Cleaned	The internal memory consumption of single values was reduced.
