@@ -118,9 +118,9 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
     const double* output = nullptr;
 
     // write the axes
-    for (int i = -1; i < nLevels; i++)
+    for (int i = 0; i <= nLevels; i++)
     {
-        wavelet.setValue(i+1, 1, i);
+        wavelet.setValue(i, 1, i);
     }
 
     // Resample the axisdata
@@ -140,7 +140,7 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
             // this case means only to write the data to a whole line
             for (int j = 0; j < nTimePoints; j++)
             {
-                wavelet.setValue(j, nLevels-i+2, vWaveletData[i]);
+                wavelet.setValue(j, i+2, vWaveletData[i]);
             }
         }
         else
@@ -159,10 +159,9 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
             // write the output to the table
             for (int j = 0; j < nTimePoints; j++)
             {
-                wavelet.setValue(j, nLevels-i+2, output[j]);
+                wavelet.setValue(j, i+2, output[j]);
             }
         }
-
     }
 
     return wavelet;

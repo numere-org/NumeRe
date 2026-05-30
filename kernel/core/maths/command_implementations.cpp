@@ -2905,13 +2905,28 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0,  _idx.row.front() + vWaveletData.size()-1);
 
+    int level = 0;
+    int translation = 0;
+
     for (size_t i = 0; i < vWaveletData.size(); i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;
 
-        _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i));
+        if (bInverseTrafo)
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, double(i));
+        else
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, std::complex<double>(level, translation));
+
         _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
+
+        translation++;
+
+        if (translation >= intPower(2, std::max(0, level-1)))
+        {
+            level++;
+            translation = 0;
+        }
     }
 
     if (!bInverseTrafo)
