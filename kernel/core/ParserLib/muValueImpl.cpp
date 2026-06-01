@@ -22,6 +22,10 @@
 #include "../utils/stringtools.hpp"
 #include "../utils/stringview.hpp"
 
+#ifndef PARSERSTANDALONE
+#include "../../kernel.hpp"
+#endif // PARSERSTANDALONE
+
 #include <set>
 
 // Reasonable other data types:
@@ -3338,6 +3342,304 @@ namespace mu
     {
         return "{.isopen: " + toString(m_val.is_open()) + ", .len: " + toString(m_val.length())
             + ", .fname: " + m_val.getFileName() + ", .mode: " + m_val.getOpenMode() + "}";
+    }
+
+
+
+    //------------------------------------------------------------------------------
+
+    /////////////////////////////////////////////////
+    /// \brief LoggerValue constructor.
+    /////////////////////////////////////////////////
+    LoggerValue::LoggerValue() : Object("logger")
+    {
+        declareMethod(MethodDefinition("isopen", 0));
+        declareMethod(MethodDefinition("fname", 0));
+        declareMethod(MethodDefinition("level", 0));
+
+        declareApplyingMethod(MethodDefinition("close", 0));
+        declareApplyingMethod(MethodDefinition("level", 1));
+        declareApplyingMethod(MethodDefinition("debug", 1));
+        declareApplyingMethod(MethodDefinition("info", 1));
+        declareApplyingMethod(MethodDefinition("warning", 1));
+        declareApplyingMethod(MethodDefinition("error", 1));
+        declareApplyingMethod(MethodDefinition("open", 1));
+        declareApplyingMethod(MethodDefinition("write", 1));
+        declareApplyingMethod(MethodDefinition("push", 1));
+        declareApplyingMethod(MethodDefinition("push", 2));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a LoggerValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    LoggerValue::LoggerValue(const BaseValue& other) : LoggerValue()
+    {
+        if (operator==(other))
+            m_val = static_cast<const LoggerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const LoggerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return LoggerValue&
+    ///
+    /////////////////////////////////////////////////
+    LoggerValue& LoggerValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_val = static_cast<const LoggerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const LoggerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool LoggerValue::isValid() const
+    {
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    LoggerValue::operator bool() const
+    {
+        return m_val.is_open();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the bytes size of this
+    /// instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t LoggerValue::getBytes() const
+    {
+        return sizeof(LeveledLogger);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "isopen")
+            return new NumValue(m_val.is_open());
+        else if (sMethod == "level")
+            return new StrValue(LeveledLogger::levelToString(m_val.getLoggingLevel()));
+        else if (sMethod == "fname")
+            return new StrValue(m_val.getLogFile());
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "close")
+        {
+            if (m_val.is_open())
+            {
+                m_val.close();
+                return new NumValue(true);
+            }
+
+            return new NumValue(false);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "level" && arg1.getPlainType() == TYPE_STRING)
+        {
+            std::string sLevel = static_cast<const StrValue&>(arg1).get();
+
+            for (size_t level = Logger::LVL_DEBUG; level < Logger::LVL_ERROR; level++)
+            {
+                if (LeveledLogger::levelToString((Logger::LogLevel)level) == sLevel)
+                {
+                    m_val.setLoggingLevel((Logger::LogLevel)level);
+                    return arg1.clone();
+                }
+            }
+
+            return new StrValue("");
+        }
+        else if (sMethod == "debug" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.debug(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "info" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.info(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "warning" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.warning(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "error" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.error(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "write" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.push_info(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "push" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.info(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "open" && arg1.getPlainType() == TYPE_STRING)
+        {
+            std::string fileName = static_cast<const StrValue&>(arg1).get();
+
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            fileName = _fSys.ValidizeAndPrepareName(fileName, "");
+#endif
+
+            return new NumValue(m_val.open(fileName));
+        }
+        else if (sMethod == "open"
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+        {
+            std::string fileName = static_cast<const PathValue&>(arg1).get().to_string('/');
+
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            fileName = _fSys.ValidizeAndPrepareName(fileName, "");
+#endif
+
+            return new NumValue(m_val.open(fileName));
+        }
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod,
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "push" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_STRING)
+        {
+            std::string sLevel = static_cast<const StrValue&>(arg2).get();
+
+            for (size_t level = Logger::LVL_DEBUG; level < Logger::LVL_ERROR; level++)
+            {
+                if (LeveledLogger::levelToString((Logger::LogLevel)level) == sLevel)
+                {
+                    m_val.push_line((Logger::LogLevel)level, static_cast<const StrValue&>(arg1).get());
+                    return new NumValue(true);
+                }
+            }
+
+            return new NumValue(false);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string LoggerValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{.isopen: " + toString(m_val.is_open())
+            + ", .fname: \"" + m_val.getLogFile() + "\", .level: \"" + LeveledLogger::levelToString(m_val.getLoggingLevel()) + "\"}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string LoggerValue::printVal(size_t digits, size_t chrs) const
+    {
+        return "{.isopen: " + toString(m_val.is_open())
+            + ", .fname: " + m_val.getLogFile() + ", .level: " + LeveledLogger::levelToString(m_val.getLoggingLevel()) + "}";
     }
 
 

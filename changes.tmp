@@ -3,3 +3,4 @@ Fixed	Curvilinear coordinates do now work more consistent across the plotting ty
 Cleaned	The duplicate code detection feature does not use end points of control flow statements as starting points any longer.
 Cleaned	The internal memory consumption of single values was reduced.
 Cleaned	Improved the return of "fwt", especially the enumeration of the coefficients.
+New	A logger object is now available.

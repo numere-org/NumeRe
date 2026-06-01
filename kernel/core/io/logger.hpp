@@ -51,6 +51,17 @@ class Logger
         void push(const std::string& sMessage);
         void push_line(const std::string& sMessage);
 
+        /////////////////////////////////////////////////
+        /// \brief Get the target log file.
+        ///
+        /// \return const std::string&
+        ///
+        /////////////////////////////////////////////////
+        const std::string& getLogFile() const
+        {
+            return m_sLogFile;
+        }
+
         enum LogLevel
         {
             LVL_DEBUG,
@@ -63,33 +74,42 @@ class Logger
 };
 
 
-
 /////////////////////////////////////////////////
-/// \brief This class is a specialisation of the
-/// Logger to run detached, i.e. as a global
-/// instance usable form everywhere.
+/// \brief This class represents a simple logging
+/// functionality, which might be extended in the
+/// future to handle more generic logging
+/// formats.
 /////////////////////////////////////////////////
-class DetachedLogger : public Logger
+class LeveledLogger : public Logger
 {
-    private:
-        std::vector<std::string> m_buffer;
+    protected:
         Logger::LogLevel m_level;
-        bool m_startAfterCrash;
         bool m_hasErrorLogged;
 
     public:
-        DetachedLogger(Logger::LogLevel lvl = Logger::LVL_INFO);
-        ~DetachedLogger();
+        LeveledLogger(Logger::LogLevel lvl = Logger::LVL_INFO);
+        LeveledLogger(const std::string& sLogFile, Logger::LogLevel lvl = Logger::LVL_INFO);
+        LeveledLogger(const LeveledLogger& other);
 
-        bool is_buffering() const;
-        bool open(const std::string& sLogFile);
-        void setLoggingLevel(Logger::LogLevel lvl);
+        LeveledLogger& operator=(const LeveledLogger& other);
 
-        void push_info(const std::string& sInfo);
-        std::string get_session_log(size_t revId = 0) const;
-        std::string get_system_information() const;
-        void write_system_information();
         void push_line(Logger::LogLevel lvl, const std::string& sMessage);
+        virtual void push_info(const std::string& sInfo);
+        void setLoggingLevel(Logger::LogLevel lvl);
+        void setLoggingLevel(const std::string& lvl);
+        static std::string levelToString(Logger::LogLevel lvl);
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the currently used logging
+        /// level.
+        ///
+        /// \return Logger::LogLevel
+        ///
+        /////////////////////////////////////////////////
+        Logger::LogLevel getLoggingLevel() const
+        {
+            return m_level;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Convenience member function.
@@ -153,17 +173,6 @@ class DetachedLogger : public Logger
         }
 
         /////////////////////////////////////////////////
-        /// \brief Did the last session crash?
-        ///
-        /// \return bool
-        ///
-        /////////////////////////////////////////////////
-        bool startFromCrash() const
-        {
-            return m_startAfterCrash;
-        }
-
-        /////////////////////////////////////////////////
         /// \brief Returns true, if we logged any error
         /// during this session.
         ///
@@ -174,7 +183,43 @@ class DetachedLogger : public Logger
         {
             return m_hasErrorLogged;
         }
+};
 
+
+
+/////////////////////////////////////////////////
+/// \brief This class is a specialisation of the
+/// Logger to run detached, i.e. as a global
+/// instance usable form everywhere.
+/////////////////////////////////////////////////
+class DetachedLogger : public LeveledLogger
+{
+    private:
+        std::vector<std::string> m_buffer;
+        bool m_startAfterCrash;
+
+    public:
+        DetachedLogger(Logger::LogLevel lvl = Logger::LVL_INFO);
+        ~DetachedLogger();
+
+        bool is_buffering() const;
+        bool open(const std::string& sLogFile);
+        void push_info(const std::string& sInfo) override;
+
+        std::string get_session_log(size_t revId = 0) const;
+        std::string get_system_information() const;
+        void write_system_information();
+
+        /////////////////////////////////////////////////
+        /// \brief Did the last session crash?
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool startFromCrash() const
+        {
+            return m_startAfterCrash;
+        }
 };
 
 

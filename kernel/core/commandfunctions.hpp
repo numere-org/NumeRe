@@ -5021,6 +5021,13 @@ static CommandReturnValues cmd_print(string& sCmd)
                 sPrinted += "\n fname:  " + f.getFileName();
                 sPrinted += "\n  mode:  " + f.getOpenMode();
             }
+            else if (sObjectType == "logger")
+            {
+                const LeveledLogger& l = static_cast<const mu::LoggerValue&>(object).get();
+                sPrinted += "isopen:  " + toString(l.is_open());
+                sPrinted += "\n fname:  " + l.getLogFile();
+                sPrinted += "\n level:  " + LeveledLogger::levelToString(l.getLoggingLevel());
+            }
             else if (sObjectType == "path")
             {
                 const mu::Path& s = static_cast<const mu::PathValue&>(object).get();

@@ -41,6 +41,7 @@
 #ifndef PARSERSTANDALONE
 extern double g_pixelScale;
 #include "../datamanagement/memorymanager.hpp"
+#include "../../kernel.hpp"
 #endif
 #include "../utils/tools.hpp"
 #include "../../versioninformation.hpp"
@@ -6997,6 +6998,46 @@ mu::Array cast_file(const mu::Array& files, const mu::Array& openmode)
             file->get().open(files.get(i).getPath(), openmode.get(i).getStr());
 
         ret.emplace_back(file.release());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a logger object instance.
+///
+/// \param files const mu::Array&
+/// \param level const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_logger(const mu::Array& files, const mu::Array& level)
+{
+    size_t elems = std::max(files.size(), level.size());
+
+    if (!elems)
+        return mu::Value(new mu::LoggerValue);
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::unique_ptr<mu::LoggerValue> logger(new mu::LoggerValue);
+        std::string fileName = files.get(i).getPath();
+
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        fileName = _fSys.ValidizeAndPrepareName(fileName, "");
+#endif
+
+        logger->get().open(fileName);
+
+        if (!level.isDefault())
+            logger->get().setLoggingLevel(level.get(i).getStr());
+
+        ret.emplace_back(logger.release());
     }
 
     return ret;
