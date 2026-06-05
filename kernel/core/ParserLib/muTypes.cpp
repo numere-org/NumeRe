@@ -95,6 +95,8 @@ namespace mu
                 return "cluster";
             case TYPE_REFERENCE:
                 return "reference";
+            case TYPE_DICT:
+                return "dict";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_OBJECT:

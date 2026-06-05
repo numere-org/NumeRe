@@ -808,8 +808,10 @@ namespace NumeRe
             sToken = "VECT." + _lang.get(sBaseId + "[VECT]");
         else if (sType == "string" && _lang.containsString(sBaseId + "[STRING]"))
             sToken = "STRING." + _lang.get(sBaseId + "[STRING]");
-        else if (sType == "dictstruct" && _lang.containsString(sBaseId + "[DICT]"))
-            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "dict" && _lang.containsString(sBaseId + "[DICT]"))
+            sToken = "DICT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "dictstruct" && _lang.containsString(sBaseId + "[STRUCT]"))
+            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[STRUCT]");
         else if (sType == "category" && _lang.containsString(sBaseId + "[CAT]"))
             sToken = "CATEGORY." + _lang.get(sBaseId + "[CAT]");
         else if (sType == "table" && _lang.containsString(sBaseId + "[DATA]"))
@@ -826,6 +828,7 @@ namespace NumeRe
             std::string sKey = _lang.getKey(sBaseId + "*");
             size_t p = sKey.rfind('[')+1;
             sToken = sKey.substr(p, sKey.length()-1 - p) + "." + _lang.get(sKey);
+            replaceAll(sToken, "STRUCT.", "DICTSTRUCT.");
         }
 
         CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);
@@ -857,7 +860,9 @@ namespace NumeRe
         else if (sType == "string" && _lang.containsString(sBaseId + "[STRING]"))
             sToken = "STRING." + _lang.get(sBaseId + "[STRING]");
         else if (sType == "dict" && _lang.containsString(sBaseId + "[DICT]"))
-            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[DICT]");
+            sToken = "DICT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "struct" && _lang.containsString(sBaseId + "[STRUCT]"))
+            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[STRUCT]");
         else if (sType == "cat" && _lang.containsString(sBaseId + "[CAT]"))
             sToken = "CATEGORY." + _lang.get(sBaseId + "[CAT]");
         else if (sType == "table" && _lang.containsString(sBaseId + "[DATA]"))

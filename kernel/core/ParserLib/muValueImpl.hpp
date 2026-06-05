@@ -241,7 +241,41 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This class wraps an DictStruct
+    /// \brief This class wraps a Dict
+    /// instance into a value.
+    /////////////////////////////////////////////////
+    class DictValue final : public BaseValue
+    {
+        BASE_VALUE_DECL(DictValue, TYPE_DICT, Dict, m_val)
+
+        bool isValid() const override;
+
+        operator bool() const override;
+        bool operator==(const BaseValue& other) const override;
+
+        size_t getBytes() const override;
+
+        MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
+        BaseValue* call(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1) const override;
+
+        MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+        BaseValue* apply(const std::string& sMethod) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1, const BaseValue& arg2) override;
+
+
+        std::string print(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a DictStruct
     /// instance into a value.
     /////////////////////////////////////////////////
     class DictStructValue final : public BaseValue

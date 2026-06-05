@@ -729,6 +729,7 @@ void NumeReKernel::defineNumFunctions()
 
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
+    _parser.DefineFun("dict", cast_dict, true, 2);                               // dict(keys,vals)
     _parser.DefineFun("dictstruct", cast_dictstruct, true, 2);                   // dictstruct(fields,vals)
     _parser.DefineFun("file", cast_file, false, 2);                              // file(file,mode)
     _parser.DefineFun("logger", cast_logger, false, 2);                          // logger(file,level)
@@ -3912,7 +3913,25 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
 {
     constexpr size_t MAXSTRINGLENGTH = 1024;
 
-    if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
+    if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICT)
+    {
+        const mu::Dict& dict = arr.front().getDict();
+        NumeRe::Container<std::string> stringTable(dict.size(), 2);
+        std::vector<mu::BaseValueRef> keys = dict.getKeys();
+
+        for (size_t i = 0; i < keys.size(); i++)
+        {
+            stringTable.set(i, 0, (*keys[i]).print(0, 0, false) + ":");
+
+            if (dict.read(*keys[i]))
+                stringTable.set(i, 1, dict.read(*keys[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+            else
+                stringTable.set(i, 1, "void");
+        }
+
+        return stringTable;
+    }
+    else if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
     {
         const mu::DictStruct& dict = arr.front().getDictStruct();
         NumeRe::Container<std::string> stringTable(dict.size(), 2);

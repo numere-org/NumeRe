@@ -6937,6 +6937,43 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
 
 
 /////////////////////////////////////////////////
+/// \brief Implements the dict cast.
+///
+/// \param keys const mu::Array&
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_dict(const mu::Array& keys, const mu::Array& vals)
+{
+    size_t elems = keys.size();
+    mu::Dict dict;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        mu::BaseValue* key = keys.get(i).get();
+
+        if (!key)
+            continue;
+
+        if (!vals.isDefault())
+        {
+            if (vals.get(i).isRef())
+                dict.write(*key, vals.get(i).getRef().get());
+            else if (!vals.get(i).isVoid())
+                dict.write(*key, *vals.get(i).get());
+            else
+                dict.write(*key, *mu::Value("").get());
+        }
+        else
+            dict.write(*key, *mu::Value("").get());
+    }
+
+    return mu::Value(dict);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implements the dictstruct cast.
 ///
 /// \param fields const mu::Array&

@@ -132,7 +132,7 @@ std::string ParserSymbol::getHeuristicEquivalent() const
     if (type.front() == '{' && type.back() == '}')
         type = type.substr(1, type.length()-2);
 
-    if (type == "dictstruct" || type == "category" || type.starts_with("object."))
+    if (type == "dict" || type == "dictstruct" || type == "category" || type.starts_with("object."))
         return "object.*";
 
     return type;
@@ -670,6 +670,8 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
             varType = "object.path";
         else if (line[pos].m_str == "file")
             varType = "object.file";
+        else if (line[pos].m_str == "logger")
+            varType = "object.logger";
         else if (line[pos].m_str == "queue")
             varType = "object.queue";
         else if (line[pos].m_str == "stack")
@@ -893,7 +895,8 @@ static std::string filterLocalVarInitTypes(const std::string& sBaseType, const s
         return "string";
     else if (sBaseType == "object.void")
     {
-        if (sExprType != "dictstruct"
+        if (sExprType != "dict"
+            && sExprType != "dictstruct"
             && sExprType != "category"
             && !sExprType.starts_with("object."))
             return "object.void";
@@ -1790,7 +1793,8 @@ std::string CodeParser::expandReturnTypes(std::string sReturnType)
     replaceAll(sReturnType, "LOG", "logical");
     replaceAll(sReturnType, "TAB", "table");
     replaceAll(sReturnType, "CST", "cluster");
-    replaceAll(sReturnType, "DCT", "dictstruct");
+    replaceAll(sReturnType, "DCT", "dict");
+    replaceAll(sReturnType, "SCT", "dictstruct");
     replaceAll(sReturnType, "CAT", "category");
     replaceAll(sReturnType, "TIM", "datetime");
     replaceAll(sReturnType, "ARG", "any");

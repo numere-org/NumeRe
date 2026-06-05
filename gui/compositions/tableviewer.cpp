@@ -2219,8 +2219,13 @@ void TableViewer::OnCellDoubleClick(wxGridEvent& event)
                 m_numereWindow->showTable(m_intName + key.substr(0, key.length()-1),
                                           m_displayName + key.substr(0, key.length()-1));
         }
+        else if (key.Matches("*:") && value.Matches("{* x * *}"))
+        {
+            m_numereWindow->showTable(m_intName + ".at(" + key.substr(0, key.length()-1) + ")",
+                                      m_displayName + ".at(" + key.substr(0, key.length()-1) + ")");
+        }
     }
-    else if (cellValue.length() && (cellValue.Matches("{* x * *}") || cellValue.Matches("[.*: *]")))
+    else if (cellValue.length() && (cellValue.Matches("{* x * *}") || cellValue.Matches("[*: *]")))
     {
         m_numereWindow->showTable(m_intName + ".sel(" + toString(event.GetRow()+1) + ")",
                                   m_displayName + ".sel(" + toString(event.GetRow()+1) + ")");

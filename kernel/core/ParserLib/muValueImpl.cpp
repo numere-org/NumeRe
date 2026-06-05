@@ -2089,6 +2089,430 @@ namespace mu
     //------------------------------------------------------------------------------
 
     // Basic implementation of the DictStructValue class
+    BASE_VALUE_IMPL(DictValue, TYPE_DICT, m_val)
+
+
+    /////////////////////////////////////////////////
+    /// \brief Is this Dict instance valid?
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictValue::isValid() const
+    {
+        return m_val.size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Convert to boolean.
+    ///
+    /// \return DictValue::operator
+    ///
+    /////////////////////////////////////////////////
+    DictValue::operator bool() const
+    {
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                return false;
+
+            const BaseValue* f = m_val.read(*key);
+
+            if (!f || !bool(*f))
+                return false;
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Equality comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictValue::operator==(const BaseValue& other) const
+    {
+        if (other.getPlainType() == TYPE_REFERENCE)
+            return operator==(static_cast<const RefValue&>(other).get());
+
+        if (other.getPlainType() != TYPE_DICT)
+            return false;
+
+        const Dict& otherDict = static_cast<const DictValue&>(other).get();
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+
+        if (keys != otherDict.getKeys())
+            return false;
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                return false;
+
+            const BaseValue* v = m_val.read(*key);
+            const BaseValue* otherV = otherDict.read(*key);
+
+            if ((!v xor !otherV) || *v != *otherV)
+                return false;
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the byte size of this
+    /// Dict instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t DictValue::getBytes() const
+    {
+        size_t s = 0;
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                continue;
+
+            s += (*key).getBytes();
+
+            const BaseValue* f = m_val.read(*key);
+
+            if (f)
+                s += f->getBytes();
+        }
+
+        return s;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// method?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition DictValue::isMethod(const std::string& sMethod, size_t argc) const
+    {
+        static const MethodSet methods({{"keys", 0}, {"values", 0},
+                                        {"at", 1}, {"len", 0}, {"contains", 1}, {"pick", -1}, {"omit", -1}});
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "keys")
+        {
+            std::vector<BaseValueRef> keys = m_val.getKeys();
+            Array arr;
+
+            for (auto& key : keys)
+            {
+                arr.emplace_back(Value(key.m_ref.release()));
+            }
+
+            return new ArrValue(arr);
+        }
+        else if (sMethod == "values")
+        {
+            std::vector<BaseValueRef> keys = m_val.getKeys();
+            Array vals;
+            vals.reserve(keys.size());
+
+            for (const auto& key : keys)
+            {
+                if (key.is_null())
+                    vals.emplace_back(mu::Value());
+                else
+                {
+                    const BaseValue* val = m_val.read(*key);
+                    vals.emplace_back(val ? val->clone() : nullptr);
+                }
+            }
+
+            return new ArrValue(vals);
+        }
+        else if (sMethod == "len")
+            return new NumValue(Numerical(m_val.size()));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::call(const std::string& sMethod, const BaseValue& arg1) const
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE)
+            return call(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "at" && arg1.getPlainType() != TYPE_VOID)
+        {
+            const BaseValue* v = m_val.read(arg1);
+            return v ? v->clone() : nullptr;
+        }
+        else if (sMethod == "contains" && arg1.getPlainType() != TYPE_VOID)
+            return new NumValue(m_val.isKey(arg1));
+        else if (sMethod == "pick" && arg1.getPlainType() == TYPE_ARRAY)
+            return new DictValue(m_val.pick(static_cast<const ArrValue&>(arg1).get()));
+        else if (sMethod == "pick")
+            return new DictValue(m_val.pick(mu::Value(arg1.clone())));
+        else if (sMethod == "omit" && arg1.getPlainType() == TYPE_ARRAY)
+            return new DictValue(m_val.omit(static_cast<const ArrValue&>(arg1).get()));
+        else if (sMethod == "omit")
+            return new DictValue(m_val.omit(mu::Value(arg1.clone())));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to
+    /// an applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition DictValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    {
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"merge", 1},
+                                        {"write", -2}});
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "clear")
+            return new NumValue(Numerical(m_val.clear()));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "removekey" && arg1.getPlainType() != TYPE_VOID && m_val.isKey(arg1))
+            return m_val.remove(arg1);
+
+        if (sMethod == "merge" && arg1.getPlainType() == TYPE_DICT)
+        {
+            std::vector<BaseValueRef> keys = m_val.merge(static_cast<const DictValue&>(arg1).get());
+            Array arr;
+
+            for (auto& key : keys)
+            {
+                arr.emplace_back(Value(key.m_ref.release()));
+            }
+
+            return new ArrValue(arr);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod,
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "write" && arg1.getPlainType() == TYPE_ARRAY)
+        {
+            const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
+            size_t elems;
+            Array ret;
+
+            if (arg2.getPlainType() == TYPE_ARRAY)
+            {
+                const Array& arr2 = static_cast<const ArrValue&>(arg2).get();
+                elems = std::max(arr1.size(), arr2.size());
+
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(new RefValue(m_val.write(*arr1.get(i).get(), *arr2.get(i).get())));
+                }
+            }
+            else
+            {
+                elems = arr1.size();
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(new RefValue(m_val.write(*arr1.get(i).get(), arg2)));
+                }
+            }
+
+            return new ArrValue(ret);
+        }
+        else if (sMethod == "write" && arg1.getPlainType() != TYPE_VOID)
+            return new RefValue(m_val.write(arg1, arg2));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string
+    /// adding possible quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+        std::string sPrinted;
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                continue;
+
+            if (sPrinted.length())
+                sPrinted += ", ";
+
+            sPrinted += key.m_ref->print(digits, chrs, trunc) + ": ";
+            const BaseValue* v = m_val.read(*key);
+
+            if (v)
+                sPrinted += v->printEmbedded(digits, chrs, trunc);
+            else
+                sPrinted += "void";
+        }
+
+        return "[" + sPrinted + "]";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance as if it was
+    /// embedded.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{1 x 1 dict}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictValue::printVal(size_t digits, size_t chrs) const
+    {
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+        std::string sPrinted;
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                continue;
+
+            if (sPrinted.length())
+                sPrinted += ", ";
+
+            sPrinted += key.m_ref->printVal(digits, chrs) + ": ";
+            const BaseValue* v = m_val.read(*key);
+
+            if (v)
+                sPrinted += v->printVal(digits, chrs);
+            else
+                sPrinted += "void";
+        }
+
+        return "[" + sPrinted + "]";
+    }
+
+
+    //------------------------------------------------------------------------------
+
+    // Basic implementation of the DictStructValue class
     BASE_VALUE_IMPL(DictStructValue, TYPE_DICTSTRUCT, m_val)
 
 
@@ -3595,7 +4019,7 @@ namespace mu
         {
             std::string sLevel = static_cast<const StrValue&>(arg2).get();
 
-            for (size_t level = Logger::LVL_DEBUG; level < Logger::LVL_ERROR; level++)
+            for (size_t level = Logger::LVL_DEBUG; level <= Logger::LVL_ERROR; level++)
             {
                 if (LeveledLogger::levelToString((Logger::LogLevel)level) == sLevel)
                 {

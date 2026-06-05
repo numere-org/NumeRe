@@ -89,6 +89,7 @@ namespace mu
             Value(const std::complex<double>& value, bool autoType = true);
             Value(const std::string& sData);
             Value(const char* sData);
+            Value(const Dict& dict);
             Value(const DictStruct& dict);
             Value(const Object& obj);
             Value(DataType type);
@@ -159,6 +160,7 @@ namespace mu
             bool isString() const;
             bool isCategory() const;
             bool isArray() const;
+            bool isDict() const;
             bool isDictStruct() const;
             bool isObject() const;
             bool isRef() const;
@@ -176,6 +178,9 @@ namespace mu
 
             Array& getArray();
             const Array& getArray() const;
+
+            Dict& getDict();
+            const Dict& getDict() const;
 
             DictStruct& getDictStruct();
             const DictStruct& getDictStruct() const;
@@ -1559,6 +1564,8 @@ namespace mu
             Value& getGenerated(size_t i);
             const Value& getGenerated(size_t i) const;
             void set(size_t i, const Value& v);
+
+            bool contains(const Value& val) const;
 
             void zerosToVoid();
             bool isCommutative() const;

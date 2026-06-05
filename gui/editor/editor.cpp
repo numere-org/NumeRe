@@ -1233,7 +1233,9 @@ static bool isFloat(StringView viewedArg, StringView defaultValue)
 static bool isObject(StringView viewedArg, StringView defaultValue)
 {
     return defaultValue.starts_with("file(")
+        || defaultValue.starts_with("logger(")
         || defaultValue.starts_with("path(")
+        || defaultValue.starts_with("dict(")
         || defaultValue.starts_with("dictstruct(")
         || defaultValue.starts_with("queue(")
         || defaultValue.starts_with("stack(")
@@ -3076,7 +3078,7 @@ void NumeReEditor::fixSymbolName(int pos)
 
     std::string sType = symbol.getHeuristicEquivalent();
 
-    if (sType.starts_with("object.") || sType == "dictstruct" || sType == "category")
+    if (sType.starts_with("object.") || sType == "dict" || sType == "dictstruct" || sType == "category")
         sType = "o";
     else if (sType == "value")
         sType = symbol.m_class == ParserSymbol::GLOBALENUM ? "n" : "f";

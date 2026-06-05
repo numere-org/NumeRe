@@ -4,3 +4,7 @@ Cleaned	The duplicate code detection feature does not use end points of control 
 Cleaned	The internal memory consumption of single values was reduced.
 Cleaned	Improved the return of "fwt", especially the enumeration of the coefficients.
 New	A logger object is now available.
+New	Dict object can be used to map between two arbitrary types (requiring that the key type to supports a "less-than" relation).
+Cleaned	Dict object are now abbreviated with "DCT" and DictStructs with "SCT".
+Cleaned	The static code analyzer won't mark methods that have no required arguments as lacking their parentheses if the user's intend is to stick with the default arguments.
+Fixed	A rare crash that occured if tabs in the data viewer are dragged around, has been resolved.

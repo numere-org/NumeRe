@@ -22,14 +22,15 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <memory>
 #include <fstream>
+
+#include "muValueBaseDefs.hpp"
 
 namespace mu
 {
-    class BaseValue;
-    using BaseValuePtr = std::unique_ptr<BaseValue>;
+    using DictMap = std::map<BaseValueRef, BaseValuePtr>;
     using DictStructMap = std::map<std::string, BaseValuePtr>;
+    class Array;
 
     struct xPathElement
     {
@@ -186,6 +187,36 @@ namespace mu
             Path getRevBranchPart(const Path& other) const;
             Path getSegment(size_t start = 0, size_t depth = std::string::npos) const;
             std::string to_string(char separator) const;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class is a simple dictionary.
+    /////////////////////////////////////////////////
+    class Dict
+    {
+        private:
+            DictMap m_fields;
+
+        public:
+            Dict();
+            Dict(const Dict& other);
+            Dict(Dict&& other);
+
+            Dict& operator=(const Dict& other);
+            Dict& operator=(Dict&& other);
+
+            size_t size() const;
+            bool isKey(const BaseValue& key) const;
+            std::vector<BaseValueRef> getKeys() const;
+            BaseValuePtr* read(const BaseValue& key);
+            const BaseValue* read(const BaseValue& key) const;
+            BaseValuePtr* write(const BaseValue& key, const BaseValue& value);
+            BaseValue* remove(const BaseValue& key);
+            Dict pick(const Array& keys) const;
+            Dict omit(const Array& keys) const;
+            std::vector<BaseValueRef> merge(const Dict& other);
+            size_t clear();
     };
 
 

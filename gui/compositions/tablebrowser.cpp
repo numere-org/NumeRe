@@ -42,6 +42,7 @@ END_EVENT_TABLE()
 TableBrowser::TableBrowser(wxWindow* parent, NumeReWindow* topWindow) : ViewerFrame(parent, "NumeRe-DataViewer: TableBrowser", topWindow->getOptions()->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0)
 {
     m_topWindow = topWindow;
+    m_dragStart = wxNOT_FOUND;
     SyntaxStyles uiTheme = topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
 
     m_tabs = new ViewerBook(this,
@@ -146,16 +147,22 @@ void TableBrowser::createMenuBar()
 /////////////////////////////////////////////////
 int TableBrowser::findPage(const std::string& tableDisplayName, const std::string& sIntName)
 {
-    for (int i = 0; i < m_tabs->GetPageCount(); i++)
+    for (size_t i = 0; i < m_tabs->GetPageCount(); i++)
     {
         if (m_tabs->GetPageText(i) == wxFromUtf8(tableDisplayName))
         {
             std::string _sIntName;
 
-            if (m_panelTypes[i] == TYPE_TABLEPANEL)
-                _sIntName = static_cast<TablePanel*>(m_tabs->GetPage(i))->grid->GetInternalName();
-            else
-                _sIntName = static_cast<TableViewer*>(m_tabs->GetPage(i))->GetInternalName();
+            // Using dynamic casts here, because tracking all possible moves with
+            // event handler is more error prone than relying on the functionality
+            // below
+            TablePanel* panel = dynamic_cast<TablePanel*>(m_tabs->GetPage(m_tabs->GetSelection()));
+            TableViewer* viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()));
+
+            if (panel != nullptr)
+                _sIntName = panel->grid->GetInternalName();
+            else if (viewer != nullptr)
+                _sIntName = viewer->GetInternalName();
 
             if (_sIntName == sIntName)
                 return i;
@@ -179,11 +186,15 @@ int TableBrowser::findPage(const std::string& tableDisplayName, const std::strin
 void TableBrowser::openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName)
 {
     int pageNum = findPage(tableDisplayName, sIntName);
+    TableViewer* viewer;
 
     // If the page is already open
-    if (pageNum != wxNOT_FOUND && m_panelTypes[pageNum] == TYPE_TABLEVIEWER)
+    // Using dynamic casts here, because tracking all possible moves with
+    // event handler is more error prone than relying on the functionality
+    // below
+    if (pageNum != wxNOT_FOUND && (viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(pageNum))) != nullptr)
     {
-        static_cast<TableViewer*>(m_tabs->GetPage(pageNum))->SetData(_stringTable, tableDisplayName, sIntName);
+        viewer->SetData(_stringTable, tableDisplayName, sIntName);
 
         if (pageNum != m_tabs->GetSelection())
             m_tabs->ChangeSelection(pageNum);
@@ -196,14 +207,13 @@ void TableBrowser::openTable(NumeRe::Container<std::string> _stringTable, const 
         return;
     }
 
-    TableViewer* grid = new TableViewer(m_tabs, wxID_ANY, GetStatusBar(), nullptr, m_topWindow,
-                                        wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
-    grid->SetData(_stringTable, tableDisplayName, sIntName);
+    viewer = new TableViewer(m_tabs, wxID_ANY, GetStatusBar(), nullptr, m_topWindow,
+                             wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    viewer->SetData(_stringTable, tableDisplayName, sIntName);
     SyntaxStyles uiTheme = m_topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
-    grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
+    viewer->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
 
-    m_panelTypes.push_back(TYPE_TABLEVIEWER);
-    m_tabs->AddPage(grid, wxFromUtf8(tableDisplayName), true);
+    m_tabs->AddPage(viewer, wxFromUtf8(tableDisplayName), true);
 }
 
 
@@ -220,11 +230,15 @@ void TableBrowser::openTable(NumeRe::Container<std::string> _stringTable, const 
 void TableBrowser::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
     int pageNum = findPage(tableDisplayName, sIntName);
+    TablePanel* panel;
 
     // If the page is already open
-    if (pageNum != wxNOT_FOUND && m_panelTypes[pageNum] == TYPE_TABLEPANEL)
+    // Using dynamic casts here, because tracking all possible moves with
+    // event handler is more error prone than relying on the functionality
+    // below
+    if (pageNum != wxNOT_FOUND && (panel = dynamic_cast<TablePanel*>(m_tabs->GetPage(pageNum))) != nullptr)
     {
-        static_cast<TablePanel*>(m_tabs->GetPage(pageNum))->grid->SetData(_table, tableDisplayName, sIntName);
+        panel->grid->SetData(_table, tableDisplayName, sIntName);
 
         if (pageNum != m_tabs->GetSelection())
             m_tabs->ChangeSelection(pageNum);
@@ -237,11 +251,10 @@ void TableBrowser::openTable(NumeRe::Table _table, const std::string& tableDispl
         return;
     }
 
-    TablePanel* panel = new TablePanel(m_tabs, this, wxID_ANY, GetStatusBar(), m_topWindow);
+    panel = new TablePanel(m_tabs, this, wxID_ANY, GetStatusBar(), m_topWindow);
     panel->SetTerminal(m_topWindow->getTerminal());
     panel->grid->SetData(_table, tableDisplayName, sIntName);
 
-    m_panelTypes.push_back(TYPE_TABLEPANEL);
     m_tabs->AddPage(panel, wxFromUtf8(tableDisplayName), true);
 
     panel->ready();
@@ -259,10 +272,16 @@ void TableBrowser::onPageChange(wxAuiNotebookEvent& event)
 {
     SetTitle("NumeRe-DataViewer: " + m_tabs->GetPageText(event.GetSelection()));
 
-    if (m_panelTypes[m_tabs->GetSelection()] == TYPE_TABLEPANEL)
-        static_cast<TablePanel*>(m_tabs->GetPage(m_tabs->GetSelection()))->grid->refreshStatusBar();
-    else
-        static_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()))->refreshStatusBar();
+    // Using dynamic casts here, because tracking all possible moves with
+    // event handler is more error prone than relying on the functionality
+    // below
+    TablePanel* panel = dynamic_cast<TablePanel*>(m_tabs->GetPage(m_tabs->GetSelection()));
+    TableViewer* viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()));
+
+    if (panel != nullptr)
+        panel->grid->refreshStatusBar();
+    else if (viewer != nullptr)
+        viewer->refreshStatusBar();
 }
 
 
@@ -279,9 +298,6 @@ void TableBrowser::onPageClose(wxAuiNotebookEvent& event)
     if (m_tabs->GetPageCount() == 1)
         Close();
 
-    if ((size_t)event.GetSelection() < m_panelTypes.size())
-        m_panelTypes.erase(m_panelTypes.begin()+event.GetSelection());
-
     event.Skip();
 }
 
@@ -296,9 +312,17 @@ void TableBrowser::onPageClose(wxAuiNotebookEvent& event)
 /////////////////////////////////////////////////
 void TableBrowser::onMenuEvent(wxCommandEvent& event)
 {
-    if (m_panelTypes[m_tabs->GetSelection()] == TYPE_TABLEPANEL)
-        static_cast<TablePanel*>(m_tabs->GetPage(m_tabs->GetSelection()))->grid->OnMenu(event);
-    else
-        static_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()))->OnMenu(event);
+    // Using dynamic casts here, because tracking all possible moves with
+    // event handler is more error prone than relying on the functionality
+    // below
+    TablePanel* panel = dynamic_cast<TablePanel*>(m_tabs->GetPage(m_tabs->GetSelection()));
+    TableViewer* viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()));
+
+    if (panel != nullptr)
+        panel->grid->OnMenu(event);
+    else if (viewer != nullptr)
+        viewer->OnMenu(event);
 }
+
+
 

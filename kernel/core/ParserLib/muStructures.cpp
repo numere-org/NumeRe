@@ -243,6 +243,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct a Value from a Dict
+    /// instance.
+    ///
+    /// \param dict const Dict&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const Dict& dict)
+    {
+        reset(new DictValue(dict));
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct a Value from a DictStruct
     /// instance.
     ///
@@ -297,6 +310,9 @@ namespace mu
             case TYPE_ARRAY:
                 reset(new ArrValue);
                 break;
+            case TYPE_DICT:
+                reset(new DictValue);
+                break;
             case TYPE_DICTSTRUCT:
                 reset(new DictStructValue);
                 break;
@@ -350,6 +366,8 @@ namespace mu
                 return "string";
             case TYPE_ARRAY:
                 return getArray().getCommonTypeAsString();
+            case TYPE_DICT:
+                return "dict";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_OBJECT:
@@ -458,6 +476,19 @@ namespace mu
     bool Value::isDictStruct() const
     {
         return get() && get()->getType() == TYPE_DICTSTRUCT;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// Dict.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isDict() const
+    {
+        return get() && get()->getType() == TYPE_DICT;
     }
 
 
@@ -693,6 +724,40 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Get the contained Dict.
+    ///
+    /// \return Dict&
+    ///
+    /////////////////////////////////////////////////
+    Dict& Value::getDict()
+    {
+        if (get() && get()->getPlainType() == TYPE_DICT)
+            return static_cast<DictValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICT)
+            return static_cast<DictValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Dict.
+    ///
+    /// \return const Dict&
+    ///
+    /////////////////////////////////////////////////
+    const Dict& Value::getDict() const
+    {
+        if (get() && get()->getPlainType() == TYPE_DICT)
+            return static_cast<const DictValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICT)
+            return static_cast<const DictValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Get the contained DictStruct.
     ///
     /// \return DictStruct&
@@ -705,7 +770,7 @@ namespace mu
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<DictStructValue&>(getRef().get()).get();
 
-        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+        throw ParserError(ecTYPE_NO_STRUCT, getTypeAsString());
     }
 
 
@@ -722,7 +787,7 @@ namespace mu
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<const DictStructValue&>(getRef().get()).get();
 
-        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+        throw ParserError(ecTYPE_NO_STRUCT, getTypeAsString());
     }
 
 
@@ -1662,6 +1727,8 @@ namespace mu
                 return "cluster";
             case TYPE_ARRAY:
                 return "cluster*";
+            case TYPE_DICT:
+                return "dict";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_OBJECT:
@@ -4015,6 +4082,29 @@ namespace mu
 
         if (common != v.getType() && common != TYPE_CLUSTER)
             m_commonType = TYPE_VOID;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief A simple member function, to check,
+    /// whether a Value is contained in this Array.
+    /// Note that the equal-operator is used for
+    /// comparsion, therefore some results may be
+    /// surprising.
+    ///
+    /// \param val const Value&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::contains(const Value& val) const
+    {
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (get(i) == val)
+                return true;
+        }
+
+        return false;
     }
 
 

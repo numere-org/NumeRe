@@ -237,6 +237,7 @@ mu::Array oprt_f(const mu::Array&, const mu::Array&);
 
 // Cast functions
 mu::Array cast_category(const mu::Array& cats, const mu::Array& ids); // OPT=1
+mu::Array cast_dict(const mu::Array& keys, const mu::Array& vals); // OPT=2
 mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals); // OPT=2
 mu::Array cast_file(const mu::Array& files, const mu::Array& openmode); // OPT=2
 mu::Array cast_logger(const mu::Array& files, const mu::Array& level); // OPT=2

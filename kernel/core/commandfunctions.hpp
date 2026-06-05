@@ -4974,7 +4974,50 @@ static CommandReturnValues cmd_print(string& sCmd)
     {
         std::string sPrinted;
 
-        if (res[i].getCommonType() == mu::TYPE_DICTSTRUCT && res[i].size() == 1)
+        if (res[i].getCommonType() == mu::TYPE_DICT && res[i].size() == 1)
+        {
+            const mu::Dict& dict = res[i].get(0).getDict();
+            std::vector<mu::BaseValueRef> vKeys = dict.getKeys();
+            std::vector<std::string> vKeyStrings;
+
+            for (const mu::BaseValueRef& key : vKeys)
+            {
+                if (key.is_null())
+                    vKeyStrings.push_back("");
+                else
+                    vKeyStrings.push_back((*key).print(0, 0, false));
+            }
+
+            make_hline();
+            NumeReKernel::print("NUMERE: " + toUpperCase(cmdParser.getExpr()));
+            make_hline();
+
+            if (vKeys.size())
+            {
+                size_t len = std::max_element(vKeyStrings.begin(), vKeyStrings.end(),
+                                              [](const std::string& a, const std::string& b){return a.length() < b.length();})->length();
+
+                for (size_t i = 0; i < vKeys.size(); i++)
+                {
+                    if (sPrinted.length())
+                        sPrinted += "\n";
+
+                    if (vKeys[i].is_null())
+                        continue;
+
+                    if (dict.read(*vKeys[i]))
+                        sPrinted += strfill(vKeyStrings[i], len, ' ') + ":  "
+                            + dict.read(*vKeys[i])->printEmbedded(NumeReKernel::getInstance()->getSettings().getPrecision(), 0, false);
+                    else
+                        sPrinted += strfill(vKeyStrings[i], len, ' ') + ":  void";
+                }
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+            make_hline();
+        }
+        else if (res[i].getCommonType() == mu::TYPE_DICTSTRUCT && res[i].size() == 1)
         {
             const mu::DictStruct& dict = res[i].get(0).getDictStruct();
             std::vector<std::string> vKeys = dict.getFields();

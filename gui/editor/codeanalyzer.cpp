@@ -1402,6 +1402,13 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     {
         int nPos = m_editor->BraceMatch(wordend);
 
+        if (sSyntaxElement.find('.') == std::string::npos)
+            _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
+        else
+            _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), rootType);
+
+        //g_logger.info(sSyntaxElement + " | " + rootType + ": " + _cTip.sDefinition + " | " + toString(_cTip.arguments.size()));
+
         if (nPos < wordend)
         {
             // MATLAB doesn't require a parenthesis pair for empty arguments.
@@ -1409,7 +1416,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             if (m_editor->m_fileType == FILE_MATLAB)
                 AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                          "GUI_ANALYZER_MISSINGPARENTHESIS");
-            else
+            else if (_cTip.nReqArgs > 0)
                 AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                        "GUI_ANALYZER_MISSINGPARENTHESIS");
         }
@@ -1418,13 +1425,6 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             // Check for missing arguments
             std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
             EndlessVector<std::string> args = getAllArguments(sArgument);
-
-            if (sSyntaxElement.find('.') == std::string::npos)
-                _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
-            else
-                _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), rootType);
-
-            //g_logger.info(sSyntaxElement + " | " + rootType + ": " + _cTip.sDefinition + " | " + toString(_cTip.arguments.size()));
 
             if (args.size() > _cTip.arguments.size()
                 && !(_cTip.arguments.size() && _cTip.arguments.back() == "..."))

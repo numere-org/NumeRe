@@ -35,6 +35,7 @@
 
 namespace mu
 {
+
     /////////////////////////////////////////////////
     /// \brief Create an empty Path instance.
     /////////////////////////////////////////////////
@@ -597,6 +598,286 @@ namespace mu
 
         return sFormatted;
     }
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Default constructor.
+    /////////////////////////////////////////////////
+    Dict::Dict()
+    { }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor from another Dict
+    /// instance.
+    ///
+    /// \param other const Dict&
+    ///
+    /////////////////////////////////////////////////
+    Dict::Dict(const Dict& other)
+    {
+        for (auto& iter : other.m_fields)
+        {
+            m_fields[iter.first];
+
+            if (iter.second)
+                m_fields[iter.first].reset(iter.second->clone());
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor.
+    ///
+    /// \param other Dict&&
+    ///
+    /////////////////////////////////////////////////
+    Dict::Dict(Dict&& other)
+    {
+        m_fields = std::move(other.m_fields);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Copy assignment overload.
+    ///
+    /// \param other const Dict&
+    /// \return Dict&
+    ///
+    /////////////////////////////////////////////////
+    Dict& Dict::operator=(const Dict& other)
+    {
+        m_fields.clear();
+
+        for (auto& iter : other.m_fields)
+        {
+            m_fields[iter.first];
+
+            if (iter.second)
+                m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Move assigment overload.
+    ///
+    /// \param other Dict&&
+    /// \return Dict&
+    ///
+    /////////////////////////////////////////////////
+    Dict& Dict::operator=(Dict&& other)
+    {
+        m_fields.clear();
+        m_fields = std::move(other.m_fields);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the number of stored keys in
+    /// this Dict.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Dict::size() const
+    {
+        return m_fields.size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns true, if this BaseValue is a
+    /// key in this Dict.
+    ///
+    /// \param key const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Dict::isKey(const BaseValue& key) const
+    {
+        return m_fields.find(key) != m_fields.end();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get a vector containing all keys in
+    /// this Dict instance.
+    ///
+    /// \return std::vector<BaseValueRef>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<BaseValueRef> Dict::getKeys() const
+    {
+        std::vector<BaseValueRef> keys;
+        keys.reserve(m_fields.size());
+
+        for (const auto& iter : m_fields)
+        {
+            keys.push_back(iter.first);
+        }
+
+        return keys;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Read a value associated with this key.
+    ///
+    /// \param key const BaseValue&
+    /// \return BaseValuePtr*
+    ///
+    /////////////////////////////////////////////////
+    BaseValuePtr* Dict::read(const BaseValue& key)
+    {
+        auto iter = m_fields.find(key);
+
+        if (iter == m_fields.end())
+            return nullptr;
+
+        return &iter->second;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Read a value associated with this key.
+    ///
+    /// \param key const BaseValue&
+    /// \return const BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    const BaseValue* Dict::read(const BaseValue& key) const
+    {
+        auto iter = m_fields.find(key);
+
+        if (iter == m_fields.end())
+            return nullptr;
+
+        return iter->second.get();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Create or overwrite a value with this
+    /// key.
+    ///
+    /// \param key const BaseValue&
+    /// \param value const BaseValue&
+    /// \return BaseValuePtr*
+    ///
+    /////////////////////////////////////////////////
+    BaseValuePtr* Dict::write(const BaseValue& key, const BaseValue& value)
+    {
+        BaseValue* val = value.dereferencedClone();
+        m_fields[key].reset(val);
+        return &m_fields[key];
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Remove a key-value pair from this Dict.
+    ///
+    /// \param key const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* Dict::remove(const BaseValue& key)
+    {
+        auto iter = m_fields.find(key);
+
+        if (iter == m_fields.end())
+            throw std::out_of_range("Field " + key.print(0, 0, false) + " does not exist.");
+
+        BaseValue* val = iter->second.release();
+        m_fields.erase(iter);
+        return val;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Pick a set of fields into a new Dict
+    /// instance.
+    ///
+    /// \param keys const Array&
+    /// \return Dict
+    ///
+    /////////////////////////////////////////////////
+    Dict Dict::pick(const Array& keys) const
+    {
+        Dict ret;
+
+        for (auto& iter : m_fields)
+        {
+            if (keys.contains(Value(iter.first.m_ref->clone())))
+                ret.m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Omit some fields in a new Dict
+    /// instance.
+    ///
+    /// \param keys const Array&
+    /// \return Dict
+    ///
+    /////////////////////////////////////////////////
+    Dict Dict::omit(const Array& keys) const
+    {
+        Dict ret;
+
+        for (auto& iter : m_fields)
+        {
+            if (!keys.contains(Value(iter.first.m_ref->clone())))
+                ret.m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return ret;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Merge this Dict with another instance
+    /// taking duplicate fields from the other
+    /// instance.
+    ///
+    /// \param other const Dict&
+    /// \return std::vector<BaseValueRef>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<BaseValueRef> Dict::merge(const Dict& other)
+    {
+        for (const auto& iter : other.m_fields)
+        {
+            m_fields[iter.first].reset(iter.second->clone());
+        }
+
+        return getKeys();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Remove all key-value pairs from this
+    /// Dict.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t Dict::clear()
+    {
+        size_t count = m_fields.size();
+        m_fields.clear();
+        return count;
+    }
+
 
 
 

@@ -6208,6 +6208,8 @@ void NumeReWindow::prepareFunctionTree()
         else if (vKeyList[i] == "cat")
             sPrefix = "CATEGORY";
         else if (vKeyList[i] == "dict")
+            sPrefix = "DICT";
+        else if (vKeyList[i] == "struct")
             sPrefix = "DICTSTRUCT";
         else
             sPrefix = toUpperCase(vKeyList[i]);
