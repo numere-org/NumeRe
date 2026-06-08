@@ -2332,9 +2332,19 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Replaces the old with the new values
+/// in the selected columns.
+///
+/// \param _vCols const VectorIndex&
+/// \param _oldVals const mu::Array&
+/// \param _newVals const mu::Array&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals)
 {
-    if (_oldVals.size() != _newVals.size() || !_oldVals.size())
+    if ((_oldVals.size() != _newVals.size() && _newVals.size() > 1) || !_oldVals.size())
         return false;
 
     _vCols.setOpenEndIndex(getCols()-1);
@@ -2359,9 +2369,9 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
                 {
                     for (size_t n = 0; n < _oldVals.size(); n++)
                     {
-                        if (_oldVals[n].isString() && _oldVals[n] == vCategories[i])
+                        if (_oldVals.get(n).isString() && _oldVals.get(n) == vCategories[i])
                         {
-                            vCategories[i] = _newVals[n].printVal();
+                            vCategories[i] = _newVals.get(n).printVal();
                             success = true;
                             break;
                         }
@@ -2381,9 +2391,9 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
 
                 for (size_t n = 0; n < _oldVals.size(); n++)
                 {
-                    if (_oldVals[n] == v)
+                    if (_oldVals.get(n) == v)
                     {
-                        targetType = to_promoted_type(targetType, to_column_type(_newVals[n]));
+                        targetType = to_promoted_type(targetType, to_column_type(_newVals.get(n)));
                         idxMap[i] = n;
                         success = true;
                         break;
@@ -2411,7 +2421,7 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
 
                 for (const auto& iter : idxMap)
                 {
-                    col->set(iter.first, _newVals[iter.second]);
+                    col->set(iter.first, _newVals.get(iter.second));
                 }
             }
         }
@@ -3867,12 +3877,16 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
     for (const auto& sName : vColNames)
     {
         bool found = false;
+        std::regex regEx;
 
         for (size_t i = 0; i < memArray.size(); i++)
         {
             if (enableRegEx)
             {
-                if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, std::regex(sName)))
+                if (!i)
+                    regEx = sName;
+
+                if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, regEx))
                     vColIndices.push_back(i+1);
             }
             else

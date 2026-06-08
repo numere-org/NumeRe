@@ -26,6 +26,9 @@
 
 #include <regex>
 
+// Regex for WHITESPACES DIGITS . WHITESPACE(S) ANYCHARACTER
+const static std::regex enumPattern("( *\\d+\\. +)(?=\\S+)");
+
 
 /////////////////////////////////////////////////
 /// \brief This member function finds all
@@ -476,7 +479,7 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
     }
 
     // Handle ordered lists
-    if (std::regex_search(sTextRange, std::regex("( *\\d+\\. +)(?=\\S+)"))) // thats an ordered list
+    if (std::regex_search(sTextRange, enumPattern)) // thats an ordered list
     {
         size_t nItemizeStart = 0;
         size_t nLength = 0;
@@ -757,10 +760,7 @@ size_t DocumentationGenerator::findEnumItem(const std::string& sTextRange, size_
 {
     std::smatch match;
 
-    // Regex for WHITESPACES DIGITS . WHITESPACE(S) ANYCHARACTER
-    static std::regex expr("( *\\d+\\. +)(?=\\S+)");
-
-    if (std::regex_search(sTextRange, match, expr))
+    if (std::regex_search(sTextRange, match, enumPattern))
     {
         if (match.position(0) && sTextRange[match.position(0)-1] != '\n')
             return std::string::npos;

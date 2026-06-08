@@ -129,6 +129,7 @@ namespace NumeRe
     {
         static bool bBeginEnd = false;
         static size_t nLastIndent = 0;
+        static const std::regex enumPattern("(\\d+\\.|-) +.+");
 
         if (sNewDocLine.find_first_not_of(" \t") == std::string::npos)
         {
@@ -166,7 +167,7 @@ namespace NumeRe
                 sDocumentation += "\n    ";
         }
         else if (sNewDocLine.length()
-                 && std::regex_match(sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 10), std::regex("(\\d+\\.|-) +.+")))
+                 && std::regex_match(sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 10), enumPattern))
         {
             nLastIndent = sNewDocLine.find_first_not_of(" \t", sNewDocLine.find_first_of(".-")+1);
 

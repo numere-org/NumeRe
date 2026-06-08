@@ -162,6 +162,9 @@ namespace mu
     /////////////////////////////////////////////////
     static NumericalType fastPromoteAddSub(NumericalType fst, NumericalType scnd)
     {
+        if (fst == INVALID || scnd == INVALID)
+            return INVALID;
+
         return PROMOTIONTABLEADDSUB[fst * AUTO + scnd];
     }
 
@@ -179,6 +182,9 @@ namespace mu
     /////////////////////////////////////////////////
     static NumericalType fastPromoteMulDiv(NumericalType fst, NumericalType scnd)
     {
+        if (fst == INVALID || scnd == INVALID)
+            return INVALID;
+
         return PROMOTIONTABLEMULDIV[fst * AUTO + scnd];
     }
 
@@ -734,7 +740,8 @@ namespace mu
         static constexpr Numerical::InternalType CONVERSIONTABLE[] = {
             Numerical::UINT, Numerical::UINT, Numerical::UINT, Numerical::UINT, Numerical::UINT,
             Numerical::INT, Numerical::INT, Numerical::INT, Numerical::INT,
-            Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX};
+            Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX, Numerical::COMPLEX,
+            Numerical::COMPLEX, Numerical::COMPLEX};
 
         return CONVERSIONTABLE[promotion];
     }
@@ -793,7 +800,7 @@ namespace mu
         if (m_type <= I64)
             return *reinterpret_cast<const int64_t*>(&m_storage);
 
-        if (m_type <= DATETIME)
+        if (m_type <= DATETIME || m_type == INVALID)
             return intCast(*reinterpret_cast<const double*>(&m_storage));
 
         return intCast(*reinterpret_cast<const std::complex<double>*>(m_storage));
@@ -815,7 +822,7 @@ namespace mu
         if (m_type <= I64)
             return (uint64_t)*reinterpret_cast<const int64_t*>(&m_storage);
 
-        if (m_type <= DATETIME)
+        if (m_type <= DATETIME || m_type == INVALID)
             return (uint64_t)intCast(*reinterpret_cast<const double*>(&m_storage));
 
         return (uint64_t)intCast(*reinterpret_cast<const std::complex<double>*>(m_storage));
@@ -837,7 +844,7 @@ namespace mu
         if (m_type <= I64)
             return *reinterpret_cast<const int64_t*>(&m_storage);
 
-        if (m_type <= DATETIME)
+        if (m_type <= DATETIME || m_type == INVALID)
             return *reinterpret_cast<const double*>(&m_storage);
 
         return reinterpret_cast<const std::complex<double>*>(m_storage)->real();
@@ -859,7 +866,7 @@ namespace mu
         if (m_type <= I64)
             return *reinterpret_cast<const int64_t*>(&m_storage);
 
-        if (m_type <= DATETIME)
+        if (m_type <= DATETIME || m_type == INVALID)
             return *reinterpret_cast<const double*>(&m_storage);
 
         return *reinterpret_cast<const std::complex<double>*>(m_storage);

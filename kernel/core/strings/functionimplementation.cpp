@@ -2752,6 +2752,8 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
     size_t elems = rgxView.size();
 
 #ifndef PARSERSTANDALONE
+    std::regex expr;
+
     for (size_t i = 0; i < elems; i++)
     {
         StringView r = rgxView.get(i).getStr();
@@ -2779,7 +2781,11 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
         try
         {
             std::smatch match;
-            std::regex expr(r.to_string());
+
+            // Only compile a new regex if strictly necessary
+            if (!i || (rgx.size() > 1 && rgxView.get(i-1).getStr() != r))
+                expr = r.to_string();
+
             std::string sSubView = s.subview(p-1, l).to_string();
 
             if (std::regex_search(sSubView, match, expr))
@@ -2835,7 +2841,7 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
                     message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
                     break;
                 case std::regex_constants::error_complexity:
-                    message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
                     break;
                 case std::regex_constants::error_stack:
                     message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
