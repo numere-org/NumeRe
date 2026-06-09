@@ -1420,9 +1420,9 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
                 AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                        "GUI_ANALYZER_MISSINGPARENTHESIS");
         }
-        else
+        else if (std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) == m_DRAW_FUNCS.end())
         {
-            // Check for missing arguments
+            // Check for missing arguments if the function is not a drawing function
             std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
             EndlessVector<std::string> args = getAllArguments(sArgument);
 

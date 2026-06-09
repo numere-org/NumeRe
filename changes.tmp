@@ -10,3 +10,4 @@ Cleaned	The static code analyzer won't mark methods that have no required argume
 Fixed	A rare crash that occured if tabs in the data viewer are dragged around, has been resolved.
 Applied	The method TAB().replacevals() does now accept a scalar value as a common replacement value for a vector or values.
 Updated	All occurences of regular expressions have been updated to be more runtime-efficient.
+Removed	Due to the highly flexible argument list of drawing functions, those are not checked by the code analyzer any more.
