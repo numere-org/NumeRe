@@ -226,6 +226,14 @@ mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu);
 
 mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base); // OPT=1
 
+mu::Array bitfnc_cast(const mu::Array& a, const mu::Array& type);
+mu::Array bitfnc_mask(const mu::Array& a, const mu::Array& mask);
+mu::Array bitfnc_shift(const mu::Array& a, const mu::Array& level);
+mu::Array bitfnc_and(const mu::Array& a, const mu::Array& b);
+mu::Array bitfnc_or(const mu::Array& a, const mu::Array& b);
+mu::Array bitfnc_xor(const mu::Array& a, const mu::Array& b);
+mu::Array bitfnc_not(const mu::Array& a);
+
 // Operator functions
 mu::Array oprt_Mod(const mu::Array&, const mu::Array&);
 mu::Array oprt_XOR(const mu::Array&, const mu::Array&);

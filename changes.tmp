@@ -14,3 +14,4 @@ Removed	Due to the highly flexible argument list of drawing functions, those are
 Added	The path object now has the two methods "twig" for getting the parent entry of the leaf and "leafless" for returning a new path without the current leaf.
 Fixed	The code analyzer now understands better, what a wrapped line is and will examine the whole (logical) line at once.
 Fixed	The new code parser will handle more constants and heuristics won't get overwritten by generic types like "any" any longer.
+Added	Functions for bit-level logic and manipulation haven been added: "bitand()", "bitor()", "bitxor()", "bitnot()", "bitshift()", "bitmask()" and "bitcast()"
