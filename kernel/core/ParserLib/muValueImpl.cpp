@@ -3051,6 +3051,8 @@ namespace mu
         declareMethod(MethodDefinition("root", 0));
         declareMethod(MethodDefinition("leaf", 0));
         declareMethod(MethodDefinition("depth", 0));
+        declareMethod(MethodDefinition("twig", 0));
+        declareMethod(MethodDefinition("leafless", 0));
         declareMethod(MethodDefinition("trunk", 1));
         declareMethod(MethodDefinition("branch", 1));
         declareMethod(MethodDefinition("uniquetrunk", 1));
@@ -3333,6 +3335,10 @@ namespace mu
             return new StrValue(m_val.root());
         else if (sMethod == "leaf")
             return new StrValue(m_val.leaf());
+        else if (sMethod == "twig")
+            return new StrValue(m_val.depth() > 1 ? m_val.at(m_val.depth()-2) : std::string());
+        else if (sMethod == "leafless")
+            return new PathValue(m_val.getSegment(0, m_val.depth()-1));
         else if (sMethod == "depth")
             return new NumValue(m_val.depth());
 

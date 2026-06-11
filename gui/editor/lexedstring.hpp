@@ -68,6 +68,8 @@ class LexedLine
         static const LexedString BUFFER;
 
     public:
+        LexedLine() = default;
+
         /////////////////////////////////////////////////
         /// \brief Construct an instance from a vector of
         /// LexedString items.
@@ -77,6 +79,21 @@ class LexedLine
         /////////////////////////////////////////////////
         LexedLine(const std::vector<LexedString>& line) : m_line(line)
         { }
+
+        LexedLine& operator=(const LexedLine&) = default;
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a new vector.
+        ///
+        /// \param line const std::vector<LexedString>&
+        /// \return LexedLine&
+        ///
+        /////////////////////////////////////////////////
+        LexedLine& operator=(const std::vector<LexedString>& line)
+        {
+            m_line = line;
+            return *this;
+        }
 
         const LexedString& operator[](size_t i) const;
 
@@ -100,6 +117,17 @@ class LexedLine
         void advanceToNextExpression(size_t& pos) const;
 
         std::string dump() const;
+
+        /////////////////////////////////////////////////
+        /// \brief Clear the internal line.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void clear()
+        {
+            m_line.clear();
+        }
 };
 
 

@@ -11,3 +11,6 @@ Fixed	A rare crash that occured if tabs in the data viewer are dragged around, h
 Applied	The method TAB().replacevals() does now accept a scalar value as a common replacement value for a vector or values.
 Updated	All occurences of regular expressions have been updated to be more runtime-efficient.
 Removed	Due to the highly flexible argument list of drawing functions, those are not checked by the code analyzer any more.
+Added	The path object now has the two methods "twig" for getting the parent entry of the leaf and "leafless" for returning a new path without the current leaf.
+Fixed	The code analyzer now understands better, what a wrapped line is and will examine the whole (logical) line at once.
+Fixed	The new code parser will handle more constants and heuristics won't get overwritten by generic types like "any" any longer.

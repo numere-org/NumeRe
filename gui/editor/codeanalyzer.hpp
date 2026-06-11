@@ -25,6 +25,7 @@
 #include <wx/string.h>
 
 #include "../../kernel/core/symdef.hpp"
+#include "lexedstring.hpp"
 
 /////////////////////////////////////////////////
 /// \brief Stores the number of annotations for
@@ -77,6 +78,8 @@ class CodeAnalyzer
 
         int m_nCurPos;
         int m_nCurrentLine;
+        std::pair<int,int> m_currentLogicalLine;
+        LexedLine m_currentLexedLine;
 
         bool m_hasProcedureDefinition;
         std::vector<std::vector<int>> m_vCurrentScopes;

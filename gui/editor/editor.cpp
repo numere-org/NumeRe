@@ -9075,11 +9075,14 @@ void NumeReEditor::parse(int requestFromLine)
         int rootLine = requestFromLine;
 
         // Check if line is continued and if so go to start of line
-        while (rootLine > 0 && GetLine(rootLine - 1).EndsWith("\\\\"))
+        while (rootLine > 0 && isWrappedLine(rootLine))
             rootLine--;
 
         int contLine = rootLine;
         std::vector<LexedString> lexedTokens = getLexedTokens(rootLine);
+
+        while (lexedTokens.size() && lexedTokens.back().is({wxSTC_NSCR_COMMENT_BLOCK, wxSTC_NSCR_COMMENT_LINE}))
+            lexedTokens.pop_back();
 
         // Attach wrapped lines
         while (lexedTokens.size()
@@ -9134,6 +9137,10 @@ void NumeReEditor::parseSection(int startLine, int endLine)
     for (int i = startLine; i < endLine; i++)
     {
         std::vector<LexedString> lexedTokens = getLexedTokens(i);
+
+        while (lexedTokens.size() && lexedTokens.back().is({wxSTC_NSCR_COMMENT_BLOCK, wxSTC_NSCR_COMMENT_LINE}))
+            lexedTokens.pop_back();
+
         size_t rootLine = i;
 
         // Attach wrapped lines
@@ -9176,7 +9183,7 @@ int NumeReEditor::getStartLine(int line)
         line = GetFoldParent(line - 1) + 1;
 
     // Check if line is continued and if so go to start of line
-    while (GetLine(line - 2).EndsWith("\\\\"))
+    while (isWrappedLine(line-1))
         line--;
 
     return line;
@@ -9707,6 +9714,34 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 
 
 /////////////////////////////////////////////////
+/// \brief Return the start and end position of a
+/// logical line, i.e. a line, which might be
+/// wrapped around using the "\\" character
+/// sequence.
+///
+/// \param lineNum int
+/// \return std::pair<int, int>
+///
+/////////////////////////////////////////////////
+std::pair<int, int> NumeReEditor::getLogicalLine(int lineNum)
+{
+    // Check if line is continued and if so go to start of line
+    while (lineNum > 0 && isWrappedLine(lineNum))
+        lineNum--;
+
+    int startPos = GetLineIndentPosition(lineNum);
+
+    // Check if this line is wrapped and if so got to the next line
+    while (lineNum+1 < GetLineCount() && isWrappedLine(lineNum+1))
+        lineNum++;
+
+    int endPos = GetLineEndPosition(lineNum);
+
+    return std::make_pair(startPos, endPos);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Splits possibly aggregated operators
 /// to their individual atoms.
 ///
@@ -9717,8 +9752,9 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 /////////////////////////////////////////////////
 static void splitLexedOperators(StringView textRange, std::vector<LexedString>& lexedTokens)
 {
-    static std::array<std::string, 16> validMultiByteOperators({"**=", "*=", "+=", "-=", "/=", "^=", "->", ":=",
-                                                                "==", "!=", "<=", ">=", "&&", "||", "??", "\\\\"});
+    static std::array<std::string, 18> validMultiByteOperators({"**=", "*=", "+=", "-=", "/=", "^=", "->", ":=",
+                                                                "==", "!=", "<=", ">=", "++", "--", "&&", "||",
+                                                                "??", "\\\\"});
 
     while (textRange.length())
     {
@@ -9798,6 +9834,41 @@ std::vector<LexedString> NumeReEditor::getLexedTokens(int lineNum)
             else
                 lexedTokens.push_back(LexedString(textRange, style));
         }
+    }
+
+    return lexedTokens;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the selected logical line
+/// separated into lexed tokens.
+///
+/// \param lineNum int
+/// \return std::vector<LexedString>
+///
+/////////////////////////////////////////////////
+std::vector<LexedString> NumeReEditor::getLexedTokensForLogicalLine(int lineNum)
+{
+    // Check if line is continued and if so go to start of line
+    while (lineNum > 0 && isWrappedLine(lineNum))
+        lineNum--;
+
+    int contLine = lineNum;
+    std::vector<LexedString> lexedTokens = getLexedTokens(lineNum);
+
+    while (lexedTokens.size() && lexedTokens.back().is({wxSTC_NSCR_COMMENT_BLOCK, wxSTC_NSCR_COMMENT_LINE}))
+        lexedTokens.pop_back();
+
+    // Attach wrapped lines
+    while (lexedTokens.size()
+           && lexedTokens.back().m_str == "\\\\"
+           && contLine+1 < GetLineCount())
+    {
+        lexedTokens.pop_back();
+        contLine++;
+        std::vector<LexedString> nextTokens = getLexedTokens(contLine);
+        lexedTokens.insert(lexedTokens.end(), nextTokens.begin(), nextTokens.end());
     }
 
     return lexedTokens;

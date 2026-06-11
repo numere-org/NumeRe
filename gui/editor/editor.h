@@ -212,7 +212,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
 		void Transpose(int nFirstLine = 0, int nLastLine = -1);
 		wxString ExtractAsHTML(int nFirstLine = 0, int nLastLine = -1);
+		std::pair<int, int> getLogicalLine(int lineNum);
 		std::vector<LexedString> getLexedTokens(int lineNum);
+		std::vector<LexedString> getLexedTokensForLogicalLine(int lineNum);
 
 		void ToggleSettings(int _setting);
 		bool getEditorSetting(EditorSettings _setting);

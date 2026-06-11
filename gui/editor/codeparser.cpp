@@ -692,6 +692,29 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
     if (line[pos].is(wxSTC_NSCR_CONSTANTS))
         return m_provider.getConstant(line[pos].m_str).sDefinition.find('"') != std::string::npos ? "string" : "value";
 
+    // Special vals
+    if (line[pos].is(wxSTC_NSCR_PREDEFS))
+    {
+        if (line[pos].m_str == "inf"
+            || line[pos].m_str == "nan"
+            || line[pos].m_str == "I"
+            || line[pos].m_str == "nlines"
+            || line[pos].m_str == "nrows"
+            || line[pos].m_str == "ncols"
+            || line[pos].m_str == "nlayers"
+            || line[pos].m_str == "ndim")
+            return "value";
+
+        if (line[pos].m_str == "data"
+            || line[pos].m_str == "table"
+            || line[pos].m_str == "string")
+            return "table";
+
+        if (line[pos].m_str == "true"
+            || line[pos].m_str == "false")
+            return "logical";
+    }
+
     // Procedures
     if (line[pos].is(wxSTC_NSCR_PROCEDURES))
     {
@@ -744,10 +767,10 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
         std::string varType = getExprType(lineNum, line, closingBrace);
         //g_logger.info("lineNum=" + toString(lineNum) + ", varType=" + varType);
 
-        if (varType.front() == '{' && varType.back())
+        if (varType.front() == '{' && varType.back() == '}')
             types = getAllArguments(varType.substr(1, varType.length()-2));
-        else
-            types.push_back(varType);
+        else // Clusters and tables will likely be expanded into their unique types
+            types.push_back((varType == "cluster" || varType == "table") ? "void" : varType);
     }
     else
         types.push_back("void");
@@ -783,7 +806,7 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
             {
                 ParserSymbol& symbol = getMutableSymbol(varName, lineNum, false);
 
-                if (type != "void" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
+                if (type != "void" && type != "any" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
                 {
                     symbol.m_type = type;
                     symbol.m_heuristicType = false;
