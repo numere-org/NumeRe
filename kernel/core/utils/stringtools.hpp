@@ -113,6 +113,7 @@ enum ConvertibleType
     CONVTYPE_NONE,
     CONVTYPE_VALUE,
     CONVTYPE_DATE_TIME,
+    CONVTYPE_DURATION,
     CONVTYPE_LOGICAL
 };
 
@@ -140,6 +141,8 @@ enum NumberFormat
 
     NUM_DECIMAL_EU = 0x1,  // '.' as thousand seperator & ',' as decimal seperator
     NUM_DECIMAL_US = 0x2,   // ',' as thousand seperator & '.' as decimal seperator
+
+    NUM_IS_COMPLEX = 0x10,
 
     NUM_K_SPACE = 0x100,
     NUM_K_EU = 0x200,
@@ -180,6 +183,7 @@ struct NumberFormatsVoter
     int m_last_idx = -1;
     std::string m_tape;
     int m_curr_format = 0;
+    bool m_isComplex = false;
 
     static const inline std::map<std::string, int> num_format_lookup =
     {
@@ -206,7 +210,8 @@ struct NumberFormatsVoter
     int checkNumFormat(const std::string& key) const
     {
         auto elem = num_format_lookup.find(key);
-        if(elem != num_format_lookup.end())
+
+        if (elem != num_format_lookup.end())
             return elem->second;
 
         return 0;
@@ -222,11 +227,12 @@ struct NumberFormatsVoter
     void pushInbetween(int idx)
     {
         int digs_inbetween = idx - m_last_idx;
-        if(digs_inbetween > 0)
+
+        if (digs_inbetween > 0)
         {
-            if(digs_inbetween < 3)
+            if (digs_inbetween < 3)
                 m_tape.push_back('<');
-            else if(digs_inbetween > 3)
+            else if (digs_inbetween > 3)
                 m_tape.push_back('>');
             else
                 m_tape.push_back('=');
@@ -241,7 +247,7 @@ struct NumberFormatsVoter
     /////////////////////////////////////////////////
     NumberFormatsVoter()
     {
-        for(size_t i = 0; i < FMT_COUNT; i++)
+        for (size_t i = 0; i < FMT_COUNT; i++)
             m_num_format_votes[i] = 0;
     }
 
@@ -307,8 +313,32 @@ struct NumberFormatsVoter
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void endParseAndVote(int idx){
+    void endParseAndVote(int idx)
+    {
         vote(endParseNumber(idx));
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Add a complex number to the vote.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void makeComplex()
+    {
+        m_isComplex = true;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Return, whether the number format has
+    /// been switched to complex values.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool isComplex() const
+    {
+        return m_isComplex;
     }
 
     /////////////////////////////////////////////////
@@ -320,30 +350,30 @@ struct NumberFormatsVoter
     /////////////////////////////////////////////////
     void vote(int numType)
     {
-        if((numType & NUM_DECIMAL_EU && numType & NUM_K_US) ||
-           (numType & NUM_DECIMAL_US && numType & NUM_K_EU))
+        if ((numType & NUM_DECIMAL_EU && numType & NUM_K_US)
+            || (numType & NUM_DECIMAL_US && numType & NUM_K_EU))
         {
             m_num_format_votes[FMT_INVALID]++;  // INVALID Combination
         }
         else
         {
-            if(numType & NUM_DECIMAL_EU)
+            if (numType & NUM_DECIMAL_EU)
                 m_num_format_votes[FMT_DEC_EU]++;
-            else if(numType & NUM_DECIMAL_US)
+            else if (numType & NUM_DECIMAL_US)
                 m_num_format_votes[FMT_DEC_US]++;
 
-            if(numType & NUM_K_EU)
+            if (numType & NUM_K_EU)
                 m_num_format_votes[FMT_K_EU]++;
-            else if(numType & NUM_K_US)
+            else if (numType & NUM_K_US)
                 m_num_format_votes[FMT_K_US]++;
-            else if(numType & NUM_K_SPACE)
+            else if (numType & NUM_K_SPACE)
                 m_num_format_votes[FMT_K_SPACE]++;
-            else if(numType & NUM_AMBIGIOUS_DOT)
+            else if (numType & NUM_AMBIGIOUS_DOT)
                 m_num_format_votes[FMT_AMBIGIOUS_DOT]++;
-            else if(numType & NUM_AMBIGIOUS_COM)
+            else if (numType & NUM_AMBIGIOUS_COM)
                 m_num_format_votes[FMT_AMBIGIOUS_COM]++;
 
-            if(numType & NUM_INVALID)
+            if (numType & NUM_INVALID)
                 m_num_format_votes[FMT_INVALID]++;
         }
     }
@@ -360,7 +390,7 @@ struct NumberFormatsVoter
             return NUM_INVALID;
 
         int cnt_set = 0;
-        int num_format = 0;
+        int num_format = m_isComplex ? NUM_IS_COMPLEX : 0;
 
         if (m_num_format_votes[FMT_K_EU])
         {
@@ -492,6 +522,7 @@ double StrToDb(const std::string&);
 double StrToLogical(const std::string&);
 std::complex<double> StrToCmplx(const std::string&);
 sys_time_point StrToTime(const std::string&);
+double parseDuration(const std::string& sDuration);
 double versionToFloat(std::string);
 std::string floatToVersion(double);
 

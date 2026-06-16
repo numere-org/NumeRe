@@ -177,6 +177,9 @@ Memory& Memory::operator=(const Memory& other)
             case TableColumn::TYPE_DATETIME:
                 memArray[i].reset(new DateTimeColumn);
                 break;
+            case TableColumn::TYPE_DURATION:
+                memArray[i].reset(new DurationColumn);
+                break;
             case TableColumn::TYPE_STRING:
                 memArray[i].reset(new StringColumn);
                 break;
@@ -929,8 +932,8 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
-    else if (_type == TableColumn::TYPE_MIXED)
-        _type = TableColumn::TYPE_NONE; // Enable autoconversions
+    //else if (_type == TableColumn::TYPE_MIXED)
+    //    _type = TableColumn::TYPE_NONE; // Enable autoconversions
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -941,7 +944,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
         if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
             continue;
 
-        if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type)
+        if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type && memArray[_vCol[i]]->m_type != TableColumn::TYPE_NONE)
         {
             TableColumn* col = memArray[_vCol[i]]->convert(_type);
 
@@ -950,7 +953,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
             if (col && col != memArray[_vCol[i]].get())
                 memArray[_vCol[i]].reset(col);
             else
-                success = _type == TableColumn::TYPE_NONE; // Auto conversions do not flag errors
+                success = _type == TableColumn::TYPE_MIXED; // Auto conversions do not flag errors
         }
     }
 
@@ -978,8 +981,8 @@ bool Memory::convertEmptyColumns(const VectorIndex& _vCol, const std::string& _s
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
-    else if (_type == TableColumn::TYPE_MIXED)
-        _type = TableColumn::TYPE_NONE; // Enable autoconversions
+    //else if (_type == TableColumn::TYPE_MIXED)
+    //    _type = TableColumn::TYPE_NONE; // Enable autoconversions
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -1427,7 +1430,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColu
 /////////////////////////////////////////////////
 void Memory::writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData)
 {
-    promote_if_needed(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
+    promote_if_needed(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE_CF64);
     memArray[_nCol]->setValue(_nLine, _dData);
 }
 
@@ -1976,6 +1979,8 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
                     memArray[cols[j]].reset(createValueTypeColumn(tabCol->m_type));
                 else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
                     memArray[cols[j]].reset(new DateTimeColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_DURATION)
+                    memArray[cols[j]].reset(new DurationColumn);
                 else if (tabCol->m_type == TableColumn::TYPE_STRING)
                     memArray[cols[j]].reset(new StringColumn);
                 else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)

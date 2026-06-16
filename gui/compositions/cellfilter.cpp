@@ -356,6 +356,8 @@ void CellFilterDialog::OnButtonClick(wxCommandEvent& event)
         {
             if (isConvertible(s, CONVTYPE_DATE_TIME))
                 m_condition.m_vals.push_back(to_double(StrToTime(s)));
+            else if (isConvertible(s, CONVTYPE_DURATION))
+                m_condition.m_vals.push_back(parseDuration(s));
             else if (isConvertible(s, CONVTYPE_VALUE))
                 m_condition.m_vals.push_back(StrToCmplx(s));
             else

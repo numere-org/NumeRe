@@ -198,7 +198,7 @@ namespace mu
             Numerical(int64_t data, NumericalType type = I64);
             Numerical(uint64_t data, NumericalType type = UI64);
             Numerical(float data);
-            Numerical(double data);
+            Numerical(double data, NumericalType type = AUTO);
             Numerical(bool data);
             Numerical(const std::complex<float>& data);
             Numerical(const std::complex<double>& data = 0.0, NumericalType type = AUTO);

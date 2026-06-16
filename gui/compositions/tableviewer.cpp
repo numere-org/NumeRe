@@ -165,9 +165,14 @@ void TableViewer::layoutGrid()
 
                 if (m_currentColTypes[j] == TableColumn::TYPE_DATETIME)
                 {
-                    //AutoSizeColumn(j);
-                    SetColSize(j, 120);
-                    SetColMinimalWidth(j, 120);
+                    SetColSize(j, 135);
+                    SetColMinimalWidth(j, 135);
+                }
+
+                if (m_currentColTypes[j] == TableColumn::TYPE_DURATION)
+                {
+                    SetColSize(j, 140);
+                    SetColMinimalWidth(j, 140);
                 }
             }
         }
@@ -1348,6 +1353,9 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
 
         if (isConvertible(cellValue, CONVTYPE_DATE_TIME))
             return to_double(StrToTime(cellValue));
+
+        if (isConvertible(cellValue, CONVTYPE_DURATION))
+            return parseDuration(cellValue);
     }
 
     return NAN;
@@ -1379,6 +1387,9 @@ mu::Value TableViewer::get(int row, int col)
 
         if (isConvertible(cellValue, CONVTYPE_DATE_TIME))
             return mu::Value(StrToTime(cellValue));
+
+        if (isConvertible(cellValue, CONVTYPE_DURATION))
+            return mu::Numerical(parseDuration(cellValue), mu::DURATION);
     }
 
     return mu::Value(toInternalString(cellValue));
@@ -1548,6 +1559,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     // Calculate the simple statistics
     bool isDateTime = false;
+    bool isDuration = false;
     wxString colTypes;
     wxGridCellsExtent selectedExtent = coords.getExtent();
 
@@ -1564,6 +1576,9 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
         if (types.size() == 1u && *types.begin() == TableColumn::TYPE_DATETIME)
             isDateTime = true;
+
+        if (types.size() == 1u && *types.begin() == TableColumn::TYPE_DURATION)
+            isDuration = true;
 
         for (int type : types)
         {
@@ -1597,6 +1612,14 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
         statustext << L" ]  |  \u0394t " << formatDuration(dMax-dMin);
         statustext << L"  |  \u03A3t " << formatDuration(dSum.real());
         statustext << L"  |  t\u0305 " << toString(to_timePoint(dAvg.real()), GET_SHORTEST);
+    }
+    else if (isDuration && !isnan(dMin))
+    {
+        statustext = "[ " + formatDuration(dMin);
+        statustext << " : " << formatDuration(dMax);
+        statustext << L" ]  |  \u0394t " << formatDuration(dMax-dMin);
+        statustext << L"  |  \u03A3t " << formatDuration(dSum.real());
+        statustext << L"  |  t\u0305 " << formatDuration(dAvg.real());
     }
     else
     {

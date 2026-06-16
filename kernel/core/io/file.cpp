@@ -885,6 +885,7 @@ namespace NumeRe
         std::vector<size_t> vColumnWidths;
         const size_t NUMBERFIELDLENGTH = nPrecFields + 7;
         const size_t DATEFIELDLENGTH = 24;
+        const size_t DURATIONFIELDLENGTH = 28;
 
         // Go through the column heads in memory, determine
         // their cell extents and store the maximal value of
@@ -921,6 +922,8 @@ namespace NumeRe
             }
             else if (fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
                 vColumnWidths.push_back(std::max(DATEFIELDLENGTH, pCellExtents.first));
+            else if (fileData->at(j)->m_type == TableColumn::TYPE_DURATION)
+                vColumnWidths.push_back(std::max(DURATIONFIELDLENGTH, pCellExtents.first));
             else
                 vColumnWidths.push_back(std::max(NUMBERFIELDLENGTH, pCellExtents.first));
 
@@ -1092,6 +1095,7 @@ namespace NumeRe
             if (fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL
                 || fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL
                 || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME
+                || fileData->at(j)->m_type == TableColumn::TYPE_DURATION
                 || TableColumn::isValueType(fileData->at(j)->m_type))
                 fFileStream << ":";
             else
@@ -1154,7 +1158,8 @@ namespace NumeRe
                     || fileData->at(m)->m_type == TableColumn::TYPE_CATEGORICAL)
                     fFileStream << "\t\t<td align=\"center\">";
                 else if (TableColumn::isValueType(fileData->at(m)->m_type)
-                         || fileData->at(m)->m_type == TableColumn::TYPE_DATETIME)
+                         || fileData->at(m)->m_type == TableColumn::TYPE_DATETIME
+                         || fileData->at(m)->m_type == TableColumn::TYPE_DURATION)
                     fFileStream << "\t\t<td align=\"right\">";
                 else
                     fFileStream << "\t\t<td>";
@@ -1348,6 +1353,7 @@ namespace NumeRe
 
         if (TableColumn::isValueType(col->m_type)
             || col->m_type == TableColumn::TYPE_DATETIME
+            || col->m_type == TableColumn::TYPE_DURATION
             || col->m_type == TableColumn::TYPE_LOGICAL)
         {
             // All these colums write complex values
@@ -1649,7 +1655,7 @@ namespace NumeRe
 
         if (sDataType == "DTYPE=COMPLEX")
         {
-            col.reset(new ValueColumn);
+            col.reset(new CF64ValueColumn);
             col->m_sHeadLine = headAndUnit.first;
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
@@ -1743,6 +1749,8 @@ namespace NumeRe
             // Create the column for the corresponding CTYPE
             if (sColType == "CTYPE=DATETIME")
                 col.reset(new DateTimeColumn);
+            else if (sColType == "CTYPE=DURATION")
+                col.reset(new DurationColumn);
             else if (sColType == "CTYPE=LOGICAL")
                 col.reset(new LogicalColumn);
             else if (type != TableColumn::TYPE_NONE)
@@ -5045,7 +5053,7 @@ namespace NumeRe
             else if (bReadComplexData)
             {
                 if (nType & NT_FP64)
-                    fileData->at(j).reset(new ValueColumn);
+                    fileData->at(j).reset(new CF64ValueColumn);
                 else
                     fileData->at(j).reset(new CF32ValueColumn);
             }

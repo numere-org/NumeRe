@@ -492,11 +492,12 @@ namespace mu
     /// \brief Construct a Numerical from a double.
     ///
     /// \param data double
+    /// \param type NumericalType
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(double data)
+    Numerical::Numerical(double data, NumericalType type)
     {
-        writeFloat(data, F64);
+        writeFloat(data, type == AUTO ? F64 : type);
     }
 
 

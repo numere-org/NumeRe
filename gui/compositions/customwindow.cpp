@@ -1370,6 +1370,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                             v.push_back(mu::Value(StrToCmplx(cur)));
                         else if (isConvertible(cur, CONVTYPE_DATE_TIME))
                             v.push_back(mu::Value(StrToTime(cur)));
+                        else if (isConvertible(cur, CONVTYPE_DURATION))
+                            v.push_back(mu::Numerical(parseDuration(cur), mu::DURATION));
                         else if (isConvertible(cur, CONVTYPE_LOGICAL))
                             v.push_back(mu::Value(StrToLogical(cur)));
                         else
@@ -2172,6 +2174,8 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                             v.push_back(mu::Value(StrToCmplx(cur)));
                         else if (isConvertible(cur, CONVTYPE_DATE_TIME))
                             v.push_back(mu::Value(StrToTime(cur)));
+                        else if (isConvertible(cur, CONVTYPE_DURATION))
+                            v.push_back(mu::Numerical(parseDuration(cur), mu::DURATION));
                         else if (isConvertible(cur, CONVTYPE_LOGICAL))
                             v.push_back(mu::Value(StrToLogical(cur)));
                         else

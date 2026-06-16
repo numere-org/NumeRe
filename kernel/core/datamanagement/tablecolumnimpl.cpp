@@ -48,6 +48,8 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, i
                 convType = CONVTYPE_VALUE;
             else if (isConvertible(vVals[i], CONVTYPE_LOGICAL))
                 convType = CONVTYPE_LOGICAL;
+            else if (isConvertible(vVals[i], CONVTYPE_DURATION))
+                convType = CONVTYPE_DURATION;
             else if (isConvertible(vVals[i], CONVTYPE_DATE_TIME))
                 convType = CONVTYPE_DATE_TIME;
             else
@@ -70,6 +72,17 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, i
                 // Do nothing here, that's already fine, as CONVTYPE_VALUE
                 // is more general
             }
+            else if (convType == CONVTYPE_DURATION && isConvertible(vVals[i], CONVTYPE_DATE_TIME))
+            {
+                // CONVTYPE_DATE_TIME is more general than CONVTYPE_DURATON,
+                // therefore we use this as common type
+                convType = CONVTYPE_DATE_TIME;
+            }
+            else if (convType == CONVTYPE_DATE_TIME && isConvertible(vVals[i], CONVTYPE_DURATION))
+            {
+                // Do nothing here, that's already fine, as CONVTYPE_DATE_TIME
+                // is more general
+            }
             else
             {
                 convType = CONVTYPE_NONE;
@@ -78,9 +91,11 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, i
         }
     }
 
-    if(convType == CONVTYPE_VALUE) {
+    if (convType == CONVTYPE_VALUE)
+    {
         numFormat = voter.getFormat();
-        if(numFormat & NUM_INVALID)
+
+        if (numFormat & NUM_INVALID)
             return CONVTYPE_NONE;
     }
 
@@ -298,7 +313,7 @@ DateTimeColumn* DateTimeColumn::copy(const VectorIndex& idx) const
 /////////////////////////////////////////////////
 void DateTimeColumn::assign(const TableColumn* column)
 {
-    if (column->m_type == TableColumn::TYPE_DATETIME || column->m_type == TableColumn::TYPE_VALUE)
+    if (column->m_type == TableColumn::TYPE_DATETIME)
     {
         assignMetaData(column);
         m_data.clear();
@@ -322,7 +337,9 @@ void DateTimeColumn::assign(const TableColumn* column)
 /////////////////////////////////////////////////
 void DateTimeColumn::insert(const VectorIndex& idx, const TableColumn* column)
 {
-    if (column->m_type == TableColumn::TYPE_DATETIME || column->m_type == TableColumn::TYPE_VALUE)
+    if (column->m_type == TableColumn::TYPE_DATETIME
+        || column->m_type == TableColumn::TYPE_DURATION
+        || isValueType(column->m_type))
         TableColumn::setValue(idx, column->getValue(VectorIndex(0, VectorIndex::OPEN_END)));
     else
         throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
@@ -523,6 +540,19 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
         }
         case TableColumn::TYPE_DATETIME:
             return this;
+        case TableColumn::TYPE_DURATION:
+        {
+            col = new DurationColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!std::isnan(m_data[i]))
+                    col->setValue(i, m_data[i]);
+            }
+
+            break;
+        }
+
         default:
         {
             if (TableColumn::isValueType(type))
@@ -536,6 +566,172 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
     return col;
 }
 
+
+
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief Convert this duration value into a
+/// string representation.
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DurationColumn::getValueAsInternalString(size_t elem) const
+{
+    if (elem < m_data.size() && !std::isnan(m_data[elem]))
+        return formatDuration(m_data[elem]);
+
+    return "nan";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get this duration as a mu::Value.
+///
+/// \param elem size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value DurationColumn::get(size_t elem) const
+{
+    if (elem < m_data.size() && !std::isnan(m_data[elem]))
+        return mu::Numerical(m_data[elem], mu::DURATION);
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a string value.
+///
+/// \param elem size_t
+/// \param sValue const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DurationColumn::setValue(size_t elem, const std::string& sValue)
+{
+    if (isConvertible(sValue, CONVTYPE_DURATION))
+        DateTimeColumn::setValue(elem, parseDuration(sValue));
+    else
+        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue, _lang.get("ERR_NR_3603_INCONVERTIBLE_STRING"));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Copy this column.
+///
+/// \param idx const VectorIndex&
+/// \return DurationColumn*
+///
+/////////////////////////////////////////////////
+DurationColumn* DurationColumn::copy(const VectorIndex& idx) const
+{
+    idx.setOpenEndIndex(size()-1);
+
+    DurationColumn* col = new DurationColumn(idx.size());
+    col->assignMetaData(this);
+
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        col->m_data[i] = getValue(idx[i]).real();
+    }
+
+    return col;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Assign the values of a column.
+///
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void DurationColumn::assign(const TableColumn* column)
+{
+    if (column->m_type == TableColumn::TYPE_DURATION)
+    {
+        assignMetaData(column);
+        m_data.clear();
+
+        for (const auto& val : static_cast<const DurationColumn*>(column)->m_data)
+            m_data.push_back(val);
+    }
+    else
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert this column to a new type.
+///
+/// \param type ColumnType
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* DurationColumn::convert(ColumnType type)
+{
+    TableColumn* col = nullptr;
+
+    switch (type)
+    {
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
+        case TableColumn::TYPE_STRING:
+        {
+            col = new StringColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!std::isnan(m_data[i]))
+                    col->setValue(i, formatDuration(m_data[i]));
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_CATEGORICAL:
+        {
+            col = new CategoricalColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!std::isnan(m_data[i]))
+                    col->setValue(i, formatDuration(m_data[i]));
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_DATETIME:
+        {
+            col = new DateTimeColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!std::isnan(m_data[i]))
+                    col->setValue(i, m_data[i]);
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_DURATION:
+            return this;
+        default:
+        {
+            if (TableColumn::isValueType(type))
+                return convertNumericType(type, this);
+
+            return nullptr;
+        }
+    }
+
+    col->assignMetaData(this);
+    return col;
+}
 
 
 
@@ -1403,6 +1599,7 @@ TableColumn* StringColumn::convert(ColumnType type)
     // Determine first, if a conversion is possible
     int numFormat = 0;
     ConvertibleType convType = detectCommonType(m_data, numFormat);
+    ColumnType defaultNumCol = numFormat & NUM_IS_COMPLEX ? TableColumn::TYPE_VALUE_CF64 : TableColumn::TYPE_VALUE_F64;
 
     switch (type)
     {
@@ -1413,11 +1610,71 @@ TableColumn* StringColumn::convert(ColumnType type)
 
             break;
         }
+        case TableColumn::TYPE_MIXED:
+        {
+            if (convType == CONVTYPE_NONE)
+            {
+                // Try categories as last resort
+                size_t nElems = 0;
+
+                for (size_t i = 0; i < size(); i++)
+                {
+                    if (isValid(i))
+                        nElems++;
+                }
+
+                // Convert to the number of max uniques
+                nElems = std::rint(std::sqrt(nElems));
+
+                // We do not perform sample tests for small numbers
+                bool isCandidate = nElems < 100;
+
+                if (!isCandidate)
+                {
+                    // Make a quick sample test
+                    std::vector<std::string> vStrings(m_data.begin(), m_data.begin()+nElems);
+                    std::sort(vStrings.begin(), vStrings.end());
+                    auto lastUnique = std::unique(vStrings.begin(), vStrings.end());
+
+                    isCandidate = lastUnique - vStrings.begin() <= nElems/2;
+                }
+
+                // Does the sample look promising?
+                if (isCandidate)
+                {
+                    col = new CategoricalColumn(m_data.size());
+                    col->setValue(VectorIndex(0, VectorIndex::OPEN_END), m_data);
+                    col->assignMetaData(this);
+
+                    // If the number of categories is less or equal to the total
+                    // number of VALID elements, we reasonably assume that this is a
+                    // category
+                    if (static_cast<CategoricalColumn*>(col)->getCategories().size() <= nElems)
+                        return col;
+
+                    // Otherwise just return nullptr
+                    delete col;
+                }
+
+                return nullptr;
+            }
+
+            break;
+        }
         case TableColumn::TYPE_DATETIME:
         {
             if (!m_data.size())
                 convType = CONVTYPE_DATE_TIME;
             else if (convType != CONVTYPE_DATE_TIME)
+                return nullptr;
+
+            break;
+        }
+        case TableColumn::TYPE_DURATION:
+        {
+            if (!m_data.size())
+                convType = CONVTYPE_DURATION;
+            else if (convType != CONVTYPE_DURATION)
                 return nullptr;
 
             break;
@@ -1456,8 +1713,10 @@ TableColumn* StringColumn::convert(ColumnType type)
 
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
+    else if (convType == CONVTYPE_DURATION)
+        col = new DurationColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE)
-        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : TableColumn::TYPE_VALUE,
+        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : defaultNumCol,
                                     m_data.size());
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
@@ -1487,6 +1746,10 @@ TableColumn* StringColumn::convert(ColumnType type)
         else if (convType == CONVTYPE_DATE_TIME)
         {
             col->setValue(i, to_double(StrToTime(m_data[i])));
+        }
+        else if (convType == CONVTYPE_DURATION)
+        {
+            col->setValue(i, parseDuration(m_data[i]));
         }
     }
 
@@ -1944,8 +2207,9 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
     TableColumn* col = nullptr;
 
     // Determine first, if a conversion is possible
-    int NumFormat = 0;
-    ConvertibleType convType = detectCommonType(m_categories, NumFormat);
+    int numFormat = 0;
+    ConvertibleType convType = detectCommonType(m_categories, numFormat);
+    ColumnType defaultNumCol = numFormat & NUM_IS_COMPLEX ? TableColumn::TYPE_VALUE_CF64 : TableColumn::TYPE_VALUE_F64;
 
     switch (type)
     {
@@ -1961,6 +2225,15 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             if (!m_data.size())
                 convType = CONVTYPE_DATE_TIME;
             else if (convType != CONVTYPE_DATE_TIME)
+                return nullptr;
+
+            break;
+        }
+        case TableColumn::TYPE_DURATION:
+        {
+            if (!m_data.size())
+                convType = CONVTYPE_DURATION;
+            else if (convType != CONVTYPE_DURATION)
                 return nullptr;
 
             break;
@@ -1999,8 +2272,10 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
+    else if (convType == CONVTYPE_DURATION)
+        col = new DurationColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE)
-        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : TableColumn::TYPE_VALUE,
+        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : defaultNumCol,
                                     m_data.size());
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
@@ -2016,7 +2291,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         else if (convType == CONVTYPE_VALUE)
         {
             std::string strval = m_categories[m_data[i]];
-            strChangeNumberFormat(strval, NumFormat);
+            strChangeNumberFormat(strval, numFormat);
             col->setValue(i, StrToCmplx(strval));
         }
         else if (convType == CONVTYPE_LOGICAL)
@@ -2028,6 +2303,10 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         else if (convType == CONVTYPE_DATE_TIME)
         {
             col->setValue(i, to_double(StrToTime(m_categories[m_data[i]])));
+        }
+        else if (convType == CONVTYPE_DURATION)
+        {
+            col->setValue(i, parseDuration(m_categories[m_data[i]]));
         }
     }
 
@@ -2258,7 +2537,7 @@ void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType oth
 /////////////////////////////////////////////////
 void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
 {
-    if (!col || (col->m_type != type && !col->size()))
+    if (!col || (col->m_type != type && col->m_type != TableColumn::TYPE_NONE && !col->size()))
     {
         std::string sHead = TableColumn::getDefaultColumnHead(colNo);
         std::string sUnit;
@@ -2276,6 +2555,9 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
                 break;
             case TableColumn::TYPE_DATETIME:
                 col.reset(new DateTimeColumn);
+                break;
+            case TableColumn::TYPE_DURATION:
+                col.reset(new DurationColumn);
                 break;
             case TableColumn::TYPE_LOGICAL:
                 col.reset(new LogicalColumn);
@@ -2387,6 +2669,13 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             col->m_sUnit = sUnit;
             break;
         }
+        case TableColumn::TYPE_DURATION:
+        {
+            col.reset(new DurationColumn);
+            col->m_sHeadLine = sHeadLine;
+            col->m_sUnit = sUnit;
+            break;
+        }
         case TableColumn::TYPE_LOGICAL:
         {
             col.reset(new LogicalColumn);
@@ -2452,6 +2741,7 @@ TableColumn::ColumnType to_column_type(const mu::Value& val)
             case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
             case mu::DURATION:
+                return TableColumn::TYPE_DURATION;
             case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
             case mu::F32:
@@ -2519,6 +2809,7 @@ TableColumn::ColumnType to_column_type(const mu::Array& arr)
             case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
             case mu::DURATION:
+                return TableColumn::TYPE_DURATION;
             case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
             case mu::F32:
@@ -2577,6 +2868,8 @@ static mu::NumericalType to_numerical_type(TableColumn::ColumnType type)
             return mu::CF64;
         case TableColumn::TYPE_DATETIME:
             return mu::DATETIME;
+        case TableColumn::TYPE_DURATION:
+            return mu::DURATION;
         case TableColumn::TYPE_LOGICAL:
             return mu::LOGICAL;
     }
@@ -2633,6 +2926,7 @@ TableColumn::ColumnType to_promoted_type(TableColumn::ColumnType current, TableC
             case mu::UI64:
                 return TableColumn::TYPE_VALUE_UI64;
             case mu::DURATION:
+                return TableColumn::TYPE_DURATION;
             case mu::DATETIME:
                 return TableColumn::TYPE_DATETIME;
             case mu::F32:
@@ -2689,8 +2983,8 @@ TableColumn* createValueTypeColumn(TableColumn::ColumnType type, size_t nSize)
         case TableColumn::TYPE_VALUE_CF32:
             return new CF32ValueColumn(nSize);
         //case TableColumn::TYPE_VALUE_CF64: // Reminder that this might change
-        case TableColumn::TYPE_VALUE:
-            return new ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_CF64:
+            return new CF64ValueColumn(nSize);
     }
 
     return nullptr;

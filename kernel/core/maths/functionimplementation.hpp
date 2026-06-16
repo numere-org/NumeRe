@@ -282,6 +282,8 @@ mu::Array cast_numerical(const mu::Array& vals)
             ret.push_back(mu::Numerical( static_cast<T>(val.getNum().asF64()) ));
         else if (isConvertible(val.getStr(), CONVTYPE_DATE_TIME))
             ret.push_back(mu::Numerical( static_cast<T>(to_double(StrToTime(val.getStr()))) ));
+        else if (isConvertible(val.getStr(), CONVTYPE_DURATION))
+            ret.push_back(mu::Numerical( static_cast<T>(parseDuration(val.getStr())) ));
         else if (isConvertible(val.getStr(), CONVTYPE_LOGICAL))
             ret.push_back(mu::Numerical( static_cast<T>(StrToLogical(val.getStr())) ));
         else if (isConvertible(val.getStr(), CONVTYPE_VALUE))
@@ -316,6 +318,8 @@ mu::Array cast_numerical_cmplx(const mu::Array& vals)
             ret.push_back(mu::Numerical( static_cast<std::complex<T>>(val.getNum().asCF64()), castType ));
         else if (isConvertible(val.getStr(), CONVTYPE_DATE_TIME))
             ret.push_back(mu::Numerical( static_cast<std::complex<T>>(to_double(StrToTime(val.getStr()))), castType ));
+        else if (isConvertible(val.getStr(), CONVTYPE_DURATION))
+            ret.push_back(mu::Numerical( static_cast<std::complex<T>>(parseDuration(val.getStr())), castType ));
         else if (isConvertible(val.getStr(), CONVTYPE_LOGICAL))
             ret.push_back(mu::Numerical( static_cast<std::complex<T>>(StrToLogical(val.getStr())), castType ));
         else if (isConvertible(val.getStr(), CONVTYPE_VALUE))

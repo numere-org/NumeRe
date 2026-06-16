@@ -51,6 +51,7 @@ struct TableColumn
         TYPE_VALUE = TYPE_VALUE_CF64,
         VALUE_LAST,
         TYPE_DATETIME,
+        TYPE_DURATION,
         TYPE_LOGICAL,
         TYPE_CATEGORICAL,
         STRINGLIKE,

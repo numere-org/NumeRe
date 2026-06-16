@@ -522,6 +522,8 @@ class CellValueShaderDialog : public wxDialog
                         {
                             if (isConvertible(s, CONVTYPE_DATE_TIME))
                                 cond.m_vals.push_back(to_double(StrToTime(s)));
+                            else if (isConvertible(s, CONVTYPE_DURATION))
+                                cond.m_vals.push_back(parseDuration(s));
                             else if (isConvertible(s, CONVTYPE_VALUE))
                                 cond.m_vals.push_back(StrToCmplx(s));
                             else
@@ -548,6 +550,8 @@ class CellValueShaderDialog : public wxDialog
 
                             if (isConvertible(val, CONVTYPE_DATE_TIME))
                                 cond.m_vals.push_back(to_double(StrToTime(val)));
+                            else if (isConvertible(val, CONVTYPE_DURATION))
+                                cond.m_vals.push_back(parseDuration(val));
                             else if (isConvertible(val, CONVTYPE_VALUE))
                                 cond.m_vals.push_back(StrToCmplx(val));
                             else
@@ -586,6 +590,8 @@ class CellValueShaderDialog : public wxDialog
                         // Convert the values into internal types
                         if (isConvertible(val_start, CONVTYPE_DATE_TIME))
                             cond.m_vals.push_back(to_double(StrToTime(val_start)));
+                        else if (isConvertible(val_start, CONVTYPE_DURATION))
+                            cond.m_vals.push_back(parseDuration(val_start));
                         else if (isConvertible(val_start, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_start));
                         else
@@ -593,6 +599,8 @@ class CellValueShaderDialog : public wxDialog
 
                         if (isConvertible(val_end, CONVTYPE_DATE_TIME))
                             cond.m_vals.push_back(to_double(StrToTime(val_end)));
+                        else if (isConvertible(val_end, CONVTYPE_DURATION))
+                            cond.m_vals.push_back(parseDuration(val_end));
                         else if (isConvertible(val_end, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_end));
                         else
@@ -630,6 +638,8 @@ class CellValueShaderDialog : public wxDialog
                         // Convert the values into internal types
                         if (isConvertible(val_start, CONVTYPE_DATE_TIME))
                             cond.m_vals.push_back(to_double(StrToTime(val_start)));
+                        else if (isConvertible(val_start, CONVTYPE_DURATION))
+                            cond.m_vals.push_back(parseDuration(val_start));
                         else if (isConvertible(val_start, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_start));
                         else
@@ -637,6 +647,8 @@ class CellValueShaderDialog : public wxDialog
 
                         if (isConvertible(val_end, CONVTYPE_DATE_TIME))
                             cond.m_vals.push_back(to_double(StrToTime(val_end)));
+                        else if (isConvertible(val_end, CONVTYPE_DURATION))
+                            cond.m_vals.push_back(parseDuration(val_end));
                         else if (isConvertible(val_end, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_end));
                         else

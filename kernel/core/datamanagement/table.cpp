@@ -313,7 +313,7 @@ namespace NumeRe
     {
         this->setMinSize(i+1, j+1);
 
-        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
+        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE_CF64);
         vTableData[j]->setValue(i, _dValue);
     }
 
@@ -349,6 +349,14 @@ namespace NumeRe
         {
             vTableData[j]->setValue(i, toInternalString(_sValue));
         }
+        else if (isConvertible(_sValue, CONVTYPE_DURATION))
+        {
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
+
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_DURATION, false);
+            vTableData[j]->setValue(i, parseDuration(_sValue));
+        }
         else if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
         {
             if (vTableData[j])
@@ -363,7 +371,7 @@ namespace NumeRe
                 vTableData[j]->deleteElements(VectorIndex(i));
 
             std::complex<double> val = StrToCmplx(_sValue);
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE, val.imag() != 0.0);
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE_CF64, val.imag() != 0.0);
             vTableData[j]->setValue(i, val);
         }
         else if (isConvertible(_sValue, CONVTYPE_LOGICAL))

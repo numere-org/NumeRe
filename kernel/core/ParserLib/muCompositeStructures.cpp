@@ -1998,6 +1998,8 @@ namespace mu
 #ifndef PARSERSTANDALONE
                     if (isConvertible(json[member].asString(), CONVTYPE_DATE_TIME))
                         dict[member].reset(new NumValue(Numerical(StrToTime(json[member].asString()))));
+                    else if (isConvertible(json[member].asString(), CONVTYPE_DURATION))
+                        dict[member].reset(new NumValue(Numerical(parseDuration(json[member].asString()), mu::DURATION)));
                     else
 #endif
                         dict[member].reset(new StrValue(json[member].asString()));
@@ -2054,6 +2056,8 @@ namespace mu
 #ifndef PARSERSTANDALONE
                     if (isConvertible(json[i].asString(), CONVTYPE_DATE_TIME))
                         arr.emplace_back(StrToTime(json[i].asString()));
+                    else if (isConvertible(json[i].asString(), CONVTYPE_DURATION))
+                        arr.emplace_back(Numerical(parseDuration(json[i].asString()), mu::DURATION));
                     else
 #endif
                         arr.emplace_back(json[i].asString());

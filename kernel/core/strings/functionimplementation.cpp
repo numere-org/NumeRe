@@ -2205,6 +2205,8 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
                 current[nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), LOG));
             else if (vPatterns[n] == "%t")
                 current[nth_token] = mu::Value(StrToTime(sSearchString.subview(lastPosition, pos - lastPosition).to_string()));
+            else if (vPatterns[n] == "%d")
+                current[nth_token] = mu::Numerical(parseDuration(sSearchString.subview(lastPosition, pos - lastPosition).to_string()), mu::DURATION);
             else if (vPatterns[n] == "%f")
             {
                 std::string sFloatingPoint = sSearchString.subview(lastPosition, pos - lastPosition).to_string();

@@ -26,6 +26,7 @@
 #include <cstring>
 #include <sstream>
 #include <iterator>
+#include <regex>
 #include <boost/locale.hpp>
 #include <boost/algorithm/hex.hpp>
 #include <boost/nowide/fstream.hpp>
@@ -989,6 +990,70 @@ sys_time_point StrToTime(const std::string& sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Parse a duration from a string.
+///
+/// \param sDuration const std::string&
+/// \return double
+///
+/////////////////////////////////////////////////
+double parseDuration(const std::string& sDuration)
+{
+    // 56y 23wk 1d 0:00:00.xxxxxx
+    if (sDuration == "---" || toLowerCase(sDuration) == "nan")
+        return NAN;
+
+    bool isNegative = sDuration.front() == '-';
+    std::vector<std::string> tokens = split(sDuration.substr(isNegative), ' ');
+    double dDuration = 0.0;
+
+    constexpr double YEAR = 365.25*24*3600;
+    constexpr double WEEK = 7.0*24*3600;
+    constexpr double DAY = 24.0*3600;
+
+    for (const auto& tok : tokens)
+    {
+        if (tok.ends_with("y"))
+            dDuration += StrToInt(tok) * YEAR;
+
+        if (tok.ends_with("wk"))
+            dDuration += StrToInt(tok) * WEEK;
+
+        if (tok.ends_with("d"))
+            dDuration += StrToInt(tok) * DAY;
+
+        if (tok.find(':') != std::string::npos)
+        {
+            std::vector<std::string> toks = split(tok, ':');
+
+            for (size_t i = 0; i < toks.size(); i++)
+            {
+                // Catch milliseconds written as s.i or ss.iii
+                StripSpaces(toks[i]);
+
+                if (i == 2 && toks[i].length() >= 3 && (toks[i][1] == '.' || toks[i][2] == '.'))
+                {
+                    size_t dot = toks[i].find('.');
+                    toks.insert(toks.begin()+i+1, toks[i].substr(dot+1));
+                    toks[i].erase(dot);
+                }
+
+                if (!i)
+                    dDuration += StrToInt(toks[i]) * 3600.0;
+                else if (i == 1)
+                    dDuration += StrToInt(toks[i]) * 60.0;
+                else if (i == 2)
+                    dDuration += StrToInt(toks[i]);
+                else if (i == 3)
+                    dDuration += StrToInt(toks[i])*intPower(10.0, 6-toks[i].length()) * 1e-6; // scaling due to possible missing trailing zeros
+            }
+        }
+    }
+
+    return isNegative ? -dDuration : dDuration;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts a version string into a
 /// multi-digit double
 ///
@@ -1262,6 +1327,7 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
     return false;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief This function checks, whether a string
 /// can be converted to the selected
@@ -1292,6 +1358,12 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
         // NEW
         bool inNum = false;
 
+        // I * dddd + dddd
+        // ddddiI + dddd
+        // dddd + I*dddd
+        // dddd + ddddiI
+        static const std::regex is_complex("([0-9\\., ]+([eE][\\+\\-]?[0-9]+)?([iI]| *\\* *I)(?![:alnum:])|([iI] *\\* *)[0-9\\., ]+([eE][\\+\\-]?[0-9]+)?)");
+
         // Regression fix introduced because NA is accepted as NaNhow to
         for (size_t i = 0; i < sStr.length(); i++)
         {
@@ -1312,9 +1384,16 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
                 {
                     voter->endParseAndVote(i-1);  // last one was one before
                     inNum = false;
+
+                    if (sStr[i] == 'i' && (i+1 >= sStr.length() || !isalpha(sStr[i+1])))
+                        voter->makeComplex();
+                    else if (sStr[i] == '*'
+                             && sStr.find('I', i+1) != std::string::npos
+                             && sStr.find_first_not_of(" 0123456789.,eiEI+-*/\t", i+1) == std::string::npos)
+                        voter->makeComplex();
                 }
 
-                if (i > 0 && i-1 < sStr.length() && (sStr[i] == '-' || sStr[i] == '+'))
+                if (i > 0 && i+1 < sStr.length() && (sStr[i] == '-' || sStr[i] == '+'))
                 {
                     if (tolower(sStr[i-1]) != 'e'
                         && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
@@ -1326,6 +1405,9 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
 
         if (voter && inNum)
             voter->endParseAndVote(sStr.length()-1);
+
+        if (voter && !voter->isComplex() && std::regex_search(sStr, is_complex))
+            voter->makeComplex();
 
         if (!sStr.length() || toLowerCase(sStr) == "nan" || sStr == "---")
             return true;
@@ -1384,6 +1466,22 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
                     return isDateTimePattern(sStr, i);
             }
         }
+    }
+    else if (type == CONVTYPE_DURATION)
+    {
+        // Apply the simplest heuristic: only digits and separators
+        // and ignore characters, which cannot represent a date by themselves
+        // NaN is also allowed
+        if (!sStr.length() || toLowerCase(sStr) == "nan" || sStr == "---")
+            return true;
+
+        if (sStr.find_first_not_of(" 0123456789.:-\tywkd") != std::string::npos
+            || sStr.find_first_not_of(" \t.:-ywkd") == std::string::npos)
+            return false;
+
+        // 56y 23wk 1d 0:00:00
+        static std::regex DURATION_PATTERN("-?(\\d+y )?(\\d+wk )?(\\dd )?\\d+:\\d\\d(:\\d\\d)?(\\.\\d+)?");
+        return std::regex_match(sStr, DURATION_PATTERN);
     }
 
     return false;

@@ -15,3 +15,6 @@ Added	The path object now has the two methods "twig" for getting the parent entr
 Fixed	The code analyzer now understands better, what a wrapped line is and will examine the whole (logical) line at once.
 Fixed	The new code parser will handle more constants and heuristics won't get overwritten by generic types like "any" any longer.
 Added	Functions for bit-level logic and manipulation haven been added: "bitand()", "bitor()", "bitxor()", "bitnot()", "bitshift()", "bitmask()" and "bitcast()"
+Added	The table method "TAB().convert()" will now also try to convert to a categorical column, if the second argument is set to "auto".
+Applied	Tables do now also correctly handle the "duration" data type.
+Cleaned	Tables do now favor "value.f64" over the previous behavior of converting to "value.cf64". This will save a lot of space in many cases.

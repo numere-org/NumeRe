@@ -3995,7 +3995,7 @@ static mu::Value binCast_impl(const mu::Value& v, const mu::Value& type)
             else if (sourceType == mu::UI64 && (targetType == mu::F64 || targetType == mu::DURATION || targetType == mu::DATETIME))
             {
                 uint64_t source = num.asUI64();
-                return mu::Numerical(std::complex(*reinterpret_cast<double*>(&source)), targetType);
+                return mu::Numerical(*reinterpret_cast<double*>(&source), targetType);
             }
             else if ((sourceType == mu::F64 || sourceType == mu::DURATION || sourceType == mu::DATETIME) && targetType == mu::I64)
             {
@@ -4005,7 +4005,7 @@ static mu::Value binCast_impl(const mu::Value& v, const mu::Value& type)
             else if (sourceType == mu::I64 && (targetType == mu::F64 || targetType == mu::DURATION || targetType == mu::DATETIME))
             {
                 int64_t source = num.asI64();
-                return mu::Numerical(std::complex(*reinterpret_cast<double*>(&source)), targetType);
+                return mu::Numerical(*reinterpret_cast<double*>(&source), targetType);
             }
             break;
         default:
