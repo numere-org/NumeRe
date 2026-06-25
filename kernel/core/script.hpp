@@ -31,7 +31,6 @@
 #include "maths/define.hpp"
 #include "symdef.hpp"
 #include "procedure/includer.hpp"
-#include "../../network/packagerepo.hpp"
 
 class Script : public FileSystem
 {
@@ -47,7 +46,6 @@ class Script : public FileSystem
         };
 
         Logger m_logger;
-        PackageRepo m_repo;
         std::string sScriptFileName;
 
         bool bValidScript;

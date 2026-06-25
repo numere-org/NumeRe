@@ -24,6 +24,43 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <json/json.h>
+
+/////////////////////////////////////////////////
+/// \brief Wrapper class for package repo
+/// specific errors.
+/////////////////////////////////////////////////
+class PackageRepoError : public std::runtime_error
+{
+public:
+    PackageRepoError(const std::string& what) : std::runtime_error(what)
+    { }
+};
+
+/////////////////////////////////////////////////
+/// \brief Defines the set of package files for a
+/// specific version of the package.
+/////////////////////////////////////////////////
+struct PackageFiles
+{
+    std::string meta;
+    std::string file;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief Defines the available versions of the
+/// package, defaults to the latest.
+/////////////////////////////////////////////////
+struct PackageVersions
+{
+    std::map<std::string, PackageFiles> versions;
+    const PackageFiles& getLatest() const
+    {
+        return versions.rbegin()->second;
+    }
+};
+
 
 /////////////////////////////////////////////////
 /// \brief This structure contains the
@@ -31,6 +68,7 @@
 /////////////////////////////////////////////////
 struct PackageInfo
 {
+    std::string packageId;
     std::string name;
     std::string version;
     std::string author;
@@ -41,9 +79,9 @@ struct PackageInfo
     std::string keyWords;
     std::string changeLog;
     std::string license;
+    std::string repoName;
     std::string repoUrl;
 };
-
 
 
 /////////////////////////////////////////////////
@@ -55,20 +93,79 @@ struct PackageInfo
 class PackageRepo
 {
     private:
-        std::string m_repoUrl;
-        std::vector<std::string> m_list;
-        __time64_t m_lastRefreshed;
+        Json::Value m_repoConfig;
+        mutable std::map<std::string,PackageVersions> m_index;
+        mutable __time64_t m_lastRefreshed;
+
+        bool needsRefresh() const;
 
     public:
-        PackageRepo(const std::string& sRepoUrl = "");
-        void connect(const std::string& sRepoUrl);
+        PackageRepo(const std::string& sRepoConfig = "");
+        void connect(const std::string& sRepoConfig);
         bool is_connected() const;
+        std::string getRepoName() const;
 
-        const std::vector<std::string>& fetchList();
-        PackageInfo fetchInfo(const std::string& sPackageUrl);
-        PackageInfo find(const std::string& pkgId);
-        std::vector<std::string> find_candidates(const std::string& pkgId);
-        bool download(const std::string& sPackageUrl, const std::string& sTargetFile);
+        const std::map<std::string, PackageVersions>& fetchIndex() const;
+        PackageInfo fetchInfo(const std::string& sPackageId) const;
+        PackageInfo find(const std::string& pkgId) const;
+        std::vector<std::string> find_candidates(const std::string& pkgId) const;
+        bool download(const std::string& sPackageUrl, const std::string& sTargetFile) const;
+        size_t size() const;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class manages all delared package
+/// repositories and delegates the corresponding
+/// tasks.
+/////////////////////////////////////////////////
+class PackageRepoManager
+{
+    private:
+        std::vector<PackageRepo> m_remotes;
+
+    public:
+
+        bool importConfigs(const std::vector<std::string>& remoteConfigs);
+
+        /////////////////////////////////////////////////
+        /// \brief Return a list of defined remote
+        /// repositories.
+        ///
+        /// \return const std::vector<PackageRepo>&
+        ///
+        /////////////////////////////////////////////////
+        const std::vector<PackageRepo>& getRemotes() const
+        {
+            return m_remotes;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a selected remote repository by
+        /// name.
+        ///
+        /// \param sRepoName const std::string&
+        /// \return const PackageRepo&
+        ///
+        /////////////////////////////////////////////////
+        const PackageRepo& getRemote(const std::string& sRepoName) const
+        {
+            for (const PackageRepo& remote : m_remotes)
+            {
+                if (remote.getRepoName() == sRepoName)
+                    return remote;
+            }
+
+            throw std::out_of_range(sRepoName + " is not a valid remote repository.");
+        }
+
+        PackageInfo fetchInfo(const std::string& sPackageId, const std::string& sRepoName = "") const;
+        PackageInfo find(const std::string& sPackageId, const std::string& sRepoName = "") const;
+        std::vector<std::string> find_candidates(const std::string& sPackageId, const std::string& sRepoName = "") const;
+        std::vector<std::string> resolveDependencies(const std::string& sPackageId, const std::string& sRepoName = "") const;
+        bool download(const std::string& sPackageUrl, const std::string& sTargetFile, const std::string& sRepoName = "") const;
+        size_t size() const;
+        std::vector<std::string> getFullIndex() const;
 };
 
 #endif // PACKAGEREPO_HPP

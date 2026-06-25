@@ -294,6 +294,13 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
         }
     }
 
+    // Create the remote package connection handlers by importing all
+    // available configurations
+    g_logger.info("Importing remote package repository configurations.");
+
+    if (!_procedure.importRemotesConfigurations())
+        g_logger.info("There was an error in the remote package configurations.");
+
     // Load the function definitions
     if (_option.controlDefinitions() && fileExists(_option.getExePath() + "\\functions.def"))
     {

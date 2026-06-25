@@ -535,6 +535,21 @@ bool PackageManager::loadPlugins()
 
 
 /////////////////////////////////////////////////
+/// \brief Imports the remote package repository
+/// configurations and prepares the remote
+/// connections (but does not perform any
+/// networking).
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PackageManager::importRemotesConfigurations()
+{
+    return m_remotes.importConfigs(getFileList(FileSystem::ValidFolderName("<>/remotes", true, true) + "*.repository", FULLPATH));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function converts the call
 /// to a plugin in the passed command line into
 /// a call to the corresponding plugin main

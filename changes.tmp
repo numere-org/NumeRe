@@ -18,3 +18,5 @@ Added	Functions for bit-level logic and manipulation haven been added: "bitand()
 Added	The table method "TAB().convert()" will now also try to convert to a categorical column, if the second argument is set to "auto".
 Applied	Tables do now also correctly handle the "duration" data type.
 Cleaned	Tables do now favor "value.f64" over the previous behavior of converting to "value.cf64". This will save a lot of space in many cases.
+Updated	The package repository is now located in GitHub simplyfing the contribution process.
+Applied	It is possible to have secondary package repositories (even private ones), if they provide a similar REST API as GitHub or Gitlab.

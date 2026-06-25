@@ -26,7 +26,6 @@
 #include "../controls/treelistctrl.h"
 #include "../compositions/viewerframe.hpp"
 #include "../terminal/terminal.hpp"
-#include "../../network/packagerepo.hpp"
 #include <string>
 #include <vector>
 
@@ -43,7 +42,6 @@ class PackageRepoBrowser : public ViewerFrame, public wxThreadHelper
         IconManager* m_icons;
         std::string m_scriptPath;
         std::string m_fileNameToInstall;
-        PackageRepo m_repo;
 
         wxcode::wxTreeListCtrl* m_listCtrl;
         wxButton* m_installButton;
@@ -70,7 +68,7 @@ class PackageRepoBrowser : public ViewerFrame, public wxThreadHelper
         void OnClose(wxCloseEvent& event);
         // End threading part
 
-        void populatePackageList(const std::string& sUrl);
+        void populatePackageList(const std::string& sPackageId);
 
         void OnInstall(wxCommandEvent& event);
         void OnUninstall(wxCommandEvent& event);
@@ -82,6 +80,7 @@ class PackageRepoBrowser : public ViewerFrame, public wxThreadHelper
         std::string getUrl(const wxTreeItemId& item);
         std::string getDependencies(const wxTreeItemId& item);
         wxTreeItemId findPackage(const std::string& sPackageFileName);
+        wxTreeItemId findPackageByFullID(const std::string& sFullPackageId);
         void resolveDependencies(std::string sDepList, std::vector<std::string>& vDeps);
 
         bool getFileFromRepo(const std::string& sUrl);

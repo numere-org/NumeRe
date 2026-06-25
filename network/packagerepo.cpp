@@ -17,136 +17,100 @@
 ******************************************************************************/
 
 #include <boost/nowide/fstream.hpp>
+#include <regex>
+#include <sstream>
 
 #include "packagerepo.hpp"
 #include "http.h"
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/io/logger.hpp"
 
-static std::vector<std::string> fetchListHelper(const std::string& sRepoUrl);
-static std::string createSalt();
-static std::string getTagValue(const std::string& sTaggedString, const std::string& sTag);
+// Fallback configuration, if no configuration is supplied
+static const std::string DEFAULTREPOCONFIG =
+"{"
+    "\"version\": \"1.0.0\","
+    "\"name\": \"NumeRe::Packages\","
+    "\"url\": \"https://github.com/numere-org/Packages\","
+    "\"authentication\": { \"required\": false, \"method\": \"\" },"
+    "\"keys\": {\"path\" : \"path\", \"sha\": \"sha\", \"root\": \"tree\"},"
+    "\"tree\": \"https://api.github.com/repos/numere-org/Packages/git/trees/HEAD?recursive=true\","
+    "\"raw-file\": \"https://raw.githubusercontent.com/numere-org/Packages/refs/heads/main/{path}\""
+"}";
 
 
 /////////////////////////////////////////////////
-/// \brief This function fetches the
-/// repository main page as HTML and extracts the
-/// list of item links in it. These may be files
-/// and folders.
+/// \brief Static helper for easy JSON string
+/// parsing.
 ///
-/// \param sRepoUrl const std::string&
-/// \return std::vector<std::string>
+/// \param sJsonString const std::string&
+/// \param target Json::Value&
+/// \return void
 ///
 /////////////////////////////////////////////////
-static std::vector<std::string> fetchListHelper(const std::string& sRepoUrl)
+static void parseJson(const std::string& sJsonString, Json::Value& target)
 {
-    std::vector<std::string> vRepoContents;
-    std::string sRepoContents = url::get(sRepoUrl + createSalt());
-    sRepoContents = sRepoContents.substr(sRepoContents.find("<ul>")+4);
-    sRepoContents.erase(sRepoContents.find("</ul>"));
-
-    // Extract each <li></li> pairs content
-    while (sRepoContents.length() && sRepoContents.find("</li>") != std::string::npos)
+    try
     {
-        std::string sCurrentPackage = sRepoContents.substr(0, sRepoContents.find("</li>"));
-        sRepoContents.erase(0, sRepoContents.find("</li>")+5);
-
-        if (sCurrentPackage.find("href=\"") == std::string::npos)
-            break;
-
-        // Get the address
-        sCurrentPackage = sCurrentPackage.substr(sCurrentPackage.find("href=\"") + 6);
-        sCurrentPackage.erase(sCurrentPackage.find('"'));
-
-        // We do not want to follow parent directory
-        // references
-        if (sCurrentPackage.find("../") != std::string::npos)
-            continue;
-
-        // If the current URL is not a file, it might be a folder,
-        // therefore we trigger a recursion here
-        if (sCurrentPackage.back() == '/')
-        {
-            std::vector<std::string> vFolderContents = fetchListHelper(sRepoUrl + sCurrentPackage);
-
-            if (vFolderContents.size())
-                vRepoContents.insert(vRepoContents.end(), vFolderContents.begin(), vFolderContents.end());
-
-            continue;
-        }
-
-        // We only accept NSCR files at the moment
-        if (sCurrentPackage.find(".nscr") == std::string::npos)
-            continue;
-
-        // Get the resolved content
-        vRepoContents.push_back(sRepoUrl + sCurrentPackage);
+        std::istringstream iStr(sJsonString);
+        iStr >> target;
     }
-
-    return vRepoContents;
+    catch (Json::RuntimeError& e)
+    {
+        throw PackageRepoError(e.what());
+    }
+    catch (Json::LogicError& e)
+    {
+        throw PackageRepoError(e.what());
+    }
 }
-
-
-/////////////////////////////////////////////////
-/// \brief Static helper function to extract the
-/// value of an install info tag.
-///
-/// \param sTaggedString const std::string&
-/// \param sTag const std::string&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string getTagValue(const std::string& sTaggedString, const std::string& sTag)
-{
-    int nTag = findParameter(sTaggedString, sTag, '=');
-
-    if (nTag)
-        return getArgAtPos(sTaggedString, nTag+sTag.length());
-
-    return "";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Simple function to make the URL more
-/// unique to avoid server caching (which might
-/// resolve in a very delated update of the
-/// package list as the server will respond with
-/// the already cached contents rather than the
-/// current file versions).
-///
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string createSalt()
-{
-    return "?" + std::to_string(clock());
-}
-
 
 
 /////////////////////////////////////////////////
 /// \brief PackageRepo constructor.
 ///
-/// \param sRepoUrl const std::string&
+/// \param sRepoConfig const std::string&
 ///
 /////////////////////////////////////////////////
-PackageRepo::PackageRepo(const std::string& sRepoUrl)
+PackageRepo::PackageRepo(const std::string& sRepoConfig)
 {
-    connect(sRepoUrl);
+    connect(sRepoConfig);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Connect to a new repository.
 ///
-/// \param sRepoUrl const std::string&
+/// \param sRepoConfig const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PackageRepo::connect(const std::string& sRepoUrl)
+void PackageRepo::connect(const std::string& sRepoConfig)
 {
-    m_repoUrl = sRepoUrl;
+    parseJson(sRepoConfig.length() ? sRepoConfig : DEFAULTREPOCONFIG, m_repoConfig);
+
+    // Validate version
+    if (!m_repoConfig.isMember("version"))
+        throw PackageRepoError("The repository configuration '" + sRepoConfig + "' does not specify a version field.");
+
+    if (m_repoConfig["version"].asString() >= "1.1.0")
+        throw PackageRepoError("The version of the repository configuration '" + sRepoConfig
+                               + "' is newer than supported by this NumeRe version. Consider updating.");
+
+    // Validate the configuration's contents
+    if (!m_repoConfig.isMember("name")
+        || !m_repoConfig.isMember("tree")
+        || !m_repoConfig.isMember("raw-file")
+        || !m_repoConfig.isMember("authentication")
+        || !m_repoConfig.isMember("keys"))
+        throw PackageRepoError("The repository configuration '" + sRepoConfig + "' lacks required fields.");
+
+    if (!m_repoConfig["authentication"].isMember("required")
+        || !m_repoConfig["authentication"].isMember("method")
+        || !m_repoConfig["keys"].isMember("path")
+        || !m_repoConfig["keys"].isMember("root")
+        || !m_repoConfig["keys"].isMember("sha"))
+        throw PackageRepoError("The repository configuration '" + sRepoConfig + "' lacks required fields.");
+
     m_lastRefreshed = 0;
 }
 
@@ -160,26 +124,108 @@ void PackageRepo::connect(const std::string& sRepoUrl)
 /////////////////////////////////////////////////
 bool PackageRepo::is_connected() const
 {
-    return m_repoUrl.length() != 0;
+    return m_index.size() != 0;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Fetch the list of available packages
-/// and return their URLs.
+/// \brief Return the repository name.
 ///
-/// \return const std::vector<std::string>&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-const std::vector<std::string>& PackageRepo::fetchList()
+std::string PackageRepo::getRepoName() const
 {
-    if (_time64(nullptr) - m_lastRefreshed > 600)
+    return m_repoConfig["name"].asString();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Determine, whether the internal index
+/// needs a refresh.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PackageRepo::needsRefresh() const
+{
+    return _time64(nullptr) - m_lastRefreshed > 600;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Fetch the index of available packages
+/// and return their URLs.
+///
+/// \return const std::map<std::string, PackageVersions>&
+///
+/////////////////////////////////////////////////
+const std::map<std::string, PackageVersions>& PackageRepo::fetchIndex() const
+{
+    if (needsRefresh())
     {
-        m_list = fetchListHelper(m_repoUrl);
+        std::string sResponse;
+
+        if (m_repoConfig["authentication"]["required"].asBool())
+            sResponse = url::get(m_repoConfig["tree"].asString(), "", "", {m_repoConfig["authentication"]["method"].asString()});
+        else
+            sResponse = url::get(m_repoConfig["tree"].asString());
+
+        Json::Value tree;
+        parseJson(sResponse, tree);
+
+        if (!tree.isArray() && tree.isMember("message"))
+            throw PackageRepoError("The repository reported: " + tree["message"].asString());
+
+        // Validate the response
+        if (!m_repoConfig["keys"]["root"].isNull() && !tree.isMember(m_repoConfig["keys"]["root"].asString()))
+            throw PackageRepoError("The repository response lacks the required tree root field.");
+
+        // Do we have a dedicated root node?
+        if (!m_repoConfig["keys"]["root"].isNull())
+            tree = tree[m_repoConfig["keys"]["root"].asString()];
+
+        static std::regex packagePath("packages/.+/\\d\\.\\d\\.\\d/.+\\.\\w+");
+
+        std::string pathKey = m_repoConfig["keys"]["path"].asString();
+        std::string shaKey = m_repoConfig["keys"]["sha"].asString();
+        std::string rawFile = m_repoConfig["raw-file"].asString();
+
+        // Ensure that the response has the relevant keys
+        if (!tree.size() || !tree[0].isMember(pathKey) || !tree[0].isMember(shaKey))
+            throw PackageRepoError("The tree is empty or the configuration does not match the returned response.");
+
+        m_index.clear();
+
+        for (const Json::Value& val : tree)
+        {
+            std::string path = val[pathKey].asString();
+
+            if (std::regex_match(path, packagePath))
+            {
+                g_logger.debug("Found package folder: " + path);
+                std::vector<std::string> packageDef = split(path, '/');
+
+                // Create individual fields, if they do not exist alreeady
+                m_index[packageDef[1]];
+                m_index[packageDef[1]].versions[packageDef[2]];
+
+                // Prepare the file URL
+                std::string fileUrl = rawFile;
+                replaceAll(fileUrl, "{path}", path.c_str());
+                replaceAll(fileUrl, "{sha}", val[shaKey].asCString());
+
+                if (packageDef[3] == "meta.json")
+                    m_index[packageDef[1]].versions[packageDef[2]].meta = fileUrl;
+                else
+                    m_index[packageDef[1]].versions[packageDef[2]].file = fileUrl;
+            }
+        }
+
         m_lastRefreshed = _time64(nullptr);
     }
 
-    return m_list;
+    return m_index;
 }
 
 
@@ -187,52 +233,54 @@ const std::vector<std::string>& PackageRepo::fetchList()
 /// \brief Fetch the PackageInfo of a single
 /// package.
 ///
-/// \param sPackageUrl const std::string&
+/// \param sPackageId const std::string&
 /// \return PackageInfo
 ///
 /////////////////////////////////////////////////
-PackageInfo PackageRepo::fetchInfo(const std::string& sPackageUrl)
+PackageInfo PackageRepo::fetchInfo(const std::string& sPackageId) const
 {
-    std::string sCurrentPackage = url::get(sPackageUrl + createSalt());
+    if (needsRefresh())
+        fetchIndex();
+
+    auto iter = m_index.find(sPackageId);
+
+    if (iter == m_index.end())
+        return PackageInfo();
+
+    std::string sMetaFile;
+
+    if (m_repoConfig["authentication"]["required"].asBool())
+        sMetaFile = url::get(iter->second.getLatest().meta, "", "", {m_repoConfig["authentication"]["method"].asString()});
+    else
+        sMetaFile = url::get(iter->second.getLatest().meta);
+
+    Json::Value meta;
+    parseJson(sMetaFile, meta);
+
+    // Test the manifest version
+    if (meta["manifest-version"].asString() >= "1.1.0")
+        throw PackageRepoError("The manifest version of '" + sPackageId
+                               + "' is newer than supported by this NumeRe version. Consider updating.");
+
     PackageInfo pkgInfo;
+    pkgInfo.repoName = getRepoName();
+    pkgInfo.packageId = sPackageId;
+    pkgInfo.author = meta["author"].asString();
+    pkgInfo.name = meta["name"].asString();
+    pkgInfo.repoUrl = iter->second.getLatest().file;
+    pkgInfo.type = sPackageId.starts_with("plgn_") ? "Plugin" : "Package";
+    pkgInfo.version = iter->second.versions.rbegin()->first;
 
-    if (!sCurrentPackage.length())
-        return pkgInfo;
+    pkgInfo.changeLog = meta.get("changelog", "").asString();
+    pkgInfo.description = meta.get("description", "").asString();
+    pkgInfo.keyWords = meta.get("keywords", "").asString();
+    pkgInfo.license = meta.get("license", "").asString();
 
-    // Get the information
-    std::string sInfo = sCurrentPackage.substr(sCurrentPackage.find("<info>"),
-                                               sCurrentPackage.find("<endinfo>") - sCurrentPackage.find("<info>"));
-    replaceAll(sInfo, "\t", " ");
-    replaceAll(sInfo, "\n", " ");
-    replaceAll(sInfo, "\r", " ");
-
-    // Fill the package list
-    pkgInfo.name = getTagValue(sInfo, "name");
-    pkgInfo.version = "v" + getTagValue(sInfo, "version");
-    pkgInfo.author = getTagValue(sInfo, "author");
-    pkgInfo.type = getTagValue(sInfo, "type").find("PLUGIN") != std::string::npos ? "Plugin" : "Package";
-    std::string sReqVersion = getTagValue(sInfo, "requireversion");
-
-    if (sReqVersion.length())
-        pkgInfo.requiredVersion = "v" + sReqVersion;
-
-    pkgInfo.requiredPackages = getTagValue(sInfo, "requirepackages");
-    pkgInfo.description = getTagValue(sInfo, "desc");
-
-    if (!pkgInfo.description.length())
-        pkgInfo.description = getTagValue(sInfo, "plugindesc");
-
-    replaceAll(pkgInfo.description, "\\\"", "\"");
-    replaceAll(pkgInfo.description, "\\n", "\n");
-
-    pkgInfo.keyWords = getTagValue(sInfo, "keywords");
-    pkgInfo.changeLog = getTagValue(sInfo, "changelog");
-
-    replaceAll(pkgInfo.changeLog, "\\\"", "\"");
-    replaceAll(pkgInfo.changeLog, "\\n", "\n");
-
-    pkgInfo.license = getTagValue(sInfo, "license");
-    pkgInfo.repoUrl = sPackageUrl;
+    if (meta.isMember("requirements"))
+    {
+        pkgInfo.requiredPackages = meta["requirements"].get("packages", "").asString();
+        pkgInfo.requiredVersion = meta["requirements"].get("version", "").asString();
+    }
 
     return pkgInfo;
 }
@@ -247,16 +295,15 @@ PackageInfo PackageRepo::fetchInfo(const std::string& sPackageUrl)
 /// \return PackageInfo
 ///
 /////////////////////////////////////////////////
-PackageInfo PackageRepo::find(const std::string& pkgId)
+PackageInfo PackageRepo::find(const std::string& pkgId) const
 {
-    if (_time64(nullptr) - m_lastRefreshed > 600)
-        fetchList();
+    if (needsRefresh())
+        fetchIndex();
 
-    for (const std::string& pkg : m_list)
-    {
-        if (pkg.ends_with("/" + pkgId + ".nscr"))
-            return fetchInfo(pkg);
-    }
+    auto iter = m_index.find(pkgId);
+
+    if (iter != m_index.end())
+        return fetchInfo(pkgId);
 
     return PackageInfo();
 }
@@ -272,20 +319,18 @@ PackageInfo PackageRepo::find(const std::string& pkgId)
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> PackageRepo::find_candidates(const std::string& pkgId)
+std::vector<std::string> PackageRepo::find_candidates(const std::string& pkgId) const
 {
-    if (_time64(nullptr) - m_lastRefreshed > 600)
-        fetchList();
+    if (needsRefresh())
+        fetchIndex();
 
     std::vector<std::string> candidates;
+    std::string repoName = getRepoName();
 
-    for (const std::string& pkg : m_list)
+    for (const auto& pkg : m_index)
     {
-        std::string sFileName = pkg.substr(pkg.rfind('/')+1);
-        sFileName.erase(sFileName.rfind(".nscr"));
-
-        if (sFileName.find(pkgId) != std::string::npos)
-            candidates.push_back(sFileName);
+        if (pkg.first.find(pkgId) != std::string::npos)
+            candidates.push_back(pkg.first + "@" + repoName);
     }
 
     return candidates;
@@ -301,9 +346,49 @@ std::vector<std::string> PackageRepo::find_candidates(const std::string& pkgId)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sTargetFile)
+bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sTargetFile) const
 {
-    std::string contents = url::get(sPackageUrl);
+    // Test, whether this repository actually provides raw file links like the one
+    // used within this call
+    const std::string& rawFile = m_repoConfig["raw-file"].asString();
+
+    if (!sPackageUrl.starts_with(rawFile.substr(0, rawFile.find('{'))))
+        return false;
+
+    std::string contents;
+
+    try
+    {
+        if (m_repoConfig["authentication"]["required"].asBool())
+            contents = url::get(sPackageUrl, "", "", {m_repoConfig["authentication"]["method"].asString()});
+        else
+            contents = url::get(sPackageUrl);
+    }
+    catch (url::Error& e)
+    {
+        return false;
+    }
+
+    // Ensure that the reponse does not indicate that we
+    // were not able to find the desired remote file
+    if (contents.find("\"message\":") != std::string::npos)
+    {
+        // The conversion to JSON may fail
+        try
+        {
+            Json::Value response;
+            parseJson(contents, response);
+
+            if ((response["message"].asString() == "Not found" || response["message"].asString() == "401 Unauthorized")
+                || response.get("status", "").asString() == "404")
+                return false;
+        }
+        catch (...)
+        {
+            // Do nothing, because we just assumed that the response is JSON,
+            // so everything is fine here
+        }
+    }
 
     boost::nowide::ofstream file(sTargetFile.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 
@@ -317,6 +402,328 @@ bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sT
 
     return false;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Return the number of packages in this
+/// repository.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t PackageRepo::size() const
+{
+    if (needsRefresh())
+        fetchIndex();
+
+    return m_index.size();
+}
+
+
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief Imports the remote package repository
+/// configurations and prepares the remote
+/// connections (but does not perform any
+/// networking).
+///
+/// \param remoteConfigs const std::vector<std::string>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PackageRepoManager::importConfigs(const std::vector<std::string>& remoteConfigs)
+{
+    for (const std::string& cfg : remoteConfigs)
+    {
+        try
+        {
+            g_logger.debug("Importing " + cfg + " ...");
+            std::ifstream cfgFile(cfg);
+            std::string sRepoConfig;
+            std::string line;
+
+            while (cfgFile.good() && !cfgFile.eof())
+            {
+                std::getline(cfgFile, line);
+                StripSpaces(line);
+                sRepoConfig += line;
+            }
+
+            m_remotes.push_back(PackageRepo(sRepoConfig));
+        }
+        catch (std::exception& e)
+        {
+            g_logger.error(e.what());
+        }
+        catch (...)
+        {
+            g_logger.error("Generic error during configuration import.");
+        }
+    }
+
+    if (!m_remotes.size())
+    {
+        g_logger.warning("No valid repository configuration files found. Using default repository configuration.");
+        m_remotes.push_back(PackageRepo());
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Separate the PKGID@REMOTE notation.
+///
+/// \param sIdAndRemote const std::string&
+/// \return std::pair<std::string,std::string>
+///
+/////////////////////////////////////////////////
+std::pair<std::string,std::string> getIdAndRemote(const std::string& sIdAndRemote)
+{
+    size_t separator = sIdAndRemote.find('@');
+    return std::make_pair(sIdAndRemote.substr(0, separator), sIdAndRemote.substr(separator+1));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Fetch the PackageInfo of a single
+/// package.
+///
+/// \param sPackageId const std::string&
+/// \param sRepoName const std::string&
+/// \return PackageInfo
+///
+/////////////////////////////////////////////////
+PackageInfo PackageRepoManager::fetchInfo(const std::string& sPackageId, const std::string& sRepoName) const
+{
+    if (sRepoName.length())
+        return getRemote(sRepoName).fetchInfo(sPackageId);
+
+    if (sPackageId.find('@') != std::string::npos)
+    {
+        std::pair<std::string,std::string> idAndRemote = getIdAndRemote(sPackageId);
+        return getRemote(idAndRemote.second).fetchInfo(idAndRemote.first);
+    }
+
+    for (const PackageRepo& remote : m_remotes)
+    {
+        PackageInfo pkg = remote.find(sPackageId);
+
+        if (pkg.name.length())
+            return pkg;
+    }
+
+    return PackageInfo();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Find a package by its ID (the
+/// filename) and return the information of the
+/// package.
+///
+/// \param sPackageId const std::string&
+/// \param sRepoName const std::string&
+/// \return PackageInfo
+///
+/////////////////////////////////////////////////
+PackageInfo PackageRepoManager::find(const std::string& sPackageId, const std::string& sRepoName) const
+{
+    if (sRepoName.length())
+        return getRemote(sRepoName).find(sPackageId);
+
+    if (sPackageId.find('@') != std::string::npos)
+    {
+        std::pair<std::string,std::string> idAndRemote = getIdAndRemote(sPackageId);
+        return getRemote(idAndRemote.second).find(idAndRemote.first);
+    }
+
+    for (const PackageRepo& remote : m_remotes)
+    {
+        PackageInfo pkg = remote.find(sPackageId);
+
+        if (pkg.packageId.length())
+            return pkg;
+    }
+
+    return PackageInfo();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Find package candidates by using only
+/// a part of the package id. Does not download
+/// any of the necessary data with exception of
+/// the repository list.
+///
+/// \param sPackageId const std::string&
+/// \param sRepoName const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> PackageRepoManager::find_candidates(const std::string& sPackageId, const std::string& sRepoName) const
+{
+    if (sRepoName.length())
+        return getRemote(sRepoName).find_candidates(sPackageId);
+
+    if (sPackageId.find('@') != std::string::npos)
+    {
+        std::pair<std::string,std::string> idAndRemote = getIdAndRemote(sPackageId);
+        return getRemote(idAndRemote.second).find_candidates(idAndRemote.first);
+    }
+
+    std::vector<std::string> candidates;
+
+    for (const PackageRepo& remote : m_remotes)
+    {
+        std::vector<std::string> cands = remote.find_candidates(sPackageId);
+        candidates.insert(candidates.end(), cands.begin(), cands.end());
+    }
+
+    return candidates;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resolves all available dependencies of
+/// a package. During resolution, packages in the
+/// same repository are preferred over any other
+/// repository. Only if no match is found in the
+/// current repo, then all other repos are
+/// checked for the dependency.
+///
+/// \param sPackageId const std::string&
+/// \param sRepoName const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> PackageRepoManager::resolveDependencies(const std::string& sPackageId, const std::string& sRepoName) const
+{
+    PackageInfo rootPkg = find(sPackageId, sRepoName);
+    std::vector<std::string> vDependencies;
+
+    // Are there any dependencies
+    if (rootPkg.requiredPackages.length())
+    {
+        // Separate all dependencies
+        EndlessVector<std::string> pkgs = getAllArguments(rootPkg.requiredPackages);
+
+        for (const std::string& pkg : pkgs)
+        {
+            // Find each dependency individual; prefer the current repo
+            PackageInfo dependency = find(pkg, rootPkg.repoName);
+
+            // If nothing was found, try all other repos
+            if (!dependency.packageId.length())
+                dependency = find(pkg);
+
+            // If we have a valid match, add the full package ID and resolve the
+            // corresponding sub dependencies recursively
+            if (dependency.packageId.length())
+            {
+                vDependencies.push_back(dependency.packageId + "@" + dependency.repoName);
+                std::vector<std::string> subDependencies = resolveDependencies(dependency.packageId, dependency.repoName);
+
+                // If there are sub dependencies, then add them only if they are not already
+                // part of the dependency list
+                if (subDependencies.size())
+                {
+                    for (const std::string& dep : subDependencies)
+                    {
+                        if (std::find(vDependencies.begin(), vDependencies.end(), dep) == vDependencies.end())
+                            vDependencies.push_back(dep);
+                    }
+                }
+            }
+        }
+    }
+
+    return vDependencies;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Download a package to a defined
+/// location.
+///
+/// \param sPackageUrl const std::string&
+/// \param sTargetFile const std::string&
+/// \param sRepoName const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PackageRepoManager::download(const std::string& sPackageUrl, const std::string& sTargetFile, const std::string& sRepoName) const
+{
+    if (sRepoName.length())
+        return getRemote(sRepoName).download(sPackageUrl, sTargetFile);
+
+    // This notation works, but is discouraged
+    if (sPackageUrl.find('@') != std::string::npos)
+    {
+        std::pair<std::string,std::string> idAndRemote = getIdAndRemote(sPackageUrl);
+        return getRemote(idAndRemote.second).download(idAndRemote.first, sTargetFile);
+    }
+
+    // It's better to specify the remote repo instead
+    for (const PackageRepo& remote : m_remotes)
+    {
+        if (remote.download(sPackageUrl, sTargetFile))
+            return true;
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the total number of packages
+/// from all remote repositories.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t PackageRepoManager::size() const
+{
+    size_t totalSize = 0;
+
+    for (const PackageRepo& remote : m_remotes)
+    {
+        totalSize += remote.size();
+    }
+
+    return totalSize;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the full index of all available
+/// packages from all available remotes.
+///
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> PackageRepoManager::getFullIndex() const
+{
+    std::vector<std::string> vIndex;
+    vIndex.reserve(size());
+
+    for (const PackageRepo& remote : m_remotes)
+    {
+        const std::map<std::string, PackageVersions>& index = remote.fetchIndex();
+
+        for (const auto& iter : index)
+        {
+            vIndex.push_back(iter.first + "@" + remote.getRepoName());
+        }
+    }
+
+    return vIndex;
+}
+
 
 
 

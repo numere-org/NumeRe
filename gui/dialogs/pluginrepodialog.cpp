@@ -23,6 +23,7 @@
 #include "../guilang.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/versioninformation.hpp"
+#include "../../kernel/kernel.hpp"
 #include "../../common/datastructures.h"
 #include "../../network/http.h"
 #include "../controls/searchctrl.hpp"
@@ -253,14 +254,29 @@ wxArrayString PackageListSearchCtrl::getChildCandidates(const wxString& enteredT
 
 
 
+/////////////////////////////////////////////////
+/// \brief Static helper function for obtaining
+/// the central instance of the
+/// PackageRepoManager in a clean way.
+///
+/// \return const PackageRepoManager&
+///
+/////////////////////////////////////////////////
+static const PackageRepoManager& getRepoManager()
+{
+    return NumeReKernel::getInstance()->getProcedureInterpreter().getRepoManager();
+}
+
 
 
 #define REPO_URL "Repository URL"
 #define DEPENDENCIES "Dependencies"
+#define PACKAGE_ID "Package ID"
 
 #define PACKAGCOLUMN 0
-#define REPOCOLUMN 1
-#define INSTALLEDCOLUMN 2
+#define REMOTECOLUMN 1
+#define REPOCOLUMN 2
+#define INSTALLEDCOLUMN 3
 #define CHANGELOGLENGTH 750
 
 #define INSTALLEDCOLOUR wxColour(220,255,220)
@@ -296,15 +312,15 @@ PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* termina
     m_terminal = terminal;
     m_icons = icons;
     m_scriptPath = m_terminal->getPathSettings()[SCRIPTPATH];
-    m_repo.connect(REPO_LOCATION);
 
     GroupPanel* panel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_STATIC);
 
     m_listCtrl = panel->CreateWxcTreeListCtrl(panel, panel->getMainSizer(), wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED | wxTR_HIDE_ROOT);
     m_listCtrl->SetImageList(m_icons->GetImageList());
 
-    m_listCtrl->AddColumn("Packages", 300);
-    m_listCtrl->AddColumn("Repository", 500);
+    m_listCtrl->AddColumn("Packages", 250);
+    m_listCtrl->AddColumn("Repository", 140);
+    m_listCtrl->AddColumn("Meta Information", 410);
     m_listCtrl->AddColumn("Installed", 145);
 
     PackageListSearchCtrl* treesearch = new PackageListSearchCtrl(panel, wxID_ANY, "Search packages ...", wxEmptyString, m_listCtrl);
@@ -434,6 +450,7 @@ void PackageRepoBrowser::DetectInstalledPackages()
         {
             wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), wxFromUtf8(vInstalled[i].getName()));
             m_listCtrl->SetItemText(currPackage, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion + " (Local)");
+            m_listCtrl->SetItemText(currPackage, REMOTECOLUMN, "---");
             m_listCtrl->SetItemText(currPackage, REPOCOLUMN, "---");
             m_listCtrl->SetItemBold(currPackage, true);
             m_listCtrl->SetItemBackgroundColour(currPackage, LOCALCOLOUR);
@@ -544,13 +561,14 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
             m_statusText->SetLabel("Status: Fetching Package list ...");
             m_progress->Pulse();
             m_listCtrl->AddRoot("ROOT");
-            std::vector<std::string> vRepoContents = m_repo.fetchList();
+            std::vector<std::string> fullIndex = getRepoManager().getFullIndex();
 
             m_statusText->SetLabel("Status: Reading Package information ...");
-            m_progress->SetRange(vRepoContents.size());
+            m_progress->SetRange(fullIndex.size());
             m_progress->SetValue(1);
 
-            for (size_t i = 0; i < vRepoContents.size(); i++)
+            size_t i = 0;
+            for (const std::string& pkg : fullIndex)
             {
                 // Test, whether the user wants to close the window
                 if (GetThread()->TestDestroy())
@@ -559,8 +577,9 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
                     return (wxThread::ExitCode)0;
                 }
 
-                populatePackageList(vRepoContents[i]);
+                populatePackageList(pkg);
                 m_progress->SetValue(i+1);
+                i++;
             }
 
             m_statusText->SetLabel("Status: Detecting installations ...");
@@ -599,6 +618,18 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
     catch (url::Error& e)
     {
         m_statusText->SetLabel("HTTP Error: " + std::string(e.what()));
+        m_progress->SetRange(100);
+        m_progress->SetValue(100);
+    }
+    catch (PackageRepoError& e)
+    {
+        m_statusText->SetLabel("Repository Error: " + std::string(e.what()));
+        m_progress->SetRange(100);
+        m_progress->SetValue(100);
+    }
+    catch (std::exception& e)
+    {
+        m_statusText->SetLabel("Internal Error: " + std::string(e.what()));
         m_progress->SetRange(100);
         m_progress->SetValue(100);
     }
@@ -672,17 +703,18 @@ void PackageRepoBrowser::OnClose(wxCloseEvent& event)
 /// recursion is started to resolve the contents
 /// of the folder.
 ///
-/// \param sUrl const std::string&
+/// \param sPackageId const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
+void PackageRepoBrowser::populatePackageList(const std::string& sPackageId)
 {
     // Get the information
-    PackageInfo pkgInfo = m_repo.fetchInfo(sUrl);
+    PackageInfo pkgInfo = getRepoManager().fetchInfo(sPackageId);
 
     // Fill the package list
     wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), pkgInfo.name);
+    m_listCtrl->SetItemText(currPackage, REMOTECOLUMN, pkgInfo.repoName);
     m_listCtrl->SetItemText(currPackage, REPOCOLUMN, pkgInfo.version);
     m_listCtrl->SetItemBold(currPackage, true);
     m_listCtrl->SetItemImage(currPackage, PACKAGCOLUMN, m_icons->GetIconIndex("nscr"));
@@ -696,13 +728,13 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     if (pkgInfo.requiredVersion.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, "Required NumeRe version");
-        m_listCtrl->SetItemText(currPackageInfo, 1, pkgInfo.requiredVersion);
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.requiredVersion);
     }
 
     if (pkgInfo.requiredPackages.length())
     {
         currPackageInfo = m_listCtrl->AppendItem(currPackage, DEPENDENCIES);
-        m_listCtrl->SetItemText(currPackageInfo, 1, pkgInfo.requiredPackages);
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.requiredPackages);
     }
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "Description");
@@ -750,6 +782,9 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
         m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
     }
 
+    currPackageInfo = m_listCtrl->AppendItem(currPackage, PACKAGE_ID);
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.packageId + "@" + pkgInfo.repoName);
+
     currPackageInfo = m_listCtrl->AppendItem(currPackage, REPO_URL);
     m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, pkgInfo.repoUrl);
 }
@@ -770,7 +805,6 @@ void PackageRepoBrowser::OnInstall(wxCommandEvent& event)
     if (item.IsOk() && m_listCtrl->HasChildren(item))
     {
         m_vUrls.clear();
-        std::vector<std::string> vDeps;
         m_vUrls.push_back(getUrl(item));
         m_fileNameToInstall = m_vUrls.back();
         m_fileNameToInstall.erase(0, m_fileNameToInstall.rfind('/')+1);
@@ -778,20 +812,17 @@ void PackageRepoBrowser::OnInstall(wxCommandEvent& event)
         m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "Downloading ...");
         m_listCtrl->SetItemBackgroundColour(item, INSTALLEDCOLOUR);
 
-        std::string sDepList = getDependencies(item);
+        std::string packageId = getEntry(item, PACKAGE_ID);
 
-        if (sDepList.length())
+        for (const std::string& sDep : getRepoManager().resolveDependencies(packageId))
         {
-            resolveDependencies(sDepList, vDeps);
+            wxTreeItemId dep = findPackageByFullID(sDep);
 
-            for (const std::string& sDep : vDeps)
+            if (dep.IsOk() && (isInstallable(dep) || isUpdateable(dep)))
             {
-                wxTreeItemId dep = findPackage(sDep + ".nscr");
                 m_listCtrl->SetItemText(dep, INSTALLEDCOLUMN, "Downloading ...");
                 m_listCtrl->SetItemBackgroundColour(dep, INSTALLEDCOLOUR);
-
-                if (dep.IsOk())
-                    m_vUrls.push_back(getUrl(dep));
+                m_vUrls.push_back(getUrl(dep));
             }
         }
 
@@ -970,6 +1001,33 @@ wxTreeItemId PackageRepoBrowser::findPackage(const std::string& sPackageFileName
 
 
 /////////////////////////////////////////////////
+/// \brief Find a package entry from its full
+/// package ID. The returned ID must be checked
+/// for validness via wxTreeItemId::IsOk() to
+/// detect, if the package has been found.
+///
+/// \param sFullPackageId const std::string&
+/// \return wxTreeItemId
+///
+/////////////////////////////////////////////////
+wxTreeItemId PackageRepoBrowser::findPackageByFullID(const std::string& sFullPackageId)
+{
+    wxTreeItemIdValue cookie;
+    wxTreeItemId child = m_listCtrl->GetFirstChild(m_listCtrl->GetRootItem(), cookie);
+
+    while (child.IsOk())
+    {
+        if (getEntry(child, PACKAGE_ID) == sFullPackageId)
+            return child;
+
+        child = m_listCtrl->GetNextSibling(child);
+    }
+
+    return child;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function resolves the
 /// dependencies of a selected file using a
 /// recursion. Only files, which are updateable
@@ -1012,7 +1070,7 @@ bool PackageRepoBrowser::getFileFromRepo(const std::string& sUrl)
     std::string filename = sUrl;
     filename.erase(0, filename.rfind('/')+1);
 
-    return m_repo.download(sUrl, m_scriptPath + "/packages/" + filename);
+    return NumeReKernel::getInstance()->getProcedureInterpreter().getRepoManager().download(sUrl, m_scriptPath + "/packages/" + filename);
 }
 
 
