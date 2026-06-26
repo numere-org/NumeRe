@@ -274,12 +274,13 @@ namespace url
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
     /// \param httpHeader const std::vector<std::string>&
-    /// \param filestream std::ifstream*
+    /// \param datastream std::istream*
     /// \param filesize size_t
+    /// \param buffer std::string*
     /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CurlCpp put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::ifstream* filestream, size_t filesize)
+    static CurlCpp put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::istream* datastream, size_t filesize, std::string* buffer)
     {
         CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
 
@@ -289,10 +290,16 @@ namespace url
         if (!curl.setOption(CURLOPT_READFUNCTION, reader))
             throw Error("Failed to set reader [" + std::string(errorBuffer) + "].");
 
-        if (!curl.setOption(CURLOPT_READDATA, filestream))
-            throw Error("Failed to set filestream [" + std::string(errorBuffer) + "].");
+        if (!curl.setOption(CURLOPT_READDATA, datastream))
+            throw Error("Failed to set datastream [" + std::string(errorBuffer) + "].");
 
         curl.setOption(CURLOPT_INFILESIZE, filesize);
+
+        if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
+            throw Error("Failed to set writer [" + std::string(errorBuffer) + "].");
+
+        if (!curl.setOption(CURLOPT_WRITEDATA, buffer))
+            throw Error("Failed to set write data [" + std::string(errorBuffer) + "].");
 
         return curl;
     }
@@ -418,25 +425,47 @@ namespace url
     /// \param sUserName const std::string&
     /// \param sPassWord const std::string&
     /// \param httpHeader const std::vector<std::string>&
-    /// \return size_t
+    /// \param sPayLoad const std::string&
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
+    std::string put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, const std::string& sPayLoad)
     {
-        std::ifstream filestream(boost::nowide::widen(sFileName).c_str(), std::ios_base::binary);
+        std::istringstream datastream;
+        std::ifstream filestream;
+        std::istream* stream_ptr = nullptr;
+        size_t s = 0ull;
+        std::string buffer;
+        buffer.clear();
 
-        if (!filestream.good())
-            throw Error("Cannot open file '" + sFileName + "'.");
+        if (sFileName.length())
+        {
+            filestream.open(boost::nowide::widen(sFileName).c_str(), std::ios_base::binary);
 
-        filestream.seekg(0, std::ios_base::end);
-        size_t s = filestream.tellg();
-        filestream.seekg(0, std::ios_base::beg);
+            if (!filestream.good())
+                throw Error("Cannot open file '" + sFileName + "'.");
 
-        if (!s)
-            throw Error("File size of '" + sFileName + "' is zero.");
+            filestream.seekg(0, std::ios_base::end);
+            s = filestream.tellg();
+            filestream.seekg(0, std::ios_base::beg);
+
+            if (!s)
+                throw Error("File size of '" + sFileName + "' is zero.");
+
+            stream_ptr = &filestream;
+        }
+        else if (sPayLoad.length())
+        {
+            datastream.str(sPayLoad);
+            s = sPayLoad.length();
+            stream_ptr = &datastream;
+        }
+
+        if (!stream_ptr)
+            throw Error("No data for uploading provided.");
 
         // Initialize CURL connection
-        CurlCpp curl = put_init(sUrl, sUserName, sPassWord, httpHeader, &filestream, s);
+        CurlCpp curl = put_init(sUrl, sUserName, sPassWord, httpHeader, stream_ptr, s, &buffer);
 
         // Retrieve content for the URL
         if (!curl.perform())
@@ -450,8 +479,8 @@ namespace url
         if (response_code >= 500)
             throw Error(toString((int)response_code) + " " + HTTP_RESPONSES[response_code] + " [Server error] for PUT/" + sUrl);
 
-        // Return the file size
-        return s;
+        // Return the response or the file size
+        return buffer.length() ? buffer : toString(s);
     }
 
 

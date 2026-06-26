@@ -1639,7 +1639,7 @@ mu::Array matfnc_identity(const mu::Array& n)
     if (dim < 1)
         throw mu::ParserError(mu::ecMATRIX_EMPTY);
 
-    mu::Array ret(dim*dim, mu::Value(0.0));
+    mu::Array ret(size_t(dim)*size_t(dim), mu::Value(0.0));
     ret.setDimSizes({dim, dim});
 
     for (int d = 0; d < dim; d++)
@@ -1680,7 +1680,7 @@ mu::Array matfnc_correl(const mu::Array& A, const mu::Array& B)
     int m = std::max(A.cols(), B.cols());
 
     // Create the target matrix
-    mu::Array mCorrelation((2*n-1)*(2*m-1), mu::Value(0.0));
+    mu::Array mCorrelation((2*size_t(n)-1)*(2*size_t(m)-1), mu::Value(0.0));
     mCorrelation.setDimSizes({2*n-1, 2*m-1});
 
     // Calculate the elements of the matrix by applying
@@ -2835,7 +2835,7 @@ mu::Array matfnc_assemble(const mu::Array& rows, const mu::Array& cols, const mu
     int colCount = cols.call("max").getAsScalarInt();
 
     // Prepare the filled matrix
-    mu::Array assembled(rowCount*colCount, mu::Value(NAN));
+    mu::Array assembled(size_t(rowCount)*size_t(colCount), mu::Value(NAN));
     assembled.setDimSizes({rowCount, colCount});
 
     int row = 0;

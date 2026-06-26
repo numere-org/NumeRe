@@ -4593,8 +4593,30 @@ void urlExecute(CommandLineParser& cmdParser)
         std::string sPayLoad = cmdParser.getParsedParameterValueAsString("payload", "", true);
         std::vector<std::string> httpHeader;
 
+        std::string sRequestMethod;
+
+        if (sUrl.starts_with("PUT "))
+        {
+            sRequestMethod = "PUT";
+            sUrl.erase(0, 4);
+        }
+        else if (sUrl.starts_with("GET "))
+        {
+            sRequestMethod = "GET";
+            sUrl.erase(0, 4);
+        }
+        else if (sUrl.starts_with("POST "))
+        {
+            sRequestMethod = "POST";
+            sUrl.erase(0, 5);
+        }
+
+        StripSpaces(sUrl);
+
         if (cmdParser.hasParam("header"))
             httpHeader = cmdParser.getParsedParameterValue("header").as_str_vector();
+
+        std::string sUrlResponse;
 
         // Push the response into a file, if necessary
         if (cmdParser.hasParam("file"))
@@ -4610,13 +4632,14 @@ void urlExecute(CommandLineParser& cmdParser)
                 sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
 
                 // Upload the file
-                size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword, httpHeader);
-                cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
+                sUrlResponse = url::put(sUrl, sFileName, sUserName, sPassword, httpHeader);
+                replaceAll(sUrlResponse, "\r\n", "\n");
+                cmdParser.setReturnValue(mu::Value(sUrlResponse));
             }
             else
             {
                 // Get the response from the server
-                std::string sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
+                sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
 
                 // Get the file parameter value
                 sFileName = cmdParser.getFileParameterValueForSaving(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
@@ -4628,7 +4651,7 @@ void urlExecute(CommandLineParser& cmdParser)
                 if (file.good())
                 {
                     file << sUrlResponse;
-                    cmdParser.setReturnValue(mu::Value(mu::Numerical(sUrlResponse.length())));
+                    cmdParser.setReturnValue(mu::Value(toString(sUrlResponse.length())));
                 }
                 else
                     throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, cmdParser.getCommandLine(), sFileName, sFileName);
@@ -4637,7 +4660,10 @@ void urlExecute(CommandLineParser& cmdParser)
         else if (sPayLoad.length())
         {
             // Get the response from the server
-            std::string sUrlResponse = url::post(sUrl, sUserName, sPassword, httpHeader, sPayLoad);
+            if (sRequestMethod == "PUT")
+                sUrlResponse = url::put(sUrl, "", sUserName, sPassword, httpHeader, sPayLoad);
+            else
+                sUrlResponse = url::post(sUrl, sUserName, sPassword, httpHeader, sPayLoad);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
@@ -4646,7 +4672,7 @@ void urlExecute(CommandLineParser& cmdParser)
         else
         {
             // Get the response from the server
-            std::string sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
+            sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");

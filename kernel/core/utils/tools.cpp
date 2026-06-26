@@ -2465,7 +2465,8 @@ void reduceLogFilesize(const string& sFileName)
             if (nLines - i > MINLINES)
                 continue;
 
-            fTemp << sTemp << endl;
+            if (!fFile.eof() || sTemp.length())
+                fTemp << sTemp << endl;
         }
 
         // Close the file streams
