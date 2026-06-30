@@ -1389,7 +1389,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     }
                     else
                     {
-                        std::string sVarName = "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "]";
+                        std::string sVarName = "_~PLUGIN`" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "`";
                         _parser.SetInternalVar(sVarName, _return.valArray.front());
                         sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
                     }

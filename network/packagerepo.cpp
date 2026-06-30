@@ -19,11 +19,13 @@
 #include <boost/nowide/fstream.hpp>
 #include <regex>
 #include <sstream>
+#include <fstream>
 
 #include "packagerepo.hpp"
 #include "http.h"
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/io/logger.hpp"
+#include "../kernel/kernel.hpp"
 
 // Fallback configuration, if no configuration is supplied
 static const std::string DEFAULTREPOCONFIG =
@@ -36,6 +38,7 @@ static const std::string DEFAULTREPOCONFIG =
     "\"tree\": \"https://api.github.com/repos/numere-org/Packages/git/trees/HEAD?recursive=true\","
     "\"raw-file\": \"https://raw.githubusercontent.com/numere-org/Packages/refs/heads/main/{path}\""
 "}";
+static const std::string DEFAULTREPOINDEXFILE = "<>/remotes/10_numere_packages.index";
 
 
 /////////////////////////////////////////////////
@@ -69,11 +72,12 @@ static void parseJson(const std::string& sJsonString, Json::Value& target)
 /// \brief PackageRepo constructor.
 ///
 /// \param sRepoConfig const std::string&
+/// \param sIndexFile const std::string&
 ///
 /////////////////////////////////////////////////
-PackageRepo::PackageRepo(const std::string& sRepoConfig)
+PackageRepo::PackageRepo(const std::string& sRepoConfig, const std::string& sIndexFile)
 {
-    connect(sRepoConfig);
+    connect(sRepoConfig, sIndexFile);
 }
 
 
@@ -81,12 +85,19 @@ PackageRepo::PackageRepo(const std::string& sRepoConfig)
 /// \brief Connect to a new repository.
 ///
 /// \param sRepoConfig const std::string&
+/// \param sIndexFile const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PackageRepo::connect(const std::string& sRepoConfig)
+void PackageRepo::connect(const std::string& sRepoConfig, const std::string& sIndexFile)
 {
     parseJson(sRepoConfig.length() ? sRepoConfig : DEFAULTREPOCONFIG, m_repoConfig);
+    m_indexFile = sIndexFile.length() ? sIndexFile : DEFAULTREPOINDEXFILE;
+
+    if (m_indexFile.starts_with("<>"))
+    {
+        replaceAll(m_indexFile, "<>", NumeReKernel::getInstance()->getSettings().getExePath().c_str());
+    }
 
     // Validate version
     if (!m_repoConfig.isMember("version"))
@@ -149,7 +160,7 @@ std::string PackageRepo::getRepoName() const
 /////////////////////////////////////////////////
 bool PackageRepo::needsRefresh() const
 {
-    return _time64(nullptr) - m_lastRefreshed > 600;
+    return _time64(nullptr) - m_lastRefreshed > 1200;
 }
 
 
@@ -166,10 +177,48 @@ const std::map<std::string, PackageVersions>& PackageRepo::fetchIndex() const
     {
         std::string sResponse;
 
-        if (m_repoConfig["authentication"]["required"].asBool())
-            sResponse = url::get(m_repoConfig["tree"].asString(), "", "", {m_repoConfig["authentication"]["method"].asString()});
-        else
-            sResponse = url::get(m_repoConfig["tree"].asString());
+        try
+        {
+            if (m_repoConfig["authentication"]["required"].asBool())
+                sResponse = url::get(m_repoConfig["tree"].asString(), "", "", {m_repoConfig["authentication"]["method"].asString()});
+            else
+                sResponse = url::get(m_repoConfig["tree"].asString());
+        }
+        catch (...)
+        {
+            // Do we already have an index? Then we're probably rate-limited. Just
+            // leave it as it was and set the fetching time to now
+            if (m_index.size())
+            {
+                g_logger.warning("Unable to download an index update from " + m_repoConfig["tree"].asString()
+                                 + ". Re-using the current index. Check your rate-limits.");
+                m_lastRefreshed = _time64(nullptr);
+                return m_index;
+            }
+
+            // Did we cache an index in the past?
+            if (m_indexFile.length() && fileExists(m_indexFile))
+            {
+                g_logger.warning("Unable to download the current index from " + m_repoConfig["tree"].asString()
+                                 + ". Re-using the cached index from an earlier session. Check your rate-limits.");
+
+                std::ifstream indexFile(boost::nowide::widen(m_indexFile).c_str());
+                std::string line;
+                sResponse.clear();
+
+                while (indexFile.good() && !indexFile.eof())
+                {
+                    std::getline(indexFile, line);
+
+                    if (sResponse.length())
+                        sResponse += "\n";
+
+                    sResponse += line;
+                }
+            }
+            else
+                throw;
+        }
 
         Json::Value tree;
         parseJson(sResponse, tree);
@@ -221,6 +270,15 @@ const std::map<std::string, PackageVersions>& PackageRepo::fetchIndex() const
                     m_index[packageDef[1]].versions[packageDef[2]].file = fileUrl;
             }
         }
+
+        if (m_index.empty())
+            g_logger.warning("The index from " + m_repoConfig["tree"].asString() + " does not list any installable packages.");
+
+        // Write the current index to disk so that we can recycle it
+        // if the Github REST API tokens are running out (can happen,
+        // if many people sharing the same IP)
+        std::ofstream indexFile(boost::nowide::widen(m_indexFile).c_str());
+        indexFile << sResponse;
 
         m_lastRefreshed = _time64(nullptr);
     }
@@ -366,6 +424,7 @@ bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sT
     }
     catch (url::Error& e)
     {
+        g_logger.warning("Download of " + sPackageUrl + " failed.");
         return false;
     }
 
@@ -453,7 +512,7 @@ bool PackageRepoManager::importConfigs(const std::vector<std::string>& remoteCon
                 sRepoConfig += line;
             }
 
-            m_remotes.push_back(PackageRepo(sRepoConfig));
+            m_remotes.push_back(PackageRepo(sRepoConfig, cfg.substr(0, cfg.length()-10) + "index"));
         }
         catch (std::exception& e)
         {

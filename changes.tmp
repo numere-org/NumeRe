@@ -22,3 +22,9 @@ Updated	The package repository is now located in GitHub simplyfing the contribut
 Applied	It is possible to have secondary package repositories (even private ones), if they provide a similar REST API as GitHub or Gitlab.
 Cleaned	The return value of "url" is now always STR, even if the contents are byte counts. This is to make some special cases more robust.
 Added	It is now possible to enforce an HTTP method in "url" by prefixing the URL in the command with the desired method.
+Cleaned	The encoding of package files is now also UTF-8.
+Fixed	Passing a component of an object.path vector as input for another function does not result in a crash anymore.
+Fixed	Commands, which are used without any expression or parameter, do not result in a substr error anymore.
+Cleaned	The tooltips for plugin commands have been updated to reflect their signature better.
+Fixed	Return values of plugins work again as intended.
+Applied	The package repository indexes are now more robust against missing network connection or REST API rate-limits.

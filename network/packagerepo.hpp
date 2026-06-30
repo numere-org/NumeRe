@@ -96,12 +96,13 @@ class PackageRepo
         Json::Value m_repoConfig;
         mutable std::map<std::string,PackageVersions> m_index;
         mutable __time64_t m_lastRefreshed;
+        std::string m_indexFile;
 
         bool needsRefresh() const;
 
     public:
-        PackageRepo(const std::string& sRepoConfig = "");
-        void connect(const std::string& sRepoConfig);
+        PackageRepo(const std::string& sRepoConfig = "", const std::string& sIndexFile = "");
+        void connect(const std::string& sRepoConfig, const std::string& sIndexFile);
         bool is_connected() const;
         std::string getRepoName() const;
 

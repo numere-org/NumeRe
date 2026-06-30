@@ -596,7 +596,7 @@ namespace mu
             if (isString())
                 return getStr();
             else if (isObject() && getObject().getObjectType() == "path")
-                return static_cast<const PathValue*>(get())->get().to_string(separator);
+                return static_cast<const PathValue&>(getObject()).get().to_string(separator);
         }
         else
             return m_defString;

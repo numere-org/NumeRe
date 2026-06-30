@@ -7469,7 +7469,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 // Insert the prepared contents
                 for (size_t j = 0; j < contents.size(); j++)
                 {
-                    edit->AddText("\t" + contents[j] + "\r\n");
+                    edit->AddText("\t" + wxFromUtf8(contents[j]) + "\r\n");
                 }
 
                 edit->AddText("\r\n");

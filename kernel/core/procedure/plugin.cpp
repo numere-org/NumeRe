@@ -364,11 +364,16 @@ std::string Package::getCommandSignature() const
 
     std::string sSignature = sCommand + " ";
 
-    if (sArgumentList.find("<EXPRESSION>") != std::string::npos && sArgumentList.find("<PARAMSTRING>") != std::string::npos)
+    bool requiresExpression = sArgumentList.find("<EXPRESSION>") != std::string::npos
+        || sArgumentList.find("<EXPRSTRING>") != std::string::npos;
+    bool requiresParameters = sArgumentList.find("<PARAMSTRING>") != std::string::npos
+        || sArgumentList.find("<PARAMLIST>") != std::string::npos;
+
+    if (requiresExpression && requiresParameters)
         sSignature += "EX -set PAR ";
-    else if (sArgumentList.find("<EXPRESSION>") != std::string::npos)
+    else if (requiresExpression)
         sSignature += "EX ";
-    else if (sArgumentList.find("<PARAMSTRING>") != std::string::npos)
+    else if (requiresParameters)
         sSignature += "-PAR ";
     else if (sArgumentList.find("<CMDSTRING>") != std::string::npos)
         sSignature += "(...) ";

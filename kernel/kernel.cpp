@@ -2265,7 +2265,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             }
             else if (sLine.find("<<RETURNVAL>>") != std::string::npos)
             {
-                std::string sVarName = "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]";
+                std::string sVarName = "_~PLUGIN`" + _procedure.getPluginProcName() + "~ROOT`";
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
 #warning FIXME (numere#4#08/05/24): Figure out, how to correctly handle multiple return values (instead of using .front()) -> NEW ISSUE
                 _parser.SetInternalVar(sVarName, _rTemp.valArray.front());
