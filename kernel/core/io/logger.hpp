@@ -37,6 +37,7 @@ class Logger
     protected:
         boost::nowide::fstream m_logFile;
         std::string m_sLogFile;
+        bool m_enableTerminalPrints;
 
         bool ensure_open();
 

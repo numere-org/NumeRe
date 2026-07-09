@@ -1324,11 +1324,18 @@ mu::Array numfnc_logtoidx(const mu::MultiArgFuncParams& v)
 
         if (v[0].isMatrix() && !v[0].isVector())
         {
-            mu::Array num = numfnc_Sum(v);
-            vIdx.setDimSizes({num.getAsScalarInt(), v[0].getDims()});
-            vIdx.resize(num.getAsScalarInt() * v[0].getDims());
-
             size_t nCount = 0;
+
+            for (size_t i = 0; i < v[0].size(); i++)
+            {
+                if (v[0].get(i).isValid() && v[0].get(i))
+                    nCount++;
+            }
+
+            vIdx.setDimSizes({nCount, v[0].getDims()});
+            vIdx.resize(nCount * v[0].getDims());
+
+            nCount = 0;
 
             for (size_t i = 0; i < v[0].size(); i++)
             {

@@ -806,13 +806,14 @@ void PackageRepoBrowser::OnInstall(wxCommandEvent& event)
     {
         m_vUrls.clear();
         m_vUrls.push_back(getUrl(item));
-        m_fileNameToInstall = m_vUrls.back();
-        m_fileNameToInstall.erase(0, m_fileNameToInstall.rfind('/')+1);
+        std::string packageId = getEntry(item, PACKAGE_ID);
+
+        m_fileNameToInstall = packageId.substr(0, packageId.find('@'));
+
         m_installButton->Disable();
         m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "Downloading ...");
         m_listCtrl->SetItemBackgroundColour(item, INSTALLEDCOLOUR);
 
-        std::string packageId = getEntry(item, PACKAGE_ID);
 
         for (const std::string& sDep : getRepoManager().resolveDependencies(packageId))
         {

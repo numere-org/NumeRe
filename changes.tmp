@@ -28,3 +28,4 @@ Fixed	Commands, which are used without any expression or parameter, do not resul
 Cleaned	The tooltips for plugin commands have been updated to reflect their signature better.
 Fixed	Return values of plugins work again as intended.
 Applied	The package repository indexes are now more robust against missing network connection or REST API rate-limits.
+Fixed	The function "logtoidx()" does not over-allocate memory any more.

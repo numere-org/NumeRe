@@ -18,6 +18,7 @@
 
 #include "logger.hpp"
 #include "../utils/stringtools.hpp"
+#include "../../kernel.hpp"
 #include <windows.h>
 
 DetachedLogger g_logger;
@@ -72,7 +73,7 @@ bool IsWow64()
 /////////////////////////////////////////////////
 /// \brief Empty default constructor.
 /////////////////////////////////////////////////
-Logger::Logger()
+Logger::Logger() : m_enableTerminalPrints(false)
 {
     //
 }
@@ -85,7 +86,7 @@ Logger::Logger()
 /// \param sLogFile const std::string&
 ///
 /////////////////////////////////////////////////
-Logger::Logger(const std::string& sLogFile)
+Logger::Logger(const std::string& sLogFile) : m_enableTerminalPrints(false)
 {
     open(sLogFile);
 }
@@ -168,6 +169,8 @@ void Logger::push(const std::string& sMessage)
 {
     if (ensure_open())
         m_logFile << sMessage;
+    else if (m_enableTerminalPrints)
+        NumeReKernel::printPreFmt(sMessage, true);
 }
 
 
@@ -184,6 +187,8 @@ void Logger::push_line(const std::string& sMessage)
 {
     if (ensure_open())
         m_logFile << sMessage << std::endl;
+    else if (m_enableTerminalPrints)
+        NumeReKernel::print(sMessage, true);
 }
 
 
@@ -198,7 +203,7 @@ void Logger::push_line(const std::string& sMessage)
 /////////////////////////////////////////////////
 LeveledLogger::LeveledLogger(Logger::LogLevel lvl) : Logger(), m_level(lvl), m_hasErrorLogged(false)
 {
-    //
+    m_enableTerminalPrints = true;
 }
 
 
@@ -212,7 +217,7 @@ LeveledLogger::LeveledLogger(Logger::LogLevel lvl) : Logger(), m_level(lvl), m_h
 /////////////////////////////////////////////////
 LeveledLogger::LeveledLogger(const std::string& sLogFile, Logger::LogLevel lvl) : Logger(sLogFile), m_level(lvl), m_hasErrorLogged(false)
 {
-    //
+    m_enableTerminalPrints = true;
 }
 
 
@@ -224,6 +229,7 @@ LeveledLogger::LeveledLogger(const std::string& sLogFile, Logger::LogLevel lvl) 
 /////////////////////////////////////////////////
 LeveledLogger::LeveledLogger(const LeveledLogger& other) : Logger(), m_hasErrorLogged(false)
 {
+    m_enableTerminalPrints = true;
     m_level = other.m_level;
 
     if (other.is_open())
@@ -365,9 +371,9 @@ std::string LeveledLogger::levelToString(Logger::LogLevel lvl)
 /// \param lvl Logger::LogLevel
 ///
 /////////////////////////////////////////////////
-DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_startAfterCrash(false)
+DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : LeveledLogger(lvl), m_startAfterCrash(false)
 {
-    m_level = lvl;
+    m_enableTerminalPrints = false;
 }
 
 
