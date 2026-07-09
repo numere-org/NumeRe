@@ -29,3 +29,4 @@ Cleaned	The tooltips for plugin commands have been updated to reflect their sign
 Fixed	Return values of plugins work again as intended.
 Applied	The package repository indexes are now more robust against missing network connection or REST API rate-limits.
 Fixed	The function "logtoidx()" does not over-allocate memory any more.
+Cleaned	Plotting of two-column matrices is now supported

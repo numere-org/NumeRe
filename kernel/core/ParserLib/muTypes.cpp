@@ -1022,7 +1022,7 @@ namespace mu
             writeInt(asI64() + other.asI64(), promotion);
         else if (conversion == Numerical::UINT)
             writeUint(asUI64() + other.asUI64(), promotion);
-        else if (promotion <= DATETIME)
+        else if (promotion <= DATETIME || promotion == INVALID)
             writeFloat(asF64() + other.asF64(), promotion);
         else
             writeComplex(asCF64() + other.asCF64(), promotion);
@@ -1048,7 +1048,7 @@ namespace mu
             writeInt(asI64() - other.asI64(), promotion);
         else if (conversion == Numerical::UINT)
             writeUint(asUI64() - other.asUI64(), promotion);
-        else if (promotion <= DATETIME)
+        else if (promotion <= DATETIME || promotion == INVALID)
             writeFloat(asF64() - other.asF64(), promotion);
         else
             writeComplex(asCF64() - other.asCF64(), promotion);
@@ -1088,7 +1088,7 @@ namespace mu
             writeInt(asI64() * other.asI64(), promotion);
         else if (conversion == Numerical::UINT)
             writeUint(asUI64() * other.asUI64(), promotion);
-        else if (promotion <= DATETIME)
+        else if (promotion <= DATETIME || promotion == INVALID)
             writeFloat(asF64() * other.asF64(), promotion);
         else
             writeComplex(asCF64() * other.asCF64(), promotion);
