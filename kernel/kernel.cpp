@@ -794,12 +794,13 @@ void NumeReKernel::defineMatFunctions()
     _parser.DefineFun("matflf", matfnc_matfrf);                                  // matflf(x,y,z,...)
     _parser.DefineFun("det", matfnc_det);                                        // det(A)
     _parser.DefineFun("cross", matfnc_cross);                                    // cross(A)
-    _parser.DefineFun("trace", matfnc_trace);                                    // trace(A)
+    _parser.DefineFun("trace", matfnc_trace, true, 1);                           // trace(A,dim={1,2})
     _parser.DefineFun("eigenvals", matfnc_eigenvals);                            // eigenvals(A)
     _parser.DefineFun("eigenvects", matfnc_eigenvects);                          // eigenvects(A)
     _parser.DefineFun("diagonalize", matfnc_diagonalize);                        // diagonalize(A)
     _parser.DefineFun("invert", matfnc_invert);                                  // invert(A)
     _parser.DefineFun("transpose", matfnc_transpose, true, 1);                   // transpose(A,dim={2,1})
+    _parser.DefineFun("tensorprod", matfnc_tensorprod, true, 1);                 // tensorprod(A,B,dim={})
     _parser.DefineFun("size", matfnc_size);                                      // size(A)
     _parser.DefineFun("cutoff", matfnc_cutoff);                                  // cutoff(A,thresh,mode)
     _parser.DefineFun("movsum", matfnc_movsum, true, 1);                         // movsum(A,n,m=n)
@@ -3978,6 +3979,28 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
                     stringTable.set(i, j, val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
                 else
                     stringTable.set(i, j, !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+            }
+        }
+
+        return stringTable;
+    }
+    else if (arr.getDims() == 3)
+    {
+        NumeRe::Container<std::string> stringTable(arr.rows(), (arr.cols()+1)*arr.layers()-1);
+
+        for (size_t i = 0; i < arr.rows(); i++)
+        {
+            for (size_t j = 0; j < arr.cols(); j++)
+            {
+                for (size_t k = 0; k < arr.layers(); k++)
+                {
+                    const mu::Value& val = arr.get(IndexTuple({i,j,k}));
+
+                    if (val.getType() == mu::TYPE_ARRAY)
+                        stringTable.set(i, j + k*(arr.cols()+1), val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
+                    else
+                        stringTable.set(i, j + k*(arr.cols()+1), !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+                }
             }
         }
 

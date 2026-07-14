@@ -30,3 +30,5 @@ Fixed	Return values of plugins work again as intended.
 Applied	The package repository indexes are now more robust against missing network connection or REST API rate-limits.
 Fixed	The function "logtoidx()" does not over-allocate memory any more.
 Cleaned	Plotting of two-column matrices is now supported
+Applied	3D matrices will now show their layers next to each other if inspected using the dataviewer.
+New	The function "tensorprod()" provides a n-dimensional tensorproduct and also contracts, if necessary. The function "trace()" was extended to support n-dimensional contraction as well.

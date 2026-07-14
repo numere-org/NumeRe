@@ -469,28 +469,6 @@ mu::Array matfnc_cross(const mu::Array& A)
 
 
 /////////////////////////////////////////////////
-/// \brief Implementation of the trace() function.
-///
-/// \param A const mu::Array&
-/// \return mu::Array
-///
-/////////////////////////////////////////////////
-mu::Array matfnc_trace(const mu::Array& A)
-{
-    checkInputMatrix(A, MATRIX_MUST_BE_2D | MATRIX_MUST_BE_SQUARE);
-
-    mu::Value trace(0.0);
-
-    for (size_t i = 0; i < A.rows(); i++)
-    {
-        trace += A.get(i, i);
-    }
-
-    return trace;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function does the whole
 /// eigenvalues, eigenvectors and diagonalizing
 /// stuff.
@@ -821,6 +799,329 @@ mu::Array matfnc_transpose(const mu::Array& A, const mu::Array& dims)
 
         ret.get(targetIndex) = A.get(sourceIndex);
     } while (targetIter.next());
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the tensorprod()
+/// function.
+///
+/// \param A const mu::Array&
+/// \param B const mu::Array&
+/// \param dims const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_tensorprod(const mu::Array& A, const mu::Array& B, const mu::Array& dims)
+{
+    if (A.isScalar() || B.isScalar())
+        return A * B;
+
+    mu::DimSizes dimA = A.getDimSizes();
+    mu::DimSizes dimB = B.getDimSizes();
+
+    // Dimension sizes for the extraction while contracting. Will contain the contracted
+    // dimensions's sizes set to zero, i.e. [A1, A2, ..., 0, ...]
+    mu::DimSizes dimASource = dimA;
+    mu::DimSizes dimBSource = dimB;
+
+    // Dimension sizes of the contraction "matrix" created from
+    // the to-be-contracted dimension sizes of the tensor A
+    mu::DimSizes contractionDims;
+
+    // Dimension sizes of the target tensor, combines all non-contracted dimensions
+    // in the order [A1,A2,...,B1,B2,...]
+    mu::DimSizes targetDims;
+
+    std::vector<std::pair<int64_t, int64_t>> dimMapping;
+
+    if (dims.size() && !dims.isVoid() && !dims.isDefault())
+    {
+        if (dims.size() < 2ull)
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
+
+        // Get the pairings
+        if (dims.size() == 2ull && !dims.get(0).isArray() && !dims.get(1).isArray())
+            dimMapping.push_back(std::make_pair(dims.get(0).getNum().asI64()-1,
+                                                dims.get(1).getNum().asI64()-1));
+        else
+        {
+            for (size_t i = 0; i < dims.size(); i++)
+            {
+                const mu::Value& dim = dims.get(i);
+                const mu::Array& dimPair = dim.getArray();
+                dimMapping.push_back(std::make_pair(dimPair.get(0).getNum().asI64()-1,
+                                                    dimPair.get(1).getNum().asI64()-1));
+            }
+        }
+
+        // Ensure that the pairing dimensions exist and are of the same size
+        for (const std::pair<int64_t,int64_t>& p : dimMapping)
+        {
+            if (p.first < 0
+                || p.first >= dimA.size()
+                || p.second < 0
+                || p.second >= dimB.size())
+                throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
+
+            if (dimA[p.first] != dimB[p.second])
+                throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, A.printDims() + " vs. " + B.printDims());
+
+            // The contracted dimensions shall have some components and
+            // be unique as well, i.e. shall not be contracted twice
+            if (dimASource[p.first] == 0 || dimBSource[p.second] == 0)
+                throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
+
+            dimASource[p.first] = 0;
+            dimBSource[p.second] = 0;
+
+            // Store the contraction dimension size
+            contractionDims.push_back(dimA[p.first]);
+            dimA[p.first] = 1;
+            dimB[p.second] = 1;
+        }
+    }
+
+    // Define the target dimensions
+    for (size_t d : dimASource)
+    {
+        // Only copy non-zero dimensions
+        if (d)
+            targetDims.push_back(d);
+    }
+
+    for (size_t d : dimBSource)
+    {
+        // Only copy non-zero dimensions
+        if (d)
+            targetDims.push_back(d);
+    }
+
+    // Full contraction may return a vector or a scalar. Ensure that
+    // we have at least two dimensions remaining, although they might
+    // be just singular dimensions
+    while (targetDims.size() < 2ull)
+    {
+        targetDims.push_back(1ull);
+    }
+
+    while (targetDims.size() >= 2ull && targetDims.back() == 1ull)
+    {
+        targetDims.pop_back();
+    }
+
+    mu::Array ret(mu::getNumElements(targetDims));
+    ret.setDimSizes(targetDims);
+
+    mu::IndexIterator sourceAIter(dimA);
+
+    // Iterate over the remaining dims of A
+    do
+    {
+        mu::IndexIterator sourceBIter(dimB);
+
+        // Iterate over the remaining dims of B
+        do
+        {
+
+            // Get the source indices as copies because we want
+            // to adapt them within the following embedded while loop
+            mu::IndexTuple sourceAIndex = sourceAIter.index();
+            mu::IndexTuple sourceBIndex = sourceBIter.index();
+
+            mu::IndexTuple targetIndex;
+
+            // Adapt the target index with the indices of A
+            for (size_t i = 0; i < dimASource.size(); i++)
+            {
+                // Only copy non-zero dimensions
+                if (dimASource[i])
+                    targetIndex.push_back(sourceAIndex[i]);
+            }
+
+            // Adapt the target index with the indices of B
+            for (size_t i = 0; i < dimBSource.size(); i++)
+            {
+                // Only copy non-zero dimensions
+                if (dimBSource[i])
+                    targetIndex.push_back(sourceBIndex[i]);
+            }
+
+            // Full contractions need at least a single index
+            if (!targetIndex.size())
+                targetIndex.push_back(0ull);
+
+            // Get a reference to the target value
+            mu::Value& val = ret.get(targetIndex);
+
+            if (contractionDims.size())
+            {
+                mu::IndexIterator contractIter(contractionDims);
+                const mu::IndexTuple& contractIndex = contractIter.index();
+
+                // Iterate over the contraction dimensions
+                do
+                {
+                    // Move the source indices through the contraction
+                    for (size_t i = 0; i < dimMapping.size(); i++)
+                    {
+                        sourceAIndex[dimMapping[i].first] = contractIndex[i];
+                        sourceBIndex[dimMapping[i].second] = contractIndex[i];
+                    }
+
+                    // Calculate the actual component contraction
+                    val += A.get(sourceAIndex) * B.get(sourceBIndex);
+                } while (contractIter.next());
+            }
+            else
+                val = A.get(sourceAIndex) * B.get(sourceBIndex);
+        } while (sourceBIter.next());
+    } while (sourceAIter.next());
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the trace() function.
+///
+/// \param A const mu::Array&
+/// \param dims const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array matfnc_trace(const mu::Array& A, const mu::Array& dims)
+{
+    mu::DimSizes dimSizes = A.getDimSizes();
+    mu::DimSizes dimSource = dimSizes;
+
+    // Dimension sizes of the contraction "matrix" created from
+    // the to-be-contracted dimension sizes of the tensor A
+    mu::DimSizes contractionDims;
+
+    // Dimension sizes of the target tensor, combines all non-contracted dimensions
+    // in the order [A1,A2,...,An,Am,...]
+    mu::DimSizes targetDims;
+
+    std::vector<std::pair<int64_t, int64_t>> dimMapping;
+
+    if (dims.size() && !dims.isVoid() && !dims.isDefault())
+    {
+        if (dims.size() < 2ull)
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
+
+        // Get the pairings
+        if (dims.size() == 2ull && !dims.get(0).isArray() && !dims.get(1).isArray())
+            dimMapping.push_back(std::make_pair(dims.get(0).getNum().asI64()-1,
+                                                dims.get(1).getNum().asI64()-1));
+        else
+        {
+            for (size_t i = 0; i < dims.size(); i++)
+            {
+                const mu::Value& dim = dims.get(i);
+                const mu::Array& dimPair = dim.getArray();
+                dimMapping.push_back(std::make_pair(dimPair.get(0).getNum().asI64()-1,
+                                                    dimPair.get(1).getNum().asI64()-1));
+            }
+        }
+    }
+    else
+        dimMapping.push_back(std::make_pair(0ull, 1ull));
+
+    // Ensure that the pairing dimensions exist and are of the same size
+    for (const std::pair<int64_t,int64_t>& p : dimMapping)
+    {
+        if (p.first < 0
+            || p.first >= dimSizes.size()
+            || p.second < 0
+            || p.second >= dimSizes.size())
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
+
+        if (dimSizes[p.first] != dimSizes[p.second])
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, A.printDims());
+
+        // The contracted dimensions shall have some components and
+        // be unique as well, i.e. shall not be contracted twice
+        if (dimSource[p.first] == 0 || dimSource[p.second] == 0)
+            throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
+
+        dimSource[p.first] = 0;
+        dimSource[p.second] = 0;
+
+        // Store the contraction dimension size
+        contractionDims.push_back(dimSizes[p.first]);
+        dimSizes[p.first] = 1;
+        dimSizes[p.second] = 1;
+    }
+
+    for (size_t d : dimSource)
+    {
+        // Only copy non-zero dimensions
+        if (d)
+            targetDims.push_back(d);
+    }
+
+    // Full contraction may return a vector or a scalar. Ensure that
+    // we have at least two dimensions remaining, although they might
+    // be just singular dimensions
+    while (targetDims.size() < 2ull)
+    {
+        targetDims.push_back(1ull);
+    }
+
+    while (targetDims.size() >= 2ull && targetDims.back() == 1ull)
+    {
+        targetDims.pop_back();
+    }
+
+    mu::Array ret(mu::getNumElements(targetDims));
+    ret.setDimSizes(targetDims);
+
+    mu::IndexIterator sourceIter(dimSizes);
+
+    // Iterate over the remaining dims
+    do
+    {
+        // Get the source indices as copies because we want
+        // to adapt them within the following embedded while loop
+        mu::IndexTuple sourceIndex = sourceIter.index();
+
+        mu::IndexTuple targetIndex;
+
+        // Adapt the target index with the indices of A
+        for (size_t i = 0; i < dimSource.size(); i++)
+        {
+            // Only copy non-zero dimensions
+            if (dimSource[i])
+                targetIndex.push_back(sourceIndex[i]);
+        }
+
+        // Full contractions need at least a single index
+        if (!targetIndex.size())
+            targetIndex.push_back(0ull);
+
+        // Get a reference to the target value
+        mu::Value& val = ret.get(targetIndex);
+
+        mu::IndexIterator contractIter(contractionDims);
+        const mu::IndexTuple& contractIndex = contractIter.index();
+
+        // Iterate over the contraction dimensions
+        do
+        {
+            // Move the source indices through the contraction
+            for (size_t i = 0; i < dimMapping.size(); i++)
+            {
+                sourceIndex[dimMapping[i].first] = contractIndex[i];
+                sourceIndex[dimMapping[i].second] = contractIndex[i];
+            }
+
+            // Calculate the actual component contraction
+            val += A.get(sourceIndex);
+        } while (contractIter.next());
+    } while (sourceIter.next());
 
     return ret;
 }

@@ -1343,7 +1343,7 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
 
     std::string cellValue = wxToUtf8(GetCellValue(row, col));
 
-    if (cellValue.front() != '"')
+    if (cellValue.length() && cellValue.front() != '"')
     {
         if (isConvertible(cellValue, CONVTYPE_VALUE))
             return StrToCmplx(cellValue);

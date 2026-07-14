@@ -31,12 +31,13 @@ mu::Array matfnc_matfrf(const mu::MultiArgFuncParams& rows);
 
 mu::Array matfnc_det(const mu::Array& A);
 mu::Array matfnc_cross(const mu::Array& A);
-mu::Array matfnc_trace(const mu::Array& A);
 mu::Array matfnc_eigenvals(const mu::Array& A);
 mu::Array matfnc_eigenvects(const mu::Array& A);
 mu::Array matfnc_diagonalize(const mu::Array& A);
 mu::Array matfnc_invert(const mu::Array& A);
 mu::Array matfnc_transpose(const mu::Array& A, const mu::Array& dims); // OPT=1
+mu::Array matfnc_tensorprod(const mu::Array& A, const mu::Array& B, const mu::Array& dims);
+mu::Array matfnc_trace(const mu::Array& A, const mu::Array& dims); // OPT=1
 mu::Array matfnc_size(const mu::Array& A);
 mu::Array matfnc_cutoff(const mu::Array& A, const mu::Array& threshold, const mu::Array& mode);
 mu::Array matfnc_movsum(const mu::Array& A, const mu::Array& n, const mu::Array& m); // OPT=1
