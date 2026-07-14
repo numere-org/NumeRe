@@ -47,16 +47,16 @@ jobs:
           mkdir -p staging
           gh release download "$TAG" -D staging --pattern "numere-win-v*_x64*.exe"
 
-      - name: Extract exe files for signing
+      - name: Bundle exe files for signing
         if: steps.download.outcome == 'success'
         continue-on-error: true
-        id: extract
+        id: bundle
         run: |
           cd staging
           zip -r signing-payload.zip *
 
       - name: Submit to SignPath
-        if: steps.extract.outcome == 'success'
+        if: steps.bundle.outcome == 'success'
         continue-on-error: true
         id: sign
         uses: SignPath/github-action-submit-signing-request@v1
@@ -101,7 +101,7 @@ jobs:
           else
             echo "signed=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Signing incomplete — release ships with unsigned binaries"
-            echo "::warning::Download: ${{ steps.download.outcome }}, Extract: ${{ steps.extract.outcome }}, Sign: ${{ steps.sign.outcome }}, Repackage: ${{ steps.repackage.outcome }}, Upload: ${{ steps.upload.outcome }}, Scoop: ${{ steps.scoop-manifest.outcome }}"
+            echo "::warning::Download: ${{ steps.download.outcome }}, Extract: ${{ steps.extract.outcome }}, Sign: ${{ steps.sign.outcome }}, Repackage: ${{ steps.repackage.outcome }}, Upload: ${{ steps.upload.outcome }}"
           fi
 
       - name: Publish release
