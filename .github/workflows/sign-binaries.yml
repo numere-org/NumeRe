@@ -1,0 +1,111 @@
+# This is a basic workflow that is manually triggered
+
+name: Sign-Binaries
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    environment: signing
+    permissions:
+      contents: write
+    outputs:
+      signed: ${{ steps.result.outputs.signed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CANDIDATE="${{ github.event.workflow_dispatch.head_branch }}"
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            CANDIDATE=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          fi
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Could not determine release tag"
+            exit 1
+          fi
+          echo "TAG=$CANDIDATE" >> "$GITHUB_ENV"
+          echo "VERSION=${CANDIDATE#v}" >> "$GITHUB_ENV"
+
+      - name: Download Windows artifacts
+        continue-on-error: true
+        id: download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p staging
+          gh release download "$TAG" -D staging \
+            -p "numere-win-v*_x64-portable.exe" \
+            -p "numere-win-v*_x64.exe"
+
+      - name: Extract exe files for signing
+        if: steps.download.outcome == 'success'
+        continue-on-error: true
+        id: extract
+        run: |
+          zip -r signing-payload.zip *
+
+      - name: Submit to SignPath
+        if: steps.extract.outcome == 'success'
+        continue-on-error: true
+        id: sign
+        uses: SignPath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: signing-payload.zip
+          wait-for-completion: true
+          output-artifact-directory: signed-output
+
+      - name: Repackage signed binaries
+        if: steps.sign.outcome == 'success'
+        continue-on-error: true
+        id: repackage
+        run: |
+          mkdir -p upload
+          # Re-zip CLI archive with signed binary
+          cd signed-output/cli
+          # Copy bare binary
+          cp *.exe "../../upload/sap-devs_${VERSION}_windows_amd64.exe"
+
+      - name: Upload signed artifacts to release
+        if: steps.repackage.outcome == 'success'
+        continue-on-error: true
+        id: upload
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG" \
+            "upload/*.exe" \
+            --clobber
+
+      - name: Set output
+        id: result
+        run: |
+          if [ "${{ steps.sign.outcome }}" = "success" ] && [ "${{ steps.upload.outcome }}" = "success" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Windows binaries signed and uploaded successfully"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Signing incomplete — release ships with unsigned binaries"
+            echo "::warning::Download: ${{ steps.download.outcome }}, Extract: ${{ steps.extract.outcome }}, Sign: ${{ steps.sign.outcome }}, Repackage: ${{ steps.repackage.outcome }}, Upload: ${{ steps.upload.outcome }}, Scoop: ${{ steps.scoop-manifest.outcome }}"
+          fi
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "$TAG" --draft=false
