@@ -45,15 +45,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p staging
-          gh release download "$TAG" -D staging \
-            -p "numere-win-v*_x64-portable.exe" \
-            -p "numere-win-v*_x64.exe"
+          gh release download "$TAG" -D staging --pattern "numere-win-v*_x64*.exe
 
       - name: Extract exe files for signing
         if: steps.download.outcome == 'success'
         continue-on-error: true
         id: extract
         run: |
+          cd staging
           zip -r signing-payload.zip *
 
       - name: Submit to SignPath
