@@ -80,7 +80,7 @@ jobs:
           ls -l
           ls -l signed-output
           # Copy bare binary
-          cp "signed-output/*.exe" "upload/*.exe"
+          cp signed-output/*.exe upload/*.exe
 
       - name: Upload signed artifacts to release
         if: steps.repackage.outcome == 'success'
