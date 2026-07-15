@@ -51,9 +51,10 @@ jobs:
         if: steps.download.outcome == 'success'
         continue-on-error: true
         id: bundle
-        run: |
-          cd staging
-          zip -r signing-payload.zip *
+        uses: actions/upload-artifact@v7
+        with: 
+          name: installers
+          path: staging
 
       - name: Submit to SignPath
         if: steps.bundle.outcome == 'success'
@@ -66,7 +67,7 @@ jobs:
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
           signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
           artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
-          github-artifact-id: signing-payload.zip
+          github-artifact-id: ${{ steps.bundle.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: signed-output
 
