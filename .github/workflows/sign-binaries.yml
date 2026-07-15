@@ -77,6 +77,8 @@ jobs:
         id: repackage
         run: |
           mkdir -p upload
+          ls -l
+          ls -l signed-output
           # Copy bare binary
           cp "signed-output/*.exe" "upload/*.exe"
 
