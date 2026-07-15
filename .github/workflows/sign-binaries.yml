@@ -76,10 +76,8 @@ jobs:
         id: repackage
         run: |
           mkdir -p upload
-          # Re-zip CLI archive with signed binary
-          cd signed-output/cli
           # Copy bare binary
-          cp *.exe "../../upload/sap-devs_${VERSION}_windows_amd64.exe"
+          cp "signed-output/*.exe" "upload/*.exe"
 
       - name: Upload signed artifacts to release
         if: steps.repackage.outcome == 'success'
@@ -88,9 +86,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$TAG" \
-            "upload/*.exe" \
-            --clobber
+          ls -l upload/*.exe
+        #  gh release upload "$TAG" \
+        #    "upload/*.exe" \
+        #    --clobber
 
       - name: Set output
         id: result
