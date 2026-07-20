@@ -1,4 +1,6 @@
 # This is a basic workflow that is manually triggered
+# This file is partly inspired and partly copied from
+# https://github.com/SAP-samples/sap-devs-cli/blob/8c8aa6ac1afa5d7bef8964d4945df9f1dd5dfc89/.github/workflows/sign-windows.yml (Licensed as Apache-2.0)
 
 name: Sign-Binaries
 
