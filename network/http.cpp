@@ -170,13 +170,11 @@ namespace url
     /// \brief Perform common CURL initialization.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
+    /// \param params const UrlParams&
     /// \return CurlCpp
     ///
     /////////////////////////////////////////////////
-    static CurlCpp common_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
+    static CurlCpp common_init(const std::string& sUrl, const UrlParams& params)
     {
         CurlCpp curl(true);
 
@@ -189,12 +187,12 @@ namespace url
         if (!curl.setOption(CURLOPT_URL, sUrl.c_str()))
             throw Error("Failed to set URL [" + std::string(errorBuffer) + "].");
 
-        if (httpHeader.size())
+        if (params.m_httpHeader.size())
         {
             if (!curl.setOption(CURLOPT_USERAGENT, curl_version()))
                 throw Error("Failed to set user agent [" + std::string(errorBuffer) + "].");
 
-            if (!curl.setHeader(httpHeader))
+            if (!curl.setHeader(params.m_httpHeader))
                 throw Error("Failed to set http header [" + std::string(errorBuffer) + "].");
         }
         else
@@ -203,17 +201,23 @@ namespace url
                 throw Error("Failed to set user agent [" + std::string(errorBuffer) + "].");
         }
 
-        if (sUserName.length() && sPassWord.length())
+        if (params.m_userName.length() && params.m_passWord.length())
         {
-            if (!curl.setOption(CURLOPT_USERPWD, (sUserName + ":" + sPassWord).c_str()))
+            if (!curl.setOption(CURLOPT_USERPWD, (params.m_userName + ":" + params.m_passWord).c_str()))
                 throw Error("Failed to set username and password [" + std::string(errorBuffer) + "].");
         }
 
-        if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
-            throw Error("Failed to set SSL peer verify option [" + std::string(errorBuffer) + "].");
+        if (!params.m_caCert.length())
+        {
+            if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
+                throw Error("Failed to set SSL peer verify option [" + std::string(errorBuffer) + "].");
 
-        if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
-            throw Error("Failed to set SSL host verify option [" + std::string(errorBuffer) + "].");
+            if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
+                throw Error("Failed to set SSL host verify option [" + std::string(errorBuffer) + "].");
+        }
+        else
+            if (!curl.setOption(CURLOPT_CAINFO, params.m_caCert.c_str()))
+                throw Error("Failed to set the CA cert bundle option [" + std::string(errorBuffer) + "].");
 
         if (!curl.setOption(CURLOPT_FOLLOWLOCATION, 1L))
             throw Error("Failed to set redirect option [" + std::string(errorBuffer) + "].");
@@ -246,16 +250,14 @@ namespace url
     /// \brief libcurl get connection initialization.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
+    /// \param params const UrlParams&
     /// \param buffer std::string*
     /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CurlCpp get_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::string* buffer)
+    static CurlCpp get_init(const std::string& sUrl, const UrlParams& params, std::string* buffer)
     {
-        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
+        CurlCpp curl = common_init(sUrl, params);
 
         if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
             throw Error("Failed to set writer [" + std::string(errorBuffer) + "].");
@@ -271,18 +273,16 @@ namespace url
     /// \brief libcurl put connection initialization.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
+    /// \param params const UrlParams&
     /// \param datastream std::istream*
     /// \param filesize size_t
     /// \param buffer std::string*
     /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CurlCpp put_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, std::istream* datastream, size_t filesize, std::string* buffer)
+    static CurlCpp put_init(const std::string& sUrl, const UrlParams& params, std::istream* datastream, size_t filesize, std::string* buffer)
     {
-        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
+        CurlCpp curl = common_init(sUrl, params);
 
         if (!curl.setOption(CURLOPT_UPLOAD, 1L))
             throw Error("Failed to set upload option [" + std::string(errorBuffer) + "].");
@@ -309,22 +309,19 @@ namespace url
     /// \brief libcurl get connection initialization.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
-    /// \param sPayLoad const std::string&
+    /// \param params const UrlParams&
     /// \param buffer std::string*
     /// \return CurlCpp
     /// \throw http::Error
     /////////////////////////////////////////////////
-    static CurlCpp post_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, const std::string& sPayLoad, std::string* buffer)
+    static CurlCpp post_init(const std::string& sUrl, const UrlParams& params, std::string* buffer)
     {
-        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, httpHeader);
+        CurlCpp curl = common_init(sUrl, params);
 
         if (!curl.setOption(CURLOPT_POST, 1L))
             throw Error("Failed to set POST option [" + std::string(errorBuffer) + "].");
 
-        if (!curl.setOption(CURLOPT_COPYPOSTFIELDS, sPayLoad.c_str()))
+        if (!curl.setOption(CURLOPT_COPYPOSTFIELDS, params.m_payLoad.c_str()))
             throw Error("Failed to set POST option [" + std::string(errorBuffer) + "].");
 
         if (!curl.setOption(CURLOPT_WRITEFUNCTION, writer))
@@ -341,18 +338,17 @@ namespace url
     /// \brief libcurl mail initialization.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
     /// \param sFromMail const std::string&
     /// \param recipients const std::vector<std::string>&
+    /// \param params const UrlParams&
     /// \param body std::istringstream*
     /// \param bodysize size_t
     /// \return CurlCpp
     ///
     /////////////////////////////////////////////////
-    static CurlCpp mail_init(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::string& sFromMail, const std::vector<std::string>& recipients, std::istringstream* body, size_t bodysize)
+    static CurlCpp mail_init(const std::string& sUrl, const std::string& sFromMail, const std::vector<std::string>& recipients, const UrlParams& params, std::istringstream* body, size_t bodysize)
     {
-        CurlCpp curl = common_init(sUrl, sUserName, sPassWord, std::vector<std::string>());
+        CurlCpp curl = common_init(sUrl, params);
 
         // This line enables the use of STARTTLS
         if (!sUrl.starts_with("smtps://")
@@ -385,19 +381,17 @@ namespace url
     /// \brief Get the contents of a URL.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
+    /// \param params const UrlParams&
     /// \return std::string
     /// \throw http::Error
     /////////////////////////////////////////////////
-    std::string get(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader)
+    std::string get(const std::string& sUrl, const UrlParams& params)
     {
         std::string buffer;
         buffer.clear();
 
         // Initialize CURL connection
-        CurlCpp curl = get_init(sUrl, sUserName, sPassWord, httpHeader, &buffer);
+        CurlCpp curl = get_init(sUrl, params, &buffer);
 
         // Retrieve content for the URL
         if (!curl.perform())
@@ -422,14 +416,11 @@ namespace url
     ///
     /// \param sUrl const std::string&
     /// \param sFileName const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
-    /// \param sPayLoad const std::string&
+    /// \param params const UrlParams&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, const std::string& sPayLoad)
+    std::string put(const std::string& sUrl, const std::string& sFileName, const UrlParams& params)
     {
         std::istringstream datastream;
         std::ifstream filestream;
@@ -454,10 +445,10 @@ namespace url
 
             stream_ptr = &filestream;
         }
-        else if (sPayLoad.length())
+        else if (params.m_payLoad.length())
         {
-            datastream.str(sPayLoad);
-            s = sPayLoad.length();
+            datastream.str(params.m_payLoad);
+            s = params.m_payLoad.length();
             stream_ptr = &datastream;
         }
 
@@ -465,7 +456,7 @@ namespace url
             throw Error("No data for uploading provided.");
 
         // Initialize CURL connection
-        CurlCpp curl = put_init(sUrl, sUserName, sPassWord, httpHeader, stream_ptr, s, &buffer);
+        CurlCpp curl = put_init(sUrl, params, stream_ptr, s, &buffer);
 
         // Retrieve content for the URL
         if (!curl.perform())
@@ -489,20 +480,17 @@ namespace url
     /// return the transmitted bytes.
     ///
     /// \param sUrl const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
-    /// \param httpHeader const std::vector<std::string>&
-    /// \param sPayLoad const std::string&
+    /// \param params const UrlParams&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string post(const std::string& sUrl, const std::string& sUserName, const std::string& sPassWord, const std::vector<std::string>& httpHeader, const std::string& sPayLoad)
+    std::string post(const std::string& sUrl, const UrlParams& params)
     {
         std::string buffer;
         buffer.clear();
 
         // Initialize CURL connection
-        CurlCpp curl = post_init(sUrl, sUserName, sPassWord, httpHeader, sPayLoad, &buffer);
+        CurlCpp curl = post_init(sUrl, params, &buffer);
 
         // Retrieve content for the URL
         if (!curl.perform())
@@ -528,14 +516,13 @@ namespace url
     ///
     /// \param sUrl const std::string&
     /// \param sBody const std::string&
-    /// \param sUserName const std::string&
-    /// \param sPassWord const std::string&
     /// \param sFromMail const std::string&
     /// \param recipients const std::vector<std::string>&
+    /// \param params const UrlParams&
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t sendMail(const std::string& sUrl, const std::string& sBody, const std::string& sUserName, const std::string& sPassWord, const std::string& sFromMail, const std::vector<std::string>& recipients)
+    size_t sendMail(const std::string& sUrl, const std::string& sBody, const std::string& sFromMail, const std::vector<std::string>& recipients, const UrlParams& params)
     {
         std::istringstream bodyStream(sBody);
 
@@ -546,7 +533,7 @@ namespace url
             throw Error("No mail recipients defined.");
 
         // Initialize CURL connection
-        CurlCpp curl = mail_init(sUrl, sUserName, sPassWord, sFromMail, recipients, &bodyStream, sBody.length());
+        CurlCpp curl = mail_init(sUrl, sFromMail, recipients, params, &bodyStream, sBody.length());
 
         // Retrieve content for the URL
         if (!curl.perform())

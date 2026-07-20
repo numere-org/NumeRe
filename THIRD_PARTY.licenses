@@ -112,6 +112,12 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
                   --------------------------
 
+### CA certificate store license
+This is a bundle of X.509 certificates of public Certificate Authorities (CA). These were automatically extracted from Mozilla's root certificates file (certdata.txt).  This file can be found in the mozilla source tree: https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/release/security/nss/lib/ckfw/builtins/certdata.txt
+The PEM file is only a converted version of the original one and thus it is licensed under the same license as the Mozilla source file: MPL 2.0 
+
+                  --------------------------
+
 ###libNoise v1.0.0
 https://libnoise.sourceforge.net/
 Copyright (C) 2003, 2004 Jason Bevins

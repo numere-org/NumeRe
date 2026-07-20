@@ -32,3 +32,4 @@ Fixed	The function "logtoidx()" does not over-allocate memory any more.
 Cleaned	Plotting of two-column matrices is now supported
 Applied	3D matrices will now show their layers next to each other if inspected using the dataviewer.
 New	The function "tensorprod()" provides a n-dimensional tensorproduct and also contracts, if necessary. The function "trace()" was extended to support n-dimensional contraction as well.
+Cleaned	TLS and SSL certificates are now validated against a set of known trusted root CAs within "url" and "mail". There is an option to supply an own certificate or to bypass the check completely.

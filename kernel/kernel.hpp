@@ -307,6 +307,10 @@ class NumeReKernel
         std::map<std::string,std::string> getPluginLanguageStrings();
         std::map<std::string,std::string> getFunctionLanguageStrings();
         std::vector<std::string> getPluginCommands();
+        std::string getCaCertFile() const
+        {
+            return _option.getExePath() + "/remotes/cacert.pem";
+        }
         int ReadOpenFileFlag();
         std::string ReadAnswer();
         NumeReVariables getVariableList();

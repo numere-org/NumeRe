@@ -4583,6 +4583,8 @@ std::string removeQuotationMarks(const std::string&);
 /////////////////////////////////////////////////
 void urlExecute(CommandLineParser& cmdParser)
 {
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     // Try to get the contents of the desired URL
     try
     {
@@ -4591,7 +4593,14 @@ void urlExecute(CommandLineParser& cmdParser)
         std::string sUserName = cmdParser.getParsedParameterValueAsString("usr", "", true);
         std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
         std::string sPayLoad = cmdParser.getParsedParameterValueAsString("payload", "", true);
+        std::string sCaCert = cmdParser.getParsedParameterValueAsString("cacert", CACERTFILE, true);
         std::vector<std::string> httpHeader;
+
+        if (cmdParser.hasParam("noverify"))
+            sCaCert.clear();
+
+        if (sCaCert.length())
+            sCaCert = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sCaCert, "pem", false, true);
 
         std::string sRequestMethod;
 
@@ -4616,6 +4625,8 @@ void urlExecute(CommandLineParser& cmdParser)
         if (cmdParser.hasParam("header"))
             httpHeader = cmdParser.getParsedParameterValue("header").as_str_vector();
 
+        url::UrlParams params(sUserName, sPassword, sCaCert, httpHeader, sPayLoad);
+
         std::string sUrlResponse;
 
         // Push the response into a file, if necessary
@@ -4632,14 +4643,14 @@ void urlExecute(CommandLineParser& cmdParser)
                 sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
 
                 // Upload the file
-                sUrlResponse = url::put(sUrl, sFileName, sUserName, sPassword, httpHeader);
+                sUrlResponse = url::put(sUrl, sFileName, params);
                 replaceAll(sUrlResponse, "\r\n", "\n");
                 cmdParser.setReturnValue(mu::Value(sUrlResponse));
             }
             else
             {
                 // Get the response from the server
-                sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
+                sUrlResponse = url::get(sUrl, params);
 
                 // Get the file parameter value
                 sFileName = cmdParser.getFileParameterValueForSaving(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
@@ -4661,9 +4672,9 @@ void urlExecute(CommandLineParser& cmdParser)
         {
             // Get the response from the server
             if (sRequestMethod == "PUT")
-                sUrlResponse = url::put(sUrl, "", sUserName, sPassword, httpHeader, sPayLoad);
+                sUrlResponse = url::put(sUrl, "", params);
             else
-                sUrlResponse = url::post(sUrl, sUserName, sPassword, httpHeader, sPayLoad);
+                sUrlResponse = url::post(sUrl, params);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
@@ -4672,7 +4683,7 @@ void urlExecute(CommandLineParser& cmdParser)
         else
         {
             // Get the response from the server
-            sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
+            sUrlResponse = url::get(sUrl, params);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
@@ -4696,6 +4707,8 @@ void urlExecute(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 void mailClient(CommandLineParser& cmdParser)
 {
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     // Handle mail actions
     try
     {
@@ -4706,6 +4719,13 @@ void mailClient(CommandLineParser& cmdParser)
         std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
         std::string sFromMail = cmdParser.getParsedParameterValueAsString("from", "", true);
         std::string sSubject = cmdParser.getParsedParameterValueAsString("subject", "", true);
+        std::string sCaCert = cmdParser.getParsedParameterValueAsString("cacert", CACERTFILE, true);
+
+        if (cmdParser.hasParam("noverify"))
+            sCaCert.clear();
+
+        if (sCaCert.length())
+            sCaCert = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sCaCert, "pem", false, true);
 
         mu::Array rcpt;
         mu::Array cc;
@@ -4782,8 +4802,10 @@ void mailClient(CommandLineParser& cmdParser)
                 throw url::Error(mail.printVal() + " is not a valid mail address.");
         }
 
+        url::UrlParams params(sUserName, sPassword, sCaCert);
+
         // Send the mail to the recipients
-        size_t bytes = url::sendMail(sServer, sBody, sUserName, sPassword, sFromMail, rcpt.as_str_vector());
+        size_t bytes = url::sendMail(sServer, sBody, sFromMail, rcpt.as_str_vector(), params);
         cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
     }
     catch (url::Error& e)

@@ -42,17 +42,34 @@ namespace url
             }
     };
 
-    std::string get(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "",
-                    const std::vector<std::string>& httpHeader = std::vector<std::string>());
+    struct UrlParams
+    {
+        std::string m_userName;
+        std::string m_passWord;
+        std::vector<std::string> m_httpHeader;
+        std::string m_payLoad;
+        std::string m_caCert;
 
-    std::string put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName = "", const std::string& sPassWord = "",
-                    const std::vector<std::string>& httpHeader = std::vector<std::string>(), const std::string& sPayLoad = "");
+        UrlParams(const std::string& sUserName = "", const std::string& sPassWord = "", const std::string& sCaCert = "",
+                  const std::vector<std::string>& httpHeader = std::vector<std::string>(), const std::string& sPayLoad = "")
+        {
+            m_userName = sUserName;
+            m_passWord = sPassWord;
+            m_httpHeader = httpHeader;
+            m_payLoad = sPayLoad;
+            m_caCert = sCaCert;
+        }
+    };
 
-    std::string post(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "",
-                     const std::vector<std::string>& httpHeader = std::vector<std::string>(), const std::string& sPayLoad = "");
+    std::string get(const std::string& sUrl, const UrlParams& params);
 
-    size_t sendMail(const std::string& sUrl, const std::string& sBody, const std::string& sUserName, const std::string& sPassWord,
-                    const std::string& sFromMail, const std::vector<std::string>& recipients);
+    std::string put(const std::string& sUrl, const std::string& sFileName, const UrlParams& params);
+
+    std::string post(const std::string& sUrl, const UrlParams& params);
+
+    size_t sendMail(const std::string& sUrl, const std::string& sBody,
+                    const std::string& sFromMail, const std::vector<std::string>& recipients,
+                    const UrlParams& params);
 }
 
 #endif // HTTP_H

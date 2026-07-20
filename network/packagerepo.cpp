@@ -95,9 +95,7 @@ void PackageRepo::connect(const std::string& sRepoConfig, const std::string& sIn
     m_indexFile = sIndexFile.length() ? sIndexFile : DEFAULTREPOINDEXFILE;
 
     if (m_indexFile.starts_with("<>"))
-    {
         replaceAll(m_indexFile, "<>", NumeReKernel::getInstance()->getSettings().getExePath().c_str());
-    }
 
     // Validate version
     if (!m_repoConfig.isMember("version"))
@@ -111,6 +109,7 @@ void PackageRepo::connect(const std::string& sRepoConfig, const std::string& sIn
     if (!m_repoConfig.isMember("name")
         || !m_repoConfig.isMember("tree")
         || !m_repoConfig.isMember("raw-file")
+        || !m_repoConfig.isMember("verify-host")
         || !m_repoConfig.isMember("authentication")
         || !m_repoConfig.isMember("keys"))
         throw PackageRepoError("The repository configuration '" + sRepoConfig + "' lacks required fields.");
@@ -173,16 +172,21 @@ bool PackageRepo::needsRefresh() const
 /////////////////////////////////////////////////
 const std::map<std::string, PackageVersions>& PackageRepo::fetchIndex() const
 {
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     if (needsRefresh())
     {
         std::string sResponse;
 
         try
         {
+            url::UrlParams params("", "", m_repoConfig["verify-host"].asBool() ? CACERTFILE : "");
+
             if (m_repoConfig["authentication"]["required"].asBool())
-                sResponse = url::get(m_repoConfig["tree"].asString(), "", "", {m_repoConfig["authentication"]["method"].asString()});
-            else
-                sResponse = url::get(m_repoConfig["tree"].asString());
+                params.m_httpHeader.push_back(m_repoConfig["authentication"]["method"].asString());
+
+            sResponse = url::get(m_repoConfig["tree"].asString(), params);
+
         }
         catch (...)
         {
@@ -300,6 +304,8 @@ PackageInfo PackageRepo::fetchInfo(const std::string& sPackageId) const
     if (needsRefresh())
         fetchIndex();
 
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     auto iter = m_index.find(sPackageId);
 
     if (iter == m_index.end())
@@ -307,10 +313,12 @@ PackageInfo PackageRepo::fetchInfo(const std::string& sPackageId) const
 
     std::string sMetaFile;
 
+    url::UrlParams params("", "", m_repoConfig["verify-host"].asBool() ? CACERTFILE : "");
+
     if (m_repoConfig["authentication"]["required"].asBool())
-        sMetaFile = url::get(iter->second.getLatest().meta, "", "", {m_repoConfig["authentication"]["method"].asString()});
-    else
-        sMetaFile = url::get(iter->second.getLatest().meta);
+        params.m_httpHeader.push_back(m_repoConfig["authentication"]["method"].asString());
+
+    sMetaFile = url::get(iter->second.getLatest().meta, params);
 
     Json::Value meta;
     parseJson(sMetaFile, meta);
@@ -410,6 +418,8 @@ bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sT
     // used within this call
     const std::string& rawFile = m_repoConfig["raw-file"].asString();
 
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     if (!sPackageUrl.starts_with(rawFile.substr(0, rawFile.find('{'))))
         return false;
 
@@ -417,10 +427,12 @@ bool PackageRepo::download(const std::string& sPackageUrl, const std::string& sT
 
     try
     {
+        url::UrlParams params("", "", m_repoConfig["verify-host"].asBool() ? CACERTFILE : "");
+
         if (m_repoConfig["authentication"]["required"].asBool())
-            contents = url::get(sPackageUrl, "", "", {m_repoConfig["authentication"]["method"].asString()});
-        else
-            contents = url::get(sPackageUrl);
+            params.m_httpHeader.push_back(m_repoConfig["authentication"]["method"].asString());
+
+        contents = url::get(sPackageUrl, params);
     }
     catch (url::Error& e)
     {
