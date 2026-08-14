@@ -2060,12 +2060,22 @@ namespace mu
 
                 if (accepts(other))
                 {
-                    // It might be possible that this Array is the
-                    // data source for references in the passed array.
-                    // Therefore, we assign the data to a buffer,
-                    // dereference it and move the result later.
-                    other.dereference();
-                    assign(other);
+                    if (other.getCommonType() == TYPE_VOID)
+                    {
+                        if (common >= TYPE_CATEGORY && common <= TYPE_OBJECT)
+                            m_commonType = TYPE_OBJECT;
+                        clear();
+                    }
+                    else
+                    {
+                        // It might be possible that this Array is the
+                        // data source for references in the passed array.
+                        // Therefore, we assign the data to a buffer,
+                        // dereference it and move the result later.
+                        other.dereference();
+                        assign(other);
+                    }
+
                     makeMutable();
 
                     if (common == TYPE_CLUSTER)

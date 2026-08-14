@@ -167,8 +167,8 @@ class NumeReWindow : public wxFrame
         void showWindow(NumeRe::Window& window);
         void pass_command(const wxString& command, bool isEvent = false);
         void evaluateDebugInfo(const std::vector<std::string>& vDebugInfo);
-        void createLaTeXFile();
-        void runLaTeX();
+        void createLaTeXFile(bool preserveLineNumbers);
+        void runLaTeX(bool preserveLineNumbers);
         void compileLaTeX();
 
         void refreshFunctionTree();
@@ -290,6 +290,7 @@ class NumeReWindow : public wxFrame
         void showFileDialog(NumeRe::Window& window);
         void showDirDialog(NumeRe::Window& window);
         void showTextEntry(NumeRe::Window& window);
+        void showPwdEntry(NumeRe::Window& window);
         void showMessageBox(NumeRe::Window& window);
         void showListDialog(NumeRe::Window& window);
         void showSelectionDialog(NumeRe::Window& window);

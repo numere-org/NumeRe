@@ -3791,7 +3791,7 @@ mu::Array matfnc_rotmat(const mu::Array& angle, const mu::Array& dim, const mu::
     if (d >= 2)
     {
         ret.get(a1, a1) = std::cos(alpha);
-        ret.get(a2, a1) = -std::sin(alpha);
+        ret.get(a2, a1) = std::sin(alpha);
         ret.get(a1, a2) = -ret.get(a2, a1);
         ret.get(a2, a2) = ret.get(a1, a1);
     }

@@ -76,6 +76,8 @@ struct ParserSymbol
     void resolveTypeByHeuristic();
     std::string getHeuristicEquivalent() const;
 
+    void updateType(const std::string& varType);
+
     /////////////////////////////////////////////////
     /// \brief Equality operator.
     ///

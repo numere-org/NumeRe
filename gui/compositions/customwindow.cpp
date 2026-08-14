@@ -227,9 +227,9 @@ static wxArrayString getChoices(const mu::Array& choices)
 {
     wxArrayString arr;
 
-    for (const auto& c : choices)
+    for (size_t i = 0; i < choices.size(); i++)
     {
-        arr.Add(wxFromUtf8(c.printVal()));
+        arr.Add(wxFromUtf8(choices.get(i).printVal()));
     }
 
     return arr;
@@ -789,7 +789,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_CHOICE(-1, CustomWindow::OnChange)
     EVT_COMBOBOX(-1, CustomWindow::OnChange)
     EVT_TEXT(-1, CustomWindow::OnChange)
-    EVT_TEXT_ENTER(-1, CustomWindow::OnChange)
+    EVT_TEXT_ENTER(-1, CustomWindow::OnActivate)
     EVT_SPINCTRL(-1, CustomWindow::OnSpin)
     EVT_CLOSE(CustomWindow::OnClose)
     EVT_GRID_SELECT_CELL(CustomWindow::OnCellSelect)
@@ -827,9 +827,27 @@ END_EVENT_TABLE()
 /// \param addStyle int
 ///
 /////////////////////////////////////////////////
-CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef), m_dialogLock(nullptr)
+CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(), m_windowRef(windowRef), m_dialogLock(nullptr)
 {
     m_windowRef.connect(this);
+
+    const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChildElement();
+    int style = addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX;
+
+    // Evaluate possible style changes
+    if (layoutGroup->Attribute("stayontop", "true"))
+        style |= wxSTAY_ON_TOP;
+
+    if (layoutGroup->Attribute("fixedsize", "true"))
+        style &= ~(wxMAXIMIZE_BOX | wxRESIZE_BORDER);
+
+    if (layoutGroup->Attribute("minimize", "false"))
+        style &= ~wxMINIMIZE_BOX;
+
+    if (layoutGroup->Attribute("closebox", "false"))
+        style &= ~wxCLOSE_BOX;
+
+    Create(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
 
     layout();
 }
@@ -846,7 +864,7 @@ CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, in
 void CustomWindow::layout()
 {
     // Get the layout group from the layout script
-    const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChild()->ToElement();
+    const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChildElement();
 
     // Evaluate possible background color information
     if (layoutGroup->Attribute("color"))
@@ -887,13 +905,16 @@ void CustomWindow::layout()
     _groupPanel->SetScrollbars(20, 20, 200, 200);
 
     // Create a status bar
-    CreateStatusBar();
+    wxStatusBar* bar = CreateStatusBar();
 
+    // Fill the contents, if available, otherwise hide it
     if (layoutGroup->Attribute("statustext"))
     {
         wxString statusText = wxFromUtf8(layoutGroup->Attribute("statustext"));
         setStatusText(getChoices(statusText));
     }
+    else
+        bar->Hide();
 
     // Evaluate the size information
     SetClientSize(wxSize(800,600));
@@ -911,7 +932,22 @@ void CustomWindow::layout()
         }
     }
 
+    // Evaluate the position information
+    if (layoutGroup->Attribute("pos"))
+    {
+        std::vector<int> p = strIntToVector(layoutGroup->Attribute("pos"));
+
+        if (p.size() >= 2)
+        {
+            if (p[0] == -2 && p[1] == -2)
+                Centre();
+            else if (p[0] != -1 && p[1] != -1)
+                SetPosition(wxPoint(p[0], p[1]));
+        }
+    }
+
     Layout();
+
 }
 
 
@@ -1240,6 +1276,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("type", "markup"))
                 style = wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL;
 
+            if (currentChild->Attribute("type", "pwdentry"))
+                style = wxTE_PASSWORD | wxTE_PROCESS_ENTER;
+
             wxString label;
 
             if (currentChild->Attribute("label"))
@@ -1252,6 +1291,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
 
             if (currentChild->Attribute("color"))
                 textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -2044,6 +2086,9 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             if (currentChild->Attribute("type", "markup"))
                 style = wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL;
 
+            if (currentChild->Attribute("type", "pwdentry"))
+                style = wxTE_PASSWORD | wxTE_PROCESS_ENTER;
+
             wxString label;
 
             if (currentChild->Attribute("label"))
@@ -2056,6 +2101,9 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
 
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
 
             if (currentChild->Attribute("color"))
                 textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -3366,9 +3414,13 @@ mu::Array CustomWindow::getProperties() const
 /////////////////////////////////////////////////
 mu::Array CustomWindow::getStatusText() const
 {
-    const wxStatusBar* bar = GetStatusBar();
-    int numFields = bar->GetFieldsCount();
     mu::Array statusText;
+    const wxStatusBar* bar = GetStatusBar();
+
+    if (!bar)
+        return statusText;
+
+    int numFields = bar->GetFieldsCount();
 
     for (int i = 0; i < numFields; i++)
     {
@@ -4927,6 +4979,15 @@ bool CustomWindow::setStatusText(const wxArrayString& _values)
 {
     wxStatusBar* bar = GetStatusBar();
 
+    if (!bar->IsShown())
+    {
+        bar->Show();
+        SendSizeEvent();
+    }
+
+    if (!bar)
+        return false;
+
     if (bar->GetFieldsCount() != (int)_values.size())
         bar->SetFieldsCount(_values.size());
 
@@ -4991,6 +5052,22 @@ void CustomWindow::OnChange(wxCommandEvent& event)
 
     if (iter != m_windowItems.end() && iter->second.first != CustomWindow::SPINCTRL)
         handleEvent(event, "onchange");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Generic onactivate event handler.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnActivate(wxCommandEvent& event)
+{
+    auto iter = m_windowItems.find(event.GetId());
+
+    if (iter != m_windowItems.end() && iter->second.first != CustomWindow::SPINCTRL)
+        handleEvent(event, "onactivate");
 }
 
 

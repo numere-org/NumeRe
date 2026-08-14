@@ -197,7 +197,7 @@ namespace url
         }
         else
         {
-            if (!curl.setOption(CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"))
+            if (!curl.setOption(CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0"))
                 throw Error("Failed to set user agent [" + std::string(errorBuffer) + "].");
         }
 

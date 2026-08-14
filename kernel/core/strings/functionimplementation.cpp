@@ -3447,17 +3447,22 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
     {
         if (sStr.get(i).isString())
         {
-            p.SetExpr(sStr.get(i).getStr());
-            int res;
-            const mu::StackItem* vals = p.Eval(res);
-            mu::Array results;
-
-            for (int n = 0; n < res; n++)
+            if (sStr.get(i).getStr().length())
             {
-                results.insert(results.end(), vals[n].get().begin(), vals[n].get().end());
-            }
+                p.SetExpr(sStr.get(i).getStr());
+                int res;
+                const mu::StackItem* vals = p.Eval(res);
+                mu::Array results;
 
-            ret.emplace_back(results);
+                for (int n = 0; n < res; n++)
+                {
+                    results.insert(results.end(), vals[n].get().begin(), vals[n].get().end());
+                }
+
+                ret.emplace_back(results);
+            }
+            else
+                ret.emplace_back(mu::Value()); // Empty is a void result
         }
         else
             ret.emplace_back(sStr.get(i));

@@ -4245,7 +4245,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             if (vVals.size() || _idx.col.front() == VectorIndex::INVALID)
             {
                 for (size_t n = 0; n < rows; n++)
-                    m_manager.assets[typeCounter].writeAxis(cols > 1 ? vVals.get(n, 0).getNum().asF64() : n+1.0, n, XCOORD);
+                    m_manager.assets[typeCounter].writeAxis(cols > 1 && vVals.size() ? vVals.get(n, 0).getNum().asF64() : n+1.0, n, XCOORD);
             }
             else
             {

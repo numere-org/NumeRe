@@ -1740,6 +1740,12 @@ namespace mu
 
                 for (size_t i = 1; i < size(); i++)
                 {
+                    if (get(i).isVoid())
+                    {
+                        if (sType != "void")
+                            return "object.*";
+                    }
+
                     const Object& obj = get(i).getObject();
 
                     if (sType == "void")
@@ -3607,7 +3613,7 @@ namespace mu
             if (m_dimSizes[0] == 1)
             {
                 if (m_dimSizes[1] == 1)
-                    ret += get(0).print(digits, chrs, trunc);
+                    return get(0).print(digits, chrs, trunc);
                 else
                 {
                     for (size_t j = 0; j < m_dimSizes[1]; j++)
@@ -3624,6 +3630,7 @@ namespace mu
             else
             {
                 ret += "\n"; ///< For readability
+
                 for (size_t i = 0; i < m_dimSizes[0]; i++)
                 {
                     if (!i)
@@ -4075,7 +4082,7 @@ namespace mu
         DataType common = getCommonType();
 
         if (i >= size())
-            resize(i+1, Value(NAN));
+            resize(i+1, Value(common));
 
         get(i) = v;
         dereference();
@@ -4183,7 +4190,12 @@ namespace mu
             Value& v = const_cast<Value&>(operator[](i));
 
             if (v.isRef())
-                v.reset(v.getRef().get().clone());
+            {
+                if (v.getRef().isNull())
+                    v.reset(nullptr);
+                else
+                    v.reset(v.getRef().get().clone());
+            }
 
             if (v.isArray())
                 v.getArray().dereference();
@@ -4797,7 +4809,14 @@ namespace mu
 
         if (accepts(other))
         {
-            Array::operator=(Array(other));
+            if (other.getType() == TYPE_VOID)
+            {
+                if (common >= TYPE_CATEGORY && common <= TYPE_OBJECT)
+                    m_commonType = TYPE_OBJECT;
+                clear();
+            }
+            else
+                Array::operator=(Array(other));
             makeMutable();
             dereference();
 
@@ -4828,7 +4847,14 @@ namespace mu
 
         if (accepts(other))
         {
-            Array::operator=(other);
+            if (other.getCommonType() == TYPE_VOID)
+            {
+                if (common >= TYPE_CATEGORY && common <= TYPE_OBJECT)
+                    m_commonType = TYPE_OBJECT;
+                clear();
+            }
+            else
+                Array::operator=(other);
             makeMutable();
 
             if (common == TYPE_CLUSTER)
@@ -4939,7 +4965,9 @@ namespace mu
         // Objects consume other objects or categories, identical types work
         // always and numericals consume generators as well
         if (common == otherCommon
-            || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT && otherCommon >= TYPE_CATEGORY && otherCommon <= TYPE_OBJECT)
+            || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT
+                && ((otherCommon >= TYPE_CATEGORY && otherCommon <= TYPE_OBJECT)
+                    || otherCommon == TYPE_VOID))
             || (common == TYPE_NUMERICAL && otherCommon == TYPE_GENERATOR))
             return true;
 

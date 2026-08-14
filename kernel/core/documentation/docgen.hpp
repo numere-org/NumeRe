@@ -44,7 +44,7 @@ class DocumentationGenerator : public FileSystem
 
         void followBranch(const std::string& sFile, std::set<std::string>& fileSet, std::vector<std::string>& vFiles) const;
 
-        std::string convertToLaTeX(const std::string& sFileName) const;
+        std::string convertToLaTeX(const std::string& sFileName, bool preserveLineNumbers) const;
         std::string getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode = true) const;
         std::string parseDocumentation(const StyledTextFile& file, const std::string& sMainProc, int pos1, int pos2) const;
         std::string createParametersTable(const std::vector<std::string>& vParams) const;
@@ -62,8 +62,8 @@ class DocumentationGenerator : public FileSystem
     public:
         DocumentationGenerator(NumeReSyntax* _syntax, const std::string& sRootPath);
 
-        std::string createDocumentation(const std::string& sFileName) const;
-        std::string createFullDocumentation(const std::string& sFileName) const;
+        std::string createDocumentation(const std::string& sFileName, bool preserveLineNumbers) const;
+        std::string createFullDocumentation(const std::string& sFileName, bool preserveLineNumbers) const;
 };
 
 

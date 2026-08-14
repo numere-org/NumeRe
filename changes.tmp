@@ -33,3 +33,10 @@ Cleaned	Plotting of two-column matrices is now supported
 Applied	3D matrices will now show their layers next to each other if inspected using the dataviewer.
 New	The function "tensorprod()" provides a n-dimensional tensorproduct and also contracts, if necessary. The function "trace()" was extended to support n-dimensional contraction as well.
 Cleaned	TLS and SSL certificates are now validated against a set of known trusted root CAs within "url" and "mail". There is an option to supply an own certificate or to bypass the check completely.
+Applied	An option for a password entry dialog and for setting the "textfield" to password-mode has been added via the option "type=pwdentry"
+Cleaned	There are now valid variable prefixes for logical values. Accepted are "l", "b", "is", "do", "has".
+Applied	It is now possible to set the opening position of custom windows with "pos={x,y}" as well as fix the window to the uppermost z position "stayontop".
+Applied	It is now possible to control the custom window resizing ("fixedsize") and whether boxes for iconizing ("hideiconize") and closing ("hideclose") should appear.
+Cleaned	Statusbars in custom windows do now only appear, if something has been written to them.
+Applied	Experimental: "void" can be assigned to object variables to convert them to an "object.void" instance.
+Updated	The internal user agent string was updated to a recent Firefox version.

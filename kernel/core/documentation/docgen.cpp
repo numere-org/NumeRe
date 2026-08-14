@@ -91,6 +91,7 @@ void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std
 /// file to a LaTeX file.
 ///
 /// \param sFileName const std::string&
+/// \param preserveLineNumbers bool
 /// \return std::string
 ///
 /// The contents of the current code file are
@@ -98,7 +99,7 @@ void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std
 /// sections are printed as listings and the
 /// documentation strings are used as normal text.
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName) const
+std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName, bool preserveLineNumbers) const
 {
     std::string sFileContents;
     std::string sLaTeXFileName = createLaTeXFileName(sFileName) + ".tex";
@@ -206,6 +207,9 @@ std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
                     std::string sLine = file.getLine(line);
                     StripSpaces(sLine);
 
+                    if (sLine.length() && sLine.starts_with("#**"))
+                        break; // we accept empty listings for now
+
                     if (sLine.length() && !sLine.starts_with("##~") && sLine != "*#")
                     {
                         i = file.PositionFromLine(line);
@@ -217,7 +221,13 @@ std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
 
                 startpos = i;
                 bTextMode = false;
-                sFileContents += "\\begin{lstlisting}[firstnumber=" + toString(file.LineFromPosition(i)+1) + "]\n";
+
+                sFileContents += "\\begin{lstlisting}";
+
+                if (preserveLineNumbers)
+                    sFileContents += "[firstnumber=" + toString(file.LineFromPosition(i)+1) + "]";
+
+                sFileContents += "\n";
             }
 
             if (i + 1 == file.getLastPosition())
@@ -615,6 +625,18 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
         {
             for (size_t j = i + 2; j < sTextRange.length(); j++)
             {
+                // Remove wrapped lines
+                if (sTextRange[j] == '\n')
+                {
+                    size_t k = 0;
+
+                    while (j+k+1 < sTextRange.length()
+                           && (sTextRange[j+k] =='\n' || sTextRange[j+k] == ' ' || sTextRange[j+k] == '\t'))
+                        k++;
+
+                    sTextRange.replace(j, k, " ");
+                }
+
                 if (sTextRange.substr(j, 2) == "!!")
                 {
                     sTextRange.replace(j, 2, "`");
@@ -1074,17 +1096,18 @@ DocumentationGenerator::DocumentationGenerator(NumeReSyntax* _syntax, const std:
 /// and style files.
 ///
 /// \param sFileName const std::string&
+/// \param preserveLineNumbers bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createDocumentation(const std::string& sFileName) const
+std::string DocumentationGenerator::createDocumentation(const std::string& sFileName, bool preserveLineNumbers) const
 {
     if (sFileName.find(".nscr") == std::string::npos
         && sFileName.find(".nlyt") == std::string::npos
         && sFileName.find(".nprc") == std::string::npos)
         return "";
 
-    return convertToLaTeX(replacePathSeparator(sFileName));
+    return convertToLaTeX(replacePathSeparator(sFileName), preserveLineNumbers);
 }
 
 
@@ -1095,10 +1118,11 @@ std::string DocumentationGenerator::createDocumentation(const std::string& sFile
 /// compilation are created.
 ///
 /// \param sFileName const std::string&
+/// \param preserveLineNumbers bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createFullDocumentation(const std::string& sFileName) const
+std::string DocumentationGenerator::createFullDocumentation(const std::string& sFileName, bool preserveLineNumbers) const
 {
     if (sFileName.find(".nscr") == std::string::npos
         && sFileName.find(".nlyt") == std::string::npos
@@ -1115,7 +1139,7 @@ std::string DocumentationGenerator::createFullDocumentation(const std::string& s
     // Create documentations for all files
     for (size_t i = 0; i < vFiles.size(); i++)
     {
-        vIncludesList.push_back(convertToLaTeX(vFiles[i]));
+        vIncludesList.push_back(convertToLaTeX(vFiles[i], preserveLineNumbers));
     }
 
     // Create style and main files

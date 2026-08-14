@@ -1423,12 +1423,22 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_CREATE_LATEX_FILE:
         {
-            createLaTeXFile();
+            createLaTeXFile(false);
+            break;
+        }
+        case ID_MENU_CREATE_LATEX_FILE_LINES_PRESERVED:
+        {
+            createLaTeXFile(true);
             break;
         }
         case ID_MENU_RUN_LATEX:
         {
-            runLaTeX();
+            runLaTeX(false);
+            break;
+        }
+        case ID_MENU_RUN_LATEX_LINES_PRESERVED:
+        {
+            runLaTeX(true);
             break;
         }
         case ID_MENU_COMPILE_LATEX:
@@ -2240,6 +2250,8 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
             showDirDialog(window);
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_TEXTENTRY)
             showTextEntry(window);
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_PWDENTRY)
+            showPwdEntry(window);
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_MESSAGEBOX)
             showMessageBox(window);
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_LISTDIALOG)
@@ -2336,7 +2348,38 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     std::string sExpression = window.getWindowSettings().sExpression;
-    wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), prepareStringsForDialog(getNextArgument(sExpression, true)));
+    wxTextEntryDialog dialog(this,
+                             prepareStringsForDialog(window.getWindowSettings().sMessage),
+                             wxFromUtf8(window.getWindowSettings().sTitle),
+                             prepareStringsForDialog(getNextArgument(sExpression, true)));
+    dialog.SetIcon(getStandardIcon());
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
+    else
+    {
+        wxString value = dialog.GetValue();
+        window.updateWindowInformation(NumeRe::STATUS_OK, toExternalString(wxToUtf8(value)));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a password entry dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::showPwdEntry(NumeRe::Window& window)
+{
+    std::string sExpression = window.getWindowSettings().sExpression;
+    wxPasswordEntryDialog dialog(this,
+                                 prepareStringsForDialog(window.getWindowSettings().sMessage),
+                                 wxFromUtf8(window.getWindowSettings().sTitle),
+                                 "");
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
@@ -2570,10 +2613,11 @@ void NumeReWindow::evaluateDebugInfo(const std::vector<std::string>& vDebugInfo)
 /// contents from the current editor to create a
 /// new LaTeX file from them.
 ///
+/// \param preserveLineNumbers bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::createLaTeXFile()
+void NumeReWindow::createLaTeXFile(bool preserveLineNumbers)
 {
     if (!m_book->getCurrentEditor())
         return;
@@ -2581,7 +2625,7 @@ void NumeReWindow::createLaTeXFile()
     std::string sFileName = wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath());
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
 
-    std::string sDocFile = docGen.createDocumentation(sFileName);
+    std::string sDocFile = docGen.createDocumentation(sFileName, preserveLineNumbers);
 
     if (sDocFile.length())
         wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", wxFromUtf8(sDocFile)),
@@ -2597,17 +2641,18 @@ void NumeReWindow::createLaTeXFile()
 /// LaTeX documentation files and uses the Windows
 /// shell to run the XeLaTeX compiler.
 ///
+/// \param preserveLineNumbers bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::runLaTeX()
+void NumeReWindow::runLaTeX(bool preserveLineNumbers)
 {
     if (!m_book->getCurrentEditor())
         return;
 
     std::string sFileName = wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath());
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
-    std::string sMain = docGen.createFullDocumentation(sFileName);
+    std::string sMain = docGen.createFullDocumentation(sFileName, preserveLineNumbers);
 
     if (!sMain.length())
     {
@@ -5482,7 +5527,9 @@ void NumeReWindow::UpdateMenuBar()
     // Create LaTeX menu
     wxMenu* menuLaTeX = new wxMenu();
     menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
+    menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE_LINES_PRESERVED, _guilang.get("GUI_MENU_CREATELATEX_LINES_PRESERVED"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
     menuLaTeX->Append(ID_MENU_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
+    menuLaTeX->Append(ID_MENU_RUN_LATEX_LINES_PRESERVED, _guilang.get("GUI_MENU_RUNLATEX_LINES_PRESERVED"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
     menuLaTeX->Append(ID_MENU_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
 
     // Create refactoring menu
@@ -7469,7 +7516,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 // Insert the prepared contents
                 for (size_t j = 0; j < contents.size(); j++)
                 {
-                    edit->AddText("\t" + wxFromUtf8(contents[j]) + "\r\n");
+                    edit->AddText("\t" + wxFromUtf8(ensureValidUtf8(contents[j])) + "\r\n");
                 }
 
                 edit->AddText("\r\n");

@@ -88,6 +88,32 @@ void ParserSymbol::resolveTypeByHeuristic()
             m_heuristicType = m_type != "datetime";
             m_type = "datetime";
         }
+        else if (typeChar == 'b'
+                 || typeChar == 'l')
+        {
+            m_heuristicType = m_type != "logical";
+            m_type = "logical";
+        }
+    }
+    else if (m_symbol.length() > (2ull+isArg)
+             && islower(m_symbol[0+isArg])
+             && islower(m_symbol[1+isArg])
+             && isupper(m_symbol[2+isArg])
+             && (m_symbol.compare(0+isArg, 2, "is") == 0
+                 || m_symbol.compare(0+isArg, 2, "do") == 0))
+    {
+        m_heuristicType = m_type != "logical";
+        m_type = "logical";
+    }
+    else if (m_symbol.length() > (3ull+isArg)
+             && islower(m_symbol[0+isArg])
+             && islower(m_symbol[1+isArg])
+             && islower(m_symbol[2+isArg])
+             && isupper(m_symbol[3+isArg])
+             && m_symbol.compare(0+isArg, 3, "has") == 0)
+    {
+        m_heuristicType = m_type != "logical";
+        m_type = "logical";
     }
     else if (m_symbol.length() == 1
              && (m_symbol == "x"
@@ -136,6 +162,38 @@ std::string ParserSymbol::getHeuristicEquivalent() const
         return "object.*";
 
     return type;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief
+///
+/// \param varType const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void ParserSymbol::updateType(const std::string& varType)
+{
+    if (varType != "void"
+        && varType != "any"
+        && (m_type == "void" || m_heuristicType))
+    {
+        m_type = varType;
+        m_heuristicType = false;
+    }
+    else if (m_type.starts_with("object.") || m_type.starts_with("dict") || m_type == "category")
+    {
+        if (varType == "void")
+        {
+            m_type = "object.void";
+            m_heuristicType = false;
+        }
+        else if (varType.starts_with("object.") || varType.starts_with("dict") || varType == "category")
+        {
+            m_type = varType;
+            m_heuristicType = false;
+        }
+    }
 }
 
 
@@ -803,15 +861,7 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
                                                                             type));
             }
             else
-            {
-                ParserSymbol& symbol = getMutableSymbol(varName, lineNum, false);
-
-                if (type != "void" && type != "any" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
-                {
-                    symbol.m_type = type;
-                    symbol.m_heuristicType = false;
-                }
-            }
+                getMutableSymbol(varName, lineNum, false).updateType(type);
 
             varNum++;
         }
@@ -970,20 +1020,13 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
 
                 if (varType.find(',') != std::string::npos)
                     varType = "cluster";
-            }
 
-            if (isSymbol(sSymbol, lineNum, false))
-            {
-                ParserSymbol& symbol = getMutableSymbol(sSymbol, lineNum, false);
-
-                if (varType != "void" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
-                {
-                    symbol.m_type = varType;
-                    symbol.m_heuristicType = false;
-                }
+                if (isSymbol(sSymbol, lineNum, false))
+                    getMutableSymbol(sSymbol, lineNum, false).updateType(varType);
             }
-            else
+            else if (!isSymbol(sSymbol, lineNum, false))
                 m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(sSymbol, varType));
+
         }
         else if (line[pos].is({wxSTC_NSCR_CLUSTER, wxSTC_NSCR_CUSTOM_FUNCTION}))
         {
@@ -996,12 +1039,7 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
             }
 
             if (isSymbol(sSymbol, lineNum, true))
-            {
-                ParserSymbol& symbol = getMutableSymbol(sSymbol, lineNum, true);
-
-                if (symbol.m_type == "void")
-                    symbol.m_type = varType;
-            }
+                getMutableSymbol(sSymbol, lineNum, true).updateType(varType);
             else
                 m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(sSymbol, varType));
         }

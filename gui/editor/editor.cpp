@@ -68,6 +68,7 @@
 #define HIGHLIGHT_DIFFERENCE_SOURCE 11
 #define HIGHLIGHT_ANNOTATION 12
 #define HIGHLIGHT_LOCALVARIABLES 13
+#define HIGHLIGHT_DOCSTRINGCODE 14
 #define ANNOTATION_NOTE wxSTC_NSCR_PROCEDURE_COMMANDS+1
 #define ANNOTATION_WARN wxSTC_NSCR_PROCEDURE_COMMANDS+2
 #define ANNOTATION_ERROR wxSTC_NSCR_PROCEDURE_COMMANDS+3
@@ -994,22 +995,21 @@ void NumeReEditor::handleCommentAutoWrap()
     {
         // Only calculate this information if really necessary
         int lineBreakPos = WordStartPosition(FindColumn(currentLine, LINELENGTH_COLUMN), true);
-        int charsToErase = 0;
 
-        // Ensure that we do not break right after an opening brace or
-        // the corresponding function name
-        while (isOpeningBrace(GetCharAt(lineBreakPos-1)))
-        {
-            while (isOpeningBrace(GetCharAt(lineBreakPos-1)))
-                lineBreakPos--;
+        lineBreakPos = FindColumn(currentLine, LINELENGTH_COLUMN);
+        int lineIndentPos = GetLineIndentPosition(currentLine);
 
-            lineBreakPos = WordStartPosition(lineBreakPos, true);
-        }
+        while (lineBreakPos > lineIndentPos
+               && (::isblank(GetCharAt(lineBreakPos-1))
+                   || !::isblank(GetCharAt(lineBreakPos))))
+            lineBreakPos--;
 
-        // Ensure that trailing whitespaces right after the linebreak
-        // position will be removed
-        if (::isblank(GetCharAt(lineBreakPos)))
-            charsToErase = WordEndPosition(lineBreakPos, false) - lineBreakPos;
+        int lineBreakEnd = lineBreakPos;
+
+        while (lineBreakEnd < GetLastPosition()
+               && (!::isblank(GetCharAt(lineBreakEnd-1))
+                   || ::isblank(GetCharAt(lineBreakEnd))))
+            lineBreakEnd++;
 
         // Wrap only, if the breaking point before last word on line is more than half of LINELENGTH_COLUMN after the indentation
         bool isWordSmall = (lineBreakPos - GetLineIndentPosition(currentLine)) > (LINELENGTH_COLUMN/2);
@@ -1048,25 +1048,23 @@ void NumeReEditor::handleCommentAutoWrap()
 
         sLineStart.Replace("-", " ");
 
+        // Eliminate possibly trailing "!!" sequences originating from inline code in docstrings
+        if (sLineStart.EndsWith("!!"))
+            sLineStart.RemoveLast(2);
+
         if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE
             || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
         {
-            if (charsToErase)
-                DeleteRange(lineBreakPos, charsToErase);
-
-            InsertText(lineBreakPos, "\r\n" + sLineStart);
-            GotoPos(currentPos+2+sLineStart.length() - std::min(charsToErase, currentPos-lineBreakPos));
+            Replace(lineBreakPos, lineBreakEnd, "\r\n" + sLineStart);
+            GotoPos(currentPos+2+sLineStart.length() - std::min(0, currentPos-lineBreakPos) - 1);
         }
         else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
         {
             sLineStart.Replace("#*", " *");
             sLineStart.Replace("!", "");
 
-            if (charsToErase)
-                DeleteRange(lineBreakPos, charsToErase);
-
-            InsertText(lineBreakPos, "\r\n"+sLineStart);
-            GotoPos(currentPos+2+sLineStart.length() - std::min(charsToErase, currentPos-lineBreakPos));
+            Replace(lineBreakPos, lineBreakEnd, "\r\n" + sLineStart);
+            GotoPos(currentPos+2+sLineStart.length() - std::min(0, currentPos-lineBreakPos) - 1);
         }
         else
             break;
@@ -4559,6 +4557,11 @@ void NumeReEditor::UpdateIndicators()
     IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, wxColour(0, 0, 255));
 //    IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, wxColour(255, 128, 128));
 
+    // Indicator for inline code in doc comments
+    IndicatorSetStyle(HIGHLIGHT_DOCSTRINGCODE, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT_DOCSTRINGCODE, 64);
+    IndicatorSetForeground(HIGHLIGHT_DOCSTRINGCODE, wxColor(192, 128, 128));
+
     // Indicators for highlighting differences in
     // the duplicated code analysis
     IndicatorSetStyle(HIGHLIGHT_DIFFERENCES, wxSTC_INDIC_ROUNDBOX);
@@ -5383,6 +5386,49 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
 
 
 /////////////////////////////////////////////////
+/// \brief Highlights the docstring code segments
+/// with a dedicated indicator.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::highlightDocStringCode()
+{
+    SetIndicatorCurrent(HIGHLIGHT_DOCSTRINGCODE);
+    IndicatorClearRange(0, GetLastPosition());
+
+    if (!isNumeReFileType())
+        return;
+
+    for (int i = 0; i < GetLastPosition(); i++)
+    {
+        int style = GetStyleAt(i);
+
+        if ((style == wxSTC_NSCR_DOCCOMMENT_BLOCK || style == wxSTC_NSCR_DOCCOMMENT_LINE)
+            && GetTextRange(i, i+2) == "!!")
+        {
+            for (int j = 2; j+i < GetLastPosition(); j++)
+            {
+                if (style != GetStyleAt(i+j))
+                {
+                    IndicatorFillRange(i, j);
+                    i += j-1;
+                    break;
+                }
+
+                if (GetTextRange(i+j, i+j+2) == "!!")
+                {
+                    IndicatorFillRange(i, j+2);
+                    i += j+1;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This method is a simple helper for
 /// AsynchActions to determine, which key should
 /// not trigger the autoindention feature.
@@ -5530,6 +5576,7 @@ void NumeReEditor::AsynchEvaluations()
 
     markSections();
     markLocalVariables();
+    highlightDocStringCode();
 }
 
 
