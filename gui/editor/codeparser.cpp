@@ -1024,7 +1024,8 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                 if (isSymbol(sSymbol, lineNum, false))
                     getMutableSymbol(sSymbol, lineNum, false).updateType(varType);
             }
-            else if (!isSymbol(sSymbol, lineNum, false))
+
+            if (!isSymbol(sSymbol, lineNum, false))
                 m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(sSymbol, varType));
 
         }
