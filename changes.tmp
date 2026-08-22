@@ -40,3 +40,4 @@ Applied	It is now possible to control the custom window resizing ("fixedsize") a
 Cleaned	Statusbars in custom windows do now only appear, if something has been written to them.
 Applied	Experimental: "void" can be assigned to object variables to convert them to an "object.void" instance.
 Updated	The internal user agent string was updated to a recent Firefox version.
+New	A timer object for measuring durations has been added.

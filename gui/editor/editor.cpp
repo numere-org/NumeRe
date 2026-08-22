@@ -1237,6 +1237,7 @@ static bool isObject(StringView viewedArg, StringView defaultValue)
         || defaultValue.starts_with("dictstruct(")
         || defaultValue.starts_with("queue(")
         || defaultValue.starts_with("stack(")
+        || defaultValue.starts_with("timer(")
         || (viewedArg.front() == 'o' && viewedArg.length() > 1 && isupper(viewedArg[1]));
 }
 

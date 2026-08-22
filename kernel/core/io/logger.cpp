@@ -356,6 +356,8 @@ std::string LeveledLogger::levelToString(Logger::LogLevel lvl)
         case Logger::LVL_DISABLED:
             return "disabled";
     }
+
+    return "";
 }
 
 
@@ -424,16 +426,22 @@ bool DetachedLogger::open(const std::string& sLogFile)
     size_t pos = m_logFile.tellg();
 
     // If we have enough text in the logfile
-    if (pos > terminatingStatement)
+    if (pos > 3*terminatingStatement)
     {
-        m_logFile.seekg(pos-terminatingStatement-3, m_logFile.beg);
+        std::vector<std::string> vLogLines;
+        m_logFile.seekg(pos-3*terminatingStatement, m_logFile.beg);
 
-        if (m_logFile.good())
+        while (!m_logFile.eof())
         {
             std::string sLine;
             std::getline(m_logFile, sLine);
-            m_startAfterCrash = sLine != LOGGER_SHUTDOWN_LINE;
+
+            if (sLine.length())
+                vLogLines.push_back(sLine);
         }
+
+        if (vLogLines.size())
+            m_startAfterCrash = vLogLines.back() != LOGGER_SHUTDOWN_LINE;
 
         m_logFile.close();
     }

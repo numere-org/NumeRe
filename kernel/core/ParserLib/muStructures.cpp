@@ -3640,6 +3640,14 @@ namespace mu
                     else
                         ret += "| ";
 
+                    // Do not print a overly large matrix
+                    if (m_dimSizes[0] > 10 && i == 6)
+                    {
+                        ret += "... |\n";
+                        i = m_dimSizes[0]-6;
+                        continue;
+                    }
+
                     for (size_t j = 0; j < m_dimSizes[1]; j++)
                     {
                         if (j)

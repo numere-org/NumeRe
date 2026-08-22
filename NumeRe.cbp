@@ -4486,15 +4486,7 @@
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/stringview.hpp" />
-		<Unit filename="kernel/core/utils/timer.hpp">
-			<Option target="Debug" />
-			<Option target="Profiling" />
-			<Option target="Deep Debug" />
-			<Option target="Profiling_x64" />
-			<Option target="Deep Debug_x64" />
-			<Option target="Dr Memory_x64" />
-			<Option target="Debug_x64" />
-		</Unit>
+		<Unit filename="kernel/core/utils/timer.hpp" />
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />
 		<Unit filename="kernel/core/utils/utf8lib.cpp" />

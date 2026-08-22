@@ -257,7 +257,7 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             }
             else if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
                 customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<std::complex<double>*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
-            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_NUMBER)
+            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT)
                      || grid.GetTable()->CanGetValueAs(row, col, "datetime")
                      || grid.GetTable()->CanGetValueAs(row, col, "duration"))
                 customAttr->SetBackgroundColour(m_shader.getColour(std::complex<double>(grid.GetTable()->GetValueAsDouble(row, col))));

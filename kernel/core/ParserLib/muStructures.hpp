@@ -302,7 +302,7 @@ namespace mu
             /////////////////////////////////////////////////
             Value& operator+=(const Value& other)
             {
-                if (!get())
+                if (!get() && other.get())
                     reset(other->clone());
                 else if (get() && other.get())
                 {
@@ -324,7 +324,7 @@ namespace mu
             /////////////////////////////////////////////////
             Value& operator-=(const Value& other)
             {
-                if (!get())
+                if (!get() && other.get())
                     return operator=(-other);
 
                 if (get() && other.get())

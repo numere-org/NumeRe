@@ -2715,13 +2715,14 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     }
 
     // Lambda expression for catching and converting NaNs into zeros
-    auto nanguard = [](const mu::Value& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val.getNum().asCF64();};
+    auto munanguard = [](const mu::Value& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val.getNum().asCF64();};
+    auto nanguard = [](const std::complex<double>& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val;};
 
     // Copy the data
     for (int i = 0; i < _fft.lines; i++)
     {
         if (_fft.cols == 2)
-            _fftData.a[i] = nanguard(_dataView.get(vAxis[i], 0)); // Can be complex or not: does not matter
+            _fftData.a[i] = munanguard(_dataView.get(vAxis[i], 0)); // Can be complex or not: does not matter
         else if (_fft.cols == 3 && _fft.bComplex)
             _fftData.a[i] = nanguard(dual(_dataView.get(vAxis[i], 0).getNum().asF64(), _dataView.get(vAxis[i], 1).getNum().asF64()));
         else if (_fft.cols == 3 && !_fft.bComplex)
@@ -2735,13 +2736,14 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             for (int j = 0; j < nCols; j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[i+j*nLines] = nanguard(_dataView.get(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
+                    _fftData.a[i+j*nLines] = munanguard(_dataView.get(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
                                                                     j + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2)));
                 else
-                    _fftData.a[i+j*nLines] = nanguard(_dataView.get(i, j));
+                    _fftData.a[i+j*nLines] = munanguard(_dataView.get(i, j));
             }
         }
     }
+
 
     // Calculate the actual transformation and apply some
     // normalisation

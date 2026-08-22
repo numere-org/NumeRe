@@ -44,6 +44,7 @@ extern double g_pixelScale;
 #include "../../kernel.hpp"
 #endif
 #include "../utils/tools.hpp"
+#include "../utils/timer.hpp"
 #include "../../versioninformation.hpp"
 #include "../ParserLib/muValueImpl.hpp"
 
@@ -7464,6 +7465,33 @@ mu::Array cast_logger(const mu::Array& files, const mu::Array& level)
             logger->get().setLoggingLevel(level.get(i).getStr());
 
         ret.emplace_back(logger.release());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a timer object instance.
+///
+/// \param scopes const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_timer(const mu::Array& scopes)
+{
+    size_t elems = scopes.size();
+
+    if (!elems)
+        return mu::Value(new mu::TimerValue(Timer("Timer", false)));
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::string scope = scopes.get(i).getStr();
+        ret.emplace_back(new mu::TimerValue(Timer(scope, false)));
     }
 
     return ret;

@@ -5112,6 +5112,8 @@ static CommandReturnValues cmd_print(string& sCmd)
                     sPrinted += "\n back:  void";
                 }
             }
+            else
+                sPrinted = res[i].printVals(NumeReKernel::getInstance()->getSettings().getPrecision(), 0);
 
             replaceAll(sPrinted, "\n", "\n|   ");
             NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");

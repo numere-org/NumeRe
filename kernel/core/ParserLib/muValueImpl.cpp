@@ -4077,6 +4077,173 @@ namespace mu
     //------------------------------------------------------------------------------
 
     /////////////////////////////////////////////////
+    /// \brief TimerValue constructor.
+    /////////////////////////////////////////////////
+    TimerValue::TimerValue() : Object("timer")
+    {
+        declareMethod(MethodDefinition("elapsed", 0));
+        declareMethod(MethodDefinition("running", 0));
+        declareMethod(MethodDefinition("name", 0));
+
+        declareApplyingMethod(MethodDefinition("start", 0));
+        declareApplyingMethod(MethodDefinition("stop", 0));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a TimerValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    TimerValue::TimerValue(const BaseValue& other) : TimerValue()
+    {
+        if (operator==(other))
+            m_val = static_cast<const TimerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const TimerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return TimerValue&
+    ///
+    /////////////////////////////////////////////////
+    TimerValue& TimerValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_val = static_cast<const TimerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const TimerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool TimerValue::isValid() const
+    {
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    TimerValue::operator bool() const
+    {
+        return m_val.running();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the bytes size of this
+    /// instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t TimerValue::getBytes() const
+    {
+        return sizeof(Timer);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* TimerValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "elapsed")
+            return new NumValue(Numerical(m_val.getElapsed().count() * 1e-9, DURATION));
+
+        if (sMethod == "running")
+            return new NumValue(m_val.running());
+
+        if (sMethod == "name")
+            return new StrValue(m_val.getScopeName());
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* TimerValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "start")
+        {
+            m_val.Start();
+            return new NumValue(true);
+        }
+        else if (sMethod == "stop")
+            return new NumValue(Numerical(m_val.Stop().count() * 1e-9, DURATION));
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string TimerValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{.name: \"" + m_val.getScopeName() + "\""
+            + ", .running: " + toString(m_val.running())
+            + ", .elapsed: " + formatDuration(m_val.getElapsed().count()*1e-9) + "}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string TimerValue::printVal(size_t digits, size_t chrs) const
+    {
+        return "[" + m_val.getScopeName() + "] " + formatDuration(m_val.getElapsed().count()*1e-9);
+    }
+
+
+
+    //------------------------------------------------------------------------------
+
+    /////////////////////////////////////////////////
     /// \brief StackValue constructor.
     /////////////////////////////////////////////////
     StackValue::StackValue() : Object("stack")

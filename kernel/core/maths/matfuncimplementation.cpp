@@ -783,6 +783,14 @@ mu::Array matfnc_transpose(const mu::Array& A, const mu::Array& dims)
         sizes = newSizes;
     }
 
+    // Transpositions of vectors are trivial
+    if (A.isVector())
+    {
+        mu::Array ret = A;
+        ret.setDimSizes(sizes);
+        return ret;
+    }
+
     mu::Array ret(A.size());
     ret.setDimSizes(sizes);
 

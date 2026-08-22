@@ -305,12 +305,10 @@ void DataView::sortTable()
         return;
 
     Indices& _idx = m_access.getIndices();
-    mu::Array fstCol = NumeReKernel::getInstance()->getMemoryManager().getElement(_idx.row, _idx.col.subidx(0, 1),
-                                                                                  m_access.getDataObject());
-
-    // Because VectorIndex::get() expects a VectorIndex, the mu::Array is casted
-    // implicitly. THIS INCLUDES THE OFFSET OF -1.
-    _idx.row = _idx.row.get(fstCol.order());
+    std::vector<int> index = NumeReKernel::getInstance()->getMemoryManager().sortElements(m_access.getDataObject(),
+                                                                                          _idx.row, _idx.col.subidx(0, 1),
+                                                                                          "-set index internal");
+    _idx.row = _idx.row.get(index);
 }
 
 

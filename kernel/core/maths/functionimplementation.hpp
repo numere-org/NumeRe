@@ -249,6 +249,7 @@ mu::Array cast_dict(const mu::Array& keys, const mu::Array& vals); // OPT=2
 mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals); // OPT=2
 mu::Array cast_file(const mu::Array& files, const mu::Array& openmode); // OPT=2
 mu::Array cast_logger(const mu::Array& files, const mu::Array& level); // OPT=2
+mu::Array cast_timer(const mu::Array& scopes); // OPT=1
 mu::Array cast_stack(const mu::Array& vals); // OPT=1
 mu::Array cast_queue(const mu::Array& vals); // OPT=1
 mu::Array cast_path(const mu::Array& paths, const mu::Array& separator); // OPT=2

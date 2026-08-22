@@ -26,6 +26,7 @@
 #include "../../kernel/core/io/file.hpp"
 #include "../../kernel/core/io/logger.hpp"
 #include "../../kernel/kernel.hpp"
+#include "../stringconv.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
@@ -37,6 +38,48 @@
 
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
+
+
+class AutoConvTable : public wxGridStringTable
+{
+    public:
+        AutoConvTable() : wxGridStringTable()
+        { }
+
+        AutoConvTable(int rows, int cols) : wxGridStringTable(rows, cols)
+        { }
+
+        AutoConvTable(const AutoConvTable& other) = delete;
+
+        virtual bool CanGetValueAs(int row, int col, const wxString& sTypeName) override
+        {
+            std::string value = wxToUtf8(GetValue(row, col));
+
+            if (sTypeName == wxGRID_VALUE_FLOAT
+                && isConvertible(value, CONVTYPE_VALUE, nullptr))
+                return true;
+
+            if (sTypeName == wxGRID_VALUE_BOOL
+                && isConvertible(value, CONVTYPE_LOGICAL, nullptr))
+                return true;
+
+            if (sTypeName == wxGRID_VALUE_STRING)
+                return true;
+
+            return false;
+        }
+
+        virtual double GetValueAsDouble(int row, int col) override
+        {
+            return StrToDb(wxToUtf8(GetValue(row, col)));
+        }
+
+        virtual bool GetValueAsBool(int row, int col) override
+        {
+            return StrToLogical(wxToUtf8(GetValue(row, col)));
+        }
+
+};
 
 
 BEGIN_EVENT_TABLE(TableViewer, wxGrid)
@@ -1926,7 +1969,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
     }
 
     if (!GetNumberCols())
-        CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+        SetTable(new AutoConvTable(_stringTable.getRows()+1, _stringTable.getCols()+1), true);
     else
     {
         DeleteCols(0, GetNumberCols()-1);
@@ -2141,7 +2184,7 @@ void TableViewer::SetGridCursorSilent(int row, int col)
 /////////////////////////////////////////////////
 void TableViewer::SetDefaultSize(size_t rows, size_t cols)
 {
-    CreateGrid(rows+1,cols+1);
+    SetTable(new AutoConvTable(rows+1, cols+1), true);
 
     for (size_t i = 0; i < rows+1; i++)
     {

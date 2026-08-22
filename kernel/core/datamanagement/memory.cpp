@@ -463,8 +463,7 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 {
     mu::Array vReturn;
 
-    if (!memArray.size()
-        /*|| (_vCol.size() == 1 && !getElemsInColumn(_vCol.front()))*/)
+    if (!memArray.size())
         return vReturn;
 
     vReturn.resize(_vLine.size()*_vCol.size(), mu::Value());
@@ -475,23 +474,10 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
         if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
             continue;
 
-        /*int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;*/
-
         for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
-
-            /*if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }*/
 
             vReturn[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
         }
@@ -769,7 +755,7 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /////////////////////////////////////////////////
 void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
-    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
+    if (!memArray.size())
         vTarget->std::vector<mu::Value>::assign(1, mu::Value());
     else
     {
@@ -781,25 +767,12 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
             if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
                 continue;
 
-            /*int elems = getElemsInColumn(_vCol[j]);
-
-            if (!elems)
-                continue;*/
-
             for (size_t i = 0; i < _vLine.size(); i++)
             {
                 if (_vLine[i] < 0)
                     continue;
 
-                /*if (_vLine[i] >= elems)
-                {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
-                        break;
-
-                    continue;
-                }*/
-
-                (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
+                (*vTarget)[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }
         }
 
@@ -1654,6 +1627,7 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
 
     bool bError = false;
     bool bReturnIndex = false;
+    bool bInternalIndex = false;
     bSortCaseInsensitive = findParameter(sSortingExpression, "ignorecase");
     int nSign = 1;
 
@@ -1673,6 +1647,11 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
     // (instead of actual reordering the columns)
     if (findParameter(sSortingExpression, "index"))
         bReturnIndex = true;
+
+    // Evaluate, whether an index shall be returned
+    // (instead of actual reordering the columns)
+    if (findParameter(sSortingExpression, "internal"))
+        bInternalIndex = true;
 
     // Is a column group selected or do we actually
     // sort everything?
@@ -1807,7 +1786,7 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
 
     // Increment each index value, if the index
     // vector shall be returned
-    if (bReturnIndex)
+    if (bReturnIndex && !bInternalIndex)
     {
         for (size_t i = 0; i < vIndex.size(); i++)
             vIndex[i]++;
@@ -5256,6 +5235,37 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 }
 
 
+static void extractResampled(Memory* _this, Resampler* _resampler, int start_line, int start_col, int _primary_dim, int& _secondary_dim, bool linewise)
+{
+    while (true)
+    {
+        const double* dOutputSamples = _resampler->get_line();
+
+        // dOutputSamples will be a nullptr, if no more resampled
+        // lines are available
+        if (!dOutputSamples)
+            break;
+
+        if (linewise)
+        {
+            for (int _fin = 0; _fin < _primary_dim; _fin++)
+            {
+                _this->writeData(start_line+_secondary_dim, start_col+_fin, dOutputSamples[_fin]);
+            }
+        }
+        else
+        {
+            for (int _fin = 0; _fin < _primary_dim; _fin++)
+            {
+                _this->writeData(start_line+_fin, start_col+_secondary_dim, dOutputSamples[_fin]);
+            }
+        }
+
+        _secondary_dim++;
+    }
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This member function resamples the
 /// data described by the passed coordinates
@@ -5355,8 +5365,10 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         _vCol.linearize();
 
         // Create the resample object and prepare the needed memory
-        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       _vCol.size(), samples.first,
+        // NOTE: It is intentional, that the line dimension is changing
+        // here, because that is way faster in the end
+        _resampler.reset(new Resampler(_vLine.size(), _vCol.size(),
+                                       samples.first, _vCol.size(),
                                        Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
@@ -5395,80 +5407,76 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         memArray.insert(memArray.begin()+_vCol.last()+1, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
     }
 
-    // resampler output buffer
-    const double* dOutputSamples = 0;
-    std::vector<double> dInputSamples(_vCol.size());
-    int _ret_line = 0;
-    int _final_cols = 0;
-
-    // Determine the number of final columns. These will stay constant only in
-    // the column application direction
-    if (Direction == ALL || Direction == GRID || Direction == LINES)
-        _final_cols = samples.second;
-    else
-        _final_cols = _vCol.size();
+    std::vector<double> dInputSamples(Direction == COLS ? _vLine.size() : _vCol.size());
+    int _seconday_dim = 0;
+    int _primary_dim = 0;
 
     // Resample the data table
-    // Apply the resampling linewise
-    for (size_t i = 0; i < _vLine.size(); i++)
+    if (Direction == COLS)
     {
+        // Determine the number of final primary dimension. These will stay constant only in
+        // the column application direction
+        _primary_dim = samples.first;
+
+        // Apply the resampling colwise
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
-        }
-
-        // If the resampler doesn't accept a further line
-        // the buffer is probably full
-        if (!_resampler->put_line(&dInputSamples[0]))
-        {
-            if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
+            for (size_t i = 0; i < _vLine.size(); i++)
             {
-                // Obviously not the case
-                throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+                dInputSamples[i] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
             }
-            else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
+
+            // If the resampler doesn't accept a further line
+            // the buffer is probably full
+            if (!_resampler->put_line(&dInputSamples[0]))
             {
-                // Free the scan buffer of the resampler by extracting the already resampled lines
-                while (true)
+                if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
+                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+                else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
                 {
-                    dOutputSamples = _resampler->get_line();
+                    // Free the scan buffer of the resampler by extracting the already resampled lines
+                    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, false);
 
-                    // dOutputSamples will be a nullptr, if no more resampled
-                    // lines are available
-                    if (!dOutputSamples)
-                        break;
-
-                    for (int _fin = 0; _fin < _final_cols; _fin++)
-                    {
-                        writeData(_vLine.front()+_ret_line, _vCol.front()+_fin, dOutputSamples[_fin]);
-                    }
-
-                    _ret_line++;
+                    // Try again to put the current line
+                    _resampler->put_line(&dInputSamples[0]);
                 }
+            }
+        }
+    }
+    else
+    {
+        // Determine the number of final primary dimension. These will stay constant only in
+        // the column application direction
+        _primary_dim = samples.second;
 
-                // Try again to put the current line
-                _resampler->put_line(&dInputSamples[0]);
+        // Apply the resampling linewise
+        for (size_t i = 0; i < _vLine.size(); i++)
+        {
+            for (size_t j = 0; j < _vCol.size(); j++)
+            {
+                dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
+            }
+
+            // If the resampler doesn't accept a further line
+            // the buffer is probably full
+            if (!_resampler->put_line(&dInputSamples[0]))
+            {
+                if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
+                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+                else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
+                {
+                    // Free the scan buffer of the resampler by extracting the already resampled lines
+                    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, true);
+
+                    // Try again to put the current line
+                    _resampler->put_line(&dInputSamples[0]);
+                }
             }
         }
     }
 
     // Extract the remaining resampled lines from the resampler's memory
-    while (true)
-    {
-        dOutputSamples = _resampler->get_line();
-
-        // dOutputSamples will be a nullptr, if no more resampled
-        // lines are available
-        if (!dOutputSamples)
-            break;
-
-        for (int _fin = 0; _fin < _final_cols; _fin++)
-        {
-            writeData(_vLine.front()+_ret_line, _vCol.front()+_fin, dOutputSamples[_fin]);
-        }
-
-        _ret_line++;
-    }
+    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, Direction != COLS);
 
     // Delete empty lines
     if (Direction != LINES && samples.first < _vLine.size())

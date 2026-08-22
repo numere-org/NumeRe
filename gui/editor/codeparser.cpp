@@ -734,6 +734,8 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
             varType = "object.queue";
         else if (line[pos].m_str == "stack")
             varType = "object.stack";
+        else if (line[pos].m_str == "timer")
+            varType = "object.timer";
         else
             varType = CodeParser::expandReturnTypes(m_provider.getFunctionReturnValue(line[pos].m_str));
 
