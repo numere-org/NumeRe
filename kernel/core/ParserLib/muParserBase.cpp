@@ -2245,6 +2245,16 @@ namespace mu
                             stOpt.top().Set(m_FunDef.at(MU_VECTOR_EXP3), MU_VECTOR_EXP3);
                             ApplyFunc(stOpt, stVal, 3);
                         }
+                        else if (stOpt.top().GetCode() == cmIF && opt.GetCode() == cmARG_SEP)
+                        {
+                            if (stArgCount.top() < 3 || stVal.size() < 3)
+                                Error(ecUNEXPECTED_ARG_SEP, m_pTokenReader->GetPos());
+
+                            stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
+                            ApplyFunc(stOpt, stVal, 3);
+                            stArgCount.pop();
+                            stArgCount.top()++;
+                        }
                     }
 					break;
 
@@ -2542,11 +2552,11 @@ namespace mu
 			}
 
 			// Commented out - might be necessary for deep debugging stuff
-			//if (ParserBase::g_DbgDumpStack)
-			//{
+//			if (ParserBase::g_DbgDumpStack)
+//			{
 //				StackDump(stVal, stOpt);
 //				m_compilingState.m_byteCode.AsciiDump();
-			//}
+//			}
 		} // while (true)
 
 

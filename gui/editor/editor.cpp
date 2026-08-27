@@ -3969,7 +3969,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
     StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
 
-    StyleSetBackground(wxSTC_STYLE_LINENUMBER,  m_options->GetSyntaxStyle(Options::UI_THEME).foreground.ChangeLightness(Options::EDITORMARGIN));
+    StyleSetBackground(wxSTC_STYLE_LINENUMBER, m_options->GetSyntaxStyle(Options::UI_THEME).foreground.ChangeLightness(Options::EDITORMARGIN));
     SetFoldMarginColour(true, m_options->GetSyntaxStyle(Options::UI_THEME).foreground.ChangeLightness(Options::EDITORMARGIN));
 
     FileFilterType filetype = GetFileType(wxFileName(filename));

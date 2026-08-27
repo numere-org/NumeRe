@@ -856,9 +856,9 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     else if (varType == "string")
         methodSelector = ".str";
     else if (varType == "dict")
-        methodSelector = ".dict";
+        methodSelector = ".dct";
     else if (varType == "dictstruct")
-        methodSelector = ".struct";
+        methodSelector = ".sct";
     else if (varType == "category")
         methodSelector = ".cat";
     else if (varType.starts_with("object."))

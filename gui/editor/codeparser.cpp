@@ -1273,7 +1273,11 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                 scope.m_symbols[lineNum].push_back(ParserSymbol(line[1].m_str, varType, ParserSymbol::LOCALFUNC));
                 break;
             }
-            else if ((sSymbol == "define" || sSymbol == "ifndefined" || sSymbol == "ifndef") && tokenCount > 5)
+            else if ((sSymbol == "define"
+                      || sSymbol == "ifndefined"
+                      || sSymbol == "ifndef"
+                      || sSymbol == "redefine"
+                      || sSymbol == "redef") && tokenCount > 5)
             {
                 varType = "any";
 

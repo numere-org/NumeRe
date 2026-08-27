@@ -2507,9 +2507,9 @@ void promote_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType oth
 
     if (promoted == col->m_type)
         return;
-    else if (promoted == TableColumn::TYPE_NONE && !col->size())
+    else if (!col->size())
     {
-        convert_if_empty(col, colNo, other);
+        convert_if_empty(col, colNo, promoted == TableColumn::TYPE_NONE ? other : promoted);
         return;
     }
 

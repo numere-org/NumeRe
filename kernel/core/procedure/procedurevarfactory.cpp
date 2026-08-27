@@ -962,6 +962,7 @@ void ProcedureVarFactory::createLocalVars(std::string sVarList, mu::DataType def
     }
 
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+    FunctionDefinitionManager& _funcDefs = NumeReKernel::getInstance()->getDefinitions();
 
     // Get the number of declared variables
     size_t nLocalVarMapSize = countVarListElements(sVarList);
@@ -990,6 +991,9 @@ void ProcedureVarFactory::createLocalVars(std::string sVarList, mu::DataType def
         if (currentDef.find('=') != std::string::npos)
         {
             std::string sVarValue = currentDef.substr(currentDef.find('=')+1);
+
+            if (!_funcDefs.call(sVarValue))
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sVarList, SyntaxError::invalid_position);
 
             if (sVarValue.find('$') != std::string::npos && sVarValue.find('(') != std::string::npos)
             {

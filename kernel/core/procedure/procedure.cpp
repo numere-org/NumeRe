@@ -173,6 +173,30 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         }
     }
 
+    // Call functions if we're not in a loop
+    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
+        || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
+    {
+        if (sCurrentCommand != "for"
+            && sCurrentCommand != "if"
+            && sCurrentCommand != "while"
+            && sCurrentCommand != "switch"
+            && sCurrentCommand != "define"
+            && sCurrentCommand != "redef"
+            && sCurrentCommand != "redefine"
+            && sCurrentCommand != "undefine"
+            && sCurrentCommand != "undef"
+            && sCurrentCommand != "ifndef"
+            && sCurrentCommand != "ifndefined")
+        {
+            if (!_functions.call(sLine))
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
+
+            // Reduce surrounding white spaces
+            StripSpaces(sLine);
+        }
+    }
+
     // Handle the "to_cmd()" function, which is quite slow
     // Only handle this function, if we're not inside of a loop
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
@@ -333,20 +357,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 procedureInterface(sLine, _parser, _functions, _data, _pData, _script, _option, 0);
         }
 
-    }
-
-    // Call functions if we're not in a loop
-    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
-        || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
-    {
-        if (sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
-        {
-            if (!_functions.call(sLine))
-                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
-
-            // Reduce surrounding white spaces
-            StripSpaces(sLine);
-        }
     }
 
     // Handle recursive expressions
