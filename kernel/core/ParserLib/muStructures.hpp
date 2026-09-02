@@ -21,7 +21,6 @@
 
 #include <vector>
 #include <memory>
-#include <list>
 #include <numeric>
 #include <boost/circular_buffer.hpp>
 
@@ -105,14 +104,21 @@ namespace mu
             {
                 if (!other.get())
                     reset(nullptr);
-                else if (isRef())
-                    getRef() = *other.get();
-                else if (!get() || (get()->getPlainType() != other->getPlainType()))
+                else if (!get())
                     reset(other->clone());
-                else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
-                    reset(other->clone());
-                else if (this != &other)
-                    *get() = *other.get();
+                else // both are non-zero
+                {
+                    DataType type = get()->getType();
+                    DataType otherType = other.get()->getType();
+
+                    if (get()->getPlainType() == TYPE_REFERENCE)
+                        getRef() = *other.get();
+                    else if (type != otherType
+                             || (type == TYPE_OBJECT && static_cast<Object*>(get())->getObjectType() != other.getObject().getObjectType()))
+                        reset(other->clone());
+                    else if (this != &other)
+                        *get() = *other.get();
+                }
 
                 return *this;
             }
@@ -128,12 +134,19 @@ namespace mu
             {
                 if (!other.get())
                     reset(nullptr);
-                else if (!get() || (get()->getPlainType() != other->getPlainType()))
+                else if (!get())
                     reset(other->clone());
-                else if (isObject() && other.isObject() && getObject().getObjectType() != other.getObject().getObjectType())
-                    reset(other->clone());
-                else if (this != &other)
-                    *get() = *other.get();
+                else // both are non-zero
+                {
+                    DataType type = get()->getPlainType(); // to catch references
+                    DataType otherType = other.get()->getPlainType(); // to catch references
+
+                    if (type != otherType
+                        || (type == TYPE_OBJECT && static_cast<Object*>(get())->getObjectType() != other.getObject().getObjectType()))
+                        reset(other->clone());
+                    else if (this != &other)
+                        *get() = *other.get();
+                }
 
                 return *this;
             }
@@ -156,10 +169,35 @@ namespace mu
 
             bool isVoid() const;
             bool isValid() const;
+            bool isIndex() const;
             bool isNumerical() const;
             bool isString() const;
             bool isCategory() const;
-            bool isArray() const;
+
+            /////////////////////////////////////////////////
+            /// \brief True, if the contained value is an
+            /// Array.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isArray() const
+            {
+                return get() && get()->getType() == TYPE_ARRAY;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief True, if the contained value is a
+            /// reference to an array.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isArrayRef() const
+            {
+                return get() && get()->getPlainType() == TYPE_REFERENCE && get()->getType() == TYPE_ARRAY;
+            }
+
             bool isDict() const;
             bool isDictStruct() const;
             bool isObject() const;
@@ -169,6 +207,8 @@ namespace mu
             std::string& getStr();
             const std::string& getStr() const;
             std::string getPath(char separator = '/') const;
+
+            Numerical& getAsIndex();
 
             Numerical& getNum();
             const Numerical& getNum() const;
@@ -535,9 +575,10 @@ namespace mu
                     if (other.first().isArray()) // was front()
                         return assign(other.first().getArray()); // was front()
 
-                    if (size() && first().isRef()) // was front()
+                    size_t elems = size();
+
+                    if (elems && first().isRef()) // was front()
                     {
-                        size_t elems = size();
                         for (size_t i = 0; i < elems; i++)
                         {
                             get(i).assign(other.get(i));
@@ -548,7 +589,7 @@ namespace mu
                         return *this;
                     }
 
-                    if (size() != 1)
+                    if (elems != 1)
                         resize(1);
 
                     first().assign(other.first()); // was front()
@@ -596,7 +637,7 @@ namespace mu
                     if (other.first().isArray())
                         return operator=(other.first().getArray());
 
-                    if (size() != 1)
+                    if (count() != 1)
                         resize(1);
 
                     first() = other.first();
@@ -927,11 +968,13 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixAdd(*this, other);
 
-                if (size() == 1 && front().isArray())
+                size_t elements = size();
+
+                if (elements == 1 && front().isArray())
                     return front().getArray() + other;
 
                 Array ret;
-                size_t elements = std::max(size(), other.size());
+                elements = std::max(elements, other.size());
                 ret.reserve(elements);
 
                 for (size_t i = 0; i < elements; i++)
@@ -975,12 +1018,13 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixSub(*this, other);
 
-                if (size() == 1 && front().isArray())
+                size_t elements = size();
+
+                if (elements == 1 && front().isArray())
                     return front().getArray() - other;
 
                 Array ret;
-
-                size_t elements = std::max(size(), other.size());
+                elements = std::max(elements, other.size());
                 ret.reserve(elements);
 
                 for (size_t i = 0; i < elements; i++)
@@ -1003,11 +1047,13 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixDiv(*this, other);
 
-                if (size() == 1 && front().isArray())
+                size_t elements = size();
+
+                if (elements == 1 && front().isArray())
                     return front().getArray() / other;
 
                 Array ret;
-                size_t elements = std::max(size(), other.size());
+                elements = std::max(elements, other.size());
                 ret.reserve(elements);
 
                 for (size_t i = 0; i < elements; i++)
@@ -1030,11 +1076,13 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixMul(*this, other);
 
-                if (size() == 1 && front().isArray())
+                size_t elements = size();
+
+                if (elements == 1 && front().isArray())
                     return front().getArray() * other;
 
                 Array ret;
-                size_t elements = std::max(size(), other.size());
+                elements = std::max(elements, other.size());
                 ret.reserve(elements);
 
                 for (size_t i = 0; i < elements; i++)
@@ -1057,11 +1105,13 @@ namespace mu
                 if (isMatrix() || other.isMatrix())
                     return matrixPow(*this, other);
 
-                if (size() == 1 && front().isArray())
+                size_t elements = size();
+
+                if (elements == 1 && front().isArray())
                     return front().getArray() ^ other;
 
                 Array ret;
-                size_t elements = std::max(size(), other.size());
+                elements = std::max(elements, other.size());
                 ret.reserve(elements);
 
                 for (size_t i = 0; i < elements; i++)
@@ -1081,7 +1131,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator+=(const Array& other)
             {
-                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
+                size_t elements = size();
+
+                if (elements < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator+(other));
                 else if (isMatrix() || other.isMatrix())
                 {
@@ -1090,7 +1142,7 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elements; i++)
                     {
                         get(i) += other.get(i);
                     }
@@ -1111,7 +1163,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator-=(const Array& other)
             {
-                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
+                size_t elements = size();
+
+                if (elements < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator-(other));
                 else if (isMatrix() || other.isMatrix())
                 {
@@ -1120,7 +1174,7 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elements; i++)
                     {
                        get(i) -= other.get(i);
                     }
@@ -1141,7 +1195,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator/=(const Array& other)
             {
-                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
+                size_t elements = size();
+
+                if (elements < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator/(other));
                 else if (isMatrix() || other.isMatrix())
                 {
@@ -1150,7 +1206,7 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elements; i++)
                     {
                         get(i) /= other.get(i);
                     }
@@ -1171,7 +1227,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator*=(const Array& other)
             {
-                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
+                size_t elements = size();
+
+                if (elements < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator*(other));
                 else if (isMatrix() || other.isMatrix())
                 {
@@ -1180,7 +1238,7 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elements; i++)
                     {
                         get(i) *= other.get(i);
                     }
@@ -1201,7 +1259,9 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator^=(const Array& other)
             {
-                if (size() < other.size() || m_commonType == TYPE_GENERATOR)
+                size_t elements = size();
+
+                if (elements < other.size() || m_commonType == TYPE_GENERATOR)
                     operator=(operator^(other));
                 else if (isMatrix() || other.isMatrix())
                 {
@@ -1210,7 +1270,7 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < size(); i++)
+                    for (size_t i = 0; i < elements; i++)
                     {
                         get(i) ^= other.get(i);
                     }
@@ -1293,10 +1353,89 @@ namespace mu
             std::string printJoined(const std::string& sSep = "", bool keepEmpty = false) const;
             std::string printOverview(size_t digits = 0, size_t chrs = 0, size_t maxElems = 5, bool alwaysBraces = false) const;
             size_t getBytes() const;
-            size_t size() const;
-            size_t count() const;
-            Value& first();
-            const Value& first() const;
+
+            /////////////////////////////////////////////////
+            /// \brief Custom size function. Will default to
+            /// the parent size function except when this
+            /// array contains a reference to another array.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t size() const
+            {
+                size_t vectSize = count();
+
+                if (vectSize == 1)
+                {
+                    const Value& fst = *(_M_impl._M_start);
+
+                    if (fst.isArrayRef())
+                        return fst.getArray().size();
+                }
+
+                if (m_commonType == TYPE_GENERATOR)
+                {
+                    size_t totalSize = 0;
+
+                    for (size_t i = 0; i < vectSize; i++)
+                    {
+                        const Value& item = *(_M_impl._M_start+i);
+
+                        if (item.isGenerator())
+                        {
+                            size_t genSize = item.getGenerator().size();
+
+                            if (genSize == UINT64_MAX)
+                                return genSize;
+
+                            totalSize += genSize;
+                        }
+                        else
+                            totalSize++;
+                    }
+
+                    return totalSize;
+                }
+
+                return vectSize;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get the number of elements stored in
+            /// the array. Does not correspond to its size.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
+            size_t count() const
+            {
+                return _M_impl._M_finish - _M_impl._M_start;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief The the first element stored in the
+            /// array. Does not correspond to calling front().
+            ///
+            /// \return Value&
+            ///
+            /////////////////////////////////////////////////
+            Value& first()
+            {
+                return *(_M_impl._M_start);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief The the first element stored in the
+            /// array. Does not correspond to calling front().
+            ///
+            /// \return const Value&
+            ///
+            /////////////////////////////////////////////////
+            const Value& first() const
+            {
+                return *(_M_impl._M_start);
+            }
 
             /////////////////////////////////////////////////
             /// \brief Make a linear index from the
@@ -1368,21 +1507,24 @@ namespace mu
             /////////////////////////////////////////////////
             Value& get(size_t i)
             {
-                size_t vectSize = count();
-
                 if (m_commonType == TYPE_GENERATOR)
                     return getGenerated(i);
-                else if (vectSize == 1u)
-                {
-                    if (first().isRef() && first().isArray())
-                        return first().getArray().get(i);
 
-                    return operator[](0);
+                size_t vectSize = count();
+
+                if (vectSize == 1u)
+                {
+                    Value& fst = *(_M_impl._M_start);
+
+                    if (fst.isArrayRef())
+                        return fst.getArray().get(i);
+
+                    return fst;
                 }
                 else if (vectSize <= i)
                     throw std::out_of_range("Element " + std::to_string(i) + " is out of bounds.");
 
-                return operator[](i);
+                return *(_M_impl._M_start + i);
             }
 
             /////////////////////////////////////////////////
@@ -1429,21 +1571,24 @@ namespace mu
             /////////////////////////////////////////////////
             const Value& get(size_t i) const
             {
-                size_t vectSize = count();
-
                 if (m_commonType == TYPE_GENERATOR)
                     return getGenerated(i);
-                else if (vectSize == 1u)
-                {
-                    if (first().isRef() && first().isArray())
-                        return first().getArray().get(i);
 
-                    return operator[](0);
+                size_t vectSize = count();
+
+                if (vectSize == 1u)
+                {
+                    const Value& fst = *(_M_impl._M_start);
+
+                    if (fst.isArrayRef())
+                        return fst.getArray().get(i);
+
+                    return fst;
                 }
                 else if (vectSize <= i)
                     return m_default;
 
-                return operator[](i);
+                return *(_M_impl._M_start + i);
             }
 
             /////////////////////////////////////////////////
@@ -2089,9 +2234,31 @@ namespace mu
 
             Variable& operator=(const Variable& other);
 
+            bool accepts(const Array& other) const;
             void indexedAssign(const Array& idx, const Array& vals);
             void overwrite(const Array& other);
-            bool accepts(const Array& other) const;
+
+            /////////////////////////////////////////////////
+            /// \brief A specialised member function for fast
+            /// assigning the calculation results to the
+            ///"ans" variable.
+            ///
+            /// \warning This is not intended for any other
+            /// purpose because it breaks the typing system.
+            ///
+            /// \param other const Array&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void assignResults(const Array& other)
+            {
+                if (this == &other)
+                    return;
+
+                other.dereference();
+                assign(other);
+                m_commonType = TYPE_CLUSTER;
+            }
 
         protected:
             void ndAssign(const Array& idx, const Array& vals);

@@ -464,7 +464,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (needReturnValue)
         thisReturnVal.valArray = mu::make_vector(v, nNum);
 
-    vAns = v[0].get();
+    vAns.assignResults(v[0].get());
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)

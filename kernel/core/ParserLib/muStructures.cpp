@@ -415,6 +415,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Ensure that an access as index is
+    /// working for this value.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isIndex() const
+    {
+        return get() && get()->getPlainType() == TYPE_NUMERICAL;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief True, if the contained value can be
     /// interpreted as a numerical value.
     ///
@@ -450,19 +463,6 @@ namespace mu
     bool Value::isCategory() const
     {
         return get() && get()->getType() == TYPE_CATEGORY;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief True, if the contained value is an
-    /// Array.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isArray() const
-    {
-        return get() && get()->getType() == TYPE_ARRAY;
     }
 
 
@@ -604,6 +604,19 @@ namespace mu
         throw ParserError(ecTYPE_NO_STR, getTypeAsString());
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get a direct access to the contained
+    /// numerical value. Is unchecked (ensure that
+    /// you know, what you have at hand).
+    ///
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical& Value::getAsIndex()
+    {
+        return static_cast<NumValue*>(get())->get();
+    }
 
     /////////////////////////////////////////////////
     /// \brief Get the contained Numerical.
@@ -3487,7 +3500,15 @@ namespace mu
     /////////////////////////////////////////////////
     int64_t Array::getAsScalarInt() const
     {
-        return front().getNum().asI64();
+        if (empty())
+            throw std::length_error("Array is empty.");
+
+        const Value& fst = first();
+
+        if (fst.isArray())
+            return fst.getArray().getAsScalarInt();
+
+        return fst.getNum().asI64();
     }
 
 
@@ -3889,86 +3910,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Custom size function. Will default to
-    /// the parent size function except when this
-    /// array contains a reference to another array.
-    ///
-    /// \return size_t
-    ///
-    /////////////////////////////////////////////////
-    size_t Array::size() const
-    {
-        size_t vectSize = count();
-
-        if (vectSize == 1 && first().isRef() && first().isArray())
-            return first().getArray().size();
-
-        if (m_commonType == TYPE_GENERATOR)
-        {
-            size_t totalSize = 0;
-
-            for (size_t i = 0; i < vectSize; i++)
-            {
-                if (operator[](i).isGenerator())
-                {
-                    size_t genSize = operator[](i).getGenerator().size();
-
-                    if (genSize == UINT64_MAX)
-                        return genSize;
-
-                    totalSize += genSize;
-                }
-                else
-                    totalSize++;
-            }
-
-            return totalSize;
-        }
-
-        return vectSize;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the number of elements stored in
-    /// the array. Does not correspond to its size.
-    ///
-    /// \return size_t
-    ///
-    /////////////////////////////////////////////////
-    size_t Array::count() const
-    {
-        return std::vector<Value>::size();
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief The the first element stored in the
-    /// array. Does not correspond to calling front().
-    ///
-    /// \return Value&
-    ///
-    /////////////////////////////////////////////////
-    Value& Array::first()
-    {
-        return std::vector<Value>::front();
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief The the first element stored in the
-    /// array. Does not correspond to calling front().
-    ///
-    /// \return const Value&
-    ///
-    /////////////////////////////////////////////////
-    const Value& Array::first() const
-    {
-        return std::vector<Value>::front();
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief Add a value to the shared buffer and
     /// return a reference to its buffer position.
     ///
@@ -4198,12 +4139,7 @@ namespace mu
             Value& v = const_cast<Value&>(operator[](i));
 
             if (v.isRef())
-            {
-                if (v.getRef().isNull())
-                    v.reset(nullptr);
-                else
-                    v.reset(v.getRef().get().clone());
-            }
+                v.reset(v.getRef().dereferencedClone());
 
             if (v.isArray())
                 v.getArray().dereference();

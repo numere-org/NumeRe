@@ -2409,7 +2409,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, const mu::StackItem* v)
 {
-    vAns = v[0].get();
+    vAns.assignResults(v[0].get());
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
