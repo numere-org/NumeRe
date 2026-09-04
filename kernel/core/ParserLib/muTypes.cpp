@@ -1153,7 +1153,7 @@ namespace mu
             writeInt(-asUI64(), NumericalType(m_type + I8));
         else if (m_type <= I64)
             writeInt(-asI64(), m_type);
-        else if (m_type <= DURATION)
+        else if (m_type <= DATETIME)
             writeFloat(-asF64(), m_type);
         else
             writeComplex(-asCF64(), m_type);
@@ -1190,7 +1190,7 @@ namespace mu
         if (m_type <= I64)
             return i64 != 0;
 
-        if (m_type <= DURATION || m_type == INVALID)
+        if (m_type <= DATETIME || m_type == INVALID)
             return f64 != 0.0;
 
         return *cf64Ptr != 0.0;

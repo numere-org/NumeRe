@@ -634,13 +634,15 @@ namespace mu
             {
                 if (other.size() == 1)
                 {
-                    if (other.first().isArray())
-                        return operator=(other.first().getArray());
+                    const mu::Value& otherfirst = other.first();
+
+                    if (otherfirst.isArray())
+                        return operator=(otherfirst.getArray());
 
                     if (count() != 1)
                         resize(1);
 
-                    first() = other.first();
+                    first() = otherfirst;
                 }
                 else if (other.m_commonType == TYPE_GENERATOR)
                 {
@@ -1142,9 +1144,26 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < elements; i++)
+                    size_t vectSize = count();
+
+                    // Separate the array reference out
+                    if (vectSize == 1u)
                     {
-                        get(i) += other.get(i);
+                        Value& fst = *(_M_impl._M_start);
+
+                        if (fst.isArrayRef())
+                            fst.getArray() += other;
+                        else
+                            fst += other.first();
+                    }
+                    else
+                    {
+                        // This can not contain generators. The special case of a
+                        // reference to an array has been eliminated previously
+                        for (size_t i = 0; i < vectSize; i++)
+                        {
+                            *(_M_impl._M_start + i) += other.get(i);
+                        }
                     }
 
                     // A recursive operation may change the common type
@@ -1174,9 +1193,26 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < elements; i++)
+                    size_t vectSize = count();
+
+                    // Separate the array reference out
+                    if (vectSize == 1u)
                     {
-                       get(i) -= other.get(i);
+                        Value& fst = *(_M_impl._M_start);
+
+                        if (fst.isArrayRef())
+                            fst.getArray() -= other;
+                        else
+                            fst -= other.first();
+                    }
+                    else
+                    {
+                        // This can not contain generators. The special case of a
+                        // reference to an array has been eliminated previously
+                        for (size_t i = 0; i < vectSize; i++)
+                        {
+                            *(_M_impl._M_start + i) -= other.get(i);
+                        }
                     }
 
                     // A recursive operation may change the common type
@@ -1206,9 +1242,26 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < elements; i++)
+                    size_t vectSize = count();
+
+                    // Separate the array reference out
+                    if (vectSize == 1u)
                     {
-                        get(i) /= other.get(i);
+                        Value& fst = *(_M_impl._M_start);
+
+                        if (fst.isArrayRef())
+                            fst.getArray() /= other;
+                        else
+                            fst /= other.first();
+                    }
+                    else
+                    {
+                        // This can not contain generators. The special case of a
+                        // reference to an array has been eliminated previously
+                        for (size_t i = 0; i < vectSize; i++)
+                        {
+                            *(_M_impl._M_start + i) /= other.get(i);
+                        }
                     }
 
                     // A recursive operation may change the common type
@@ -1238,9 +1291,26 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < elements; i++)
+                    size_t vectSize = count();
+
+                    // Separate the array reference out
+                    if (vectSize == 1u)
                     {
-                        get(i) *= other.get(i);
+                        Value& fst = *(_M_impl._M_start);
+
+                        if (fst.isArrayRef())
+                            fst.getArray() *= other;
+                        else
+                            fst *= other.first();
+                    }
+                    else
+                    {
+                        // This can not contain generators. The special case of a
+                        // reference to an array has been eliminated previously
+                        for (size_t i = 0; i < vectSize; i++)
+                        {
+                            *(_M_impl._M_start + i) *= other.get(i);
+                        }
                     }
 
                     // A recursive operation may change the common type
@@ -1270,9 +1340,26 @@ namespace mu
                 }
                 else
                 {
-                    for (size_t i = 0; i < elements; i++)
+                    size_t vectSize = count();
+
+                    // Separate the array reference out
+                    if (vectSize == 1u)
                     {
-                        get(i) ^= other.get(i);
+                        Value& fst = *(_M_impl._M_start);
+
+                        if (fst.isArrayRef())
+                            fst.getArray() ^= other;
+                        else
+                            fst ^= other.first();
+                    }
+                    else
+                    {
+                        // This can not contain generators. The special case of a
+                        // reference to an array has been eliminated previously
+                        for (size_t i = 0; i < vectSize; i++)
+                        {
+                            *(_M_impl._M_start + i) ^= other.get(i);
+                        }
                     }
 
                     // A recursive operation may change the common type
