@@ -1690,7 +1690,7 @@ namespace NumeRe
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
-            for (size_t i = 0; i < size; i++)
+            for (int64_t i = 0; i < size; i++)
             {
                 strings[i] = ansiToUtf8(strings[i]);
             }
@@ -1704,7 +1704,7 @@ namespace NumeRe
             col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
-            for (size_t i = 0; i < size; i++)
+            for (int64_t i = 0; i < size; i++)
             {
                 strings[i] = ansiToUtf8(strings[i]);
             }
@@ -1788,7 +1788,7 @@ namespace NumeRe
 
             if (fileVersionRead < 4.09)
             {
-                for (size_t i = 0; i < size; i++)
+                for (int64_t i = 0; i < size; i++)
                 {
                     strings[i] = ansiToUtf8(strings[i]);
                 }

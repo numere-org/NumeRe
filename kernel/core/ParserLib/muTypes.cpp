@@ -378,9 +378,9 @@ namespace mu
     /// \param data int8_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int8_t data)
+    Numerical::Numerical(int8_t data) : m_type(I8)
     {
-        writeInt(data, I8);
+        i64 = data;
     }
 
 
@@ -390,9 +390,9 @@ namespace mu
     /// \param data uint8_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint8_t data)
+    Numerical::Numerical(uint8_t data) : m_type(UI8)
     {
-        writeUint(data, UI8);
+        ui64 = data;
     }
 
 
@@ -402,9 +402,9 @@ namespace mu
     /// \param data int16_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int16_t data)
+    Numerical::Numerical(int16_t data) : m_type(I16)
     {
-        writeInt(data, I16);
+        i64 = data;
     }
 
 
@@ -414,9 +414,9 @@ namespace mu
     /// \param data uint16_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint16_t data)
+    Numerical::Numerical(uint16_t data) : m_type(UI16)
     {
-        writeUint(data, UI16);
+        ui64 = data;
     }
 
 
@@ -426,9 +426,9 @@ namespace mu
     /// \param data int32_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(int32_t data)
+    Numerical::Numerical(int32_t data) : m_type(I32)
     {
-        writeInt(data, I32);
+        i64 = data;
     }
 
 
@@ -438,9 +438,9 @@ namespace mu
     /// \param data uint32_t
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(uint32_t data)
+    Numerical::Numerical(uint32_t data) : m_type(UI32)
     {
-        writeUint(data, UI32);
+        ui64 = data;
     }
 
 
@@ -482,9 +482,9 @@ namespace mu
     /// \param data float
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(float data)
+    Numerical::Numerical(float data) : m_type(F32)
     {
-        writeFloat(data, F32);
+        f64 = data;
     }
 
 
@@ -495,9 +495,9 @@ namespace mu
     /// \param type NumericalType
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(double data, NumericalType type)
+    Numerical::Numerical(double data, NumericalType type) : m_type(type == AUTO ? F64 : type)
     {
-        writeFloat(data, type == AUTO ? F64 : type);
+        f64 = data;
     }
 
 
@@ -507,9 +507,9 @@ namespace mu
     /// \param data bool
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(bool data)
+    Numerical::Numerical(bool data) : m_type(LOGICAL)
     {
-        writeUint(data, LOGICAL);
+        ui64 = data;
     }
 
 
@@ -563,9 +563,9 @@ namespace mu
     /// \param time const sys_time_point&
     ///
     /////////////////////////////////////////////////
-    Numerical::Numerical(const sys_time_point& time)
+    Numerical::Numerical(const sys_time_point& time) : m_type(DATETIME)
     {
-        writeFloat(to_double(time), DATETIME);
+        f64 = to_double(time);
     }
 
 
@@ -578,13 +578,16 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical::Numerical(const Numerical& num)
     {
-        if (num.m_type == CF32 || num.m_type == CF64)
-            writeComplex(num.asCF64(), num.m_type);
+        if (num.m_type <= UI64)
+            ui64 = num.ui64;
+        else if (num.m_type <= I64)
+            i64 = num.i64;
+        else if (num.m_type <= DATETIME || num.m_type == INVALID)
+            f64 = num.f64;
         else
-        {
-            m_storage = num.m_storage;
-            m_type = num.m_type;
-        }
+            writeComplex(num.asCF64(), num.m_type);
+
+        m_type = num.m_type;
     }
 
 
@@ -597,11 +600,20 @@ namespace mu
     /////////////////////////////////////////////////
     Numerical::Numerical(Numerical&& num)
     {
-        m_storage = num.m_storage;
-        m_type = num.m_type;
+        if (num.m_type <= UI64)
+            ui64 = num.ui64;
+        else if (num.m_type <= I64)
+            i64 = num.i64;
+        else if (num.m_type <= DATETIME || num.m_type == INVALID)
+            f64 = num.f64;
+        else
+        {
+            cf64Ptr = num.cf64Ptr;
+            num.cf64Ptr = nullptr;
+        }
 
-        if (num.m_type == CF32 || num.m_type == CF64)
-            num.m_type = INVALID;
+        m_type = num.m_type;
+        num.m_type = INVALID;
     }
 
 
@@ -616,13 +628,16 @@ namespace mu
     {
         clear();
 
-        if (num.m_type == CF32 || num.m_type == CF64)
-            writeComplex(num.asCF64(), num.m_type);
+        if (num.m_type <= UI64)
+            ui64 = num.ui64;
+        else if (num.m_type <= I64)
+            i64 = num.i64;
+        else if (num.m_type <= DATETIME || num.m_type == INVALID)
+            f64 = num.f64;
         else
-        {
-            m_storage = num.m_storage;
-            m_type = num.m_type;
-        }
+            writeComplex(num.asCF64(), num.m_type);
+
+        m_type = num.m_type;
 
         return *this;
     }
@@ -639,11 +654,20 @@ namespace mu
     {
         clear();
 
-        m_storage = num.m_storage;
-        m_type = num.m_type;
+        if (num.m_type <= UI64)
+            ui64 = num.ui64;
+        else if (num.m_type <= I64)
+            i64 = num.i64;
+        else if (num.m_type <= DATETIME || num.m_type == INVALID)
+            f64 = num.f64;
+        else
+        {
+            cf64Ptr = num.cf64Ptr;
+            num.cf64Ptr = nullptr;
+        }
 
-        if (num.m_type == CF32 || num.m_type == CF64)
-            num.m_type = INVALID;
+        m_type = num.m_type;
+        num.m_type = INVALID;
 
         return *this;
     }
@@ -668,9 +692,12 @@ namespace mu
     void Numerical::clear()
     {
         if (m_type == CF32 || m_type == CF64)
-            delete reinterpret_cast<std::complex<double>*>(m_storage);
+        {
+            //g_logger.debug("Clear: " + toString(*cf64Ptr) + "@" + toHexString((size_t)cf64Ptr) + " this=" + toHexString((size_t)this));
+            delete cf64Ptr;
+        }
 
-        m_storage = 0;
+        f64 = NAN;
         m_type = INVALID;
     }
 
@@ -796,15 +823,15 @@ namespace mu
     int64_t Numerical::asI64() const
     {
         if (m_type <= UI64)
-            return m_storage;
+            return ui64;
 
         if (m_type <= I64)
-            return *reinterpret_cast<const int64_t*>(&m_storage);
+            return i64;
 
         if (m_type <= DATETIME || m_type == INVALID)
-            return intCast(*reinterpret_cast<const double*>(&m_storage));
+            return intCast(f64);
 
-        return intCast(*reinterpret_cast<const std::complex<double>*>(m_storage));
+        return intCast(*cf64Ptr);
     }
 
 
@@ -818,15 +845,15 @@ namespace mu
     uint64_t Numerical::asUI64() const
     {
         if (m_type <= UI64)
-            return m_storage;
+            return ui64;
 
         if (m_type <= I64)
-            return (uint64_t)*reinterpret_cast<const int64_t*>(&m_storage);
+            return (uint64_t)i64;
 
         if (m_type <= DATETIME || m_type == INVALID)
-            return (uint64_t)intCast(*reinterpret_cast<const double*>(&m_storage));
+            return (uint64_t)intCast(f64);
 
-        return (uint64_t)intCast(*reinterpret_cast<const std::complex<double>*>(m_storage));
+        return (uint64_t)intCast(*cf64Ptr);
     }
 
 
@@ -840,15 +867,15 @@ namespace mu
     double Numerical::asF64() const
     {
         if (m_type <= UI64)
-            return m_storage;
+            return ui64;
 
         if (m_type <= I64)
-            return *reinterpret_cast<const int64_t*>(&m_storage);
+            return i64;
 
         if (m_type <= DATETIME || m_type == INVALID)
-            return *reinterpret_cast<const double*>(&m_storage);
+            return f64;
 
-        return reinterpret_cast<const std::complex<double>*>(m_storage)->real();
+        return cf64Ptr->real();
     }
 
 
@@ -862,15 +889,15 @@ namespace mu
     std::complex<double> Numerical::asCF64() const
     {
         if (m_type <= UI64)
-            return m_storage;
+            return ui64;
 
         if (m_type <= I64)
-            return *reinterpret_cast<const int64_t*>(&m_storage);
+            return i64;
 
         if (m_type <= DATETIME || m_type == INVALID)
-            return *reinterpret_cast<const double*>(&m_storage);
+            return f64;
 
-        return *reinterpret_cast<const std::complex<double>*>(m_storage);
+        return *cf64Ptr;
     }
 
 
@@ -1158,12 +1185,15 @@ namespace mu
     Numerical::operator bool() const
     {
         if (m_type <= UI64)
-            return asUI64() != 0;
+            return ui64 != 0;
 
         if (m_type <= I64)
-            return asI64() != 0;
+            return i64 != 0;
 
-        return asCF64() != 0.0;
+        if (m_type <= DURATION || m_type == INVALID)
+            return f64 != 0.0;
+
+        return *cf64Ptr != 0.0;
     }
 
 

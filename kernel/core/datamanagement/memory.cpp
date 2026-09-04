@@ -1475,8 +1475,8 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
 
     if (_values.isMatrix() && !_values.isVector())
     {
-        if (getCols() != _values.cols()
-            && getLines() != _values.rows()
+        if (getCols() != (int)_values.cols()
+            && getLines() != (int)_values.rows()
             && _idx.row.isFullRange(getLines()-1)
             && _idx.col.isFullRange(getCols()-1))
             clear();

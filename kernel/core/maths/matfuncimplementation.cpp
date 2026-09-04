@@ -869,9 +869,9 @@ mu::Array matfnc_tensorprod(const mu::Array& A, const mu::Array& B, const mu::Ar
         for (const std::pair<int64_t,int64_t>& p : dimMapping)
         {
             if (p.first < 0
-                || p.first >= dimA.size()
+                || p.first >= (int64_t)dimA.size()
                 || p.second < 0
-                || p.second >= dimB.size())
+                || p.second >= (int64_t)dimB.size())
                 throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
 
             if (dimA[p.first] != dimB[p.second])
@@ -1042,9 +1042,9 @@ mu::Array matfnc_trace(const mu::Array& A, const mu::Array& dims)
     for (const std::pair<int64_t,int64_t>& p : dimMapping)
     {
         if (p.first < 0
-            || p.first >= dimSizes.size()
+            || p.first >= (int64_t)dimSizes.size()
             || p.second < 0
-            || p.second >= dimSizes.size())
+            || p.second >= (int64_t)dimSizes.size())
             throw mu::ParserError(mu::ecMATRIX_DIMS_INVALID, dims.print());
 
         if (dimSizes[p.first] != dimSizes[p.second])

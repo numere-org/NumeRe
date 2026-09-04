@@ -1636,7 +1636,7 @@ TableColumn* StringColumn::convert(ColumnType type)
                     std::sort(vStrings.begin(), vStrings.end());
                     auto lastUnique = std::unique(vStrings.begin(), vStrings.end());
 
-                    isCandidate = lastUnique - vStrings.begin() <= nElems/2;
+                    isCandidate = lastUnique - vStrings.begin() <= (long long int)nElems/2;
                 }
 
                 // Does the sample look promising?

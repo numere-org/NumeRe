@@ -241,7 +241,7 @@ void CodeAnalyzer::run()
 
                     bool semicolonAtEnd = m_currentLexedLine[m_currentLexedLine.size()-1].m_str == ";";
 
-                    if (m_currentLexedLine.size() >= 2+semicolonAtEnd)
+                    if (m_currentLexedLine.size() >= 2ull+semicolonAtEnd)
                     {
                         const LexedString& last = m_currentLexedLine[m_currentLexedLine.size()-1-semicolonAtEnd];
                         bool colonAllowed = m_currentLexedLine[0].is(wxSTC_NSCR_COMMAND)

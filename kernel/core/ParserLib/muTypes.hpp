@@ -116,8 +116,6 @@ namespace mu
         std::string printType() const;
     };
 
-    using NumericalStorage = uint64_t;
-
 
     /////////////////////////////////////////////////
     /// \brief This structure abstrahizes all
@@ -136,40 +134,40 @@ namespace mu
                 COMPLEX
             };
 
-            /*union
+            union
             {
                 int64_t i64;
                 uint64_t ui64;
-                std::complex<double> cf64;
-            };*/
+                double f64;
+                std::complex<double>* cf64Ptr;
+            };
 
-            NumericalStorage m_storage;
             NumericalType m_type = INVALID;
 
             void writeInt(int64_t val, NumericalType type)
             {
                 if (m_type == CF32 || m_type == CF64)
-                    delete reinterpret_cast<std::complex<double>*>(m_storage);
+                    delete cf64Ptr;
 
-                *reinterpret_cast<int64_t*>(&m_storage) = val;
+                i64 = val;
                 m_type = type;
             }
 
             void writeUint(uint64_t val, NumericalType type)
             {
                 if (m_type == CF32 || m_type == CF64)
-                    delete reinterpret_cast<std::complex<double>*>(m_storage);
+                    delete cf64Ptr;
 
-                m_storage = val;
+                ui64 = val;
                 m_type = type;
             }
 
             void writeFloat(double val, NumericalType type)
             {
                 if (m_type == CF32 || m_type == CF64)
-                    delete reinterpret_cast<std::complex<double>*>(m_storage);
+                    delete cf64Ptr;
 
-                *reinterpret_cast<double*>(&m_storage) = val;
+                f64 = val;
                 m_type = type;
             }
 
@@ -179,9 +177,9 @@ namespace mu
                     throw std::runtime_error("Request to write a complex value with an non-complex type @ Numerical::writeComplex()");
 
                 if (m_type != CF32 && m_type != CF64)
-                    m_storage = reinterpret_cast<uint64_t>(new std::complex<double>());
+                    cf64Ptr = new std::complex<double>();
 
-                *reinterpret_cast<std::complex<double>*>(m_storage) = val;
+                *cf64Ptr = val;
                 m_type = type;
             }
 

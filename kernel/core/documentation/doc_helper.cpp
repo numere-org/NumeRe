@@ -815,7 +815,7 @@ std::vector<std::string> Documentation::getCandidates(const std::string& sTopic)
     auto firstIndex = mDocumentationIndex.end();
     auto secondIndex = mDocumentationIndex.end();
 
-    for (int i = sTopic.length(); i > sTopic.length() / 2; i--)
+    for (int i = sTopic.length(); i > (int)sTopic.length() / 2; i--)
     {
         if (firstIndex != mDocumentationIndex.end())
             iter = firstIndex;

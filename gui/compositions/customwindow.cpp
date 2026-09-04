@@ -2554,7 +2554,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
     // Apply the flex effect after all embedded elements have been created
     for (int i = 0; i < currSizer->GetRows(); i++)
     {
-        if (rowScale.size() > i)
+        if (rowScale.size() > (size_t)i)
             currSizer->AddGrowableRow(i, rowScale[i]);
         else
             currSizer->AddGrowableRow(i, 1);
@@ -2562,7 +2562,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
 
     for (int j = 0; j < currSizer->GetCols(); j++)
     {
-        if (colScale.size() > j)
+        if (colScale.size() > (size_t)j)
             currSizer->AddGrowableCol(j, colScale[j]);
         else
             currSizer->AddGrowableCol(j, 1);

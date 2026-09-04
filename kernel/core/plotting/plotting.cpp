@@ -5556,7 +5556,7 @@ void Plot::fillData(double dt_max, int t_animate)
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
 
-                        for (int i = 0; i < 3; i++)
+                        for (size_t i = 0; i < 3; i++)
                         {
                             if (vResults[k].get().size() <= i) // Always fill missing dimensions with zero
                                 m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
