@@ -1341,7 +1341,6 @@ namespace mu
 
         for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
         {
-            //continue;
             switch (pTok->Cmd)
             {
                 // built in binary operators
@@ -1480,10 +1479,10 @@ namespace mu
                     if (pTok->Oprt().var.isScalar())
                         pTok->Oprt().var -= Value(1);
                     else
-                        Stack[sidx] = pTok->Oprt().var-= Value(1);
+                        Stack[sidx] = pTok->Oprt().var -= Value(1);
                     continue;
 
-                case  cmIF: // Not needed right now, operator converted to a function
+                /*case  cmIF: // Not needed right now, operator converted to a function
                     if (!all(Stack[sidx--].get()))
                         pTok += pTok->Oprt().offset;
                     continue;
@@ -1493,7 +1492,7 @@ namespace mu
                     continue;
 
                 case  cmENDIF: // Not needed right now, operator converted to a function
-                    continue;
+                    continue;*/
 
                 // value and variable tokens
                 case  cmVAL:

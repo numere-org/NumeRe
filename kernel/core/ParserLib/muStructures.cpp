@@ -4321,14 +4321,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) += otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() += other;
+            else
+                fst += other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfAdd");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] += otherView.get(i);
+            }
         }
     }
 
@@ -4349,14 +4371,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) -= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() -= other;
+            else
+                fst -= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfSub");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] -= otherView.get(i);
+            }
         }
     }
 
@@ -4378,14 +4422,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) *= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() *= other;
+            else
+                fst *= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfMul");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] *= otherView.get(i);
+            }
         }
     }
 
@@ -4407,14 +4473,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) /= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() /= other;
+            else
+                fst /= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfDiv");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] /= otherView.get(i);
+            }
         }
     }
 
@@ -4436,14 +4524,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) ^= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() ^= other;
+            else
+                fst ^= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfPow");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] ^= otherView.get(i);
+            }
         }
     }
 

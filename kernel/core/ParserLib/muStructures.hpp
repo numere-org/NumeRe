@@ -570,15 +570,19 @@ namespace mu
             /////////////////////////////////////////////////
             Array& assign(const Array& other)
             {
+                size_t vectSize = count();
+
                 if (other.count() == 1 && other.m_commonType != TYPE_GENERATOR)
                 {
-                    if (other.first().isArray()) // was front()
-                        return assign(other.first().getArray()); // was front()
+                    const Value& otherFirst = other.first();
 
-                    size_t elems = size();
+                    if (otherFirst.isArray())
+                        return assign(otherFirst.getArray());
 
-                    if (elems && first().isRef()) // was front()
+                    if (vectSize && first().isRef())
                     {
+                        size_t elems = size();
+
                         for (size_t i = 0; i < elems; i++)
                         {
                             get(i).assign(other.get(i));
@@ -589,26 +593,33 @@ namespace mu
                         return *this;
                     }
 
-                    if (elems != 1)
+                    if (vectSize != 1)
                         resize(1);
 
-                    first().assign(other.first()); // was front()
+                    first().assign(otherFirst);
                 }
-                else if (count() == 1 && first().isRef()) // was front()
+                else if (vectSize == 1 && first().isRef())
                 {
                     // Insert a complete array into a single reference
-                    first().assign(other); // was front()
+                    first().assign(other);
                     m_commonType = TYPE_ARRAY;
                     m_dimSizes = other.m_dimSizes;
                     return *this;
                 }
                 else
                 {
-                    resize(other.size());
+                    // Assumed guarantees:
+                    // - this is not an array reference
+                    // - if this is an generator, it needs to be overwritten nevertheless
+                    // - Resizing this eliminates all possible assignment problems
+                    // - Resizing this makes count() identical to other.size()
 
-                    for (size_t i = 0; i < size(); i++)
+                    resize(other.size());
+                    vectSize = count();
+
+                    for (size_t i = 0; i < vectSize; i++)
                     {
-                        get(i).assign(other.get(i));
+                        (_M_impl._M_start + i)->assign(other.get(i));
                     }
                 }
 
@@ -632,7 +643,7 @@ namespace mu
             /////////////////////////////////////////////////
             Array& operator=(const Array& other)
             {
-                if (other.size() == 1)
+                if (other.count() == 1 && other.m_commonType != TYPE_GENERATOR)
                 {
                     const mu::Value& otherfirst = other.first();
 
@@ -661,12 +672,18 @@ namespace mu
                     if (getCommonType() == TYPE_GENERATOR)
                         clear();
 
+                    // Assumed guarantees:
+                    // - this can not be an array reference due to resizing
+                    // - this is not a generator
+                    // - Resizing this eliminates all possible assignment problems
+                    // - Resizing this makes count() identical to other.size()
+
                     size_t elems = other.size();
                     resize(elems);
 
                     for (size_t i = 0; i < elems; i++)
                     {
-                        get(i) = other.get(i);
+                        *(_M_impl._M_start + i) = other.get(i);
                     }
                 }
 
@@ -1158,8 +1175,10 @@ namespace mu
                     }
                     else
                     {
-                        // This can not contain generators. The special case of a
-                        // reference to an array has been eliminated previously
+                        // Assumed guarantees:
+                        // - this is not an array reference
+                        // - this is not a generator
+
                         for (size_t i = 0; i < vectSize; i++)
                         {
                             *(_M_impl._M_start + i) += other.get(i);
@@ -1207,8 +1226,10 @@ namespace mu
                     }
                     else
                     {
-                        // This can not contain generators. The special case of a
-                        // reference to an array has been eliminated previously
+                        // Assumed guarantees:
+                        // - this is not an array reference
+                        // - this is not a generator
+
                         for (size_t i = 0; i < vectSize; i++)
                         {
                             *(_M_impl._M_start + i) -= other.get(i);
@@ -1256,8 +1277,10 @@ namespace mu
                     }
                     else
                     {
-                        // This can not contain generators. The special case of a
-                        // reference to an array has been eliminated previously
+                        // Assumed guarantees:
+                        // - this is not an array reference
+                        // - this is not a generator
+
                         for (size_t i = 0; i < vectSize; i++)
                         {
                             *(_M_impl._M_start + i) /= other.get(i);
@@ -1305,8 +1328,10 @@ namespace mu
                     }
                     else
                     {
-                        // This can not contain generators. The special case of a
-                        // reference to an array has been eliminated previously
+                        // Assumed guarantees:
+                        // - this is not an array reference
+                        // - this is not a generator
+
                         for (size_t i = 0; i < vectSize; i++)
                         {
                             *(_M_impl._M_start + i) *= other.get(i);
@@ -1354,8 +1379,10 @@ namespace mu
                     }
                     else
                     {
-                        // This can not contain generators. The special case of a
-                        // reference to an array has been eliminated previously
+                        // Assumed guarantees:
+                        // - this is not an array reference
+                        // - this is not a generator
+
                         for (size_t i = 0; i < vectSize; i++)
                         {
                             *(_M_impl._M_start + i) ^= other.get(i);
