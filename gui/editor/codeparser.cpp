@@ -100,6 +100,7 @@ void ParserSymbol::resolveTypeByHeuristic()
              && islower(m_symbol[1+isArg])
              && isupper(m_symbol[2+isArg])
              && (m_symbol.compare(0+isArg, 2, "is") == 0
+                 || m_symbol.compare(0+isArg, 2, "as") == 0
                  || m_symbol.compare(0+isArg, 2, "do") == 0))
     {
         m_heuristicType = m_type != "logical";

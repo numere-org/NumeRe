@@ -1304,9 +1304,15 @@ static bool isBool(StringView viewedArg, StringView defaultValue)
 {
     return defaultValue == "true"
         || defaultValue == "false"
-        || ((viewedArg.starts_with("is") || viewedArg.starts_with("as"))
+        || ((viewedArg.starts_with("l") || viewedArg.starts_with("b"))
+            && viewedArg.length() > 1
+            && isupper(viewedArg[1]))
+        || ((viewedArg.starts_with("is") || viewedArg.starts_with("as") || viewedArg.starts_with("do"))
             && viewedArg.length() > 2
-            && isupper(viewedArg[2]));
+            && isupper(viewedArg[2]))
+        || (viewedArg.starts_with("has")
+            && viewedArg.length() > 3
+            && isupper(viewedArg[3]));
 }
 
 
