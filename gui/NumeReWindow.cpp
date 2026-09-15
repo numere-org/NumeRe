@@ -6687,7 +6687,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
             return;
 
         wxFileName pathname = data->filename;
-        wxString dragableExtensions = ";nscr;nprc;ndat;nlyt;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
+        wxString dragableExtensions = ";nscr;nprc;ndat;nlyt;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;xml;json;diff;";
 
         if (dragableExtensions.find(";" + pathname.GetExt().Lower() + ";") != std::string::npos)
         {

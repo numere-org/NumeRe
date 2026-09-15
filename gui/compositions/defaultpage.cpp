@@ -152,7 +152,7 @@ DefaultPage::DefaultPage(wxWindow* parent, const wxArrayString& searchPaths, boo
     std::string sUserName = getUserDisplayName(true);
 
     wxStaticText* text = AddStaticText(this, vGroup, _guilang.get("GUI_STATUSBAR_WELCOMEPAGE_FILETYPE")
-                                       + (sUserName.length() ? ", " + sUserName + "!" : std::string()));
+                                       + (sUserName.length() ? ", " + sUserName : std::string()));
     wxFont font = text->GetFont();
     font.SetPointSize(24);
     text->SetFont(font);

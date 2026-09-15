@@ -147,7 +147,7 @@ using namespace std;
 /////////////////////////////////////////////////
 NumeReEditor::NumeReEditor(NumeReWindow* mframe, wxWindow* parent, wxWindowID id,
                            const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
-                               wxStyledTextCtrl(parent, id, pos, size, style, name), m_codeParser(*mframe->getTerminal()->getProvider())
+    wxStyledTextCtrl(parent, id, pos, size, style, name), m_codeParser(*mframe->getTerminal()->getProvider())
 {
     m_mainFrame = mframe;
     m_options = m_mainFrame->getOptions();
@@ -254,7 +254,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, wxWindow* parent, wxWindowID id
 
     MarkerDefine(MARKER_CONDITIONALBREAKPOINT, wxSTC_MARK_CIRCLE);
 //    MarkerDefineBitmap(MARKER_CONDITIONALBREAKPOINT, wxBitmap(wxImage(m_mainFrame->getProgramFolder() +  "/icons/color/add-bp.png", wxBITMAP_TYPE_PNG)));
-    MarkerSetBackground(MARKER_CONDITIONALBREAKPOINT, wxColour(128,0,255));
+    MarkerSetBackground(MARKER_CONDITIONALBREAKPOINT, wxColour(128, 0, 255));
 
     MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
     MarkerSetBackground(MARKER_BOOKMARK, wxColour(192, 0, 64));
@@ -413,7 +413,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     if (!filename.IsEmpty())
     {
         if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-            && GetFileNameAndPath().length())
+                && GetFileNameAndPath().length())
             m_terminal->clearBreakpoints(GetFileNameAndPath());
 
         m_simpleFileName = fn.GetFullName();
@@ -459,7 +459,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
         else if (revisions && revisions->getRevisionCount())
-            revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
+            revisions->restoreRevision(revisions->getRevisionCount() - 1, filename);
 
         return false;
     }
@@ -469,7 +469,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
         else if (revisions && revisions->getRevisionCount())
-            revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
+            revisions->restoreRevision(revisions->getRevisionCount() - 1, filename);
 
         return false;
     }
@@ -479,7 +479,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
         else if (revisions && revisions->getRevisionCount())
-            revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
+            revisions->restoreRevision(revisions->getRevisionCount() - 1, filename);
 
         return false;
     }
@@ -580,9 +580,9 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
     if (fileContents.find("\r\n") != std::string::npos)
         eolMode = wxSTC_EOL_CRLF;
     else if (fileContents.find("\r") != std::string::npos)
-		eolMode = wxSTC_EOL_CR;
+        eolMode = wxSTC_EOL_CR;
     else if (fileContents.find("\n") != std::string::npos)
-		eolMode = wxSTC_EOL_LF;
+        eolMode = wxSTC_EOL_LF;
 
     if (eolMode != -1)
         SetEOLMode(eolMode);
@@ -654,18 +654,18 @@ static wxChar getBracePartner(wxChar chr)
 {
     switch (chr)
     {
-    case '(':
-        return ')';
-    case ')':
-        return '(';
-    case '{':
-        return '}';
-    case '}':
-        return '{';
-    case '[':
-        return ']';
-    case ']':
-        return '[';
+        case '(':
+            return ')';
+        case ')':
+            return '(';
+        case '{':
+            return '}';
+        case '}':
+            return '{';
+        case '[':
+            return ']';
+        case ']':
+            return '[';
     }
 
     return 0;
@@ -700,10 +700,10 @@ static bool isReparseChar(wxChar chr)
 {
     // 32-35, 37-47, 58-63, 91-94,123-125
     return isIn(chr, 32, 35)
-        || isIn(chr, 37, 47)
-        || isIn(chr, 58, 63)
-        || isIn(chr, 91, 94)
-        || isIn(chr, 123, 125);
+           || isIn(chr, 37, 47)
+           || isIn(chr, 58, 63)
+           || isIn(chr, 91, 94)
+           || isIn(chr, 123, 125);
 }
 
 
@@ -779,7 +779,7 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
     if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
     {
         if (m_currSelection.length())
-            InsertText(currentPos-1, "\"" + m_currSelection);
+            InsertText(currentPos - 1, "\"" + m_currSelection);
         else if (m_nextChar == '"') // Jump over partners
             DeleteRange(currentPos, 1);
         else if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING)
@@ -793,15 +793,15 @@ void NumeReEditor::OnChar(wxStyledTextEvent& event)
             if (isOpeningBrace(chr))
             {
                 InsertText(currentPos, m_currSelection + getBracePartner(chr));
-                GotoPos(currentPos-1);
+                GotoPos(currentPos - 1);
             }
             else
-                InsertText(currentPos-1, getBracePartner(chr) + m_currSelection);
+                InsertText(currentPos - 1, getBracePartner(chr) + m_currSelection);
         }
         else if (m_nextChar == chr && !isOpeningBrace(chr)) // Jump over closing partners
             DeleteRange(currentPos, 1);
         else if (isOpeningBrace(chr)
-                 && (BraceMatch(currentPos-1) == wxSTC_INVALID_POSITION || GetCharAt(currentPos) == getBracePartner(chr)))
+                 && (BraceMatch(currentPos - 1) == wxSTC_INVALID_POSITION || GetCharAt(currentPos) == getBracePartner(chr)))
             InsertText(currentPos, wxString(getBracePartner(chr)));
     }
 
@@ -841,7 +841,7 @@ void NumeReEditor::handleAutoComplete(wxChar chr)
         if (chr == '.')
             wordstartpos = currentPos;
 
-        if (GetCharAt(wordstartpos-1) == '.')
+        if (GetCharAt(wordstartpos - 1) == '.')
             isMethod = true;
     }
 
@@ -892,14 +892,14 @@ void NumeReEditor::handleAutoComplete(wxChar chr)
                 // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
                 // autocompletion list entries
                 if (sNamespace == "thisfile"
-                    || sNamespace == "thisfile~"
-                    || sSelectedNamespace == "thisfile"
-                    || sSelectedNamespace == "thisfile~")
+                        || sNamespace == "thisfile~"
+                        || sSelectedNamespace == "thisfile"
+                        || sSelectedNamespace == "thisfile~")
                 {
                     AutoCompSetIgnoreCase(true);
                     AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
                     sAutoCompList = m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos),
-                                                                          sSelectedNamespace);
+                                    sSelectedNamespace);
                 }
                 else
                 {
@@ -910,7 +910,7 @@ void NumeReEditor::handleAutoComplete(wxChar chr)
                         sSelectedNamespace = "";
 
                     sAutoCompList = _syntax->getProcAutoCompList(wxToUtf8(GetTextRange(wordstartpos, currentPos)),
-                                                                 wxToUtf8(sNamespace), wxToUtf8(sSelectedNamespace));
+                                    wxToUtf8(sNamespace), wxToUtf8(sSelectedNamespace));
                 }
             }
             else if (!isStyleType(STYLE_COMMENT, wordstartpos)
@@ -930,7 +930,7 @@ void NumeReEditor::handleAutoComplete(wxChar chr)
 
                 sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
                                                      _syntax->getAutoCompList(wxToUtf8(GetTextRange(smartSenseWordStart, currentPos)),
-                                                                              useSmartSense, varType, isVect));
+                                                             useSmartSense, varType, isVect));
             }
         }
         else if (m_fileType == FILE_MATLAB
@@ -979,7 +979,7 @@ void NumeReEditor::handleCommentAutoWrap()
     // if line indicator setting is active, provide autowrapping for comments
     bool isLineIndicatorActive = m_options->getSetting(SETTING_B_LINELENGTH).active();
     bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
-    bool isComment = isStyleType(STYLE_COMMENT, currentPos) && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1);
+    bool isComment = isStyleType(STYLE_COMMENT, currentPos) && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine) + 1);
 
     if (!isComment || !isNumereFile || !isLineIndicatorActive)
         return;
@@ -989,9 +989,9 @@ void NumeReEditor::handleCommentAutoWrap()
     BeginUndoAction();
 
     while (isNumereFile
-           && isLineIndicatorActive
-           && isComment
-           && (GetColumn(currentPos) > LINELENGTH_COLUMN))
+            && isLineIndicatorActive
+            && isComment
+            && (GetColumn(currentPos) > LINELENGTH_COLUMN))
     {
         // Only calculate this information if really necessary
         int lineBreakPos = WordStartPosition(FindColumn(currentLine, LINELENGTH_COLUMN), true);
@@ -1000,44 +1000,44 @@ void NumeReEditor::handleCommentAutoWrap()
         int lineIndentPos = GetLineIndentPosition(currentLine);
 
         while (lineBreakPos > lineIndentPos
-               && (::isblank(GetCharAt(lineBreakPos-1))
-                   || !::isblank(GetCharAt(lineBreakPos))))
+                && (::isblank(GetCharAt(lineBreakPos - 1))
+                    || !::isblank(GetCharAt(lineBreakPos))))
             lineBreakPos--;
 
         int lineBreakEnd = lineBreakPos;
 
         while (lineBreakEnd < GetLastPosition()
-               && (!::isblank(GetCharAt(lineBreakEnd-1))
-                   || ::isblank(GetCharAt(lineBreakEnd))))
+                && (!::isblank(GetCharAt(lineBreakEnd - 1))
+                    || ::isblank(GetCharAt(lineBreakEnd))))
             lineBreakEnd++;
 
         // Wrap only, if the breaking point before last word on line is more than half of LINELENGTH_COLUMN after the indentation
-        bool isWordSmall = (lineBreakPos - GetLineIndentPosition(currentLine)) > (LINELENGTH_COLUMN/2);
+        bool isWordSmall = (lineBreakPos - GetLineIndentPosition(currentLine)) > (LINELENGTH_COLUMN / 2);
 
         if (!isWordSmall)
             break;
 
         // Get the start of the last line to use as a reference for indentation
-        wxString sLineStart = GetTextRange(PositionFromLine(currentLine), GetLineIndentPosition(currentLine)+20);
+        wxString sLineStart = GetTextRange(PositionFromLine(currentLine), GetLineIndentPosition(currentLine) + 20);
 
         // Handle also enumerations. Those have to follow
         // the DIGIT.WHITESPACE pattern
         if (sLineStart.find_first_not_of("#*! \t") != std::string::npos
-            && std::isdigit(sLineStart[sLineStart.find_first_not_of("#*! ")]))
+                && std::isdigit(sLineStart[sLineStart.find_first_not_of("#*! ")]))
         {
             size_t enumStart = sLineStart.find_first_not_of("#*! \t");
             size_t enumLength = 1;
 
-            while (sLineStart.length() > enumStart+enumLength && std::isdigit(sLineStart[enumStart+enumLength]))
+            while (sLineStart.length() > enumStart + enumLength && std::isdigit(sLineStart[enumStart + enumLength]))
                 enumLength++;
 
-            if (sLineStart.length() > enumStart+enumLength+2
-                && sLineStart.compare(enumStart+enumLength, 2, ". ") == 0
-                && sLineStart.find_first_not_of(' ', enumStart+enumLength+1) != std::string::npos)
+            if (sLineStart.length() > enumStart + enumLength + 2
+                    && sLineStart.compare(enumStart + enumLength, 2, ". ") == 0
+                    && sLineStart.find_first_not_of(' ', enumStart + enumLength + 1) != std::string::npos)
             {
                 enumLength++;
 
-                sLineStart.erase(sLineStart.find_first_not_of(' ', enumStart+enumLength));
+                sLineStart.erase(sLineStart.find_first_not_of(' ', enumStart + enumLength));
                 sLineStart.replace(enumStart, enumLength, enumLength, wxUniChar(' '));
             }
             else
@@ -1053,10 +1053,10 @@ void NumeReEditor::handleCommentAutoWrap()
             sLineStart.RemoveLast(2);
 
         if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE
-            || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
+                || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
         {
             Replace(lineBreakPos, lineBreakEnd, "\r\n" + sLineStart);
-            GotoPos(currentPos+2+sLineStart.length() - std::min(0, currentPos-lineBreakPos) - 1);
+            GotoPos(currentPos + 2 + sLineStart.length() - std::min(0, currentPos - lineBreakPos) - 1);
         }
         else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
         {
@@ -1064,7 +1064,7 @@ void NumeReEditor::handleCommentAutoWrap()
             sLineStart.Replace("!", "");
 
             Replace(lineBreakPos, lineBreakEnd, "\r\n" + sLineStart);
-            GotoPos(currentPos+2+sLineStart.length() - std::min(0, currentPos-lineBreakPos) - 1);
+            GotoPos(currentPos + 2 + sLineStart.length() - std::min(0, currentPos - lineBreakPos) - 1);
         }
         else
             break;
@@ -1147,7 +1147,7 @@ void NumeReEditor::MakeBlockCheck()
     }
 
     // Ensure that we have a command below the cursor
-    if (!isStyleType(STYLE_COMMAND, GetCurrentPos()) && !isStyleType(STYLE_COMMAND, GetCurrentPos()-1))
+    if (!isStyleType(STYLE_COMMAND, GetCurrentPos()) && !isStyleType(STYLE_COMMAND, GetCurrentPos() - 1))
         return;
 
     // Get the word below the cursor
@@ -1203,17 +1203,17 @@ static bool isFloat(StringView viewedArg, StringView defaultValue)
 {
     if (viewedArg.length() == 1)
         return viewedArg == "x"
-            || viewedArg == "y"
-            || viewedArg == "z"
-            || viewedArg == "t"
-            || viewedArg == "p"
-            || viewedArg == "q";
+               || viewedArg == "y"
+               || viewedArg == "z"
+               || viewedArg == "t"
+               || viewedArg == "p"
+               || viewedArg == "q";
     else if (viewedArg.length() == 2 && isdigit(viewedArg.back()))
         return viewedArg.front() == 'x'
-            || viewedArg.front() == 'y'
-            || viewedArg.front() == 'z'
-            || viewedArg.front() == 't'
-            || viewedArg.front() == 'a';
+               || viewedArg.front() == 'y'
+               || viewedArg.front() == 'z'
+               || viewedArg.front() == 't'
+               || viewedArg.front() == 'a';
 
     return viewedArg.front() == 'f' && viewedArg.length() > 1 && isupper(viewedArg[1]);
 }
@@ -1231,14 +1231,14 @@ static bool isFloat(StringView viewedArg, StringView defaultValue)
 static bool isObject(StringView viewedArg, StringView defaultValue)
 {
     return defaultValue.starts_with("file(")
-        || defaultValue.starts_with("logger(")
-        || defaultValue.starts_with("path(")
-        || defaultValue.starts_with("dict(")
-        || defaultValue.starts_with("dictstruct(")
-        || defaultValue.starts_with("queue(")
-        || defaultValue.starts_with("stack(")
-        || defaultValue.starts_with("timer(")
-        || (viewedArg.front() == 'o' && viewedArg.length() > 1 && isupper(viewedArg[1]));
+           || defaultValue.starts_with("logger(")
+           || defaultValue.starts_with("path(")
+           || defaultValue.starts_with("dict(")
+           || defaultValue.starts_with("dictstruct(")
+           || defaultValue.starts_with("queue(")
+           || defaultValue.starts_with("stack(")
+           || defaultValue.starts_with("timer(")
+           || (viewedArg.front() == 'o' && viewedArg.length() > 1 && isupper(viewedArg[1]));
 }
 
 
@@ -1254,10 +1254,10 @@ static bool isObject(StringView viewedArg, StringView defaultValue)
 static bool isInt(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg == "n"
-        || viewedArg == "m"
-        || viewedArg == "l"
-        || viewedArg == "k"
-        || (viewedArg.front() == 'n' && viewedArg.length() > 1 && isupper(viewedArg[1]));
+           || viewedArg == "m"
+           || viewedArg == "l"
+           || viewedArg == "k"
+           || (viewedArg.front() == 'n' && viewedArg.length() > 1 && isupper(viewedArg[1]));
 }
 
 
@@ -1303,16 +1303,16 @@ static bool isMat(StringView viewedArg, StringView defaultValue)
 static bool isBool(StringView viewedArg, StringView defaultValue)
 {
     return defaultValue == "true"
-        || defaultValue == "false"
-        || ((viewedArg.starts_with("l") || viewedArg.starts_with("b"))
-            && viewedArg.length() > 1
-            && isupper(viewedArg[1]))
-        || ((viewedArg.starts_with("is") || viewedArg.starts_with("as") || viewedArg.starts_with("do"))
-            && viewedArg.length() > 2
-            && isupper(viewedArg[2]))
-        || (viewedArg.starts_with("has")
-            && viewedArg.length() > 3
-            && isupper(viewedArg[3]));
+           || defaultValue == "false"
+           || ((viewedArg.starts_with("l") || viewedArg.starts_with("b"))
+               && viewedArg.length() > 1
+               && isupper(viewedArg[1]))
+           || ((viewedArg.starts_with("is") || viewedArg.starts_with("as") || viewedArg.starts_with("do"))
+               && viewedArg.length() > 2
+               && isupper(viewedArg[2]))
+           || (viewedArg.starts_with("has")
+               && viewedArg.length() > 3
+               && isupper(viewedArg[3]));
 }
 
 
@@ -1377,12 +1377,12 @@ void NumeReEditor::HandleFunctionCallTip()
     // whether the cursor is now on a syntax element with dwelling calltip
     // and prefer this over the context calltip
     if (!m_nLastReleasedKey
-        && (isStyleType(STYLE_FUNCTION, currPos)
-            || isStyleType(STYLE_COMMAND, currPos)
-            || isStyleType(STYLE_PROCEDURE, currPos)
-            || GetStyleAt(currPos) == wxSTC_NSCR_METHOD
-            || GetStyleAt(currPos) == wxSTC_NSCR_CONSTANTS
-            || GetStyleAt(currPos) == wxSTC_NSCR_PREDEFS))
+            && (isStyleType(STYLE_FUNCTION, currPos)
+                || isStyleType(STYLE_COMMAND, currPos)
+                || isStyleType(STYLE_PROCEDURE, currPos)
+                || GetStyleAt(currPos) == wxSTC_NSCR_METHOD
+                || GetStyleAt(currPos) == wxSTC_NSCR_CONSTANTS
+                || GetStyleAt(currPos) == wxSTC_NSCR_PREDEFS))
     {
         ShowDwellingCallTip(currPos);
         return;
@@ -1414,12 +1414,12 @@ void NumeReEditor::HandleFunctionCallTip()
         else
         {
             if (_cTip.sDefinition.find("::") != std::string::npos)
-                _cTip.sDefinition.erase(_cTip.sDefinition.find("::"), _cTip.sDefinition.find("->")-_cTip.sDefinition.find("::"));
+                _cTip.sDefinition.erase(_cTip.sDefinition.find("::"), _cTip.sDefinition.find("->") - _cTip.sDefinition.find("::"));
         }
     }
     else if (sFunctionContext.front() == '.')
     {
-        _cTip = _provider.getMethod(sFunctionContext.substr(1), get_method_root_type(WordStartPosition(nStartingBrace-1, true)).first);
+        _cTip = _provider.getMethod(sFunctionContext.substr(1), get_method_root_type(WordStartPosition(nStartingBrace - 1, true)).first);
         nDotPos = _cTip.sDefinition.find('.');
 
         if (!detectArgumentTypes)
@@ -1469,7 +1469,7 @@ void NumeReEditor::HandleFunctionCallTip()
         // Remove possible default values
         if (viewedArg.find('=') != std::string::npos)
         {
-            defaultValue = viewedArg.subview(viewedArg.find('=')+1);
+            defaultValue = viewedArg.subview(viewedArg.find('=') + 1);
             viewedArg = viewedArg.subview(0, viewedArg.find('='));
 
             defaultValue.strip();
@@ -1527,7 +1527,7 @@ void NumeReEditor::HandleFunctionCallTip()
 
     // Adapt the starting position so that the opening braces align
     if (_cTip.sDefinition.find("(", nDotPos) != std::string::npos
-        && _cTip.sDefinition.find("(", nDotPos) <= (size_t)(nStartingBrace-PositionFromLine(LineFromPosition(nStartingBrace))))
+            && _cTip.sDefinition.find("(", nDotPos) <= (size_t)(nStartingBrace - PositionFromLine(LineFromPosition(nStartingBrace))))
         nStartingBrace -= _cTip.sDefinition.find("(", nDotPos);
 
     if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))
@@ -1648,8 +1648,8 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
     {
         // Ignore comments and strings
         if (isStyleType(StyleType::STYLE_STRING, i)
-            || isStyleType(StyleType::STYLE_COMMENT_LINE, i)
-            || isStyleType(StyleType::STYLE_COMMENT_BLOCK, i))
+                || isStyleType(StyleType::STYLE_COMMENT_LINE, i)
+                || isStyleType(StyleType::STYLE_COMMENT_BLOCK, i))
             continue;
 
         currentChar = this->GetCharAt(i);
@@ -1709,7 +1709,7 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
     // argument, if the user is already beyond the last argument
     if (sArgList.ends_with("..."))
     {
-        nArgStartPos = nParensPos + sArgList.length()-3;
+        nArgStartPos = nParensPos + sArgList.length() - 3;
         return "...";
     }
 
@@ -1760,8 +1760,8 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
 
             // Construct the tooltip
             wxString sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                           + toUpperCase(blockDef.startWord)
-                                                                           + "_*"), lastpos)) + "\n  [...]\n";
+                                            + toUpperCase(blockDef.startWord)
+                                            + "_*"), lastpos)) + "\n  [...]\n";
 
             if (selection != blockDef.startWord)
                 nLength = wxToUtf8(sBlock).length();
@@ -1770,8 +1770,8 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
             if (blockDef.middleWord1.length())
             {
                 sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                       + toUpperCase(blockDef.middleWord1)
-                                                                       + "_*"), lastpos2)) + "\n  [...]\n";
+                                        + toUpperCase(blockDef.middleWord1)
+                                        + "_*"), lastpos2)) + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1)
                     nLength = wxToUtf8(sBlock).length();
@@ -1782,7 +1782,7 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
             {
                 sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
                                                      + toUpperCase(blockDef.middleWord2) + "_*"))
-                                                     + "\n  [...]\n";
+                          + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
                     nLength = wxToUtf8(sBlock).length();
@@ -1790,8 +1790,8 @@ void NumeReEditor::ShowDwellingCallTip(int charpos)
 
             // Add the last word
             sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                   + toUpperCase(blockDef.endWord)
-                                                                   + "_*"), lastpos));
+                                    + toUpperCase(blockDef.endWord)
+                                    + "_*"), lastpos));
 
             // Display the tooltip and highlight the corresponding positions
             AdvCallTipShow(startPosition, sBlock);
@@ -1965,13 +1965,13 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
     // Check the parentheses in the case of selections
     // and matching partners
     if (event.GetKeyCode() != WXK_SHIFT
-        && event.GetKeyCode() != WXK_CAPITAL
-        && event.GetKeyCode() != WXK_END
-        && event.GetKeyCode() != WXK_HOME
-        && event.GetKeyCode() != WXK_LEFT
-        && event.GetKeyCode() != WXK_RIGHT
-        && event.GetKeyCode() != WXK_UP
-        && event.GetKeyCode() != WXK_DOWN)
+            && event.GetKeyCode() != WXK_CAPITAL
+            && event.GetKeyCode() != WXK_END
+            && event.GetKeyCode() != WXK_HOME
+            && event.GetKeyCode() != WXK_LEFT
+            && event.GetKeyCode() != WXK_RIGHT
+            && event.GetKeyCode() != WXK_UP
+            && event.GetKeyCode() != WXK_DOWN)
     {
         if (HasSelection())
             m_currSelection = GetSelectedText();
@@ -1988,8 +1988,8 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
     // keys to automatically close it. Otherwise they are used
     // to navigate in the autocompletion list
     if (AutoCompActive()
-        && m_options->isEnabled(SETTING_B_HOMEENDCANCELS)
-        && (event.GetKeyCode() == WXK_END || event.GetKeyCode() == WXK_HOME))
+            && m_options->isEnabled(SETTING_B_HOMEENDCANCELS)
+            && (event.GetKeyCode() == WXK_END || event.GetKeyCode() == WXK_HOME))
         AutoCompCancel();
 
     // Pass the control to the internal OnKeyDown event
@@ -2182,8 +2182,8 @@ void NumeReEditor::OnEnter(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnLeave(wxMouseEvent& event)
 {
-   // if (this->CallTipActive())
-   //     this->AdvCallTipCancel();
+    // if (this->CallTipActive())
+    //     this->AdvCallTipCancel();
 
     event.Skip();
 }
@@ -2220,10 +2220,10 @@ void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
     if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_NLYT)
-        || m_PopUpActive
-        || m_isFunctionContext
-        || AutoCompActive()
-        || !HasFocus())
+            || m_PopUpActive
+            || m_isFunctionContext
+            || AutoCompActive()
+            || !HasFocus())
         return;
 
     ShowDwellingCallTip(event.GetPosition());
@@ -2316,33 +2316,33 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
 {
     // Is the autocompleted text a function or
     // a control flow statement?
-    if (event.GetText()[event.GetText().length()-1] == '(')
+    if (event.GetText()[event.GetText().length() - 1] == '(')
     {
         // Ensure that there's actually a need for a new
         // parenthesis and insert a closed pair
         if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active()
-            && (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
+                && (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
             InsertText(GetCurrentPos(), "()");
 
         // Replace the current text with the function's
         // name without the parenthesis
-        Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length()-1));
+        Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length() - 1));
 
         // Jump into the parenthesis
         GotoPos(event.GetPosition() + event.GetText().length() - !m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active());
         AutoCompCancel();
     }
-    else if (event.GetText()[event.GetText().length()-1] == '{')
+    else if (event.GetText()[event.GetText().length() - 1] == '{')
     {
         // Ensure that there's actually a need for a new
         // parenthesis and insert a closed pair
         if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active()
-            && (GetCharAt(GetCurrentPos()) != '{' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
+                && (GetCharAt(GetCurrentPos()) != '{' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
             InsertText(GetCurrentPos(), "{}");
 
         // Replace the current text with the function's
         // name without the parenthesis
-        Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length()-1));
+        Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length() - 1));
 
         // Jump into the parenthesis
         GotoPos(event.GetPosition() + event.GetText().length() - !m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active());
@@ -2365,7 +2365,7 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
         // Copy the line indentation for the second statement,
         // if needed
         if (sAutoComp.find("\r\n") != std::string::npos)
-            SetLineIndentation(LineFromPosition(event.GetPosition())+1, GetLineIndentation(LineFromPosition(event.GetPosition())));
+            SetLineIndentation(LineFromPosition(event.GetPosition()) + 1, GetLineIndentation(LineFromPosition(event.GetPosition())));
 
         // Goto the pipe position
         GotoPos(event.GetPosition() + pos);
@@ -2454,10 +2454,10 @@ void NumeReEditor::ToggleCommentLine()
 
         // TeX file syntax highlighting requires a special handling
         if ((m_fileType == FILE_TEXSOURCE && GetStyleAt(position + 1) == wxSTC_TEX_DEFAULT && GetCharAt(position) == '%')
-            || (m_fileType != FILE_TEXSOURCE && style == nCommentStyle))
+                || (m_fileType != FILE_TEXSOURCE && style == nCommentStyle))
         {
             // Remove the line comment characters
-            if (GetCharAt(position + nCommentCharSequenceLen-1) == ' ')
+            if (GetCharAt(position + nCommentCharSequenceLen - 1) == ' ')
             {
                 // With the separating whitespace
                 if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + nCommentCharSequenceLen)
@@ -2471,13 +2471,13 @@ void NumeReEditor::ToggleCommentLine()
             else
             {
                 // Without the separating whitespace
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + nCommentCharSequenceLen-1)
-                    nSelectionStart -= nCommentCharSequenceLen-1;
+                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + nCommentCharSequenceLen - 1)
+                    nSelectionStart -= nCommentCharSequenceLen - 1;
                 else if (i == nFirstLine && nSelectionStart >= 0)
                     nSelectionStart = position;
 
-                DeleteRange(position, nCommentCharSequenceLen-1);
-                nSelectionEnd -= nCommentCharSequenceLen-1;
+                DeleteRange(position, nCommentCharSequenceLen - 1);
+                nSelectionEnd -= nCommentCharSequenceLen - 1;
             }
         }
         else if ((m_fileType == FILE_TEXSOURCE && (GetStyleAt(position + 1) != wxSTC_TEX_DEFAULT || GetCharAt(position) != '%'))
@@ -2532,9 +2532,9 @@ void NumeReEditor::ToggleCommentSelection()
 
     // Some code segments do not have block comments
     if (m_fileType != FILE_NSCR
-        && m_fileType != FILE_NPRC
-        && m_fileType != FILE_XML
-        && m_fileType != FILE_CPP)
+            && m_fileType != FILE_NPRC
+            && m_fileType != FILE_XML
+            && m_fileType != FILE_CPP)
     {
         ToggleCommentLine();
         return;
@@ -2928,7 +2928,7 @@ static char applyFunctionHeuristics(const std::string& func)
     // Find the key for the corresponding language string
     std::string sKey = wxToUtf8(_guilang.getKey("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(func) + "_[*]"));
     wxString sRetVal = _guilang.get(sKey);
-    sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find(')')+1));
+    sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find(')') + 1));
     sRetVal.erase(sRetVal.find_first_of(" -"));
 
     // Use the documented return value to determine the type
@@ -2963,7 +2963,7 @@ static char applyCommandHeuristics(const std::string& command)
     if (sRetVal.find("->") == std::string::npos)
         return 0; // s.th.s is clearly wrong here
 
-    sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find("->")+2));
+    sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find("->") + 2));
     sRetVal.erase(sRetVal.find_first_of(" -"));
 
     // Use the documented return value to determine the type
@@ -3060,7 +3060,7 @@ static char applyValueHeuristics(std::string val)
 void NumeReEditor::fixSymbolName(int pos)
 {
     if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
-        || (GetStyleAt(pos) != wxSTC_NPRC_IDENTIFIER && GetStyleAt(pos) != wxSTC_NSCR_CUSTOM_FUNCTION))
+            || (GetStyleAt(pos) != wxSTC_NPRC_IDENTIFIER && GetStyleAt(pos) != wxSTC_NSCR_CUSTOM_FUNCTION))
         return;
 
     int lineNum = LineFromPosition(pos);
@@ -3116,7 +3116,7 @@ void NumeReEditor::fixSymbolName(int pos)
 
         // Find all occurences
         std::vector<int> vMatches = m_search->FindAll(sOldName, {wxSTC_NSCR_IDENTIFIER, wxSTC_NSCR_CUSTOM_FUNCTION},
-                                                      PositionFromLine(context.first), GetLineEndPosition(context.second), false);
+                                    PositionFromLine(context.first), GetLineEndPosition(context.second), false);
 
         // Now replace it everywhere
         ReplaceMatches(vMatches, sOldName, sSymbol);
@@ -3344,23 +3344,23 @@ void NumeReEditor::getMatchingBlock(int nPos)
 /////////////////////////////////////////////////
 static char BraceOpposite(char ch)
 {
-	switch (ch)
-	{
-	case '(':
-		return ')';
-	case ')':
-		return '(';
-	case '[':
-		return ']';
-	case ']':
-		return '[';
-	case '{':
-		return '}';
-	case '}':
-		return '{';
-	default:
-		return '\0';
-	}
+    switch (ch)
+    {
+        case '(':
+            return ')';
+        case ')':
+            return '(';
+        case '[':
+            return ']';
+        case ']':
+            return '[';
+        case '{':
+            return '}';
+        case '}':
+            return '{';
+        default:
+            return '\0';
+    }
 }
 
 
@@ -3403,7 +3403,7 @@ int NumeReEditor::BraceMatch(int pos)
             bool openBrace = isOpeningBrace(chAtPos);
 
             if ((direction == 1 && openBrace)
-                || (direction == -1 && !openBrace))
+                    || (direction == -1 && !openBrace))
                 openParentheses.push_back(chAtPos);
             else if ((direction == -1 && openBrace)
                      || (direction == 1 && !openBrace))
@@ -3541,8 +3541,8 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                     vBlocks[block]++;
 
                 if (block == blockMiddle
-                    && !(*std::min_element(vBlocks.begin(), vBlocks.end()))
-                    && !(*std::max_element(vBlocks.begin(), vBlocks.end())))
+                        && !(*std::min_element(vBlocks.begin(), vBlocks.end()))
+                        && !(*std::max_element(vBlocks.begin(), vBlocks.end())))
                 {
                     nStartPos = WordStartPosition(i, true);
                     break;
@@ -3607,13 +3607,13 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 
             // only in the current if block
             if (searchForMiddleWords != wxNOT_FOUND
-                && isBlockMiddle(currentWord) == searchForMiddleWords
-                && isOnlyActiveBlock(searchForMiddleWords, vBlocks))
+                    && isBlockMiddle(currentWord) == searchForMiddleWords
+                    && isOnlyActiveBlock(searchForMiddleWords, vBlocks))
                 vPos.push_back(WordStartPosition(i, true));
 
             if (currentWord == endblock
-                && !(*std::min_element(vBlocks.begin(), vBlocks.end()))
-                && !(*std::max_element(vBlocks.begin(), vBlocks.end())))
+                    && !(*std::min_element(vBlocks.begin(), vBlocks.end()))
+                    && !(*std::max_element(vBlocks.begin(), vBlocks.end())))
             {
                 vPos.push_back(WordStartPosition(i, true));
                 break;
@@ -3993,13 +3993,14 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
     // make it for both: NSCR and NPRC
     if (filetype == FILE_NSCR
-        || filetype == FILE_NPRC
-        || filetype == FILE_MATLAB
-        || filetype == FILE_CPP
-        || filetype == FILE_DIFF
-        || filetype == FILE_XML
-        || filetype == FILE_INI
-        || filetype == FILE_TEXSOURCE)
+            || filetype == FILE_NPRC
+            || filetype == FILE_MATLAB
+            || filetype == FILE_CPP
+            || filetype == FILE_DIFF
+            || filetype == FILE_XML
+            || filetype == FILE_INI
+            || filetype == FILE_JSON
+            || filetype == FILE_TEXSOURCE)
     {
         SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
@@ -4447,37 +4448,50 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     {
         SetLexer(wxSTC_LEX_XML);
         SetProperty("fold", "1");
-        StyleSetForeground(wxSTC_H_DEFAULT, wxColour(0,0,0));
-        StyleSetForeground(wxSTC_H_TAG, wxColour(0,0,255));
+        StyleSetForeground(wxSTC_H_DEFAULT, wxColour(0, 0, 0));
+        StyleSetForeground(wxSTC_H_TAG, wxColour(0, 0, 255));
         StyleSetBold(wxSTC_H_TAG, true);
-        StyleSetForeground(wxSTC_H_TAGEND, wxColour(0,0,255));
+        StyleSetForeground(wxSTC_H_TAGEND, wxColour(0, 0, 255));
         StyleSetBold(wxSTC_H_TAGEND, true);
-        StyleSetForeground(wxSTC_H_ATTRIBUTE, wxColour(255,0,0));
-        StyleSetBackground(wxSTC_H_ATTRIBUTE, wxColour(255,255,255));
-        StyleSetForeground(wxSTC_H_DOUBLESTRING, wxColour(128,0,255));
+        StyleSetForeground(wxSTC_H_ATTRIBUTE, wxColour(255, 0, 0));
+        StyleSetBackground(wxSTC_H_ATTRIBUTE, wxColour(255, 255, 255));
+        StyleSetForeground(wxSTC_H_DOUBLESTRING, wxColour(128, 0, 255));
         StyleSetBold(wxSTC_H_DOUBLESTRING, true);
-        StyleSetForeground(wxSTC_H_SINGLESTRING, wxColour(128,0,255));
+        StyleSetForeground(wxSTC_H_SINGLESTRING, wxColour(128, 0, 255));
         StyleSetBold(wxSTC_H_SINGLESTRING, true);
-        StyleSetForeground(wxSTC_H_COMMENT, wxColour(0,128,0));
+        StyleSetForeground(wxSTC_H_COMMENT, wxColour(0, 128, 0));
         StyleSetItalic(wxSTC_H_COMMENT, true);
-        StyleSetForeground(wxSTC_H_ENTITY, wxColour(64,0,0));
-        StyleSetBackground(wxSTC_H_ENTITY, wxColour(255,255,220));
+        StyleSetForeground(wxSTC_H_ENTITY, wxColour(64, 0, 0));
+        StyleSetBackground(wxSTC_H_ENTITY, wxColour(255, 255, 220));
         StyleSetBold(wxSTC_H_ENTITY, true);
     }
     else if (filetype == FILE_INI)
     {
         SetLexer(wxSTC_LEX_PROPERTIES);
         SetProperty("fold", "1");
-        StyleSetForeground(wxSTC_PROPS_DEFAULT, wxColour(0,0,0));
-        StyleSetForeground(wxSTC_PROPS_KEY, wxColour(0,0,128));
+        StyleSetForeground(wxSTC_PROPS_DEFAULT, wxColour(0, 0, 0));
+        StyleSetForeground(wxSTC_PROPS_KEY, wxColour(0, 0, 128));
         StyleSetBold(wxSTC_PROPS_KEY, true);
-        StyleSetForeground(wxSTC_PROPS_DEFVAL, wxColour(255,0,255));
-        StyleSetForeground(wxSTC_PROPS_ASSIGNMENT, wxColour(255,0,0));
-        StyleSetBackground(wxSTC_PROPS_ASSIGNMENT, wxColour(255,255,255));
-        StyleSetForeground(wxSTC_PROPS_SECTION, wxColour(128,0,0));
+        StyleSetForeground(wxSTC_PROPS_DEFVAL, wxColour(255, 0, 255));
+        StyleSetForeground(wxSTC_PROPS_ASSIGNMENT, wxColour(255, 0, 0));
+        StyleSetBackground(wxSTC_PROPS_ASSIGNMENT, wxColour(255, 255, 255));
+        StyleSetForeground(wxSTC_PROPS_SECTION, wxColour(128, 0, 0));
         StyleSetBold(wxSTC_PROPS_SECTION, true);
-        StyleSetForeground(wxSTC_PROPS_COMMENT, wxColour(0,128,0));
+        StyleSetForeground(wxSTC_PROPS_COMMENT, wxColour(0, 128, 0));
         StyleSetItalic(wxSTC_PROPS_COMMENT, true);
+    }
+    else if (filetype == FILE_JSON)
+    {
+        SetLexer(wxSTC_LEX_CPP);
+        SetProperty("fold", "1");
+        SetKeyWords(0, "true false");
+        StyleSetForeground(wxSTC_C_DEFAULT, wxColour(0, 0, 0));
+        StyleSetForeground(wxSTC_C_IDENTIFIER, wxColour(0, 0, 0));
+        StyleSetForeground(wxSTC_C_NUMBER, wxColour(128, 0, 128));
+        StyleSetForeground(wxSTC_C_STRING, wxColour(128, 128, 255));
+        StyleSetForeground(wxSTC_C_WORD, wxColour(0, 0, 255));
+        StyleSetBold(wxSTC_C_WORD, true);
+        StyleSetForeground(wxSTC_C_OPERATOR, wxColour(255, 0, 0));
     }
     else
     {
@@ -4732,30 +4746,53 @@ void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 /////////////////////////////////////////////////
 FileFilterType NumeReEditor::GetFileType(const wxFileName& filename)
 {
-	wxString extension = filename.GetExt().Lower();
+    wxString extension = filename.GetExt().Lower();
 
-	FileFilterType fileType = FILE_NONSOURCE;
+    FileFilterType fileType = FILE_NONSOURCE;
 
-	if (extension == "nprc")
-		fileType = FILE_NPRC;
-	else if (extension == "nscr" || extension == "nlyt")
-		fileType = FILE_NSCR;
-	else if (extension == "ndat" || extension == "dat" || extension == "csv" || extension == "jdx" || extension == "dx" || extension == "jcm")
-		fileType = FILE_DATAFILES;
-	else if (extension == "tex")
+    if (extension == "nprc")
+        fileType = FILE_NPRC;
+    else if (extension == "nscr"
+             || extension == "nlyt")
+        fileType = FILE_NSCR;
+    else if (extension == "ndat"
+             || extension == "dat"
+             || extension == "csv"
+             || extension == "jdx"
+             || extension == "dx"
+             || extension == "jcm")
+        fileType = FILE_DATAFILES;
+    else if (extension == "tex")
         fileType = FILE_TEXSOURCE;
-	else if (extension == "m")
+    else if (extension == "m")
         fileType = FILE_MATLAB;
-	else if (extension == "cxx" || extension == "hxx" || extension == "c" || extension == "h" || extension == "cpp" || extension == "hpp")
+    else if (extension == "cxx"
+             || extension == "hxx"
+             || extension == "c"
+             || extension == "h"
+             || extension == "cpp"
+             || extension == "hpp")
         fileType = FILE_CPP;
-	else if (extension == "diff" || extension == "patch")
+    else if (extension == "diff"
+             || extension == "patch")
         fileType = FILE_DIFF;
-	else if (extension == "nhlp" || extension == "xml" || extension == "npkp" || extension == "html" || extension == "htm" || extension == "labx" || extension == "svg")
+    else if (extension == "nhlp"
+             || extension == "xml"
+             || extension == "npkp"
+             || extension == "html"
+             || extension == "htm"
+             || extension == "labx"
+             || extension == "svg")
         fileType = FILE_XML;
-	else if (extension == "ini" || extension == "cfg" || extension == "conf")
+    else if (extension == "ini"
+             || extension == "cfg"
+             || extension == "conf")
         fileType = FILE_INI;
+    else if (extension == "json"
+             || extension == "repository")
+        fileType = FILE_JSON;
 
-	return fileType;
+    return fileType;
 }
 
 
@@ -4987,8 +5024,8 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
             }
         }
         else if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
-                || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
-                || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
+                 || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
+                 || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
         {
             // Show "help on item"
             m_popupMenu.Insert(nINSERTIONPOINT, m_menuHelpOnSelection);
@@ -5011,13 +5048,13 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
             m_popupMenu.Insert(nINSERTIONPOINT, m_menuRefactoring);
 
             if (isStyleType(STYLE_DEFAULT, charpos)
-                || isStyleType(STYLE_IDENTIFIER, charpos)
-                || isStyleType(STYLE_DATAOBJECT, charpos)
-                || isStyleType(STYLE_FUNCTION, charpos))
+                    || isStyleType(STYLE_IDENTIFIER, charpos)
+                    || isStyleType(STYLE_DATAOBJECT, charpos)
+                    || isStyleType(STYLE_FUNCTION, charpos))
                 m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
 
             if (isStyleType(STYLE_IDENTIFIER, charpos)
-                || GetStyleAt(charpos) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                    || GetStyleAt(charpos) == wxSTC_NSCR_CUSTOM_FUNCTION)
                 m_refactoringMenu->Enable(ID_FIX_TYPE, true);
 
             if (HasSelection())
@@ -5131,11 +5168,11 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent& event)
 
             for (int i = 0; i < nLinesAdded; i++)
             {
-                markModified(nLine+nLinesAdded-1-i);
+                markModified(nLine + nLinesAdded - 1 - i);
             }
 
             if (numereFile)
-                parse(nLine+1);
+                parse(nLine + 1);
         }
         else if (nLinesAdded < 0)
         {
@@ -5237,13 +5274,13 @@ void NumeReEditor::markSections(bool bForceRefresh)
         for (int i = startline; i < endline; i++)
         {
             if (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i))
-                || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i)))
+                    || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i)))
             {
                 if (!MarkerOnLine(i, MARKER_SECTION))
                     MarkerAdd(i, MARKER_SECTION);
 
-                while (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i+1))
-                       || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i+1)))
+                while (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i + 1))
+                        || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i + 1)))
                 {
                     i++;
 
@@ -5278,16 +5315,16 @@ void NumeReEditor::markSections(bool bForceRefresh)
                     wxString word = GetTextRange(wordstart, wordend);
 
                     if (word == "maketitle"
-                        || word == "part"
-                        || word == "chapter"
-                        || word == "section"
-                        || word == "subsection"
-                        || word == "subsubsection"
-                        || word == "subsubsubsection"
-                        || word == "paragraph"
-                        || word == "subparagraph"
-                        || word == "addchap"
-                        || word == "addsec")
+                            || word == "part"
+                            || word == "chapter"
+                            || word == "section"
+                            || word == "subsection"
+                            || word == "subsubsection"
+                            || word == "subsubsubsection"
+                            || word == "paragraph"
+                            || word == "subparagraph"
+                            || word == "addchap"
+                            || word == "addsec")
                     {
                         if (!MarkerOnLine(i, MARKER_SECTION))
                             MarkerAdd(i, MARKER_SECTION);
@@ -5350,14 +5387,14 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
         return;
 
     int startLine = bForceRefresh ? 0 : GetCurrentLine();
-    int endLine = bForceRefresh ? GetLineCount() : GetCurrentLine()+1;
+    int endLine = bForceRefresh ? GetLineCount() : GetCurrentLine() + 1;
 
     for (int i = startLine; i < endLine; i++)
     {
         if (m_codeParser.hasLocalScope(i))
         {
             const ParserScope& scope = static_cast<const CodeParser&>(m_codeParser).getScope(i);
-            std::pair<int,int> context = scope.getRange();
+            std::pair<int, int> context = scope.getRange();
 
             int startPos = PositionFromLine(context.first);
             int endPos = GetLineEndPosition(context.second);
@@ -5370,13 +5407,13 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
                 for (const ParserSymbol& symbol : symbols.second)
                 {
                     if (symbol.m_class == ParserSymbol::LOCAL
-                        || symbol.m_class == ParserSymbol::LOCALFUNC)
+                            || symbol.m_class == ParserSymbol::LOCALFUNC)
                     {
                         std::vector<int> localVars = m_search->FindAll(symbol.m_symbol,
-                                                                       {wxSTC_NSCR_IDENTIFIER, wxSTC_NSCR_CLUSTER, wxSTC_NSCR_CUSTOM_FUNCTION},
-                                                                       startPos,
-                                                                       endPos,
-                                                                       false);
+                        {wxSTC_NSCR_IDENTIFIER, wxSTC_NSCR_CLUSTER, wxSTC_NSCR_CUSTOM_FUNCTION},
+                        startPos,
+                        endPos,
+                        false);
 
                         for (int n : localVars)
                         {
@@ -5412,21 +5449,21 @@ void NumeReEditor::highlightDocStringCode()
         int style = GetStyleAt(i);
 
         if ((style == wxSTC_NSCR_DOCCOMMENT_BLOCK || style == wxSTC_NSCR_DOCCOMMENT_LINE)
-            && GetTextRange(i, i+2) == "!!")
+                && GetTextRange(i, i + 2) == "!!")
         {
-            for (int j = 2; j+i < GetLastPosition(); j++)
+            for (int j = 2; j + i < GetLastPosition(); j++)
             {
-                if (style != GetStyleAt(i+j))
+                if (style != GetStyleAt(i + j))
                 {
                     IndicatorFillRange(i, j);
-                    i += j-1;
+                    i += j - 1;
                     break;
                 }
 
-                if (GetTextRange(i+j, i+j+2) == "!!")
+                if (GetTextRange(i + j, i + j + 2) == "!!")
                 {
-                    IndicatorFillRange(i, j+2);
-                    i += j+1;
+                    IndicatorFillRange(i, j + 2);
+                    i += j + 1;
                     break;
                 }
             }
@@ -5447,19 +5484,19 @@ void NumeReEditor::highlightDocStringCode()
 bool NumeReEditor::isNoAutoIndentionKey(int keycode)
 {
     return keycode == WXK_BACK
-        || keycode == WXK_DELETE
-        || keycode == WXK_TAB
-        || keycode == WXK_SHIFT
-        || keycode == WXK_CAPITAL
-        || keycode == WXK_ALT
-        || keycode == WXK_CONTROL
-        || keycode == WXK_ESCAPE
-        || keycode == WXK_LEFT
-        || keycode == WXK_RIGHT
-        || keycode == WXK_UP
-        || keycode == WXK_DOWN
-        || keycode == WXK_HOME
-        || keycode == WXK_END;
+           || keycode == WXK_DELETE
+           || keycode == WXK_TAB
+           || keycode == WXK_SHIFT
+           || keycode == WXK_CAPITAL
+           || keycode == WXK_ALT
+           || keycode == WXK_CONTROL
+           || keycode == WXK_ESCAPE
+           || keycode == WXK_LEFT
+           || keycode == WXK_RIGHT
+           || keycode == WXK_UP
+           || keycode == WXK_DOWN
+           || keycode == WXK_HOME
+           || keycode == WXK_END;
 }
 
 
@@ -5478,17 +5515,17 @@ bool NumeReEditor::isWrappedLine(int line)
 
     if (m_fileType == FILE_MATLAB)
     {
-        wxString lastLine = GetLine(line-1);
-        lastLine.erase(lastLine.find_last_not_of("\r\n\t ")+1);
+        wxString lastLine = GetLine(line - 1);
+        lastLine.erase(lastLine.find_last_not_of("\r\n\t ") + 1);
         return lastLine.EndsWith("...");
     }
     else if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
     {
-        std::vector<LexedString> vLexedTokens = getLexedTokens(line-1);
+        std::vector<LexedString> vLexedTokens = getLexedTokens(line - 1);
 
         // Remove trailing comments
         while (vLexedTokens.size()
-               && vLexedTokens.back().is({wxSTC_NSCR_COMMENT_LINE, wxSTC_NSCR_DOCCOMMENT_LINE}))
+                && vLexedTokens.back().is({wxSTC_NSCR_COMMENT_LINE, wxSTC_NSCR_DOCCOMMENT_LINE}))
         {
             vLexedTokens.pop_back();
         }
@@ -5516,10 +5553,10 @@ bool NumeReEditor::isWrappedLine(int line)
 void NumeReEditor::AsynchActions()
 {
     if (!AutoCompActive()
-        && getEditorSetting(SETTING_INDENTONTYPE)
-        && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
-        && !isNoAutoIndentionKey(m_nLastReleasedKey)
-        && !HasSelection())
+            && getEditorSetting(SETTING_INDENTONTYPE)
+            && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
+            && !isNoAutoIndentionKey(m_nLastReleasedKey)
+            && !HasSelection())
     {
         int nLine = GetCurrentLine();
         int offset = 0;
@@ -5529,12 +5566,12 @@ void NumeReEditor::AsynchActions()
             offset--;
 
         // Get parent line
-        int nParentline = GetFoldParent(nLine+offset);
+        int nParentline = GetFoldParent(nLine + offset);
 
         // if not found -> return
         if (nParentline == wxNOT_FOUND)
         {
-            nParentline = std::max(nLine-10, 0);
+            nParentline = std::max(nLine - 10, 0);
 
             if (GetFoldParent(nParentline) != wxNOT_FOUND)
                 nParentline = GetFoldParent(nParentline);
@@ -5904,8 +5941,8 @@ void NumeReEditor::EnsureLineVisibility(int line)
     // of a hidden sectioon
     if (!GetLineVisible(line))
     {
-        int nFirstLine = line-1;
-        int nLastLine = line+1;
+        int nFirstLine = line - 1;
+        int nLastLine = line + 1;
 
         // Find the first unhidden line
         while (!GetLineVisible(nFirstLine))
@@ -5999,14 +6036,14 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
     wxString pathname = procedurename;
 
     // check whether the procedure is an external procedure
-    if (pathname.substr(0, 2) == "$'" && pathname[pathname.length()-1] == '\'')
+    if (pathname.substr(0, 2) == "$'" && pathname[pathname.length() - 1] == '\'')
     {
-        if (!fileExists(wxToUtf8(pathname.substr(2, pathname.length()-3)) + ".nprc"))
+        if (!fileExists(wxToUtf8(pathname.substr(2, pathname.length() - 3)) + ".nprc"))
         {
             int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", procedurename), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
 
             if (ret == wxYES)
-                m_mainFrame->NewFile(FILE_NPRC, pathname.substr(2, pathname.length()-3));
+                m_mainFrame->NewFile(FILE_NPRC, pathname.substr(2, pathname.length() - 3));
 
             return;
         }
@@ -6017,9 +6054,9 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
         for (size_t i = 0; i < pathname.length(); i++)
         {
             if (!isalnum(pathname[i])
-                && pathname[i] != '$'
-                && pathname[i] != '_'
-                && pathname[i] != '~')
+                    && pathname[i] != '$'
+                    && pathname[i] != '_'
+                    && pathname[i] != '~')
             {
                 wxMessageBox(_guilang.get("GUI_DLG_PROC_INVALIDCHARS", procedurename), _guilang.get("GUI_DLG_PROC_INVALIDCHARS_HEADLINE"), wxCENTER | wxICON_ERROR | wxOK, this);
                 return;
@@ -6053,7 +6090,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
             {
                 this->SetFocus();
                 this->GotoLine(LineFromPosition(nminpos));
-                this->SetFirstVisibleLine(VisibleFromDocLine(LineFromPosition(nminpos))-2);
+                this->SetFirstVisibleLine(VisibleFromDocLine(LineFromPosition(nminpos)) - 2);
                 this->EnsureVisible(LineFromPosition(nminpos));
                 return;
             }
@@ -6177,7 +6214,7 @@ void NumeReEditor::ReplaceMatches(const vector<int>& vMatches, const wxString& s
     // replace every match with the new symbol name
     for (size_t i = 0; i < vMatches.size(); i++)
     {
-        this->Replace(vMatches[i] + i*nInc, vMatches[i]+sSymbol.length() + i*nInc, sNewSymbol);
+        this->Replace(vMatches[i] + i * nInc, vMatches[i] + sSymbol.length() + i * nInc, sNewSymbol);
     }
 }
 
@@ -6292,8 +6329,8 @@ void NumeReEditor::RenameSymbols(int nPos)
 
         if (symbol.m_type == "value" || symbol.m_type == "{value}")
             vOccurences = m_search->FindAll(sCurrentName,
-                                            {wxSTC_NSCR_IDENTIFIER, wxSTC_NSCR_CUSTOM_FUNCTION},
-                                            nStartPos, nEndPos, textdialog.replaceInComments());
+        {wxSTC_NSCR_IDENTIFIER, wxSTC_NSCR_CUSTOM_FUNCTION},
+        nStartPos, nEndPos, textdialog.replaceInComments());
         else
             vOccurences = m_search->FindAll(sCurrentName, nStyle, nStartPos, nEndPos, textdialog.replaceInComments());
     }
@@ -6334,7 +6371,7 @@ void NumeReEditor::AbstrahizeSection()
     int nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd()));
 
     if (GetSelectionEnd() == PositionFromLine(LineFromPosition(GetSelectionEnd())))
-        nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd()-1));
+        nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd() - 1));
 
     int nCurrentBlockStart = 0;
     int nCurrentBlockEnd = GetLastPosition();
@@ -6392,7 +6429,7 @@ void NumeReEditor::AbstrahizeSection()
         // Increment the starting line to omit the argument list
         // as variable occurence source. Those will be detected
         // by comparing with the splitted argument list
-        nCurrentBlockStart = PositionFromLine(LineFromPosition(nCurrentBlockStart)+1);
+        nCurrentBlockStart = PositionFromLine(LineFromPosition(nCurrentBlockStart) + 1);
     }
 
     // Determine the interface by searching for variables
@@ -6415,7 +6452,7 @@ void NumeReEditor::AbstrahizeSection()
             wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
             // Ignore MATLAB structure fields
-            if (GetCharAt(WordStartPosition(i, true)-1) == '.')
+            if (GetCharAt(WordStartPosition(i, true) - 1) == '.')
                 continue;
 
             // Find all occurences
@@ -6426,12 +6463,12 @@ void NumeReEditor::AbstrahizeSection()
                 // Determine, whether the token is used before
                 // or afer the current section
                 if (vMatch.front() < nStartPos
-                    || (sArgumentListSet.size() && sArgumentListSet.find(wxToUtf8(sCurrentToken)) != sArgumentListSet.end()))
+                        || (sArgumentListSet.size() && sArgumentListSet.find(wxToUtf8(sCurrentToken)) != sArgumentListSet.end()))
                     lInputTokens.push_back(sCurrentToken);
 
                 if (vMatch.back() > nEndPos
-                    && vMatch.front() < nStartPos
-                    && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                        && vMatch.front() < nStartPos
+                        && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
                 else if (vMatch.back() > nEndPos
                          && vMatch.front() >= nStartPos
@@ -6453,13 +6490,13 @@ void NumeReEditor::AbstrahizeSection()
             wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
             // Ignore MATLAB structure fields
-            if (GetCharAt(WordStartPosition(i, true)-1) == '.')
+            if (GetCharAt(WordStartPosition(i, true) - 1) == '.')
                 continue;
 
             // Ignore functions, which are not part of any argument list;
             // these are most probably actual functions
             if ((!sMatlabReturnListSet.size() || sMatlabReturnListSet.find(wxToUtf8(sCurrentToken)) == sMatlabReturnListSet.end())
-                && (!sArgumentListSet.size() || sArgumentListSet.find(wxToUtf8(sCurrentToken)) == sArgumentListSet.end()))
+                    && (!sArgumentListSet.size() || sArgumentListSet.find(wxToUtf8(sCurrentToken)) == sArgumentListSet.end()))
                 continue;
 
             // Find all occurences
@@ -6493,10 +6530,10 @@ void NumeReEditor::AbstrahizeSection()
                 // Determine, whether the token is used before
                 // or after the current section
                 if (vMatch.front() < nStartPos
-                    || (sArgumentListSet.find(wxToUtf8(sCurrentToken) + "()") != sArgumentListSet.end()
-                        && GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
-                    || (sArgumentListSet.find(wxToUtf8(sCurrentToken) + "{}") != sArgumentListSet.end()
-                        && GetStyleAt(i) == wxSTC_NSCR_CLUSTER))
+                        || (sArgumentListSet.find(wxToUtf8(sCurrentToken) + "()") != sArgumentListSet.end()
+                            && GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                        || (sArgumentListSet.find(wxToUtf8(sCurrentToken) + "{}") != sArgumentListSet.end()
+                            && GetStyleAt(i) == wxSTC_NSCR_CLUSTER))
                 {
                     if (GetStyleAt(i) == wxSTC_NSCR_CLUSTER)
                         lInputTokens.push_back(sCurrentToken + "{}");
@@ -6505,7 +6542,7 @@ void NumeReEditor::AbstrahizeSection()
                 }
 
                 if (vMatch.back() > nEndPos
-                    && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                        && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                 {
                     if (GetStyleAt(i) == wxSTC_NSCR_CLUSTER)
                         lOutputTokens.push_back(sCurrentToken + "{}");
@@ -6543,7 +6580,7 @@ void NumeReEditor::AbstrahizeSection()
         while (iter != lOutputTokens.end())
         {
             if ((*iter).find("()") != std::string::npos
-                || (*iter).find("{}") != std::string::npos)
+                    || (*iter).find("{}") != std::string::npos)
             {
                 // We have a table or a cluster as a mixture
                 auto inputIter = std::find(lInputTokens.begin(), lInputTokens.end(), *iter);
@@ -6571,7 +6608,7 @@ void NumeReEditor::AbstrahizeSection()
     }
 
     if (sInputList.length())
-        sInputList.erase(sInputList.length()-1);
+        sInputList.erase(sInputList.length() - 1);
 
     for (auto iter = lOutputTokens.begin(); iter != lOutputTokens.end(); ++iter)
     {
@@ -6579,7 +6616,7 @@ void NumeReEditor::AbstrahizeSection()
     }
 
     if (sOutputList.length())
-        sOutputList.erase(sOutputList.length()-1);
+        sOutputList.erase(sOutputList.length() - 1);
 
     // Use these interfaces and the positions to
     // create the new procedure in a new window
@@ -6741,22 +6778,22 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
             break;
 
         // Ignore dynamic structure field accesses in MATLAB
-        if (isStyleType(STYLE_OPERATOR, vMatch[i]-1)
-            && (GetCharAt(vMatch[i]-1) == '.' || (GetCharAt(vMatch[i]-2) == '.' && GetCharAt(vMatch[i]-1) == '(')))
+        if (isStyleType(STYLE_OPERATOR, vMatch[i] - 1)
+                && (GetCharAt(vMatch[i] - 1) == '.' || (GetCharAt(vMatch[i] - 2) == '.' && GetCharAt(vMatch[i] - 1) == '(')))
             continue;
 
         // Examine the code part left of the token, whether
         // there's a modifying operator
-        for (int j = vMatch[i]+sToken.length(); j < nSectionEnd; j++)
+        for (int j = vMatch[i] + sToken.length(); j < nSectionEnd; j++)
         {
             // Ignore whitespaces
             if (GetCharAt(j) == ' ' || GetCharAt(j) == '\t')
                 continue;
 
             // We only examine operator characters
-            if (isStyleType(STYLE_OPERATOR, j) && isStyleType(STYLE_OPERATOR, j+1) && sModificationOperators.find(GetTextRange(j, j+2)) != string::npos)
+            if (isStyleType(STYLE_OPERATOR, j) && isStyleType(STYLE_OPERATOR, j + 1) && sModificationOperators.find(GetTextRange(j, j + 2)) != string::npos)
                 return true;
-            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '=' && GetCharAt(j+1) != '=')
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '=' && GetCharAt(j + 1) != '=')
                 return true;
             else if (isStyleType(STYLE_OPERATOR, j) && (GetCharAt(j) == '(' || GetCharAt(j) == '[' || GetCharAt(j) == '{'))
             {
@@ -6770,23 +6807,23 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
                 // ignore closing parentheses
                 continue;
             }
-            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_IDENTIFIER, j+1))
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_IDENTIFIER, j + 1))
             {
                 // MATLAB struct fix
-                while (isStyleType(STYLE_IDENTIFIER, j+1))
+                while (isStyleType(STYLE_IDENTIFIER, j + 1))
                     j++;
             }
-            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_FUNCTION, j+1))
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_FUNCTION, j + 1))
             {
                 // MATLAB struct fix
-                while (isStyleType(STYLE_FUNCTION, j+1))
+                while (isStyleType(STYLE_FUNCTION, j + 1))
                     j++;
             }
-            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && GetCharAt(j+1) == '(')
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && GetCharAt(j + 1) == '(')
             {
                 // MATLAB struct fix
                 // Jump over parentheses
-                j = BraceMatch(j+1);
+                j = BraceMatch(j + 1);
                 if (j == wxSTC_INVALID_POSITION)
                     return false;
             }
@@ -6834,7 +6871,7 @@ wxString NumeReEditor::getFunctionArgumentList(int nFunctionStartLine)
     // Ensure that the line contains the keyword "function"
     // or "procedure", respectively
     if ((sReturn.find("function ") == string::npos && m_fileType == FILE_MATLAB)
-        || (sReturn.find("procedure ") == string::npos && m_fileType == FILE_NPRC))
+            || (sReturn.find("procedure ") == string::npos && m_fileType == FILE_NPRC))
         return "";
 
     // Ensure that the line contains opening and
@@ -6843,7 +6880,7 @@ wxString NumeReEditor::getFunctionArgumentList(int nFunctionStartLine)
         return "";
 
     // Extract the function argument list
-    sReturn.erase(0, sReturn.find('(')+1);
+    sReturn.erase(0, sReturn.find('(') + 1);
     sReturn.erase(sReturn.rfind(')'));
 
     // Return the argument list
@@ -6875,13 +6912,13 @@ wxString NumeReEditor::getMatlabReturnList(int nMatlabFunctionStartLine)
         return "";
 
     // Remove the keyword part and the function declaration itself
-    sReturn.erase(0, sReturn.find("function")+8);
+    sReturn.erase(0, sReturn.find("function") + 8);
     sReturn.erase(sReturn.find('='));
 
     // Remove surrounding brackets
     if (sReturn.find('[') != string::npos && sReturn.find(']') != string::npos)
     {
-        sReturn.erase(0, sReturn.find('[')+1);
+        sReturn.erase(0, sReturn.find('[') + 1);
         sReturn.erase(sReturn.rfind(']'));
     }
 
@@ -6939,7 +6976,7 @@ wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
 bool NumeReEditor::isValidAutoCompMatch(int nPos, bool findAll, bool searchMethod)
 {
     // Ignore self matches
-    if (nPos <= GetCurrentPos() && WordEndPosition(nPos+1, true) >= GetCurrentPos())
+    if (nPos <= GetCurrentPos() && WordEndPosition(nPos + 1, true) >= GetCurrentPos())
         return false;
 
     // Ignore matches not at the starting position
@@ -6951,7 +6988,7 @@ bool NumeReEditor::isValidAutoCompMatch(int nPos, bool findAll, bool searchMetho
         return true;
     else if (!isStyleType(STYLE_COMMENT, nPos)
              && !isStyleType(STYLE_STRING, nPos)
-             && (!searchMethod || GetCharAt(nPos-1) == '.'))
+             && (!searchMethod || GetCharAt(nPos - 1) == '.'))
         return true;
 
     return false;
@@ -6978,12 +7015,12 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     std::string sScopedList;
     bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
     bool searchMethod = GetCharAt(wordstartpos) == '.';
-    wxString wordstart = GetTextRange(searchMethod ? wordstartpos+1 : wordstartpos, currpos);
+    wxString wordstart = GetTextRange(searchMethod ? wordstartpos + 1 : wordstartpos, currpos);
 
     std::pair<int, int> context = std::make_pair(0, GetLineCount());
     bool findAll = !useSmartSense
-                || isStyleType(STYLE_COMMENT, wordstartpos)
-                || isStyleType(STYLE_STRING, wordstartpos);
+                   || isStyleType(STYLE_COMMENT, wordstartpos)
+                   || isStyleType(STYLE_STRING, wordstartpos);
 
     int lineNum = LineFromPosition(currpos);
 
@@ -7039,9 +7076,9 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
 
             // Append the needed opening parentheses, if the completed
             // objects are data objects or functions
-            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos+sMatch.length()) == '('))
+            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos + sMatch.length()) == '('))
                 sFillUp = "(?" + toString((int)NumeReSyntax::SYNTAX_TABLE);
-            else if (isStyleType(STYLE_DATAOBJECT, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos+sMatch.length()) == '{'))
+            else if (isStyleType(STYLE_DATAOBJECT, nPos) || (isStyleType(STYLE_STRINGPARSER, nPos) && GetCharAt(nPos + sMatch.length()) == '{'))
                 sFillUp = "{?" + toString((int)NumeReSyntax::SYNTAX_CLUSTER);
             else if (isStyleType(STYLE_IDENTIFIER, nPos))
                 sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
@@ -7279,8 +7316,8 @@ void NumeReEditor::OnHideSelection(wxCommandEvent& event)
 
     HideLines(nFirstLine, nLastLine);
 
-    MarkerAdd(nFirstLine-1, MARKER_HIDDEN);
-    MarkerAdd(nFirstLine-1, MARKER_HIDDEN_MARGIN);
+    MarkerAdd(nFirstLine - 1, MARKER_HIDDEN);
+    MarkerAdd(nFirstLine - 1, MARKER_HIDDEN_MARGIN);
 }
 
 
@@ -7650,8 +7687,8 @@ int NumeReEditor::isBlockStart(const std::string& sWord, bool allowIntermediate)
         if (id != wxNOT_FOUND)
         {
             if (isEqualIgnoreWhitespace(vBlockDefs[id].startWord, sWord)
-                || (allowIntermediate && (isEqualIgnoreWhitespace(sWord, vBlockDefs[id].middleWord1)
-                                          || isEqualIgnoreWhitespace(sWord, vBlockDefs[id].middleWord2))))
+                    || (allowIntermediate && (isEqualIgnoreWhitespace(sWord, vBlockDefs[id].middleWord1)
+                                              || isEqualIgnoreWhitespace(sWord, vBlockDefs[id].middleWord2))))
                 return id;
         }
     }
@@ -7722,8 +7759,8 @@ int NumeReEditor::isBlockMiddle(const std::string& sWord)
         int id = getBlockID(sWord);
 
         if (id != wxNOT_FOUND
-            && (isEqualIgnoreWhitespace(vBlockDefs[id].middleWord1, sWord)
-                || isEqualIgnoreWhitespace(vBlockDefs[id].middleWord2, sWord)))
+                && (isEqualIgnoreWhitespace(vBlockDefs[id].middleWord1, sWord)
+                    || isEqualIgnoreWhitespace(vBlockDefs[id].middleWord2, sWord)))
             return id;
     }
     else if (m_fileType == FILE_MATLAB)
@@ -7752,13 +7789,13 @@ bool NumeReEditor::hasBlockMiddle(const std::string& sWord)
     }
     else if (m_fileType == FILE_MATLAB)
         return sWord == "if"
-            || sWord == "try"
-            || sWord == "switch"
-            || sWord == "elseif"
-            || sWord == "else"
-            || sWord == "case"
-            || sWord == "otherwise"
-            || sWord == "catch";
+               || sWord == "try"
+               || sWord == "switch"
+               || sWord == "elseif"
+               || sWord == "else"
+               || sWord == "case"
+               || sWord == "otherwise"
+               || sWord == "catch";
 
     return false;
 }
@@ -7781,30 +7818,30 @@ int NumeReEditor::getBlockID(const std::string& word)
         for (size_t i = 0; i < vBlockDefs.size(); i++)
         {
             if (isEqualIgnoreWhitespace(vBlockDefs[i].startWord, word)
-                || isEqualIgnoreWhitespace(vBlockDefs[i].middleWord1, word)
-                || isEqualIgnoreWhitespace(vBlockDefs[i].middleWord2, word)
-                || isEqualIgnoreWhitespace(vBlockDefs[i].endWord, word))
+                    || isEqualIgnoreWhitespace(vBlockDefs[i].middleWord1, word)
+                    || isEqualIgnoreWhitespace(vBlockDefs[i].middleWord2, word)
+                    || isEqualIgnoreWhitespace(vBlockDefs[i].endWord, word))
                 return i;
         }
     }
     else if (m_fileType == FILE_MATLAB)
         return word == "if"
-            || word == "for"
-            || word == "parfor"
-            || word == "while"
-            || word == "classdef"
-            || word == "arguments"
-            || word == "properties"
-            || word == "function"
-            || word == "methods"
-            || word == "try"
-            || word == "switch"
-            || word == "end"
-            || word == "elseif"
-            || word == "else"
-            || word == "case"
-            || word == "otherwise"
-            || word == "catch";
+               || word == "for"
+               || word == "parfor"
+               || word == "while"
+               || word == "classdef"
+               || word == "arguments"
+               || word == "properties"
+               || word == "function"
+               || word == "methods"
+               || word == "try"
+               || word == "switch"
+               || word == "end"
+               || word == "elseif"
+               || word == "else"
+               || word == "case"
+               || word == "otherwise"
+               || word == "catch";
 
     return wxNOT_FOUND;
 }
@@ -7983,7 +8020,7 @@ void NumeReEditor::OnMarginClick(wxStyledTextEvent& event)
         if (MarkerOnLine(linenum, MARKER_HIDDEN))
         {
             // Hidden lines
-            int nNextVisibleLine = linenum+1;
+            int nNextVisibleLine = linenum + 1;
 
             while (!GetLineVisible(nNextVisibleLine))
                 nNextVisibleLine++;
@@ -8048,7 +8085,7 @@ void NumeReEditor::AddBreakpoint(int linenum)
 void NumeReEditor::EditBreakpoint(int linenum)
 {
     if (!isBreakPointAllowed(linenum)
-        || (!MarkerOnLine(linenum, MARKER_BREAKPOINT) && !MarkerOnLine(linenum, MARKER_CONDITIONALBREAKPOINT)))
+            || (!MarkerOnLine(linenum, MARKER_BREAKPOINT) && !MarkerOnLine(linenum, MARKER_CONDITIONALBREAKPOINT)))
         return;
 
     // Get the current breakpoint definition
@@ -8056,8 +8093,8 @@ void NumeReEditor::EditBreakpoint(int linenum)
 
     // Get the expression from the user
     wxString newCondition = wxGetTextFromUser(_guilang.get("GUI_MENU_EDITOR_EDITBP_TEXT"),
-                                              _guilang.get("GUI_MENU_EDITOR_EDITBP_HEAD"),
-                                              wxFromUtf8(bp.m_condition), this);
+                            _guilang.get("GUI_MENU_EDITOR_EDITBP_HEAD"),
+                            wxFromUtf8(bp.m_condition), this);
 
     if (!newCondition.length())
         return;
@@ -8137,13 +8174,13 @@ bool NumeReEditor::isBreakPointAllowed(int linenum)
     {
         // Check the current character
         if (!isStyleType(STYLE_COMMENT_LINE, i)
-            && !isStyleType(STYLE_COMMENT_BLOCK, i)
-            && !isStyleType(STYLE_COMMENT_SECTION_LINE, i)
-            && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, i)
-            && GetCharAt(i) != '\r'
-            && GetCharAt(i) != '\n'
-            && GetCharAt(i) != ' '
-            && GetCharAt(i) != '\t')
+                && !isStyleType(STYLE_COMMENT_BLOCK, i)
+                && !isStyleType(STYLE_COMMENT_SECTION_LINE, i)
+                && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, i)
+                && GetCharAt(i) != '\r'
+                && GetCharAt(i) != '\n'
+                && GetCharAt(i) != ' '
+                && GetCharAt(i) != '\t')
         {
             // Add the breakpoint marker
             return true;
@@ -8197,7 +8234,7 @@ void NumeReEditor::AddProcedureDocumentation()
         if (sCurArg.find('=') != std::string::npos)
         {
             sDefault = sCurArg.substr(sCurArg.find_first_not_of(" =\t", sCurArg.find('=')));
-            sCurArg.erase(sCurArg.find_last_not_of(" =", sCurArg.find('='))+1);
+            sCurArg.erase(sCurArg.find_last_not_of(" =", sCurArg.find('=')) + 1);
         }
 
         sDocumentation += "\r\n##! \\param " + sCurArg + "  ";
@@ -8279,8 +8316,8 @@ wxThread::ExitCode NumeReEditor::Entry()
 
         // Do not use folding block ends as starting points
         if (!(GetFoldLevel(i) & wxSTC_FOLDLEVELHEADERFLAG)
-            && (GetFoldLevel(i) & wxSTC_FOLDLEVELNUMBERMASK) != wxSTC_FOLDLEVELBASE
-            && GetLastChild(i, -1) == i)
+                && (GetFoldLevel(i) & wxSTC_FOLDLEVELNUMBERMASK) != wxSTC_FOLDLEVELBASE
+                && GetLastChild(i, -1) == i)
             continue;
 
         // Search for all possible duplications in the remaining document.
@@ -8838,11 +8875,11 @@ wxString NumeReEditor::getNextToken(int& nPos)
 /// \return std::pair<int,int>
 ///
 /////////////////////////////////////////////////
-std::pair<int,int> NumeReEditor::getCurrentContext(int line)
+std::pair<int, int> NumeReEditor::getCurrentContext(int line)
 {
     if (m_fileType != FILE_NPRC
-        && m_fileType != FILE_MATLAB
-        && m_fileType != FILE_CPP)
+            && m_fileType != FILE_MATLAB
+            && m_fileType != FILE_CPP)
         return std::make_pair(0, GetLineCount());
 
     // Try to find the current procedure header
@@ -8879,15 +8916,15 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
     if (!m_codeParser.isValidLine(lineNum))
         parse(lineNum);
 
-    int style = GetStyleAt(pos-2);
-    char c = GetCharAt(pos-2);
+    int style = GetStyleAt(pos - 2);
+    char c = GetCharAt(pos - 2);
 
     // Jump over square brackets
-    if (style == wxSTC_NSCR_OPERATORS && c == ']' && BraceMatch(pos-2) != wxNOT_FOUND)
+    if (style == wxSTC_NSCR_OPERATORS && c == ']' && BraceMatch(pos - 2) != wxNOT_FOUND)
     {
-        pos = BraceMatch(pos-2)+1;
-        style = GetStyleAt(pos-2);
-        c = GetCharAt(pos-2);
+        pos = BraceMatch(pos - 2) + 1;
+        style = GetStyleAt(pos - 2);
+        c = GetCharAt(pos - 2);
         lineNum = LineFromPosition(pos);
     }
 
@@ -8895,16 +8932,16 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
     // and should be extended with the semi-static parser model
     if (style == wxSTC_NSCR_IDENTIFIER)
     {
-        int c_pos = WordStartPosition(pos-2, true);
+        int c_pos = WordStartPosition(pos - 2, true);
         std::string symbol = wxToUtf8(GetTextRange(c_pos, WordEndPosition(c_pos, true)));
 
         if (m_codeParser.isSymbol(symbol, lineNum, false))
             std::tie(varType, isVect) = CodeParser::convertToMethodType(m_codeParser.getSymbol(symbol, lineNum, false).m_type);
         else
         {
-            varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos+1)))
-                || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos+1) == 's' && isupper(GetCharAt(c_pos+2)))
-                ? "string" : "*";
+            varType = (GetCharAt(c_pos) == 's' && isupper(GetCharAt(c_pos + 1)))
+                      || (GetCharAt(c_pos) == '_' && GetCharAt(c_pos + 1) == 's' && isupper(GetCharAt(c_pos + 2)))
+                      ? "string" : "*";
         }
 
         isVect = true;
@@ -8914,9 +8951,9 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
     else if (style == wxSTC_NSCR_METHOD)
     {
         // Examine method return values
-        int methodStart = WordStartPosition(pos-2, true);
+        int methodStart = WordStartPosition(pos - 2, true);
         std::string sReturnValue = _provider.getMethodReturnValue(wxToUtf8(GetTextRange(methodStart,
-                                                                               pos-1)), get_method_root_type(methodStart).first);
+                                   pos - 1)), get_method_root_type(methodStart).first);
 
         if (sReturnValue.find("{}") != std::string::npos || sReturnValue.find("{*}") != std::string::npos)
         {
@@ -8928,25 +8965,25 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
     }
     else if (c == '}')
     {
-        int braceStart = BraceMatch(pos-2);
-        int prevStyle = GetStyleAt(braceStart-1);
+        int braceStart = BraceMatch(pos - 2);
+        int prevStyle = GetStyleAt(braceStart - 1);
 
         varType = prevStyle == wxSTC_NSCR_CLUSTER
-            || prevStyle == wxSTC_NSCR_PREDEFS
-            || prevStyle == wxSTC_NSCR_STRING_PARSER
-            || GetTextRange(braceStart, pos-1).find('"') != std::string::npos
-            ? "string" : "*";
+                  || prevStyle == wxSTC_NSCR_PREDEFS
+                  || prevStyle == wxSTC_NSCR_STRING_PARSER
+                  || GetTextRange(braceStart, pos - 1).find('"') != std::string::npos
+                  ? "string" : "*";
         isVect = true;
     }
     else if (c == ')')
     {
-        int braceStart = BraceMatch(pos-2);
-        int prevStyle = GetStyleAt(braceStart-1);
+        int braceStart = BraceMatch(pos - 2);
+        int prevStyle = GetStyleAt(braceStart - 1);
 
         if (prevStyle == wxSTC_NSCR_METHOD || prevStyle == wxSTC_NSCR_FUNCTION)
         {
             // Examine method or function return values
-            int symbolStart = WordStartPosition(braceStart-1, true);
+            int symbolStart = WordStartPosition(braceStart - 1, true);
             std::string sSymbolName = wxToUtf8(GetTextRange(symbolStart, braceStart));
             std::string sReturnValue;
 
@@ -8966,7 +9003,7 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
         else if (prevStyle == wxSTC_NSCR_PROCEDURES)
         {
             // Examine procedure return values
-            m_search->FindMarkedProcedure(braceStart-1);
+            m_search->FindMarkedProcedure(braceStart - 1);
             wxString procdef = m_search->FindProcedureDefinition();
 
             if (procdef.length() && procdef.find("->") != std::string::npos)
@@ -8986,21 +9023,21 @@ std::pair<std::string, bool> NumeReEditor::get_method_root_type(int pos)
             varType = "string";
         else if (prevStyle == wxSTC_NSCR_CUSTOM_FUNCTION)
         {
-            int symbolStart = WordStartPosition(braceStart-1, true);
+            int symbolStart = WordStartPosition(braceStart - 1, true);
             std::string sSymbolName = wxToUtf8(GetTextRange(symbolStart, braceStart));
 
             if (m_codeParser.isSymbol(sSymbolName, lineNum, false))
             {
                 std::tie(varType, isVect) = CodeParser::convertToMethodType(m_codeParser.getSymbol(sSymbolName,
-                                                                                                   lineNum, false).m_type);
+                                            lineNum, false).m_type);
             }
             else
                 varType = "table";
         }
         else if (prevStyle == wxSTC_NSCR_PREDEFS)
         {
-            varType = GetTextRange(braceStart, pos-1) == "()"
-                ? "table" : "*";
+            varType = GetTextRange(braceStart, pos - 1) == "()"
+                      ? "table" : "*";
             isVect = true;
         }
         else if (prevStyle == wxSTC_NSCR_CUSTOM_METHOD)
@@ -9037,7 +9074,7 @@ void NumeReEditor::parseAll()
 
         for (int scopeStart : scopeStarts)
         {
-            std::pair<int,int> ctx = getCurrentContext(LineFromPosition(scopeStart));
+            std::pair<int, int> ctx = getCurrentContext(LineFromPosition(scopeStart));
             m_codeParser.addLocalScope(ParserScope(ctx.first, ctx.second));
         }
 
@@ -9051,7 +9088,7 @@ void NumeReEditor::parseAll()
             // and at the definition string (if available)
             if (procdef.find("::") != std::string::npos)
             {
-                wxString flags = procdef.substr(procdef.find("::")+2);
+                wxString flags = procdef.substr(procdef.find("::") + 2);
                 procdef.erase(procdef.find("::"));
 
                 if (flags.find("\n") != std::string::npos)
@@ -9059,7 +9096,7 @@ void NumeReEditor::parseAll()
 
                 if (flags.find("->") != std::string::npos)
                 {
-                    returns = flags.substr(flags.find("->")+2);
+                    returns = flags.substr(flags.find("->") + 2);
                     flags.erase(flags.find("->"));
                 }
             }
@@ -9070,7 +9107,7 @@ void NumeReEditor::parseAll()
 
                 if (procdef.find("->") != std::string::npos)
                 {
-                    returns = procdef.substr(procdef.find("->")+2);
+                    returns = procdef.substr(procdef.find("->") + 2);
                     procdef.erase(procdef.find("->"));
                 }
             }
@@ -9081,7 +9118,7 @@ void NumeReEditor::parseAll()
             returns.Trim(false);
 
             if (procdef.length())
-                localProcs["$thisfile~"+wxToUtf8(procdef.substr(1, procdef.find('(')-1))] = wxToUtf8(returns);
+                localProcs["$thisfile~" + wxToUtf8(procdef.substr(1, procdef.find('(') - 1))] = wxToUtf8(returns);
         }
 
 
@@ -9118,7 +9155,7 @@ void NumeReEditor::parse(int requestFromLine)
         const ParserScope& scope = static_cast<const CodeParser&>(m_codeParser).getScope(requestFromLine);
 
         // Ensure that the previous section of the code is correctly parsed
-        if (scope.getRange().first < requestFromLine && !scope.isValidLine(requestFromLine-1))
+        if (scope.getRange().first < requestFromLine && !scope.isValidLine(requestFromLine - 1))
         {
             g_logger.info("Starting reparsing of previous code lines ...");
             parseSection(scope.getRange().first, requestFromLine);
@@ -9140,8 +9177,8 @@ void NumeReEditor::parse(int requestFromLine)
 
         // Attach wrapped lines
         while (lexedTokens.size()
-               && lexedTokens.back().m_str == "\\\\"
-               && contLine+1 < GetLineCount())
+                && lexedTokens.back().m_str == "\\\\"
+                && contLine + 1 < GetLineCount())
         {
             lexedTokens.pop_back();
             contLine++;
@@ -9199,8 +9236,8 @@ void NumeReEditor::parseSection(int startLine, int endLine)
 
         // Attach wrapped lines
         while (lexedTokens.size()
-               && lexedTokens.back().m_str == "\\\\"
-               && i+1 < GetLineCount())
+                && lexedTokens.back().m_str == "\\\\"
+                && i + 1 < GetLineCount())
         {
             lexedTokens.pop_back();
             i++;
@@ -9208,7 +9245,7 @@ void NumeReEditor::parseSection(int startLine, int endLine)
             lexedTokens.insert(lexedTokens.end(), nextTokens.begin(), nextTokens.end());
         }
 
-        m_codeParser.parse(rootLine, i-rootLine, lexedTokens);
+        m_codeParser.parse(rootLine, i - rootLine, lexedTokens);
     }
 
     g_logger.info("Parsing step completed.");
@@ -9237,7 +9274,7 @@ int NumeReEditor::getStartLine(int line)
         line = GetFoldParent(line - 1) + 1;
 
     // Check if line is continued and if so go to start of line
-    while (isWrappedLine(line-1))
+    while (isWrappedLine(line - 1))
         line--;
 
     return line;
@@ -9284,22 +9321,22 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return GetStyleAt(nPos) == wxSTC_NSCR_DEFAULT;
                     case STYLE_COMMENT:
                         return GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
-                                || GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
+                               || GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMENT_LINE:
                         return GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE;
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE;
                     case STYLE_COMMENT_BLOCK:
                         return GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK;
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK;
                     case STYLE_COMMENT_SECTION_LINE:
                         return GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMENT_SECTION_BLOCK:
                         return GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
-                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
+                               || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMAND:
                         return GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
                                || GetStyleAt(nPos) == wxSTC_NPRC_COMMAND
@@ -9370,16 +9407,16 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return GetStyleAt(nPos) == wxSTC_C_DEFAULT;
                     case STYLE_COMMENT:
                         return GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
-                                || GetStyleAt(nPos) == wxSTC_C_COMMENT
-                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
-                                || GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
-                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENT
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
                     case STYLE_COMMENT_LINE:
                         return GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
-                                || GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC;
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC;
                     case STYLE_COMMENT_BLOCK:
                         return GetStyleAt(nPos) == wxSTC_C_COMMENT
-                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOC;
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTDOC;
                     case STYLE_COMMENT_SECTION_LINE:
                         return GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
@@ -9506,10 +9543,10 @@ wxString NumeReEditor::addLinebreaks(const wxString& sLine, bool onlyDocumentati
         {
             nLastLineBreak = i;
 
-            std::string sCandidate = wxToUtf8(sReturn.substr(i+1, 15));
+            std::string sCandidate = wxToUtf8(sReturn.substr(i + 1, 15));
 
             if (std::regex_search(sCandidate, match, expr) && match.position(0) == 0)
-                addIndent = match.length(0)-4;
+                addIndent = match.length(0) - 4;
             else
                 addIndent = 0;
         }
@@ -9591,10 +9628,10 @@ void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine)
 void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
 {
     if (nFirstLine < 0)
-		nFirstLine = 0;
+        nFirstLine = 0;
 
-	if (nLastLine <= 0 || nLastLine > GetLineCount())
-		nLastLine = GetLineCount()-1;
+    if (nLastLine <= 0 || nLastLine > GetLineCount())
+        nLastLine = GetLineCount() - 1;
 
     int nFirstPos = PositionFromLine(nFirstLine);
     int nLastPos = GetLineEndPosition(nLastLine);
@@ -9634,12 +9671,12 @@ void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
         tokenizer.SetString(GetLine(i), sDelimiter);
 
         while (tokenizer.HasMoreTokens())
-            vTable[i-nFirstLine].push_back(tokenizer.GetNextToken());
+            vTable[i - nFirstLine].push_back(tokenizer.GetNextToken());
 
         // Update the numbers of columns (will be lines),
         // if necessary
-        if (vTable[i-nFirstLine].size() > maxLines)
-            maxLines = vTable[i-nFirstLine].size();
+        if (vTable[i - nFirstLine].size() > maxLines)
+            maxLines = vTable[i - nFirstLine].size();
     }
 
     wxString finalLayout;
@@ -9652,11 +9689,11 @@ void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
             if (vTable[j].size() > i)
                 finalLayout += vTable[j][i];
 
-            if (j+1 < vTable.size())
+            if (j + 1 < vTable.size())
                 finalLayout += sDelimiter[0];
         }
 
-        if (i+1 < maxLines)
+        if (i + 1 < maxLines)
             finalLayout += "\r\n";
     }
 
@@ -9680,10 +9717,10 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
     wxString sHtml = "<pre style=\"display: block; overflow-x: auto; padding: 0.5em; background-color: rgb(244, 244, 244); color: rgb(0, 0, 0); font-family: consolas, monospace;\">";
 
     if (nFirstLine < 0)
-		nFirstLine = 0;
+        nFirstLine = 0;
 
-	if (nLastLine <= 0 || nLastLine > GetLineCount())
-		nLastLine = GetLineCount()-1;
+    if (nLastLine <= 0 || nLastLine > GetLineCount())
+        nLastLine = GetLineCount() - 1;
 
     int nFirstPos = PositionFromLine(nFirstLine);
     int nLastPos = GetLineEndPosition(nLastLine);
@@ -9693,15 +9730,15 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
     {
         wxString sHtml;
         sHtml += "<span style=\"color: rgb("
-            + toString(StyleGetForeground(style).Red()) + ", "
-            + toString(StyleGetForeground(style).Green()) + ", "
-            + toString(StyleGetForeground(style).Blue()) + ");";
+                 + toString(StyleGetForeground(style).Red()) + ", "
+                 + toString(StyleGetForeground(style).Green()) + ", "
+                 + toString(StyleGetForeground(style).Blue()) + ");";
 
         if (StyleGetBackground(style) != *wxWHITE)
             sHtml += " background-color: rgb("
-                + toString(StyleGetBackground(style).Red()) + ", "
-                + toString(StyleGetBackground(style).Green()) + ", "
-                + toString(StyleGetBackground(style).Blue()) + ");";
+                     + toString(StyleGetBackground(style).Red()) + ", "
+                     + toString(StyleGetBackground(style).Green()) + ", "
+                     + toString(StyleGetBackground(style).Blue()) + ");";
 
         if (StyleGetItalic(style))
             sHtml += " font-style: italic;";
@@ -9738,10 +9775,10 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
             nLastStatePosition = i;
         }
 
-        if (i+1 == nLastPos)
+        if (i + 1 == nLastPos)
         {
             int style = GetStyleAt(nLastStatePosition);
-            wxString textRange = GetTextRange(nLastStatePosition, i+1);
+            wxString textRange = GetTextRange(nLastStatePosition, i + 1);
 
             // Replace less and greater characters with the
             // HTML entities
@@ -9786,7 +9823,7 @@ std::pair<int, int> NumeReEditor::getLogicalLine(int lineNum)
     int startPos = GetLineIndentPosition(lineNum);
 
     // Check if this line is wrapped and if so got to the next line
-    while (lineNum+1 < GetLineCount() && isWrappedLine(lineNum+1))
+    while (lineNum + 1 < GetLineCount() && isWrappedLine(lineNum + 1))
         lineNum++;
 
     int endPos = GetLineEndPosition(lineNum);
@@ -9807,8 +9844,8 @@ std::pair<int, int> NumeReEditor::getLogicalLine(int lineNum)
 static void splitLexedOperators(StringView textRange, std::vector<LexedString>& lexedTokens)
 {
     static std::array<std::string, 18> validMultiByteOperators({"**=", "*=", "+=", "-=", "/=", "^=", "->", ":=",
-                                                                "==", "!=", "<=", ">=", "++", "--", "&&", "||",
-                                                                "??", "\\\\"});
+            "==", "!=", "<=", ">=", "++", "--", "&&", "||",
+            "??", "\\\\"});
 
     while (textRange.length())
     {
@@ -9916,8 +9953,8 @@ std::vector<LexedString> NumeReEditor::getLexedTokensForLogicalLine(int lineNum)
 
     // Attach wrapped lines
     while (lexedTokens.size()
-           && lexedTokens.back().m_str == "\\\\"
-           && contLine+1 < GetLineCount())
+            && lexedTokens.back().m_str == "\\\\"
+            && contLine + 1 < GetLineCount())
     {
         lexedTokens.pop_back();
         contLine++;

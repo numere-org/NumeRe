@@ -41,3 +41,5 @@ Cleaned	Statusbars in custom windows do now only appear, if something has been w
 Applied	Experimental: "void" can be assigned to object variables to convert them to an "object.void" instance.
 Updated	The internal user agent string was updated to a recent Firefox version.
 New	A timer object for measuring durations has been added.
+Applied	Editor tabs can now be scrolled with the mouse wheel.
+Updated	The tip-of-the-day dialog shows now better and updated information.

@@ -59,7 +59,7 @@ wxArrayString HistorySearchCtrl::getCandidates(const wxString& enteredText)
     if (!m_history)
         return wxArrayString(1, &enteredText);
 
-    wxArrayString entered = wxStringTokenize(enteredText);
+    wxArrayString entered = wxStringTokenize(enteredText.Lower());
     std::vector<wxString> stringArray;
     std::vector<size_t> matchWeights;
     std::vector<size_t> index;
@@ -72,13 +72,14 @@ wxArrayString HistorySearchCtrl::getCandidates(const wxString& enteredText)
         if (line.substr(0, 6) != "## ---" && std::find(stringArray.begin(), stringArray.end(), line) == stringArray.end())
         {
             size_t matchWeight = 0;
+            wxString matchString = line.Lower();
 
             for (size_t j = 0; j < entered.GetCount(); j++)
             {
                 if (entered[j].length() < 3)
                     continue;
 
-                if (line.find(entered[j]) != std::string::npos)
+                if (matchString.find(entered[j]) != std::string::npos)
                     matchWeight += entered.GetCount() - j;
             }
 

@@ -1924,6 +1924,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
             && (m_editor->BraceMatch(i) >= m_nCurPos || m_editor->BraceMatch(i) == -1) // either no brace (yet) or the brace further right
             && (m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CLUSTER
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CUSTOM_FUNCTION
+                || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_METHOD // for table methods
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_IDENTIFIER
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_PREDEFS)) // table() or data()
         {
@@ -1968,27 +1969,31 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
         // Should only be used in tables. Additionally,
         // their order might be mixed up
         if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CUSTOM_FUNCTION
-            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_PREDEFS)
+            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_PREDEFS
+            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_METHOD)
             AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
                                      "GUI_ANALYZER_DIMVAR_MISUSE");
 
-        // Now, check for mixed up orientations
-        int contextEnd = m_editor->BraceMatch(contextPoint);
+        if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_METHOD)
+        {
+            // Now, check for mixed up orientations
+            int contextEnd = m_editor->BraceMatch(contextPoint);
 
-        if (contextEnd == wxNOT_FOUND)
-            contextEnd = m_editor->GetLineEndPosition(m_nCurrentLine);
+            if (contextEnd == wxNOT_FOUND)
+                contextEnd = m_editor->GetLineEndPosition(m_nCurrentLine);
 
-        // Get the context content and split it up into
-        // the single arguments
-        std::string sContext = wxToUtf8(m_editor->GetTextRange(contextPoint+1, contextEnd));
-        EndlessVector<std::string> args = getAllArguments(sContext);
+            // Get the context content and split it up into
+            // the single arguments
+            std::string sContext = wxToUtf8(m_editor->GetTextRange(contextPoint+1, contextEnd));
+            EndlessVector<std::string> args = getAllArguments(sContext);
 
-        // Check, whether the dimension vars can be found in the
-        // opposite dimension
-        if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
-            || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
-            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                     "GUI_ANALYZER_DIMVAR_MIXUP");
+            // Check, whether the dimension vars can be found in the
+            // opposite dimension
+            if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
+                || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
+                AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                         "GUI_ANALYZER_DIMVAR_MIXUP");
+        }
     }
 
     m_nCurPos = wordend;

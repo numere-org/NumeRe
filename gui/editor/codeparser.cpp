@@ -182,14 +182,18 @@ void ParserSymbol::updateType(const std::string& varType)
         m_type = varType;
         m_heuristicType = false;
     }
-    else if (m_type.starts_with("object.") || m_type.starts_with("dict") || m_type == "category")
+    else if (m_type.find("object.") != std::string::npos
+             || m_type.find("dict") != std::string::npos
+             || m_type.find("category") != std::string::npos)
     {
         if (varType == "void")
         {
             m_type = "object.void";
             m_heuristicType = false;
         }
-        else if (varType.starts_with("object.") || varType.starts_with("dict") || varType == "category")
+        else if (varType.find("object.") != std::string::npos
+                 || varType.find("dict") != std::string::npos
+                 || varType.find("category") != std::string::npos)
         {
             m_type = varType;
             m_heuristicType = false;

@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <boost/nowide/convert.hpp>
 
 #include "plugins.hpp"
 #include "../kernel.hpp"
@@ -580,7 +581,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     // Add all legends to the graph
     for (size_t i = 0; i < vLegends.size(); i++)
     {
-        _histGraph->AddLegend(vLegends[i].c_str(), (sColorStyles[nStyle] + (_histParams.bBars ? "" : "=.")).c_str());
+        _histGraph->AddLegend(boost::nowide::widen(vLegends[i]).c_str(), (sColorStyles[nStyle] + (_histParams.bBars ? "" : "=.")).c_str());
 
         if (nStyle == nStyleMax - 1)
             nStyle = 0;
@@ -622,7 +623,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         else if (!_pData.getLogscale(XRANGE) && _histParams.bBars)
         {
             if (vCategories.size())
-                _histGraph->SetTicksVal('x', _mAxisVals, sTicks.c_str());
+                _histGraph->SetTicksVal('x', _mAxisVals, boost::nowide::widen(sTicks).c_str());
             else
             {
                 double diff = _mAxisVals.GetNN() > 2 ? (_mAxisVals.a[1] - _mAxisVals.a[0]) : 0.0;
@@ -694,7 +695,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     // Write the axis labels
     if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
     {
-        _histGraph->Label('x', _histParams.sBinLabel.c_str(), 0.0);
+        _histGraph->Label('x', boost::nowide::widen(_histParams.sBinLabel).c_str(), 0.0);
 
         if (sCommonExponent.length() && !_pData.getLogscale(XRANGE) && !_pData.getTimeAxis(XRANGE).use)
         {
@@ -704,9 +705,9 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         }
 
         if (_pData.getSettings(PlotData::LOG_BOX))
-            _histGraph->Label('y', _histParams.sCountLabel.c_str(), 0.0);
+            _histGraph->Label('y', boost::nowide::widen(_histParams.sCountLabel).c_str(), 0.0);
         else
-            _histGraph->Label('y', _histParams.sCountLabel.c_str(), 1.1);
+            _histGraph->Label('y', boost::nowide::widen(_histParams.sCountLabel).c_str(), 1.1);
     }
 
     // Create the grid
@@ -1543,12 +1544,12 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
     }
 
-    _histGraph->Label('x', _histParams.sAxisLabels[XCOORD].c_str(), 0);
+    _histGraph->Label('x', boost::nowide::widen(_histParams.sAxisLabels[XCOORD]).c_str(), 0);
 
     if (_histParams.bSum || _histParams.bAvg)
-        _histGraph->Label('y', _histParams.sAxisLabels[ZCOORD].c_str(), 0);
+        _histGraph->Label('y', boost::nowide::widen(_histParams.sAxisLabels[ZCOORD]).c_str(), 0);
     else
-        _histGraph->Label('y', _histParams.sCountLabel.c_str(), 0);
+        _histGraph->Label('y', boost::nowide::widen(_histParams.sCountLabel).c_str(), 0);
 
     _histGraph->Bars(_mAxisVals[0], _barHistData, _pData.getColors().c_str());
 
@@ -1604,8 +1605,8 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
     }
 
-    _histGraph->Label('x', _histParams.sAxisLabels[XCOORD].c_str(), 0);
-    _histGraph->Label('y', _histParams.sAxisLabels[YCOORD].c_str(), 0);
+    _histGraph->Label('x', boost::nowide::widen(_histParams.sAxisLabels[XCOORD]).c_str(), 0);
+    _histGraph->Label('y', boost::nowide::widen(_histParams.sAxisLabels[YCOORD]).c_str(), 0);
 
     if (isScatterPlot)
         _histGraph->Dots(_hist2DData[0], _hist2DData[1], _hist2DData[2], _pData.getColorScheme().c_str());
@@ -1667,11 +1668,11 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     }
 
     if (!_histParams.bSum && !_histParams.bAvg)
-        _histGraph->Label('x', _histParams.sCountLabel.c_str(), 0);
+        _histGraph->Label('x', boost::nowide::widen(_histParams.sCountLabel).c_str(), 0);
     else
-        _histGraph->Label('x', _histParams.sAxisLabels[ZCOORD].c_str(), 0);
+        _histGraph->Label('x', boost::nowide::widen(_histParams.sAxisLabels[ZCOORD]).c_str(), 0);
 
-    _histGraph->Label('y', _histParams.sAxisLabels[YCOORD].c_str(), 0);
+    _histGraph->Label('y', boost::nowide::widen(_histParams.sAxisLabels[YCOORD]).c_str(), 0);
     _histGraph->Barh(_mAxisVals[1], _hBarHistData, _pData.getColors().c_str());
 
 ////////////////////////////////// OUTPUT

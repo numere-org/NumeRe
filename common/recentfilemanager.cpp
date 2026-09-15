@@ -68,7 +68,7 @@ void RecentFilesManager::push(const wxString& newFile)
 
     m_fileList.push_back(file);
 
-    if (m_fileList.size() > 20)
+    if (m_fileList.size() > 30)
         m_fileList.erase(m_fileList.begin());
 }
 

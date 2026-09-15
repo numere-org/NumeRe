@@ -1391,7 +1391,21 @@ namespace mu
     /////////////////////////////////////////////////
     std::string CatValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return toExternalString(m_val.name) + ": " + toString(m_val.val.asI64());
+        std::string sCatId = ": " + toString(m_val.val.asI64());
+        size_t remainingChars = chrs;
+
+        if (remainingChars > sCatId.length()+4)
+            remainingChars -= sCatId.length();
+
+        if (chrs > 0)
+        {
+            if (trunc)
+                return ensureValidUtf8(truncString(toExternalString(replaceControlCharacters(m_val.name)), remainingChars)) + sCatId;
+
+            return ensureValidUtf8(ellipsize(toExternalString(replaceControlCharacters(m_val.name)), remainingChars)) + sCatId;
+        }
+
+        return ensureValidUtf8(toExternalString(replaceControlCharacters(m_val.name))) + sCatId;
     }
 
 

@@ -17,128 +17,115 @@
 ******************************************************************************/
 
 #include "tipdialog.hpp"
+#include "../../kernel/core/utils/stringtools.hpp"
+
 #include <wx/statline.h>
 #include <wx/artprov.h>
 
 #define wxID_NEXT_TIP 32000
-#if defined(__SMARTPHONE__)
-    #define wxLARGESMALL(large,small) small
-#else
-    #define wxLARGESMALL(large,small) large
-#endif
 
 BEGIN_EVENT_TABLE(TipDialog, wxDialog)
     EVT_BUTTON(wxID_NEXT_TIP, TipDialog::OnNextTip)
 END_EVENT_TABLE()
 
-TipDialog::TipDialog(wxWindow *parent, wxTipProvider *tipProvider, const wxArrayString& text, bool showAtStartup)
-           : wxDialog(GetParentForModalDialog(parent, 0), wxID_ANY, text[0], wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+/////////////////////////////////////////////////
+/// \brief Construct the tip dialog window.
+///
+/// \param parent wxWindow*
+/// \param tipProvider MyTipProvider*
+/// \param text const wxArrayString&
+/// \param showAtStartup bool
+///
+/////////////////////////////////////////////////
+TipDialog::TipDialog(wxWindow* parent, MyTipProvider* tipProvider, const wxArrayString& text, bool showAtStartup)
+    : wxDialog(GetParentForModalDialog(parent, 0), wxID_ANY, text[0], wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
+    m_textSnippets = text;
     m_tipProvider = tipProvider;
-    bool isPda = (wxSystemSettings::GetScreenType() <= wxSYS_SCREEN_PDA);
 
     // 1) create all controls in tab order
-    wxStaticText *__text = new wxStaticText(this, wxID_ANY, text[1]);
+    m_header = new wxStaticText(this, wxID_ANY, m_textSnippets[1]);
 
-    if (!isPda)
-    {
-        wxFont font = __text->GetFont();
-        font.SetPointSize(int(1.6 * font.GetPointSize()));
-        font.SetWeight(wxFONTWEIGHT_BOLD);
-        __text->SetFont(font);
-    }
+    wxFont font = m_header->GetFont();
+    font.SetPointSize(int(1.6 * font.GetPointSize()));
+    //font.SetWeight(wxFONTWEIGHT_BOLD);
+    m_header->SetFont(font);
 
-    m_text = new wxTextCtrl(this, wxID_ANY, wxEmptyString,
-                            wxDefaultPosition, wxSize(200, 160),
-                            wxTE_MULTILINE |
-                            wxTE_READONLY |
-                            wxTE_NO_VSCROLL |
-                            wxTE_RICH2 | // a hack to get rid of vert scrollbar
-                            wxDEFAULT_CONTROL_BORDER
-                            );
-#if defined(__WXMSW__)
-    m_text->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxNORMAL));
-#endif
-
-//#if defined(__WXPM__)
-    //
-    // The only way to get icons into an OS/2 static bitmap control
-    //
-//    wxBitmap                        vBitmap;
-
-//    vBitmap.SetId(wxICON_TIP); // OS/2 specific bitmap method--OS/2 wxBitmaps all have an ID.
-//                               // and for StatBmp's under OS/2 it MUST be a valid resource ID.
-//
-//    wxStaticBitmap*                 bmp = new wxStaticBitmap(this, wxID_ANY, vBitmap);
-//
-//#else
+    m_text = new TextField(this, wxID_ANY, wxEmptyString, wxSize(200, 160),
+                           wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL | wxTE_READONLY);
 
     wxIcon icon = wxArtProvider::GetIcon(wxART_TIP, wxART_CMN_DIALOG);
-    wxStaticBitmap *bmp = new wxStaticBitmap(this, wxID_ANY, icon);
+    wxStaticBitmap* bmp = new wxStaticBitmap(this, wxID_ANY, icon);
 
-//#endif
 
-    m_checkbox = new wxCheckBox(this, wxID_ANY, text[3]);
+    m_checkbox = new wxCheckBox(this, wxID_ANY, m_textSnippets[3]);
     m_checkbox->SetValue(showAtStartup);
     m_checkbox->SetFocus();
 
-    // smart phones does not support or do not waste space for wxButtons
-#ifndef __SMARTPHONE__
-    wxButton *btnNext = new wxButton(this, wxID_NEXT_TIP, text[2]);
-#endif
-
-    // smart phones does not support or do not waste space for wxButtons
-#ifndef __SMARTPHONE__
-    wxButton *btnClose = new wxButton(this, wxID_CLOSE, text[4]);
+    wxButton* btnNext = new wxButton(this, wxID_NEXT_TIP, m_textSnippets[2]);
+    wxButton* btnClose = new wxButton(this, wxID_CLOSE, m_textSnippets[4]);
     SetAffirmativeId(wxID_CLOSE);
-#endif
-
 
     // 2) put them in boxes
+    wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* icon_text = new wxBoxSizer(wxHORIZONTAL);
+    icon_text->Add(bmp, 0, wxCENTER);
+    icon_text->Add(m_header, 1, wxCENTER | wxLEFT, 10);
 
-    wxBoxSizer *topsizer = new wxBoxSizer( wxVERTICAL );
+    topsizer->Add(icon_text, 0, wxEXPAND | wxALL, 10);
+    topsizer->Add(m_text, 1, wxEXPAND | wxLEFT | wxRIGHT, 10);
 
-    wxBoxSizer *icon_text = new wxBoxSizer( wxHORIZONTAL );
-    icon_text->Add( bmp, 0, wxCENTER );
-    icon_text->Add( __text, 1, wxCENTER | wxLEFT, wxLARGESMALL(20,0) );
-    topsizer->Add( icon_text, 0, wxEXPAND | wxALL, wxLARGESMALL(10,0) );
+    wxBoxSizer* bottom = new wxBoxSizer(wxHORIZONTAL);
+    bottom->Add(m_checkbox, 0, wxCENTER);
 
-    topsizer->Add( m_text, 1, wxEXPAND | wxLEFT|wxRIGHT, wxLARGESMALL(10,0) );
+    bottom->Add(10, 10, 1);
+    bottom->Add(btnNext, 0, wxCENTER | wxLEFT, 10);
+    bottom->Add(btnClose, 0, wxCENTER | wxLEFT, 10);
 
-    wxBoxSizer *bottom = new wxBoxSizer( wxHORIZONTAL );
-    if (isPda)
-        topsizer->Add( m_checkbox, 0, wxCENTER|wxTOP );
-    else
-        bottom->Add( m_checkbox, 0, wxCENTER );
-
-    // smart phones does not support or do not waste space for wxButtons
-#ifdef __SMARTPHONE__
-    SetRightMenu(wxID_NEXT_TIP, _("Next"));
-    SetLeftMenu(wxID_CLOSE);
-#else
-    if (!isPda)
-        bottom->Add( 10,10,1 );
-    bottom->Add( btnNext, 0, wxCENTER | wxLEFT, wxLARGESMALL(10,0) );
-    bottom->Add( btnClose, 0, wxCENTER | wxLEFT, wxLARGESMALL(10,0) );
-#endif
-
-    if (isPda)
-        topsizer->Add( bottom, 0, wxCENTER | wxALL, 5 );
-    else
-        topsizer->Add( bottom, 0, wxEXPAND | wxALL, wxLARGESMALL(10,0) );
+    topsizer->Add(bottom, 0, wxEXPAND | wxALL, 10);
 
     SetTipText();
 
-    SetSizer( topsizer );
+    SetSizer(topsizer);
 
-    topsizer->SetSizeHints( this );
-    topsizer->Fit( this );
+    topsizer->SetSizeHints(this);
+    topsizer->Fit(this);
 
     Centre(wxBOTH | wxCENTER_FRAME);
 }
 
 
-bool ShowTip(wxWindow* parent, wxTipProvider* tipProvider, const wxArrayString& text, bool showAtStartUp)
+/////////////////////////////////////////////////
+/// \brief Update the displayed tip with the next
+/// available tip.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TipDialog::SetTipText()
+{
+    m_text->SetMarkupText(m_tipProvider->GetTip());
+    m_text->SetInsertionPoint(0);
+
+    auto index = m_tipProvider->getIndex();
+
+    SetTitle(m_textSnippets[0] + " (" + index.first + "/" + index.second + ")");
+    m_header->SetLabel(m_textSnippets[1] + " " + index.first);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Simple helper function to open up the
+/// tip dialog.
+///
+/// \param parent wxWindow*
+/// \param tipProvider MyTipProvider*
+/// \param text const wxArrayString&
+/// \param showAtStartUp bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool ShowTip(wxWindow* parent, MyTipProvider* tipProvider, const wxArrayString& text, bool showAtStartUp)
 {
     TipDialog dlg(parent, tipProvider, text, showAtStartUp);
     dlg.ShowModal();
@@ -147,9 +134,24 @@ bool ShowTip(wxWindow* parent, wxTipProvider* tipProvider, const wxArrayString& 
 }
 
 
+
+
+
+/////////////////////////////////////////////////
+/// \brief Construct a tip provider instance.
+///
+/// \param vTipList const std::vector<std::string>&
+///
+/////////////////////////////////////////////////
 MyTipProvider::MyTipProvider(const std::vector<std::string>& vTipList) : wxTipProvider(vTipList.size())
 {
     vTip = vTipList;
+
+    for (std::string& tip : vTip)
+    {
+        replaceAll(tip, "\\n", "\n");
+    }
+
     nth_tip = 0;
     // --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
     srand(time(NULL));

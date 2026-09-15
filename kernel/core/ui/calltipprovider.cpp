@@ -927,6 +927,13 @@ namespace NumeRe
         else
             _cTip.sDefinition = _lang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(sToken) + "_*");
 
+        if (_cTip.sDefinition.length() > m_maxLineLength)
+        {
+            _cTip.sDocumentation = _cTip.sDefinition.substr(_cTip.sDefinition.find('=')+2);
+            _cTip.sDefinition.replace(m_maxLineLength-4, std::string::npos, " ...");
+            _cTip = addLinebreaks(_cTip, m_maxLineLength);
+        }
+
         _cTip.nStart = 0;
         _cTip.nEnd = _cTip.sDefinition.find('=');
 

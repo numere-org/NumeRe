@@ -3357,14 +3357,31 @@ namespace mu
             int64_t p = idx.get(item-1).getNum().asI64();
 
             // Construct and insert the element
-            if (p > 0 && p <= (int64_t)size())
+            if (p > 0)
             {
-                if (vals.isDefault())
-                    ret.get(item-1) = Value(commonType);
-                else
-                    ret.get(item-1) = vals.get(item-1);
+                if (p <= (int64_t)size())
+                {
+                    if (vals.isDefault())
+                        ret.get(item-1) = Value(commonType);
+                    else
+                        ret.get(item-1) = vals.get(item-1);
 
-                insert(begin()+p-1, ret.get(item-1));
+                    insert(begin()+p-1, ret.get(item-1));
+                }
+                else
+                {
+                    while (p-1 > (int64_t)size())
+                    {
+                        emplace_back(commonType);
+                    }
+
+                    if (vals.isDefault())
+                        ret.get(item-1) = Value(commonType);
+                    else
+                        ret.get(item-1) = vals.get(item-1);
+
+                    emplace_back(ret.get(item-1));
+                }
             }
         }
 

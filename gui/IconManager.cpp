@@ -19,14 +19,19 @@
 
 
 
+/////////////////////////////////////////////////
+/// \brief Construct the instance from the icons
+/// located in the icons folder in the root path.
+///
+/// \param programPath const wxString&
+///
+/////////////////////////////////////////////////
 IconManager::IconManager(const wxString& programPath)
 {
     m_imageScaleFactor = 1.0;
 
 	m_images = new wxImageList(16, 16);
 
-
-	m_iconExtensionMapping["cpj"] = m_images->GetImageCount();
 	m_iconExtensionMapping["DEFAULTFILEEXTENSION"] = m_images->GetImageCount();
 	wxBitmap defaultfile(newfile_xpm);
 	m_images->Add(defaultfile);
@@ -41,13 +46,10 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping[".txt"] = m_images->GetImageCount();
 	m_iconExtensionMapping["log"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".log"] = m_images->GetImageCount();
-	m_iconExtensionMapping["xml"] = m_images->GetImageCount();
-	m_iconExtensionMapping[".xml"] = m_images->GetImageCount();
 	m_iconExtensionMapping["md"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".md"] = m_images->GetImageCount();
 	m_images->Add(document);
 
-	//wxBitmap openfolder(openfolder16x1632bpp_xpm);
 	wxIcon openfolder(programPath + "/icons/folder.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["FOLDEROPEN"] = m_images->GetImageCount();
 	m_images->Add(openfolder);
@@ -138,33 +140,97 @@ IconManager::IconManager(const wxString& programPath)
 
 	AddIconToList("c");
 	AddIconToList("cpp");
-	AddIconToList("h");
 
-	m_iconExtensionMapping["hpp"] = GetIconIndex("h");
-	AddIconToList("lib");
-
-	CreateDisabledIcon("c");
-	CreateDisabledIcon("cpp");
-	CreateDisabledIcon("h");
+	if (AddIconToList("h"))
+        m_iconExtensionMapping["hpp"] = GetIconIndex("h");
 
 	wxBitmap exe(exe_xpm);
 	m_iconExtensionMapping["exe"] = m_images->GetImageCount();
+	m_images->Add(exe);
+
+	// The following ones do have internal fallback icons
+    if (!AddIconToList("csv"))
+    {
+        wxIcon CSV(programPath + "/icons/csv.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["csv"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".csv"] = m_images->GetImageCount();
+        m_images->Add(CSV);
+    }
+
+    if (!AddIconToList("ods"))
+    {
+        wxIcon ODS(programPath + "/icons/ods.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["ods"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".ods"] = m_images->GetImageCount();
+        m_images->Add(ODS);
+    }
+
+    if (!AddIconToList("xls"))
+    {
+        wxIcon XLS(programPath + "/icons/xls.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["xls"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".xls"] = m_images->GetImageCount();
+        m_images->Add(XLS);
+    }
+
+    if (!AddIconToList("xlsx"))
+    {
+        wxIcon XLSX(programPath + "/icons/xlsx.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["xlsx"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".xlsx"] = m_images->GetImageCount();
+        m_images->Add(XLSX);
+    }
+
+    if (!AddIconToList("xml"))
+    {
+        wxIcon XML(programPath + "/icons/xml.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["xml"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".xml"] = m_images->GetImageCount();
+        m_images->Add(XML);
+    }
+
+    if (!AddIconToList("json"))
+    {
+        wxIcon JSON(programPath + "/icons/json.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["json"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".json"] = m_images->GetImageCount();
+        m_images->Add(JSON);
+    }
+
+    if (!AddIconToList("tex"))
+    {
+        wxIcon TEX(programPath + "/icons/tex.ico", wxBITMAP_TYPE_ICO);
+        m_iconExtensionMapping["tex"] = m_images->GetImageCount();
+        m_iconExtensionMapping[".tex"] = m_images->GetImageCount();
+        m_images->Add(TEX);
+    }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Destroy the instance.
+/////////////////////////////////////////////////
 IconManager::~IconManager()
 {
 	delete m_images;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Add an icon to the list by searching
+/// through the OS registry.
+///
+/// \param iconInfo wxString
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool IconManager::AddIconToList(wxString iconInfo)
 {
 	// wxTheMimeTypesManager is a wxWidgets-created global instance
 	wxFileType* fileType = wxTheMimeTypesManager->GetFileTypeFromExtension(iconInfo);
 
 	if (fileType == NULL)
-	{
 		return false;
-	}
 
 	wxIconLocation iconLocation;
 
@@ -225,35 +291,45 @@ bool IconManager::AddIconToList(wxString iconInfo)
 	return result;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Get the index of the desired icon. If
+/// it is not yet present, try to add it
+/// automatically.
+///
+/// \param iconInfo wxString
+/// \return int
+///
+/////////////////////////////////////////////////
 int IconManager::GetIconIndex(wxString iconInfo)
 {
 	int currentExtensionIconNumber;
 
 	if (iconInfo == wxEmptyString)
-	{
 		return m_iconExtensionMapping["DEFAULTFILEEXTENSION"];
-	}
 
 	if (m_iconExtensionMapping.find(iconInfo) != m_iconExtensionMapping.end())
-	{
 		currentExtensionIconNumber = m_iconExtensionMapping[iconInfo];
-	}
 	else
 	{
 		if (AddIconToList(iconInfo))
-		{
 			currentExtensionIconNumber = m_iconExtensionMapping[iconInfo];
-		}
 		else
-		{
 			currentExtensionIconNumber = m_iconExtensionMapping["DEFAULTFILEEXTENSION"];
-		}
 	}
 
 	return currentExtensionIconNumber;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Create a disabled (greyed-out) icon
+/// from a selected icon.
+///
+/// \param iconInfo wxString
+/// \return void
+///
+/////////////////////////////////////////////////
 void IconManager::CreateDisabledIcon(wxString iconInfo)
 {
 	int iconIndex = GetIconIndex(iconInfo);
@@ -278,7 +354,18 @@ void IconManager::CreateDisabledIcon(wxString iconInfo)
 	m_images->Add(disabledIcon);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Get a pointer to the internal image
+/// list.
+///
+/// \return wxImageList*
+///
+/////////////////////////////////////////////////
 wxImageList* IconManager::GetImageList()
 {
 	return m_images;
 }
+
+
+
