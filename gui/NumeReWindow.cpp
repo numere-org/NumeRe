@@ -7936,3 +7936,17 @@ void NumeReWindow::ensureEditorTabVisible()
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Ensure that the terminal knows its
+/// correct line length.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::ensureCorrectTerminalDimensions()
+{
+    toggleHistory();
+    toggleHistory();
+}
+

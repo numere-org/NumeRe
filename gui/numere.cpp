@@ -287,6 +287,8 @@ bool NumeReApp::OnInit()
     delete m_mainWindow->tipProvider;
     m_mainWindow->tipProvider = nullptr;
 
+    m_mainWindow->ensureCorrectTerminalDimensions();
+
     return true;
 }
 

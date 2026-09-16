@@ -225,6 +225,7 @@ class NumeReWindow : public wxFrame
         void OnReportIssue(ErrorLocation location = ERR_NONE);
         void OnFindUpdate();
         void ensureEditorTabVisible();
+        void ensureCorrectTerminalDimensions();
 
 
     private:
