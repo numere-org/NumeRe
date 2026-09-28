@@ -2688,7 +2688,6 @@ namespace mu
             if (v)
             {
                 BaseValue* cloned = v->clone();
-                mu::print(getTypeAsString(cloned->getType()) + " " + cloned->print(0,0,false));
 
                 if (cloned->getType() == TYPE_ARRAY)
                     static_cast<ArrValue*>(cloned)->get().makeConst();

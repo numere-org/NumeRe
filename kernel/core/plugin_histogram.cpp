@@ -629,10 +629,10 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
                 double diff = _mAxisVals.GetNN() > 2 ? (_mAxisVals.a[1] - _mAxisVals.a[0]) : 0.0;
 
                 if (_pData.getTickTemplate(XCOORD).length())
-                    _histGraph->SetTickTempl('x', _pData.getTickTemplate(XCOORD).c_str());
+                    _histGraph->SetTickTempl('x', boost::nowide::widen(_pData.getTickTemplate(XCOORD)).c_str());
 
                 if (_pData.getTickTemplate(YCOORD).length())
-                    _histGraph->SetTickTempl('y', _pData.getTickTemplate(YCOORD).c_str());
+                    _histGraph->SetTickTempl('y', boost::nowide::widen(_pData.getTickTemplate(YCOORD)).c_str());
 
                 int subticks = 0;
                 int tickfactor = 1;

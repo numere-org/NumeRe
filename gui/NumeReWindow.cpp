@@ -2535,7 +2535,7 @@ void NumeReWindow::showListEditDialog(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
     {
         wxArrayString listEntries = dialog.getEntries();

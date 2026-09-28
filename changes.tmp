@@ -1,45 +1,4 @@
-Fixed	The autoindentation now also can handle wrapped lines with additonal trailing line comments.
-Fixed	Curvilinear coordinates do now work more consistent across the plotting types.
-Cleaned	The duplicate code detection feature does not use end points of control flow statements as starting points any longer.
-Cleaned	The internal memory consumption of single values was reduced.
-Cleaned	Improved the return of "fwt", especially the enumeration of the coefficients.
-New	A logger object is now available.
-New	Dict object can be used to map between two arbitrary types (requiring that the key type to supports a "less-than" relation).
-Cleaned	Dict object are now abbreviated with "DCT" and DictStructs with "SCT".
-Cleaned	The static code analyzer won't mark methods that have no required arguments as lacking their parentheses if the user's intend is to stick with the default arguments.
-Fixed	A rare crash that occured if tabs in the data viewer are dragged around, has been resolved.
-Applied	The method TAB().replacevals() does now accept a scalar value as a common replacement value for a vector or values.
-Updated	All occurences of regular expressions have been updated to be more runtime-efficient.
-Removed	Due to the highly flexible argument list of drawing functions, those are not checked by the code analyzer any more.
-Added	The path object now has the two methods "twig" for getting the parent entry of the leaf and "leafless" for returning a new path without the current leaf.
-Fixed	The code analyzer now understands better, what a wrapped line is and will examine the whole (logical) line at once.
-Fixed	The new code parser will handle more constants and heuristics won't get overwritten by generic types like "any" any longer.
-Added	Functions for bit-level logic and manipulation haven been added: "bitand()", "bitor()", "bitxor()", "bitnot()", "bitshift()", "bitmask()" and "bitcast()"
-Added	The table method "TAB().convert()" will now also try to convert to a categorical column, if the second argument is set to "auto".
-Applied	Tables do now also correctly handle the "duration" data type.
-Cleaned	Tables do now favor "value.f64" over the previous behavior of converting to "value.cf64". This will save a lot of space in many cases.
-Updated	The package repository is now located in GitHub simplyfing the contribution process.
-Applied	It is possible to have secondary package repositories (even private ones), if they provide a similar REST API as GitHub or Gitlab.
-Cleaned	The return value of "url" is now always STR, even if the contents are byte counts. This is to make some special cases more robust.
-Added	It is now possible to enforce an HTTP method in "url" by prefixing the URL in the command with the desired method.
-Cleaned	The encoding of package files is now also UTF-8.
-Fixed	Passing a component of an object.path vector as input for another function does not result in a crash anymore.
-Fixed	Commands, which are used without any expression or parameter, do not result in a substr error anymore.
-Cleaned	The tooltips for plugin commands have been updated to reflect their signature better.
-Fixed	Return values of plugins work again as intended.
-Applied	The package repository indexes are now more robust against missing network connection or REST API rate-limits.
-Fixed	The function "logtoidx()" does not over-allocate memory any more.
-Cleaned	Plotting of two-column matrices is now supported
-Applied	3D matrices will now show their layers next to each other if inspected using the dataviewer.
-New	The function "tensorprod()" provides a n-dimensional tensorproduct and also contracts, if necessary. The function "trace()" was extended to support n-dimensional contraction as well.
-Cleaned	TLS and SSL certificates are now validated against a set of known trusted root CAs within "url" and "mail". There is an option to supply an own certificate or to bypass the check completely.
-Applied	An option for a password entry dialog and for setting the "textfield" to password-mode has been added via the option "type=pwdentry"
-Cleaned	There are now valid variable prefixes for logical values. Accepted are "l", "b", "is", "do", "has".
-Applied	It is now possible to set the opening position of custom windows with "pos={x,y}" as well as fix the window to the uppermost z position "stayontop".
-Applied	It is now possible to control the custom window resizing ("fixedsize") and whether boxes for iconizing ("hideiconize") and closing ("hideclose") should appear.
-Cleaned	Statusbars in custom windows do now only appear, if something has been written to them.
-Applied	Experimental: "void" can be assigned to object variables to convert them to an "object.void" instance.
-Updated	The internal user agent string was updated to a recent Firefox version.
-New	A timer object for measuring durations has been added.
-Applied	Editor tabs can now be scrolled with the mouse wheel.
-Updated	The tip-of-the-day dialog shows now better and updated information.
+Fixed	Resolved the problem that canceling a listeditor did not return anything useful.
+Cleaned	Function argument tooltips are now shown above the code line rather than below to avoid overlaying possible wrapped lines. If there is not enough space above the line, the tooltip is automatically shown below the line as before.
+Applied	Detection of logical values in the editor has been improved.
+Applied	The comments within the revision dialog are now also shown as tooltips making them easier to access.

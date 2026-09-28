@@ -1533,10 +1533,10 @@ void NumeReEditor::HandleFunctionCallTip()
     if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))
     {
         AdvCallTipCancel();
-        AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
+        AdvCallTipShow(nStartingBrace, _cTip.sDefinition, true);
     }
     else if (!CallTipActive())
-        AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
+        AdvCallTipShow(nStartingBrace, _cTip.sDefinition, true);
 
     if (sArgument.length())
         CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
@@ -1902,16 +1902,20 @@ int NumeReEditor::CallTipStartPos()
 
 
 /////////////////////////////////////////////////
-/// \brief A more advanced calltip display routine.
+/// \brief A more advanced calltip display
+/// routine. Set above to true to (try to) show
+/// this calltip above the line associated with
+/// the position.
 ///
 /// \param pos int
 /// \param definition const wxString&
+/// \param above bool
 /// \return void
 ///
 /// Only updates the calltip, if the contents are
 /// different.
 /////////////////////////////////////////////////
-void NumeReEditor::AdvCallTipShow(int pos, const wxString& definition)
+void NumeReEditor::AdvCallTipShow(int pos, const wxString& definition, bool above)
 {
     m_nCallTipStart = pos;
 
@@ -1923,6 +1927,7 @@ void NumeReEditor::AdvCallTipShow(int pos, const wxString& definition)
         m_sCallTipContent = definition;
     }
 
+    CallTipSetPosition(above);
     CallTipShow(pos, definition);
 }
 
@@ -9161,7 +9166,7 @@ void NumeReEditor::parse(int requestFromLine)
             parseSection(scope.getRange().first, requestFromLine);
         }
 
-        g_logger.info("Starting single line reparse ...");
+        g_logger.debug("Starting single line reparse ...");
 
         int rootLine = requestFromLine;
 
@@ -9187,7 +9192,7 @@ void NumeReEditor::parse(int requestFromLine)
         }
 
         m_codeParser.parseSingleLine(rootLine, lexedTokens);
-        g_logger.info("Parsing step completed.");
+        g_logger.debug("Parsing step completed.");
         //g_logger.info(m_codeParser.dump());
 
         return;
@@ -9249,7 +9254,7 @@ void NumeReEditor::parseSection(int startLine, int endLine)
     }
 
     g_logger.info("Parsing step completed.");
-    g_logger.info(m_codeParser.dump());
+    g_logger.debug(m_codeParser.dump());
 }
 
 

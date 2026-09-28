@@ -129,7 +129,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ShowDwellingCallTip(int charpos);
 
 		int CallTipStartPos();
-		void AdvCallTipShow(int pos, const wxString& definition);
+		void AdvCallTipShow(int pos, const wxString& definition, bool above = false);
 		void AdvCallTipCancel();
 
 		void getMatchingBrace(int nPos);

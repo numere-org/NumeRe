@@ -762,6 +762,10 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
     {
         if (line[pos].m_str == "inf"
             || line[pos].m_str == "nan"
+            || line[pos].m_str == "x"
+            || line[pos].m_str == "y"
+            || line[pos].m_str == "z"
+            || line[pos].m_str == "t"
             || line[pos].m_str == "I"
             || line[pos].m_str == "nlines"
             || line[pos].m_str == "nrows"
@@ -823,11 +827,13 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
 {
     size_t tokenCount = line.size();
     size_t closingBrace = pos+1;
+    bool isAssignment = false;
     line.advanceToClosingParens(closingBrace, "{", "}");
     EndlessVector<std::string> types;
 
     if (tokenCount > closingBrace+2 && line[closingBrace+1].isAssignmentOperator())
     {
+        isAssignment = true;
         closingBrace += 2;
         std::string varType = getExprType(lineNum, line, closingBrace);
         //g_logger.info("lineNum=" + toString(lineNum) + ", varType=" + varType);
@@ -867,7 +873,7 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
                     m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(varName,
                                                                             type));
             }
-            else
+            else if (isAssignment) // Only change the types for real assignments
                 getMutableSymbol(varName, lineNum, false).updateType(type);
 
             varNum++;
@@ -908,6 +914,11 @@ std::string CodeParser::getExprType(int lineNum, const LexedLine& line, size_t& 
 
     if (line.size() > exprStart+2 && line[exprStart+1].m_str == "." && line[exprStart+2].is(wxSTC_NSCR_METHOD))
         exprType = evaluateMethods(exprType, lineNum, line, exprStart);
+
+    static const std::array<std::string, 9> COMPARISONS({"==", "!=", "<=", ">=", "<", ">", "&&", "||", "|||"});
+
+    if (line.size() > exprStart+2 && std::find(COMPARISONS.begin(), COMPARISONS.end(), line[exprStart+1].m_str) != COMPARISONS.end())
+        exprType = "logical";
 
     line.advanceToNextExpression(exprStart);
     return exprType;
@@ -963,22 +974,28 @@ static std::string filterLocalVarInitTypes(const std::string& sBaseType, const s
     if (sBaseType == sExprType || "{" + sBaseType + "}" == sExprType)
         return sExprType;
 
+    StringView exprType(sExprType);
+
+    if (exprType.front() == '{' && exprType.back() == '}')
+    {
+        exprType.trim_back(1);
+        exprType.trim_front(1);
+    }
+
     if (sBaseType == "value")
     {
-        if (sExprType != "datetime"
-            && sExprType != "{datetime}"
-            && sExprType != "logical"
-            && sExprType != "{logical}")
+        if (exprType != "datetime"
+            && exprType != "logical")
             return "value";
     }
     else if (sBaseType == "string")
         return "string";
     else if (sBaseType == "object.void")
     {
-        if (sExprType != "dict"
-            && sExprType != "dictstruct"
-            && sExprType != "category"
-            && !sExprType.starts_with("object."))
+        if (exprType != "dict"
+            && exprType != "dictstruct"
+            && exprType != "category"
+            && !exprType.starts_with("object."))
             return "object.void";
     }
 

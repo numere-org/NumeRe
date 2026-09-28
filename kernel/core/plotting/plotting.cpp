@@ -6817,9 +6817,9 @@ void Plot::CoordSettings()
             if (_pData.getTickTemplate(i).length())
             {
                 if (i < 3)
-                    _graph->SetTickTempl('x' + i, _pData.getTickTemplate(i).c_str());
+                    _graph->SetTickTempl('x' + i, boost::nowide::widen(_pData.getTickTemplate(i)).c_str());
                 else
-                    _graph->SetTickTempl('c', _pData.getTickTemplate(i).c_str());
+                    _graph->SetTickTempl('c', boost::nowide::widen(_pData.getTickTemplate(i)).c_str());
             }
             else if (_pInfo.ranges[i].max() / _pData.getAxisScale(i) < 1e-2
                      && _pInfo.ranges[i].max() / _pData.getAxisScale(i) >= 1e-3)

@@ -1212,7 +1212,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
                                                        sSyntaxElement,
                                                        m_sError,
-                                                       _guilang.get("ERR_NR_2022_0_INCLUDE_NOT_EXIST", e.getToken())),
+                                                       _guilang.get("ERR_NR_2023_0_INCLUDE_NOT_EXIST", e.getToken())),
                                           ANNOTATION_ERROR);
         }
 
