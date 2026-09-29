@@ -119,6 +119,7 @@ mu::Array numfnc_lcm(const mu::Array&, const mu::Array&);
 mu::Array numfnc_is_string(const mu::Array&);
 mu::Array numfnc_isnan(const mu::Array&);
 mu::Array numfnc_isvoid(const mu::Array&);
+mu::Array numfnc_isvalid(const mu::Array&);
 mu::Array numfnc_interval(const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array numfnc_numereversion();
 mu::Array numfnc_omp_threads();

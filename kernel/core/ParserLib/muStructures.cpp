@@ -2184,7 +2184,7 @@ namespace mu
         static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
-                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"order", 0},
+                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"valids", 0}, {"sel", -1}, {"order", 0},
                                         {"order", -1}, {"delegate", -MethodDefinition::multiargcount},
                                         {"submat", -MethodDefinition::multiargcount}});
 
@@ -2260,6 +2260,21 @@ namespace mu
             return Value(rows());
         else if (sMethod == "cols")
             return Value(cols());
+        else if (sMethod == "valids")
+        {
+            Array ret;
+            size_t elems = size();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                const mu::Value v = get(i);
+
+                if (v.isValid())
+                    ret.push_back(v);
+            }
+
+            return ret;
+        }
         else if (front().isMethod(sMethod, 0))
         {
             Array ret;

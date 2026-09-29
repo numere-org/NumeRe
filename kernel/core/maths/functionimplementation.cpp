@@ -4899,7 +4899,43 @@ mu::Array numfnc_isnan(const mu::Array& v)
 /////////////////////////////////////////////////
 mu::Array numfnc_isvoid(const mu::Array& v)
 {
-    return mu::Value(v.isVoid());
+    if (v.isVoid())
+        return mu::Value(true);
+
+    mu::Array ret;
+    ret.copyDims(v);
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        ret.emplace_back(v.get(i).isVoid());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Detect, whether a value is a valid
+/// value.
+///
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_isvalid(const mu::Array& v)
+{
+    if (v.isVoid())
+        return mu::Value(false);
+
+    mu::Array ret;
+    ret.copyDims(v);
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        ret.emplace_back(v.get(i).isValid());
+    }
+
+    return ret;
 }
 
 
