@@ -952,8 +952,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
-    _parser.DefineFun("readxml", strfnc_readxml);                                    // readxml(file)
-    _parser.DefineFun("readjson", strfnc_readjson);                                  // readjson(file)
+    _parser.DefineFun("readxml", strfnc_readxml, true, 1);                           // readxml(file,isfile)
+    _parser.DefineFun("readjson", strfnc_readjson, true, 1);                         // readjson(file,isfile)
 }
 
 

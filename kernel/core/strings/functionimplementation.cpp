@@ -3748,27 +3748,37 @@ mu::Array strfnc_gettypeof(const mu::Array& vals)
 /// \brief Implements the readxml() function.
 ///
 /// \param xmlFiles const mu::Array&
+/// \param opts const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_readxml(const mu::Array& xmlFiles)
+mu::Array strfnc_readxml(const mu::Array& xmlFiles, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.copyDims(xmlFiles);
-#ifndef PARSERSTANDALONE
-    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+    mu::MatrixView xmlView(xmlFiles);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = xmlView.prepare(optsView);
 
-    for (const mu::Value& file : xmlFiles)
+    size_t elems = xmlView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string validFile = _fSys.ValidFileName(file.getPath(), ".xml", false, true);
-
-        if (!fileExists(validFile))
-            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
-
         ret.emplace_back(mu::DictStruct());
-        ret.back().getDictStruct().importXml(validFile);
+
+        if (opts.isDefault() || optsView.get(i).getNum().asI64())
+        {
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            std::string validFile = _fSys.ValidFileName(xmlView.get(i).getPath(), ".xml", false, true);
+
+            if (!fileExists(validFile))
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
+
+            ret.back().getDictStruct().importXml(validFile);
+#endif // PARSERSTANDALONE
+        }
+        else
+            ret.back().getDictStruct().decodeXml(xmlView.get(i).getStr());
     }
-#endif
 
     return ret;
 }
@@ -3778,27 +3788,37 @@ mu::Array strfnc_readxml(const mu::Array& xmlFiles)
 /// \brief Implements the readjson() function.
 ///
 /// \param jsonFiles const mu::Array&
+/// \param opts const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_readjson(const mu::Array& jsonFiles)
+mu::Array strfnc_readjson(const mu::Array& jsonFiles, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.copyDims(jsonFiles);
-#ifndef PARSERSTANDALONE
-    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+    mu::MatrixView jsonView(jsonFiles);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = jsonView.prepare(optsView);
 
-    for (const mu::Value& file : jsonFiles)
+    size_t elems = jsonView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string validFile = _fSys.ValidFileName(file.getPath(), ".json", false, true);
-
-        if (!fileExists(validFile))
-            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);
-
         ret.emplace_back(mu::DictStruct());
-        ret.back().getDictStruct().importJson(validFile);
+
+        if (opts.isDefault() || optsView.get(i).getNum().asI64())
+        {
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            std::string validFile = _fSys.ValidFileName(jsonView.get(i).getPath(), ".json", false, true);
+
+            if (!fileExists(validFile))
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);
+
+            ret.back().getDictStruct().importJson(validFile);
+#endif // PARSERSTANDALONE
+        }
+        else
+            ret.back().getDictStruct().decodeJson(jsonView.get(i).getStr());
     }
-#endif
 
     return ret;
 }

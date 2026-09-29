@@ -3,3 +3,4 @@ Cleaned	Function argument tooltips are now shown above the code line rather than
 Applied	Detection of logical values in the editor has been improved.
 Applied	The comments within the revision dialog are now also shown as tooltips making them easier to access.
 Cleaned	The order of editor tabs is now respected, if they are scrolled with the mouse wheel. Also, only the tabs of the currently split editor are scrolled.
+Applied	"readxml()" and "readjson()" now accept a second parameter switching them to string mode so that JSON or XML strings may now decoded directly.
