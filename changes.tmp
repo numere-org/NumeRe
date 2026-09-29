@@ -2,3 +2,4 @@ Fixed	Resolved the problem that canceling a listeditor did not return anything u
 Cleaned	Function argument tooltips are now shown above the code line rather than below to avoid overlaying possible wrapped lines. If there is not enough space above the line, the tooltip is automatically shown below the line as before.
 Applied	Detection of logical values in the editor has been improved.
 Applied	The comments within the revision dialog are now also shown as tooltips making them easier to access.
+Cleaned	The order of editor tabs is now respected, if they are scrolled with the mouse wheel. Also, only the tabs of the currently split editor are scrolled.

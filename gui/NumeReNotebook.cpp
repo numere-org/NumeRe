@@ -477,7 +477,28 @@ void EditorNotebook::OnTabClosed(wxAuiNotebookEvent& event)
 /////////////////////////////////////////////////
 void EditorNotebook::OnTabScroll(wxMouseEvent &event)
 {
-    AdvanceSelection(event.GetWheelRotation() < 0);
+    wxPoint client_pt = ScreenToClient(wxGetMousePosition());
+    wxAuiTabCtrl* ctrl = GetTabCtrlFromPoint(client_pt);
+
+    if (!ctrl)
+        return;
+
+    int ctrl_idx = ctrl->GetActivePage();
+
+    if (event.GetWheelRotation() > 0)
+    {
+        if (ctrl_idx == 0)
+            ctrl_idx = ctrl->GetPageCount();
+
+        SetSelectionToPage(ctrl->GetPage(ctrl_idx-1));
+    }
+    else
+    {
+        if (ctrl_idx+1 == ctrl->GetPageCount())
+            SetSelectionToPage(ctrl->GetPage(0));
+        else
+            SetSelectionToPage(ctrl->GetPage(ctrl_idx+1));
+    }
 }
 
 
