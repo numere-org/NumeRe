@@ -8,3 +8,4 @@ Cleaned	"is_void()" does now work on the individual elements of an array.
 New	The function "is_valid()" returns which elements of an array are valid.
 Added	The method "VECT.valids" returns only the valid values in a linear array.
 Added	The method "VECT.as_idx" returns the logical values of the array as an index.
+Fixed	The filtering functionality of the table viewer has been improved.

@@ -975,7 +975,17 @@ void TableViewer::applyConditionalCellColourScheme()
     double minVal = calculateMin(coordsContainer);
     double maxVal = calculateMax(coordsContainer);
 
-    CellValueShaderDialog dialog(this, minVal, maxVal);
+    std::vector<std::string> vCategories;
+
+    if (isGridNumeReTable
+        && coordsContainer.getCols() == 1
+        && m_currentColTypes[coordsContainer.getExtent().m_topleft.GetCol()] == TableColumn::TYPE_CATEGORICAL)
+    {
+        GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
+        vCategories = gridtab->getCategories(coordsContainer.getExtent().m_topleft.GetCol());
+    }
+
+    CellValueShaderDialog dialog(this, minVal, maxVal, vCategories);
 
     if (dialog.ShowModal() == wxID_OK)
         conditionalFormat(coordsContainer, dialog.getShader());
@@ -1063,8 +1073,7 @@ void TableViewer::applyFilter()
             {
                 mu::Value v = get(i, j);
 
-                if ((v.isString() && !m_filter[j].eval(v.getStr()).first)
-                    || (!v.isString() && !m_filter[j].eval(v.getNum().asCF64()).first))
+                if (!m_filter[j].eval(v).first)
                 {
                     show = false;
                     break;

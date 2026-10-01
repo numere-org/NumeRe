@@ -48,22 +48,24 @@ class CellValueShader
         /// depending on their value and using linear
         /// interpolation.
         ///
-        /// \param val double
+        /// \param val const mu::Value&
         /// \param excl bool
         /// \return wxColour
         ///
         /////////////////////////////////////////////////
-        wxColour interpolateColor(double val, bool excl) const
+        wxColour interpolateColor(const mu::Value& val, bool excl) const
         {
-            if (isnan(val) || isinf(val))
+            if (!val.isValid())
                 return *wxWHITE;
 
+            double _real_value = val.as_cmplx().real();
+
             // Scale to number of colours
-            val *= m_colorArray.size() - 1 - (excl*2); // 5-2-1 => 3
+            _real_value *= m_colorArray.size() - 1 - (excl*2); // 5-2-1 => 3
 
             // Get index and fraction
-            int index = std::floor(val); // 3
-            double part = val - index;
+            int index = std::floor(_real_value); // 3
+            double part = _real_value - index;
             index += excl; // 4
 
             // Safety part
@@ -99,11 +101,11 @@ class CellValueShader
         /// \brief Calculate the colour for a numerical
         /// value.
         ///
-        /// \param val const std::complex<double>&
+        /// \param val const mu::Value&
         /// \return wxColour
         ///
         /////////////////////////////////////////////////
-        wxColour getColour(const std::complex<double>& val) const
+        wxColour getColour(const mu::Value& val) const
         {
             switch (m_condition.m_type)
             {
@@ -111,24 +113,18 @@ class CellValueShader
                 // within the CellFilterCondition instance and have
                 // to be done here.
                 case CellFilterCondition::CT_INTERVAL_RE:
-                {
-                    return interpolateColor((val.real() - m_condition.m_vals.front().real())
-                                            / (m_condition.m_vals.back().real()-m_condition.m_vals.front().real()), false);
-                }
-                case CellFilterCondition::CT_INTERVAL_RE_EXCL:
-                {
-                    return interpolateColor((val.real() - m_condition.m_vals.front().real())
-                                            / (m_condition.m_vals.back().real()-m_condition.m_vals.front().real()), true);
-                }
                 case CellFilterCondition::CT_INTERVAL_IM:
                 {
-                    return interpolateColor((val.imag() - m_condition.m_vals.front().imag())
-                                            / (m_condition.m_vals.back().imag()-m_condition.m_vals.front().imag()), false);
+                    return interpolateColor((val - m_condition.m_vals.front())
+                                            / (m_condition.m_vals.back()-m_condition.m_vals.front()),
+                                            false);
                 }
+                case CellFilterCondition::CT_INTERVAL_RE_EXCL:
                 case CellFilterCondition::CT_INTERVAL_IM_EXCL:
                 {
-                    return interpolateColor((val.imag() - m_condition.m_vals.front().imag())
-                                            / (m_condition.m_vals.back().imag()-m_condition.m_vals.front().imag()), true);
+                    return interpolateColor((val - m_condition.m_vals.front())
+                                            / (m_condition.m_vals.back()-m_condition.m_vals.front()), +
+                                            true);
                 }
                 default:
                 {
@@ -146,11 +142,11 @@ class CellValueShader
         /// \brief Calulate the colour for a string
         /// value.
         ///
-        /// \param strVal const wxString&
+        /// \param strVal const std::string&
         /// \return wxColour
         ///
         /////////////////////////////////////////////////
-        wxColour getColour(const wxString& strVal) const
+        wxColour getColour(const std::string& strVal) const
         {
             auto result = m_condition.eval(strVal);
 
@@ -269,10 +265,11 @@ class CellValueShaderDialog : public wxDialog
         /// \brief This private member function creates
         /// the category value comparison page.
         ///
+        /// \param vCategories const std::vector<std::string>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void createCategoryPage()
+        void createCategoryPage(const std::vector<std::string>& vCategories)
         {
             GroupPanel* _panel = new GroupPanel(m_book);
 
@@ -286,7 +283,9 @@ class CellValueShaderDialog : public wxDialog
                 m_category_colour[i]->SetColour(CATEGORYCOLOUR[i]);
                 hsizer->Add(m_category_colour[i], 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-                m_category_value[i] = _panel->CreateTextInput(vsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_CATEGORY_VALUE"), wxEmptyString, 0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
+                m_category_value[i] = _panel->CreateTextInput(vsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_CATEGORY_VALUE"),
+                                                              vCategories.size() > i ? wxFromUtf8(vCategories[i]) : wxString(),
+                                                              0, wxID_ANY, wxSize(-1, -1), wxALIGN_CENTER_VERTICAL, 1);
             }
 
             // Enable scrolling
@@ -417,10 +416,11 @@ class CellValueShaderDialog : public wxDialog
         /// \param parent wxWindow*
         /// \param minVal double
         /// \param maxVal double
+        /// \param vCategories const std::vector<std::string>&
         /// \param id wxWindowID
         ///
         /////////////////////////////////////////////////
-        CellValueShaderDialog(wxWindow* parent, double minVal, double maxVal, wxWindowID id = wxID_ANY) : wxDialog(parent, id, _guilang.get("GUI_DLG_CVS_HEAD"))
+        CellValueShaderDialog(wxWindow* parent, double minVal, double maxVal, const std::vector<std::string>& vCategories, wxWindowID id = wxID_ANY) : wxDialog(parent, id, _guilang.get("GUI_DLG_CVS_HEAD"))
         {
             wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
             SetSizer(vsizer);
@@ -428,7 +428,7 @@ class CellValueShaderDialog : public wxDialog
 
             // Create the various pages containing different shader conditions
             createLtGtPage();
-            createCategoryPage();
+            createCategoryPage(vCategories);
             createIntervalPage(minVal, maxVal);
             createIntervalExclPage(minVal, maxVal);
 
@@ -474,12 +474,11 @@ class CellValueShaderDialog : public wxDialog
                         // Extract the value and convert multiple values into
                         // a vector
                         std::string val = wxToUtf8(m_lt_gt_value->GetValue());
-                        std::vector<std::string> vecVal;
 
                         if (val.front() == '{' && val.back() == '}')
-                            vecVal = toStrVector(val);
+                            cond.m_strs = toStrVector(val);
                         else
-                            vecVal.push_back(val);
+                            cond.m_strs.push_back(val);
 
                         // Get colour and update the statics
                         colors.push_back(m_lt_gt_colour->GetColour());
@@ -498,13 +497,11 @@ class CellValueShaderDialog : public wxDialog
                             cond.m_type = CellFilterCondition::CT_LESS_EQ_THAN;
                         else if (condType == ">=")
                             cond.m_type = CellFilterCondition::CT_GREATER_EQ_THAN;
-                        else if (condType == "==" && (isConvertible(vecVal.front(), CONVTYPE_VALUE)
-                                                      || isConvertible(vecVal.front(), CONVTYPE_DATE_TIME)))
+                        else if (condType == "==" && isNumerical(cond.m_strs.front()))
                             cond.m_type = CellFilterCondition::CT_EQUALS_VAL;
                         else if (condType == "==")
                             cond.m_type = CellFilterCondition::CT_EQUALS_STR;
-                        else if (condType == "!=" && (isConvertible(vecVal.front(), CONVTYPE_VALUE)
-                                                      || isConvertible(vecVal.front(), CONVTYPE_DATE_TIME)))
+                        else if (condType == "!=" && isNumerical(cond.m_strs.front()))
                             cond.m_type = CellFilterCondition::CT_NOT_EQUALS_VAL;
                         else if (condType == "!=")
                             cond.m_type = CellFilterCondition::CT_NOT_EQUALS_STR;
@@ -518,16 +515,16 @@ class CellValueShaderDialog : public wxDialog
                             cond.m_type = CellFilterCondition::CT_NOT_EMPTY;
 
                         // Insert the comparison values into the internal vectors
-                        for (const auto& s : vecVal)
+                        for (const auto& s : cond.m_strs)
                         {
                             if (isConvertible(s, CONVTYPE_DATE_TIME))
-                                cond.m_vals.push_back(to_double(StrToTime(s)));
+                                cond.m_vals.push_back(StrToTime(s));
                             else if (isConvertible(s, CONVTYPE_DURATION))
-                                cond.m_vals.push_back(parseDuration(s));
+                                cond.m_vals.push_back(mu::Numerical(parseDuration(s), mu::DURATION));
                             else if (isConvertible(s, CONVTYPE_VALUE))
                                 cond.m_vals.push_back(StrToCmplx(s));
                             else
-                                cond.m_strs.push_back(s);
+                                cond.m_vals.push_back(s);
                         }
 
                         break;
@@ -549,13 +546,13 @@ class CellValueShaderDialog : public wxDialog
                             CATEGORYCOLOUR[i] = m_category_colour[i]->GetColour();
 
                             if (isConvertible(val, CONVTYPE_DATE_TIME))
-                                cond.m_vals.push_back(to_double(StrToTime(val)));
+                                cond.m_vals.push_back(StrToTime(val));
                             else if (isConvertible(val, CONVTYPE_DURATION))
-                                cond.m_vals.push_back(parseDuration(val));
+                                cond.m_vals.push_back(mu::Numerical(parseDuration(val), mu::DURATION));
                             else if (isConvertible(val, CONVTYPE_VALUE))
                                 cond.m_vals.push_back(StrToCmplx(val));
                             else
-                                cond.m_vals.push_back(NAN);
+                                cond.m_vals.push_back(val);
 
                             cond.m_strs.push_back(val);
                         }
@@ -589,18 +586,18 @@ class CellValueShaderDialog : public wxDialog
 
                         // Convert the values into internal types
                         if (isConvertible(val_start, CONVTYPE_DATE_TIME))
-                            cond.m_vals.push_back(to_double(StrToTime(val_start)));
+                            cond.m_vals.push_back(StrToTime(val_start));
                         else if (isConvertible(val_start, CONVTYPE_DURATION))
-                            cond.m_vals.push_back(parseDuration(val_start));
+                            cond.m_vals.push_back(mu::Numerical(parseDuration(val_start), mu::DURATION));
                         else if (isConvertible(val_start, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_start));
                         else
                             cond.m_vals.push_back(NAN);
 
                         if (isConvertible(val_end, CONVTYPE_DATE_TIME))
-                            cond.m_vals.push_back(to_double(StrToTime(val_end)));
+                            cond.m_vals.push_back(StrToTime(val_end));
                         else if (isConvertible(val_end, CONVTYPE_DURATION))
-                            cond.m_vals.push_back(parseDuration(val_end));
+                            cond.m_vals.push_back(mu::Numerical(parseDuration(val_end), mu::DURATION));
                         else if (isConvertible(val_end, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_end));
                         else
@@ -637,18 +634,18 @@ class CellValueShaderDialog : public wxDialog
 
                         // Convert the values into internal types
                         if (isConvertible(val_start, CONVTYPE_DATE_TIME))
-                            cond.m_vals.push_back(to_double(StrToTime(val_start)));
+                            cond.m_vals.push_back(StrToTime(val_start));
                         else if (isConvertible(val_start, CONVTYPE_DURATION))
-                            cond.m_vals.push_back(parseDuration(val_start));
+                            cond.m_vals.push_back(mu::Numerical(parseDuration(val_start), mu::DURATION));
                         else if (isConvertible(val_start, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_start));
                         else
                             cond.m_vals.push_back(NAN);
 
                         if (isConvertible(val_end, CONVTYPE_DATE_TIME))
-                            cond.m_vals.push_back(to_double(StrToTime(val_end)));
+                            cond.m_vals.push_back(StrToTime(val_end));
                         else if (isConvertible(val_end, CONVTYPE_DURATION))
-                            cond.m_vals.push_back(parseDuration(val_end));
+                            cond.m_vals.push_back(mu::Numerical(parseDuration(val_end), mu::DURATION));
                         else if (isConvertible(val_end, CONVTYPE_VALUE))
                             cond.m_vals.push_back(StrToCmplx(val_end));
                         else

@@ -4131,10 +4131,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    if (vals.get(k).isString())
-                                        condition.m_strs.push_back(vals.get(k).getStr());
-                                    else
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    condition.m_strs.push_back(vals.get(k).printVal());
+                                    condition.m_vals.push_back(vals.get(k));
                                 }
 
                                 if (cond == "<")
@@ -4172,11 +4170,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    if (vals.get(k).isNumerical())
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
-                                    else
-                                        condition.m_vals.push_back(NAN);
-
+                                    condition.m_vals.push_back(vals.get(k));
                                     condition.m_strs.push_back(vals.get(k).printVal());
                                 }
 
@@ -4201,7 +4195,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    condition.m_vals.push_back(vals.get(k));
                                 }
 
                                 for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4225,7 +4219,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    condition.m_vals.push_back(vals.get(k));
                                 }
 
                                 for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4483,10 +4477,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        if (vals.get(k).isString())
-                                            condition.m_strs.push_back(vals.get(k).getStr());
-                                        else
-                                            condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        condition.m_strs.push_back(vals.get(k).printVal());
+                                        condition.m_vals.push_back(vals.get(k));
                                     }
 
                                     if (cond == "<")
@@ -4524,11 +4516,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        if (vals.get(k).isNumerical())
-                                            condition.m_vals.push_back(vals.get(k).as_cmplx());
-                                        else
-                                            condition.m_vals.push_back(NAN);
-
+                                        condition.m_vals.push_back(vals.get(k));
                                         condition.m_strs.push_back(vals.get(k).printVal());
                                     }
 
@@ -4553,7 +4541,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        condition.m_vals.push_back(vals.get(k));
                                     }
 
                                     for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4577,7 +4565,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        condition.m_vals.push_back(vals.get(k));
                                     }
 
                                     for (size_t k = 0; k < colorStrings.size(); k++)

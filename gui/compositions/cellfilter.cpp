@@ -38,22 +38,22 @@ END_EVENT_TABLE()
 void CellFilterCondition::reset()
 {
     m_type = CT_NONE;
-    m_strs.clear();
     m_vals.clear();
+    m_strs.clear();
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Evaluate the condition for a numerical
-/// value. The returned pair is defined as
+/// \brief Evaluate the condition for a mu::Value.
+/// The returned pair is defined as
 /// (fulfilled, index), where index references
 /// the index of the comparison value (if any).
 ///
-/// \param val const std::complex<double>&
+/// \param val const mu::Value&
 /// \return std::pair<bool, size_t>
 ///
 /////////////////////////////////////////////////
-std::pair<bool, size_t> CellFilterCondition::eval(const std::complex<double>& val) const
+std::pair<bool, size_t> CellFilterCondition::eval(const mu::Value& val) const
 {
     if (!m_vals.size() && m_type != CT_EMPTY && m_type != CT_NOT_EMPTY)
         return std::pair<bool, size_t>(false, 0);
@@ -61,15 +61,19 @@ std::pair<bool, size_t> CellFilterCondition::eval(const std::complex<double>& va
     switch (m_type)
     {
         case CT_EQUALS_VAL:
+        case CT_EQUALS_STR:
         {
-            if (std::find(m_vals.begin(), m_vals.end(), val) != m_vals.end())
+            if (std::find(m_vals.begin(), m_vals.end(), val) != m_vals.end()
+                || std::find(m_strs.begin(), m_strs.end(), val.printVal()) != m_strs.end())
                 return std::pair<bool, size_t>(true, 0);
 
             break;
         }
         case CT_NOT_EQUALS_VAL:
+        case CT_NOT_EQUALS_STR:
         {
-            if (std::find(m_vals.begin(), m_vals.end(), val) != m_vals.end())
+            if (std::find(m_vals.begin(), m_vals.end(), val) != m_vals.end()
+                || std::find(m_strs.begin(), m_strs.end(), val.printVal()) != m_strs.end())
                 return std::pair<bool, size_t>(false, 0);
 
             return std::pair<bool, size_t>(true, 0);
@@ -78,7 +82,7 @@ std::pair<bool, size_t> CellFilterCondition::eval(const std::complex<double>& va
         {
             for (size_t i = 0; i < m_vals.size(); i++)
             {
-                if (m_vals[i] == val)
+                if (bool(m_vals[i] == val) || m_strs[i] == val.printVal())
                     return std::pair<bool, size_t>(true, i);
             }
 
@@ -86,31 +90,51 @@ std::pair<bool, size_t> CellFilterCondition::eval(const std::complex<double>& va
         }
         case CT_LESS_THAN:
         {
-            if (val.real() < m_vals.front().real())
+            if (val < m_vals.front())
                 return std::pair<bool, size_t>(true, 0);
 
             break;
         }
         case CT_GREATER_THAN:
         {
-            if (val.real() > m_vals.front().real())
+            if (val > m_vals.front())
                 return std::pair<bool, size_t>(true, 0);
 
             break;
         }
         case CT_LESS_EQ_THAN:
         {
-            if (val.real() <= m_vals.front().real())
+            if (val <= m_vals.front())
                 return std::pair<bool, size_t>(true, 0);
 
             break;
         }
         case CT_GREATER_EQ_THAN:
         {
-            if (val.real() >= m_vals.front().real())
+            if (val >= m_vals.front())
                 return std::pair<bool, size_t>(true, 0);
 
             break;
+        }
+        case CT_FIND_STR:
+        {
+            for (const auto& sStr : m_strs)
+            {
+                if (val.printVal().find(sStr) != std::string::npos)
+                    return std::pair<bool, size_t>(true, 0);
+            }
+
+            return std::pair<bool, size_t>(false, 0);
+        }
+        case CT_NOT_FIND_STR:
+        {
+            for (const auto& sStr : m_strs)
+            {
+                if (val.printVal().find(sStr) != std::string::npos)
+                    return std::pair<bool, size_t>(false, 0);
+            }
+
+            return std::pair<bool, size_t>(true, 0);
         }
         case CT_EMPTY:
         {
@@ -138,11 +162,11 @@ std::pair<bool, size_t> CellFilterCondition::eval(const std::complex<double>& va
 /// (fulfilled, index), where index references
 /// the index of the comparison value (if any).
 ///
-/// \param val const wxString&
+/// \param val const std::string&
 /// \return std::pair<bool, size_t>
 ///
 /////////////////////////////////////////////////
-std::pair<bool, size_t> CellFilterCondition::eval(const wxString& val) const
+std::pair<bool, size_t> CellFilterCondition::eval(const std::string& val) const
 {
     if (!val.length() && m_type == CT_EMPTY)
         return std::pair<bool, size_t>(true, 0);
@@ -151,15 +175,15 @@ std::pair<bool, size_t> CellFilterCondition::eval(const wxString& val) const
         || (!m_strs.size() && m_type != CT_NOT_EMPTY))
         return std::pair<bool, size_t>(false, 0);
 
-    auto removeQuotes = [](const wxString& strVal) {return strVal[0] == '"' && strVal[strVal.length()-1] == '"'
+    auto removeQuotes = [](const std::string& strVal) {return strVal[0] == '"' && strVal[strVal.length()-1] == '"'
                                                     ? strVal.substr(1, strVal.length()-2) : strVal;};
 
-    if (m_type == CT_EQUALS_STR)
+    if (m_type == CT_EQUALS_STR || m_type == CT_EQUALS_VAL)
     {
         if (std::find(m_strs.begin(), m_strs.end(), removeQuotes(val)) != m_strs.end())
             return std::pair<bool, size_t>(true, 0);
     }
-    else if (m_type == CT_NOT_EQUALS_STR)
+    else if (m_type == CT_NOT_EQUALS_STR || m_type == CT_NOT_EQUALS_VAL)
     {
         if (std::find(m_strs.begin(), m_strs.end(), removeQuotes(val)) != m_strs.end())
             return std::pair<bool, size_t>(false, 0);
@@ -261,12 +285,7 @@ CellFilterDialog::CellFilterDialog(wxWindow* parent, CellFilterCondition cond, w
         else if (cond.m_type <= CellFilterCondition::CT_NOT_EMPTY)
             m_lt_gt_choice->SetSelection(cond.m_type - 3);
 
-        if (cond.m_vals.size())
-        {
-            std::string sVal = cond.m_vals.size() > 1 ? toString(cond.m_vals) : toString(cond.m_vals.front());
-            m_lt_gt_value->SetValue(sVal);
-        }
-        else if (cond.m_strs.size())
+        if (cond.m_strs.size())
         {
             std::string sVal;
 
@@ -306,18 +325,16 @@ void CellFilterDialog::OnButtonClick(wxCommandEvent& event)
     if (event.GetId() == wxID_OK)
     {
         // Reset the values first
-        m_condition.m_strs.clear();
-        m_condition.m_vals.clear();
+        m_condition.reset();
 
         // Extract the value and convert multiple values into
         // a vector
         std::string val = wxToUtf8(m_lt_gt_value->GetValue());
-        std::vector<std::string> vecVal;
 
         if (val.front() == '{' && val.back() == '}')
-            vecVal = toStrVector(val);
+            m_condition.m_strs = toStrVector(val);
         else
-            vecVal.push_back(val);
+            m_condition.m_strs.push_back(val);
 
         // Get the string from the dropdown
         wxString condType = m_lt_gt_choice->GetString(m_lt_gt_choice->GetSelection());
@@ -332,13 +349,11 @@ void CellFilterDialog::OnButtonClick(wxCommandEvent& event)
             m_condition.m_type = CellFilterCondition::CT_LESS_EQ_THAN;
         else if (condType == ">=")
             m_condition.m_type = CellFilterCondition::CT_GREATER_EQ_THAN;
-        else if (condType == "==" && (isConvertible(vecVal.front(), CONVTYPE_VALUE)
-                                      || isConvertible(vecVal.front(), CONVTYPE_DATE_TIME)))
+        else if (condType == "==" && isNumerical(m_condition.m_strs.front()))
             m_condition.m_type = CellFilterCondition::CT_EQUALS_VAL;
         else if (condType == "==")
             m_condition.m_type = CellFilterCondition::CT_EQUALS_STR;
-        else if (condType == "!=" && (isConvertible(vecVal.front(), CONVTYPE_VALUE)
-                                      || isConvertible(vecVal.front(), CONVTYPE_DATE_TIME)))
+        else if (condType == "!=" && isNumerical(m_condition.m_strs.front()))
             m_condition.m_type = CellFilterCondition::CT_NOT_EQUALS_VAL;
         else if (condType == "!=")
             m_condition.m_type = CellFilterCondition::CT_NOT_EQUALS_STR;
@@ -352,21 +367,39 @@ void CellFilterDialog::OnButtonClick(wxCommandEvent& event)
             m_condition.m_type = CellFilterCondition::CT_NOT_EMPTY;
 
         // Insert the comparison values into the internal vectors
-        for (const auto& s : vecVal)
+        for (const auto& s : m_condition.m_strs)
         {
             if (isConvertible(s, CONVTYPE_DATE_TIME))
-                m_condition.m_vals.push_back(to_double(StrToTime(s)));
+                m_condition.m_vals.push_back(StrToTime(s));
             else if (isConvertible(s, CONVTYPE_DURATION))
-                m_condition.m_vals.push_back(parseDuration(s));
+                m_condition.m_vals.push_back(mu::Numerical(parseDuration(s), mu::DURATION));
             else if (isConvertible(s, CONVTYPE_VALUE))
                 m_condition.m_vals.push_back(StrToCmplx(s));
             else
-                m_condition.m_strs.push_back(s);
+                m_condition.m_vals.push_back(s);
         }
     }
 
     // Return the ID of the clicked button
     EndModal(event.GetId());
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Combines the necessary conversion
+/// checks to get a numerical value.
+///
+/// \param value const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isNumerical(const std::string& value)
+{
+    return isConvertible(value, CONVTYPE_VALUE)
+        || isConvertible(value, CONVTYPE_DATE_TIME)
+        || isConvertible(value, CONVTYPE_DURATION)
+        || isConvertible(value, CONVTYPE_LOGICAL);
+}
+
 
 
