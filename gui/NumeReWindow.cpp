@@ -6512,7 +6512,8 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
-        if (data->isDir)
+
+        if (m_functionTree->HasChildren(item))
         {
             m_functionTree->Toggle(item);
         }

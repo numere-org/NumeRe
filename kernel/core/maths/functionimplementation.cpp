@@ -23,6 +23,7 @@
 #include "functionimplementation.hpp"
 #include "../ParserLib/muParserTemplateMagic.h"
 #include "../ParserLib/muHelpers.hpp"
+#include "../../externals/date/include/date/date.h"
 #define _USE_MATH_DEFINES
 
 
@@ -4876,6 +4877,30 @@ mu::Array timfnc_weeknum(const mu::Array& vTime)
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the number of
+/// days in the month of the current time value.
+///
+/// \param time const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_monthdays(const mu::Array& time)
+{
+    mu::Array ret;
+    ret.copyDims(time.size());
+
+    for (size_t i = 0; i < time.size(); i++)
+    {
+        time_stamp timeStamp = getTimeStampFromTimePoint(to_timePoint(time.get(i).getNum().asF64()));
+        date::year_month_day_last ymdl(timeStamp.m_ymd.year(), date::month_day_last(timeStamp.m_ymd.month()));
+        ret.push_back(mu::Value(unsigned(ymdl.day())));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns, whether the selected value is
 /// NaN.
 ///
@@ -5299,6 +5324,40 @@ static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, con
 
 
 /////////////////////////////////////////////////
+/// \brief Implenents the from_weekday() function.
+///
+/// \param year const mu::Value&
+/// \param month const mu::Value&
+/// \param weekday const mu::Value&
+/// \param idx const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value from_weekday_impl(const mu::Value& year, const mu::Value& month, const mu::Value& weekday, const mu::Value& idx)
+{
+    date::month m(month.getNum().asUI64());
+    date::year y(year.getNum().asI64());
+    date::weekday wd(weekday.getNum().asUI64());
+    date::year_month_day ymd;
+
+    if (idx.getNum().asI64() <= 0)
+    {
+        date::year_month_weekday_last ymwdl(y, m, date::weekday_last(wd));
+        ymd = date::year_month_day(ymwdl);
+    }
+    else
+    {
+        date::year_month_weekday ymwd(y, m, date::weekday_indexed(wd, idx.getNum().asUI64()));
+        ymd = date::year_month_day(ymwd);
+    }
+
+    return mu::Value(getTimePointFromYMD((int)ymd.year(),
+                                         (unsigned)ymd.month(),
+                                         (unsigned)ymd.day()));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Internal implementation of the
 /// as_time() function.
 ///
@@ -5335,6 +5394,23 @@ mu::Array timfnc_as_date(const mu::Array& year, const mu::Array& month, const mu
     return mu::apply(as_date_impl, year,
                      month.isDefault() ? mu::Array(mu::Value(1.0)) : month,
                      day.isDefault() ? mu::Array(mu::Value(1.0)) : day);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the date from
+/// the passed indexed weekday.
+///
+/// \param year const mu::Array&
+/// \param month const mu::Array&
+/// \param weekday const mu::Array&
+/// \param idx const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_from_weekday(const mu::Array& year, const mu::Array& month, const mu::Array& weekday, const mu::Array& idx)
+{
+    return mu::apply(from_weekday_impl, year, month, weekday, idx);
 }
 
 

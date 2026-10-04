@@ -9,3 +9,7 @@ New	The function "is_valid()" returns which elements of an array are valid.
 Added	The method "VECT.valids" returns only the valid values in a linear array.
 Added	The method "VECT.as_idx" returns the logical values of the array as an index.
 Fixed	The filtering functionality of the table viewer has been improved.
+Added	The function "monthname()" was added.
+Added	The function "monthdays()" was added.
+Added	The function "from_weekday()" was added.
+Added	Constants for the indices of the days of the week were added.

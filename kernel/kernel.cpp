@@ -495,6 +495,13 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_hour_secs", 3600 );
     _parser.DefineConst("_week_secs", 604800);
     _parser.DefineConst("_year_secs", 31557600);
+    _parser.DefineConst("_monday", 1);
+    _parser.DefineConst("_tuesday", 2);
+    _parser.DefineConst("_wednesday", 3);
+    _parser.DefineConst("_thursday", 4);
+    _parser.DefineConst("_friday", 5);
+    _parser.DefineConst("_saturday", 6);
+    _parser.DefineConst("_sunday", 7);
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", mu::Value());
@@ -682,7 +689,9 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("date", timfnc_date);                                      // date(TIME,TYPE)
     _parser.DefineFun("datetime", timfnc_datetime);                              // datetime(x)
     _parser.DefineFun("weeknum", timfnc_weeknum);                                // weeknum(tDate)
+    _parser.DefineFun("monthdays", timfnc_monthdays);                            // monthdays(tDate)
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);                       // as_date(nYear, nMounth, nDay)
+    _parser.DefineFun("from_weekday", timfnc_from_weekday);                      // from_weekday(nYear, nMounth, nWeekday, nIndex)
     _parser.DefineFun("as_time", timfnc_as_time, true, 4);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
     _parser.DefineFun("get_utc_offset", timfnc_get_utc_offset, false);           // get_utc_offset()
     _parser.DefineFun("is_leapyear", timfnc_is_leap_year);                       // is_leap_year(nDate)
@@ -914,7 +923,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("substr", strfnc_substr, true, 1);                             // substr(str,p,l)
     _parser.DefineFun("repeat", strfnc_repeat);                                      // repeat(str,n)
     _parser.DefineFun("timeformat", strfnc_timeformat);                              // timeformat(str,time)
-    _parser.DefineFun("weekday", strfnc_weekday, true, 1);                           // weekday(d,opts)
+    _parser.DefineFun("weekday", strfnc_weekday, true, 1);                           // weekday(time,opts)
+    _parser.DefineFun("monthname", strfnc_monthname);                                // monthname(time)
     _parser.DefineFun("char", strfnc_char);                                          // char(str,n)
     _parser.DefineFun("byte", strfnc_char);                                          // byte(str,n)
     _parser.DefineFun("getopt", strfnc_getopt);                                      // getopt(str,n)

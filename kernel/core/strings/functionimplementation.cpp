@@ -1828,35 +1828,65 @@ mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
 /// \brief Implementation of the weekday()
 /// function.
 ///
-/// \param daynum const mu::Array&
+/// \param timeVal const mu::Array&
 /// \param opts const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
+mu::Array strfnc_weekday(const mu::Array& timeVal, const mu::Array& opts)
 {
-    mu::MatrixView dayNumView(daynum);
+    mu::MatrixView timeValView(timeVal);
     mu::MatrixView optsView(opts);
-    mu::Array ret = dayNumView.prepare(optsView);
+    mu::Array ret = timeValView.prepare(optsView);
 
-    size_t elems = dayNumView.size();
+    static std::vector<std::string> vWeekDays = _lang.getList("COMMON_WEEKDAY_*");
+    size_t elems = timeValView.size();
 
     for (size_t i = 0; i < elems; i++)
     {
-        sys_time_point nTime = to_timePoint(dayNumView.get(i).getNum().asF64());
+        sys_time_point nTime = to_timePoint(timeValView.get(i).getNum().asF64());
 
         size_t day = getWeekDay(nTime);
 
-        if (opts.isDefault()|| !optsView.get(i))
+        if (opts.isDefault() || !optsView.get(i))
         {
             ret.emplace_back(day);
             continue;
         }
 
-        static std::vector<std::string> weekdays = _lang.getList("COMMON_WEEKDAY_*");
+        if (vWeekDays.size() >= 7)
+            ret.emplace_back(vWeekDays[day-1]);
+        else
+            ret.emplace_back("UNDEFINED");
+    }
 
-        if (weekdays.size() >= 7)
-            ret.emplace_back(weekdays[day-1]);
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the monthname()
+/// function.
+///
+/// \param timeVal const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_monthname(const mu::Array& timeVal)
+{
+    mu::Array ret;
+    ret.copyDims(timeVal);
+    size_t elems = timeVal.size();
+
+    static std::vector<std::string> vMonthNames = _lang.getList("COMMON_MONTH_*");
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        time_stamp nTime = getTimeStampFromTimePoint(to_timePoint(timeVal.get(i).getNum().asF64()));
+        size_t nMonth = (unsigned)nTime.m_ymd.month();
+
+        if (vMonthNames.size() >= 12)
+            ret.emplace_back(vMonthNames[nMonth-1]);
         else
             ret.emplace_back("UNDEFINED");
     }

@@ -167,7 +167,9 @@ mu::Array timfnc_today();
 mu::Array timfnc_date(const mu::Array&, const mu::Array&);
 mu::Array timfnc_datetime(const mu::Array&);
 mu::Array timfnc_weeknum(const mu::Array&);
+mu::Array timfnc_monthdays(const mu::Array&);
 mu::Array timfnc_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
+mu::Array timfnc_from_weekday(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array timfnc_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4
 mu::Array timfnc_get_utc_offset();
 mu::Array timfnc_is_daylightsavingtime(const mu::Array&);
