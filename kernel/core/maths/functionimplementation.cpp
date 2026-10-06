@@ -4965,6 +4965,37 @@ mu::Array numfnc_isvalid(const mu::Array& v)
 
 
 /////////////////////////////////////////////////
+/// \brief Fills all invalid values with the
+/// corresponding replacement value.
+///
+/// \param arr const mu::Array&
+/// \param replVal const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_fillinvalid(const mu::Array& arr, const mu::Array& replVal)
+{
+    if (arr.isVoid())
+        return replVal;
+
+    mu::Array ret;
+    ret.copyDims(arr);
+
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        const mu::Value& v = arr.get(i);
+
+        if (!v.isValid())
+            ret.emplace_back(replVal);
+        else
+            ret.emplace_back(v);
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Internal implementation of the range()
 /// function.
 ///
