@@ -222,9 +222,9 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vMemory[findTable(sTable)]->reorderRows(_vRows, _vNewOrder);
         }
 
-        bool replaceVals(const std::string& sTable, const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals)
+        bool replaceVals(const std::string& sTable, const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals, bool enableRegEx)
         {
-            return vMemory[findTable(sTable)]->replaceVals(_vCols, _oldVals, _newVals);
+            return vMemory[findTable(sTable)]->replaceVals(_vCols, _oldVals, _newVals, enableRegEx);
         }
 
         bool resizeTable(int _nCols, const std::string& _sTable)
@@ -414,14 +414,14 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
         }
 
         std::vector<size_t> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
-                                         const mu::Array& vValues) const
+                                         const mu::Array& vValues, bool enableRegEx) const
         {
-            return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues);
+            return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues, enableRegEx);
         }
 
-        mu::Array getIndex(const std::string& sTable, size_t nCol, const mu::Array& vValues) const
+        mu::Array getIndex(const std::string& sTable, size_t nCol, const mu::Array& vValues, bool enableRegEx) const
         {
-            return vMemory[findTable(sTable)]->getIndex(nCol, vValues);
+            return vMemory[findTable(sTable)]->getIndex(nCol, vValues, enableRegEx);
         }
 
         std::vector<AnovaResult> getAnova(const std::string& sTable,

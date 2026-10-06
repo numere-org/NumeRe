@@ -38,7 +38,7 @@ void FactorNode::calculateMean(const Memory* mem, const std::vector<std::string>
     for (size_t i = 0; i < factorSet.size(); i++)
     {
         // positions of all elements, which correspond to the passed values
-        mu::Array catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factorSet[i]));
+        mu::Array catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factorSet[i]), false);
 
         if (!catIndex1.front().isValid())
             continue;

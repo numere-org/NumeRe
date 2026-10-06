@@ -2323,16 +2323,18 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 /// \param _vCols const VectorIndex&
 /// \param _oldVals const mu::Array&
 /// \param _newVals const mu::Array&
+/// \param enableRegEx bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals)
+bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals, bool enableRegEx)
 {
     if ((_oldVals.size() != _newVals.size() && _newVals.size() > 1) || !_oldVals.size())
         return false;
 
     _vCols.setOpenEndIndex(getCols()-1);
     bool success = false;
+    std::regex regEx;
 
     // Search in all columns
     for (size_t j = 0; j < _vCols.size(); j++)
@@ -2349,11 +2351,20 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
             {
                 std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(col.get())->getCategories();
 
-                for (size_t i = 0; i < vCategories.size(); i++)
+                for (size_t n = 0; n < _oldVals.size(); n++)
                 {
-                    for (size_t n = 0; n < _oldVals.size(); n++)
+                    const mu::Value& oldVal = _oldVals.get(n);
+
+                    if (!oldVal.isString())
+                        continue;
+
+                    if (enableRegEx)
+                        regEx = oldVal.getStr();
+
+                    for (size_t i = 0; i < vCategories.size(); i++)
                     {
-                        if (_oldVals.get(n).isString() && _oldVals.get(n) == vCategories[i])
+                        if ((enableRegEx && std::regex_match(vCategories[i], regEx))
+                            || (!enableRegEx && oldVal.getStr() == vCategories[i]))
                         {
                             vCategories[i] = _newVals.get(n).printVal();
                             success = true;
@@ -2369,18 +2380,23 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
             std::map<size_t, size_t> idxMap;
 
             // Find all matches and get the promoted type
-            for (size_t i = 0; i < col->size(); i++)
+            for (size_t n = 0; n < _oldVals.size(); n++)
             {
-                mu::Value v = col->get(i);
+                const mu::Value& oldVal = _oldVals.get(n);
 
-                for (size_t n = 0; n < _oldVals.size(); n++)
+                if (oldVal.isString() && enableRegEx)
+                    regEx = oldVal.getStr();
+
+                for (size_t i = 0; i < col->size(); i++)
                 {
-                    if (_oldVals.get(n) == v)
+                    mu::Value v = col->get(i);
+
+                    if ((enableRegEx && oldVal.isString() && v.isString() && std::regex_match(v.getStr(), regEx))
+                        || (!enableRegEx && oldVal == v))
                     {
                         targetType = to_promoted_type(targetType, to_column_type(_newVals.get(n)));
                         idxMap[i] = n;
                         success = true;
-                        break;
                     }
                 }
             }
@@ -3870,7 +3886,7 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
                 if (!i)
                     regEx = sName;
 
-                if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, regEx))
+                if (memArray[i] && std::regex_match(memArray[i]->m_sHeadLine, regEx))
                     vColIndices.push_back(i+1);
             }
             else
@@ -3907,10 +3923,11 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
 ///
 /// \param _vCols const VectorIndex&
 /// \param vValues const mu::Array&
+/// \param enableRegEx bool
 /// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const
+std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues, bool enableRegEx) const
 {
     std::vector<size_t> vCounted;
 
@@ -3919,16 +3936,29 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
         if (_vCols[j] >= (int)memArray.size() || !memArray[_vCols[j]])
             continue;
 
-        for (const auto& val : vValues)
+        for (size_t n = 0; n < vValues.size(); n++)
         {
+            const mu::Value& val = vValues.get(n);
             size_t count = 0;
+            std::regex regEx;
+            bool isNum = val.isNumerical();
+
+            if (!isNum && enableRegEx)
+                regEx = val.getStr();
 
             for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
             {
-                if (val.isNumerical()
-                    ? closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().asCF64())
-                    : memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr())
-                    count++;
+                if (isNum)
+                {
+                    if (closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().asCF64()))
+                        count++;
+                }
+                else
+                {
+                    if ((enableRegEx && std::regex_match(memArray[_vCols[j]]->getValueAsInternalString(i), regEx))
+                        || (!enableRegEx && memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr()))
+                        count++;
+                }
             }
 
             vCounted.push_back(count);
@@ -3947,10 +3977,11 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
 ///
 /// \param col size_t
 /// \param vValues const mu::Array&
+/// \param enableRegEx bool
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
+mu::Array Memory::getIndex(size_t col, const mu::Array& vValues, bool enableRegEx) const
 {
     mu::Array indices;
 
@@ -3960,16 +3991,29 @@ mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
         return indices;
     }
 
-    for (const auto& val : vValues)
+    for (size_t n = 0; n < vValues.size(); n++)
     {
+        const mu::Value& val = vValues.get(n);
         mu::Array idxSet;
+        std::regex regEx;
+        bool isNum = val.isNumerical();
+
+        if (!isNum && enableRegEx)
+            regEx = val.getStr();
 
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
-            if (val.isNumerical()
-                ? closeEnough(memArray[col]->getValue(i), val.getNum().asCF64())
-                : memArray[col]->getValueAsInternalString(i) == val.getStr())
-                idxSet.push_back(i+1);
+            if (isNum)
+            {
+                if (closeEnough(memArray[col]->getValue(i), val.getNum().asCF64()))
+                    idxSet.push_back(i+1);
+            }
+            else
+            {
+                if ((enableRegEx && std::regex_match(memArray[col]->getValueAsInternalString(i), regEx))
+                    || (!enableRegEx && memArray[col]->getValueAsInternalString(i) == val.getStr()))
+                    idxSet.push_back(i+1);
+            }
         }
 
         if (vValues.size() > 1)

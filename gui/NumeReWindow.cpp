@@ -6505,19 +6505,21 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
     }
     else
     {
-        NumeReEditor* edit = m_book->getFocusedEditor();
-
-        if (!edit)
-            return;
-
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
 
         if (m_functionTree->HasChildren(item))
         {
             m_functionTree->Toggle(item);
+            return;
         }
-        else if (data->isCommand)
+
+        NumeReEditor* edit = m_book->getFocusedEditor();
+
+        if (!edit)
+            return;
+
+        if (data->isCommand)
         {
             edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')+1));
             edit->GotoPos(edit->GetCurrentPos()+(data->tooltip).find(' ')+1);

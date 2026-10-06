@@ -13,3 +13,5 @@ Added	The function "monthname()" was added.
 Added	The function "monthdays()" was added.
 Added	The function "from_weekday()" was added.
 Added	Constants for the indices of the days of the week were added.
+Applied	The methods "TAB().indexof()", "TAB().replacevals()", "TAB().countif()" do now support regular expressions for their comparison values.
+Fixed	Opening folders in the symbols tree via double-clicking does now work always.

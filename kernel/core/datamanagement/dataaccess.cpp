@@ -1588,13 +1588,17 @@ static std::string tableMethod_replacevals(const std::string& sTableName, std::s
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    bool enableRegEx = false;
 
     if (nResults < 3)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().replacevals()", ".replacevals(", ".replacevals(");
 
+    if (nResults > 3)
+        enableRegEx = mu::all(v[3].get());
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
     _kernel->getParser().SetInternalVar(sResultVectorName,
-                                        mu::Value(_kernel->getMemoryManager().replaceVals(sTableName, cols, v[1].get(), v[2].get())));
+                                        mu::Value(_kernel->getMemoryManager().replaceVals(sTableName, cols, v[1].get(), v[2].get(), enableRegEx)));
     return sResultVectorName;
 }
 
@@ -1650,6 +1654,7 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    bool enableRegEx = false;
 
     if (nResults < 2)
     {
@@ -1657,7 +1662,10 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-    std::vector<size_t> count = _kernel->getMemoryManager().countIfEqual(sTableName, cols, v[1].get());
+    if (nResults > 2)
+        enableRegEx = mu::all(v[2].get());
+
+    std::vector<size_t> count = _kernel->getMemoryManager().countIfEqual(sTableName, cols, v[1].get(), enableRegEx);
 
     if (count.size())
         _kernel->getParser().SetInternalVar(sResultVectorName, count);
@@ -1686,6 +1694,7 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName);
+    bool enableRegEx = false;
 
     if (nResults < 2)
     {
@@ -1693,7 +1702,10 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
         return sResultVectorName;
     }
 
-    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getIndex(sTableName, cols.front(), v[1].get()));
+    if (nResults > 2)
+        enableRegEx = mu::all(v[2].get());
+
+    _kernel->getParser().SetInternalVar(sResultVectorName, _kernel->getMemoryManager().getIndex(sTableName, cols.front(), v[1].get(), enableRegEx));
     return sResultVectorName;
 }
 
