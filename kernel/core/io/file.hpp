@@ -1921,6 +1921,8 @@ namespace NumeRe
                 // do nothing
                 return false;
             }
+
+            static bool isJcampDX(const std::string& filename);
     };
 
 

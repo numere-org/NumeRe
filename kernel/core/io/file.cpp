@@ -21,6 +21,7 @@
 
 #include <set>
 #include <algorithm> // contains std::find_if for datetime detection
+#include <regex>
 
 #include "file.hpp"
 #include "../datamanagement/tablecolumnimpl.hpp"
@@ -60,6 +61,9 @@ namespace NumeRe
 
         if ((sExt == "dat" || sExt == "zygo") && ZygoLib::DatFile::isDatFile(filename))
             return new ZygoDat(filename);
+
+        if (sExt == "txt" && JcampDX::isJcampDX(filename))
+            return new JcampDX(filename);
 
         if (sExt == "txt" || sExt == "dat" || !sExt.length())
             return new TextDataFile(filename);
@@ -3196,6 +3200,7 @@ namespace NumeRe
         };
 
         size_t m_points;
+        bool m_isRruff;
         DataFormat m_format;
         double m_xFactor;
         double m_yFactor;
@@ -3207,7 +3212,7 @@ namespace NumeRe
         std::string m_yUnit;
         std::string m_symbol;
 
-        MetaData() : m_points(0), m_format(NO_FORMAT), m_xFactor(1), m_yFactor(1), m_firstX(0), m_lastX(0), m_deltaX(0) {}
+        MetaData() : m_points(0), m_isRruff(false), m_format(NO_FORMAT), m_xFactor(1), m_yFactor(1), m_firstX(0), m_lastX(0), m_deltaX(0) {}
     };
 
 
@@ -3258,6 +3263,12 @@ namespace NumeRe
             }
 
             parseLabel(vFileContents[i]);
+
+            if (vFileContents[i].starts_with("##RRUFFID="))
+            {
+                vMeta[0].m_isRruff = true;
+                vMeta[0].m_format = MetaData::XY_XY;
+            }
 
             // Here starts a n-tuples table
             if (vFileContents[i].starts_with("##NTUPLES="))
@@ -3443,6 +3454,37 @@ namespace NumeRe
 
                 break;
             }
+
+            if (meta.m_isRruff)
+            {
+                if (vFileContents[i].starts_with("##FILETYPE="))
+                {
+                    std::string sFileType = vFileContents[i].substr(11);
+                    StripSpaces(sFileType);
+
+                    if (sFileType.find("Raman") != std::string::npos)
+                    {
+                        meta.m_xUnit = "Raman Shift|1/cm";
+                        meta.m_yUnit = "Relative Intensity|%";
+                    }
+                    else if (sFileType.find("Diffraction Profile") != std::string::npos)
+                    {
+                        meta.m_xUnit = "Diffraction Angle theta|°";
+                        meta.m_yUnit = "Intensity";
+                    }
+                    else if (sFileType.find("Infrared") != std::string::npos)
+                    {
+                        meta.m_xUnit = "Wavenumber k|1/cm";
+                        meta.m_yUnit = "Intensity";
+                    }
+                }
+                else if (!vFileContents[i].starts_with("##"))
+                {
+                    nDataStart = i;
+                    meta.m_points = vFileContents.size() - nDataStart - 1;
+                    break;
+                }
+            }
         }
 
         if (!meta.m_points || !nDataStart || meta.m_format == MetaData::NO_FORMAT)
@@ -3524,6 +3566,8 @@ namespace NumeRe
             else if (toUpperCase(meta.m_xUnit) == "1/S" || toUpperCase(meta.m_xUnit) == "1/SECONDS")
                 meta.m_xUnit = "Frequency f|Hz";
         }
+        else if (meta.m_isRruff)
+            meta.m_xUnit = "Raman Shift|1/cm";
 
         if (meta.m_yUnit.length())
         {
@@ -3538,6 +3582,8 @@ namespace NumeRe
             else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.starts_with("Intensity"))
                 meta.m_yUnit = "Intensity";
         }
+        else if (meta.m_isRruff)
+            meta.m_yUnit = "Relative Intensity|%";
 
         meta.m_deltaX = (meta.m_lastX - meta.m_firstX) / (meta.m_points - 1);
         size_t currentRow = 0;
@@ -3694,7 +3740,7 @@ namespace NumeRe
             else if (sValue.length()
                      && (sLine[i] == 'e' || sLine[i] == 'E')
                      && sLine.length() > i+2
-                     && (sLine[i] == '+' || sLine[i] == '-')
+                     && (sLine[i+1] == '+' || sLine[i+1] == '-')
                      && sNumericChars.find(sValue[0]) != std::string::npos)
                 sValue += sLine[i];
             else if (sValue.length()
@@ -3830,6 +3876,38 @@ namespace NumeRe
         }
 
         return vLine;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Static member function to detect,
+    /// whether the target file has the format of a
+    /// JCAMP-DX file (i.e. "##LABEL=" tags).
+    ///
+    /// \param filename const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool JcampDX::isJcampDX(const std::string& filename)
+    {
+        std::ifstream file(filename);
+        static const std::regex JCAMPDXTAG("##.+=.*");
+        static const std::regex FILETYPETAG("##(RRUFFID|JCAMP-?DX)=.+");
+
+        if (!file.good())
+            return false;
+
+        std::string line1, line2, line3;
+        std::getline(file, line1);
+        std::getline(file, line2);
+        std::getline(file, line3);
+
+        return std::regex_match(line1, JCAMPDXTAG)
+            && std::regex_match(line2, JCAMPDXTAG)
+            && std::regex_match(line3, JCAMPDXTAG)
+            && (std::regex_match(line1, FILETYPETAG)
+                || std::regex_match(line2, FILETYPETAG)
+                || std::regex_match(line3, FILETYPETAG));
     }
 
 
