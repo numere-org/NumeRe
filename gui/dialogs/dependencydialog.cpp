@@ -16,12 +16,135 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <vector>
+#include <wx/tokenzr.h>
+
 #include "dependencydialog.hpp"
 #include "../NumeReWindow.h"
 #include "../../kernel/kernel.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../guilang.hpp"
 #include "../../kernel/core/ui/winlayout.hpp"
+
+
+BEGIN_EVENT_TABLE(DependencySearchCtrl, SearchCtrl)
+    EVT_SIZE(DependencySearchCtrl::OnSizeEvent)
+END_EVENT_TABLE()
+
+
+/////////////////////////////////////////////////
+/// \brief If we select an item, we want to send
+/// it to the terminal.
+///
+/// \param value const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DependencySearchCtrl::selectItem(const wxString& value)
+{
+    if (m_dependencyTree)
+    {
+        wxTreeItemId currItem = m_dependencyTree->GetRootItem();
+
+        while ((currItem = m_dependencyTree->GetNext(currItem)).IsOk())
+        {
+            if (m_dependencyTree->GetItemText(currItem) == value)
+            {
+                m_dependencyTree->SetItemBackgroundColour(currItem, wxColour(192, 227, 248));
+                m_dependencyTree->EnsureVisible(currItem);
+            }
+            else
+                m_dependencyTree->SetItemBackgroundColour(currItem, *wxWHITE);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the search candidates by searching
+/// through the (valid) lines of the history.
+///
+/// \param enteredText const wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+wxArrayString DependencySearchCtrl::getCandidates(const wxString& enteredText)
+{
+    if (!m_dependencyTree)
+        return wxArrayString(1, &enteredText);
+
+    wxArrayString entered = wxStringTokenize(enteredText.Lower());
+    std::vector<wxString> stringArray;
+    std::vector<size_t> matchWeights;
+    std::vector<size_t> index;
+
+    wxTreeItemId item = m_dependencyTree->GetRootItem();
+
+    while ((item = m_dependencyTree->GetNext(item)).IsOk())
+    {
+        size_t matchWeight = 0;
+        wxString itemText = m_dependencyTree->GetItemText(item);
+
+        if (std::find(stringArray.begin(), stringArray.end(), itemText) != stringArray.end())
+            continue;
+
+        wxString matchString = itemText.Lower();
+
+        for (size_t i = 0; i < entered.GetCount(); i++)
+        {
+            if (matchString.find(entered[i]) != std::string::npos)
+            {
+                if (entered[i].length() < 3)
+                    continue;
+
+                if (matchString.find(entered[i]) != std::string::npos)
+                    matchWeight += entered.GetCount() - i;
+            }
+        }
+
+        // Only add if enough weights
+        if ((matchWeight && entered.GetCount() == 1)
+            || matchWeight > entered.GetCount())
+        {
+            stringArray.push_back(itemText);
+            index.push_back(matchWeights.size());
+            matchWeights.push_back(matchWeight);
+        }
+    }
+
+    std::sort(index.begin(), index.end(), [&matchWeights](int a, int b){return matchWeights[a] > matchWeights[b];});
+    wxArrayString candidates;
+
+    for (size_t i = 0; i < stringArray.size(); i++)
+    {
+        candidates.Add(stringArray[index[i]]);
+    }
+
+    return candidates;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resize the shown columns to fit the
+/// history parent's size.
+///
+/// \param event wxSizeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencySearchCtrl::OnSizeEvent(wxSizeEvent& event)
+{
+    wxArrayInt sizes;
+    sizes.Add(event.GetSize().x-20, 1);
+    popUp->SetColSizes(sizes);
+    event.Skip();
+}
+
+
 
 
 using namespace std;
@@ -92,6 +215,9 @@ DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxStri
     m_dependencyTree = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                                   wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT);
     m_dependencyTree->AddColumn(_guilang.get("GUI_DEPDLG_TREE"), GetClientSize().GetWidth());
+    DependencySearchCtrl* searchCtrl = new DependencySearchCtrl(this, wxID_ANY, _guilang.get("GUI_DEPDLG_SEARCH"), "", m_dependencyTree);
+
+    vsizer->Add(searchCtrl, 0, wxEXPAND | wxALL, 5);
     vsizer->Add(m_dependencyTree, 1, wxEXPAND | wxALL, 5);
     vsizer->Add(CreateButtonSizer(wxOK), 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
 
@@ -786,7 +912,6 @@ void DependencyDialog::OnItemSelected(wxTreeEvent& event)
 
     while ((currItem = m_dependencyTree->GetNext(currItem)).IsOk())
     {
-        wxString helper = m_dependencyTree->GetItemText(currItem);
         if (m_dependencyTree->GetItemText(currItem) == NAME)
             m_dependencyTree->SetItemBackgroundColour(currItem, wxColour(192, 227, 248));
         else
