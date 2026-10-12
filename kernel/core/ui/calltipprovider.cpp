@@ -919,13 +919,22 @@ namespace NumeRe
     {
         CallTip _cTip;
 
-        if (sToken.front() != '_')
-            sToken.insert(0, 1, '_');
-
-        if (sToken == "_G")
-            _cTip.sDefinition = _lang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
+        if (sToken.starts_with("__") && sToken.ends_with("__"))
+        {
+            // This is a user-defined environment variable
+            _cTip.sDefinition = NumeReKernel::getInstance()->getEnvironment().getVarDefinition(sToken);
+        }
         else
-            _cTip.sDefinition = _lang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(sToken) + "_*");
+        {
+            if (sToken.front() != '_')
+                sToken.insert(0, 1, '_');
+
+            if (sToken == "_G")
+                _cTip.sDefinition = "<const> " + _lang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
+            else
+                _cTip.sDefinition = "<const> " + _lang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(sToken) + "_*");
+        }
+
 
         if (_cTip.sDefinition.length() > m_maxLineLength)
         {
@@ -934,8 +943,8 @@ namespace NumeRe
             _cTip = addLinebreaks(_cTip, m_maxLineLength);
         }
 
-        _cTip.nStart = 0;
-        _cTip.nEnd = _cTip.sDefinition.find('=');
+        _cTip.nStart = _cTip.sDefinition.find('>') + 1;
+        _cTip.nEnd = _cTip.sDefinition.find_first_of("=:");
 
         return _cTip;
     }

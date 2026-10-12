@@ -243,10 +243,11 @@ wxBoxSizer* GroupPanel::getMainSizer()
 /// \param parent wxWindow*
 /// \param sizer const SizerWrapper&
 /// \param expand int
+/// \param alignment int
 /// \return wxStaticBoxSizer*
 ///
 /////////////////////////////////////////////////
-wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient, wxWindow* parent, const SizerWrapper& sizer, int expand)
+wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient, wxWindow* parent, const SizerWrapper& sizer, int expand, int alignment)
 {
     if (!parent)
         parent = this;
@@ -256,11 +257,11 @@ wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient
 
     // Add the group to the main sizer
     if (!sizer)
-        mainSizer->Add(groupSizer, expand, wxEXPAND | wxALL, ELEMENT_BORDER);
+        mainSizer->Add(groupSizer, expand, alignment | wxEXPAND | wxALL, ELEMENT_BORDER);
     else if (sizer.isBox())
-        sizer.s->Add(groupSizer, expand, wxEXPAND | wxALL, ELEMENT_BORDER);
+        sizer.s->Add(groupSizer, expand, alignment | wxEXPAND | wxALL, ELEMENT_BORDER);
     else if (sizer.canEmplace())
-        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, wxEXPAND | wxALL, ELEMENT_BORDER);
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, alignment | wxEXPAND | wxALL, ELEMENT_BORDER);
     else
         wxMessageBox("A labeled group does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
 
@@ -275,21 +276,22 @@ wxStaticBoxSizer* GroupPanel::createGroup(const wxString& sGroupName, int orient
 /// \param orient int
 /// \param sizer const SizerWrapper&
 /// \param expand int
+/// \param alignment int
 /// \return wxBoxSizer*
 ///
 /////////////////////////////////////////////////
-wxBoxSizer* GroupPanel::createGroup(int orient, const SizerWrapper& sizer, int expand)
+wxBoxSizer* GroupPanel::createGroup(int orient, const SizerWrapper& sizer, int expand, int alignment)
 {
     // Create a new static box sizer
     wxBoxSizer* groupSizer = new wxBoxSizer(orient);
 
     // Add the group to the main sizer
     if (!sizer)
-        mainSizer->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+        mainSizer->Add(groupSizer, expand, alignment | wxEXPAND | wxALL, 0);
     else if (sizer.isBox())
-        sizer.s->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+        sizer.s->Add(groupSizer, expand, alignment | wxEXPAND | wxALL, 0);
     else if (sizer.canEmplace())
-        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, expand, wxEXPAND | wxALL, 0);
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, expand, alignment | wxEXPAND | wxALL, 0);
     else
         wxMessageBox("A group does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
 
@@ -303,10 +305,11 @@ wxBoxSizer* GroupPanel::createGroup(int orient, const SizerWrapper& sizer, int e
 ///
 /// \param sizer const SizerWrapper&
 /// \param expand int
+/// \param alignment int
 /// \return wxGridBagSizer*
 ///
 /////////////////////////////////////////////////
-wxGridBagSizer* GroupPanel::createGridGroup(const SizerWrapper& sizer, int expand)
+wxGridBagSizer* GroupPanel::createGridGroup(const SizerWrapper& sizer, int expand, int alignment)
 {
     // Create a new static box sizer
     wxGridBagSizer* groupSizer = new wxGridBagSizer();
@@ -316,11 +319,11 @@ wxGridBagSizer* GroupPanel::createGridGroup(const SizerWrapper& sizer, int expan
 
     // Add the group to the main sizer
     if (!sizer)
-        mainSizer->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+        mainSizer->Add(groupSizer, expand,alignment |  wxEXPAND | wxALL, 0);
     else if (sizer.isBox())
-        sizer.s->Add(groupSizer, expand, wxEXPAND | wxALL, 0);
+        sizer.s->Add(groupSizer, expand, alignment | wxEXPAND | wxALL, 0);
     else if (sizer.canEmplace())
-        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, expand, wxEXPAND | wxALL, 0);
+        sizer.gbs->Add(groupSizer, sizer.pos, sizer.span, expand, alignment | wxEXPAND | wxALL, 0);
     else
         wxMessageBox("A group of type \"flexgrid\" does not fit into its assigned group. If the assigned group is of type \"flexgrid\", then the target cell(s) may already be occupied.", "Group layout warning", wxOK | wxCENTER | wxICON_WARNING, this);
 

@@ -354,6 +354,12 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     g_logger.debug("Defining constants.");
     defineConst();
 
+    if (fileExists(_option.getExePath() + "/numere.env"))
+    {
+        g_logger.debug("Initializing environment.");
+        initEnvironment();
+    }
+
     // Define the functions
     g_logger.debug("Defining functions.");
     defineNumFunctions();
@@ -438,7 +444,6 @@ void NumeReKernel::defineOperators()
 /////////////////////////////////////////////////
 void NumeReKernel::defineConst()
 {
-    // --> Eigene Konstanten <--
     _parser.DefineConst("_g", 9.80665);
     _parser.DefineConst("_c", 299792458);
     _parser.DefineConst("_elek_feldkonst", 8.854187817e-12);
@@ -465,10 +470,7 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_r_earth", 6.378137e6);
     _parser.DefineConst("_r_sonne", 6.9551e8);
     _parser.DefineConst("_r_sun", 6.9551e8);
-    _parser.DefineConst("true", true);
     _parser.DefineConst("_theta_weinberg", 0.49097621387892);
-    _parser.DefineConst("false", false);
-    _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
     _parser.DefineConst("_R", 8.3144622);
     _parser.DefineConst("_alpha_fs", 7.2973525698E-3);
     _parser.DefineConst("_mu_bohr", 9.27400968E-24);
@@ -489,12 +491,16 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_gamma_e", 1.760859644e11);
     _parser.DefineConst("_gamma_n", 1.83247172e8);
     _parser.DefineConst("_gamma_p", 2.6752219e8);
+
     _parser.DefineConst("_feigenbaum_delta", 4.66920160910299067185);
     _parser.DefineConst("_feigenbaum_alpha", 2.50290787509589282228);
+    _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
+
     _parser.DefineConst("_day_secs", 86400);
     _parser.DefineConst("_hour_secs", 3600 );
     _parser.DefineConst("_week_secs", 604800);
     _parser.DefineConst("_year_secs", 31557600);
+
     _parser.DefineConst("_monday", 1);
     _parser.DefineConst("_tuesday", 2);
     _parser.DefineConst("_wednesday", 3);
@@ -502,14 +508,19 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_friday", 5);
     _parser.DefineConst("_saturday", 6);
     _parser.DefineConst("_sunday", 7);
+
+    _parser.DefineConst("true", true);
+    _parser.DefineConst("false", false);
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", mu::Value());
     _parser.DefineConst("I", std::complex<double>(0.0, 1.0));
+
     _parser.DefineConst(errorTypeToString(TYPE_CUSTOMERROR), mu::Value(TYPE_CUSTOMERROR));
     _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::Value(TYPE_SYNTAXERROR));
     _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::Value(TYPE_ASSERTIONERROR));
     _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::Value(TYPE_MATHERROR));
+
     _parser.DefineConst("ui8_max", mu::Numerical((uint8_t)UINT8_MAX));
     _parser.DefineConst("i8_max", mu::Numerical((int8_t)INT8_MAX));
     _parser.DefineConst("i8_min", mu::Numerical((int8_t)INT8_MIN));
@@ -534,7 +545,22 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("cf32_max", std::complex<float>(__FLT_MAX__, __FLT_MAX__));
     _parser.DefineConst("cf32_min", std::complex<float>(__FLT_MIN__, __FLT_MIN__));
     _parser.DefineConst("cf32_eps", std::complex<float>(__FLT_EPSILON__, __FLT_EPSILON__));
+
     _parser.DefineConst("loremipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function initializes the
+/// user-defined environment.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::initEnvironment()
+{
+    _environment.load(_option.getExePath() + "/numere.env");
+    _parser.SetEnvironmentVars(_environment.getVars());
 }
 
 

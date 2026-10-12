@@ -1839,6 +1839,30 @@
 			<Option target="Debug_x64" />
 			<Option target="Nightly_x64" />
 		</Unit>
+		<Unit filename="gui/dialogs/environmentdialog.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+			<Option target="Nightly_x64" />
+		</Unit>
+		<Unit filename="gui/dialogs/environmentdialog.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+			<Option target="Nightly_x64" />
+		</Unit>
 		<Unit filename="gui/dialogs/fndrpldialog.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -4492,6 +4516,30 @@
 		<Unit filename="kernel/core/utils/utf8lib.cpp" />
 		<Unit filename="kernel/core/utils/utf8lib.hpp" />
 		<Unit filename="kernel/core/version.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+			<Option target="Nightly_x64" />
+		</Unit>
+		<Unit filename="kernel/environment.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Release_x64" />
+			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
+			<Option target="Debug_x64" />
+			<Option target="Nightly_x64" />
+		</Unit>
+		<Unit filename="kernel/environment.hpp">
 			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />

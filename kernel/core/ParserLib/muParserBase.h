@@ -160,6 +160,7 @@ namespace mu
 							EOprtAssociativity a_eAssociativity = oaLEFT,
 							bool optimizeAway = true);
 			void DefineConst(const string_type& a_sName, Value a_fVal);
+			void SetEnvironmentVars(const std::map<std::string, Value>& envVars);
 			Variable* CreateVar(const string_type& a_sName, mu::DataType defaultType = mu::TYPE_VOID);
 			Variable* ReadVar(const string_type& a_sName);
 			void DefineVar(const string_type& a_sName, Variable* a_fVar);
@@ -175,6 +176,7 @@ namespace mu
 			void ClearOprt();
 
 			void RemoveVar(const string_type& a_strVarName);
+			void RemoveConst(const string_type& a_strConstName);
 			const varmap_type& GetUsedVar();
 			const varmap_type& GetVar() const;
 			const varmap_type& GetInternalVars() const;

@@ -850,6 +850,38 @@ namespace mu
 		ReInit();
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief Sets the current user-defined
+    /// environment variables.
+    ///
+    /// \param std::map<std::string const
+    /// \param envVars Value>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::SetEnvironmentVars(const std::map<std::string, Value>& envVars)
+	{
+	    auto iter = m_ConstDef.begin();
+
+	    // Erase all declared environment variables
+	    while (iter != m_ConstDef.end())
+        {
+            if (iter->first.starts_with("__") && iter->first.ends_with("__"))
+                iter = m_ConstDef.erase(iter);
+            else
+                iter++;
+        }
+
+        // Declare the new set of environment variables
+        for (const auto& envVar : envVars)
+        {
+            CheckName(envVar.first, ValidNameChars());
+            m_ConstDef[envVar.first] = envVar.second;
+        }
+
+        ReInit();
+	}
+
 	//---------------------------------------------------------------------------
 	/** \brief Get operator priority.
 	    \throw ParserException if a_Oprt is no operator code
@@ -2671,6 +2703,25 @@ namespace mu
 	{
 	    if (m_factory->Remove(a_strVarName))
             ReInit();
+	}
+
+    /////////////////////////////////////////////////
+    /// \brief Remove a constant from internal
+    /// storage.
+    ///
+    /// \param a_strConstName const string_type&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::RemoveConst(const string_type& a_strConstName)
+	{
+	    auto iter = m_ConstDef.find(a_strConstName);
+
+	    if (iter != m_ConstDef.end())
+        {
+            m_ConstDef.erase(iter);
+            ReInit();
+        }
 	}
 
 	//------------------------------------------------------------------------------

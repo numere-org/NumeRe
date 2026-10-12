@@ -34,6 +34,7 @@ NumeReSyntax::NumeReSyntax() : sPath("")
     vMethodsArgs.push_back("NO_SYNTAX_ELEMENTS");
     vOptions.push_back("NO_SYNTAX_ELEMENTS");
     vConstants.push_back("NO_SYNTAX_ELEMENTS");
+    vEnvVars.push_back("NO_SYNTAX_ELEMENTS");
     vSpecialValues.push_back("NO_SYNTAX_ELEMENTS");
     vOperators.push_back("NO_SYNTAX_ELEMENTS");
     vDocKeyWords.push_back("NO_SYNTAX_ELEMENTS");
@@ -169,6 +170,22 @@ void NumeReSyntax::addPlugins(const std::vector<std::string>& vPlugins)
 {
     loadSyntax();
     vNSCRCommands.insert(vNSCRCommands.end(), vPlugins.begin(), vPlugins.end());
+
+    mAutoCompList.clear();
+    prepareAutoCompMaps();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets the user environment variables.
+///
+/// \param vEnvVars const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReSyntax::setEnvVars(const std::vector<std::string>& vVars)
+{
+    vEnvVars = vVars;
 
     mAutoCompList.clear();
     prepareAutoCompMaps();
@@ -472,6 +489,9 @@ void NumeReSyntax::prepareAutoCompMaps()
         for (size_t i = 0; i < vConstants.size(); i++)
             mAutoCompList[toLowerCase(vConstants[i])] = std::make_pair(vConstants[i] + "?" + toString((int)SYNTAX_CONSTANT),
                                                                        SYNTAX_CONSTANT);
+        for (size_t i = 0; i < vEnvVars.size(); i++)
+            mAutoCompList[toLowerCase(vEnvVars[i])] = std::make_pair(vEnvVars[i] + "?" + toString((int)SYNTAX_CONSTANT),
+                                                                       SYNTAX_CONSTANT);
 
         for (size_t i = 0; i < vSpecialValues.size(); i++)
         {
@@ -771,6 +791,11 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
             else if (matchItem(vConstants, sCommandLine.substr(i,nLen)))
             {
                 // Constants
+                colors.replace(i, nLen, nLen, '0'+SYNTAX_CONSTANT);
+            }
+            else if (matchItem(vEnvVars, sCommandLine.substr(i,nLen)))
+            {
+                // Envirnment variables
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_CONSTANT);
             }
             else if (matchItem(vSpecialValues, sCommandLine.substr(i,nLen)))

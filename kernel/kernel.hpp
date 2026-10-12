@@ -24,6 +24,7 @@
 
 // --> LOKALE HEADER <--
 #include "windowmanager.hpp"
+#include "environment.hpp"
 
 #include "core/built-in.hpp"
 #include "core/plugins.hpp"
@@ -138,6 +139,7 @@ class NumeReKernel
         NumeReDebugger _debugger;
         NumeRe::WindowManager _manager;
         Documentation _documentation;
+        Environment _environment;
 
         // private member functions for special tasks
         void printResult(const std::string& sLine, bool bScriptRunning);
@@ -222,6 +224,7 @@ class NumeReKernel
         static bool GetAsyncCancelState();
         static void showTable(NumeRe::Table _table, std::string __name, bool openeditable = false);
         static void showStringTable(NumeRe::Container<std::string> _stringtable, std::string __name, bool openeditable = false);
+
         void showWindow(const NumeRe::Window& window);
         static NumeRe::Table getTable();
         NumeRe::Table getTable(const std::string& sTableName);
@@ -233,6 +236,7 @@ class NumeReKernel
         static void clcTerminal();
         void refreshFunctionTree();
         void closeWindows(int type);
+        void initEnvironment();
 
         // Public member functions
         // Main loop function
@@ -301,6 +305,11 @@ class NumeReKernel
         Documentation& getDocumentation()
         {
             return _documentation;
+        }
+
+        Environment& getEnvironment()
+        {
+            return _environment;
         }
 
         void displaySplash();

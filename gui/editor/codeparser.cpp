@@ -755,7 +755,19 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
 
     // Constants
     if (line[pos].is(wxSTC_NSCR_CONSTANTS))
-        return m_provider.getConstant(line[pos].m_str).sDefinition.find('"') != std::string::npos ? "string" : "value";
+    {
+        std::string sDef = m_provider.getConstant(line[pos].m_str).sDefinition;
+        size_t colonPos = sDef.find(':');
+
+        if (colonPos < sDef.find('='))
+        {
+            sDef = sDef.substr(colonPos+1, sDef.find_first_of("=.", colonPos)-colonPos-1);
+            StripSpaces(sDef);
+            return sDef;
+        }
+
+        return sDef.find('"') != std::string::npos ? "string" : "value";
+    }
 
     // Special vals
     if (line[pos].is(wxSTC_NSCR_PREDEFS))

@@ -19,6 +19,7 @@
 #include "stringtools.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
+#include "../ParserLib/muStructures.hpp"
 #include "../../../externals/base-n/include/basen.hpp"
 #include "../../../common/markup.hpp"
 
@@ -986,6 +987,34 @@ sys_time_point StrToTime(const std::string& sString)
     }
 
     return getTimePointFromTimeStamp(timeStruct);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a string value into a
+///mu::Value instance. Is intended for
+/// user-supplied strings, which should not be
+/// piped through the parser.
+///
+/// \param sStrValue const std::string&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+mu::Value StrToValue(const std::string& sStrValue)
+{
+    if (sStrValue.front() == '"' && sStrValue.back() == '"')
+        return mu::Value(toInternalString(sStrValue));
+    else
+    {
+        if (isConvertible(sStrValue, CONVTYPE_DATE_TIME))
+            return StrToTime(sStrValue);
+        else if (isConvertible(sStrValue, CONVTYPE_DURATION))
+            return mu::Numerical(parseDuration(sStrValue), mu::DURATION);
+        else if (isConvertible(sStrValue, CONVTYPE_VALUE))
+            return StrToCmplx(sStrValue);
+    }
+
+    return sStrValue;
 }
 
 

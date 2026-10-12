@@ -91,6 +91,7 @@
 #include "dialogs/newfiledialog.hpp"
 #include "dialogs/listeditdialog.hpp"
 #include "dialogs/reportissuedialog.hpp"
+#include "dialogs/environmentdialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -1682,6 +1683,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_OPTIONS:
         {
             OnOptions();
+            break;
+        }
+        case ID_MENU_ENVIRONMENT:
+        {
+            OnEnvironment();
             break;
         }
         case ID_MENU_TOGGLE_DEBUGGER:
@@ -5554,6 +5560,7 @@ void NumeReWindow::UpdateMenuBar()
     wxMenu* menuTools = new wxMenu();
 
     menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
+    menuTools->Append(ID_MENU_ENVIRONMENT, _guilang.get("GUI_MENU_ENVIRONMENT"));
     menuTools->AppendSeparator();
     menuTools->Append(ID_MENU_EXECUTE, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
     menuTools->Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EXECUTE_FROM_LINE"), _guilang.get("GUI_MENU_EXECUTE_FROM_LINE_TTP"));
@@ -6288,7 +6295,7 @@ void NumeReWindow::prepareFunctionTree()
             FileNameTreeData* data = new FileNameTreeData();
             data->isConstant = true;
             data->tooltip = vDirList[j];
-            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(" = ")), idxConstants, -1, data);
+            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find_first_of(": =")), idxConstants, -1, data);
         }
     }
 
@@ -6667,7 +6674,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         }
         else
         {
-            token.erase(token.find(' '));
+            token.erase(token.find_first_of(" :"));
 
             if (token.find('(') != std::string::npos)
                 token.erase(token.find('(')+1);
@@ -7725,6 +7732,51 @@ void NumeReWindow::OnOptions()
 
     if (m_book->getCurrentEditor())
         m_book->getCurrentEditor()->SetFocus();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Edit the environment variables.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnEnvironment()
+{
+    if (m_terminal->IsBusy())
+    {
+        wxMessageBox(_guilang.get("GUI_ENV_BUSY_ERROR"), _guilang.get("GUI_ENV_BUSY_ERROR_HEAD"), wxCENTRE | wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    EnvironmentDialog dialog(this, getProgramFolder() + "/numere.env");
+    dialog.SetIcon(getStandardIcon());
+    int result = dialog.ShowModal();
+
+    if (result == wxID_OK)
+    {
+        // Re-init envars and syntax
+        m_terminal->updateEnvironment();
+
+        // Re-init editors
+        for (size_t i = 0; i < m_book->GetPageCount(); i++)
+        {
+            if (m_book->isDefaultPage(i))
+                continue;
+
+            NumeReEditor* edit = m_book->getEditor(i); // Might need adaption
+            edit->UpdateSyntaxHighlighting(true);
+
+            if (m_book->getEditor(i, true))
+            {
+                edit = m_book->getEditor(i, true);
+                edit->UpdateSyntaxHighlighting(true);
+            }
+        }
+
+        // Re-init history
+        m_history->UpdateSyntaxHighlighting();
+    }
 }
 
 

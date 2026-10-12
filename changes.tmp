@@ -18,3 +18,4 @@ Fixed	Opening folders in the symbols tree via double-clicking does now work alwa
 Added	The function "fillinvalid()" can be used to replace invalid values (void, nan and empty strings) with another value.
 Added	RRUFF files (similar to JCAMP-DX files) can now be loaded natively.
 Added	The dependency viewer how has a search bar for finding dedicated dependencies.
+New	It is now possible to define user-specific constants as "environment variables" in the corresponding dialog in the "Tools" menu. They are handled just as regular constants, but their value is hidden from any code file.

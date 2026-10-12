@@ -243,6 +243,7 @@ class NumeReWindow : public wxFrame
         void OnPrintPreview();
         void OnPrintPage();
         void OnOptions();
+        void OnEnvironment();
         void OnFindReplace(int id );
         void OnCopyAsPath();
         void OnOpenInExplorer();

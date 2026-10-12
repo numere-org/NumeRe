@@ -1008,7 +1008,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         if (currentChild->Attribute("align"))
         {
             std::string sAlign = currentChild->Attribute("align");
-            alignment = 0;
+            alignment = wxALIGN_LEFT;
 
             // LRCTB
             if (sAlign.find_first_of("TB") == std::string::npos)
@@ -1017,8 +1017,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (sAlign.find_first_of("LR") == std::string::npos)
                 alignment |= wxALIGN_CENTER_HORIZONTAL;
 
-            if (sAlign.find("L") != std::string::npos)
-                alignment |= wxALIGN_LEFT;
+            if (sAlign.find("C") != std::string::npos)
+                alignment |= wxALIGN_CENTER;
 
             if (sAlign.find("R") != std::string::npos)
                 alignment |= wxALIGN_RIGHT;
@@ -1028,7 +1028,6 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (sAlign.find("B") != std::string::npos)
                 alignment |= wxALIGN_BOTTOM;
-
         }
 
         // Now check for the current XMLElement's
@@ -1668,7 +1667,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     {
                         noteBook = new wxNotebook(currParent, id);
                         m_windowItems[id] = std::make_pair(CustomWindow::NOTEBOOK, noteBook);
-                        currSizer->Add(noteBook, 1, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+                        currSizer->Add(noteBook, 1, alignment | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
 
                         if (currentChild->Attribute("onchange"))
                             m_eventTable[id].onchange = currentChild->Attribute("onchange");
@@ -1702,11 +1701,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 }
                 else
                 {
-                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer, expand);
+                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer, expand, alignment);
 
                     if (isGrid)
                     {
-                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand);
+                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand, alignment);
                         layoutGridChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), gbSizer, _groupPanel, _rowScl, _colScl);
                     }
                     else
@@ -1717,12 +1716,12 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             {
                 if (isGrid)
                 {
-                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(currSizer, expand);
+                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(currSizer, expand, alignment);
                     layoutGridChild(currentChild->FirstChildElement(), currParent, gbSizer, _groupPanel, _rowScl, _colScl);
                 }
                 else
                 {
-                    wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand);
+                    wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand, alignment);
                     layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
                 }
             }
@@ -1798,7 +1797,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
         if (currentChild->Attribute("align"))
         {
             std::string sAlign = currentChild->Attribute("align");
-            alignment = 0;
+            alignment = wxALIGN_LEFT;
 
             // LRCTB
             if (sAlign.find_first_of("TB") == std::string::npos)
@@ -1807,8 +1806,8 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             if (sAlign.find_first_of("LR") == std::string::npos)
                 alignment |= wxALIGN_CENTER_HORIZONTAL;
 
-            if (sAlign.find("L") != std::string::npos)
-                alignment |= wxALIGN_LEFT;
+            if (sAlign.find("C") != std::string::npos)
+                alignment |= wxALIGN_CENTER;
 
             if (sAlign.find("R") != std::string::npos)
                 alignment |= wxALIGN_RIGHT;
@@ -2483,7 +2482,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                     {
                         noteBook = new wxNotebook(currParent, id);
                         m_windowItems[id] = std::make_pair(CustomWindow::NOTEBOOK, noteBook);
-                        currSizer->Add(noteBook, gbPos, gbSpan, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+                        currSizer->Add(noteBook, gbPos, gbSpan, alignment | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
 
                         if (currentChild->Attribute("onchange"))
                             m_eventTable[id].onchange = currentChild->Attribute("onchange");
@@ -2517,11 +2516,11 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                 }
                 else
                 {
-                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, SizerWrapper(currSizer, gbPos, gbSpan), expand, alignment);
 
                     if (isGrid)
                     {
-                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand);
+                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand, alignment);
                         layoutGridChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), gbSizer, _groupPanel, _rowScl, _colScl);
                     }
                     else
@@ -2532,12 +2531,12 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             {
                 if (isGrid)
                 {
-                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(SizerWrapper(currSizer, gbPos, gbSpan), expand, alignment);
                     layoutGridChild(currentChild->FirstChildElement(), currParent, gbSizer, _groupPanel, _rowScl, _colScl);
                 }
                 else
                 {
-                    wxBoxSizer* sizer = _groupPanel->createGroup(style, SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    wxBoxSizer* sizer = _groupPanel->createGroup(style, SizerWrapper(currSizer, gbPos, gbSpan), expand, alignment);
                     layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
                 }
             }

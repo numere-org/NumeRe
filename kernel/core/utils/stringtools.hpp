@@ -32,6 +32,11 @@ class Settings;
 class StringView;
 class MutableStringView;
 
+namespace mu
+{
+    class Value;
+}
+
 /////////////////////////////////////////////////
 /// \brief Structure containing the german umlauts. The
 /// lower field will contain lower case umlauts,
@@ -522,6 +527,7 @@ double StrToDb(const std::string&);
 double StrToLogical(const std::string&);
 std::complex<double> StrToCmplx(const std::string&);
 sys_time_point StrToTime(const std::string&);
+mu::Value StrToValue(const std::string&);
 double parseDuration(const std::string& sDuration);
 double versionToFloat(std::string);
 std::string floatToVersion(double);
