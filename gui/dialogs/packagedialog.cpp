@@ -692,11 +692,11 @@ void PackageDialog::loadProjectFile(const wxString& filename)
             if (!fileExists(sFile))
                 allFilesFound = false;
             else
-                prop->SetValueFromString(wxFromUtf8(sFile));
+                prop->SetValueFromString(wxFromUtf8(ensureValidUtf8(sFile)));
             continue;
         }
 
-        prop->SetValueFromString(wxFromUtf8(infoitem->GetText()));
+        prop->SetValueFromString(wxFromUtf8(ensureValidUtf8(infoitem->GetText())));
     }
 
     m_fileList->DeleteAllItems();
@@ -713,14 +713,14 @@ void PackageDialog::loadProjectFile(const wxString& filename)
         {
             allFilesFound = false;
 
-            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + wxFromUtf8(sFile), m_icons->GetIconIndex(""));
+            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + wxFromUtf8(ensureValidUtf8(sFile)), m_icons->GetIconIndex(""));
         }
         else
         {
             if (file->Attribute("lastmodified"))
             {
                 wxString t = file->Attribute("lastmodified");
-                wxFileName fn(wxFromUtf8(sFile));
+                wxFileName fn(wxFromUtf8(ensureValidUtf8(sFile)));
 
                 if (t != fn.GetModificationTime().ToTimezone(wxDateTime::TimeZone(wxDateTime::GMT0)).FormatISOCombined())
                     changesDetected = true;
@@ -728,7 +728,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
 
             std::string sExt = sFile.substr(sFile.rfind('.'));
 
-            m_fileList->InsertItem(m_fileList->GetItemCount(), wxFromUtf8(sFile), m_icons->GetIconIndex(sExt));
+            m_fileList->InsertItem(m_fileList->GetItemCount(), wxFromUtf8(ensureValidUtf8(sFile)), m_icons->GetIconIndex(sExt));
         }
 
         file = file->NextSiblingElement();

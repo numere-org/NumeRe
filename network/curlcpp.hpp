@@ -208,6 +208,22 @@ class CurlCpp
         }
 
         /////////////////////////////////////////////////
+        /// \brief Return the HTTP response code.
+        ///
+        /// \return long
+        ///
+        /////////////////////////////////////////////////
+        long getHttpResponse() const
+        {
+            if (!m_curlInstance)
+                return -1;
+
+            long response_code;
+            curl_easy_getinfo(m_curlInstance, CURLINFO_RESPONSE_CODE, &response_code);
+            return response_code;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Returns true, if the instance is valid.
         ///
         /// \return operator

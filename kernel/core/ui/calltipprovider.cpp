@@ -129,6 +129,7 @@ namespace NumeRe
     {
         static bool bBeginEnd = false;
         static size_t nLastIndent = 0;
+        static const std::regex enumPattern("(\\d+\\.|-) +.+");
 
         if (sNewDocLine.find_first_not_of(" \t") == std::string::npos)
         {
@@ -166,7 +167,7 @@ namespace NumeRe
                 sDocumentation += "\n    ";
         }
         else if (sNewDocLine.length()
-                 && std::regex_match(sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 10), std::regex("(\\d+\\.|-) +.+")))
+                 && std::regex_match(sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 10), enumPattern))
         {
             nLastIndent = sNewDocLine.find_first_not_of(" \t", sNewDocLine.find_first_of(".-")+1);
 
@@ -808,8 +809,10 @@ namespace NumeRe
             sToken = "VECT." + _lang.get(sBaseId + "[VECT]");
         else if (sType == "string" && _lang.containsString(sBaseId + "[STRING]"))
             sToken = "STRING." + _lang.get(sBaseId + "[STRING]");
-        else if (sType == "dictstruct" && _lang.containsString(sBaseId + "[DICT]"))
-            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "dict" && _lang.containsString(sBaseId + "[DICT]"))
+            sToken = "DICT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "dictstruct" && _lang.containsString(sBaseId + "[STRUCT]"))
+            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[STRUCT]");
         else if (sType == "category" && _lang.containsString(sBaseId + "[CAT]"))
             sToken = "CATEGORY." + _lang.get(sBaseId + "[CAT]");
         else if (sType == "table" && _lang.containsString(sBaseId + "[DATA]"))
@@ -826,6 +829,7 @@ namespace NumeRe
             std::string sKey = _lang.getKey(sBaseId + "*");
             size_t p = sKey.rfind('[')+1;
             sToken = sKey.substr(p, sKey.length()-1 - p) + "." + _lang.get(sKey);
+            replaceAll(sToken, "STRUCT.", "DICTSTRUCT.");
         }
 
         CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);
@@ -857,7 +861,9 @@ namespace NumeRe
         else if (sType == "string" && _lang.containsString(sBaseId + "[STRING]"))
             sToken = "STRING." + _lang.get(sBaseId + "[STRING]");
         else if (sType == "dict" && _lang.containsString(sBaseId + "[DICT]"))
-            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[DICT]");
+            sToken = "DICT." + _lang.get(sBaseId + "[DICT]");
+        else if (sType == "struct" && _lang.containsString(sBaseId + "[STRUCT]"))
+            sToken = "DICTSTRUCT." + _lang.get(sBaseId + "[STRUCT]");
         else if (sType == "cat" && _lang.containsString(sBaseId + "[CAT]"))
             sToken = "CATEGORY." + _lang.get(sBaseId + "[CAT]");
         else if (sType == "table" && _lang.containsString(sBaseId + "[DATA]"))
@@ -913,16 +919,32 @@ namespace NumeRe
     {
         CallTip _cTip;
 
-        if (sToken.front() != '_')
-            sToken.insert(0, 1, '_');
-
-        if (sToken == "_G")
-            _cTip.sDefinition = _lang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
+        if (sToken.starts_with("__") && sToken.ends_with("__"))
+        {
+            // This is a user-defined environment variable
+            _cTip.sDefinition = NumeReKernel::getInstance()->getEnvironment().getVarDefinition(sToken);
+        }
         else
-            _cTip.sDefinition = _lang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(sToken) + "_*");
+        {
+            if (sToken.front() != '_')
+                sToken.insert(0, 1, '_');
 
-        _cTip.nStart = 0;
-        _cTip.nEnd = _cTip.sDefinition.find('=');
+            if (sToken == "_G")
+                _cTip.sDefinition = "<const> " + _lang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
+            else
+                _cTip.sDefinition = "<const> " + _lang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(sToken) + "_*");
+        }
+
+
+        if (_cTip.sDefinition.length() > m_maxLineLength)
+        {
+            _cTip.sDocumentation = _cTip.sDefinition.substr(_cTip.sDefinition.find('=')+2);
+            _cTip.sDefinition.replace(m_maxLineLength-4, std::string::npos, " ...");
+            _cTip = addLinebreaks(_cTip, m_maxLineLength);
+        }
+
+        _cTip.nStart = _cTip.sDefinition.find('>') + 1;
+        _cTip.nEnd = _cTip.sDefinition.find_first_of("=:");
 
         return _cTip;
     }

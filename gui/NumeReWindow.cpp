@@ -91,6 +91,7 @@
 #include "dialogs/newfiledialog.hpp"
 #include "dialogs/listeditdialog.hpp"
 #include "dialogs/reportissuedialog.hpp"
+#include "dialogs/environmentdialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -1423,12 +1424,22 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_CREATE_LATEX_FILE:
         {
-            createLaTeXFile();
+            createLaTeXFile(false);
+            break;
+        }
+        case ID_MENU_CREATE_LATEX_FILE_LINES_PRESERVED:
+        {
+            createLaTeXFile(true);
             break;
         }
         case ID_MENU_RUN_LATEX:
         {
-            runLaTeX();
+            runLaTeX(false);
+            break;
+        }
+        case ID_MENU_RUN_LATEX_LINES_PRESERVED:
+        {
+            runLaTeX(true);
             break;
         }
         case ID_MENU_COMPILE_LATEX:
@@ -1672,6 +1683,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_OPTIONS:
         {
             OnOptions();
+            break;
+        }
+        case ID_MENU_ENVIRONMENT:
+        {
+            OnEnvironment();
             break;
         }
         case ID_MENU_TOGGLE_DEBUGGER:
@@ -2240,6 +2256,8 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
             showDirDialog(window);
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_TEXTENTRY)
             showTextEntry(window);
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_PWDENTRY)
+            showPwdEntry(window);
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_MESSAGEBOX)
             showMessageBox(window);
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_LISTDIALOG)
@@ -2336,7 +2354,38 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     std::string sExpression = window.getWindowSettings().sExpression;
-    wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), wxFromUtf8(window.getWindowSettings().sTitle), prepareStringsForDialog(getNextArgument(sExpression, true)));
+    wxTextEntryDialog dialog(this,
+                             prepareStringsForDialog(window.getWindowSettings().sMessage),
+                             wxFromUtf8(window.getWindowSettings().sTitle),
+                             prepareStringsForDialog(getNextArgument(sExpression, true)));
+    dialog.SetIcon(getStandardIcon());
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
+    else
+    {
+        wxString value = dialog.GetValue();
+        window.updateWindowInformation(NumeRe::STATUS_OK, toExternalString(wxToUtf8(value)));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a password entry dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::showPwdEntry(NumeRe::Window& window)
+{
+    std::string sExpression = window.getWindowSettings().sExpression;
+    wxPasswordEntryDialog dialog(this,
+                                 prepareStringsForDialog(window.getWindowSettings().sMessage),
+                                 wxFromUtf8(window.getWindowSettings().sTitle),
+                                 "");
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
@@ -2492,7 +2541,7 @@ void NumeReWindow::showListEditDialog(NumeRe::Window& window)
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
-        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "\"\"");
     else
     {
         wxArrayString listEntries = dialog.getEntries();
@@ -2570,10 +2619,11 @@ void NumeReWindow::evaluateDebugInfo(const std::vector<std::string>& vDebugInfo)
 /// contents from the current editor to create a
 /// new LaTeX file from them.
 ///
+/// \param preserveLineNumbers bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::createLaTeXFile()
+void NumeReWindow::createLaTeXFile(bool preserveLineNumbers)
 {
     if (!m_book->getCurrentEditor())
         return;
@@ -2581,7 +2631,7 @@ void NumeReWindow::createLaTeXFile()
     std::string sFileName = wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath());
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
 
-    std::string sDocFile = docGen.createDocumentation(sFileName);
+    std::string sDocFile = docGen.createDocumentation(sFileName, preserveLineNumbers);
 
     if (sDocFile.length())
         wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", wxFromUtf8(sDocFile)),
@@ -2597,17 +2647,18 @@ void NumeReWindow::createLaTeXFile()
 /// LaTeX documentation files and uses the Windows
 /// shell to run the XeLaTeX compiler.
 ///
+/// \param preserveLineNumbers bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::runLaTeX()
+void NumeReWindow::runLaTeX(bool preserveLineNumbers)
 {
     if (!m_book->getCurrentEditor())
         return;
 
     std::string sFileName = wxToUtf8(m_book->getCurrentEditor()->GetFileNameAndPath());
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
-    std::string sMain = docGen.createFullDocumentation(sFileName);
+    std::string sMain = docGen.createFullDocumentation(sFileName, preserveLineNumbers);
 
     if (!sMain.length())
     {
@@ -5482,7 +5533,9 @@ void NumeReWindow::UpdateMenuBar()
     // Create LaTeX menu
     wxMenu* menuLaTeX = new wxMenu();
     menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
+    menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE_LINES_PRESERVED, _guilang.get("GUI_MENU_CREATELATEX_LINES_PRESERVED"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
     menuLaTeX->Append(ID_MENU_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
+    menuLaTeX->Append(ID_MENU_RUN_LATEX_LINES_PRESERVED, _guilang.get("GUI_MENU_RUNLATEX_LINES_PRESERVED"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
     menuLaTeX->Append(ID_MENU_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
 
     // Create refactoring menu
@@ -5507,6 +5560,7 @@ void NumeReWindow::UpdateMenuBar()
     wxMenu* menuTools = new wxMenu();
 
     menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
+    menuTools->Append(ID_MENU_ENVIRONMENT, _guilang.get("GUI_MENU_ENVIRONMENT"));
     menuTools->AppendSeparator();
     menuTools->Append(ID_MENU_EXECUTE, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
     menuTools->Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EXECUTE_FROM_LINE"), _guilang.get("GUI_MENU_EXECUTE_FROM_LINE_TTP"));
@@ -6208,6 +6262,8 @@ void NumeReWindow::prepareFunctionTree()
         else if (vKeyList[i] == "cat")
             sPrefix = "CATEGORY";
         else if (vKeyList[i] == "dict")
+            sPrefix = "DICT";
+        else if (vKeyList[i] == "struct")
             sPrefix = "DICTSTRUCT";
         else
             sPrefix = toUpperCase(vKeyList[i]);
@@ -6239,7 +6295,7 @@ void NumeReWindow::prepareFunctionTree()
             FileNameTreeData* data = new FileNameTreeData();
             data->isConstant = true;
             data->tooltip = vDirList[j];
-            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(" = ")), idxConstants, -1, data);
+            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find_first_of(": =")), idxConstants, -1, data);
         }
     }
 
@@ -6456,18 +6512,21 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
     }
     else
     {
+        wxTreeItemId item = event.GetItem();
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+
+        if (m_functionTree->HasChildren(item))
+        {
+            m_functionTree->Toggle(item);
+            return;
+        }
+
         NumeReEditor* edit = m_book->getFocusedEditor();
 
         if (!edit)
             return;
 
-        wxTreeItemId item = event.GetItem();
-        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
-        if (data->isDir)
-        {
-            m_functionTree->Toggle(item);
-        }
-        else if (data->isCommand)
+        if (data->isCommand)
         {
             edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')+1));
             edit->GotoPos(edit->GetCurrentPos()+(data->tooltip).find(' ')+1);
@@ -6615,7 +6674,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         }
         else
         {
-            token.erase(token.find(' '));
+            token.erase(token.find_first_of(" :"));
 
             if (token.find('(') != std::string::npos)
                 token.erase(token.find('(')+1);
@@ -6638,7 +6697,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
             return;
 
         wxFileName pathname = data->filename;
-        wxString dragableExtensions = ";nscr;nprc;ndat;nlyt;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
+        wxString dragableExtensions = ";nscr;nprc;ndat;nlyt;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;xml;json;diff;";
 
         if (dragableExtensions.find(";" + pathname.GetExt().Lower() + ";") != std::string::npos)
         {
@@ -7467,7 +7526,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 // Insert the prepared contents
                 for (size_t j = 0; j < contents.size(); j++)
                 {
-                    edit->AddText("\t" + contents[j] + "\r\n");
+                    edit->AddText("\t" + wxFromUtf8(ensureValidUtf8(contents[j])) + "\r\n");
                 }
 
                 edit->AddText("\r\n");
@@ -7673,6 +7732,51 @@ void NumeReWindow::OnOptions()
 
     if (m_book->getCurrentEditor())
         m_book->getCurrentEditor()->SetFocus();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Edit the environment variables.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnEnvironment()
+{
+    if (m_terminal->IsBusy())
+    {
+        wxMessageBox(_guilang.get("GUI_ENV_BUSY_ERROR"), _guilang.get("GUI_ENV_BUSY_ERROR_HEAD"), wxCENTRE | wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    EnvironmentDialog dialog(this, getProgramFolder() + "/numere.env");
+    dialog.SetIcon(getStandardIcon());
+    int result = dialog.ShowModal();
+
+    if (result == wxID_OK)
+    {
+        // Re-init envars and syntax
+        m_terminal->updateEnvironment();
+
+        // Re-init editors
+        for (size_t i = 0; i < m_book->GetPageCount(); i++)
+        {
+            if (m_book->isDefaultPage(i))
+                continue;
+
+            NumeReEditor* edit = m_book->getEditor(i); // Might need adaption
+            edit->UpdateSyntaxHighlighting(true);
+
+            if (m_book->getEditor(i, true))
+            {
+                edit = m_book->getEditor(i, true);
+                edit->UpdateSyntaxHighlighting(true);
+            }
+        }
+
+        // Re-init history
+        m_history->UpdateSyntaxHighlighting();
+    }
 }
 
 
@@ -7885,5 +7989,19 @@ void NumeReWindow::ensureEditorTabVisible()
         Update();
         m_defaultPage->CallAfter(DefaultPage::loadLatestRelease);
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Ensure that the terminal knows its
+/// correct line length.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::ensureCorrectTerminalDimensions()
+{
+    toggleHistory();
+    toggleHistory();
 }
 

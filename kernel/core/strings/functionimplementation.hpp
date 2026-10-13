@@ -69,7 +69,8 @@ mu::Array strfnc_findparam(const mu::Array& par, const mu::Array& line, const mu
 mu::Array strfnc_substr(const mu::Array& sStr, const mu::Array& pos, const mu::Array& len); // OPT=1
 mu::Array strfnc_repeat(const mu::Array& sStr, const mu::Array& rep);
 mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time);
-mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts); // OPT=1
+mu::Array strfnc_weekday(const mu::Array& timeVal, const mu::Array& opts); // OPT=1
+mu::Array strfnc_monthname(const mu::Array& timeVal);
 mu::Array strfnc_char(const mu::Array& sStr, const mu::Array& pos);
 mu::Array strfnc_getopt(const mu::Array& sStr, const mu::Array& pos);
 mu::Array strfnc_replace(const mu::Array& where, const mu::Array& from, const mu::Array& len, const mu::Array& rep);
@@ -107,8 +108,8 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr);
 mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col);
 mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const mu::Array& len); // OPT=2
 mu::Array strfnc_gettypeof(const mu::Array& vals);
-mu::Array strfnc_readxml(const mu::Array& xmlFiles);
-mu::Array strfnc_readjson(const mu::Array& jsonFiles);
+mu::Array strfnc_readxml(const mu::Array& xmlFiles, const mu::Array& opts); // OPT=1
+mu::Array strfnc_readjson(const mu::Array& jsonFiles, const mu::Array& opts); // OPT=1
 
 #endif // STRFUNCTIONIMPLEMENTATION_HPP
 

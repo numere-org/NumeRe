@@ -1828,35 +1828,65 @@ mu::Array strfnc_timeformat(const mu::Array& fmt, const mu::Array& time)
 /// \brief Implementation of the weekday()
 /// function.
 ///
-/// \param daynum const mu::Array&
+/// \param timeVal const mu::Array&
 /// \param opts const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_weekday(const mu::Array& daynum, const mu::Array& opts)
+mu::Array strfnc_weekday(const mu::Array& timeVal, const mu::Array& opts)
 {
-    mu::MatrixView dayNumView(daynum);
+    mu::MatrixView timeValView(timeVal);
     mu::MatrixView optsView(opts);
-    mu::Array ret = dayNumView.prepare(optsView);
+    mu::Array ret = timeValView.prepare(optsView);
 
-    size_t elems = dayNumView.size();
+    static std::vector<std::string> vWeekDays = _lang.getList("COMMON_WEEKDAY_*");
+    size_t elems = timeValView.size();
 
     for (size_t i = 0; i < elems; i++)
     {
-        sys_time_point nTime = to_timePoint(dayNumView.get(i).getNum().asF64());
+        sys_time_point nTime = to_timePoint(timeValView.get(i).getNum().asF64());
 
         size_t day = getWeekDay(nTime);
 
-        if (opts.isDefault()|| !optsView.get(i))
+        if (opts.isDefault() || !optsView.get(i))
         {
             ret.emplace_back(day);
             continue;
         }
 
-        static std::vector<std::string> weekdays = _lang.getList("COMMON_WEEKDAY_*");
+        if (vWeekDays.size() >= 7)
+            ret.emplace_back(vWeekDays[day-1]);
+        else
+            ret.emplace_back("UNDEFINED");
+    }
 
-        if (weekdays.size() >= 7)
-            ret.emplace_back(weekdays[day-1]);
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the monthname()
+/// function.
+///
+/// \param timeVal const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_monthname(const mu::Array& timeVal)
+{
+    mu::Array ret;
+    ret.copyDims(timeVal);
+    size_t elems = timeVal.size();
+
+    static std::vector<std::string> vMonthNames = _lang.getList("COMMON_MONTH_*");
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        time_stamp nTime = getTimeStampFromTimePoint(to_timePoint(timeVal.get(i).getNum().asF64()));
+        size_t nMonth = (unsigned)nTime.m_ymd.month();
+
+        if (vMonthNames.size() >= 12)
+            ret.emplace_back(vMonthNames[nMonth-1]);
         else
             ret.emplace_back("UNDEFINED");
     }
@@ -2205,6 +2235,8 @@ mu::Array strfnc_textparse(const mu::Array& sStr, const mu::Array& pattern, cons
                 current[nth_token] = mu::Value(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), LOG));
             else if (vPatterns[n] == "%t")
                 current[nth_token] = mu::Value(StrToTime(sSearchString.subview(lastPosition, pos - lastPosition).to_string()));
+            else if (vPatterns[n] == "%d")
+                current[nth_token] = mu::Numerical(parseDuration(sSearchString.subview(lastPosition, pos - lastPosition).to_string()), mu::DURATION);
             else if (vPatterns[n] == "%f")
             {
                 std::string sFloatingPoint = sSearchString.subview(lastPosition, pos - lastPosition).to_string();
@@ -2752,6 +2784,8 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
     size_t elems = rgxView.size();
 
 #ifndef PARSERSTANDALONE
+    std::regex expr;
+
     for (size_t i = 0; i < elems; i++)
     {
         StringView r = rgxView.get(i).getStr();
@@ -2779,7 +2813,11 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
         try
         {
             std::smatch match;
-            std::regex expr(r.to_string());
+
+            // Only compile a new regex if strictly necessary
+            if (!i || (rgx.size() > 1 && rgxView.get(i-1).getStr() != r))
+                expr = r.to_string();
+
             std::string sSubView = s.subview(p-1, l).to_string();
 
             if (std::regex_search(sSubView, match, expr))
@@ -2835,7 +2873,7 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
                     message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
                     break;
                 case std::regex_constants::error_complexity:
-                    message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
+                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
                     break;
                 case std::regex_constants::error_stack:
                     message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
@@ -3439,17 +3477,22 @@ mu::Array strfnc_to_value(const mu::Array& sStr)
     {
         if (sStr.get(i).isString())
         {
-            p.SetExpr(sStr.get(i).getStr());
-            int res;
-            const mu::StackItem* vals = p.Eval(res);
-            mu::Array results;
-
-            for (int n = 0; n < res; n++)
+            if (sStr.get(i).getStr().length())
             {
-                results.insert(results.end(), vals[n].get().begin(), vals[n].get().end());
-            }
+                p.SetExpr(sStr.get(i).getStr());
+                int res;
+                const mu::StackItem* vals = p.Eval(res);
+                mu::Array results;
 
-            ret.emplace_back(results);
+                for (int n = 0; n < res; n++)
+                {
+                    results.insert(results.end(), vals[n].get().begin(), vals[n].get().end());
+                }
+
+                ret.emplace_back(results);
+            }
+            else
+                ret.emplace_back(mu::Value()); // Empty is a void result
         }
         else
             ret.emplace_back(sStr.get(i));
@@ -3735,27 +3778,37 @@ mu::Array strfnc_gettypeof(const mu::Array& vals)
 /// \brief Implements the readxml() function.
 ///
 /// \param xmlFiles const mu::Array&
+/// \param opts const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_readxml(const mu::Array& xmlFiles)
+mu::Array strfnc_readxml(const mu::Array& xmlFiles, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.copyDims(xmlFiles);
-#ifndef PARSERSTANDALONE
-    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+    mu::MatrixView xmlView(xmlFiles);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = xmlView.prepare(optsView);
 
-    for (const mu::Value& file : xmlFiles)
+    size_t elems = xmlView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string validFile = _fSys.ValidFileName(file.getPath(), ".xml", false, true);
-
-        if (!fileExists(validFile))
-            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
-
         ret.emplace_back(mu::DictStruct());
-        ret.back().getDictStruct().importXml(validFile);
+
+        if (opts.isDefault() || optsView.get(i).getNum().asI64())
+        {
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            std::string validFile = _fSys.ValidFileName(xmlView.get(i).getPath(), ".xml", false, true);
+
+            if (!fileExists(validFile))
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readxml(\"" + validFile + "\")", validFile);
+
+            ret.back().getDictStruct().importXml(validFile);
+#endif // PARSERSTANDALONE
+        }
+        else
+            ret.back().getDictStruct().decodeXml(xmlView.get(i).getStr());
     }
-#endif
 
     return ret;
 }
@@ -3765,27 +3818,37 @@ mu::Array strfnc_readxml(const mu::Array& xmlFiles)
 /// \brief Implements the readjson() function.
 ///
 /// \param jsonFiles const mu::Array&
+/// \param opts const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_readjson(const mu::Array& jsonFiles)
+mu::Array strfnc_readjson(const mu::Array& jsonFiles, const mu::Array& opts)
 {
-    mu::Array ret;
-    ret.copyDims(jsonFiles);
-#ifndef PARSERSTANDALONE
-    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+    mu::MatrixView jsonView(jsonFiles);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = jsonView.prepare(optsView);
 
-    for (const mu::Value& file : jsonFiles)
+    size_t elems = jsonView.size();
+
+    for (size_t i = 0; i < elems; i++)
     {
-        std::string validFile = _fSys.ValidFileName(file.getPath(), ".json", false, true);
-
-        if (!fileExists(validFile))
-            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);
-
         ret.emplace_back(mu::DictStruct());
-        ret.back().getDictStruct().importJson(validFile);
+
+        if (opts.isDefault() || optsView.get(i).getNum().asI64())
+        {
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            std::string validFile = _fSys.ValidFileName(jsonView.get(i).getPath(), ".json", false, true);
+
+            if (!fileExists(validFile))
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readjson(\"" + validFile + "\")", validFile);
+
+            ret.back().getDictStruct().importJson(validFile);
+#endif // PARSERSTANDALONE
+        }
+        else
+            ret.back().getDictStruct().decodeJson(jsonView.get(i).getStr());
     }
-#endif
 
     return ret;
 }

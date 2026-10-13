@@ -455,9 +455,9 @@ void DebugViewer::setDebugInfo(const wxString& title, const std::vector<std::str
     for (size_t i = 0; i < vStack.size(); i++)
     {
         m_stacktrace->InsertItem(i, "");
-        m_stacktrace->SetItem(i, 1, vStack[i].substr(0, vStack[i].find('\t')));
-        m_stacktrace->SetItem(i, nLineColumn, vStack[i].substr(vStack[i].rfind('\t')+1));
-        m_stacktrace->SetItem(i, nModuleColumn, vStack[i].substr(vStack[i].find('\t')+1, vStack[i].rfind('\t') - vStack[i].find('\t') - 1));
+        m_stacktrace->SetItem(i, 1, wxFromUtf8(vStack[i].substr(0, vStack[i].find('\t'))));
+        m_stacktrace->SetItem(i, nLineColumn, wxFromUtf8(vStack[i].substr(vStack[i].rfind('\t')+1)));
+        m_stacktrace->SetItem(i, nModuleColumn, wxFromUtf8(vStack[i].substr(vStack[i].find('\t')+1, vStack[i].rfind('\t') - vStack[i].find('\t') - 1)));
     }
 
     // Get the debugger information for the

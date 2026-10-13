@@ -24,6 +24,8 @@
 #include "../maths/matfuncimplementation.hpp"
 #include "../strings/functionimplementation.hpp"
 
+#include "muValueImpl.hpp"
+
 #include "../utils/timer.hpp"
 #include "testTypes.hpp"
 
@@ -371,6 +373,10 @@ int main()
     _parser.DefineVar("t", &t);
 
     runtests();
+
+    std::cout << sizeof(mu::Value) << std::endl;
+    std::cout << sizeof(mu::NumValue) << std::endl;
+    std::cout << sizeof(mu::Numerical) << std::endl;
 
     while (true)
     {

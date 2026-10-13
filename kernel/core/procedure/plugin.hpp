@@ -32,6 +32,7 @@
 
 #include "../io/filesystem.hpp"
 #include "../ui/error.hpp"
+#include "../../../network/packagerepo.hpp"
 
 
 /////////////////////////////////////////////////
@@ -116,6 +117,7 @@ class PackageManager : public FileSystem
     private:
         boost::nowide::fstream fPlugins;
         std::vector<Package> vPackageInfo;
+        PackageRepoManager m_remotes;
         std::string sPluginDefinitionFile;
 
         std::string sPluginProcName;
@@ -130,6 +132,7 @@ class PackageManager : public FileSystem
         PackageManager& operator= (const PackageManager& _manager);
 
         bool loadPlugins();
+        bool importRemotesConfigurations();
         bool evalPluginCmd(std::string& sCmd);
         bool declareNewPackage(const std::string& sInstallInfoString);
         bool isPluginCmd(const std::string& sCmd) const;
@@ -159,6 +162,43 @@ class PackageManager : public FileSystem
         const std::vector<Package>& getPackages() const
         {
             return vPackageInfo;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Access the contained
+        /// PackageRepoManager as const ref.
+        ///
+        /// \return const PackageRepoManager&
+        ///
+        /////////////////////////////////////////////////
+        const PackageRepoManager& getRepoManager() const
+        {
+            return m_remotes;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return a list of defined remote
+        /// repositories.
+        ///
+        /// \return const std::vector<PackageRepo>&
+        ///
+        /////////////////////////////////////////////////
+        const std::vector<PackageRepo>& getRemotes() const
+        {
+            return m_remotes.getRemotes();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a selected remote repository by
+        /// name.
+        ///
+        /// \param name const std::string&
+        /// \return const PackageRepo&
+        ///
+        /////////////////////////////////////////////////
+        const PackageRepo& getRemote(const std::string& name) const
+        {
+            return m_remotes.getRemote(name);
         }
 
         /////////////////////////////////////////////////

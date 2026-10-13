@@ -177,6 +177,9 @@ Memory& Memory::operator=(const Memory& other)
             case TableColumn::TYPE_DATETIME:
                 memArray[i].reset(new DateTimeColumn);
                 break;
+            case TableColumn::TYPE_DURATION:
+                memArray[i].reset(new DurationColumn);
+                break;
             case TableColumn::TYPE_STRING:
                 memArray[i].reset(new StringColumn);
                 break;
@@ -460,8 +463,7 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 {
     mu::Array vReturn;
 
-    if (!memArray.size()
-        /*|| (_vCol.size() == 1 && !getElemsInColumn(_vCol.front()))*/)
+    if (!memArray.size())
         return vReturn;
 
     vReturn.resize(_vLine.size()*_vCol.size(), mu::Value());
@@ -472,23 +474,10 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
         if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
             continue;
 
-        /*int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;*/
-
         for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
-
-            /*if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }*/
 
             vReturn[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
         }
@@ -766,7 +755,7 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /////////////////////////////////////////////////
 void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
-    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
+    if (!memArray.size())
         vTarget->std::vector<mu::Value>::assign(1, mu::Value());
     else
     {
@@ -778,25 +767,12 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
             if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
                 continue;
 
-            /*int elems = getElemsInColumn(_vCol[j]);
-
-            if (!elems)
-                continue;*/
-
             for (size_t i = 0; i < _vLine.size(); i++)
             {
                 if (_vLine[i] < 0)
                     continue;
 
-                /*if (_vLine[i] >= elems)
-                {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
-                        break;
-
-                    continue;
-                }*/
-
-                (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->get(_vLine[i]);
+                (*vTarget)[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
             }
         }
 
@@ -929,8 +905,8 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
-    else if (_type == TableColumn::TYPE_MIXED)
-        _type = TableColumn::TYPE_NONE; // Enable autoconversions
+    //else if (_type == TableColumn::TYPE_MIXED)
+    //    _type = TableColumn::TYPE_NONE; // Enable autoconversions
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -941,7 +917,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
         if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
             continue;
 
-        if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type)
+        if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type && memArray[_vCol[i]]->m_type != TableColumn::TYPE_NONE)
         {
             TableColumn* col = memArray[_vCol[i]]->convert(_type);
 
@@ -950,7 +926,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
             if (col && col != memArray[_vCol[i]].get())
                 memArray[_vCol[i]].reset(col);
             else
-                success = _type == TableColumn::TYPE_NONE; // Auto conversions do not flag errors
+                success = _type == TableColumn::TYPE_MIXED; // Auto conversions do not flag errors
         }
     }
 
@@ -978,8 +954,8 @@ bool Memory::convertEmptyColumns(const VectorIndex& _vCol, const std::string& _s
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
-    else if (_type == TableColumn::TYPE_MIXED)
-        _type = TableColumn::TYPE_NONE; // Enable autoconversions
+    //else if (_type == TableColumn::TYPE_MIXED)
+    //    _type = TableColumn::TYPE_NONE; // Enable autoconversions
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -1427,7 +1403,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColu
 /////////////////////////////////////////////////
 void Memory::writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData)
 {
-    promote_if_needed(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
+    promote_if_needed(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE_CF64);
     memArray[_nCol]->setValue(_nLine, _dData);
 }
 
@@ -1499,8 +1475,8 @@ void Memory::writeData(Indices& _idx, const mu::Array& _values)
 
     if (_values.isMatrix() && !_values.isVector())
     {
-        if (getCols() != _values.cols()
-            && getLines() != _values.rows()
+        if (getCols() != (int)_values.cols()
+            && getLines() != (int)_values.rows()
             && _idx.row.isFullRange(getLines()-1)
             && _idx.col.isFullRange(getCols()-1))
             clear();
@@ -1651,6 +1627,7 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
 
     bool bError = false;
     bool bReturnIndex = false;
+    bool bInternalIndex = false;
     bSortCaseInsensitive = findParameter(sSortingExpression, "ignorecase");
     int nSign = 1;
 
@@ -1670,6 +1647,11 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
     // (instead of actual reordering the columns)
     if (findParameter(sSortingExpression, "index"))
         bReturnIndex = true;
+
+    // Evaluate, whether an index shall be returned
+    // (instead of actual reordering the columns)
+    if (findParameter(sSortingExpression, "internal"))
+        bInternalIndex = true;
 
     // Is a column group selected or do we actually
     // sort everything?
@@ -1804,7 +1786,7 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
 
     // Increment each index value, if the index
     // vector shall be returned
-    if (bReturnIndex)
+    if (bReturnIndex && !bInternalIndex)
     {
         for (size_t i = 0; i < vIndex.size(); i++)
             vIndex[i]++;
@@ -1976,6 +1958,8 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
                     memArray[cols[j]].reset(createValueTypeColumn(tabCol->m_type));
                 else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
                     memArray[cols[j]].reset(new DateTimeColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_DURATION)
+                    memArray[cols[j]].reset(new DurationColumn);
                 else if (tabCol->m_type == TableColumn::TYPE_STRING)
                     memArray[cols[j]].reset(new StringColumn);
                 else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
@@ -2332,13 +2316,25 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 }
 
 
-bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals)
+/////////////////////////////////////////////////
+/// \brief Replaces the old with the new values
+/// in the selected columns.
+///
+/// \param _vCols const VectorIndex&
+/// \param _oldVals const mu::Array&
+/// \param _newVals const mu::Array&
+/// \param enableRegEx bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals, bool enableRegEx)
 {
-    if (_oldVals.size() != _newVals.size() || !_oldVals.size())
+    if ((_oldVals.size() != _newVals.size() && _newVals.size() > 1) || !_oldVals.size())
         return false;
 
     _vCols.setOpenEndIndex(getCols()-1);
     bool success = false;
+    std::regex regEx;
 
     // Search in all columns
     for (size_t j = 0; j < _vCols.size(); j++)
@@ -2355,13 +2351,22 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
             {
                 std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(col.get())->getCategories();
 
-                for (size_t i = 0; i < vCategories.size(); i++)
+                for (size_t n = 0; n < _oldVals.size(); n++)
                 {
-                    for (size_t n = 0; n < _oldVals.size(); n++)
+                    const mu::Value& oldVal = _oldVals.get(n);
+
+                    if (!oldVal.isString())
+                        continue;
+
+                    if (enableRegEx)
+                        regEx = oldVal.getStr();
+
+                    for (size_t i = 0; i < vCategories.size(); i++)
                     {
-                        if (_oldVals[n].isString() && _oldVals[n] == vCategories[i])
+                        if ((enableRegEx && std::regex_match(vCategories[i], regEx))
+                            || (!enableRegEx && oldVal.getStr() == vCategories[i]))
                         {
-                            vCategories[i] = _newVals[n].printVal();
+                            vCategories[i] = _newVals.get(n).printVal();
                             success = true;
                             break;
                         }
@@ -2375,18 +2380,23 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
             std::map<size_t, size_t> idxMap;
 
             // Find all matches and get the promoted type
-            for (size_t i = 0; i < col->size(); i++)
+            for (size_t n = 0; n < _oldVals.size(); n++)
             {
-                mu::Value v = col->get(i);
+                const mu::Value& oldVal = _oldVals.get(n);
 
-                for (size_t n = 0; n < _oldVals.size(); n++)
+                if (oldVal.isString() && enableRegEx)
+                    regEx = oldVal.getStr();
+
+                for (size_t i = 0; i < col->size(); i++)
                 {
-                    if (_oldVals[n] == v)
+                    mu::Value v = col->get(i);
+
+                    if ((enableRegEx && oldVal.isString() && v.isString() && std::regex_match(v.getStr(), regEx))
+                        || (!enableRegEx && oldVal == v))
                     {
-                        targetType = to_promoted_type(targetType, to_column_type(_newVals[n]));
+                        targetType = to_promoted_type(targetType, to_column_type(_newVals.get(n)));
                         idxMap[i] = n;
                         success = true;
-                        break;
                     }
                 }
             }
@@ -2411,7 +2421,7 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
 
                 for (const auto& iter : idxMap)
                 {
-                    col->set(iter.first, _newVals[iter.second]);
+                    col->set(iter.first, _newVals.get(iter.second));
                 }
             }
         }
@@ -3867,12 +3877,16 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
     for (const auto& sName : vColNames)
     {
         bool found = false;
+        std::regex regEx;
 
         for (size_t i = 0; i < memArray.size(); i++)
         {
             if (enableRegEx)
             {
-                if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, std::regex(sName)))
+                if (!i)
+                    regEx = sName;
+
+                if (memArray[i] && std::regex_match(memArray[i]->m_sHeadLine, regEx))
                     vColIndices.push_back(i+1);
             }
             else
@@ -3909,10 +3923,11 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
 ///
 /// \param _vCols const VectorIndex&
 /// \param vValues const mu::Array&
+/// \param enableRegEx bool
 /// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const
+std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues, bool enableRegEx) const
 {
     std::vector<size_t> vCounted;
 
@@ -3921,16 +3936,29 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
         if (_vCols[j] >= (int)memArray.size() || !memArray[_vCols[j]])
             continue;
 
-        for (const auto& val : vValues)
+        for (size_t n = 0; n < vValues.size(); n++)
         {
+            const mu::Value& val = vValues.get(n);
             size_t count = 0;
+            std::regex regEx;
+            bool isNum = val.isNumerical();
+
+            if (!isNum && enableRegEx)
+                regEx = val.getStr();
 
             for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
             {
-                if (val.isNumerical()
-                    ? closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().asCF64())
-                    : memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr())
-                    count++;
+                if (isNum)
+                {
+                    if (closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().asCF64()))
+                        count++;
+                }
+                else
+                {
+                    if ((enableRegEx && std::regex_match(memArray[_vCols[j]]->getValueAsInternalString(i), regEx))
+                        || (!enableRegEx && memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr()))
+                        count++;
+                }
             }
 
             vCounted.push_back(count);
@@ -3949,10 +3977,11 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
 ///
 /// \param col size_t
 /// \param vValues const mu::Array&
+/// \param enableRegEx bool
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
+mu::Array Memory::getIndex(size_t col, const mu::Array& vValues, bool enableRegEx) const
 {
     mu::Array indices;
 
@@ -3962,16 +3991,29 @@ mu::Array Memory::getIndex(size_t col, const mu::Array& vValues) const
         return indices;
     }
 
-    for (const auto& val : vValues)
+    for (size_t n = 0; n < vValues.size(); n++)
     {
+        const mu::Value& val = vValues.get(n);
         mu::Array idxSet;
+        std::regex regEx;
+        bool isNum = val.isNumerical();
+
+        if (!isNum && enableRegEx)
+            regEx = val.getStr();
 
         for (size_t i = 0; i < memArray[col]->size(); i++)
         {
-            if (val.isNumerical()
-                ? closeEnough(memArray[col]->getValue(i), val.getNum().asCF64())
-                : memArray[col]->getValueAsInternalString(i) == val.getStr())
-                idxSet.push_back(i+1);
+            if (isNum)
+            {
+                if (closeEnough(memArray[col]->getValue(i), val.getNum().asCF64()))
+                    idxSet.push_back(i+1);
+            }
+            else
+            {
+                if ((enableRegEx && std::regex_match(memArray[col]->getValueAsInternalString(i), regEx))
+                    || (!enableRegEx && memArray[col]->getValueAsInternalString(i) == val.getStr()))
+                    idxSet.push_back(i+1);
+            }
         }
 
         if (vValues.size() > 1)
@@ -5237,6 +5279,37 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 }
 
 
+static void extractResampled(Memory* _this, Resampler* _resampler, int start_line, int start_col, int _primary_dim, int& _secondary_dim, bool linewise)
+{
+    while (true)
+    {
+        const double* dOutputSamples = _resampler->get_line();
+
+        // dOutputSamples will be a nullptr, if no more resampled
+        // lines are available
+        if (!dOutputSamples)
+            break;
+
+        if (linewise)
+        {
+            for (int _fin = 0; _fin < _primary_dim; _fin++)
+            {
+                _this->writeData(start_line+_secondary_dim, start_col+_fin, dOutputSamples[_fin]);
+            }
+        }
+        else
+        {
+            for (int _fin = 0; _fin < _primary_dim; _fin++)
+            {
+                _this->writeData(start_line+_fin, start_col+_secondary_dim, dOutputSamples[_fin]);
+            }
+        }
+
+        _secondary_dim++;
+    }
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This member function resamples the
 /// data described by the passed coordinates
@@ -5336,8 +5409,10 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         _vCol.linearize();
 
         // Create the resample object and prepare the needed memory
-        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       _vCol.size(), samples.first,
+        // NOTE: It is intentional, that the line dimension is changing
+        // here, because that is way faster in the end
+        _resampler.reset(new Resampler(_vLine.size(), _vCol.size(),
+                                       samples.first, _vCol.size(),
                                        Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
@@ -5376,80 +5451,76 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         memArray.insert(memArray.begin()+_vCol.last()+1, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
     }
 
-    // resampler output buffer
-    const double* dOutputSamples = 0;
-    std::vector<double> dInputSamples(_vCol.size());
-    int _ret_line = 0;
-    int _final_cols = 0;
-
-    // Determine the number of final columns. These will stay constant only in
-    // the column application direction
-    if (Direction == ALL || Direction == GRID || Direction == LINES)
-        _final_cols = samples.second;
-    else
-        _final_cols = _vCol.size();
+    std::vector<double> dInputSamples(Direction == COLS ? _vLine.size() : _vCol.size());
+    int _seconday_dim = 0;
+    int _primary_dim = 0;
 
     // Resample the data table
-    // Apply the resampling linewise
-    for (size_t i = 0; i < _vLine.size(); i++)
+    if (Direction == COLS)
     {
+        // Determine the number of final primary dimension. These will stay constant only in
+        // the column application direction
+        _primary_dim = samples.first;
+
+        // Apply the resampling colwise
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
-        }
-
-        // If the resampler doesn't accept a further line
-        // the buffer is probably full
-        if (!_resampler->put_line(&dInputSamples[0]))
-        {
-            if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
+            for (size_t i = 0; i < _vLine.size(); i++)
             {
-                // Obviously not the case
-                throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+                dInputSamples[i] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
             }
-            else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
+
+            // If the resampler doesn't accept a further line
+            // the buffer is probably full
+            if (!_resampler->put_line(&dInputSamples[0]))
             {
-                // Free the scan buffer of the resampler by extracting the already resampled lines
-                while (true)
+                if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
+                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+                else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
                 {
-                    dOutputSamples = _resampler->get_line();
+                    // Free the scan buffer of the resampler by extracting the already resampled lines
+                    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, false);
 
-                    // dOutputSamples will be a nullptr, if no more resampled
-                    // lines are available
-                    if (!dOutputSamples)
-                        break;
-
-                    for (int _fin = 0; _fin < _final_cols; _fin++)
-                    {
-                        writeData(_vLine.front()+_ret_line, _vCol.front()+_fin, dOutputSamples[_fin]);
-                    }
-
-                    _ret_line++;
+                    // Try again to put the current line
+                    _resampler->put_line(&dInputSamples[0]);
                 }
+            }
+        }
+    }
+    else
+    {
+        // Determine the number of final primary dimension. These will stay constant only in
+        // the column application direction
+        _primary_dim = samples.second;
 
-                // Try again to put the current line
-                _resampler->put_line(&dInputSamples[0]);
+        // Apply the resampling linewise
+        for (size_t i = 0; i < _vLine.size(); i++)
+        {
+            for (size_t j = 0; j < _vCol.size(); j++)
+            {
+                dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
+            }
+
+            // If the resampler doesn't accept a further line
+            // the buffer is probably full
+            if (!_resampler->put_line(&dInputSamples[0]))
+            {
+                if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
+                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+                else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
+                {
+                    // Free the scan buffer of the resampler by extracting the already resampled lines
+                    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, true);
+
+                    // Try again to put the current line
+                    _resampler->put_line(&dInputSamples[0]);
+                }
             }
         }
     }
 
     // Extract the remaining resampled lines from the resampler's memory
-    while (true)
-    {
-        dOutputSamples = _resampler->get_line();
-
-        // dOutputSamples will be a nullptr, if no more resampled
-        // lines are available
-        if (!dOutputSamples)
-            break;
-
-        for (int _fin = 0; _fin < _final_cols; _fin++)
-        {
-            writeData(_vLine.front()+_ret_line, _vCol.front()+_fin, dOutputSamples[_fin]);
-        }
-
-        _ret_line++;
-    }
+    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, Direction != COLS);
 
     // Delete empty lines
     if (Direction != LINES && samples.first < _vLine.size())

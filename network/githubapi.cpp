@@ -113,15 +113,17 @@ namespace GitHub
     /// \param issue const Issue&
     /// \param sApiUrl const std::string&
     /// \param sUserAuth const std::string&
-    /// \param sLogPath const std::string&
+    /// \param sRootPath const std::string&
+    /// \param caCertFile const std::string&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string create(const Issue& issue, const std::string& sApiUrl, const std::string& sUserAuth, const std::string& sLogPath)
+    std::string create(const Issue& issue, const std::string& sApiUrl, const std::string& sUserAuth, const std::string& sRootPath)
     {
         // Set Up CURL
         CurlCpp curl(true);
-        Logger logger(sLogPath+"/github.log");
+        Logger logger(sRootPath+"/github.log");
+        std::string caCertFile = sRootPath + "/remotes/cacert.pem";
 
         if (curl)
         {
@@ -137,13 +139,7 @@ namespace GitHub
                 return "";
             }
 
-            if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
-            {
-                logger.push_line("ERROR: Internal cURL problem.");
-                return "";
-            }
-
-            if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
+            if (!curl.setOption(CURLOPT_CAINFO, caCertFile.c_str()))
             {
                 logger.push_line("ERROR: Internal cURL problem.");
                 return "";
@@ -218,15 +214,16 @@ namespace GitHub
     /// \brief Get all releases available on GitHub.
     ///
     /// \param sRepoApiUrl const std::string&
-    /// \param sLogPath const std::string&
+    /// \param sRootPath const std::string&
     /// \return Json::Value
     ///
     /////////////////////////////////////////////////
-    Json::Value getReleases(const std::string& sRepoApiUrl, const std::string& sLogPath)
+    Json::Value getReleases(const std::string& sRepoApiUrl, const std::string& sRootPath)
     {
         // Set Up CURL
         CurlCpp curl(true);
-        Logger logger(sLogPath+"/github.log");
+        Logger logger(sRootPath+"/github.log");
+        std::string caCertFile = sRootPath + "/remotes/cacert.pem";
 
         if (curl)
         {
@@ -240,13 +237,7 @@ namespace GitHub
                 return Json::Value();
             }
 
-            if (!curl.setOption(CURLOPT_SSL_VERIFYHOST, 0L))
-            {
-                logger.push_line("ERROR: Internal cURL problem.");
-                return Json::Value();
-            }
-
-            if (!curl.setOption(CURLOPT_SSL_VERIFYPEER, 0L))
+            if (!curl.setOption(CURLOPT_CAINFO, caCertFile.c_str()))
             {
                 logger.push_line("ERROR: Internal cURL problem.");
                 return Json::Value();

@@ -158,7 +158,9 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	{
 		wxCriticalSectionLocker lock(m_kernelCS);
 		getSyntax()->addPlugins(_kernel.getPluginCommands());
+		getSyntax()->setEnvVars(_kernel.getEnvironment().getVarList());
 	}
+
 	m_init = 0;
 }
 
@@ -216,6 +218,21 @@ std::map<std::string, std::string> NumeReTerminal::getMenuMap()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getMenuMap();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Updates the internal environment and
+/// reloads the syntax.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::updateEnvironment()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    _kernel.initEnvironment();
+    getSyntax()->setEnvVars(_kernel.getEnvironment().getVarList());
 }
 
 

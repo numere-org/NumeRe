@@ -88,6 +88,33 @@ void ParserSymbol::resolveTypeByHeuristic()
             m_heuristicType = m_type != "datetime";
             m_type = "datetime";
         }
+        else if (typeChar == 'b'
+                 || typeChar == 'l')
+        {
+            m_heuristicType = m_type != "logical";
+            m_type = "logical";
+        }
+    }
+    else if (m_symbol.length() > (2ull+isArg)
+             && islower(m_symbol[0+isArg])
+             && islower(m_symbol[1+isArg])
+             && isupper(m_symbol[2+isArg])
+             && (m_symbol.compare(0+isArg, 2, "is") == 0
+                 || m_symbol.compare(0+isArg, 2, "as") == 0
+                 || m_symbol.compare(0+isArg, 2, "do") == 0))
+    {
+        m_heuristicType = m_type != "logical";
+        m_type = "logical";
+    }
+    else if (m_symbol.length() > (3ull+isArg)
+             && islower(m_symbol[0+isArg])
+             && islower(m_symbol[1+isArg])
+             && islower(m_symbol[2+isArg])
+             && isupper(m_symbol[3+isArg])
+             && m_symbol.compare(0+isArg, 3, "has") == 0)
+    {
+        m_heuristicType = m_type != "logical";
+        m_type = "logical";
     }
     else if (m_symbol.length() == 1
              && (m_symbol == "x"
@@ -132,10 +159,46 @@ std::string ParserSymbol::getHeuristicEquivalent() const
     if (type.front() == '{' && type.back() == '}')
         type = type.substr(1, type.length()-2);
 
-    if (type == "dictstruct" || type == "category" || type.starts_with("object."))
+    if (type == "dict" || type == "dictstruct" || type == "category" || type.starts_with("object."))
         return "object.*";
 
     return type;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief
+///
+/// \param varType const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void ParserSymbol::updateType(const std::string& varType)
+{
+    if (varType != "void"
+        && varType != "any"
+        && (m_type == "void" || m_heuristicType))
+    {
+        m_type = varType;
+        m_heuristicType = false;
+    }
+    else if (m_type.find("object.") != std::string::npos
+             || m_type.find("dict") != std::string::npos
+             || m_type.find("category") != std::string::npos)
+    {
+        if (varType == "void")
+        {
+            m_type = "object.void";
+            m_heuristicType = false;
+        }
+        else if (varType.find("object.") != std::string::npos
+                 || varType.find("dict") != std::string::npos
+                 || varType.find("category") != std::string::npos)
+        {
+            m_type = varType;
+            m_heuristicType = false;
+        }
+    }
 }
 
 
@@ -670,10 +733,14 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
             varType = "object.path";
         else if (line[pos].m_str == "file")
             varType = "object.file";
+        else if (line[pos].m_str == "logger")
+            varType = "object.logger";
         else if (line[pos].m_str == "queue")
             varType = "object.queue";
         else if (line[pos].m_str == "stack")
             varType = "object.stack";
+        else if (line[pos].m_str == "timer")
+            varType = "object.timer";
         else
             varType = CodeParser::expandReturnTypes(m_provider.getFunctionReturnValue(line[pos].m_str));
 
@@ -688,7 +755,46 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
 
     // Constants
     if (line[pos].is(wxSTC_NSCR_CONSTANTS))
-        return m_provider.getConstant(line[pos].m_str).sDefinition.find('"') != std::string::npos ? "string" : "value";
+    {
+        std::string sDef = m_provider.getConstant(line[pos].m_str).sDefinition;
+        size_t colonPos = sDef.find(':');
+
+        if (colonPos < sDef.find('='))
+        {
+            sDef = sDef.substr(colonPos+1, sDef.find_first_of("=.", colonPos)-colonPos-1);
+            StripSpaces(sDef);
+            return sDef;
+        }
+
+        return sDef.find('"') != std::string::npos ? "string" : "value";
+    }
+
+    // Special vals
+    if (line[pos].is(wxSTC_NSCR_PREDEFS))
+    {
+        if (line[pos].m_str == "inf"
+            || line[pos].m_str == "nan"
+            || line[pos].m_str == "x"
+            || line[pos].m_str == "y"
+            || line[pos].m_str == "z"
+            || line[pos].m_str == "t"
+            || line[pos].m_str == "I"
+            || line[pos].m_str == "nlines"
+            || line[pos].m_str == "nrows"
+            || line[pos].m_str == "ncols"
+            || line[pos].m_str == "nlayers"
+            || line[pos].m_str == "ndim")
+            return "value";
+
+        if (line[pos].m_str == "data"
+            || line[pos].m_str == "table"
+            || line[pos].m_str == "string")
+            return "table";
+
+        if (line[pos].m_str == "true"
+            || line[pos].m_str == "false")
+            return "logical";
+    }
 
     // Procedures
     if (line[pos].is(wxSTC_NSCR_PROCEDURES))
@@ -733,19 +839,21 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
 {
     size_t tokenCount = line.size();
     size_t closingBrace = pos+1;
+    bool isAssignment = false;
     line.advanceToClosingParens(closingBrace, "{", "}");
     EndlessVector<std::string> types;
 
     if (tokenCount > closingBrace+2 && line[closingBrace+1].isAssignmentOperator())
     {
+        isAssignment = true;
         closingBrace += 2;
         std::string varType = getExprType(lineNum, line, closingBrace);
         //g_logger.info("lineNum=" + toString(lineNum) + ", varType=" + varType);
 
-        if (varType.front() == '{' && varType.back())
+        if (varType.front() == '{' && varType.back() == '}')
             types = getAllArguments(varType.substr(1, varType.length()-2));
-        else
-            types.push_back(varType);
+        else // Clusters and tables will likely be expanded into their unique types
+            types.push_back((varType == "cluster" || varType == "table") ? "void" : varType);
     }
     else
         types.push_back("void");
@@ -777,16 +885,8 @@ void CodeParser::expandAssignment(int lineNum, const LexedLine& line, size_t& po
                     m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(varName,
                                                                             type));
             }
-            else
-            {
-                ParserSymbol& symbol = getMutableSymbol(varName, lineNum, false);
-
-                if (type != "void" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
-                {
-                    symbol.m_type = type;
-                    symbol.m_heuristicType = false;
-                }
-            }
+            else if (isAssignment) // Only change the types for real assignments
+                getMutableSymbol(varName, lineNum, false).updateType(type);
 
             varNum++;
         }
@@ -826,6 +926,11 @@ std::string CodeParser::getExprType(int lineNum, const LexedLine& line, size_t& 
 
     if (line.size() > exprStart+2 && line[exprStart+1].m_str == "." && line[exprStart+2].is(wxSTC_NSCR_METHOD))
         exprType = evaluateMethods(exprType, lineNum, line, exprStart);
+
+    static const std::array<std::string, 9> COMPARISONS({"==", "!=", "<=", ">=", "<", ">", "&&", "||", "|||"});
+
+    if (line.size() > exprStart+2 && std::find(COMPARISONS.begin(), COMPARISONS.end(), line[exprStart+1].m_str) != COMPARISONS.end())
+        exprType = "logical";
 
     line.advanceToNextExpression(exprStart);
     return exprType;
@@ -881,21 +986,28 @@ static std::string filterLocalVarInitTypes(const std::string& sBaseType, const s
     if (sBaseType == sExprType || "{" + sBaseType + "}" == sExprType)
         return sExprType;
 
+    StringView exprType(sExprType);
+
+    if (exprType.front() == '{' && exprType.back() == '}')
+    {
+        exprType.trim_back(1);
+        exprType.trim_front(1);
+    }
+
     if (sBaseType == "value")
     {
-        if (sExprType != "datetime"
-            && sExprType != "{datetime}"
-            && sExprType != "logical"
-            && sExprType != "{logical}")
+        if (exprType != "datetime"
+            && exprType != "logical")
             return "value";
     }
     else if (sBaseType == "string")
         return "string";
     else if (sBaseType == "object.void")
     {
-        if (sExprType != "dictstruct"
-            && sExprType != "category"
-            && !sExprType.starts_with("object."))
+        if (exprType != "dict"
+            && exprType != "dictstruct"
+            && exprType != "category"
+            && !exprType.starts_with("object."))
             return "object.void";
     }
 
@@ -944,20 +1056,14 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
 
                 if (varType.find(',') != std::string::npos)
                     varType = "cluster";
+
+                if (isSymbol(sSymbol, lineNum, false))
+                    getMutableSymbol(sSymbol, lineNum, false).updateType(varType);
             }
 
-            if (isSymbol(sSymbol, lineNum, false))
-            {
-                ParserSymbol& symbol = getMutableSymbol(sSymbol, lineNum, false);
-
-                if (varType != "void" && (symbol.m_type == "object.void" || symbol.m_type == "void" || symbol.m_heuristicType))
-                {
-                    symbol.m_type = varType;
-                    symbol.m_heuristicType = false;
-                }
-            }
-            else
+            if (!isSymbol(sSymbol, lineNum, false))
                 m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(sSymbol, varType));
+
         }
         else if (line[pos].is({wxSTC_NSCR_CLUSTER, wxSTC_NSCR_CUSTOM_FUNCTION}))
         {
@@ -970,12 +1076,7 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
             }
 
             if (isSymbol(sSymbol, lineNum, true))
-            {
-                ParserSymbol& symbol = getMutableSymbol(sSymbol, lineNum, true);
-
-                if (symbol.m_type == "void")
-                    symbol.m_type = varType;
-            }
+                getMutableSymbol(sSymbol, lineNum, true).updateType(varType);
             else
                 m_globalScope.m_symbols[lineNum].push_back(ParserSymbol(sSymbol, varType));
         }
@@ -1206,7 +1307,11 @@ void CodeParser::parseSingleLine(int lineNum, const LexedLine& line)
                 scope.m_symbols[lineNum].push_back(ParserSymbol(line[1].m_str, varType, ParserSymbol::LOCALFUNC));
                 break;
             }
-            else if ((sSymbol == "define" || sSymbol == "ifndefined" || sSymbol == "ifndef") && tokenCount > 5)
+            else if ((sSymbol == "define"
+                      || sSymbol == "ifndefined"
+                      || sSymbol == "ifndef"
+                      || sSymbol == "redefine"
+                      || sSymbol == "redef") && tokenCount > 5)
             {
                 varType = "any";
 
@@ -1790,7 +1895,8 @@ std::string CodeParser::expandReturnTypes(std::string sReturnType)
     replaceAll(sReturnType, "LOG", "logical");
     replaceAll(sReturnType, "TAB", "table");
     replaceAll(sReturnType, "CST", "cluster");
-    replaceAll(sReturnType, "DCT", "dictstruct");
+    replaceAll(sReturnType, "DCT", "dict");
+    replaceAll(sReturnType, "SCT", "dictstruct");
     replaceAll(sReturnType, "CAT", "category");
     replaceAll(sReturnType, "TIM", "datetime");
     replaceAll(sReturnType, "ARG", "any");

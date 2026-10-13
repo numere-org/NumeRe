@@ -28,6 +28,7 @@
 class StringColumn;
 class CategoricalColumn;
 class DateTimeColumn;
+class DurationColumn;
 class LogicalColumn;
 
 // Helper for all TYPE_VALUE_* conversions
@@ -391,6 +392,18 @@ class GenericValueColumn : public TableColumn
                 case TableColumn::TYPE_DATETIME:
                 {
                     col = new DateTimeColumn(m_data.size());
+
+                    for (size_t i = 0; i < m_data.size(); i++)
+                    {
+                        if (!mu::isnan((std::complex<double>)m_data[i]))
+                            col->setValue(i, getValue(i));
+                    }
+
+                    break;
+                }
+                case TableColumn::TYPE_DURATION:
+                {
+                    col = new DurationColumn(m_data.size());
 
                     for (size_t i = 0; i < m_data.size(); i++)
                     {
@@ -858,7 +871,8 @@ using F32ValueColumn = BaseFloatColumn<float, TableColumn::TYPE_VALUE_F32>;
 using F64ValueColumn = BaseFloatColumn<double, TableColumn::TYPE_VALUE_F64>;
 
 using CF32ValueColumn = BaseComplexColumn<std::complex<float>, TableColumn::TYPE_VALUE_CF32>;
-using ValueColumn = BaseComplexColumn<std::complex<double>, TableColumn::TYPE_VALUE>;
+using CF64ValueColumn = BaseComplexColumn<std::complex<double>, TableColumn::TYPE_VALUE_CF64>;
+using ValueColumn = F64ValueColumn;
 
 
 /////////////////////////////////////////////////
@@ -867,7 +881,7 @@ using ValueColumn = BaseComplexColumn<std::complex<double>, TableColumn::TYPE_VA
 /////////////////////////////////////////////////
 class DateTimeColumn : public TableColumn
 {
-    private:
+    protected:
         std::vector<double> m_data;
 
     public:
@@ -942,6 +956,47 @@ class DateTimeColumn : public TableColumn
         {
             return m_data.size();
         }
+
+        virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) override;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief A table column containing numerical
+/// values formatted as durations.
+/////////////////////////////////////////////////
+class DurationColumn : public DateTimeColumn
+{
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor. Sets only the
+        /// column's type.
+        /////////////////////////////////////////////////
+        DurationColumn() : DateTimeColumn()
+        {
+            m_type = TableColumn::TYPE_DURATION;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Generalized constructor. Will prepare
+        /// a column with the specified size.
+        ///
+        /// \param nElem size_t
+        ///
+        /////////////////////////////////////////////////
+        DurationColumn(size_t nElem) : DurationColumn()
+        {
+            resize(nElem);
+        }
+
+        virtual std::string getValueAsInternalString(size_t elem) const override;
+
+        virtual mu::Value get(size_t elem) const override;
+
+        virtual void setValue(size_t elem, const std::string& sValue) override;
+
+        virtual DurationColumn* copy(const VectorIndex& idx) const override;
+        virtual void assign(const TableColumn* column) override;
 
         virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) override;
 };

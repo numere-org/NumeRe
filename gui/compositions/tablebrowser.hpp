@@ -37,15 +37,9 @@ class NumeReWindow;
 class TableBrowser : public ViewerFrame
 {
     private:
-        enum PanelType
-        {
-            TYPE_TABLEVIEWER,
-            TYPE_TABLEPANEL
-        };
-
+        int m_dragStart;
         ViewerBook* m_tabs;
         NumeReWindow* m_topWindow;
-        std::vector<PanelType> m_panelTypes;
 
         void createMenuBar();
         int findPage(const std::string& tableDisplayName, const std::string& sIntName);

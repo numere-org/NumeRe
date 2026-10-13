@@ -64,7 +64,7 @@ namespace mu
     /////////////////////////////////////////////////
     Value::Value(BaseValue* other)
     {
-        if (other && other->m_type == TYPE_ARRAY)
+        if (other && other->getPlainType() == TYPE_ARRAY)
         {
             ArrValue* arrVal = static_cast<ArrValue*>(other);
 
@@ -243,6 +243,19 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Construct a Value from a Dict
+    /// instance.
+    ///
+    /// \param dict const Dict&
+    ///
+    /////////////////////////////////////////////////
+    Value::Value(const Dict& dict)
+    {
+        reset(new DictValue(dict));
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Construct a Value from a DictStruct
     /// instance.
     ///
@@ -297,6 +310,9 @@ namespace mu
             case TYPE_ARRAY:
                 reset(new ArrValue);
                 break;
+            case TYPE_DICT:
+                reset(new DictValue);
+                break;
             case TYPE_DICTSTRUCT:
                 reset(new DictStructValue);
                 break;
@@ -350,6 +366,8 @@ namespace mu
                 return "string";
             case TYPE_ARRAY:
                 return getArray().getCommonTypeAsString();
+            case TYPE_DICT:
+                return "dict";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_OBJECT:
@@ -380,7 +398,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isVoid() const
     {
-        return !get() || get()->m_type == TYPE_NEUTRAL || get()->m_type == TYPE_INVALID;
+        return !get() || get()->getPlainType() == TYPE_NEUTRAL || get()->getType() == TYPE_INVALID;
     }
 
 
@@ -393,6 +411,19 @@ namespace mu
     bool Value::isValid() const
     {
         return get() && get()->isValid();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Ensure that an access as index is
+    /// working for this value.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isIndex() const
+    {
+        return get() && get()->getPlainType() == TYPE_NUMERICAL;
     }
 
 
@@ -436,19 +467,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief True, if the contained value is an
-    /// Array.
-    ///
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool Value::isArray() const
-    {
-        return get() && get()->getType() == TYPE_ARRAY;
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief True, if the contained value is a
     /// DictStruct.
     ///
@@ -458,6 +476,19 @@ namespace mu
     bool Value::isDictStruct() const
     {
         return get() && get()->getType() == TYPE_DICTSTRUCT;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief True, if the contained value is a
+    /// Dict.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Value::isDict() const
+    {
+        return get() && get()->getType() == TYPE_DICT;
     }
 
 
@@ -483,7 +514,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isRef() const
     {
-        return get() && get()->m_type == TYPE_REFERENCE;
+        return get() && get()->getPlainType() == TYPE_REFERENCE;
     }
 
 
@@ -496,7 +527,7 @@ namespace mu
     /////////////////////////////////////////////////
     bool Value::isGenerator() const
     {
-        return get() && get()->m_type == TYPE_GENERATOR;
+        return get() && get()->getType() == TYPE_GENERATOR;
     }
 
 
@@ -510,9 +541,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_STRING)
+            if (get()->getPlainType() == TYPE_STRING)
                 return static_cast<StrValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().name;
             else if (isRef() && get()->getType() == TYPE_STRING)
                 return static_cast<StrValue&>(getRef().get()).get();
@@ -534,9 +565,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_STRING)
+            if (get()->getPlainType() == TYPE_STRING)
                 return static_cast<const StrValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().name;
             else if (isRef() && get()->getType() == TYPE_STRING)
                 return static_cast<const StrValue&>(getRef().get()).get();
@@ -565,7 +596,7 @@ namespace mu
             if (isString())
                 return getStr();
             else if (isObject() && getObject().getObjectType() == "path")
-                return static_cast<const PathValue*>(get())->get().to_string(separator);
+                return static_cast<const PathValue&>(getObject()).get().to_string(separator);
         }
         else
             return m_defString;
@@ -573,6 +604,19 @@ namespace mu
         throw ParserError(ecTYPE_NO_STR, getTypeAsString());
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Get a direct access to the contained
+    /// numerical value. Is unchecked (ensure that
+    /// you know, what you have at hand).
+    ///
+    /// \return Numerical&
+    ///
+    /////////////////////////////////////////////////
+    Numerical& Value::getAsIndex()
+    {
+        return static_cast<NumValue*>(get())->get();
+    }
 
     /////////////////////////////////////////////////
     /// \brief Get the contained Numerical.
@@ -584,9 +628,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
+            if (get()->getPlainType() == TYPE_NUMERICAL)
                 return static_cast<NumValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<CatValue*>(get())->get().val;
             else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
                 return static_cast<NumValue&>(getRef().get()).get();
@@ -608,9 +652,9 @@ namespace mu
     {
         if (get())
         {
-            if (get()->m_type == TYPE_NUMERICAL || get()->m_type == TYPE_INVALID)
+            if (get()->getPlainType() == TYPE_NUMERICAL)
                 return static_cast<const NumValue*>(get())->get();
-            else if (get()->m_type == TYPE_CATEGORY)
+            else if (get()->getPlainType() == TYPE_CATEGORY)
                 return static_cast<const CatValue*>(get())->get().val;
             else if (isRef() && (get()->getType() == TYPE_NUMERICAL || get()->getType() == TYPE_INVALID))
                 return static_cast<const NumValue&>(getRef().get()).get();
@@ -632,7 +676,7 @@ namespace mu
     /////////////////////////////////////////////////
     Category& Value::getCategory()
     {
-        if (get() && get()->m_type == TYPE_CATEGORY)
+        if (get() && get()->getPlainType() == TYPE_CATEGORY)
             return static_cast<CatValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_CATEGORY)
             return static_cast<CatValue&>(getRef().get()).get();
@@ -649,7 +693,7 @@ namespace mu
     /////////////////////////////////////////////////
     const Category& Value::getCategory() const
     {
-        if (get() && get()->m_type == TYPE_CATEGORY)
+        if (get() && get()->getPlainType() == TYPE_CATEGORY)
             return static_cast<const CatValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_CATEGORY)
             return static_cast<const CatValue&>(getRef().get()).get();
@@ -666,7 +710,7 @@ namespace mu
     /////////////////////////////////////////////////
     Array& Value::getArray()
     {
-        if (get() && get()->m_type == TYPE_ARRAY)
+        if (get() && get()->getPlainType() == TYPE_ARRAY)
             return static_cast<ArrValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_ARRAY)
             return static_cast<ArrValue&>(getRef().get()).get();
@@ -683,12 +727,46 @@ namespace mu
     /////////////////////////////////////////////////
     const Array& Value::getArray() const
     {
-        if (get() && get()->m_type == TYPE_ARRAY)
+        if (get() && get()->getPlainType() == TYPE_ARRAY)
             return static_cast<const ArrValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_ARRAY)
             return static_cast<const ArrValue&>(getRef().get()).get();
 
         throw ParserError(ecTYPE_NO_ARR, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Dict.
+    ///
+    /// \return Dict&
+    ///
+    /////////////////////////////////////////////////
+    Dict& Value::getDict()
+    {
+        if (get() && get()->getPlainType() == TYPE_DICT)
+            return static_cast<DictValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICT)
+            return static_cast<DictValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the contained Dict.
+    ///
+    /// \return const Dict&
+    ///
+    /////////////////////////////////////////////////
+    const Dict& Value::getDict() const
+    {
+        if (get() && get()->getPlainType() == TYPE_DICT)
+            return static_cast<const DictValue*>(get())->get();
+        else if (isRef() && get()->getType() == TYPE_DICT)
+            return static_cast<const DictValue&>(getRef().get()).get();
+
+        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
     }
 
 
@@ -700,12 +778,12 @@ namespace mu
     /////////////////////////////////////////////////
     DictStruct& Value::getDictStruct()
     {
-        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+        if (get() && get()->getPlainType() == TYPE_DICTSTRUCT)
             return static_cast<DictStructValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<DictStructValue&>(getRef().get()).get();
 
-        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+        throw ParserError(ecTYPE_NO_STRUCT, getTypeAsString());
     }
 
 
@@ -717,12 +795,12 @@ namespace mu
     /////////////////////////////////////////////////
     const DictStruct& Value::getDictStruct() const
     {
-        if (get() && get()->m_type == TYPE_DICTSTRUCT)
+        if (get() && get()->getPlainType() == TYPE_DICTSTRUCT)
             return static_cast<const DictStructValue*>(get())->get();
         else if (isRef() && get()->getType() == TYPE_DICTSTRUCT)
             return static_cast<const DictStructValue&>(getRef().get()).get();
 
-        throw ParserError(ecTYPE_NO_DICT, getTypeAsString());
+        throw ParserError(ecTYPE_NO_STRUCT, getTypeAsString());
     }
 
 
@@ -734,7 +812,7 @@ namespace mu
     /////////////////////////////////////////////////
     Object& Value::getObject()
     {
-        if (get() && get()->m_type == TYPE_OBJECT)
+        if (get() && get()->getPlainType() == TYPE_OBJECT)
             return *static_cast<Object*>(get());
         else if (isRef() && get()->getType() == TYPE_OBJECT)
             return static_cast<Object&>(getRef().get());
@@ -751,7 +829,7 @@ namespace mu
     /////////////////////////////////////////////////
     const Object& Value::getObject() const
     {
-        if (get() && get()->m_type == TYPE_OBJECT)
+        if (get() && get()->getPlainType() == TYPE_OBJECT)
             return *static_cast<const Object*>(get());
         else if (isRef() && get()->getType() == TYPE_OBJECT)
             return static_cast<const Object&>(getRef().get());
@@ -768,7 +846,7 @@ namespace mu
     /////////////////////////////////////////////////
     RefValue& Value::getRef()
     {
-        if (get() && get()->m_type == TYPE_REFERENCE)
+        if (get() && get()->getPlainType() == TYPE_REFERENCE)
             return *static_cast<RefValue*>(get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
@@ -783,7 +861,7 @@ namespace mu
     /////////////////////////////////////////////////
     const RefValue& Value::getRef() const
     {
-        if (get() && get()->m_type == TYPE_REFERENCE)
+        if (get() && get()->getPlainType() == TYPE_REFERENCE)
             return *static_cast<const RefValue*>(get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
@@ -798,8 +876,10 @@ namespace mu
     /////////////////////////////////////////////////
     const GeneratorValue& Value::getGenerator() const
     {
-        if (get() && get()->m_type == TYPE_GENERATOR)
+        if (get() && get()->getPlainType() == TYPE_GENERATOR)
             return *static_cast<const GeneratorValue*>(get());
+        else if (isRef() && get()->getType() == TYPE_GENERATOR)
+            return static_cast<const GeneratorValue&>(getRef().get());
 
         throw ParserError(ecTYPE_NO_REF, getTypeAsString());
     }
@@ -1660,6 +1740,8 @@ namespace mu
                 return "cluster";
             case TYPE_ARRAY:
                 return "cluster*";
+            case TYPE_DICT:
+                return "dict";
             case TYPE_DICTSTRUCT:
                 return "dictstruct";
             case TYPE_OBJECT:
@@ -1671,6 +1753,12 @@ namespace mu
 
                 for (size_t i = 1; i < size(); i++)
                 {
+                    if (get(i).isVoid())
+                    {
+                        if (sType != "void")
+                            return "object.*";
+                    }
+
                     const Object& obj = get(i).getObject();
 
                     if (sType == "void")
@@ -2096,8 +2184,8 @@ namespace mu
         static const MethodSet methods({{"std", 0}, {"avg", 0}, {"prd", 0}, {"sum", 0}, {"min", 0}, {"max", 0}, {"norm", 0},
                                         {"num", 0}, {"cnt", 0}, {"med", 0}, {"and", 0}, {"or", 0}, {"xor", 0}, {"size", 0},
                                         {"maxpos", 0}, {"minpos", 0}, {"exc", 0}, {"skw", 0}, {"stderr", 0}, {"rms", 0},
-                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"sel", -1}, {"order", 0},
-                                        {"order", -1}, {"delegate", -MethodDefinition::multiargcount},
+                                        {"unwrap", 0}, {"rows", 0}, {"cols", 0}, {"valids", 0}, {"as_idx", 0}, {"order", 0},
+                                        {"sel", -1}, {"order", -1}, {"delegate", -MethodDefinition::multiargcount},
                                         {"submat", -MethodDefinition::multiargcount}});
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
@@ -2172,6 +2260,23 @@ namespace mu
             return Value(rows());
         else if (sMethod == "cols")
             return Value(cols());
+        else if (sMethod == "as_idx")
+            return numfnc_logtoidx(this);
+        else if (sMethod == "valids")
+        {
+            Array ret;
+            size_t elems = size();
+
+            for (size_t i = 0; i < elems; i++)
+            {
+                const mu::Value v = get(i);
+
+                if (v.isValid())
+                    ret.push_back(v);
+            }
+
+            return ret;
+        }
         else if (front().isMethod(sMethod, 0))
         {
             Array ret;
@@ -3269,14 +3374,31 @@ namespace mu
             int64_t p = idx.get(item-1).getNum().asI64();
 
             // Construct and insert the element
-            if (p > 0 && p <= (int64_t)size())
+            if (p > 0)
             {
-                if (vals.isDefault())
-                    ret.get(item-1) = Value(commonType);
-                else
-                    ret.get(item-1) = vals.get(item-1);
+                if (p <= (int64_t)size())
+                {
+                    if (vals.isDefault())
+                        ret.get(item-1) = Value(commonType);
+                    else
+                        ret.get(item-1) = vals.get(item-1);
 
-                insert(begin()+p-1, ret.get(item-1));
+                    insert(begin()+p-1, ret.get(item-1));
+                }
+                else
+                {
+                    while (p-1 > (int64_t)size())
+                    {
+                        emplace_back(commonType);
+                    }
+
+                    if (vals.isDefault())
+                        ret.get(item-1) = Value(commonType);
+                    else
+                        ret.get(item-1) = vals.get(item-1);
+
+                    emplace_back(ret.get(item-1));
+                }
             }
         }
 
@@ -3412,7 +3534,15 @@ namespace mu
     /////////////////////////////////////////////////
     int64_t Array::getAsScalarInt() const
     {
-        return front().getNum().asI64();
+        if (empty())
+            throw std::length_error("Array is empty.");
+
+        const Value& fst = first();
+
+        if (fst.isArray())
+            return fst.getArray().getAsScalarInt();
+
+        return fst.getNum().asI64();
     }
 
 
@@ -3538,7 +3668,7 @@ namespace mu
             if (m_dimSizes[0] == 1)
             {
                 if (m_dimSizes[1] == 1)
-                    ret += get(0).print(digits, chrs, trunc);
+                    return get(0).print(digits, chrs, trunc);
                 else
                 {
                     for (size_t j = 0; j < m_dimSizes[1]; j++)
@@ -3555,6 +3685,7 @@ namespace mu
             else
             {
                 ret += "\n"; ///< For readability
+
                 for (size_t i = 0; i < m_dimSizes[0]; i++)
                 {
                     if (!i)
@@ -3563,6 +3694,14 @@ namespace mu
                         ret += "\\ ";
                     else
                         ret += "| ";
+
+                    // Do not print a overly large matrix
+                    if (m_dimSizes[0] > 10 && i == 6)
+                    {
+                        ret += "... |\n";
+                        i = m_dimSizes[0]-6;
+                        continue;
+                    }
 
                     for (size_t j = 0; j < m_dimSizes[1]; j++)
                     {
@@ -3805,82 +3944,17 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Custom size function. Will default to
-    /// the parent size function except when this
-    /// array contains a reference to another array.
+    /// \brief Add a value to the shared buffer and
+    /// return a reference to its buffer position.
     ///
-    /// \return size_t
-    ///
-    /////////////////////////////////////////////////
-    size_t Array::size() const
-    {
-        size_t vectSize = count();
-
-        if (vectSize == 1 && first().isRef() && first().isArray())
-            return first().getArray().size();
-
-        if (m_commonType == TYPE_GENERATOR)
-        {
-            size_t totalSize = 0;
-
-            for (size_t i = 0; i < vectSize; i++)
-            {
-                if (operator[](i).isGenerator())
-                {
-                    size_t genSize = operator[](i).getGenerator().size();
-
-                    if (genSize == UINT64_MAX)
-                        return genSize;
-
-                    totalSize += genSize;
-                }
-                else
-                    totalSize++;
-            }
-
-            return totalSize;
-        }
-
-        return vectSize;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Get the number of elements stored in
-    /// the array. Does not correspond to its size.
-    ///
-    /// \return size_t
-    ///
-    /////////////////////////////////////////////////
-    size_t Array::count() const
-    {
-        return std::vector<Value>::size();
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief The the first element stored in the
-    /// array. Does not correspond to calling front().
-    ///
+    /// \param val Value&&
     /// \return Value&
     ///
     /////////////////////////////////////////////////
-    Value& Array::first()
+    Value& Array::buffered(Value&& val) const
     {
-        return std::vector<Value>::front();
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief The the first element stored in the
-    /// array. Does not correspond to calling front().
-    ///
-    /// \return const Value&
-    ///
-    /////////////////////////////////////////////////
-    const Value& Array::first() const
-    {
-        return std::vector<Value>::front();
+        m_buffer.push_back(val);
+        return m_buffer.back();
     }
 
 
@@ -3905,17 +3979,21 @@ namespace mu
 
             if (val.isGenerator())
             {
-                if (val.getGenerator().size() <= i)
-                    i -= val.getGenerator().size();
+                const GeneratorValue& gen = val.getGenerator();
+
+                if (gen.size() <= i)
+                    i -= gen.size();
                 else
-                {
-                    m_buffer.push_back(val.getGenerator().at(i));
+                    return buffered(gen.at(i));
+            }
+            else if (val.isArray() && val.getArray().count() == 1 && val.getArray().first().isGenerator())
+            {
+                const GeneratorValue& gen = val.getArray().first().getGenerator();
 
-                    if (m_buffer.size() > 10)
-                        m_buffer.pop_front();
-
-                    return m_buffer.back();
-                }
+                if (gen.size() <= i)
+                    i -= gen.size();
+                else
+                    return buffered(gen.at(i));
             }
             else if (i)
                 i--;
@@ -3948,17 +4026,21 @@ namespace mu
 
             if (val.isGenerator())
             {
-                if (val.getGenerator().size() <= i)
-                    i -= val.getGenerator().size();
+                const GeneratorValue& gen = val.getGenerator();
+
+                if (gen.size() <= i)
+                    i -= gen.size();
                 else
-                {
-                    m_buffer.push_back(val.getGenerator().at(i));
+                    return buffered(gen.at(i));
+            }
+            else if (val.isArray() && val.getArray().count() == 1 && val.getArray().first().isGenerator())
+            {
+                const GeneratorValue& gen = val.getArray().first().getGenerator();
 
-                    if (m_buffer.size() > 10)
-                        m_buffer.pop_front();
-
-                    return m_buffer.back();
-                }
+                if (gen.size() <= i)
+                    i -= gen.size();
+                else
+                    return buffered(gen.at(i));
             }
             else if (i)
                 i--;
@@ -3983,13 +4065,36 @@ namespace mu
         DataType common = getCommonType();
 
         if (i >= size())
-            resize(i+1, Value(NAN));
+            resize(i+1, Value(common));
 
         get(i) = v;
         dereference();
 
         if (common != v.getType() && common != TYPE_CLUSTER)
             m_commonType = TYPE_VOID;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief A simple member function, to check,
+    /// whether a Value is contained in this Array.
+    /// Note that the equal-operator is used for
+    /// comparsion, therefore some results may be
+    /// surprising.
+    ///
+    /// \param val const Value&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Array::contains(const Value& val) const
+    {
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (get(i) == val)
+                return true;
+        }
+
+        return false;
     }
 
 
@@ -4068,7 +4173,7 @@ namespace mu
             Value& v = const_cast<Value&>(operator[](i));
 
             if (v.isRef())
-                v.reset(v.getRef().get().clone());
+                v.reset(v.getRef().dereferencedClone());
 
             if (v.isArray())
                 v.getArray().dereference();
@@ -4250,14 +4355,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) += otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() += other;
+            else
+                fst += other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfAdd");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] += otherView.get(i);
+            }
         }
     }
 
@@ -4278,14 +4405,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) -= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() -= other;
+            else
+                fst -= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfSub");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] -= otherView.get(i);
+            }
         }
     }
 
@@ -4307,14 +4456,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) *= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() *= other;
+            else
+                fst *= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfMul");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] *= otherView.get(i);
+            }
         }
     }
 
@@ -4336,14 +4507,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) /= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() /= other;
+            else
+                fst /= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfDiv");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] /= otherView.get(i);
+            }
         }
     }
 
@@ -4365,14 +4558,36 @@ namespace mu
             return;
         }
 
-        MatrixView otherView(other);
-        otherView.mergeDimSizes(curr);
+        size_t vectSize = curr.count();
 
-        size_t elements = curr.size();
-
-        for (size_t i = 0; i < elements; i++)
+        // Separate the array reference out
+        if (vectSize == 1u)
         {
-            curr.get(i) ^= otherView.get(i);
+            Value& fst = curr.first();
+
+            if (fst.isArrayRef())
+                fst.getArray() ^= other;
+            else
+                fst ^= other.first();
+        }
+        else
+        {
+            MatrixView otherView(other);
+            otherView.mergeDimSizes(curr);
+
+            size_t elements = curr.size();
+
+            if (elements != vectSize)
+                throw std::length_error("count and size do not match in matrixSelfPow");
+
+            // Assumed guarantees:
+            // - curr is not an array reference
+            // - curr is not a generator
+
+            for (size_t i = 0; i < vectSize; i++)
+            {
+                curr[i] ^= otherView.get(i);
+            }
         }
     }
 
@@ -4682,7 +4897,14 @@ namespace mu
 
         if (accepts(other))
         {
-            Array::operator=(Array(other));
+            if (other.getType() == TYPE_VOID)
+            {
+                if (common >= TYPE_CATEGORY && common <= TYPE_OBJECT)
+                    m_commonType = TYPE_OBJECT;
+                clear();
+            }
+            else
+                Array::operator=(Array(other));
             makeMutable();
             dereference();
 
@@ -4713,7 +4935,14 @@ namespace mu
 
         if (accepts(other))
         {
-            Array::operator=(other);
+            if (other.getCommonType() == TYPE_VOID)
+            {
+                if (common >= TYPE_CATEGORY && common <= TYPE_OBJECT)
+                    m_commonType = TYPE_OBJECT;
+                clear();
+            }
+            else
+                Array::operator=(other);
             makeMutable();
 
             if (common == TYPE_CLUSTER)
@@ -4824,7 +5053,9 @@ namespace mu
         // Objects consume other objects or categories, identical types work
         // always and numericals consume generators as well
         if (common == otherCommon
-            || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT && otherCommon >= TYPE_CATEGORY && otherCommon <= TYPE_OBJECT)
+            || (common >= TYPE_CATEGORY && common <= TYPE_OBJECT
+                && ((otherCommon >= TYPE_CATEGORY && otherCommon <= TYPE_OBJECT)
+                    || otherCommon == TYPE_VOID))
             || (common == TYPE_NUMERICAL && otherCommon == TYPE_GENERATOR))
             return true;
 
@@ -5308,6 +5539,7 @@ namespace mu
     const std::string Value::m_defString;
     const Numerical Value::m_defVal;
     const Value Array::m_default(TYPE_NEUTRAL);
+    boost::circular_buffer<Value> Array::m_buffer(1000);
 
 
 

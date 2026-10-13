@@ -42,7 +42,6 @@ Script::Script() : FileSystem(), _localDef(true)
     nInstallModeFlags = ENABLE_DEFAULTS;
     nCurrentPackage = 0;
     nLine = 0;
-    m_repo.connect(REPO_LOCATION);
 }
 
 
@@ -1127,7 +1126,7 @@ bool Script::handleRepositoryInstall(const std::string& sPkgId)
     m_script.reset();
     isInstallMode = true;
 
-    g_logger.info("Searching " + sPkgId + " in the package folder ...");
+    g_logger.info("Searching '" + sPkgId + "' in the package folder ...");
 
     // Search in the local storage first
     if (fileExists(sPackageFileName))
@@ -1136,10 +1135,11 @@ bool Script::handleRepositoryInstall(const std::string& sPkgId)
         return true;
     }
 
-    g_logger.info("Searching " + sPkgId + " in the package repository ...");
+    g_logger.info("Searching '" + sPkgId + "' in the package repository ...");
 
     NumeReKernel::printPreFmt("|-> PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_SEARCHING", sPkgId));
-    std::vector<std::string> candidates = m_repo.find_candidates(sPkgId);
+    const PackageRepoManager& repoManager = NumeReKernel::getInstance()->getProcedureInterpreter().getRepoManager();
+    std::vector<std::string> candidates = repoManager.find_candidates(sPkgId);
 
     PackageInfo pkgInfo;
 
@@ -1154,28 +1154,53 @@ bool Script::handleRepositoryInstall(const std::string& sPkgId)
         std::string sSelection;
         NumeReKernel::getline(sSelection);
         NumeReKernel::printPreFmt("|-> PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_SEARCHING", sSelection));
-        pkgInfo = m_repo.find(sSelection);
-        sPackageFileName = ValidFileName("packages/" + sSelection, ".nscr");
+        pkgInfo = repoManager.find(sSelection);
+        sPackageFileName = ValidFileName("packages/" + sSelection.substr(0, sSelection.find('@')), ".nscr");
     }
-    else if (candidates.size() == 1 && candidates.front() == sPkgId)
+    else if (candidates.size() == 1 && (candidates.front() == sPkgId || candidates.front().substr(0, candidates.front().find('@')) == sPkgId))
     {
-        pkgInfo = m_repo.find(candidates.front());
-        sPackageFileName = ValidFileName("packages/" + candidates.front(), ".nscr");
+        pkgInfo = repoManager.find(candidates.front());
+        sPackageFileName = ValidFileName("packages/" + sPkgId.substr(0, sPkgId.find('@')), ".nscr");
     }
 
     if (pkgInfo.repoUrl.length())
     {
-        g_logger.info("Package " + pkgInfo.name + " " + pkgInfo.version + " found: " + pkgInfo.repoUrl);
+        g_logger.info("Package '" + pkgInfo.name + "' " + pkgInfo.version + " found: " + pkgInfo.repoUrl);
         NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_FOUND", pkgInfo.name, pkgInfo.version));
+        g_logger.info("Downloading package ...");
 
-        if (m_repo.download(pkgInfo.repoUrl, sPackageFileName))
+        if (!repoManager.download(pkgInfo.repoUrl, sPackageFileName, pkgInfo.repoName))
         {
-            NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_DOWNLOADED") + "\n");
-            openScript(sPackageFileName, 0);
-            return true;
-        }
-        else
             NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_ERROR") + "\n");
+            return false;
+        }
+
+        if (pkgInfo.requiredPackages.length())
+        {
+            g_logger.info("Resolving dependencies for '" + pkgInfo.name + "' ...");
+            NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_RESOLVE_DEPENDENCIES"));
+            std::vector<std::string> vDependencies = repoManager.resolveDependencies(pkgInfo.packageId + "@" + pkgInfo.repoName);
+            g_logger.info("Found " + toString(vDependencies.size()) + " dependencies. Starting download process ...");
+
+            for (const std::string& dependency : vDependencies)
+            {
+                PackageInfo depInfo = repoManager.fetchInfo(dependency);
+                std::string depFileName = ValidFileName("packages/" + depInfo.packageId, ".nscr");
+                NumeReKernel::printPreFmt("\n|   PACKAGE REPOSITORY: " + _lang.get("SCRIPT_REPO_DOWNLOAD_DEPENDENCY", depInfo.name, depInfo.version));
+
+                if (!depInfo.packageId.length()
+                    || !repoManager.download(depInfo.repoUrl, depFileName, depInfo.repoName))
+                {
+                    NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_ERROR") + "\n");
+                    return false;
+                }
+            }
+        }
+
+        g_logger.info("Downloads finished. Starting installation ...");
+        NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_DOWNLOADED") + "\n");
+        openScript(sPackageFileName, 0);
+        return true;
     }
     else
         NumeReKernel::printPreFmt(" " + _lang.get("SCRIPT_REPO_NOTFOUND") + "\n");

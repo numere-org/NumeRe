@@ -33,7 +33,11 @@ When writing procedures, the deeply-integrated namespaces help you to keep order
 This makes it possible to have several procedures with the same name that are still unique. The editor supports you by auto-completion, as well as by
 displaying tooltips that show documentation and signatures of functions, commands and procedures.
 
-**Get more information at: [en.numere.org](https://en.numere.org)**
+**Get more information at: [www.numere.org](https://www.numere.org)**
+
+### Official and central package repository
+
+The [official and central package repository](https://github.com/numere-org/numere-packages) was migrated from SourceForge, because forking and creating pull requests makes it easier for the package authors to actually share their creations. It is supported by NumeRe starting with the full release of v1.1.8.
 
 ## Screen shots
 

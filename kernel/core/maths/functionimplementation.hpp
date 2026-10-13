@@ -119,6 +119,8 @@ mu::Array numfnc_lcm(const mu::Array&, const mu::Array&);
 mu::Array numfnc_is_string(const mu::Array&);
 mu::Array numfnc_isnan(const mu::Array&);
 mu::Array numfnc_isvoid(const mu::Array&);
+mu::Array numfnc_isvalid(const mu::Array&);
+mu::Array numfnc_fillinvalid(const mu::Array&, const mu::Array&);
 mu::Array numfnc_interval(const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array numfnc_numereversion();
 mu::Array numfnc_omp_threads();
@@ -166,7 +168,9 @@ mu::Array timfnc_today();
 mu::Array timfnc_date(const mu::Array&, const mu::Array&);
 mu::Array timfnc_datetime(const mu::Array&);
 mu::Array timfnc_weeknum(const mu::Array&);
+mu::Array timfnc_monthdays(const mu::Array&);
 mu::Array timfnc_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
+mu::Array timfnc_from_weekday(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&);
 mu::Array timfnc_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4
 mu::Array timfnc_get_utc_offset();
 mu::Array timfnc_is_daylightsavingtime(const mu::Array&);
@@ -226,6 +230,14 @@ mu::Array rndfnc_student_t_inv_q(const mu::Array& q, const mu::Array& nu);
 
 mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base); // OPT=1
 
+mu::Array bitfnc_cast(const mu::Array& a, const mu::Array& type);
+mu::Array bitfnc_mask(const mu::Array& a, const mu::Array& mask);
+mu::Array bitfnc_shift(const mu::Array& a, const mu::Array& level);
+mu::Array bitfnc_and(const mu::Array& a, const mu::Array& b);
+mu::Array bitfnc_or(const mu::Array& a, const mu::Array& b);
+mu::Array bitfnc_xor(const mu::Array& a, const mu::Array& b);
+mu::Array bitfnc_not(const mu::Array& a);
+
 // Operator functions
 mu::Array oprt_Mod(const mu::Array&, const mu::Array&);
 mu::Array oprt_XOR(const mu::Array&, const mu::Array&);
@@ -237,8 +249,11 @@ mu::Array oprt_f(const mu::Array&, const mu::Array&);
 
 // Cast functions
 mu::Array cast_category(const mu::Array& cats, const mu::Array& ids); // OPT=1
+mu::Array cast_dict(const mu::Array& keys, const mu::Array& vals); // OPT=2
 mu::Array cast_dictstruct(const mu::Array& fields, const mu::Array& vals); // OPT=2
 mu::Array cast_file(const mu::Array& files, const mu::Array& openmode); // OPT=2
+mu::Array cast_logger(const mu::Array& files, const mu::Array& level); // OPT=2
+mu::Array cast_timer(const mu::Array& scopes); // OPT=1
 mu::Array cast_stack(const mu::Array& vals); // OPT=1
 mu::Array cast_queue(const mu::Array& vals); // OPT=1
 mu::Array cast_path(const mu::Array& paths, const mu::Array& separator); // OPT=2
@@ -272,6 +287,8 @@ mu::Array cast_numerical(const mu::Array& vals)
             ret.push_back(mu::Numerical( static_cast<T>(val.getNum().asF64()) ));
         else if (isConvertible(val.getStr(), CONVTYPE_DATE_TIME))
             ret.push_back(mu::Numerical( static_cast<T>(to_double(StrToTime(val.getStr()))) ));
+        else if (isConvertible(val.getStr(), CONVTYPE_DURATION))
+            ret.push_back(mu::Numerical( static_cast<T>(parseDuration(val.getStr())) ));
         else if (isConvertible(val.getStr(), CONVTYPE_LOGICAL))
             ret.push_back(mu::Numerical( static_cast<T>(StrToLogical(val.getStr())) ));
         else if (isConvertible(val.getStr(), CONVTYPE_VALUE))
@@ -306,6 +323,8 @@ mu::Array cast_numerical_cmplx(const mu::Array& vals)
             ret.push_back(mu::Numerical( static_cast<std::complex<T>>(val.getNum().asCF64()), castType ));
         else if (isConvertible(val.getStr(), CONVTYPE_DATE_TIME))
             ret.push_back(mu::Numerical( static_cast<std::complex<T>>(to_double(StrToTime(val.getStr()))), castType ));
+        else if (isConvertible(val.getStr(), CONVTYPE_DURATION))
+            ret.push_back(mu::Numerical( static_cast<std::complex<T>>(parseDuration(val.getStr())), castType ));
         else if (isConvertible(val.getStr(), CONVTYPE_LOGICAL))
             ret.push_back(mu::Numerical( static_cast<std::complex<T>>(StrToLogical(val.getStr())), castType ));
         else if (isConvertible(val.getStr(), CONVTYPE_VALUE))

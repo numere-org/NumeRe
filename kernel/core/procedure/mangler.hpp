@@ -100,10 +100,11 @@ class Mangler
         static std::string demangleExpression(std::string sMangledExpression)
         {
             std::smatch match;
+            static const std::regex pattern(PATTERN);
 
             while (true)
             {
-                std::regex_search(sMangledExpression, match, std::regex(PATTERN));
+                std::regex_search(sMangledExpression, match, pattern);
 
                 if (match.size())
                     sMangledExpression.replace(match.position(),
@@ -128,10 +129,11 @@ class Mangler
         static std::string demangleExpressionWithPosition(std::string sMangledExpression, size_t& relPos)
         {
             std::smatch match;
+            static const std::regex pattern(PATTERN);
 
             while (true)
             {
-                std::regex_search(sMangledExpression, match, std::regex(PATTERN));
+                std::regex_search(sMangledExpression, match, pattern);
 
                 if (match.size())
                 {

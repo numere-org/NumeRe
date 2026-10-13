@@ -263,9 +263,9 @@ class GroupPanel : public wxScrolledWindow
 
         // Group adders
         wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL, wxWindow* parent = nullptr,
-                                      const SizerWrapper& sizer = nullptr, int expand = 0);
-        wxBoxSizer* createGroup(int orient = wxVERTICAL, const SizerWrapper& sizer = nullptr, int expand = 0);
-        wxGridBagSizer* createGridGroup(const SizerWrapper& sizer = nullptr, int expand = 0);
+                                      const SizerWrapper& sizer = nullptr, int expand = 0, int alignment = wxALIGN_LEFT);
+        wxBoxSizer* createGroup(int orient = wxVERTICAL, const SizerWrapper& sizer = nullptr, int expand = 0, int alignment = wxALIGN_LEFT);
+        wxGridBagSizer* createGridGroup(const SizerWrapper& sizer = nullptr, int expand = 0, int alignment = wxALIGN_LEFT);
         wxCollapsiblePane* createCollapsibleGroup(const wxString& label, wxWindow* parent = nullptr, const SizerWrapper& sizer = nullptr);
 
         // A spacer

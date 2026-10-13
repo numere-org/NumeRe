@@ -589,7 +589,34 @@ class Assertion
         void reset();
         void resetStats();
         void enable(const std::string& sExpr);
-        void checkAssertion(const mu::StackItem* v, int nNum);
+
+        /////////////////////////////////////////////////
+        /// \brief Checks the return value of a muParser
+        /// evaluated result.
+        ///
+        /// \param v const mu::StackItem*
+        /// \param nNum int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void checkAssertion(const mu::StackItem* v, int nNum)
+        {
+            // Only do something, if the assertion mode is
+            // active
+            if (assertionMode)
+            {
+                for (int i = 0; i < nNum; i++)
+                {
+                    // If a single value is zero,
+                    // throw the assertion error
+                    if (!mu::all(v[i].get()))
+                        assertionFail();
+                }
+
+                stats.succeeded();
+            }
+        }
+
         void checkAssertion(const Matrix& _mMatrix);
         AssertionStats getStats() const;
 };

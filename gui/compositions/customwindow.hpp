@@ -371,6 +371,7 @@ class CustomWindow : public wxFrame
         void OnMenuEvent(wxCommandEvent& event);
         void OnClick(wxCommandEvent& event);
         void OnChange(wxCommandEvent& event);
+        void OnActivate(wxCommandEvent& event);
         void OnSpin(wxSpinEvent& event);
         void OnTabChanged(wxBookCtrlEvent& event);
         void OnCellSelect(wxGridEvent& event);

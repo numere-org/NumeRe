@@ -4162,6 +4162,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         bool isTablePlot = _data.containsTables(vDataPlots[i]);
         mu::Array vVals;
         size_t rows = 0;
+        size_t cols = 0;
 
         while (m_types[typeCounter] != PT_DATA && typeCounter+1 < m_types.size())
             typeCounter++;
@@ -4185,6 +4186,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, vDataPlots[i], vDataPlots[i]);
 
             rows = vVals.rows();
+            cols = vVals.cols();
         }
 
         Indices& _idx = _accessParser.getIndices();
@@ -4210,6 +4212,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCurrentExpr, sDataTable, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             rows = _idx.row.size();
+            cols = _idx.col.size();
         }
 
         if (isPlot1D(_pInfo.sCommand))
@@ -4226,7 +4229,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 datarows = _idx.col.numberOfNodes() - 1*!_pData.getSettings(PlotData::LOG_BOXPLOT);
 
             m_manager.assets[typeCounter].create1DPlot(PT_DATA, rows,
-                                                       isTablePlot ? datarows : std::max(datarows, vVals.cols()));
+                                                       isTablePlot ? datarows : std::max(datarows, cols > 1 ? cols-1 : 1));
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
                 throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
@@ -4242,7 +4245,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             if (vVals.size() || _idx.col.front() == VectorIndex::INVALID)
             {
                 for (size_t n = 0; n < rows; n++)
-                    m_manager.assets[typeCounter].writeAxis(n+1.0, n, XCOORD);
+                    m_manager.assets[typeCounter].writeAxis(cols > 1 && vVals.size() ? vVals.get(n, 0).getNum().asF64() : n+1.0, n, XCOORD);
             }
             else
             {
@@ -4271,8 +4274,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 {
                     for (size_t n = 0; n < rows; n++)
                     {
-                        if (q < vVals.cols())
-                            m_manager.assets[typeCounter].writeData(vVals.get(n, q).getNum().asCF64(), q, n);
+                        if (q + (cols > 1) < vVals.cols())
+                            m_manager.assets[typeCounter].writeData(vVals.get(n, q+(cols > 1)).getNum().asCF64(), q, n);
                         else
                             m_manager.assets[typeCounter].writeData(0.0, q, n);
                     }
@@ -5553,7 +5556,7 @@ void Plot::fillData(double dt_max, int t_animate)
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].front().getNum().asF64(), y, YCOORD);
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].front().getNum().asF64(), z, ZCOORD);
 
-                        for (int i = 0; i < 3; i++)
+                        for (size_t i = 0; i < 3; i++)
                         {
                             if (vResults[k].get().size() <= i) // Always fill missing dimensions with zero
                                 m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
@@ -6814,9 +6817,9 @@ void Plot::CoordSettings()
             if (_pData.getTickTemplate(i).length())
             {
                 if (i < 3)
-                    _graph->SetTickTempl('x' + i, _pData.getTickTemplate(i).c_str());
+                    _graph->SetTickTempl('x' + i, boost::nowide::widen(_pData.getTickTemplate(i)).c_str());
                 else
-                    _graph->SetTickTempl('c', _pData.getTickTemplate(i).c_str());
+                    _graph->SetTickTempl('c', boost::nowide::widen(_pData.getTickTemplate(i)).c_str());
             }
             else if (_pInfo.ranges[i].max() / _pData.getAxisScale(i) < 1e-2
                      && _pInfo.ranges[i].max() / _pData.getAxisScale(i) >= 1e-3)

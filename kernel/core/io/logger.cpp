@@ -18,6 +18,7 @@
 
 #include "logger.hpp"
 #include "../utils/stringtools.hpp"
+#include "../../kernel.hpp"
 #include <windows.h>
 
 DetachedLogger g_logger;
@@ -72,7 +73,7 @@ bool IsWow64()
 /////////////////////////////////////////////////
 /// \brief Empty default constructor.
 /////////////////////////////////////////////////
-Logger::Logger()
+Logger::Logger() : m_enableTerminalPrints(false)
 {
     //
 }
@@ -85,7 +86,7 @@ Logger::Logger()
 /// \param sLogFile const std::string&
 ///
 /////////////////////////////////////////////////
-Logger::Logger(const std::string& sLogFile)
+Logger::Logger(const std::string& sLogFile) : m_enableTerminalPrints(false)
 {
     open(sLogFile);
 }
@@ -122,6 +123,7 @@ bool Logger::open(const std::string& sLogFile)
 void Logger::close()
 {
     m_logFile.close();
+    m_sLogFile.clear();
 }
 
 
@@ -167,6 +169,8 @@ void Logger::push(const std::string& sMessage)
 {
     if (ensure_open())
         m_logFile << sMessage;
+    else if (m_enableTerminalPrints)
+        NumeReKernel::printPreFmt(sMessage, true);
 }
 
 
@@ -183,6 +187,177 @@ void Logger::push_line(const std::string& sMessage)
 {
     if (ensure_open())
         m_logFile << sMessage << std::endl;
+    else if (m_enableTerminalPrints)
+        NumeReKernel::print(sMessage, true);
+}
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief Create a leveled logger instance.
+///
+/// \param lvl Logger::LogLevel
+///
+/////////////////////////////////////////////////
+LeveledLogger::LeveledLogger(Logger::LogLevel lvl) : Logger(), m_level(lvl), m_hasErrorLogged(false)
+{
+    m_enableTerminalPrints = true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a leveled logger instance with
+/// a dedicated target file.
+///
+/// \param sLogFile const std::string&
+/// \param lvl Logger::LogLevel
+///
+/////////////////////////////////////////////////
+LeveledLogger::LeveledLogger(const std::string& sLogFile, Logger::LogLevel lvl) : Logger(sLogFile), m_level(lvl), m_hasErrorLogged(false)
+{
+    m_enableTerminalPrints = true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Copy constructor.
+///
+/// \param other const LeveledLogger&
+///
+/////////////////////////////////////////////////
+LeveledLogger::LeveledLogger(const LeveledLogger& other) : Logger(), m_hasErrorLogged(false)
+{
+    m_enableTerminalPrints = true;
+    m_level = other.m_level;
+
+    if (other.is_open())
+        open(other.m_sLogFile);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Copy assignment operator.
+///
+/// \param other const LeveledLogger&
+/// \return LeveledLogger&
+///
+/////////////////////////////////////////////////
+LeveledLogger& LeveledLogger::operator=(const LeveledLogger& other)
+{
+    m_level = other.m_level;
+
+    if (is_open())
+        close();
+
+    if (other.is_open())
+        open(other.m_sLogFile);
+
+    return *this;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push a message with the corresponding
+/// logging level to the logger. The message will
+/// be prefixed with the millisecond-precise
+/// timestamp.
+///
+/// \param lvl Logger::LogLevel
+/// \param sMessage const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void LeveledLogger::push_line(Logger::LogLevel lvl, const std::string& sMessage)
+{
+    if (lvl < m_level)
+        return;
+
+    std::string sLevel = toString(sys_time_now(), GET_MILLISECONDS) + "  " + strlfill(toUpperCase(levelToString(lvl)) + ":", 9, ' ');
+    push_info(sLevel + sMessage);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push a message to the logger, which
+/// is not dependend on the logging level and
+/// will be shown without a timestamp.
+///
+/// \param sInfo const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void LeveledLogger::push_info(const std::string& sInfo)
+{
+    Logger::push_line(sInfo);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Change the logging level or completely
+/// disable the logger.
+///
+/// \param lvl Logger::LogLevel
+/// \return void
+///
+/////////////////////////////////////////////////
+void LeveledLogger::setLoggingLevel(Logger::LogLevel lvl)
+{
+    m_level = lvl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Change the logging level or completely
+/// disable the logger.
+///
+/// \param lvl const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void LeveledLogger::setLoggingLevel(const std::string& lvl)
+{
+    if (lvl == "debug")
+        m_level = LVL_DEBUG;
+    else if (lvl == "info")
+        m_level = LVL_INFO;
+    else if (lvl == "cmdline")
+        m_level = LVL_CMDLINE;
+    else if (lvl == "warning")
+        m_level = LVL_WARNING;
+    else if (lvl == "error")
+        m_level = LVL_ERROR;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the logging level to a string
+/// representation.
+///
+/// \param lvl Logger::LogLevel
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string LeveledLogger::levelToString(Logger::LogLevel lvl)
+{
+    switch (lvl)
+    {
+        case Logger::LVL_DEBUG:
+            return "debug";
+        case Logger::LVL_INFO:
+            return "info";
+        case Logger::LVL_CMDLINE:
+            return "cmdline";
+        case Logger::LVL_WARNING:
+            return "warning";
+        case Logger::LVL_ERROR:
+            return "error";
+        case Logger::LVL_DISABLED:
+            return "disabled";
+    }
+
+    return "";
 }
 
 
@@ -198,9 +373,9 @@ void Logger::push_line(const std::string& sMessage)
 /// \param lvl Logger::LogLevel
 ///
 /////////////////////////////////////////////////
-DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl), m_startAfterCrash(false), m_hasErrorLogged(false)
+DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : LeveledLogger(lvl), m_startAfterCrash(false)
 {
-    //
+    m_enableTerminalPrints = false;
 }
 
 
@@ -251,16 +426,22 @@ bool DetachedLogger::open(const std::string& sLogFile)
     size_t pos = m_logFile.tellg();
 
     // If we have enough text in the logfile
-    if (pos > terminatingStatement)
+    if (pos > 3*terminatingStatement)
     {
-        m_logFile.seekg(pos-terminatingStatement-3, m_logFile.beg);
+        std::vector<std::string> vLogLines;
+        m_logFile.seekg(pos-3*terminatingStatement, m_logFile.beg);
 
-        if (m_logFile.good())
+        while (!m_logFile.eof())
         {
             std::string sLine;
             std::getline(m_logFile, sLine);
-            m_startAfterCrash = sLine != LOGGER_SHUTDOWN_LINE;
+
+            if (sLine.length())
+                vLogLines.push_back(sLine);
         }
+
+        if (vLogLines.size())
+            m_startAfterCrash = vLogLines.back() != LOGGER_SHUTDOWN_LINE;
 
         m_logFile.close();
     }
@@ -271,20 +452,6 @@ bool DetachedLogger::open(const std::string& sLogFile)
     m_buffer.clear();
 
     return good;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Change the logging level or completely
-/// disable the logger.
-///
-/// \param lvl Logger::LogLevel
-/// \return void
-///
-/////////////////////////////////////////////////
-void DetachedLogger::setLoggingLevel(Logger::LogLevel lvl)
-{
-    m_level = lvl;
 }
 
 
@@ -431,45 +598,5 @@ void DetachedLogger::write_system_information()
 }
 
 
-/////////////////////////////////////////////////
-/// \brief Push a message with the corresponding
-/// logging level to the logger. The message will
-/// be prefixed with the millisecond-precise
-/// timestamp.
-///
-/// \param lvl Logger::LogLevel
-/// \param sMessage const std::string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void DetachedLogger::push_line(Logger::LogLevel lvl, const std::string& sMessage)
-{
-    if (lvl < m_level)
-        return;
 
-    std::string sLevel = toString(sys_time_now(), GET_MILLISECONDS) + "  ";
-
-    switch (lvl)
-    {
-        case Logger::LVL_DEBUG:
-            sLevel += "DEBUG:   ";
-            break;
-        case Logger::LVL_INFO:
-            sLevel += "INFO:    ";
-            break;
-        case Logger::LVL_CMDLINE:
-            sLevel += "CMDLINE: ";
-            break;
-        case Logger::LVL_WARNING:
-            sLevel += "WARNING: ";
-            break;
-        case Logger::LVL_ERROR:
-            sLevel += "ERROR:   ";
-            break;
-        case Logger::LVL_DISABLED:
-            return;
-    }
-
-    push_info(sLevel + sMessage);
-}
 

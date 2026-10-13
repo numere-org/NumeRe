@@ -26,6 +26,7 @@
 #include "../../kernel/core/io/file.hpp"
 #include "../../kernel/core/io/logger.hpp"
 #include "../../kernel/kernel.hpp"
+#include "../stringconv.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
@@ -37,6 +38,48 @@
 
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
+
+
+class AutoConvTable : public wxGridStringTable
+{
+    public:
+        AutoConvTable() : wxGridStringTable()
+        { }
+
+        AutoConvTable(int rows, int cols) : wxGridStringTable(rows, cols)
+        { }
+
+        AutoConvTable(const AutoConvTable& other) = delete;
+
+        virtual bool CanGetValueAs(int row, int col, const wxString& sTypeName) override
+        {
+            std::string value = wxToUtf8(GetValue(row, col));
+
+            if (sTypeName == wxGRID_VALUE_FLOAT
+                && isConvertible(value, CONVTYPE_VALUE, nullptr))
+                return true;
+
+            if (sTypeName == wxGRID_VALUE_BOOL
+                && isConvertible(value, CONVTYPE_LOGICAL, nullptr))
+                return true;
+
+            if (sTypeName == wxGRID_VALUE_STRING)
+                return true;
+
+            return false;
+        }
+
+        virtual double GetValueAsDouble(int row, int col) override
+        {
+            return StrToDb(wxToUtf8(GetValue(row, col)));
+        }
+
+        virtual bool GetValueAsBool(int row, int col) override
+        {
+            return StrToLogical(wxToUtf8(GetValue(row, col)));
+        }
+
+};
 
 
 BEGIN_EVENT_TABLE(TableViewer, wxGrid)
@@ -165,9 +208,14 @@ void TableViewer::layoutGrid()
 
                 if (m_currentColTypes[j] == TableColumn::TYPE_DATETIME)
                 {
-                    //AutoSizeColumn(j);
-                    SetColSize(j, 120);
-                    SetColMinimalWidth(j, 120);
+                    SetColSize(j, 135);
+                    SetColMinimalWidth(j, 135);
+                }
+
+                if (m_currentColTypes[j] == TableColumn::TYPE_DURATION)
+                {
+                    SetColSize(j, 140);
+                    SetColMinimalWidth(j, 140);
                 }
             }
         }
@@ -927,7 +975,17 @@ void TableViewer::applyConditionalCellColourScheme()
     double minVal = calculateMin(coordsContainer);
     double maxVal = calculateMax(coordsContainer);
 
-    CellValueShaderDialog dialog(this, minVal, maxVal);
+    std::vector<std::string> vCategories;
+
+    if (isGridNumeReTable
+        && coordsContainer.getCols() == 1
+        && m_currentColTypes[coordsContainer.getExtent().m_topleft.GetCol()] == TableColumn::TYPE_CATEGORICAL)
+    {
+        GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
+        vCategories = gridtab->getCategories(coordsContainer.getExtent().m_topleft.GetCol());
+    }
+
+    CellValueShaderDialog dialog(this, minVal, maxVal, vCategories);
 
     if (dialog.ShowModal() == wxID_OK)
         conditionalFormat(coordsContainer, dialog.getShader());
@@ -1015,8 +1073,7 @@ void TableViewer::applyFilter()
             {
                 mu::Value v = get(i, j);
 
-                if ((v.isString() && !m_filter[j].eval(v.getStr()).first)
-                    || (!v.isString() && !m_filter[j].eval(v.getNum().asCF64()).first))
+                if (!m_filter[j].eval(v).first)
                 {
                     show = false;
                     break;
@@ -1338,7 +1395,7 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
 
     std::string cellValue = wxToUtf8(GetCellValue(row, col));
 
-    if (cellValue.front() != '"')
+    if (cellValue.length() && cellValue.front() != '"')
     {
         if (isConvertible(cellValue, CONVTYPE_VALUE))
             return StrToCmplx(cellValue);
@@ -1348,6 +1405,9 @@ std::complex<double> TableViewer::CellToCmplx(int row, int col)
 
         if (isConvertible(cellValue, CONVTYPE_DATE_TIME))
             return to_double(StrToTime(cellValue));
+
+        if (isConvertible(cellValue, CONVTYPE_DURATION))
+            return parseDuration(cellValue);
     }
 
     return NAN;
@@ -1379,6 +1439,9 @@ mu::Value TableViewer::get(int row, int col)
 
         if (isConvertible(cellValue, CONVTYPE_DATE_TIME))
             return mu::Value(StrToTime(cellValue));
+
+        if (isConvertible(cellValue, CONVTYPE_DURATION))
+            return mu::Numerical(parseDuration(cellValue), mu::DURATION);
     }
 
     return mu::Value(toInternalString(cellValue));
@@ -1548,6 +1611,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     // Calculate the simple statistics
     bool isDateTime = false;
+    bool isDuration = false;
     wxString colTypes;
     wxGridCellsExtent selectedExtent = coords.getExtent();
 
@@ -1564,6 +1628,9 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
         if (types.size() == 1u && *types.begin() == TableColumn::TYPE_DATETIME)
             isDateTime = true;
+
+        if (types.size() == 1u && *types.begin() == TableColumn::TYPE_DURATION)
+            isDuration = true;
 
         for (int type : types)
         {
@@ -1597,6 +1664,14 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
         statustext << L" ]  |  \u0394t " << formatDuration(dMax-dMin);
         statustext << L"  |  \u03A3t " << formatDuration(dSum.real());
         statustext << L"  |  t\u0305 " << toString(to_timePoint(dAvg.real()), GET_SHORTEST);
+    }
+    else if (isDuration && !isnan(dMin))
+    {
+        statustext = "[ " + formatDuration(dMin);
+        statustext << " : " << formatDuration(dMax);
+        statustext << L" ]  |  \u0394t " << formatDuration(dMax-dMin);
+        statustext << L"  |  \u03A3t " << formatDuration(dSum.real());
+        statustext << L"  |  t\u0305 " << formatDuration(dAvg.real());
     }
     else
     {
@@ -1903,7 +1978,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
     }
 
     if (!GetNumberCols())
-        CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+        SetTable(new AutoConvTable(_stringTable.getRows()+1, _stringTable.getCols()+1), true);
     else
     {
         DeleteCols(0, GetNumberCols()-1);
@@ -2118,7 +2193,7 @@ void TableViewer::SetGridCursorSilent(int row, int col)
 /////////////////////////////////////////////////
 void TableViewer::SetDefaultSize(size_t rows, size_t cols)
 {
-    CreateGrid(rows+1,cols+1);
+    SetTable(new AutoConvTable(rows+1, cols+1), true);
 
     for (size_t i = 0; i < rows+1; i++)
     {
@@ -2219,8 +2294,13 @@ void TableViewer::OnCellDoubleClick(wxGridEvent& event)
                 m_numereWindow->showTable(m_intName + key.substr(0, key.length()-1),
                                           m_displayName + key.substr(0, key.length()-1));
         }
+        else if (key.Matches("*:") && value.Matches("{* x * *}"))
+        {
+            m_numereWindow->showTable(m_intName + ".at(" + key.substr(0, key.length()-1) + ")",
+                                      m_displayName + ".at(" + key.substr(0, key.length()-1) + ")");
+        }
     }
-    else if (cellValue.length() && (cellValue.Matches("{* x * *}") || cellValue.Matches("[.*: *]")))
+    else if (cellValue.length() && (cellValue.Matches("{* x * *}") || cellValue.Matches("[*: *]")))
     {
         m_numereWindow->showTable(m_intName + ".sel(" + toString(event.GetRow()+1) + ")",
                                   m_displayName + ".sel(" + toString(event.GetRow()+1) + ")");

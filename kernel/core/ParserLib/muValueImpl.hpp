@@ -24,6 +24,8 @@
 #include "muValueBase.hpp"
 #include "muStructures.hpp"
 #include "muCompositeStructures.hpp"
+#include "../io/logger.hpp"
+#include "../utils/timer.hpp"
 
 namespace mu
 {
@@ -40,6 +42,10 @@ namespace mu
         BaseValue& operator=(const BaseValue& other) override;
         BaseValue& operator=(const NeutralValue& other);
         BaseValue* clone() const override;
+        DataType getPlainType() const override
+        {
+            return TYPE_NEUTRAL;
+        }
 
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
@@ -69,6 +75,11 @@ namespace mu
         BASE_VALUE_DECL(NumValue, TYPE_NUMERICAL, Numerical, m_val)
 
         NumValue(double val, bool makeInvalid);
+
+        DataType getType() const override
+        {
+            return m_val.getType() == INVALID ? TYPE_INVALID : TYPE_NUMERICAL;
+        }
 
         BaseValue* operator+(const BaseValue& other) const override;
         BaseValue* operator-() const override;
@@ -231,7 +242,41 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This class wraps an DictStruct
+    /// \brief This class wraps a Dict
+    /// instance into a value.
+    /////////////////////////////////////////////////
+    class DictValue final : public BaseValue
+    {
+        BASE_VALUE_DECL(DictValue, TYPE_DICT, Dict, m_val)
+
+        bool isValid() const override;
+
+        operator bool() const override;
+        bool operator==(const BaseValue& other) const override;
+
+        size_t getBytes() const override;
+
+        MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
+        BaseValue* call(const std::string& sMethod) const override;
+        BaseValue* call(const std::string& sMethod,
+                        const BaseValue& arg1) const override;
+
+        MethodDefinition isApplyingMethod(const std::string& sMethod, size_t argc) const override;
+        BaseValue* apply(const std::string& sMethod) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1) override;
+        BaseValue* apply(const std::string& sMethod,
+                         const BaseValue& arg1, const BaseValue& arg2) override;
+
+
+        std::string print(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printEmbedded(size_t digits, size_t chrs, bool trunc) const override;
+        std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a DictStruct
     /// instance into a value.
     /////////////////////////////////////////////////
     class DictStructValue final : public BaseValue
@@ -484,6 +529,220 @@ namespace mu
             BaseValue* apply(const std::string& sMethod) override;
             BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
             BaseValue* apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) override;
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a file instance into
+    /// an object.
+    /////////////////////////////////////////////////
+    class LoggerValue final : public Object
+    {
+        private:
+            LeveledLogger m_val;
+
+        public:
+            LoggerValue();
+
+            /////////////////////////////////////////////////
+            /// \brief Create from a logger instance.
+            /////////////////////////////////////////////////
+            LoggerValue(const LeveledLogger& logger) : LoggerValue()
+            {
+                m_val = logger;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            /////////////////////////////////////////////////
+            LoggerValue(const LoggerValue& other) : LoggerValue()
+            {
+                m_val = other.m_val;
+            }
+
+            LoggerValue(LoggerValue&& other) = default;
+            LoggerValue(const BaseValue& other);
+            LoggerValue& operator=(const BaseValue& other) override;
+
+            /////////////////////////////////////////////////
+            /// \brief Assign a logger instance.
+            ///
+            /// \param val const LeveledLogger&
+            /// \return LoggerValue&
+            ///
+            /////////////////////////////////////////////////
+            LoggerValue& operator=(const LeveledLogger& val)
+            {
+                m_val = val;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Assign another LoggerValue instance.
+            ///
+            /// \param other const LoggerValue&
+            /// \return LoggerValue&
+            ///
+            /////////////////////////////////////////////////
+            LoggerValue& operator=(const LoggerValue& other)
+            {
+                m_val = other.m_val;
+                return *this;
+            }
+
+            LoggerValue& operator=(LoggerValue&& other) = default;
+
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            BaseValue* clone() const override
+            {
+                return new LoggerValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the file instance.
+            ///
+            /// \return LeveledLogger&
+            ///
+            /////////////////////////////////////////////////
+            LeveledLogger& get()
+            {
+                return m_val;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the file
+            /// instance.
+            ///
+            /// \return const LeveledLogger&
+            ///
+            /////////////////////////////////////////////////
+            const LeveledLogger& get() const
+            {
+                return m_val;
+            }
+
+            bool isValid() const override;
+            operator bool() const override;
+            size_t getBytes() const override;
+
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* apply(const std::string& sMethod) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1) override;
+            BaseValue* apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) override;
+
+            std::string print(size_t digits, size_t chrs, bool trunc) const override;
+            std::string printVal(size_t digits, size_t chrs) const override;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class wraps a timer instance into
+    /// an object.
+    /////////////////////////////////////////////////
+    class TimerValue final : public Object
+    {
+        private:
+            Timer m_val;
+
+        public:
+            TimerValue();
+
+            /////////////////////////////////////////////////
+            /// \brief Create from a Timer instance.
+            /////////////////////////////////////////////////
+            TimerValue(const Timer& logger) : TimerValue()
+            {
+                m_val = logger;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            /////////////////////////////////////////////////
+            TimerValue(const TimerValue& other) : TimerValue()
+            {
+                m_val = other.m_val;
+            }
+
+            TimerValue(TimerValue&& other) = default;
+            TimerValue(const BaseValue& other);
+            TimerValue& operator=(const BaseValue& other) override;
+
+            /////////////////////////////////////////////////
+            /// \brief Assign a Timer instance.
+            ///
+            /// \param val const Timer&
+            /// \return TimerValue&
+            ///
+            /////////////////////////////////////////////////
+            TimerValue& operator=(const Timer& val)
+            {
+                m_val = val;
+                return *this;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Assign another TimerValue instance.
+            ///
+            /// \param other const TimerValue&
+            /// \return TimerValue&
+            ///
+            /////////////////////////////////////////////////
+            TimerValue& operator=(const TimerValue& other)
+            {
+                m_val = other.m_val;
+                return *this;
+            }
+
+            TimerValue& operator=(TimerValue&& other) = default;
+
+            /////////////////////////////////////////////////
+            /// \brief Clone this instance.
+            ///
+            /// \return BaseValue*
+            ///
+            /////////////////////////////////////////////////
+            BaseValue* clone() const override
+            {
+                return new TimerValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a reference to the file instance.
+            ///
+            /// \return Timer&
+            ///
+            /////////////////////////////////////////////////
+            Timer& get()
+            {
+                return m_val;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Get a const reference to the file
+            /// instance.
+            ///
+            /// \return const Timer&
+            ///
+            /////////////////////////////////////////////////
+            const Timer& get() const
+            {
+                return m_val;
+            }
+
+            bool isValid() const override;
+            operator bool() const override;
+            size_t getBytes() const override;
+
+            BaseValue* call(const std::string& sMethod) const override;
+            BaseValue* apply(const std::string& sMethod) override;
 
             std::string print(size_t digits, size_t chrs, bool trunc) const override;
             std::string printVal(size_t digits, size_t chrs) const override;

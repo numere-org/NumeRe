@@ -100,6 +100,7 @@ void CodeAnalyzer::run()
     if (m_editor->isNumeReFileType() && m_editor->m_codeParser.isDirty())
         m_editor->parse(0);
 
+    m_currentLogicalLine = std::make_pair(0, -1);
     m_nCurrentLine = -1;
     m_hasProcedureDefinition = false;
 
@@ -107,6 +108,7 @@ void CodeAnalyzer::run()
     bool isAlreadyMeasured = false;
     bool isSuppressed = false;
 
+    m_currentLexedLine.clear();
     m_currentMode.clear();
     m_sCurrentLine.clear();
     m_sStyles.clear();
@@ -153,14 +155,6 @@ void CodeAnalyzer::run()
             std::string sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
             StripSpaces(sLine);
 
-            // catch constant expressions
-            if (CHECK_CONSTANT_EXPRESSION
-                && sLine.length()
-                && sLine.find_first_not_of("\n\r\t") != std::string::npos
-                && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == std::string::npos)
-                AnnotCount += addWarning(sLine.substr(0, sLine.find_last_not_of("0123456789eE+-*/.,;^()")),
-                                         "GUI_ANALYZER_CONSTEXPR");
-
             // Handle line continuations
             if (sLine.find("\\\\") != std::string::npos)
                 isContinuedLine = true;
@@ -168,7 +162,6 @@ void CodeAnalyzer::run()
             {
                 isContinuedLine = false;
                 m_hasProcedureDefinition = false;
-                m_currentMode.clear();
             }
 
             // Find the summary line for the current file and push the
@@ -188,7 +181,92 @@ void CodeAnalyzer::run()
                 m_editor->AnnotationSetStyles(m_nCurrentLine, m_sStyles);
             }
 
+            m_sCurrentLine.clear();
+            m_sStyles.clear();
             m_nCurrentLine = m_editor->LineFromPosition(m_nCurPos);
+
+            if (m_nCurrentLine >= m_editor->LineFromPosition(m_currentLogicalLine.second)+1)
+            {
+                m_currentLogicalLine = m_editor->getLogicalLine(m_nCurrentLine);
+                m_currentLexedLine = m_editor->getLexedTokensForLogicalLine(m_nCurrentLine);
+
+                // Get the line's contents
+                sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
+                StripSpaces(sLine);
+
+                while (sLine.back() == '\r' || sLine.back() == '\n')
+                    sLine.pop_back();
+
+                // catch constant expressions
+                if (CHECK_CONSTANT_EXPRESSION && m_currentLexedLine.size())
+                {
+                    bool isConstant = true;
+
+                    for (const LexedString& lexed : m_currentLexedLine)
+                    {
+                        if (!lexed.is({wxSTC_NSCR_COMMENT_BLOCK,
+                                       wxSTC_NSCR_COMMENT_LINE,
+                                       wxSTC_NSCR_OPERATORS,
+                                       wxSTC_NSCR_NUMBERS,
+                                       wxSTC_NSCR_STRING,
+                                       wxSTC_NSCR_CONSTANTS}))
+                        {
+                            isConstant = false;
+                            break;
+                        }
+                    }
+
+                    if (isConstant)
+                        AnnotCount += addWarning(highlightFoundOccurence(sLine,
+                                                                         m_currentLogicalLine.first,
+                                                                         m_currentLogicalLine.second - m_currentLogicalLine.first),
+                                                 "GUI_ANALYZER_CONSTEXPR");
+                }
+
+                // Check for unbalanced expressions
+                if (m_currentLexedLine.size())
+                {
+                    const LexedString& first = m_currentLexedLine[0];
+
+                    if (first.is(wxSTC_NSCR_OPERATORS)
+                        && first.m_str != "+"
+                        && first.m_str != "-"
+                        && first.m_str != "!"
+                        && first.m_str != "("
+                        && first.m_str != "{")
+                        AnnotCount += addError(highlightFoundOccurence(sLine,
+                                                                       m_currentLogicalLine.first,
+                                                                       m_currentLogicalLine.second - m_currentLogicalLine.first),
+                                 "GUI_ANALYZER_UNBALANCED_EXPR");
+
+                    bool semicolonAtEnd = m_currentLexedLine[m_currentLexedLine.size()-1].m_str == ";";
+
+                    if (m_currentLexedLine.size() >= 2ull+semicolonAtEnd)
+                    {
+                        const LexedString& last = m_currentLexedLine[m_currentLexedLine.size()-1-semicolonAtEnd];
+                        bool colonAllowed = m_currentLexedLine[0].is(wxSTC_NSCR_COMMAND)
+                            && (m_currentLexedLine[0].m_str == "case"
+                                || m_currentLexedLine[0].m_str == "default"
+                                || m_currentLexedLine[0].m_str == "catch");
+
+                        if (last.is(wxSTC_NSCR_OPERATORS)
+                            && last.m_str != "++"
+                            && last.m_str != "--"
+                            && last.m_str != "!"
+                            && last.m_str != "!!"
+                            && last.m_str != "'"
+                            && last.m_str != ")"
+                            && last.m_str != "]"
+                            && last.m_str != "}"
+                            && !(colonAllowed && last.m_str == ":"))
+                            AnnotCount += addError(highlightFoundOccurence(sLine,
+                                                                           m_currentLogicalLine.first,
+                                                                           m_currentLogicalLine.second - m_currentLogicalLine.first),
+                                     "GUI_ANALYZER_UNBALANCED_EXPR");
+                    }
+                }
+            }
+
             sLine = wxToUtf8(m_editor->GetLine(m_nCurrentLine));
 
             // Ensure that there's no trailing comment
@@ -218,11 +296,33 @@ void CodeAnalyzer::run()
             if (lastVisibleChar != std::string::npos
                 && (sLine[lastVisibleChar] == ';' || (lastVisibleChar > 0 && sLine.substr(lastVisibleChar-1, 2) == "\\\\")))
                 isSuppressed = true;
+            else if (m_currentLexedLine.size() && m_currentLexedLine[0].is(wxSTC_NSCR_COMMAND))
+                isSuppressed = m_currentLexedLine[0].m_str != "assert"
+                    && m_currentLexedLine[0].m_str != "explicit"
+                    && m_currentLexedLine[0].m_str != "global";
             else
                 isSuppressed = false;
 
-            m_sCurrentLine.clear();
-            m_sStyles.clear();
+            if (m_currentLexedLine.size()
+                && m_currentLexedLine[0].is(wxSTC_NSCR_COMMAND)
+                && (m_currentLexedLine[0].m_str == "define"
+                    || m_currentLexedLine[0].m_str == "ifndefined"
+                    || m_currentLexedLine[0].m_str == "lclfunc"
+                    || m_currentLexedLine[0].m_str == "def"
+                    || m_currentLexedLine[0].m_str == "ifndef"))
+                m_currentMode = "define";
+            else if (m_currentLexedLine.size()
+                && m_currentLexedLine[0].is(wxSTC_NSCR_COMMAND)
+                && (m_currentLexedLine[0].m_str == "draw"
+                    || m_currentLexedLine[0].m_str == "draw3d"))
+                m_currentMode = "draw";
+            else if (m_currentLexedLine.size()
+                && m_currentLexedLine[0].is(wxSTC_NSCR_COMMAND)
+                && (m_currentLexedLine[0].m_str == "matop"
+                    || m_currentLexedLine[0].m_str == "mtrxop"))
+                m_currentMode = "matop";
+            else
+                m_currentMode.clear();
         }
 
         int style = m_editor->GetStyleAt(m_nCurPos);
@@ -1112,7 +1212,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
                                                        sSyntaxElement,
                                                        m_sError,
-                                                       _guilang.get("ERR_NR_2022_0_INCLUDE_NOT_EXIST", e.getToken())),
+                                                       _guilang.get("ERR_NR_2023_0_INCLUDE_NOT_EXIST", e.getToken())),
                                           ANNOTATION_ERROR);
         }
 
@@ -1402,6 +1502,13 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     {
         int nPos = m_editor->BraceMatch(wordend);
 
+        if (sSyntaxElement.find('.') == std::string::npos)
+            _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
+        else
+            _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), rootType);
+
+        //g_logger.info(sSyntaxElement + " | " + rootType + ": " + _cTip.sDefinition + " | " + toString(_cTip.arguments.size()));
+
         if (nPos < wordend)
         {
             // MATLAB doesn't require a parenthesis pair for empty arguments.
@@ -1409,22 +1516,15 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             if (m_editor->m_fileType == FILE_MATLAB)
                 AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                          "GUI_ANALYZER_MISSINGPARENTHESIS");
-            else
+            else if (_cTip.nReqArgs > 0)
                 AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                        "GUI_ANALYZER_MISSINGPARENTHESIS");
         }
-        else
+        else if (std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) == m_DRAW_FUNCS.end())
         {
-            // Check for missing arguments
+            // Check for missing arguments if the function is not a drawing function
             std::string sArgument = wxToUtf8(m_editor->GetTextRange(wordend + 1, nPos));
             EndlessVector<std::string> args = getAllArguments(sArgument);
-
-            if (sSyntaxElement.find('.') == std::string::npos)
-                _cTip = _provider.getFunction(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)));
-            else
-                _cTip = _provider.getMethod(wxToUtf8(m_editor->GetTextRange(wordstart, wordend)), rootType);
-
-            //g_logger.info(sSyntaxElement + " | " + rootType + ": " + _cTip.sDefinition + " | " + toString(_cTip.arguments.size()));
 
             if (args.size() > _cTip.arguments.size()
                 && !(_cTip.arguments.size() && _cTip.arguments.back() == "..."))
@@ -1441,7 +1541,9 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
         AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                "GUI_ANALYZER_STRINGFUNCTION");
 
-    if (m_currentMode != "draw" && std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) != m_DRAW_FUNCS.end())
+    if (m_currentMode != "draw"
+        && m_currentMode != "define"
+        && std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) != m_DRAW_FUNCS.end())
         AnnotCount += addError(highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart),
                                "GUI_ANALYZER_DRAWFUNCTION");
 
@@ -1822,6 +1924,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
             && (m_editor->BraceMatch(i) >= m_nCurPos || m_editor->BraceMatch(i) == -1) // either no brace (yet) or the brace further right
             && (m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CLUSTER
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CUSTOM_FUNCTION
+                || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_METHOD // for table methods
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_IDENTIFIER
                 || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_PREDEFS)) // table() or data()
         {
@@ -1866,27 +1969,31 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
         // Should only be used in tables. Additionally,
         // their order might be mixed up
         if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CUSTOM_FUNCTION
-            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_PREDEFS)
+            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_PREDEFS
+            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_METHOD)
             AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
                                      "GUI_ANALYZER_DIMVAR_MISUSE");
 
-        // Now, check for mixed up orientations
-        int contextEnd = m_editor->BraceMatch(contextPoint);
+        if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_METHOD)
+        {
+            // Now, check for mixed up orientations
+            int contextEnd = m_editor->BraceMatch(contextPoint);
 
-        if (contextEnd == wxNOT_FOUND)
-            contextEnd = m_editor->GetLineEndPosition(m_nCurrentLine);
+            if (contextEnd == wxNOT_FOUND)
+                contextEnd = m_editor->GetLineEndPosition(m_nCurrentLine);
 
-        // Get the context content and split it up into
-        // the single arguments
-        std::string sContext = wxToUtf8(m_editor->GetTextRange(contextPoint+1, contextEnd));
-        EndlessVector<std::string> args = getAllArguments(sContext);
+            // Get the context content and split it up into
+            // the single arguments
+            std::string sContext = wxToUtf8(m_editor->GetTextRange(contextPoint+1, contextEnd));
+            EndlessVector<std::string> args = getAllArguments(sContext);
 
-        // Check, whether the dimension vars can be found in the
-        // opposite dimension
-        if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
-            || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
-            AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
-                                     "GUI_ANALYZER_DIMVAR_MIXUP");
+            // Check, whether the dimension vars can be found in the
+            // opposite dimension
+            if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
+                || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
+                AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                         "GUI_ANALYZER_DIMVAR_MIXUP");
+        }
     }
 
     m_nCurPos = wordend;

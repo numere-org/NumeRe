@@ -249,20 +249,18 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             if (grid.GetTable()->CanGetValueAs(row, col, "mu::Value"))
             {
                 mu::Value* val = static_cast<mu::Value*>(grid.GetTable()->GetValueAsCustom(row, col, "mu::Value"));
-
-                if (val->isString())
-                    customAttr->SetBackgroundColour(m_shader.getColour(val->getStr()));
-                else
-                    customAttr->SetBackgroundColour(m_shader.getColour(val->as_cmplx()));
+                customAttr->SetBackgroundColour(m_shader.getColour(*val));
             }
             else if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
-                customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<std::complex<double>*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
-            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_NUMBER) || grid.GetTable()->CanGetValueAs(row, col, "datetime"))
-                customAttr->SetBackgroundColour(m_shader.getColour(std::complex<double>(grid.GetTable()->GetValueAsDouble(row, col))));
+                customAttr->SetBackgroundColour(m_shader.getColour(mu::Numerical(*static_cast<std::complex<double>*>(grid.GetTable()->GetValueAsCustom(row, col, "complex")))));
+            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT)
+                     || grid.GetTable()->CanGetValueAs(row, col, "datetime")
+                     || grid.GetTable()->CanGetValueAs(row, col, "duration"))
+                customAttr->SetBackgroundColour(m_shader.getColour(mu::Numerical(grid.GetTable()->GetValueAsDouble(row, col))));
             else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
-                customAttr->SetBackgroundColour(m_shader.getColour(std::complex<double>(grid.GetTable()->GetValueAsBool(row, col))));
+                customAttr->SetBackgroundColour(m_shader.getColour(mu::Numerical(grid.GetTable()->GetValueAsBool(row, col))));
             else
-                customAttr->SetBackgroundColour(m_shader.getColour(grid.GetTable()->GetValue(row, col)));
+                customAttr->SetBackgroundColour(m_shader.getColour(wxToUtf8(grid.GetTable()->GetValue(row, col))));
 
             // Calculate luminosity and correct text colour, if necessary
             const wxColour& bgColour = customAttr->GetBackgroundColour();
@@ -974,7 +972,8 @@ class CombinedCellEditor : public wxGridCellEditor
             }
             else if (!isHead
                      && (int)vTypes.size() > col
-                     && vTypes[col] == TableColumn::TYPE_DATETIME)
+                     && (vTypes[col] == TableColumn::TYPE_DATETIME
+                         || vTypes[col] == TableColumn::TYPE_DURATION))
             {
                 // Select the date entry control
                 m_control = m_datePicker;

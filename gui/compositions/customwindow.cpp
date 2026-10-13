@@ -227,9 +227,9 @@ static wxArrayString getChoices(const mu::Array& choices)
 {
     wxArrayString arr;
 
-    for (const auto& c : choices)
+    for (size_t i = 0; i < choices.size(); i++)
     {
-        arr.Add(wxFromUtf8(c.printVal()));
+        arr.Add(wxFromUtf8(choices.get(i).printVal()));
     }
 
     return arr;
@@ -505,12 +505,12 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
 
         if (fields[i] == "nodes")
         {
-            if (elem->m_type == mu::TYPE_ARRAY)
+            if (elem->getType() == mu::TYPE_ARRAY)
             {
                 populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), parentItem);
                 continue;
             }
-            else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+            else if (elem->getType() == mu::TYPE_DICTSTRUCT)
             {
                 populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), parentItem);
                 continue;
@@ -519,12 +519,12 @@ static void populateXmlChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dic
 
         item = listCtrl->AppendItem(parentItem, wxFromUtf8(fields[i]));
 
-        if (elem->m_type == mu::TYPE_ARRAY)
+        if (elem->getType() == mu::TYPE_ARRAY)
         {
             populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), item);
             continue;
         }
-        else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+        else if (elem->getType() == mu::TYPE_DICTSTRUCT)
         {
             populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), item);
             continue;
@@ -571,12 +571,12 @@ static void populateChild(wxTreeListCtrl* listCtrl, const mu::DictStruct& dict, 
         const mu::BaseValue* elem = dict.read(fields[i]);
         item = listCtrl->AppendItem(parentItem, wxFromUtf8(fields[i]));
 
-        if (elem->m_type == mu::TYPE_ARRAY)
+        if (elem->getType() == mu::TYPE_ARRAY)
         {
             populateArrChild(listCtrl, static_cast<const mu::ArrValue*>(elem)->get(), item);
             continue;
         }
-        else if (elem->m_type == mu::TYPE_DICTSTRUCT)
+        else if (elem->getType() == mu::TYPE_DICTSTRUCT)
         {
             populateChild(listCtrl, static_cast<const mu::DictStructValue*>(elem)->get(), item);
             continue;
@@ -789,7 +789,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_CHOICE(-1, CustomWindow::OnChange)
     EVT_COMBOBOX(-1, CustomWindow::OnChange)
     EVT_TEXT(-1, CustomWindow::OnChange)
-    EVT_TEXT_ENTER(-1, CustomWindow::OnChange)
+    EVT_TEXT_ENTER(-1, CustomWindow::OnActivate)
     EVT_SPINCTRL(-1, CustomWindow::OnSpin)
     EVT_CLOSE(CustomWindow::OnClose)
     EVT_GRID_SELECT_CELL(CustomWindow::OnCellSelect)
@@ -827,9 +827,27 @@ END_EVENT_TABLE()
 /// \param addStyle int
 ///
 /////////////////////////////////////////////////
-CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef), m_dialogLock(nullptr)
+CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(), m_windowRef(windowRef), m_dialogLock(nullptr)
 {
     m_windowRef.connect(this);
+
+    const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChildElement();
+    int style = addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX;
+
+    // Evaluate possible style changes
+    if (layoutGroup->Attribute("stayontop", "true"))
+        style |= wxSTAY_ON_TOP;
+
+    if (layoutGroup->Attribute("fixedsize", "true"))
+        style &= ~(wxMAXIMIZE_BOX | wxRESIZE_BORDER);
+
+    if (layoutGroup->Attribute("minimize", "false"))
+        style &= ~wxMINIMIZE_BOX;
+
+    if (layoutGroup->Attribute("closebox", "false"))
+        style &= ~wxCLOSE_BOX;
+
+    Create(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
 
     layout();
 }
@@ -846,7 +864,7 @@ CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, in
 void CustomWindow::layout()
 {
     // Get the layout group from the layout script
-    const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChild()->ToElement();
+    const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChildElement();
 
     // Evaluate possible background color information
     if (layoutGroup->Attribute("color"))
@@ -887,13 +905,16 @@ void CustomWindow::layout()
     _groupPanel->SetScrollbars(20, 20, 200, 200);
 
     // Create a status bar
-    CreateStatusBar();
+    wxStatusBar* bar = CreateStatusBar();
 
+    // Fill the contents, if available, otherwise hide it
     if (layoutGroup->Attribute("statustext"))
     {
         wxString statusText = wxFromUtf8(layoutGroup->Attribute("statustext"));
         setStatusText(getChoices(statusText));
     }
+    else
+        bar->Hide();
 
     // Evaluate the size information
     SetClientSize(wxSize(800,600));
@@ -911,7 +932,22 @@ void CustomWindow::layout()
         }
     }
 
+    // Evaluate the position information
+    if (layoutGroup->Attribute("pos"))
+    {
+        std::vector<int> p = strIntToVector(layoutGroup->Attribute("pos"));
+
+        if (p.size() >= 2)
+        {
+            if (p[0] == -2 && p[1] == -2)
+                Centre();
+            else if (p[0] != -1 && p[1] != -1)
+                SetPosition(wxPoint(p[0], p[1]));
+        }
+    }
+
     Layout();
+
 }
 
 
@@ -972,7 +1008,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         if (currentChild->Attribute("align"))
         {
             std::string sAlign = currentChild->Attribute("align");
-            alignment = 0;
+            alignment = wxALIGN_LEFT;
 
             // LRCTB
             if (sAlign.find_first_of("TB") == std::string::npos)
@@ -981,8 +1017,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (sAlign.find_first_of("LR") == std::string::npos)
                 alignment |= wxALIGN_CENTER_HORIZONTAL;
 
-            if (sAlign.find("L") != std::string::npos)
-                alignment |= wxALIGN_LEFT;
+            if (sAlign.find("C") != std::string::npos)
+                alignment |= wxALIGN_CENTER;
 
             if (sAlign.find("R") != std::string::npos)
                 alignment |= wxALIGN_RIGHT;
@@ -992,7 +1028,6 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (sAlign.find("B") != std::string::npos)
                 alignment |= wxALIGN_BOTTOM;
-
         }
 
         // Now check for the current XMLElement's
@@ -1240,6 +1275,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("type", "markup"))
                 style = wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL;
 
+            if (currentChild->Attribute("type", "pwdentry"))
+                style = wxTE_PASSWORD | wxTE_PROCESS_ENTER;
+
             wxString label;
 
             if (currentChild->Attribute("label"))
@@ -1252,6 +1290,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
 
             if (currentChild->Attribute("color"))
                 textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -1370,6 +1411,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                             v.push_back(mu::Value(StrToCmplx(cur)));
                         else if (isConvertible(cur, CONVTYPE_DATE_TIME))
                             v.push_back(mu::Value(StrToTime(cur)));
+                        else if (isConvertible(cur, CONVTYPE_DURATION))
+                            v.push_back(mu::Numerical(parseDuration(cur), mu::DURATION));
                         else if (isConvertible(cur, CONVTYPE_LOGICAL))
                             v.push_back(mu::Value(StrToLogical(cur)));
                         else
@@ -1624,7 +1667,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     {
                         noteBook = new wxNotebook(currParent, id);
                         m_windowItems[id] = std::make_pair(CustomWindow::NOTEBOOK, noteBook);
-                        currSizer->Add(noteBook, 1, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+                        currSizer->Add(noteBook, 1, alignment | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
 
                         if (currentChild->Attribute("onchange"))
                             m_eventTable[id].onchange = currentChild->Attribute("onchange");
@@ -1658,11 +1701,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 }
                 else
                 {
-                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer, expand);
+                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer, expand, alignment);
 
                     if (isGrid)
                     {
-                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand);
+                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand, alignment);
                         layoutGridChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), gbSizer, _groupPanel, _rowScl, _colScl);
                     }
                     else
@@ -1673,12 +1716,12 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             {
                 if (isGrid)
                 {
-                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(currSizer, expand);
+                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(currSizer, expand, alignment);
                     layoutGridChild(currentChild->FirstChildElement(), currParent, gbSizer, _groupPanel, _rowScl, _colScl);
                 }
                 else
                 {
-                    wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand);
+                    wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand, alignment);
                     layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
                 }
             }
@@ -1754,7 +1797,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
         if (currentChild->Attribute("align"))
         {
             std::string sAlign = currentChild->Attribute("align");
-            alignment = 0;
+            alignment = wxALIGN_LEFT;
 
             // LRCTB
             if (sAlign.find_first_of("TB") == std::string::npos)
@@ -1763,8 +1806,8 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             if (sAlign.find_first_of("LR") == std::string::npos)
                 alignment |= wxALIGN_CENTER_HORIZONTAL;
 
-            if (sAlign.find("L") != std::string::npos)
-                alignment |= wxALIGN_LEFT;
+            if (sAlign.find("C") != std::string::npos)
+                alignment |= wxALIGN_CENTER;
 
             if (sAlign.find("R") != std::string::npos)
                 alignment |= wxALIGN_RIGHT;
@@ -2042,6 +2085,9 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             if (currentChild->Attribute("type", "markup"))
                 style = wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_RICH2 | wxTE_AUTO_URL;
 
+            if (currentChild->Attribute("type", "pwdentry"))
+                style = wxTE_PASSWORD | wxTE_PROCESS_ENTER;
+
             wxString label;
 
             if (currentChild->Attribute("label"))
@@ -2054,6 +2100,9 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
 
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
 
             if (currentChild->Attribute("color"))
                 textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -2172,6 +2221,8 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                             v.push_back(mu::Value(StrToCmplx(cur)));
                         else if (isConvertible(cur, CONVTYPE_DATE_TIME))
                             v.push_back(mu::Value(StrToTime(cur)));
+                        else if (isConvertible(cur, CONVTYPE_DURATION))
+                            v.push_back(mu::Numerical(parseDuration(cur), mu::DURATION));
                         else if (isConvertible(cur, CONVTYPE_LOGICAL))
                             v.push_back(mu::Value(StrToLogical(cur)));
                         else
@@ -2431,7 +2482,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                     {
                         noteBook = new wxNotebook(currParent, id);
                         m_windowItems[id] = std::make_pair(CustomWindow::NOTEBOOK, noteBook);
-                        currSizer->Add(noteBook, gbPos, gbSpan, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+                        currSizer->Add(noteBook, gbPos, gbSpan, alignment | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
 
                         if (currentChild->Attribute("onchange"))
                             m_eventTable[id].onchange = currentChild->Attribute("onchange");
@@ -2465,11 +2516,11 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                 }
                 else
                 {
-                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, SizerWrapper(currSizer, gbPos, gbSpan), expand, alignment);
 
                     if (isGrid)
                     {
-                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand);
+                        wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(sizer, expand, alignment);
                         layoutGridChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), gbSizer, _groupPanel, _rowScl, _colScl);
                     }
                     else
@@ -2480,12 +2531,12 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
             {
                 if (isGrid)
                 {
-                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    wxGridBagSizer* gbSizer = _groupPanel->createGridGroup(SizerWrapper(currSizer, gbPos, gbSpan), expand, alignment);
                     layoutGridChild(currentChild->FirstChildElement(), currParent, gbSizer, _groupPanel, _rowScl, _colScl);
                 }
                 else
                 {
-                    wxBoxSizer* sizer = _groupPanel->createGroup(style, SizerWrapper(currSizer, gbPos, gbSpan), expand);
+                    wxBoxSizer* sizer = _groupPanel->createGroup(style, SizerWrapper(currSizer, gbPos, gbSpan), expand, alignment);
                     layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
                 }
             }
@@ -2502,7 +2553,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
     // Apply the flex effect after all embedded elements have been created
     for (int i = 0; i < currSizer->GetRows(); i++)
     {
-        if (rowScale.size() > i)
+        if (rowScale.size() > (size_t)i)
             currSizer->AddGrowableRow(i, rowScale[i]);
         else
             currSizer->AddGrowableRow(i, 1);
@@ -2510,7 +2561,7 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
 
     for (int j = 0; j < currSizer->GetCols(); j++)
     {
-        if (colScale.size() > j)
+        if (colScale.size() > (size_t)j)
             currSizer->AddGrowableCol(j, colScale[j]);
         else
             currSizer->AddGrowableCol(j, 1);
@@ -3362,9 +3413,13 @@ mu::Array CustomWindow::getProperties() const
 /////////////////////////////////////////////////
 mu::Array CustomWindow::getStatusText() const
 {
-    const wxStatusBar* bar = GetStatusBar();
-    int numFields = bar->GetFieldsCount();
     mu::Array statusText;
+    const wxStatusBar* bar = GetStatusBar();
+
+    if (!bar)
+        return statusText;
+
+    int numFields = bar->GetFieldsCount();
 
     for (int i = 0; i < numFields; i++)
     {
@@ -3954,7 +4009,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                 {
                     const mu::DictStruct& dict = _options.get(0).getDictStruct();
 
-                    if (dict.isField("min-cols") && dict.read("min-cols")->m_type == mu::TYPE_NUMERICAL)
+                    if (dict.isField("min-cols") && dict.read("min-cols")->getType() == mu::TYPE_NUMERICAL)
                     {
                         int64_t c = table->GetNumberCols();
                         int64_t t = static_cast<const mu::NumValue*>(dict.read("min-cols"))->get().asI64();
@@ -3963,7 +4018,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                             table->AppendCols(t-c+1);
                     }
 
-                    if (dict.isField("min-rows") && dict.read("min-rows")->m_type == mu::TYPE_NUMERICAL)
+                    if (dict.isField("min-rows") && dict.read("min-rows")->getType() == mu::TYPE_NUMERICAL)
                     {
                         int64_t r = table->GetNumberRows();
                         int64_t t = static_cast<const mu::NumValue*>(dict.read("min-rows"))->get().asI64();
@@ -3984,7 +4039,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         int64_t currentCols = table->GetNumberCols()-1;
                         const mu::BaseValue* val = dict.read("fitsize-cols");
 
-                        if (val->m_type == mu::TYPE_ARRAY)
+                        if (val->getType() == mu::TYPE_ARRAY)
                         {
                             const mu::Array& selectedCols = static_cast<const mu::ArrValue*>(val)->get();
 
@@ -3998,7 +4053,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                 cols.Add(selected-1);
                             }
                         }
-                        else if (val->m_type == mu::TYPE_NUMERICAL)
+                        else if (val->getType() == mu::TYPE_NUMERICAL)
                         {
                             int64_t c = static_cast<const mu::NumValue*>(val)->get().asI64();
 
@@ -4031,10 +4086,10 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                             if (!condFormat.isField("cols")
                                 || !condFormat.isField("format")
-                                || condFormat.read("format")->m_type != mu::TYPE_ARRAY)
+                                || condFormat.read("format")->getType() != mu::TYPE_ARRAY)
                                 return false;
 
-                            if (condFormat.read("cols")->m_type == mu::TYPE_ARRAY)
+                            if (condFormat.read("cols")->getType() == mu::TYPE_ARRAY)
                             {
                                 const mu::Array& selectedCols = static_cast<const mu::ArrValue*>(condFormat.read("cols"))->get();
 
@@ -4048,7 +4103,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                                     cols.Add(selected-1);
                                 }
                             }
-                            else if (condFormat.read("cols")->m_type == mu::TYPE_NUMERICAL)
+                            else if (condFormat.read("cols")->getType() == mu::TYPE_NUMERICAL)
                             {
                                 int64_t c = static_cast<const mu::NumValue*>(condFormat.read("cols"))->get().asI64();
 
@@ -4075,10 +4130,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    if (vals.get(k).isString())
-                                        condition.m_strs.push_back(vals.get(k).getStr());
-                                    else
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    condition.m_strs.push_back(vals.get(k).printVal());
+                                    condition.m_vals.push_back(vals.get(k));
                                 }
 
                                 if (cond == "<")
@@ -4116,11 +4169,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    if (vals.get(k).isNumerical())
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
-                                    else
-                                        condition.m_vals.push_back(NAN);
-
+                                    condition.m_vals.push_back(vals.get(k));
                                     condition.m_strs.push_back(vals.get(k).printVal());
                                 }
 
@@ -4145,7 +4194,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    condition.m_vals.push_back(vals.get(k));
                                 }
 
                                 for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4169,7 +4218,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                 for (size_t k = 0; k < vals.size(); k++)
                                 {
-                                    condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                    condition.m_vals.push_back(vals.get(k));
                                 }
 
                                 for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4200,8 +4249,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                             if (!cellFormat.isField("cells")
                                 || !cellFormat.isField("format")
-                                || cellFormat.read("cells")->m_type != mu::TYPE_ARRAY
-                                || cellFormat.read("format")->m_type != mu::TYPE_DICTSTRUCT)
+                                || cellFormat.read("cells")->getType() != mu::TYPE_ARRAY
+                                || cellFormat.read("format")->getType() != mu::TYPE_DICTSTRUCT)
                                 return false;
 
                             const mu::Array& cellsDef = static_cast<const mu::ArrValue*>(cellFormat.read("cells"))->get();
@@ -4274,7 +4323,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
                         }
                     }
 
-                    if (dict.isField("col-labels") && dict.read("col-labels")->m_type == mu::TYPE_DICTSTRUCT)
+                    if (dict.isField("col-labels") && dict.read("col-labels")->getType() == mu::TYPE_DICTSTRUCT)
                     {// "col-labels", {{COLS},{LABELS}}, ...
                         const mu::DictStruct& labelDef = static_cast<const DictStructValue*>(dict.read("col-labels"))->get();
                         int64_t currentCols = table->GetNumberCols()-1;
@@ -4427,10 +4476,8 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        if (vals.get(k).isString())
-                                            condition.m_strs.push_back(vals.get(k).getStr());
-                                        else
-                                            condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        condition.m_strs.push_back(vals.get(k).printVal());
+                                        condition.m_vals.push_back(vals.get(k));
                                     }
 
                                     if (cond == "<")
@@ -4468,11 +4515,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        if (vals.get(k).isNumerical())
-                                            condition.m_vals.push_back(vals.get(k).as_cmplx());
-                                        else
-                                            condition.m_vals.push_back(NAN);
-
+                                        condition.m_vals.push_back(vals.get(k));
                                         condition.m_strs.push_back(vals.get(k).printVal());
                                     }
 
@@ -4497,7 +4540,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        condition.m_vals.push_back(vals.get(k));
                                     }
 
                                     for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4521,7 +4564,7 @@ bool CustomWindow::setItemOptions(const mu::Array& _options, int windowItemID)
 
                                     for (size_t k = 0; k < vals.size(); k++)
                                     {
-                                        condition.m_vals.push_back(vals.get(k).as_cmplx());
+                                        condition.m_vals.push_back(vals.get(k));
                                     }
 
                                     for (size_t k = 0; k < colorStrings.size(); k++)
@@ -4923,6 +4966,15 @@ bool CustomWindow::setStatusText(const wxArrayString& _values)
 {
     wxStatusBar* bar = GetStatusBar();
 
+    if (!bar->IsShown())
+    {
+        bar->Show();
+        SendSizeEvent();
+    }
+
+    if (!bar)
+        return false;
+
     if (bar->GetFieldsCount() != (int)_values.size())
         bar->SetFieldsCount(_values.size());
 
@@ -4987,6 +5039,22 @@ void CustomWindow::OnChange(wxCommandEvent& event)
 
     if (iter != m_windowItems.end() && iter->second.first != CustomWindow::SPINCTRL)
         handleEvent(event, "onchange");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Generic onactivate event handler.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnActivate(wxCommandEvent& event)
+{
+    auto iter = m_windowItems.find(event.GetId());
+
+    if (iter != m_windowItems.end() && iter->second.first != CustomWindow::SPINCTRL)
+        handleEvent(event, "onactivate");
 }
 
 

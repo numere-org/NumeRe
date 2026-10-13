@@ -42,6 +42,7 @@ namespace mu
         TYPE_ARRAY,
         TYPE_CLUSTER,
         TYPE_CATEGORY,
+        TYPE_DICT,
         TYPE_DICTSTRUCT,
         TYPE_OBJECT,
         TYPE_GENERATOR,
@@ -77,7 +78,8 @@ namespace mu
         DATETIME,
         CF32,
         CF64,
-        AUTO
+        AUTO,
+        INVALID
     };
 
     std::string getTypeAsString(DataType type);
@@ -136,10 +138,50 @@ namespace mu
             {
                 int64_t i64;
                 uint64_t ui64;
-                std::complex<double> cf64;
+                double f64;
+                std::complex<double>* cf64Ptr;
             };
 
-            NumericalType m_type;
+            NumericalType m_type = INVALID;
+
+            void writeInt(int64_t val, NumericalType type)
+            {
+                if (m_type == CF32 || m_type == CF64)
+                    delete cf64Ptr;
+
+                i64 = val;
+                m_type = type;
+            }
+
+            void writeUint(uint64_t val, NumericalType type)
+            {
+                if (m_type == CF32 || m_type == CF64)
+                    delete cf64Ptr;
+
+                ui64 = val;
+                m_type = type;
+            }
+
+            void writeFloat(double val, NumericalType type)
+            {
+                if (m_type == CF32 || m_type == CF64)
+                    delete cf64Ptr;
+
+                f64 = val;
+                m_type = type;
+            }
+
+            void writeComplex(const std::complex<double>& val, NumericalType type)
+            {
+                if (type != CF32 && type != CF64)
+                    throw std::runtime_error("Request to write a complex value with an non-complex type @ Numerical::writeComplex()");
+
+                if (m_type != CF32 && m_type != CF64)
+                    cf64Ptr = new std::complex<double>();
+
+                *cf64Ptr = val;
+                m_type = type;
+            }
 
             InternalType getConversion(NumericalType promotion) const;
             void resultPromote();
@@ -154,12 +196,21 @@ namespace mu
             Numerical(int64_t data, NumericalType type = I64);
             Numerical(uint64_t data, NumericalType type = UI64);
             Numerical(float data);
-            Numerical(double data);
+            Numerical(double data, NumericalType type = AUTO);
             Numerical(bool data);
             Numerical(const std::complex<float>& data);
             Numerical(const std::complex<double>& data = 0.0, NumericalType type = AUTO);
             Numerical(const sys_time_point& data);
 
+            Numerical(const Numerical& num);
+            Numerical(Numerical&& num);
+
+            Numerical& operator=(const Numerical& num);
+            Numerical& operator=(Numerical&& num);
+
+            ~Numerical();
+
+            void clear();
             static Numerical autoType(const std::complex<double>& data, NumericalType hint = AUTO);
 
             int64_t asI64() const;

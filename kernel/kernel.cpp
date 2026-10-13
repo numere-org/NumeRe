@@ -294,6 +294,13 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
         }
     }
 
+    // Create the remote package connection handlers by importing all
+    // available configurations
+    g_logger.info("Importing remote package repository configurations.");
+
+    if (!_procedure.importRemotesConfigurations())
+        g_logger.info("There was an error in the remote package configurations.");
+
     // Load the function definitions
     if (_option.controlDefinitions() && fileExists(_option.getExePath() + "\\functions.def"))
     {
@@ -346,6 +353,12 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     // Define the constants
     g_logger.debug("Defining constants.");
     defineConst();
+
+    if (fileExists(_option.getExePath() + "/numere.env"))
+    {
+        g_logger.debug("Initializing environment.");
+        initEnvironment();
+    }
 
     // Define the functions
     g_logger.debug("Defining functions.");
@@ -431,7 +444,6 @@ void NumeReKernel::defineOperators()
 /////////////////////////////////////////////////
 void NumeReKernel::defineConst()
 {
-    // --> Eigene Konstanten <--
     _parser.DefineConst("_g", 9.80665);
     _parser.DefineConst("_c", 299792458);
     _parser.DefineConst("_elek_feldkonst", 8.854187817e-12);
@@ -458,10 +470,7 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_r_earth", 6.378137e6);
     _parser.DefineConst("_r_sonne", 6.9551e8);
     _parser.DefineConst("_r_sun", 6.9551e8);
-    _parser.DefineConst("true", true);
     _parser.DefineConst("_theta_weinberg", 0.49097621387892);
-    _parser.DefineConst("false", false);
-    _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
     _parser.DefineConst("_R", 8.3144622);
     _parser.DefineConst("_alpha_fs", 7.2973525698E-3);
     _parser.DefineConst("_mu_bohr", 9.27400968E-24);
@@ -482,20 +491,36 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_gamma_e", 1.760859644e11);
     _parser.DefineConst("_gamma_n", 1.83247172e8);
     _parser.DefineConst("_gamma_p", 2.6752219e8);
+
     _parser.DefineConst("_feigenbaum_delta", 4.66920160910299067185);
     _parser.DefineConst("_feigenbaum_alpha", 2.50290787509589282228);
+    _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
+
     _parser.DefineConst("_day_secs", 86400);
     _parser.DefineConst("_hour_secs", 3600 );
     _parser.DefineConst("_week_secs", 604800);
     _parser.DefineConst("_year_secs", 31557600);
+
+    _parser.DefineConst("_monday", 1);
+    _parser.DefineConst("_tuesday", 2);
+    _parser.DefineConst("_wednesday", 3);
+    _parser.DefineConst("_thursday", 4);
+    _parser.DefineConst("_friday", 5);
+    _parser.DefineConst("_saturday", 6);
+    _parser.DefineConst("_sunday", 7);
+
+    _parser.DefineConst("true", true);
+    _parser.DefineConst("false", false);
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", mu::Value());
     _parser.DefineConst("I", std::complex<double>(0.0, 1.0));
+
     _parser.DefineConst(errorTypeToString(TYPE_CUSTOMERROR), mu::Value(TYPE_CUSTOMERROR));
     _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::Value(TYPE_SYNTAXERROR));
     _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::Value(TYPE_ASSERTIONERROR));
     _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::Value(TYPE_MATHERROR));
+
     _parser.DefineConst("ui8_max", mu::Numerical((uint8_t)UINT8_MAX));
     _parser.DefineConst("i8_max", mu::Numerical((int8_t)INT8_MAX));
     _parser.DefineConst("i8_min", mu::Numerical((int8_t)INT8_MIN));
@@ -520,7 +545,22 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("cf32_max", std::complex<float>(__FLT_MAX__, __FLT_MAX__));
     _parser.DefineConst("cf32_min", std::complex<float>(__FLT_MIN__, __FLT_MIN__));
     _parser.DefineConst("cf32_eps", std::complex<float>(__FLT_EPSILON__, __FLT_EPSILON__));
+
     _parser.DefineConst("loremipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function initializes the
+/// user-defined environment.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::initEnvironment()
+{
+    _environment.load(_option.getExePath() + "/numere.env");
+    _parser.SetEnvironmentVars(_environment.getVars());
 }
 
 
@@ -587,6 +627,8 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("getdpiscale", numfnc_pixelscale);                         // getdpiscale()
     _parser.DefineFun("is_nan", numfnc_isnan);                                   // is_nan(x)
     _parser.DefineFun("is_void", numfnc_isvoid);                                 // is_void(x)
+    _parser.DefineFun("is_valid", numfnc_isvalid);                               // is_valid(x)
+    _parser.DefineFun("fillinvalid", numfnc_fillinvalid);                        // fillinvalid(x,v)
     _parser.DefineFun("range", numfnc_interval);                                 // range(x,left,right)
     _parser.DefineFun("Ai", numfnc_AiryA);                                       // Ai(x)
     _parser.DefineFun("Bi", numfnc_AiryB);                                       // Bi(x)
@@ -674,11 +716,21 @@ void NumeReKernel::defineNumFunctions()
     _parser.DefineFun("date", timfnc_date);                                      // date(TIME,TYPE)
     _parser.DefineFun("datetime", timfnc_datetime);                              // datetime(x)
     _parser.DefineFun("weeknum", timfnc_weeknum);                                // weeknum(tDate)
+    _parser.DefineFun("monthdays", timfnc_monthdays);                            // monthdays(tDate)
     _parser.DefineFun("as_date", timfnc_as_date, true, 2);                       // as_date(nYear, nMounth, nDay)
+    _parser.DefineFun("from_weekday", timfnc_from_weekday);                      // from_weekday(nYear, nMounth, nWeekday, nIndex)
     _parser.DefineFun("as_time", timfnc_as_time, true, 4);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
     _parser.DefineFun("get_utc_offset", timfnc_get_utc_offset, false);           // get_utc_offset()
     _parser.DefineFun("is_leapyear", timfnc_is_leap_year);                       // is_leap_year(nDate)
     _parser.DefineFun("is_daylightsavingtime", timfnc_is_daylightsavingtime);    // is_daylightsavingtime(nDate)
+
+    _parser.DefineFun("bitcast", bitfnc_cast);                                   // bitcast(a,type)
+    _parser.DefineFun("bitand", bitfnc_and);                                     // bitand(a,b)
+    _parser.DefineFun("bitor", bitfnc_or);                                       // bitor(a,b)
+    _parser.DefineFun("bitxor", bitfnc_xor);                                     // bitxor(a,b)
+    _parser.DefineFun("bitnot", bitfnc_not);                                     // bitnot(a)
+    _parser.DefineFun("bitshift", bitfnc_shift);                                 // bitshift(a,level)
+    _parser.DefineFun("bitmask", bitfnc_mask);                                   // bitmask(a,mask)
 
     _parser.DefineFun("perlin", rndfnc_perlin, true, 6);                         // perlin(x,y,z,seed,freq,oct,pers)
     _parser.DefineFun("ridgedmulti", rndfnc_rigedmultifractal, true, 5);         // ridgedmulti(x,y,z,seed,freq,oct)
@@ -729,8 +781,11 @@ void NumeReKernel::defineNumFunctions()
 
     // Cast functions
     _parser.DefineFun("category", cast_category, true, 1);                       // category(str,val)
+    _parser.DefineFun("dict", cast_dict, true, 2);                               // dict(keys,vals)
     _parser.DefineFun("dictstruct", cast_dictstruct, true, 2);                   // dictstruct(fields,vals)
     _parser.DefineFun("file", cast_file, false, 2);                              // file(file,mode)
+    _parser.DefineFun("logger", cast_logger, false, 2);                          // logger(file,level)
+    _parser.DefineFun("timer", cast_timer, false, 1);                            // timer(scope)
     _parser.DefineFun("queue", cast_queue, true, 1);                             // queue(vals)
     _parser.DefineFun("stack", cast_stack, true, 1);                             // stack(vals)
     _parser.DefineFun("path", cast_path, true, 2);                               // path(paths,separator)
@@ -777,12 +832,13 @@ void NumeReKernel::defineMatFunctions()
     _parser.DefineFun("matflf", matfnc_matfrf);                                  // matflf(x,y,z,...)
     _parser.DefineFun("det", matfnc_det);                                        // det(A)
     _parser.DefineFun("cross", matfnc_cross);                                    // cross(A)
-    _parser.DefineFun("trace", matfnc_trace);                                    // trace(A)
+    _parser.DefineFun("trace", matfnc_trace, true, 1);                           // trace(A,dim={1,2})
     _parser.DefineFun("eigenvals", matfnc_eigenvals);                            // eigenvals(A)
     _parser.DefineFun("eigenvects", matfnc_eigenvects);                          // eigenvects(A)
     _parser.DefineFun("diagonalize", matfnc_diagonalize);                        // diagonalize(A)
     _parser.DefineFun("invert", matfnc_invert);                                  // invert(A)
     _parser.DefineFun("transpose", matfnc_transpose, true, 1);                   // transpose(A,dim={2,1})
+    _parser.DefineFun("tensorprod", matfnc_tensorprod, true, 1);                 // tensorprod(A,B,dim={})
     _parser.DefineFun("size", matfnc_size);                                      // size(A)
     _parser.DefineFun("cutoff", matfnc_cutoff);                                  // cutoff(A,thresh,mode)
     _parser.DefineFun("movsum", matfnc_movsum, true, 1);                         // movsum(A,n,m=n)
@@ -894,7 +950,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("substr", strfnc_substr, true, 1);                             // substr(str,p,l)
     _parser.DefineFun("repeat", strfnc_repeat);                                      // repeat(str,n)
     _parser.DefineFun("timeformat", strfnc_timeformat);                              // timeformat(str,time)
-    _parser.DefineFun("weekday", strfnc_weekday, true, 1);                           // weekday(d,opts)
+    _parser.DefineFun("weekday", strfnc_weekday, true, 1);                           // weekday(time,opts)
+    _parser.DefineFun("monthname", strfnc_monthname);                                // monthname(time)
     _parser.DefineFun("char", strfnc_char);                                          // char(str,n)
     _parser.DefineFun("byte", strfnc_char);                                          // byte(str,n)
     _parser.DefineFun("getopt", strfnc_getopt);                                      // getopt(str,n)
@@ -933,8 +990,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
-    _parser.DefineFun("readxml", strfnc_readxml);                                    // readxml(file)
-    _parser.DefineFun("readjson", strfnc_readjson);                                  // readjson(file)
+    _parser.DefineFun("readxml", strfnc_readxml, true, 1);                           // readxml(file,isfile)
+    _parser.DefineFun("readjson", strfnc_readjson, true, 1);                         // readjson(file,isfile)
 }
 
 
@@ -2248,7 +2305,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             }
             else if (sLine.find("<<RETURNVAL>>") != std::string::npos)
             {
-                std::string sVarName = "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]";
+                std::string sVarName = "_~PLUGIN`" + _procedure.getPluginProcName() + "~ROOT`";
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
 #warning FIXME (numere#4#08/05/24): Figure out, how to correctly handle multiple return values (instead of using .front()) -> NEW ISSUE
                 _parser.SetInternalVar(sVarName, _rTemp.valArray.front());
@@ -2390,7 +2447,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, const mu::StackItem* v)
 {
-    vAns = v[0].get();
+    vAns.assignResults(v[0].get());
 
     if (!bSupressAnswer)
         printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
@@ -3911,7 +3968,25 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
 {
     constexpr size_t MAXSTRINGLENGTH = 1024;
 
-    if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
+    if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICT)
+    {
+        const mu::Dict& dict = arr.front().getDict();
+        NumeRe::Container<std::string> stringTable(dict.size(), 2);
+        std::vector<mu::BaseValueRef> keys = dict.getKeys();
+
+        for (size_t i = 0; i < keys.size(); i++)
+        {
+            stringTable.set(i, 0, (*keys[i]).print(0, 0, false) + ":");
+
+            if (dict.read(*keys[i]))
+                stringTable.set(i, 1, dict.read(*keys[i])->printEmbedded(5, MAXSTRINGLENGTH, true));
+            else
+                stringTable.set(i, 1, "void");
+        }
+
+        return stringTable;
+    }
+    else if (arr.size() == 1 && arr.getCommonType() == mu::TYPE_DICTSTRUCT)
     {
         const mu::DictStruct& dict = arr.front().getDictStruct();
         NumeRe::Container<std::string> stringTable(dict.size(), 2);
@@ -3943,6 +4018,28 @@ static NumeRe::Container<std::string> arrayToStringTable(const mu::Array& arr)
                     stringTable.set(i, j, val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
                 else
                     stringTable.set(i, j, !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+            }
+        }
+
+        return stringTable;
+    }
+    else if (arr.getDims() == 3)
+    {
+        NumeRe::Container<std::string> stringTable(arr.rows(), (arr.cols()+1)*arr.layers()-1);
+
+        for (size_t i = 0; i < arr.rows(); i++)
+        {
+            for (size_t j = 0; j < arr.cols(); j++)
+            {
+                for (size_t k = 0; k < arr.layers(); k++)
+                {
+                    const mu::Value& val = arr.get(IndexTuple({i,j,k}));
+
+                    if (val.getType() == mu::TYPE_ARRAY)
+                        stringTable.set(i, j + k*(arr.cols()+1), val.getArray().printEmbedded(5, MAXSTRINGLENGTH, true));
+                    else
+                        stringTable.set(i, j + k*(arr.cols()+1), !val.isValid() ? "---" : val.print(5, MAXSTRINGLENGTH, true));
+                }
             }
         }
 

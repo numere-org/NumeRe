@@ -111,23 +111,24 @@ namespace mu
         m_vErrMsg[ecTYPE_NO_CAT]            =   "ERR_MUP_39_TYPE_NO_CAT";
         m_vErrMsg[ecTYPE_NO_ARR]            =   "ERR_MUP_40_TYPE_NO_ARR";
         m_vErrMsg[ecTYPE_NO_DICT]           =   "ERR_MUP_41_TYPE_NO_DICT";
-        m_vErrMsg[ecTYPE_NO_OBJ]            =   "ERR_MUP_42_TYPE_NO_OBJ";
-        m_vErrMsg[ecTYPE_NO_REF]            =   "ERR_MUP_43_TYPE_NO_REF";
-        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_44_TYPE_MISMATCH";
-        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_45_TYPE_MISMATCH_OOB";
-        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_46_ASSIGNED_TYPE_MISMATCH";
-        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_47_METHOD_ERROR";
-        m_vErrMsg[ecNOT_IMPLEMENTED]        =   "ERR_MUP_48_NOT_IMPLEMENTED";
-        m_vErrMsg[ecDEREFERENCE_VOID]       =   "ERR_MUP_49_DEREFERENCE_VOID";
+        m_vErrMsg[ecTYPE_NO_STRUCT]         =   "ERR_MUP_42_TYPE_NO_STRUCT";
+        m_vErrMsg[ecTYPE_NO_OBJ]            =   "ERR_MUP_43_TYPE_NO_OBJ";
+        m_vErrMsg[ecTYPE_NO_REF]            =   "ERR_MUP_44_TYPE_NO_REF";
+        m_vErrMsg[ecTYPE_MISMATCH]          =   "ERR_MUP_45_TYPE_MISMATCH";
+        m_vErrMsg[ecTYPE_MISMATCH_OOB]      =   "ERR_MUP_46_TYPE_MISMATCH_OOB";
+        m_vErrMsg[ecASSIGNED_TYPE_MISMATCH] =   "ERR_MUP_47_ASSIGNED_TYPE_MISMATCH";
+        m_vErrMsg[ecMETHOD_ERROR]           =   "ERR_MUP_48_METHOD_ERROR";
+        m_vErrMsg[ecNOT_IMPLEMENTED]        =   "ERR_MUP_49_NOT_IMPLEMENTED";
+        m_vErrMsg[ecDEREFERENCE_VOID]       =   "ERR_MUP_50_DEREFERENCE_VOID";
 
-        m_vErrMsg[ecMATRIX_DIMS_INVALID]    =   "ERR_MUP_50_MATRIX_DIMS_INVALID";
-        m_vErrMsg[ecMATRIX_EMPTY]           =   "ERR_MUP_51_MATRIX_EMPTY";
-        m_vErrMsg[ecMATRIX_INVALID_VALS]    =   "ERR_MUP_52_MATRIX_INVALID_VALS";
-        m_vErrMsg[ecMATRIX_NOT_INVERTIBLE]  =   "ERR_MUP_53_MATRIX_NOT_INVERTIBLE";
-        m_vErrMsg[ecINVALID_WINDOW_SIZE]    =   "ERR_MUP_54_INVALID_WINDOW_SIZE";
-        m_vErrMsg[ecINVALID_FILTER_SIZE]    =   "ERR_MUP_55_INVALID_FILTER_SIZE";
+        m_vErrMsg[ecMATRIX_DIMS_INVALID]    =   "ERR_MUP_51_MATRIX_DIMS_INVALID";
+        m_vErrMsg[ecMATRIX_EMPTY]           =   "ERR_MUP_52_MATRIX_EMPTY";
+        m_vErrMsg[ecMATRIX_INVALID_VALS]    =   "ERR_MUP_53_MATRIX_INVALID_VALS";
+        m_vErrMsg[ecMATRIX_NOT_INVERTIBLE]  =   "ERR_MUP_54_MATRIX_NOT_INVERTIBLE";
+        m_vErrMsg[ecINVALID_WINDOW_SIZE]    =   "ERR_MUP_55_INVALID_WINDOW_SIZE";
+        m_vErrMsg[ecINVALID_FILTER_SIZE]    =   "ERR_MUP_56_INVALID_FILTER_SIZE";
 
-        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_56_INTERNAL_ERROR";
+        m_vErrMsg[ecINTERNAL_ERROR]         = 	"ERR_MUP_57_INTERNAL_ERROR";
 
 
 

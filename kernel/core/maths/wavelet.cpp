@@ -38,48 +38,60 @@ void calculateWavelet(std::vector<double>& data, WaveletType _type, int k, int d
     switch (_type)
     {
         case Daubechies:
-            if (k == 2) // special case: Daubechies with k = 2 is the haar wavelet
+            // special case: Daubechies with k = 2 is the haar wavelet
+            if (k == 2)
             {
                 wavelet = gsl_wavelet_alloc(gsl_wavelet_haar, 2);
                 break;
             }
-            if (k < 4 || k > 20 || k % 2) // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+
+            // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            if (k < 4 || k > 20 || k % 2)
                 throw SyntaxError(SyntaxError::INVALID_WAVELET_COEFFICIENT, "", SyntaxError::invalid_position);
+
             wavelet = gsl_wavelet_alloc(gsl_wavelet_daubechies, k);
             break;
         case CenteredDaubechies:
-            if (k == 2) // special case: Daubechies with k = 2 is the haar wavelet
+            // special case: Daubechies with k = 2 is the haar wavelet
+            if (k == 2)
             {
                 wavelet = gsl_wavelet_alloc(gsl_wavelet_haar_centered, 2);
                 break;
             }
-            if (k < 4 || k > 20 || k % 2) // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+
+            // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            if (k < 4 || k > 20 || k % 2)
                 throw SyntaxError(SyntaxError::INVALID_WAVELET_COEFFICIENT, "", SyntaxError::invalid_position);
+
             wavelet = gsl_wavelet_alloc(gsl_wavelet_daubechies_centered, k);
             break;
         case Haar:
-            wavelet = gsl_wavelet_alloc(gsl_wavelet_haar, 2); // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            wavelet = gsl_wavelet_alloc(gsl_wavelet_haar, 2);
             break;
         case CenteredHaar:
-            wavelet = gsl_wavelet_alloc(gsl_wavelet_haar_centered, 2); // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            wavelet = gsl_wavelet_alloc(gsl_wavelet_haar_centered, 2);
             break;
         case BSpline:
-            if (k != 103 && k != 105 && !(k >= 202 && k <= 208 && !(k % 2)) && !(k >= 301 && k <= 309 && k % 2)) // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            if (k != 103 && k != 105 && !(k >= 202 && k <= 208 && !(k % 2)) && !(k >= 301 && k <= 309 && k % 2))
                 throw SyntaxError(SyntaxError::INVALID_WAVELET_COEFFICIENT, "", SyntaxError::invalid_position);
+
             wavelet = gsl_wavelet_alloc(gsl_wavelet_bspline, k);
             break;
         case CenteredBSpline:
-            if (k != 103 && k != 105 && !(k >= 202 && k <= 208 && !(k % 2)) && !(k >= 301 && k <= 309 && k % 2)) // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            // implemented values for k according https://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html
+            if (k != 103 && k != 105 && !(k >= 202 && k <= 208 && !(k % 2)) && !(k >= 301 && k <= 309 && k % 2))
                 throw SyntaxError(SyntaxError::INVALID_WAVELET_COEFFICIENT, "", SyntaxError::invalid_position);
+
             wavelet = gsl_wavelet_alloc(gsl_wavelet_bspline_centered, k);
             break;
     }
 
     // assure that the combination is possible
     if (wavelet == nullptr)
-    {
         throw SyntaxError(SyntaxError::INVALID_WAVELET_TYPE, "", SyntaxError::invalid_position);
-    }
 
     // allocate the workspace
     workspace = gsl_wavelet_workspace_alloc(data.size());
@@ -102,14 +114,15 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
     int nTimePoints = vWaveletData.size() / 2;
     NumeRe::Table wavelet;
     wavelet.setSize(nTimePoints, nLevels+3);
-    double* data = new double[nTimePoints];
+    std::vector<double> data(nTimePoints);
     const double* output = nullptr;
 
     // write the axes
-    for (int i = -1; i < nLevels; i++)
+    for (int i = 0; i <= nLevels; i++)
     {
-        wavelet.setValue(i+1, 1, i);
+        wavelet.setValue(i, 1, i);
     }
+
     // Resample the axisdata
     Resampler axis(vAxisData.size(), 1, nTimePoints, 1, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
     axis.put_line(&vAxisData[0]);
@@ -127,7 +140,7 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
             // this case means only to write the data to a whole line
             for (int j = 0; j < nTimePoints; j++)
             {
-                wavelet.setValue(j, nLevels-i+2, vWaveletData[i]);
+                wavelet.setValue(j, i+2, vWaveletData[i]);
             }
         }
         else
@@ -137,21 +150,20 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
             {
                 data[k] = vWaveletData[(1 << (i-1))+k];
             }
+
             // resample them
             Resampler res((1 << ((i-1))), 1, nTimePoints, 1, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
-            res.put_line(data);
-
+            res.put_line(&data[0]);
             output = res.get_line();
+
             // write the output to the table
             for (int j = 0; j < nTimePoints; j++)
             {
-                wavelet.setValue(j, nLevels-i+2, output[j]);
+                wavelet.setValue(j, i+2, output[j]);
             }
         }
-
     }
 
-    delete[] data;
     return wavelet;
 }
 

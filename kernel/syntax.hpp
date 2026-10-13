@@ -61,6 +61,7 @@ class NumeReSyntax
         std::vector<std::string> vMethods;
         std::vector<std::string> vMethodsArgs;
         std::vector<std::string> vConstants;
+        std::vector<std::string> vEnvVars;
         std::vector<std::string> vSpecialValues;
         std::vector<std::string> vOperators;
         std::vector<std::string> vDocKeyWords;
@@ -113,6 +114,7 @@ class NumeReSyntax
 
         void loadSyntax(const std::string& _sPath = "");
         void addPlugins(const std::vector<std::string>& vPlugins);
+        void setEnvVars(const std::vector<std::string>& vVars);
         void setProcedureTree(const std::vector<std::string>& vTree);
 
         static std::string mergeAutoCompleteLists(std::string sPreDefList, std::string sScopedList);
@@ -130,7 +132,7 @@ class NumeReSyntax
         std::string getNoArgMethods() const
             {return constructString(vMethods);}
         std::string getConstants() const
-            {return constructString(vConstants);}
+            {return constructString(vConstants) + " " + constructString(vEnvVars);}
         std::string getSpecial() const
             {return constructString(vSpecialValues);}
         std::string getOperators() const

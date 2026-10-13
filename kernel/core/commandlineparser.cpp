@@ -94,6 +94,9 @@ CommandLineParser::CommandLineParser(const std::string& sCommandLine, const std:
 /////////////////////////////////////////////////
 void CommandLineParser::parse(const std::string& sCommandString, CommandLineParser::CommandSignature signature)
 {
+    if (sCommandString.length() <= m_cmd.length()+1)
+        return;
+
     switch (signature)
     {
         // Command-parameter sequence

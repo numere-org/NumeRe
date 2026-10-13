@@ -2715,13 +2715,14 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     }
 
     // Lambda expression for catching and converting NaNs into zeros
-    auto nanguard = [](const mu::Value& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val.getNum().asCF64();};
+    auto munanguard = [](const mu::Value& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val.getNum().asCF64();};
+    auto nanguard = [](const std::complex<double>& val) {return mu::isnan(val) ? std::complex<double>(0.0) : val;};
 
     // Copy the data
     for (int i = 0; i < _fft.lines; i++)
     {
         if (_fft.cols == 2)
-            _fftData.a[i] = nanguard(_dataView.get(vAxis[i], 0)); // Can be complex or not: does not matter
+            _fftData.a[i] = munanguard(_dataView.get(vAxis[i], 0)); // Can be complex or not: does not matter
         else if (_fft.cols == 3 && _fft.bComplex)
             _fftData.a[i] = nanguard(dual(_dataView.get(vAxis[i], 0).getNum().asF64(), _dataView.get(vAxis[i], 1).getNum().asF64()));
         else if (_fft.cols == 3 && !_fft.bComplex)
@@ -2735,13 +2736,14 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             for (int j = 0; j < nCols; j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[i+j*nLines] = nanguard(_dataView.get(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
+                    _fftData.a[i+j*nLines] = munanguard(_dataView.get(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
                                                                     j + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2)));
                 else
-                    _fftData.a[i+j*nLines] = nanguard(_dataView.get(i, j));
+                    _fftData.a[i+j*nLines] = munanguard(_dataView.get(i, j));
             }
         }
     }
+
 
     // Calculate the actual transformation and apply some
     // normalisation
@@ -2905,13 +2907,28 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0,  _idx.row.front() + vWaveletData.size()-1);
 
+    int level = 0;
+    int translation = 0;
+
     for (size_t i = 0; i < vWaveletData.size(); i++)
     {
         if (_idx.row[i] == VectorIndex::INVALID)
             break;
 
-        _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i));
+        if (bInverseTrafo)
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, double(i));
+        else
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, std::complex<double>(level, translation));
+
         _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
+
+        translation++;
+
+        if (translation >= intPower(2, std::max(0, level-1)))
+        {
+            level++;
+            translation = 0;
+        }
     }
 
     if (!bInverseTrafo)
@@ -4568,6 +4585,8 @@ std::string removeQuotationMarks(const std::string&);
 /////////////////////////////////////////////////
 void urlExecute(CommandLineParser& cmdParser)
 {
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     // Try to get the contents of the desired URL
     try
     {
@@ -4576,10 +4595,41 @@ void urlExecute(CommandLineParser& cmdParser)
         std::string sUserName = cmdParser.getParsedParameterValueAsString("usr", "", true);
         std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
         std::string sPayLoad = cmdParser.getParsedParameterValueAsString("payload", "", true);
+        std::string sCaCert = cmdParser.getParsedParameterValueAsString("cacert", CACERTFILE, true);
         std::vector<std::string> httpHeader;
+
+        if (cmdParser.hasParam("noverify"))
+            sCaCert.clear();
+
+        if (sCaCert.length())
+            sCaCert = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sCaCert, "pem", false, true);
+
+        std::string sRequestMethod;
+
+        if (sUrl.starts_with("PUT "))
+        {
+            sRequestMethod = "PUT";
+            sUrl.erase(0, 4);
+        }
+        else if (sUrl.starts_with("GET "))
+        {
+            sRequestMethod = "GET";
+            sUrl.erase(0, 4);
+        }
+        else if (sUrl.starts_with("POST "))
+        {
+            sRequestMethod = "POST";
+            sUrl.erase(0, 5);
+        }
+
+        StripSpaces(sUrl);
 
         if (cmdParser.hasParam("header"))
             httpHeader = cmdParser.getParsedParameterValue("header").as_str_vector();
+
+        url::UrlParams params(sUserName, sPassword, sCaCert, httpHeader, sPayLoad);
+
+        std::string sUrlResponse;
 
         // Push the response into a file, if necessary
         if (cmdParser.hasParam("file"))
@@ -4595,13 +4645,14 @@ void urlExecute(CommandLineParser& cmdParser)
                 sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
 
                 // Upload the file
-                size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword, httpHeader);
-                cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
+                sUrlResponse = url::put(sUrl, sFileName, params);
+                replaceAll(sUrlResponse, "\r\n", "\n");
+                cmdParser.setReturnValue(mu::Value(sUrlResponse));
             }
             else
             {
                 // Get the response from the server
-                std::string sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
+                sUrlResponse = url::get(sUrl, params);
 
                 // Get the file parameter value
                 sFileName = cmdParser.getFileParameterValueForSaving(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
@@ -4613,7 +4664,7 @@ void urlExecute(CommandLineParser& cmdParser)
                 if (file.good())
                 {
                     file << sUrlResponse;
-                    cmdParser.setReturnValue(mu::Value(mu::Numerical(sUrlResponse.length())));
+                    cmdParser.setReturnValue(mu::Value(toString(sUrlResponse.length())));
                 }
                 else
                     throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, cmdParser.getCommandLine(), sFileName, sFileName);
@@ -4622,7 +4673,10 @@ void urlExecute(CommandLineParser& cmdParser)
         else if (sPayLoad.length())
         {
             // Get the response from the server
-            std::string sUrlResponse = url::post(sUrl, sUserName, sPassword, httpHeader, sPayLoad);
+            if (sRequestMethod == "PUT")
+                sUrlResponse = url::put(sUrl, "", params);
+            else
+                sUrlResponse = url::post(sUrl, params);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
@@ -4631,7 +4685,7 @@ void urlExecute(CommandLineParser& cmdParser)
         else
         {
             // Get the response from the server
-            std::string sUrlResponse = url::get(sUrl, sUserName, sPassword, httpHeader);
+            sUrlResponse = url::get(sUrl, params);
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
@@ -4655,6 +4709,8 @@ void urlExecute(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 void mailClient(CommandLineParser& cmdParser)
 {
+    static std::string CACERTFILE = NumeReKernel::getInstance()->getCaCertFile();
+
     // Handle mail actions
     try
     {
@@ -4665,6 +4721,13 @@ void mailClient(CommandLineParser& cmdParser)
         std::string sPassword = cmdParser.getParsedParameterValueAsString("pwd", "", true);
         std::string sFromMail = cmdParser.getParsedParameterValueAsString("from", "", true);
         std::string sSubject = cmdParser.getParsedParameterValueAsString("subject", "", true);
+        std::string sCaCert = cmdParser.getParsedParameterValueAsString("cacert", CACERTFILE, true);
+
+        if (cmdParser.hasParam("noverify"))
+            sCaCert.clear();
+
+        if (sCaCert.length())
+            sCaCert = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sCaCert, "pem", false, true);
 
         mu::Array rcpt;
         mu::Array cc;
@@ -4741,8 +4804,10 @@ void mailClient(CommandLineParser& cmdParser)
                 throw url::Error(mail.printVal() + " is not a valid mail address.");
         }
 
+        url::UrlParams params(sUserName, sPassword, sCaCert);
+
         // Send the mail to the recipients
-        size_t bytes = url::sendMail(sServer, sBody, sUserName, sPassword, sFromMail, rcpt.as_str_vector());
+        size_t bytes = url::sendMail(sServer, sBody, sFromMail, rcpt.as_str_vector(), params);
         cmdParser.setReturnValue(mu::Value(mu::Numerical(bytes)));
     }
     catch (url::Error& e)

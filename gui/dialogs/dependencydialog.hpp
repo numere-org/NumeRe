@@ -27,6 +27,46 @@
 #include "../../kernel/core/procedure/procedurelibrary.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"
 #include "../../common/datastructures.h"
+#include "../controls/searchctrl.hpp"
+
+
+/////////////////////////////////////////////////
+/// \brief A specialisation of the SearchCtrl for
+/// the dependency viewer dialog.
+/////////////////////////////////////////////////
+class DependencySearchCtrl : public SearchCtrl
+{
+    private:
+        wxcode::wxTreeListCtrl* m_dependencyTree;
+
+    protected:
+        virtual bool selectItem(const wxString& value) override;
+        virtual wxArrayString getCandidates(const wxString& enteredText) override;
+
+    public:
+        DependencySearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxcode::wxTreeListCtrl* dependencyTree = nullptr) : SearchCtrl(parent, id, wxEmptyString), m_dependencyTree(dependencyTree)
+        {
+            // Provide a neat hint to the user, what he
+            // may expect from this control
+            SetHint(hint);
+            popUp->SetCallTips(calltip);
+            wxArrayInt sizes;
+            sizes.Add(450, 1);
+            popUp->SetColSizes(sizes);
+            popUp->EnableDragDrop(true);
+        }
+
+        void OnSizeEvent(wxSizeEvent& event);
+        DECLARE_EVENT_TABLE();
+};
+
+
+
+
+
+
+
+
 
 /////////////////////////////////////////////////
 /// \brief This class represents a dialog showing

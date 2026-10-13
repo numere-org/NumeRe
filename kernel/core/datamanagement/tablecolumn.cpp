@@ -320,12 +320,15 @@ std::string TableColumn::typeToString(TableColumn::ColumnType type)
         return "value.f64";
     case TYPE_VALUE_CF32:
         return "value.cf32";
-    case TYPE_VALUE:
-        return "value";
+    //case TYPE_VALUE:
+    case TYPE_VALUE_CF64:
+        return "value.cf64";
     case TYPE_STRING:
         return "string";
     case TYPE_DATETIME:
         return "datetime";
+    case TYPE_DURATION:
+        return "duration";
     case TYPE_LOGICAL:
         return "logical";
     case TYPE_CATEGORICAL:
@@ -349,7 +352,7 @@ std::string TableColumn::typeToString(TableColumn::ColumnType type)
 TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
 {
     if (sType == "value" || sType == "value.cf64")
-        return TYPE_VALUE;
+        return TYPE_VALUE_CF64;
     else if (sType == "value.cf32")
         return TYPE_VALUE_CF32;
     else if (sType == "value.f64")
@@ -376,6 +379,8 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
         return TYPE_STRING;
     else if (sType == "datetime")
         return TYPE_DATETIME;
+    else if (sType == "duration")
+        return TYPE_DURATION;
     else if (sType == "logical")
         return TYPE_LOGICAL;
     else if (sType == "category")
@@ -396,8 +401,8 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
 /////////////////////////////////////////////////
 std::vector<std::string> TableColumn::getTypesAsString()
 {
-    return {"string", "datetime", "logical", "category",
-        "value", "value.cf32", "value.f64", "value.f32",
+    return {"string", "datetime", "duration", "logical", "category",
+        "value.cf64", "value.cf32", "value.f64", "value.f32",
         "value.i64", "value.ui64", "value.i32", "value.ui32",
         "value.i16", "value.ui16", "value.i8", "value.ui8"};
 }

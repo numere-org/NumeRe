@@ -46,10 +46,11 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
 {
     bool isInList = false;
     std::vector<std::string> vSplitted = split(sDefinition, '\n');
+    static std::regex expr("\\d+\\. +.+");
 
     for (size_t i = 0; i < vSplitted.size(); i++)
     {
-        if (std::regex_match(vSplitted[i].substr(4, 10), std::regex("\\d+\\. +.+")))
+        if (std::regex_match(vSplitted[i].substr(4, 10), expr))
         {
             if (!isInList)
             {

@@ -23,6 +23,7 @@
 #include "functionimplementation.hpp"
 #include "../ParserLib/muParserTemplateMagic.h"
 #include "../ParserLib/muHelpers.hpp"
+#include "../../externals/date/include/date/date.h"
 #define _USE_MATH_DEFINES
 
 
@@ -41,14 +42,17 @@
 #ifndef PARSERSTANDALONE
 extern double g_pixelScale;
 #include "../datamanagement/memorymanager.hpp"
+#include "../../kernel.hpp"
 #endif
 #include "../utils/tools.hpp"
+#include "../utils/timer.hpp"
 #include "../../versioninformation.hpp"
 #include "../ParserLib/muValueImpl.hpp"
 
 /*
  * Ende der globalen Variablen
  */
+
 
 /////////////////////////////////////////////////
 /// \brief Quick wrapper to handle occurences,
@@ -1322,11 +1326,18 @@ mu::Array numfnc_logtoidx(const mu::MultiArgFuncParams& v)
 
         if (v[0].isMatrix() && !v[0].isVector())
         {
-            mu::Array num = numfnc_Sum(v);
-            vIdx.setDimSizes({num.getAsScalarInt(), v[0].getDims()});
-            vIdx.resize(num.getAsScalarInt() * v[0].getDims());
-
             size_t nCount = 0;
+
+            for (size_t i = 0; i < v[0].size(); i++)
+            {
+                if (v[0].get(i).isValid() && v[0].get(i))
+                    nCount++;
+            }
+
+            vIdx.setDimSizes({nCount, v[0].getDims()});
+            vIdx.resize(nCount * v[0].getDims());
+
+            nCount = 0;
 
             for (size_t i = 0; i < v[0].size(); i++)
             {
@@ -3805,38 +3816,315 @@ static mu::Value xor_impl(const mu::Value& v1, const mu::Value& v2)
 
 
 /////////////////////////////////////////////////
-/// \brief Internal implementation of the binary
-/// OR operator.
+/// \brief Static helper function for converting
+/// number bases into the decimal base.
 ///
-/// \param v1 const std::complex<double>&
-/// \param v2 const std::complex<double>&
-/// \return std::complex<double>
+/// \param value StringView
+/// \return uint64_t
 ///
 /////////////////////////////////////////////////
-static std::complex<double> binOr_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+static uint64_t convertBaseToDecimal(StringView value)
 {
-    if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
-        return NAN;
+    std::stringstream stream;
+    uint64_t ret = 0;
 
-    return intCast(v1) | intCast(v2);
+    if (value.starts_with("0x"))
+        stream.setf(std::ios::hex, std::ios::basefield);
+    else if (value.find_first_not_of("01") == std::string::npos)
+    {
+        for (int64_t i = value.length() - 1; i >= 0; i--)
+        {
+            if (value[i] == '1')
+                ret += intCast(intPower(2, value.length()-1 - i));
+        }
+
+        return ret;
+    }
+
+    stream << value.to_string();
+    stream >> ret;
+
+    return ret;
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Internal implementation of the binary
-/// AND operator.
+/// SHIFT.
 ///
-/// \param v1 const std::complex<double>&
-/// \param v2 const std::complex<double>&
-/// \return std::complex<double>
+/// \param v const mu::Value&
+/// \param level const mu::Value&
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
-static std::complex<double> binAnd_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+static mu::Value binShift_impl(const mu::Value& v, const mu::Value& level)
 {
-    if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
+    if (!v.isValid() || !level.isValid() || !v.isNumerical())
         return NAN;
 
-    return intCast(v1) & intCast(v2);
+    if (level.getNum() == mu::Numerical(0))
+        return v.getNum().asUI64();
+    else if (level.getNum() < mu::Numerical(0))
+        return v.getNum().asUI64() >> -level.getNum().asI64();
+
+    return v.getNum().asUI64() << level.getNum().asUI64();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// cast.
+///
+/// \param v const mu::Value&
+/// \param type const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value binCast_impl(const mu::Value& v, const mu::Value& type)
+{
+    if (!v.isValid() || !type.isValid())
+        return NAN;
+
+    const std::string& targetTypeStr = type.getStr();
+    const mu::Numerical& num = v.getNum();
+    mu::NumericalType targetType = mu::AUTO;
+
+    if (targetTypeStr == "logical")
+        targetType = mu::LOGICAL;
+    else if (targetTypeStr == "value.i8")
+        targetType = mu::I8;
+    else if (targetTypeStr == "value.ui8")
+        targetType = mu::UI8;
+    else if (targetTypeStr == "value.i16")
+        targetType = mu::I16;
+    else if (targetTypeStr == "value.ui16")
+        targetType = mu::UI16;
+    else if (targetTypeStr == "value.i32")
+        targetType = mu::I32;
+    else if (targetTypeStr == "value.ui32")
+        targetType = mu::UI32;
+    else if (targetTypeStr == "value.i64")
+        targetType = mu::I64;
+    else if (targetTypeStr == "value.ui64")
+        targetType = mu::UI64;
+    else if (targetTypeStr == "value.f32")
+        targetType = mu::F32;
+    else if (targetTypeStr == "value.f64")
+        targetType = mu::F64;
+    else if (targetTypeStr == "duration")
+        targetType = mu::DURATION;
+    else if (targetTypeStr == "datetime")
+        targetType = mu::DATETIME;
+
+    mu::NumericalType sourceType = num.getType();
+
+    if (targetType == sourceType)
+        return v;
+
+    mu::TypeInfo targetInfo(targetType);
+    mu::TypeInfo sourceInfo = num.getInfo();
+
+    if (targetInfo.m_bits != sourceInfo.m_bits)
+        return NAN;
+
+    switch (targetInfo.m_bits)
+    {
+        case 8:
+            if ((sourceType == mu::UI8 || sourceType == mu::LOGICAL) && targetType == mu::I8)
+            {
+                uint8_t source = num.asUI64();
+                return mu::Numerical(*reinterpret_cast<int8_t*>(&source));
+            }
+            else if (sourceType == mu::I8 && (targetType == mu::UI8 || targetType == mu::LOGICAL))
+            {
+                int8_t source = num.asI64();
+                return mu::Numerical((uint64_t)*reinterpret_cast<uint8_t*>(&source), targetType);
+            }
+            break;
+        case 16:
+            if (sourceType == mu::UI16 && targetType == mu::I16)
+            {
+                uint16_t source = num.asUI64();
+                return mu::Numerical(*reinterpret_cast<int16_t*>(&source));
+            }
+            else if (sourceType == mu::I16 && targetType == mu::UI16)
+            {
+                int16_t source = num.asI64();
+                return mu::Numerical(*reinterpret_cast<uint16_t*>(&source));
+            }
+            break;
+        case 32:
+            if (sourceType == mu::UI32 && targetType == mu::I32)
+            {
+                uint32_t source = num.asUI64();
+                return mu::Numerical(*reinterpret_cast<int32_t*>(&source));
+            }
+            else if (sourceType == mu::I32 && targetType == mu::UI32)
+            {
+                int32_t source = num.asI64();
+                return mu::Numerical(*reinterpret_cast<uint32_t*>(&source));
+            }
+            else if (sourceType == mu::F32 && targetType == mu::UI32)
+            {
+                float source = num.asF64();
+                return mu::Numerical(*reinterpret_cast<uint32_t*>(&source));
+            }
+            else if (sourceType == mu::UI32 && targetType == mu::F32)
+            {
+                uint32_t source = num.asUI64();
+                return mu::Numerical(*reinterpret_cast<float*>(&source));
+            }
+            else if (sourceType == mu::F32 && targetType == mu::I32)
+            {
+                float source = num.asF64();
+                return mu::Numerical(*reinterpret_cast<int32_t*>(&source));
+            }
+            else if (sourceType == mu::I32 && targetType == mu::F32)
+            {
+                int32_t source = num.asI64();
+                return mu::Numerical(*reinterpret_cast<float*>(&source));
+            }
+            break;
+        case 64:
+            if (sourceType == mu::UI64 && targetType == mu::I64)
+            {
+                uint64_t source = num.asUI64();
+                return mu::Numerical(*reinterpret_cast<int64_t*>(&source));
+            }
+            else if (sourceType == mu::I64 && targetType == mu::UI64)
+            {
+                int64_t source = num.asI64();
+                return mu::Numerical(*reinterpret_cast<uint64_t*>(&source));
+            }
+            else if ((sourceType == mu::F64 || sourceType == mu::DURATION || sourceType == mu::DATETIME) && targetType == mu::UI64)
+            {
+                double source = num.asF64();
+                return mu::Numerical(*reinterpret_cast<uint64_t*>(&source));
+            }
+            else if (sourceType == mu::UI64 && (targetType == mu::F64 || targetType == mu::DURATION || targetType == mu::DATETIME))
+            {
+                uint64_t source = num.asUI64();
+                return mu::Numerical(*reinterpret_cast<double*>(&source), targetType);
+            }
+            else if ((sourceType == mu::F64 || sourceType == mu::DURATION || sourceType == mu::DATETIME) && targetType == mu::I64)
+            {
+                double source = num.asF64();
+                return mu::Numerical(*reinterpret_cast<int64_t*>(&source));
+            }
+            else if (sourceType == mu::I64 && (targetType == mu::F64 || targetType == mu::DURATION || targetType == mu::DATETIME))
+            {
+                int64_t source = num.asI64();
+                return mu::Numerical(*reinterpret_cast<double*>(&source), targetType);
+            }
+            break;
+        default:
+            return NAN;
+    }
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// mask.
+///
+/// \param v const mu::Value&
+/// \param mask const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value binMask_impl(const mu::Value& v, const mu::Value& mask)
+{
+    if (!v.isValid() || !mask.isValid())
+        return NAN;
+
+    if (mask.isString())
+        return v.getNum().asUI64() & convertBaseToDecimal(mask.getStr());
+
+    return v.getNum().asUI64() & mask.getNum().asUI64();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// OR.
+///
+/// \param v1 const mu::Value&
+/// \param v2 const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value binOr_impl(const mu::Value& v1, const mu::Value& v2)
+{
+    if (!v1.isValid() || !v2.isValid())
+        return NAN;
+
+    return v1.getNum().asUI64() | v2.getNum().asUI64();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// AND.
+///
+/// \param v1 const mu::Value&
+/// \param v2 const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value binAnd_impl(const mu::Value& v1, const mu::Value& v2)
+{
+    if (!v1.isValid() || !v2.isValid())
+        return NAN;
+
+    return v1.getNum().asUI64() & v2.getNum().asUI64();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// XOR.
+///
+/// \param v1 const mu::Value&
+/// \param v2 const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value binXor_impl(const mu::Value& v1, const mu::Value& v2)
+{
+    if (!v1.isValid() || !v2.isValid())
+        return NAN;
+
+    return v1.getNum().asUI64() ^ v2.getNum().asUI64();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Internal implementation of the binary
+/// NOT.
+///
+/// \param v const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value binNot_impl(const mu::Value& v)
+{
+    if (!v.isValid())
+        return NAN;
+
+    const mu::Numerical& num = v.getNum();
+    mu::TypeInfo info = num.getInfo();
+    uint64_t res = ~num.asUI64();
+
+    if (info.m_bits == 8)
+        return (uint8_t)res;
+    else if (info.m_bits == 16)
+        return (uint16_t)res;
+    else if (info.m_bits == 32)
+        return (uint32_t)res;
+
+    return res;
 }
 
 
@@ -4589,6 +4877,30 @@ mu::Array timfnc_weeknum(const mu::Array& vTime)
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the number of
+/// days in the month of the current time value.
+///
+/// \param time const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_monthdays(const mu::Array& time)
+{
+    mu::Array ret;
+    ret.copyDims(time.size());
+
+    for (size_t i = 0; i < time.size(); i++)
+    {
+        time_stamp timeStamp = getTimeStampFromTimePoint(to_timePoint(time.get(i).getNum().asF64()));
+        date::year_month_day_last ymdl(timeStamp.m_ymd.year(), date::month_day_last(timeStamp.m_ymd.month()));
+        ret.push_back(mu::Value(unsigned(ymdl.day())));
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns, whether the selected value is
 /// NaN.
 ///
@@ -4612,7 +4924,74 @@ mu::Array numfnc_isnan(const mu::Array& v)
 /////////////////////////////////////////////////
 mu::Array numfnc_isvoid(const mu::Array& v)
 {
-    return mu::Value(v.isVoid());
+    if (v.isVoid())
+        return mu::Value(true);
+
+    mu::Array ret;
+    ret.copyDims(v);
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        ret.emplace_back(v.get(i).isVoid());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Detect, whether a value is a valid
+/// value.
+///
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_isvalid(const mu::Array& v)
+{
+    if (v.isVoid())
+        return mu::Value(false);
+
+    mu::Array ret;
+    ret.copyDims(v);
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        ret.emplace_back(v.get(i).isValid());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Fills all invalid values with the
+/// corresponding replacement value.
+///
+/// \param arr const mu::Array&
+/// \param replVal const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array numfnc_fillinvalid(const mu::Array& arr, const mu::Array& replVal)
+{
+    if (arr.isVoid())
+        return replVal;
+
+    mu::Array ret;
+    ret.copyDims(arr);
+
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        const mu::Value& v = arr.get(i);
+
+        if (!v.isValid())
+            ret.emplace_back(replVal);
+        else
+            ret.emplace_back(v);
+    }
+
+    return ret;
 }
 
 
@@ -4976,6 +5355,40 @@ static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, con
 
 
 /////////////////////////////////////////////////
+/// \brief Implenents the from_weekday() function.
+///
+/// \param year const mu::Value&
+/// \param month const mu::Value&
+/// \param weekday const mu::Value&
+/// \param idx const mu::Value&
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
+static mu::Value from_weekday_impl(const mu::Value& year, const mu::Value& month, const mu::Value& weekday, const mu::Value& idx)
+{
+    date::month m(month.getNum().asUI64());
+    date::year y(year.getNum().asI64());
+    date::weekday wd(weekday.getNum().asUI64());
+    date::year_month_day ymd;
+
+    if (idx.getNum().asI64() <= 0)
+    {
+        date::year_month_weekday_last ymwdl(y, m, date::weekday_last(wd));
+        ymd = date::year_month_day(ymwdl);
+    }
+    else
+    {
+        date::year_month_weekday ymwd(y, m, date::weekday_indexed(wd, idx.getNum().asUI64()));
+        ymd = date::year_month_day(ymwd);
+    }
+
+    return mu::Value(getTimePointFromYMD((int)ymd.year(),
+                                         (unsigned)ymd.month(),
+                                         (unsigned)ymd.day()));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Internal implementation of the
 /// as_time() function.
 ///
@@ -5012,6 +5425,23 @@ mu::Array timfnc_as_date(const mu::Array& year, const mu::Array& month, const mu
     return mu::apply(as_date_impl, year,
                      month.isDefault() ? mu::Array(mu::Value(1.0)) : month,
                      day.isDefault() ? mu::Array(mu::Value(1.0)) : day);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the date from
+/// the passed indexed weekday.
+///
+/// \param year const mu::Array&
+/// \param month const mu::Array&
+/// \param weekday const mu::Array&
+/// \param idx const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array timfnc_from_weekday(const mu::Array& year, const mu::Array& month, const mu::Array& weekday, const mu::Array& idx)
+{
+    return mu::apply(from_weekday_impl, year, month, weekday, idx);
 }
 
 
@@ -6639,6 +7069,110 @@ mu::Array rndfnc_shuffle(const mu::Array& shuffle, const mu::Array& base)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the bitcast()
+/// function.
+///
+/// \param a const mu::Array&
+/// \param type const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_cast(const mu::Array& a, const mu::Array& type)
+{
+    return mu::apply(binCast_impl, a, type);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the bitmask()
+/// function.
+///
+/// \param a const mu::Array&
+/// \param mask const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_mask(const mu::Array& a, const mu::Array& mask)
+{
+    return mu::apply(binMask_impl, a, mask);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the bitshift()
+/// function.
+///
+/// \param a const mu::Array&
+/// \param level const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_shift(const mu::Array& a, const mu::Array& level)
+{
+    return mu::apply(binShift_impl, a, level);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the bitand()
+/// function.
+///
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_and(const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(binAnd_impl, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the bitor()
+/// function.
+///
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_or(const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(binOr_impl, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the bitxor()
+/// function.
+///
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_xor(const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(binXor_impl, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the bitnot()
+/// fumction.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array bitfnc_not(const mu::Array& a)
+{
+    return mu::apply(binNot_impl, a);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns the utc offset
 /// in seconds.
 ///
@@ -6936,6 +7470,43 @@ mu::Array cast_category(const mu::Array& cats, const mu::Array& ids)
 
 
 /////////////////////////////////////////////////
+/// \brief Implements the dict cast.
+///
+/// \param keys const mu::Array&
+/// \param vals const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_dict(const mu::Array& keys, const mu::Array& vals)
+{
+    size_t elems = keys.size();
+    mu::Dict dict;
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        mu::BaseValue* key = keys.get(i).get();
+
+        if (!key)
+            continue;
+
+        if (!vals.isDefault())
+        {
+            if (vals.get(i).isRef())
+                dict.write(*key, vals.get(i).getRef().get());
+            else if (!vals.get(i).isVoid())
+                dict.write(*key, *vals.get(i).get());
+            else
+                dict.write(*key, *mu::Value("").get());
+        }
+        else
+            dict.write(*key, *mu::Value("").get());
+    }
+
+    return mu::Value(dict);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implements the dictstruct cast.
 ///
 /// \param fields const mu::Array&
@@ -6997,6 +7568,73 @@ mu::Array cast_file(const mu::Array& files, const mu::Array& openmode)
             file->get().open(files.get(i).getPath(), openmode.get(i).getStr());
 
         ret.emplace_back(file.release());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a logger object instance.
+///
+/// \param files const mu::Array&
+/// \param level const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_logger(const mu::Array& files, const mu::Array& level)
+{
+    size_t elems = std::max(files.size(), level.size());
+
+    if (!elems)
+        return mu::Value(new mu::LoggerValue);
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::unique_ptr<mu::LoggerValue> logger(new mu::LoggerValue);
+        std::string fileName = files.get(i).getPath();
+
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        fileName = _fSys.ValidizeAndPrepareName(fileName, "");
+#endif
+
+        logger->get().open(fileName);
+
+        if (!level.isDefault())
+            logger->get().setLoggingLevel(level.get(i).getStr());
+
+        ret.emplace_back(logger.release());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a timer object instance.
+///
+/// \param scopes const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array cast_timer(const mu::Array& scopes)
+{
+    size_t elems = scopes.size();
+
+    if (!elems)
+        return mu::Value(new mu::TimerValue(Timer("Timer", false)));
+
+    mu::Array ret;
+    ret.reserve(elems);
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        std::string scope = scopes.get(i).getStr();
+        ret.emplace_back(new mu::TimerValue(Timer(scope, false)));
     }
 
     return ret;

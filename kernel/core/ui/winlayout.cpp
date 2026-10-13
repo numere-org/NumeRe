@@ -360,6 +360,21 @@ static std::string parseLayoutScript(std::string sLayoutScript, tinyxml2::XMLDoc
                 if (findParameter(line, "statustext", '='))
                     currentGroup.top()->SetAttribute("statustext", parseOpt(line, findParameter(line, "statustext", '=')+10).c_str());
 
+                if (findParameter(line, "stayontop"))
+                    currentGroup.top()->SetAttribute("stayontop", "true");
+
+                if (findParameter(line, "fixedsize"))
+                    currentGroup.top()->SetAttribute("fixedsize", "true");
+
+                if (findParameter(line, "hideiconize"))
+                    currentGroup.top()->SetAttribute("minimize", "false");
+
+                if (findParameter(line, "hideclose"))
+                    currentGroup.top()->SetAttribute("closebox", "false");
+
+                if (findParameter(line, "pos", '='))
+                    currentGroup.top()->SetAttribute("pos", parseOpt(line, findParameter(line, "pos", '=')+3).c_str());
+
                 if (findParameter(line, "onopen", '='))
                     sOnOpenEvent = parseEventOpt(line, findParameter(line, "onopen", '=')+6, sThisFolder);
             }
@@ -886,6 +901,8 @@ void dialogCommand(CommandLineParser& cmdParser)
             nControls = NumeRe::CTRL_MESSAGEBOX;
         else if (sType == "textentry")
             nControls = NumeRe::CTRL_TEXTENTRY;
+        else if (sType == "pwdentry")
+            nControls = NumeRe::CTRL_PWDENTRY;
         else if (sType == "listeditor")
             nControls = NumeRe::CTRL_LISTEDITDIALOG;
     }

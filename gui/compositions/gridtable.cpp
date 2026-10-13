@@ -163,6 +163,9 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
     if (sTypeName == "datetime" && _table.getColumnType(col) == TableColumn::TYPE_DATETIME)
         return true;
 
+    if (sTypeName == "duration" && _table.getColumnType(col) == TableColumn::TYPE_DURATION)
+        return true;
+
     if (sTypeName == wxGRID_VALUE_FLOAT
         && TableColumn::isValueType(_table.getColumnType(col))
         && (_table.getValue(getRow(row), col).imag() == 0 || mu::isnan(_table.getValue(getRow(row), col))))

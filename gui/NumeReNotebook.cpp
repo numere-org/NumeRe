@@ -20,7 +20,7 @@ BEGIN_EVENT_TABLE(EditorNotebook, wxAuiNotebook)
 	EVT_AUINOTEBOOK_TAB_RIGHT_UP	(-1, EditorNotebook::OnTabRightClicked)
 	EVT_AUINOTEBOOK_DRAG_MOTION     (-1, EditorNotebook::OnTabMove)
 	//EVT_RIGHT_UP	(EditorNotebook::OnTabRightClicked)
-	//EVT_MOUSEWHEEL  (EditorNotebook::OnTabScroll)
+	EVT_MOUSEWHEEL  (EditorNotebook::OnTabScroll)
 	//EVT_ENTER_WINDOW(EditorNotebook::OnEnter)
 	//EVT_LEAVE_WINDOW(EditorNotebook::OnLeave)
 	EVT_SIZE        (EditorNotebook::OnSize)
@@ -477,32 +477,28 @@ void EditorNotebook::OnTabClosed(wxAuiNotebookEvent& event)
 /////////////////////////////////////////////////
 void EditorNotebook::OnTabScroll(wxMouseEvent &event)
 {
-	wxPoint pt;
-	pt.x = event.GetX();
-	pt.y = event.GetY();
+    wxPoint client_pt = ScreenToClient(wxGetMousePosition());
+    wxAuiTabCtrl* ctrl = GetTabCtrlFromPoint(client_pt);
 
-	long flags = 0;
-	int pageNum = this->HitTest (pt, &flags);
+    if (!ctrl)
+        return;
 
-	if (pageNum < 0 || GetPageCount() <= 1)
-		return;
+    int ctrl_idx = ctrl->GetActivePage();
 
-	size_t currentPage = GetSelection();
+    if (event.GetWheelRotation() > 0)
+    {
+        if (ctrl_idx == 0)
+            ctrl_idx = ctrl->GetPageCount();
 
-	if (event.GetWheelRotation() < 0)
-	{
-        if (currentPage + 1 == GetPageCount())
-            SetSelection(0);
+        SetSelectionToPage(ctrl->GetPage(ctrl_idx-1));
+    }
+    else
+    {
+        if (ctrl_idx+1 == ctrl->GetPageCount())
+            SetSelectionToPage(ctrl->GetPage(0));
         else
-            SetSelection(currentPage+1);
-	}
-	else
-	{
-        if (!currentPage)
-            SetSelection(GetPageCount()-1);
-        else
-            SetSelection(currentPage-1);
-	}
+            SetSelectionToPage(ctrl->GetPage(ctrl_idx+1));
+    }
 }
 
 

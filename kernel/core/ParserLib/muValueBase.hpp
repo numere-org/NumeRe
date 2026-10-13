@@ -75,9 +75,9 @@ namespace mu
     class BaseValue
     {
         public:
-            DataType m_type;
-
             virtual ~BaseValue() {}
+
+            virtual DataType getPlainType() const = 0;
 
             /////////////////////////////////////////////////
             /// \brief Get the contained data type.
@@ -87,7 +87,7 @@ namespace mu
             /////////////////////////////////////////////////
             virtual DataType getType() const
             {
-                return m_type;
+                return getPlainType();
             }
 
             /////////////////////////////////////////////////
@@ -231,6 +231,17 @@ namespace mu
             Object(const Object& other);
             std::string getObjectType() const;
 
+            /////////////////////////////////////////////////
+            /// \brief Declare this type of value.
+            ///
+            /// \return DataType
+            ///
+            /////////////////////////////////////////////////
+            DataType getPlainType() const override
+            {
+                return TYPE_OBJECT;
+            }
+
             bool operator==(const BaseValue& other) const;
 
             MethodDefinition isMethod(const std::string& sMethod, size_t argc) const override;
@@ -263,7 +274,6 @@ namespace mu
             /////////////////////////////////////////////////
             RefValue() : BaseValue(), m_ptr(nullptr)
             {
-                m_type = TYPE_REFERENCE;
             }
 
             /////////////////////////////////////////////////
@@ -274,7 +284,6 @@ namespace mu
             /////////////////////////////////////////////////
             RefValue(BaseValuePtr* val) : BaseValue(), m_ptr(val)
             {
-                m_type = TYPE_REFERENCE;
             }
 
             /////////////////////////////////////////////////
@@ -285,7 +294,6 @@ namespace mu
             /////////////////////////////////////////////////
             RefValue(const RefValue& other): BaseValue()
             {
-                m_type = other.m_type;
                 m_ptr = other.m_ptr;
             }
 
@@ -320,6 +328,17 @@ namespace mu
             }
 
             RefValue& operator=(RefValue&& other) = default;
+
+            /////////////////////////////////////////////////
+            /// \brief Declare this type of value.
+            ///
+            /// \return DataType
+            ///
+            /////////////////////////////////////////////////
+            DataType getPlainType() const override
+            {
+                return TYPE_REFERENCE;
+            }
 
             /////////////////////////////////////////////////
             /// \brief Return the embedded data type.
@@ -495,7 +514,6 @@ namespace mu
             /////////////////////////////////////////////////
             GeneratorValue() : BaseValue(), m_firstVal(NAN), m_step(NAN), m_lastVal(NAN), m_size(0)
             {
-                m_type = TYPE_GENERATOR;
             }
 
             /////////////////////////////////////////////////
@@ -509,7 +527,6 @@ namespace mu
             GeneratorValue(const Numerical& fstVal, const Numerical& lstVal)
                 : BaseValue(), m_firstVal(fstVal.asCF64()), m_lastVal(lstVal.asCF64()), m_size(0)
             {
-                m_type = TYPE_GENERATOR;
                 m_step = m_lastVal - m_firstVal;
                 m_step.real(m_step.real() > 0.0 ? 1.0 : (m_step.real() < 0.0 ? -1.0 : 0.0));
                 m_step.imag(m_step.imag() > 0.0 ? 1.0 : (m_step.imag() < 0.0 ? -1.0 : 0.0));
@@ -529,7 +546,6 @@ namespace mu
             GeneratorValue(const Numerical& fstVal, const Numerical& increment, const Numerical& lstVal)
                 : BaseValue(), m_firstVal(fstVal.asCF64()), m_step(increment.asCF64()), m_lastVal(lstVal.asCF64()), m_size(0)
             {
-                m_type = TYPE_GENERATOR;
                 calculateSize();
             }
 
@@ -541,7 +557,6 @@ namespace mu
             /////////////////////////////////////////////////
             GeneratorValue(const GeneratorValue& other) : BaseValue()
             {
-                m_type = other.m_type;
                 m_firstVal = other.m_firstVal;
                 m_step = other.m_step;
                 m_lastVal = other.m_lastVal;
@@ -579,6 +594,17 @@ namespace mu
             BaseValue* clone() const override
             {
                 return new GeneratorValue(*this);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Declare this type of value.
+            ///
+            /// \return DataType
+            ///
+            /////////////////////////////////////////////////
+            DataType getPlainType() const override
+            {
+                return TYPE_GENERATOR;
             }
 
             /////////////////////////////////////////////////
@@ -705,15 +731,12 @@ private:                                                      \
 public:                                                       \
     CLASS() : BaseValue(), ATTR()                             \
     {                                                         \
-        m_type = ID;                                          \
     }                                                         \
     CLASS(const TYPE& val) : BaseValue(), ATTR(val)           \
     {                                                         \
-        m_type = ID;                                          \
     }                                                         \
     CLASS(const CLASS& other): BaseValue()                    \
     {                                                         \
-        m_type = other.m_type;                                \
         ATTR = other.ATTR;                                    \
     }                                                         \
     CLASS(CLASS&& other) = default;                           \
@@ -738,6 +761,10 @@ public:                                                       \
     {                                                         \
         return ATTR;                                          \
     }                                                         \
+    DataType getPlainType() const override                    \
+    {                                                         \
+        return ID;                                            \
+    }                                                         \
     const TYPE& get() const                                   \
     {                                                         \
         return ATTR;                                          \
@@ -746,19 +773,18 @@ public:                                                       \
 #define BASE_VALUE_IMPL(CLASS, ID, ATTR)                        \
 CLASS::CLASS(const BaseValue& other) : BaseValue()              \
 {                                                               \
-    m_type = ID;                                                \
-    if (other.m_type == ID)                                     \
+    if (other.getPlainType() == ID)                             \
         ATTR = static_cast<const CLASS&>(other).ATTR;           \
-    else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == ID)  \
+    else if (other.getPlainType() == TYPE_REFERENCE && other.getType() == ID)  \
         ATTR = static_cast<const CLASS&>(static_cast<const RefValue&>(other).get()).ATTR;               \
     else                                                        \
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);            \
 }                                                               \
 CLASS& CLASS::operator=(const BaseValue& other)                 \
 {                                                               \
-    if (other.m_type == ID)                                     \
+    if (other.getPlainType() == ID)                             \
         ATTR = static_cast<const CLASS&>(other).ATTR;           \
-    else if (other.m_type == TYPE_REFERENCE)                    \
+    else if (other.getPlainType() == TYPE_REFERENCE)            \
         return operator=(static_cast<const RefValue&>(other).get());  \
     else                                                        \
         throw ParserError(ecASSIGNED_TYPE_MISMATCH);            \

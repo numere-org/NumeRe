@@ -230,6 +230,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     nFirstVal = v[0].get().getAsScalarInt();
     nLastVal = v[1].get().getAsScalarInt();
 
+    // This shall fail if the types mismatch
+    *vVarArray[nVarAdress] = mu::Value(nFirstVal);
+
     // Depending on the order of the boundaries, we
     // have to consider the incrementation variable
     if (nLastVal < nFirstVal)
@@ -247,7 +250,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // inner loop runs through the contained command lines
     for (int64_t __i = nFirstVal; (nInc)*__i <= nInc * nLastVal; __i += nInc)
     {
-        *vVarArray[nVarAdress] = mu::Value(__i);
+        vVarArray[nVarAdress]->first().getAsIndex() = __i;
 
         // Handle the optional third parameter containing a condition
         if (nNum > 2 && !mu::all(v[2].get()))
@@ -363,7 +366,12 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
         // The variable value might have been changed
         // snychronize the index
-        __i = vVarArray[nVarAdress]->getAsScalarInt();
+        mu::Value& fst = vVarArray[nVarAdress]->first();
+
+        if (!fst.isIndex())
+            throw mu::ParserError(mu::ecTYPE_NO_VAL, fst.getTypeAsString());
+
+        __i = fst.getAsIndex().asI64();
 
         // Print the status to the terminal, if it is required
         if (!nth_loop && !bMask && bSilent)
@@ -3252,7 +3260,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         // Check only the last expression
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns = v[0].get();
+        vAns.assignResults(v[0].get());
 
         if (!bLoopSupressAnswer)
             NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");
@@ -3550,9 +3558,9 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 
     // Calculate the result
     v = _parserRef->Eval(nNum);
-    _assertionHandler.checkAssertion(v, nNum);
 
-    vAns = v[0].get();
+    _assertionHandler.checkAssertion(v, nNum);
+    vAns.assignResults(v[0].get());
 
     if (!bLoopSupressAnswer)
         NumeReKernel::printPreFmt(NumeReKernel::formatResultOutput(nNum, v) + "\n");

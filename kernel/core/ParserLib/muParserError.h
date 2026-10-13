@@ -93,25 +93,26 @@ namespace mu
         ecTYPE_NO_VAL            = 38, ///< Type is not a value (Value does not contain a numerical type)
         ecTYPE_NO_CAT            = 39, ///< Type is not a category (Value does not contain a category)
         ecTYPE_NO_ARR            = 40, ///< Type is not an array (Value does not contain an array)
-        ecTYPE_NO_DICT           = 41, ///< Type is not a dictstruct (Value does not contain a dictstruct)
-        ecTYPE_NO_OBJ            = 42, ///< Type is not an object (Value does not contain an object)
-        ecTYPE_NO_REF            = 43, ///< Type is not a reference (Value does not contain a reference)
-        ecTYPE_MISMATCH          = 44, ///< Something's wrong with the types (Value types do not match or operation not supported)
-        ecTYPE_MISMATCH_OOB      = 45, ///< Something's wrong with the types (Value types do not match or index out of bounds)
-        ecASSIGNED_TYPE_MISMATCH = 46, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
-        ecMETHOD_ERROR           = 47, ///< Such a method does not exist (No such method or too few arguments)
-        ecNOT_IMPLEMENTED        = 48, ///< Operation is not implemented for this data type.
-        ecDEREFERENCE_VOID       = 49, ///< Cannot dereference void
+        ecTYPE_NO_DICT           = 41, ///< Type is not a dict (Value does not contain a dict)
+        ecTYPE_NO_STRUCT         = 42, ///< Type is not a dictstruct (Value does not contain a dictstruct)
+        ecTYPE_NO_OBJ            = 43, ///< Type is not an object (Value does not contain an object)
+        ecTYPE_NO_REF            = 44, ///< Type is not a reference (Value does not contain a reference)
+        ecTYPE_MISMATCH          = 45, ///< Something's wrong with the types (Value types do not match or operation not supported)
+        ecTYPE_MISMATCH_OOB      = 46, ///< Something's wrong with the types (Value types do not match or index out of bounds)
+        ecASSIGNED_TYPE_MISMATCH = 47, ///< Types in assignment do not match (Cannot assign a different type to an already initialized variable)
+        ecMETHOD_ERROR           = 48, ///< Such a method does not exist (No such method or too few arguments)
+        ecNOT_IMPLEMENTED        = 49, ///< Operation is not implemented for this data type.
+        ecDEREFERENCE_VOID       = 50, ///< Cannot dereference void
 
-        ecMATRIX_DIMS_INVALID    = 50, ///< Matrix dimensions are invalid in some way
-        ecMATRIX_EMPTY           = 51, ///< Matrix is empty
-        ecMATRIX_INVALID_VALS    = 52, ///< Matrix contains invalid values
-        ecMATRIX_NOT_INVERTIBLE  = 53, ///< Matrix is not invertible
-        ecINVALID_WINDOW_SIZE    = 54, ///< Stat window size is invalid
-        ecINVALID_FILTER_SIZE    = 55, ///< Filter kernel size is invalid
+        ecMATRIX_DIMS_INVALID    = 51, ///< Matrix dimensions are invalid in some way
+        ecMATRIX_EMPTY           = 52, ///< Matrix is empty
+        ecMATRIX_INVALID_VALS    = 53, ///< Matrix contains invalid values
+        ecMATRIX_NOT_INVERTIBLE  = 54, ///< Matrix is not invertible
+        ecINVALID_WINDOW_SIZE    = 55, ///< Stat window size is invalid
+        ecINVALID_FILTER_SIZE    = 56, ///< Filter kernel size is invalid
 
         // internal errors
-        ecINTERNAL_ERROR         = 56, ///< Internal error of any kind.
+        ecINTERNAL_ERROR         = 57, ///< Internal error of any kind.
 
         // The last two are special entries
         ecCOUNT,                      ///< This is no error code, It just stores just the total number of error codes

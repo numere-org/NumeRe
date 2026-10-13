@@ -173,6 +173,30 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         }
     }
 
+    // Call functions if we're not in a loop
+    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
+        || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
+    {
+        if (sCurrentCommand != "for"
+            && sCurrentCommand != "if"
+            && sCurrentCommand != "while"
+            && sCurrentCommand != "switch"
+            && sCurrentCommand != "define"
+            && sCurrentCommand != "redef"
+            && sCurrentCommand != "redefine"
+            && sCurrentCommand != "undefine"
+            && sCurrentCommand != "undef"
+            && sCurrentCommand != "ifndef"
+            && sCurrentCommand != "ifndefined")
+        {
+            if (!_functions.call(sLine))
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
+
+            // Reduce surrounding white spaces
+            StripSpaces(sLine);
+        }
+    }
+
     // Handle the "to_cmd()" function, which is quite slow
     // Only handle this function, if we're not inside of a loop
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
@@ -335,20 +359,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     }
 
-    // Call functions if we're not in a loop
-    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
-        || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
-    {
-        if (sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
-        {
-            if (!_functions.call(sLine))
-                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
-
-            // Reduce surrounding white spaces
-            StripSpaces(sLine);
-        }
-    }
-
     // Handle recursive expressions
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_RECURSIVEEXPRESSION
@@ -454,7 +464,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (needReturnValue)
         thisReturnVal.valArray = mu::make_vector(v, nNum);
 
-    vAns = v[0].get();
+    vAns.assignResults(v[0].get());
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
@@ -1389,7 +1399,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     }
                     else
                     {
-                        std::string sVarName = "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "]";
+                        std::string sVarName = "_~PLUGIN`" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "`";
                         _parser.SetInternalVar(sVarName, _return.valArray.front());
                         sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
                     }

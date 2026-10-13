@@ -902,7 +902,7 @@ vector<string> NumeReDebugger::getClusters()
 /////////////////////////////////////////////////
 vector<string> NumeReDebugger::getObjects()
 {
-    return getVars({mu::TYPE_DICTSTRUCT, mu::TYPE_CATEGORY, mu::TYPE_OBJECT});
+    return getVars({mu::TYPE_DICT, mu::TYPE_DICTSTRUCT, mu::TYPE_CATEGORY, mu::TYPE_OBJECT});
 }
 
 

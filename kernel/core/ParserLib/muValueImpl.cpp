@@ -22,6 +22,10 @@
 #include "../utils/stringtools.hpp"
 #include "../utils/stringview.hpp"
 
+#ifndef PARSERSTANDALONE
+#include "../../kernel.hpp"
+#endif // PARSERSTANDALONE
+
 #include <set>
 
 // Reasonable other data types:
@@ -39,7 +43,6 @@ namespace mu
     /////////////////////////////////////////////////
     NeutralValue::NeutralValue()
     {
-        m_type = TYPE_NEUTRAL;
     }
 
 
@@ -51,7 +54,6 @@ namespace mu
     /////////////////////////////////////////////////
     NeutralValue::NeutralValue(const NeutralValue& other)
     {
-        m_type = TYPE_NEUTRAL;
     }
 
 
@@ -64,8 +66,8 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NeutralValue::operator=(const BaseValue& other)
     {
-        if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH_OOB, getTypeAsString(m_type) + " = " + getTypeAsString(other.m_type));
+        if (other.getType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH_OOB, getTypeAsString(getType()) + " = " + getTypeAsString(other.getType()));
 
         return *this;
     }
@@ -143,7 +145,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NeutralValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getType() == TYPE_STRING)
             return StrValue("") / other;
 
         return NumValue(Numerical(NAN)) / other;
@@ -280,20 +282,14 @@ namespace mu
     /////////////////////////////////////////////////
     NumValue::NumValue(const BaseValue& other) : BaseValue()
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
-        {
-            m_type = other.m_type;
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val = static_cast<const NumValue&>(other).m_val;
-        }
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
         {
             const RefValue& refVal = static_cast<const RefValue&>(other);
 
-            if (refVal.get().m_type == TYPE_NUMERICAL || refVal.get().m_type == TYPE_INVALID)
-            {
-                m_type = refVal.get().m_type;
+            if (refVal.get().getPlainType() == TYPE_NUMERICAL)
                 m_val = static_cast<const NumValue&>(refVal.get()).m_val;
-            }
             else
                 throw ParserError(ecASSIGNED_TYPE_MISMATCH);
         }
@@ -311,12 +307,9 @@ namespace mu
     /////////////////////////////////////////////////
     NumValue& NumValue::operator=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
-        {
-            m_type = other.m_type;
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val = static_cast<const NumValue&>(other).m_val;
-        }
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator=(static_cast<const RefValue&>(other).get());
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -335,12 +328,7 @@ namespace mu
     /////////////////////////////////////////////////
     NumValue::NumValue(double val, bool makeInvalid)
     {
-        if (makeInvalid)
-            m_type = TYPE_INVALID;
-        else
-            m_type = TYPE_NUMERICAL;
-
-        m_val = val;
+        m_val = Numerical(std::complex(val), makeInvalid ? INVALID : AUTO);
     }
 
 
@@ -353,18 +341,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val + static_cast<const NumValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val + static_cast<const CatValue&>(other).get().val);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) + static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " + " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -389,18 +377,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator-(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val - static_cast<const NumValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val - static_cast<const CatValue&>(other).get().val);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) - static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator-(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " - " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -413,18 +401,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val / static_cast<const NumValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val / static_cast<const CatValue&>(other).get().val);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return new NumValue(NAN);
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " / " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -437,25 +425,25 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val * static_cast<const NumValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
         {
             if (m_val.isInt() && m_val.asI64() == 1)
                 return other.clone();
 
             return new NumValue(m_val * static_cast<const CatValue&>(other).get().val);
         }
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_STRING)
             return new StrValue(strRepeat(static_cast<const StrValue&>(other).get(), m_val.asI64()));
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return new NumValue(NAN);
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " * " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -481,14 +469,14 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val += static_cast<const NumValue&>(other).m_val;
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val += static_cast<const CatValue&>(other).get().val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        else if (other.getPlainType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " + " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -503,14 +491,14 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator-=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val -= static_cast<const NumValue&>(other).m_val;
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val -= static_cast<const CatValue&>(other).get().val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator-=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
+        else if (other.getPlainType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " - " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -525,16 +513,16 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator/=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val /= static_cast<const NumValue&>(other).m_val;
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val /= static_cast<const CatValue&>(other).get().val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             m_val = NAN;
         else
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " / " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -549,16 +537,16 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val *= static_cast<const NumValue&>(other).m_val;
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val *= static_cast<const CatValue&>(other).get().val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             m_val = NAN;
         else
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " * " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -573,16 +561,16 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& NumValue::operator^=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val = m_val.pow(static_cast<const NumValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val = m_val.pow(static_cast<const CatValue&>(other).get().val);
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator^=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             m_val = NAN;
         else
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " ^ " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -609,18 +597,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* NumValue::pow(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val.pow(static_cast<const NumValue&>(other).m_val));
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val.pow(static_cast<const CatValue&>(other).get().val));
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Array(Value(m_val)).pow(static_cast<const ArrValue&>(other).get()));
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return new NumValue(NAN);
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return pow(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " ^ " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " ^ " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -659,10 +647,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool NumValue::operator==(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator==(static_cast<const RefValue&>(other).get());
 
-        return other.m_type == TYPE_NUMERICAL && m_val == static_cast<const NumValue&>(other).m_val;
+        return other.getPlainType() == TYPE_NUMERICAL && m_val == static_cast<const NumValue&>(other).m_val;
     }
 
 
@@ -675,11 +663,11 @@ namespace mu
     /////////////////////////////////////////////////
     bool NumValue::operator<(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator<(static_cast<const RefValue&>(other).get());
 
-        if (other.m_type != TYPE_NUMERICAL && other.m_type != TYPE_INVALID)
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
+        if (other.getPlainType() != TYPE_NUMERICAL)
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " < " + getTypeAsString(other.getPlainType()));
 
         return m_val < static_cast<const NumValue&>(other).m_val;
     }
@@ -745,18 +733,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* StrValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             return new StrValue(m_val + static_cast<const StrValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new StrValue(m_val + static_cast<const CatValue&>(other).get().name);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) + static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " + " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -769,20 +757,20 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* StrValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             return new PathValue(Path(m_val) / static_cast<const StrValue&>(other).m_val);
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new PathValue(Path(m_val) / static_cast<const CatValue&>(other).get().name);
-        else if (other.m_type == TYPE_OBJECT && static_cast<const Object&>(other).getObjectType() == "path")
+        else if (other.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(other).getObjectType() == "path")
             return new PathValue(Path(m_val) / static_cast<const PathValue&>(other).get());
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return new PathValue(Path(m_val) / "");
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " / " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -795,18 +783,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* StrValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(strRepeat(m_val, static_cast<const NumValue&>(other).get().asI64()));
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new StrValue(strRepeat(m_val, static_cast<const CatValue&>(other).get().val.asI64()));
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return new StrValue("");
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " * " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -819,14 +807,14 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& StrValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             m_val += static_cast<const StrValue&>(other).m_val;
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val += static_cast<const CatValue&>(other).get().name;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        else if (other.getPlainType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " + " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -841,16 +829,16 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& StrValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             m_val = strRepeat(m_val, static_cast<const NumValue&>(other).get().asI64());
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val = strRepeat(m_val, static_cast<const CatValue&>(other).get().val.asI64());
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             m_val = "";
         else
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " * " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -891,10 +879,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool StrValue::operator==(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator==(static_cast<const RefValue&>(other).get());
 
-        return other.m_type == TYPE_STRING && m_val == static_cast<const StrValue&>(other).m_val;
+        return other.getPlainType() == TYPE_STRING && m_val == static_cast<const StrValue&>(other).m_val;
     }
 
 
@@ -907,11 +895,11 @@ namespace mu
     /////////////////////////////////////////////////
     bool StrValue::operator<(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator<(static_cast<const RefValue&>(other).get());
 
-        if (other.m_type != TYPE_STRING)
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
+        if (other.getPlainType() != TYPE_STRING)
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(getPlainType()) + " < " + getTypeAsString(other.getPlainType()));
 
         return m_val < static_cast<const StrValue&>(other).m_val;
     }
@@ -981,7 +969,7 @@ namespace mu
         else if (sMethod == "normalize")
             return new StrValue(normalize_unicode_impl(m_val, "nfc"));
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getPlainType()) + "." + sMethod);
     }
 
 
@@ -995,10 +983,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* StrValue::call(const std::string& sMethod, const BaseValue& arg1) const
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return call(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "at" && arg1.m_type == TYPE_NUMERICAL)
+        if (sMethod == "at" && arg1.getPlainType() == TYPE_NUMERICAL)
         {
             int64_t p = static_cast<const NumValue&>(arg1).get().asI64();
 
@@ -1009,44 +997,44 @@ namespace mu
             else
                 return new StrValue(m_val.substr(p-1, 1));
         }
-        else if (sMethod == "chr" && arg1.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "chr" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(chr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1));
-        else if (sMethod == "startsw" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "startsw" && arg1.getPlainType() == TYPE_STRING)
         {
             if (!arg1)
                 return new NumValue(false);
 
             return new NumValue(m_val.starts_with(static_cast<const StrValue&>(arg1).get()));
         }
-        else if (sMethod == "endsw" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "endsw" && arg1.getPlainType() == TYPE_STRING)
         {
             if (!arg1)
                 return new NumValue(false);
 
             return new NumValue(m_val.ends_with(static_cast<const StrValue&>(arg1).get()));
         }
-        else if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "sub" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(substr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1));
-        else if (sMethod == "splt" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "splt" && arg1.getPlainType() == TYPE_STRING)
             return new ArrValue(split_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "fnd" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "fnd" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(strfnd_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "rfnd" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "rfnd" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(strrfnd_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "mtch" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "mtch" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(strmatch_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "rmtch" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "rmtch" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(strrmatch_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "nmtch" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "nmtch" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(str_not_match_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "nrmtch" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "nrmtch" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(str_not_rmatch_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "normalize" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "normalize" && arg1.getPlainType() == TYPE_STRING)
             return new StrValue(normalize_unicode_impl(m_val, static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "collate" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "collate" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(collate_impl(m_val, static_cast<const StrValue&>(arg1).get(), 1));
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(getPlainType()) + "." + sMethod);
     }
 
 
@@ -1061,39 +1049,39 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* StrValue::call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return call(sMethod,
-                        arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                        arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                        arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                        arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_NUMERICAL)
+        if (sMethod == "sub" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(substr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1,
                                             static_cast<const NumValue&>(arg2).get().asI64()));
-        else if (sMethod == "splt" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "splt" && arg1.getPlainType() == TYPE_STRING)
             return new ArrValue(split_impl(m_val, static_cast<const StrValue&>(arg1).get(), bool(arg2)));
-        else if (sMethod == "fnd" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "fnd" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(strfnd_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                             static_cast<const NumValue&>(arg2).get().asI64()-1));
-        else if (sMethod == "rfnd" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "rfnd" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(strrfnd_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                              static_cast<const NumValue&>(arg2).get().asI64()-1));
-        else if (sMethod == "mtch" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "mtch" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(strmatch_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                               static_cast<const NumValue&>(arg2).get().asI64()-1));
-        else if (sMethod == "rmtch" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "rmtch" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(strrmatch_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                                static_cast<const NumValue&>(arg2).get().asI64()-1));
-        else if (sMethod == "nmtch" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "nmtch" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(str_not_match_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                                    static_cast<const NumValue&>(arg2).get().asI64()-1));
-        else if (sMethod == "nrmtch" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "nrmtch" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(str_not_rmatch_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                                     static_cast<const NumValue&>(arg2).get().asI64()-1));
-        else if (sMethod == "collate" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "collate" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(collate_impl(m_val, static_cast<const StrValue&>(arg1).get(),
                                                     static_cast<const NumValue&>(arg2).get().asI64()));
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_STRING) + "." + sMethod);
     }
 
 
@@ -1156,20 +1144,20 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val.val + static_cast<const NumValue&>(other).get());
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val.val + static_cast<const CatValue&>(other).m_val.val);
-        else if (other.m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_STRING)
             return new StrValue(m_val.name + static_cast<const StrValue&>(other).get());
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) + static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " + " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(TYPE_CATEGORY) + " + " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -1194,18 +1182,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator-(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val.val - static_cast<const NumValue&>(other).get());
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val.val - static_cast<const CatValue&>(other).m_val.val);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) - static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator-(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " - " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(TYPE_CATEGORY) + " - " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -1218,18 +1206,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val.val / static_cast<const NumValue&>(other).get());
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val.val / static_cast<const CatValue&>(other).m_val.val);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) / static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " / " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(TYPE_CATEGORY) + " / " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -1243,7 +1231,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* CatValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL || other.m_type == TYPE_INVALID)
+        if (other.getPlainType() == TYPE_NUMERICAL)
         {
             const Numerical& n = static_cast<const NumValue&>(other).get();
 
@@ -1252,18 +1240,18 @@ namespace mu
 
             return new NumValue(m_val.val * n);
         }
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new NumValue(m_val.val * static_cast<const CatValue&>(other).m_val.val);
-        else if (other.m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_STRING)
             return new StrValue(strRepeat(static_cast<const StrValue&>(other).get(), m_val.val.asI64()));
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(Value(m_val) * static_cast<const ArrValue&>(other).get());
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return new NumValue(0.0);
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " * " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, getTypeAsString(TYPE_CATEGORY) + " * " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -1314,10 +1302,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool CatValue::operator==(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator==(static_cast<const RefValue&>(other).get());
 
-        return other.m_type == TYPE_CATEGORY && m_val == static_cast<const CatValue&>(other).m_val;
+        return other.getPlainType() == TYPE_CATEGORY && m_val == static_cast<const CatValue&>(other).m_val;
     }
 
 
@@ -1330,11 +1318,11 @@ namespace mu
     /////////////////////////////////////////////////
     bool CatValue::operator<(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator<(static_cast<const RefValue&>(other).get());
 
-        if (other.m_type != TYPE_CATEGORY)
-            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(m_type) + " < " + getTypeAsString(other.m_type));
+        if (other.getPlainType() != TYPE_CATEGORY)
+            throw ParserError(ecTYPE_MISMATCH, getTypeAsString(TYPE_CATEGORY) + " < " + getTypeAsString(other.getPlainType()));
 
         return m_val < static_cast<const CatValue&>(other).m_val;
     }
@@ -1386,7 +1374,7 @@ namespace mu
         else if (sMethod == "val")
             return new NumValue(m_val.val);
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_CATEGORY) + "." + sMethod);
     }
 
 
@@ -1403,7 +1391,21 @@ namespace mu
     /////////////////////////////////////////////////
     std::string CatValue::print(size_t digits, size_t chrs, bool trunc) const
     {
-        return toExternalString(m_val.name) + ": " + toString(m_val.val.asI64());
+        std::string sCatId = ": " + toString(m_val.val.asI64());
+        size_t remainingChars = chrs;
+
+        if (remainingChars > sCatId.length()+4)
+            remainingChars -= sCatId.length();
+
+        if (chrs > 0)
+        {
+            if (trunc)
+                return ensureValidUtf8(truncString(toExternalString(replaceControlCharacters(m_val.name)), remainingChars)) + sCatId;
+
+            return ensureValidUtf8(ellipsize(toExternalString(replaceControlCharacters(m_val.name)), remainingChars)) + sCatId;
+        }
+
+        return ensureValidUtf8(toExternalString(replaceControlCharacters(m_val.name))) + sCatId;
     }
 
 
@@ -1456,11 +1458,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(m_val + static_cast<const ArrValue&>(other).m_val);
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
         return new ArrValue(m_val + Value(other.clone()));
@@ -1488,11 +1490,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator-(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(m_val - static_cast<const ArrValue&>(other).m_val);
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator-(static_cast<const RefValue&>(other).get());
 
         return new ArrValue(m_val - Value(other.clone()));
@@ -1508,11 +1510,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(m_val / static_cast<const ArrValue&>(other).m_val);
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/(static_cast<const RefValue&>(other).get());
 
         return new ArrValue(m_val / Value(other.clone()));
@@ -1528,9 +1530,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(m_val * static_cast<const ArrValue&>(other).m_val);
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*(static_cast<const RefValue&>(other).get());
 
         return new ArrValue(m_val * Value(other.clone()));
@@ -1546,11 +1548,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::operator^(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(m_val ^ static_cast<const ArrValue&>(other).m_val);
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator^(static_cast<const RefValue&>(other).get());
 
         return new ArrValue(m_val ^ Value(other.clone()));
@@ -1566,9 +1568,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             m_val += static_cast<const ArrValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+=(static_cast<const RefValue&>(other).get());
         else
             m_val += Value(other.clone());
@@ -1586,9 +1588,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator-=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             m_val -= static_cast<const ArrValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator-=(static_cast<const RefValue&>(other).get());
         else
             m_val -= Value(other.clone());
@@ -1606,9 +1608,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator/=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             m_val /= static_cast<const ArrValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/=(static_cast<const RefValue&>(other).get());
         else
             m_val /= Value(other.clone());
@@ -1626,9 +1628,9 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             m_val *= static_cast<const ArrValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator*=(static_cast<const RefValue&>(other).get());
         else
             m_val *= Value(other.clone());
@@ -1646,11 +1648,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& ArrValue::operator^=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             m_val ^= static_cast<const ArrValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator^=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
+        else if (other.getPlainType() != TYPE_NEUTRAL)
             m_val ^= Value(other.clone());
 
         return *this;
@@ -1678,11 +1680,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* ArrValue::pow(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return new ArrValue(m_val.pow(static_cast<const ArrValue&>(other).m_val));
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return pow(static_cast<const RefValue&>(other).get());
 
         return new ArrValue(m_val.pow(Value(other.clone())));
@@ -1724,10 +1726,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool ArrValue::operator==(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator==(static_cast<const RefValue&>(other).get());
 
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return all(m_val == static_cast<const ArrValue&>(other).m_val);
 
         return all(m_val == Array(Value(other.clone())));
@@ -1743,10 +1745,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool ArrValue::operator<(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator<(static_cast<const RefValue&>(other).get());
 
-        if (other.m_type == TYPE_ARRAY)
+        if (other.getPlainType() == TYPE_ARRAY)
             return all(m_val < static_cast<const ArrValue&>(other).m_val);
 
         return all(m_val < Value(other.clone()));
@@ -1805,7 +1807,7 @@ namespace mu
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1) const
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return call(sMethod, static_cast<const RefValue&>(arg1).get());
 
         return new ArrValue(m_val.call(sMethod, Value(arg1.clone())));
@@ -1824,10 +1826,10 @@ namespace mu
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return call(sMethod,
-                        arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                        arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                        arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                        arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
         return new ArrValue(m_val.call(sMethod, Value(arg1.clone()), Value(arg2.clone())));
     }
@@ -1846,11 +1848,11 @@ namespace mu
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE || arg3.getPlainType() == TYPE_REFERENCE)
             return call(sMethod,
-                        arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                        arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                        arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
+                        arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                        arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                        arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
 
         return new ArrValue(m_val.call(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone())));
     }
@@ -1870,12 +1872,15 @@ namespace mu
     BaseValue* ArrValue::call(const std::string& sMethod,
                               const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE
+            || arg2.getPlainType() == TYPE_REFERENCE
+            || arg3.getPlainType() == TYPE_REFERENCE
+            || arg4.getPlainType() == TYPE_REFERENCE)
             return call(sMethod,
-                        arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                        arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                        arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
-                        arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+                        arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                        arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                        arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                        arg4.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return new ArrValue(m_val.call(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone()), Value(arg4.clone())));
     }
@@ -1943,7 +1948,7 @@ namespace mu
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1)
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone())));
@@ -1962,10 +1967,10 @@ namespace mu
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod,
-                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone()), Value(arg2.clone())));
     }
@@ -1984,11 +1989,11 @@ namespace mu
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE || arg3.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod,
-                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                         arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                         arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3);
 
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone())));
     }
@@ -2008,12 +2013,15 @@ namespace mu
     BaseValue* ArrValue::apply(const std::string& sMethod,
                                const BaseValue& arg1, const BaseValue& arg2, const BaseValue& arg3, const BaseValue& arg4)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE || arg3.m_type == TYPE_REFERENCE || arg4.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE
+            || arg2.getPlainType() == TYPE_REFERENCE
+            || arg3.getPlainType() == TYPE_REFERENCE
+            || arg4.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod,
-                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
-                         arg3.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
-                         arg4.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2,
+                         arg3.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg3).get() : arg3,
+                         arg4.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg4).get() : arg4);
 
         return new ArrValue(m_val.apply(sMethod, Value(arg1.clone()), Value(arg2.clone()), Value(arg3.clone()), Value(arg4.clone())));
     }
@@ -2095,6 +2103,430 @@ namespace mu
     //------------------------------------------------------------------------------
 
     // Basic implementation of the DictStructValue class
+    BASE_VALUE_IMPL(DictValue, TYPE_DICT, m_val)
+
+
+    /////////////////////////////////////////////////
+    /// \brief Is this Dict instance valid?
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictValue::isValid() const
+    {
+        return m_val.size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Convert to boolean.
+    ///
+    /// \return DictValue::operator
+    ///
+    /////////////////////////////////////////////////
+    DictValue::operator bool() const
+    {
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                return false;
+
+            const BaseValue* f = m_val.read(*key);
+
+            if (!f || !bool(*f))
+                return false;
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Equality comparison operator.
+    ///
+    /// \param other const BaseValue&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictValue::operator==(const BaseValue& other) const
+    {
+        if (other.getPlainType() == TYPE_REFERENCE)
+            return operator==(static_cast<const RefValue&>(other).get());
+
+        if (other.getPlainType() != TYPE_DICT)
+            return false;
+
+        const Dict& otherDict = static_cast<const DictValue&>(other).get();
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+
+        if (keys != otherDict.getKeys())
+            return false;
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                return false;
+
+            const BaseValue* v = m_val.read(*key);
+            const BaseValue* otherV = otherDict.read(*key);
+
+            if ((!v xor !otherV) || *v != *otherV)
+                return false;
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the byte size of this
+    /// Dict instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t DictValue::getBytes() const
+    {
+        size_t s = 0;
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                continue;
+
+            s += (*key).getBytes();
+
+            const BaseValue* f = m_val.read(*key);
+
+            if (f)
+                s += f->getBytes();
+        }
+
+        return s;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to a
+    /// method?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition DictValue::isMethod(const std::string& sMethod, size_t argc) const
+    {
+        static const MethodSet methods({{"keys", 0}, {"values", 0},
+                                        {"at", 1}, {"len", 0}, {"contains", 1}, {"pick", -1}, {"omit", -1}});
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "keys")
+        {
+            std::vector<BaseValueRef> keys = m_val.getKeys();
+            Array arr;
+
+            for (auto& key : keys)
+            {
+                arr.emplace_back(Value(key.m_ref.release()));
+            }
+
+            return new ArrValue(arr);
+        }
+        else if (sMethod == "values")
+        {
+            std::vector<BaseValueRef> keys = m_val.getKeys();
+            Array vals;
+            vals.reserve(keys.size());
+
+            for (const auto& key : keys)
+            {
+                if (key.is_null())
+                    vals.emplace_back(mu::Value());
+                else
+                {
+                    const BaseValue* val = m_val.read(*key);
+                    vals.emplace_back(val ? val->clone() : nullptr);
+                }
+            }
+
+            return new ArrValue(vals);
+        }
+        else if (sMethod == "len")
+            return new NumValue(Numerical(m_val.size()));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::call(const std::string& sMethod, const BaseValue& arg1) const
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE)
+            return call(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "at" && arg1.getPlainType() != TYPE_VOID)
+        {
+            const BaseValue* v = m_val.read(arg1);
+            return v ? v->clone() : nullptr;
+        }
+        else if (sMethod == "contains" && arg1.getPlainType() != TYPE_VOID)
+            return new NumValue(m_val.isKey(arg1));
+        else if (sMethod == "pick" && arg1.getPlainType() == TYPE_ARRAY)
+            return new DictValue(m_val.pick(static_cast<const ArrValue&>(arg1).get()));
+        else if (sMethod == "pick")
+            return new DictValue(m_val.pick(mu::Value(arg1.clone())));
+        else if (sMethod == "omit" && arg1.getPlainType() == TYPE_ARRAY)
+            return new DictValue(m_val.omit(static_cast<const ArrValue&>(arg1).get()));
+        else if (sMethod == "omit")
+            return new DictValue(m_val.omit(mu::Value(arg1.clone())));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Does the passed string correspond to
+    /// an applying method?
+    ///
+    /// \param sMethod const std::string&
+    /// \param argc size_t
+    /// \return MethodDefinition
+    ///
+    /////////////////////////////////////////////////
+    MethodDefinition DictValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
+    {
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"merge", 1},
+                                        {"write", -2}});
+
+        auto iter = methods.find(MethodDefinition(sMethod, argc));
+
+        if (iter != methods.end())
+            return *iter;
+
+        return MethodDefinition();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "clear")
+            return new NumValue(Numerical(m_val.clear()));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "removekey" && arg1.getPlainType() != TYPE_VOID && m_val.isKey(arg1))
+            return m_val.remove(arg1);
+
+        if (sMethod == "merge" && arg1.getPlainType() == TYPE_DICT)
+        {
+            std::vector<BaseValueRef> keys = m_val.merge(static_cast<const DictValue&>(arg1).get());
+            Array arr;
+
+            for (auto& key : keys)
+            {
+                arr.emplace_back(Value(key.m_ref.release()));
+            }
+
+            return new ArrValue(arr);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* DictValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod,
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "write" && arg1.getPlainType() == TYPE_ARRAY)
+        {
+            const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
+            size_t elems;
+            Array ret;
+
+            if (arg2.getPlainType() == TYPE_ARRAY)
+            {
+                const Array& arr2 = static_cast<const ArrValue&>(arg2).get();
+                elems = std::max(arr1.size(), arr2.size());
+
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(new RefValue(m_val.write(*arr1.get(i).get(), *arr2.get(i).get())));
+                }
+            }
+            else
+            {
+                elems = arr1.size();
+                ret.reserve(elems);
+
+                for (size_t i = 0; i < elems; i++)
+                {
+                    ret.emplace_back(new RefValue(m_val.write(*arr1.get(i).get(), arg2)));
+                }
+            }
+
+            return new ArrValue(ret);
+        }
+        else if (sMethod == "write" && arg1.getPlainType() != TYPE_VOID)
+            return new RefValue(m_val.write(arg1, arg2));
+
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICT) + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string
+    /// adding possible quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+        std::string sPrinted;
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                continue;
+
+            if (sPrinted.length())
+                sPrinted += ", ";
+
+            sPrinted += key.m_ref->print(digits, chrs, trunc) + ": ";
+            const BaseValue* v = m_val.read(*key);
+
+            if (v)
+                sPrinted += v->printEmbedded(digits, chrs, trunc);
+            else
+                sPrinted += "void";
+        }
+
+        return "[" + sPrinted + "]";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance as if it was
+    /// embedded.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictValue::printEmbedded(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{1 x 1 dict}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance into a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictValue::printVal(size_t digits, size_t chrs) const
+    {
+        std::vector<BaseValueRef> keys = m_val.getKeys();
+        std::string sPrinted;
+
+        for (const auto& key : keys)
+        {
+            if (key.is_null())
+                continue;
+
+            if (sPrinted.length())
+                sPrinted += ", ";
+
+            sPrinted += key.m_ref->printVal(digits, chrs) + ": ";
+            const BaseValue* v = m_val.read(*key);
+
+            if (v)
+                sPrinted += v->printVal(digits, chrs);
+            else
+                sPrinted += "void";
+        }
+
+        return "[" + sPrinted + "]";
+    }
+
+
+    //------------------------------------------------------------------------------
+
+    // Basic implementation of the DictStructValue class
     BASE_VALUE_IMPL(DictStructValue, TYPE_DICTSTRUCT, m_val)
 
 
@@ -2141,10 +2573,10 @@ namespace mu
     /////////////////////////////////////////////////
     bool DictStructValue::operator==(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_REFERENCE)
+        if (other.getPlainType() == TYPE_REFERENCE)
             return operator==(static_cast<const RefValue&>(other).get());
 
-        if (other.m_type != TYPE_DICTSTRUCT)
+        if (other.getPlainType() != TYPE_DICTSTRUCT)
             return false;
 
         const DictStruct& otherDict = static_cast<const DictStructValue&>(other).get();
@@ -2266,7 +2698,7 @@ namespace mu
             return nullptr;
         }
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
     }
 
 
@@ -2280,45 +2712,45 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::call(const std::string& sMethod, const BaseValue& arg1) const
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return call(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "at" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+        if (sMethod == "at" && arg1.getPlainType() == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
         {
             const BaseValue* v = m_val.read(static_cast<const StrValue&>(arg1).get());
             return v ? v->clone() : nullptr;
         }
         else if (sMethod == "at"
-                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
                  && m_val.isField(static_cast<const PathValue&>(arg1).get()))
         {
             const BaseValue* v = m_val.read(static_cast<const PathValue&>(arg1).get());
             return v ? v->clone() : nullptr;
         }
-        else if (sMethod == "contains" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "contains" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.isField(static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "contains" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+        else if (sMethod == "contains" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(m_val.isField(static_cast<const PathValue&>(arg1).get()));
         else if (sMethod == "encodejson")
             return new StrValue(m_val.encodeJson((bool)arg1));
         else if (sMethod == "encodexml")
             return new StrValue(m_val.encodeXml((bool)arg1));
-        else if (sMethod == "pick" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "pick" && arg1.getPlainType() == TYPE_STRING)
             return new DictStructValue(m_val.pick({static_cast<const StrValue&>(arg1).get()}));
-        else if (sMethod == "pick" && arg1.m_type == TYPE_ARRAY)
+        else if (sMethod == "pick" && arg1.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr = static_cast<const ArrValue&>(arg1).get();
             return new DictStructValue(m_val.pick(arr.as_str_vector()));
         }
-        else if (sMethod == "omit" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "omit" && arg1.getPlainType() == TYPE_STRING)
             return new DictStructValue(m_val.omit({static_cast<const StrValue&>(arg1).get()}));
-        else if (sMethod == "omit" && arg1.m_type == TYPE_ARRAY)
+        else if (sMethod == "omit" && arg1.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr = static_cast<const ArrValue&>(arg1).get();
             return new DictStructValue(m_val.omit(arr.as_str_vector()));
         }
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
     }
 
 
@@ -2364,7 +2796,7 @@ namespace mu
         if (m_val.isField(sMethod))
             return new RefValue(m_val.read(sMethod));
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
     }
 
 
@@ -2378,45 +2810,45 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "removekey" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+        if (sMethod == "removekey" && arg1.getPlainType() == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return m_val.remove(static_cast<const StrValue&>(arg1).get());
 
         if (sMethod == "removekey"
-            && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+            && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
             && m_val.isField(static_cast<const PathValue&>(arg1).get()))
             return m_val.remove(static_cast<const PathValue&>(arg1).get());
 
-        if (sMethod == "loadxml" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "loadxml" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(Numerical(m_val.importXml(static_cast<const StrValue&>(arg1).get())));
 
-        if (sMethod == "loadxml" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+        if (sMethod == "loadxml" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(Numerical(m_val.importXml(static_cast<const PathValue&>(arg1).get().to_string('/'))));
 
-        if (sMethod == "decodexml" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "decodexml" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(Numerical(m_val.decodeXml(static_cast<const StrValue&>(arg1).get())));
 
-        if (sMethod == "loadjson" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "loadjson" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(Numerical(m_val.importJson(static_cast<const StrValue&>(arg1).get())));
 
-        if (sMethod == "loadjson" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+        if (sMethod == "loadjson" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(Numerical(m_val.importJson(static_cast<const PathValue&>(arg1).get().to_string('/'))));
 
-        if (sMethod == "merge" && arg1.m_type == TYPE_DICTSTRUCT)
+        if (sMethod == "merge" && arg1.getPlainType() == TYPE_DICTSTRUCT)
             return new ArrValue(m_val.merge(static_cast<const DictStructValue&>(arg1).get()));
 
-        if (sMethod == "decodejson" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "decodejson" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(Numerical(m_val.decodeJson(static_cast<const StrValue&>(arg1).get())));
 
-        if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "insertkey" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.addKey(static_cast<const StrValue&>(arg1).get()));
         else if (sMethod == "insertkey"
-                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
                  && m_val.isField(static_cast<const PathValue&>(arg1).get()))
             return new NumValue(m_val.addKey(static_cast<const PathValue&>(arg1).get()));
-        else if (sMethod == "insertkey" && arg1.m_type == TYPE_ARRAY)
+        else if (sMethod == "insertkey" && arg1.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
             size_t elems = arr1.size();
@@ -2434,7 +2866,7 @@ namespace mu
         if (m_val.isField(sMethod))
             return new RefValue(m_val.write(sMethod, arg1));
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
     }
 
 
@@ -2449,24 +2881,24 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* DictStructValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod,
-                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        if (sMethod == "write" && arg1.m_type == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
+        if (sMethod == "write" && arg1.getPlainType() == TYPE_STRING && m_val.isField(static_cast<const StrValue&>(arg1).get()))
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
         else if (sMethod == "write"
-                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
                  && m_val.isField(static_cast<const PathValue&>(arg1).get()))
             return new RefValue(m_val.write(static_cast<const PathValue&>(arg1).get(), arg2));
-        else if (sMethod == "write" && arg1.m_type == TYPE_ARRAY)
+        else if (sMethod == "write" && arg1.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
             size_t elems;
             Array ret;
 
-            if (arg2.m_type == TYPE_ARRAY)
+            if (arg2.getPlainType() == TYPE_ARRAY)
             {
                 const Array& arr2 = static_cast<const ArrValue&>(arg2).get();
                 elems = std::max(arr1.size(), arr2.size());
@@ -2476,7 +2908,7 @@ namespace mu
                 for (size_t i = 0; i < elems; i++)
                 {
                     if (!m_val.isField(arr1.get(i).getStr()))
-                        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+                        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
 
                     ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), *arr2.get(i).get())));
                 }
@@ -2489,7 +2921,7 @@ namespace mu
                 for (size_t i = 0; i < elems; i++)
                 {
                     if (!m_val.isField(arr1.get(i).getStr()))
-                        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+                        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
 
                     ret.emplace_back(new RefValue(m_val.write(arr1.get(i).getStr(), arg2)));
                 }
@@ -2498,18 +2930,18 @@ namespace mu
             return new ArrValue(ret);
         }
 
-        if (sMethod == "insertkey" && arg1.m_type == TYPE_STRING)
+        if (sMethod == "insertkey" && arg1.getPlainType() == TYPE_STRING)
             return new RefValue(m_val.write(static_cast<const StrValue&>(arg1).get(), arg2));
         else if (sMethod == "insertkey"
-                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new RefValue(m_val.write(static_cast<const PathValue&>(arg1).get(), arg2));
-        else if (sMethod == "insertkey" && arg1.m_type == TYPE_ARRAY)
+        else if (sMethod == "insertkey" && arg1.getPlainType() == TYPE_ARRAY)
         {
             const Array& arr1 = static_cast<const ArrValue&>(arg1).get();
             size_t elems;
             Array ret;
 
-            if (arg2.m_type == TYPE_ARRAY)
+            if (arg2.getPlainType() == TYPE_ARRAY)
             {
                 const Array& arr2 = static_cast<const ArrValue&>(arg2).get();
                 elems = std::max(arr1.size(), arr2.size());
@@ -2535,11 +2967,11 @@ namespace mu
             return new ArrValue(ret);
         }
 
-        if (sMethod == "renamekey" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_STRING)
+        if (sMethod == "renamekey" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.renameKey(static_cast<const StrValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
 
 
-        throw ParserError(ecMETHOD_ERROR, getTypeAsString(m_type) + "." + sMethod);
+        throw ParserError(ecMETHOD_ERROR, getTypeAsString(TYPE_DICTSTRUCT) + "." + sMethod);
     }
 
 
@@ -2633,6 +3065,8 @@ namespace mu
         declareMethod(MethodDefinition("root", 0));
         declareMethod(MethodDefinition("leaf", 0));
         declareMethod(MethodDefinition("depth", 0));
+        declareMethod(MethodDefinition("twig", 0));
+        declareMethod(MethodDefinition("leafless", 0));
         declareMethod(MethodDefinition("trunk", 1));
         declareMethod(MethodDefinition("branch", 1));
         declareMethod(MethodDefinition("uniquetrunk", 1));
@@ -2662,11 +3096,11 @@ namespace mu
     {
         if (Object::operator==(other))
             m_val = static_cast<const PathValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE && Object::operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && Object::operator==(static_cast<const RefValue&>(other).get()))
             m_val = static_cast<const PathValue&>(static_cast<const RefValue&>(other).get()).m_val;
-        else if (other.m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_STRING)
             m_val = Path(static_cast<const StrValue&>(other).get());
-        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().getPlainType() == TYPE_STRING)
             m_val = Path(static_cast<const StrValue&>(static_cast<const RefValue&>(other).get()).get());
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -2684,11 +3118,11 @@ namespace mu
     {
         if (Object::operator==(other))
             m_val = static_cast<const PathValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE && Object::operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && Object::operator==(static_cast<const RefValue&>(other).get()))
             m_val = static_cast<const PathValue&>(static_cast<const RefValue&>(other).get()).m_val;
-        else if (other.m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_STRING)
             m_val = Path(static_cast<const StrValue&>(other).get());
-        else if (other.m_type == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().m_type == TYPE_STRING)
+        else if (other.getPlainType() == TYPE_REFERENCE && static_cast<const RefValue&>(other).get().getPlainType() == TYPE_STRING)
             m_val = Path(static_cast<const StrValue&>(static_cast<const RefValue&>(other).get()).get());
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -2737,11 +3171,11 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::operator+(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             return new PathValue(m_val + static_cast<const StrValue&>(other).get());
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new PathValue(m_val + static_cast<const CatValue&>(other).get().name);
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
         {
             const Array& otherArr = static_cast<const ArrValue&>(other).get();
             Array ret;
@@ -2754,12 +3188,12 @@ namespace mu
 
             return new ArrValue(ret);
         }
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -2772,14 +3206,14 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::operator*(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
+        if (other.getPlainType() == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
             return clone();
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -2792,13 +3226,13 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::operator/(const BaseValue& other) const
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             return new PathValue(m_val / static_cast<const StrValue&>(other).get());
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             return new PathValue(m_val / static_cast<const CatValue&>(other).get().name);
         else if (Object::operator==(other))
             return new PathValue(m_val / static_cast<const PathValue&>(other).get());
-        else if (other.m_type == TYPE_ARRAY)
+        else if (other.getPlainType() == TYPE_ARRAY)
         {
             const Array& otherArr = static_cast<const ArrValue&>(other).get();
             Array ret;
@@ -2814,12 +3248,12 @@ namespace mu
 
             return new ArrValue(ret);
         }
-        else if (other.m_type == TYPE_NEUTRAL)
+        else if (other.getPlainType() == TYPE_NEUTRAL)
             return clone();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+(static_cast<const RefValue&>(other).get());
 
-        throw ParserError(ecTYPE_MISMATCH, "object.path / " + getTypeAsString(other.m_type));
+        throw ParserError(ecTYPE_MISMATCH, "object.path / " + getTypeAsString(other.getPlainType()));
     }
 
 
@@ -2832,14 +3266,14 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& PathValue::operator+=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             m_val += static_cast<const StrValue&>(other).get();
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val += static_cast<const CatValue&>(other).get().name;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.m_type));
+        else if (other.getPlainType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path + " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -2854,12 +3288,12 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& PathValue::operator*=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
+        if (other.getPlainType() == TYPE_NUMERICAL && static_cast<const NumValue&>(other).get() == mu::Numerical(1))
             return *this;
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator+=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.m_type));
+        else if (other.getPlainType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path * " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -2874,16 +3308,16 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue& PathValue::operator/=(const BaseValue& other)
     {
-        if (other.m_type == TYPE_STRING)
+        if (other.getPlainType() == TYPE_STRING)
             m_val /= static_cast<const StrValue&>(other).get();
-        else if (other.m_type == TYPE_CATEGORY)
+        else if (other.getPlainType() == TYPE_CATEGORY)
             m_val /= static_cast<const CatValue&>(other).get().name;
         else if (Object::operator==(other))
             m_val /= static_cast<const PathValue&>(other).get();
-        else if (other.m_type == TYPE_REFERENCE)
+        else if (other.getPlainType() == TYPE_REFERENCE)
             return operator/=(static_cast<const RefValue&>(other).get());
-        else if (other.m_type != TYPE_NEUTRAL)
-            throw ParserError(ecTYPE_MISMATCH, "object.path / " + getTypeAsString(other.m_type));
+        else if (other.getPlainType() != TYPE_NEUTRAL)
+            throw ParserError(ecTYPE_MISMATCH, "object.path / " + getTypeAsString(other.getPlainType()));
 
         return *this;
     }
@@ -2915,6 +3349,10 @@ namespace mu
             return new StrValue(m_val.root());
         else if (sMethod == "leaf")
             return new StrValue(m_val.leaf());
+        else if (sMethod == "twig")
+            return new StrValue(m_val.depth() > 1 ? m_val.at(m_val.depth()-2) : std::string());
+        else if (sMethod == "leafless")
+            return new PathValue(m_val.getSegment(0, m_val.depth()-1));
         else if (sMethod == "depth")
             return new NumValue(m_val.depth());
 
@@ -2932,7 +3370,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::call(const std::string& sMethod, const BaseValue& arg1) const
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return call(sMethod, static_cast<const RefValue&>(arg1).get());
 
         if (sMethod == "trunk" && Object::operator==(arg1))
@@ -2941,11 +3379,11 @@ namespace mu
             return new PathValue(m_val.getBranchPart(static_cast<const PathValue&>(arg1).get()));
         else if (sMethod == "uniquetrunk" && Object::operator==(arg1))
             return new PathValue(m_val.getRevBranchPart(static_cast<const PathValue&>(arg1).get()));
-        else if (sMethod == "format" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "format" && arg1.getPlainType() == TYPE_STRING)
             return new StrValue(m_val.to_string(static_cast<const StrValue&>(arg1).get().front()));
-        else if (sMethod == "at" && arg1.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "at" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(m_val.at(static_cast<const NumValue&>(arg1).get().asUI64()-1));
-        else if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "sub" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new PathValue(m_val.getSegment(static_cast<const NumValue&>(arg1).get().asUI64()-1));
 
         throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
@@ -2963,12 +3401,12 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::call(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2) const
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return call(sMethod,
-                        arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                        arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                        arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                        arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        if (sMethod == "sub" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_NUMERICAL)
+        if (sMethod == "sub" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_NUMERICAL)
             return new PathValue(m_val.getSegment(static_cast<const NumValue&>(arg1).get().asUI64()-1,
                                                   static_cast<const NumValue&>(arg2).get().asUI64()));
 
@@ -3009,10 +3447,10 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "remove" && arg1.m_type == TYPE_NUMERICAL)
+        if (sMethod == "remove" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(m_val.remove(static_cast<const NumValue&>(arg1).get().asUI64()-1));
 
         throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
@@ -3030,18 +3468,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* PathValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod,
-                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        if (sMethod == "write" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_STRING)
+        if (sMethod == "write" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.write(static_cast<const NumValue&>(arg1).get().asUI64()-1, static_cast<const StrValue&>(arg2).get()));
-        else if (sMethod == "insert" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_STRING)
+        else if (sMethod == "insert" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.insert(static_cast<const NumValue&>(arg1).get().asUI64()-1, static_cast<const StrValue&>(arg2).get()));
-        else if (sMethod == "insert" && arg1.m_type == TYPE_NUMERICAL && Object::operator==(arg2))
+        else if (sMethod == "insert" && arg1.getPlainType() == TYPE_NUMERICAL && Object::operator==(arg2))
             return new NumValue(m_val.insert(static_cast<const NumValue&>(arg1).get().asUI64()-1, static_cast<const PathValue&>(arg2).get()));
-        else if (sMethod == "remove" && arg1.m_type == TYPE_NUMERICAL && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "remove" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_NUMERICAL)
             return new PathValue(m_val.remove(static_cast<const NumValue&>(arg1).get().asUI64()-1,
                                               static_cast<const NumValue&>(arg2).get().asUI64()));
 
@@ -3148,7 +3586,7 @@ namespace mu
     {
         if (operator==(other))
             m_val = static_cast<const FileValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
             m_val = static_cast<const FileValue&>(static_cast<const RefValue&>(other).get()).m_val;
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -3166,7 +3604,7 @@ namespace mu
     {
         if (operator==(other))
             m_val = static_cast<const FileValue&>(other).m_val;
-        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
             m_val = static_cast<const FileValue&>(static_cast<const RefValue&>(other).get()).m_val;
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -3268,18 +3706,18 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* FileValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
-        if (sMethod == "wpos" && arg1.m_type == TYPE_NUMERICAL)
+        if (sMethod == "wpos" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val.set_write_pos(static_cast<const NumValue&>(arg1).get().asUI64()));
-        else if (sMethod == "rpos" && arg1.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "rpos" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new NumValue(m_val.set_read_pos(static_cast<const NumValue&>(arg1).get().asUI64()));
-        else if (sMethod == "open" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "open" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.open(static_cast<const StrValue&>(arg1).get()));
-        else if (sMethod == "open" && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+        else if (sMethod == "open" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(m_val.open(static_cast<const PathValue&>(arg1).get()));
-        else if (sMethod == "read" && arg1.m_type == TYPE_STRING)
+        else if (sMethod == "read" && arg1.getPlainType() == TYPE_STRING)
             return m_val.read(static_cast<const StrValue&>(arg1).get());
         else if (sMethod == "write")
             return new NumValue(m_val.write(arg1));
@@ -3299,20 +3737,20 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* FileValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
     {
-        if (arg1.m_type == TYPE_REFERENCE || arg2.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod,
-                         arg1.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
-                         arg2.m_type == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
 
-        if (sMethod == "open" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_STRING)
+        if (sMethod == "open" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.open(static_cast<const StrValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
         else if (sMethod == "open"
-                 && arg1.m_type == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
-                 && arg2.m_type == TYPE_STRING)
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path"
+                 && arg2.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.open(static_cast<const PathValue&>(arg1).get(), static_cast<const StrValue&>(arg2).get()));
-        else if (sMethod == "read" && arg1.m_type == TYPE_STRING && arg2.m_type == TYPE_NUMERICAL)
+        else if (sMethod == "read" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_NUMERICAL)
             return m_val.read(static_cast<const StrValue&>(arg1).get(), static_cast<const NumValue&>(arg2).get().asUI64());
-        else if (sMethod == "write" && arg2.m_type == TYPE_STRING)
+        else if (sMethod == "write" && arg2.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.write(arg1, static_cast<const StrValue&>(arg2).get()));
 
         throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
@@ -3355,6 +3793,471 @@ namespace mu
     //------------------------------------------------------------------------------
 
     /////////////////////////////////////////////////
+    /// \brief LoggerValue constructor.
+    /////////////////////////////////////////////////
+    LoggerValue::LoggerValue() : Object("logger")
+    {
+        declareMethod(MethodDefinition("isopen", 0));
+        declareMethod(MethodDefinition("fname", 0));
+        declareMethod(MethodDefinition("level", 0));
+
+        declareApplyingMethod(MethodDefinition("close", 0));
+        declareApplyingMethod(MethodDefinition("level", 1));
+        declareApplyingMethod(MethodDefinition("debug", 1));
+        declareApplyingMethod(MethodDefinition("info", 1));
+        declareApplyingMethod(MethodDefinition("warning", 1));
+        declareApplyingMethod(MethodDefinition("error", 1));
+        declareApplyingMethod(MethodDefinition("open", 1));
+        declareApplyingMethod(MethodDefinition("write", 1));
+        declareApplyingMethod(MethodDefinition("push", 1));
+        declareApplyingMethod(MethodDefinition("push", 2));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a LoggerValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    LoggerValue::LoggerValue(const BaseValue& other) : LoggerValue()
+    {
+        if (operator==(other))
+            m_val = static_cast<const LoggerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const LoggerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return LoggerValue&
+    ///
+    /////////////////////////////////////////////////
+    LoggerValue& LoggerValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_val = static_cast<const LoggerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const LoggerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool LoggerValue::isValid() const
+    {
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    LoggerValue::operator bool() const
+    {
+        return m_val.is_open();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the bytes size of this
+    /// instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t LoggerValue::getBytes() const
+    {
+        return sizeof(LeveledLogger);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "isopen")
+            return new NumValue(m_val.is_open());
+        else if (sMethod == "level")
+            return new StrValue(LeveledLogger::levelToString(m_val.getLoggingLevel()));
+        else if (sMethod == "fname")
+            return new StrValue(m_val.getLogFile());
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "close")
+        {
+            if (m_val.is_open())
+            {
+                m_val.close();
+                return new NumValue(true);
+            }
+
+            return new NumValue(false);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with one argument.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::apply(const std::string& sMethod, const BaseValue& arg1)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod, static_cast<const RefValue&>(arg1).get());
+
+        if (sMethod == "level" && arg1.getPlainType() == TYPE_STRING)
+        {
+            std::string sLevel = static_cast<const StrValue&>(arg1).get();
+
+            for (size_t level = Logger::LVL_DEBUG; level < Logger::LVL_ERROR; level++)
+            {
+                if (LeveledLogger::levelToString((Logger::LogLevel)level) == sLevel)
+                {
+                    m_val.setLoggingLevel((Logger::LogLevel)level);
+                    return arg1.clone();
+                }
+            }
+
+            return new StrValue("");
+        }
+        else if (sMethod == "debug" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.debug(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "info" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.info(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "warning" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.warning(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "error" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.error(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "write" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.push_info(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "push" && arg1.getPlainType() == TYPE_STRING)
+        {
+            m_val.info(static_cast<const StrValue&>(arg1).get());
+            return new NumValue(true);
+        }
+        else if (sMethod == "open" && arg1.getPlainType() == TYPE_STRING)
+        {
+            std::string fileName = static_cast<const StrValue&>(arg1).get();
+
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            fileName = _fSys.ValidizeAndPrepareName(fileName, "");
+#endif
+
+            return new NumValue(m_val.open(fileName));
+        }
+        else if (sMethod == "open"
+                 && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+        {
+            std::string fileName = static_cast<const PathValue&>(arg1).get().to_string('/');
+
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            fileName = _fSys.ValidizeAndPrepareName(fileName, "");
+#endif
+
+            return new NumValue(m_val.open(fileName));
+        }
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with two arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \param arg1 const BaseValue&
+    /// \param arg2 const BaseValue&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* LoggerValue::apply(const std::string& sMethod, const BaseValue& arg1, const BaseValue& arg2)
+    {
+        if (arg1.getPlainType() == TYPE_REFERENCE || arg2.getPlainType() == TYPE_REFERENCE)
+            return apply(sMethod,
+                         arg1.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg1).get() : arg1,
+                         arg2.getPlainType() == TYPE_REFERENCE ? static_cast<const RefValue&>(arg2).get() : arg2);
+
+        if (sMethod == "push" && arg1.getPlainType() == TYPE_STRING && arg2.getPlainType() == TYPE_STRING)
+        {
+            std::string sLevel = static_cast<const StrValue&>(arg2).get();
+
+            for (size_t level = Logger::LVL_DEBUG; level <= Logger::LVL_ERROR; level++)
+            {
+                if (LeveledLogger::levelToString((Logger::LogLevel)level) == sLevel)
+                {
+                    m_val.push_line((Logger::LogLevel)level, static_cast<const StrValue&>(arg1).get());
+                    return new NumValue(true);
+                }
+            }
+
+            return new NumValue(false);
+        }
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string LoggerValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{.isopen: " + toString(m_val.is_open())
+            + ", .fname: \"" + m_val.getLogFile() + "\", .level: \"" + LeveledLogger::levelToString(m_val.getLoggingLevel()) + "\"}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string LoggerValue::printVal(size_t digits, size_t chrs) const
+    {
+        return "{.isopen: " + toString(m_val.is_open())
+            + ", .fname: " + m_val.getLogFile() + ", .level: " + LeveledLogger::levelToString(m_val.getLoggingLevel()) + "}";
+    }
+
+
+
+    //------------------------------------------------------------------------------
+
+    /////////////////////////////////////////////////
+    /// \brief TimerValue constructor.
+    /////////////////////////////////////////////////
+    TimerValue::TimerValue() : Object("timer")
+    {
+        declareMethod(MethodDefinition("elapsed", 0));
+        declareMethod(MethodDefinition("running", 0));
+        declareMethod(MethodDefinition("name", 0));
+
+        declareApplyingMethod(MethodDefinition("start", 0));
+        declareApplyingMethod(MethodDefinition("stop", 0));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Construct a TimerValue from another
+    /// BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    ///
+    /////////////////////////////////////////////////
+    TimerValue::TimerValue(const BaseValue& other) : TimerValue()
+    {
+        if (operator==(other))
+            m_val = static_cast<const TimerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const TimerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assign another BaseValue instance.
+    ///
+    /// \param other const BaseValue&
+    /// \return TimerValue&
+    ///
+    /////////////////////////////////////////////////
+    TimerValue& TimerValue::operator=(const BaseValue& other)
+    {
+        if (operator==(other))
+            m_val = static_cast<const TimerValue&>(other).m_val;
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+            m_val = static_cast<const TimerValue&>(static_cast<const RefValue&>(other).get()).m_val;
+        else
+            throw ParserError(ecASSIGNED_TYPE_MISMATCH);
+
+        return *this;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this instance is valid.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool TimerValue::isValid() const
+    {
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Cast to bool.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    TimerValue::operator bool() const
+    {
+        return m_val.running();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return the bytes size of this
+    /// instance.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t TimerValue::getBytes() const
+    {
+        return sizeof(Timer);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Call a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* TimerValue::call(const std::string& sMethod) const
+    {
+        if (sMethod == "elapsed")
+            return new NumValue(Numerical(m_val.getElapsed().count() * 1e-9, DURATION));
+
+        if (sMethod == "running")
+            return new NumValue(m_val.running());
+
+        if (sMethod == "name")
+            return new StrValue(m_val.getScopeName());
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Apply a method with no arguments.
+    ///
+    /// \param sMethod const std::string&
+    /// \return BaseValue*
+    ///
+    /////////////////////////////////////////////////
+    BaseValue* TimerValue::apply(const std::string& sMethod)
+    {
+        if (sMethod == "start")
+        {
+            m_val.Start();
+            return new NumValue(true);
+        }
+        else if (sMethod == "stop")
+            return new NumValue(Numerical(m_val.Stop().count() * 1e-9, DURATION));
+
+        throw ParserError(ecMETHOD_ERROR, "object." + getObjectType() + "." + sMethod);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \param trunc bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string TimerValue::print(size_t digits, size_t chrs, bool trunc) const
+    {
+        return "{.name: \"" + m_val.getScopeName() + "\""
+            + ", .running: " + toString(m_val.running())
+            + ", .elapsed: " + formatDuration(m_val.getElapsed().count()*1e-9) + "}";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Print this instance to a string
+    /// without additional quotation marks.
+    ///
+    /// \param digits size_t
+    /// \param chrs size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string TimerValue::printVal(size_t digits, size_t chrs) const
+    {
+        return "[" + m_val.getScopeName() + "] " + formatDuration(m_val.getElapsed().count()*1e-9);
+    }
+
+
+
+    //------------------------------------------------------------------------------
+
+    /////////////////////////////////////////////////
     /// \brief StackValue constructor.
     /////////////////////////////////////////////////
     StackValue::StackValue() : Object("stack")
@@ -3380,7 +4283,7 @@ namespace mu
     {
         if (operator==(other))
             m_stack = static_cast<const StackValue&>(other).m_stack;
-        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
             m_stack = static_cast<const StackValue&>(static_cast<const RefValue&>(other).get()).m_stack;
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -3398,7 +4301,7 @@ namespace mu
     {
         if (operator==(other))
             m_stack = static_cast<const StackValue&>(other).m_stack;
-        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
             m_stack = static_cast<const StackValue&>(static_cast<const RefValue&>(other).get()).m_stack;
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -3533,7 +4436,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* StackValue::apply(const std::string& sMethod, const BaseValue& arg1)
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
         if (sMethod == "push")
@@ -3618,7 +4521,7 @@ namespace mu
     {
         if (operator==(other))
             m_queue = static_cast<const QueueValue&>(other).m_queue;
-        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
             m_queue = static_cast<const QueueValue&>(static_cast<const RefValue&>(other).get()).m_queue;
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -3636,7 +4539,7 @@ namespace mu
     {
         if (operator==(other))
             m_queue = static_cast<const QueueValue&>(other).m_queue;
-        else if (other.m_type == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
+        else if (other.getPlainType() == TYPE_REFERENCE && operator==(static_cast<const RefValue&>(other).get()))
             m_queue = static_cast<const QueueValue&>(static_cast<const RefValue&>(other).get()).m_queue;
         else
             throw ParserError(ecASSIGNED_TYPE_MISMATCH);
@@ -3789,7 +4692,7 @@ namespace mu
     /////////////////////////////////////////////////
     BaseValue* QueueValue::apply(const std::string& sMethod, const BaseValue& arg1) // push push_front
     {
-        if (arg1.m_type == TYPE_REFERENCE)
+        if (arg1.getPlainType() == TYPE_REFERENCE)
             return apply(sMethod, static_cast<const RefValue&>(arg1).get());
 
         if (sMethod == "push")

@@ -323,7 +323,7 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
     {
         int posStart = x-1;
 
-        while (posStart > 0 && vColors[posStart-1] == vColors[x-1] && isalnum(sLine[posStart-1]))
+        while (posStart > 0 && vColors[posStart-1] == vColors[x-1] && (isalnum(sLine[posStart-1]) || sLine[posStart-1] == '_'))
             posStart--;
 
         varType = getVariableType(sLine.substr(posStart, x - posStart).ToAscii().data());
@@ -352,6 +352,8 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
             else if (sReturnValue.find("CAT") != std::string::npos)
                 varType = "category";
             else if (sReturnValue.find("DCT") != std::string::npos)
+                varType = "dict";
+            else if (sReturnValue.find("SCT") != std::string::npos)
                 varType = "dictstruct";
             else if (sReturnValue.find("OBJ") != std::string::npos
                      || sReturnValue.find("ARG") != std::string::npos
@@ -455,6 +457,8 @@ std::pair<std::string, bool> GenericTerminal::get_method_root_type(int x, int y)
                     else if (sReturnValue.find("CAT") != std::string::npos)
                         varType = "category";
                     else if (sReturnValue.find("DCT") != std::string::npos)
+                        varType = "dict";
+                    else if (sReturnValue.find("SCT") != std::string::npos)
                         varType = "dictstruct";
                     else if (sReturnValue.find("OBJ") != std::string::npos)
                         varType = "object." + sSymbolName;

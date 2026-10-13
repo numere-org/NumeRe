@@ -99,34 +99,44 @@ void RevisionDialog::populateRevisionList()
     // Handle each revision independently
     for (size_t i = 0; i < revList.size(); i++)
     {
+        size_t firstTab = revList[i].find('\t');
+        wxString revId = revList[i].substr(0, firstTab);
+        wxString dateTime = revList[i].substr(firstTab+1,
+                                              revList[i].find('\t', firstTab+1) - firstTab-1);
+        wxString comment = revList[i].substr(revList[i].rfind('\t')+1);
+
         // Is it a tag?
         if (revList[i].substr(0, 3) == "tag")
         {
             // A tag is appended to the previous revision
-            wxTreeItemId currentTagItem = revisionList->AppendItem(currentItem, revList[i].substr(0, revList[i].find('\t')));
-            revisionList->SetItemText(currentTagItem, 1, revList[i].substr(revList[i].find('\t')+1, revList[i].find('\t', revList[i].find('\t')+1) - revList[i].find('\t')-1));
-            revisionList->SetItemText(currentTagItem, 2, revList[i].substr(revList[i].rfind('\t')+1));
+            wxTreeItemId currentTagItem = revisionList->AppendItem(currentItem, revId);
+            revisionList->SetItemText(currentTagItem, 1, dateTime);
+            revisionList->SetItemText(currentTagItem, 2, comment);
+            revisionList->SetItemToolTip(currentTagItem, comment);
             revisionList->SetItemFont(currentTagItem, revisionList->GetFont().MakeItalic());
             revisionList->SetItemTextColour(currentTagItem, wxColour(0, 0, 192));
         }
         else
         {
             // Create a new revision in the tree
-            currentItem = revisionList->AppendItem(revisionList->GetRootItem(), revList[i].substr(0, revList[i].find('\t')));
-            revisionList->SetItemText(currentItem, 1, revList[i].substr(revList[i].find('\t')+1, revList[i].find('\t', revList[i].find('\t')+1) - revList[i].find('\t')-1));
-            revisionList->SetItemText(currentItem, 2, revList[i].substr(revList[i].rfind('\t')+1));
+            currentItem = revisionList->AppendItem(revisionList->GetRootItem(), revId);
+            revisionList->SetItemText(currentItem, 1, dateTime);
+            revisionList->SetItemText(currentItem, 2, comment);
 
-            if (revisionList->GetItemText(currentItem, 2).substr(0, 5) == "MOVE:")
+            if (comment.length() && !comment.StartsWith("DIFF"))
+                revisionList->SetItemToolTip(currentItem, comment);
+
+            if (comment.StartsWith("MOVE:"))
                 revisionList->SetItemTextColour(currentItem, wxColour(128, 0, 0));
 
-            if (revisionList->GetItemText(currentItem, 2).substr(0, 7) == "RENAME:")
+            if (comment.StartsWith("RENAME:"))
                 revisionList->SetItemTextColour(currentItem, wxColour(0, 128, 0));
 
-            if (revisionList->GetItemText(currentItem, 2).substr(0, 8) == "RESTORE:")
+            if (comment.StartsWith("RESTORE:"))
                 revisionList->SetItemTextColour(currentItem, wxColour(0, 128, 128));
 
             // Do not display the "DIFF" comment identifier
-            if (revisionList->GetItemText(currentItem, 2).substr(0, 4) == "DIFF")
+            if (comment.StartsWith("DIFF"))
                 revisionList->SetItemText(currentItem, 2, "");
 
             if (revisionList->GetItemText(currentItem, 0) == currentRev)

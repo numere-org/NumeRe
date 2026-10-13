@@ -129,7 +129,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ShowDwellingCallTip(int charpos);
 
 		int CallTipStartPos();
-		void AdvCallTipShow(int pos, const wxString& definition);
+		void AdvCallTipShow(int pos, const wxString& definition, bool above = false);
 		void AdvCallTipCancel();
 
 		void getMatchingBrace(int nPos);
@@ -212,7 +212,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
 		void Transpose(int nFirstLine = 0, int nLastLine = -1);
 		wxString ExtractAsHTML(int nFirstLine = 0, int nLastLine = -1);
+		std::pair<int, int> getLogicalLine(int lineNum);
 		std::vector<LexedString> getLexedTokens(int lineNum);
+		std::vector<LexedString> getLexedTokensForLogicalLine(int lineNum);
 
 		void ToggleSettings(int _setting);
 		bool getEditorSetting(EditorSettings _setting);
@@ -330,6 +332,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void markSections(bool bForceRefresh = false);
 		void markLocalVariables(bool bForceRefresh = false);
+		void highlightDocStringCode();
 		bool isNoAutoIndentionKey(int keycode);
 		void AsynchActions();
 		void AsynchEvaluations();

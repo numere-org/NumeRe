@@ -25,6 +25,8 @@
 #include <vector>
 #include <utility>
 
+#include "../../kernel/core/ParserLib/muStructures.hpp"
+
 /////////////////////////////////////////////////
 /// \brief This structure represents a generic
 /// cell value filtering condition, which
@@ -57,12 +59,12 @@ struct CellFilterCondition
     };
 
     ConditionType m_type;
-    std::vector<std::complex<double>> m_vals;
-    std::vector<wxString> m_strs;
+    std::vector<mu::Value> m_vals;
+    std::vector<std::string> m_strs;
 
     void reset();
-    std::pair<bool, size_t> eval(const std::complex<double>& val) const;
-    std::pair<bool, size_t> eval(const wxString& val) const;
+    std::pair<bool, size_t> eval(const mu::Value& val) const;
+    std::pair<bool, size_t> eval(const std::string& val) const;
 };
 
 class wxChoice;
@@ -100,6 +102,8 @@ class CellFilterDialog : public wxDialog
 
         DECLARE_EVENT_TABLE();
 };
+
+bool isNumerical(const std::string& value);
 #endif
 
 

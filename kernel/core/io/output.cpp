@@ -19,6 +19,7 @@
 
 #include "output.hpp"
 #include "../../kernel.hpp"
+#include "../utils/utf8lib.hpp"
 
 using namespace std;
 
@@ -383,7 +384,7 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
                 if (bPrintTeX)
                     _sMatrix[i][j] = replaceTeXControls(_sMatrix[i][j]);
 
-                nLongest[j] = std::max(nLongest[j], _sMatrix[i][j].length());
+                nLongest[j] = std::max(nLongest[j], countUnicodePoints(_sMatrix[i][j]));
             }
 
             nLongest[j] += COLUMNSEPARATOR;
@@ -397,7 +398,7 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
             {
                 if (i < 5 || i >= nRows - 5)
                 {
-                    nLongest[j] = std::max(nLongest[j], _sMatrix[i][j].length());
+                    nLongest[j] = std::max(nLongest[j], countUnicodePoints(_sMatrix[i][j]));
                 }
             }
 
@@ -504,7 +505,7 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
                 if (i < nHeadLineCount)
                     sPrint.append(COLUMNSEPARATOR, ' ');
                 else
-                    sPrint.append(nLongest[j] - _sMatrix[i][j].length(), ' ');
+                    sPrint.append(nLongest[j] - countUnicodePoints(_sMatrix[i][j]), ' ');
 
                 if (i >= nHeadLineCount && _sMatrix[i][j] != "---" && !bSumBar)
                     sPrint += "$";
@@ -521,7 +522,7 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
                 }
 
                 if (i < nHeadLineCount)
-                    sPrint.append(nLongest[j] - _sMatrix[i][j].length() - COLUMNSEPARATOR, ' ');
+                    sPrint.append(nLongest[j] - countUnicodePoints(_sMatrix[i][j]) - COLUMNSEPARATOR, ' ');
 
                 if (i >= nHeadLineCount && _sMatrix[i][j] != "---")
                     sPrint += "$";
@@ -610,13 +611,13 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
                         if (i < nHeadLineCount)
                             sPrint.append(COLUMNSEPARATOR, ' ');
                         else
-                            sPrint.append(nLongest[j] - _sMatrix[i][j].length(), ' ');
+                            sPrint.append(nLongest[j] - countUnicodePoints(_sMatrix[i][j]), ' ');
                     }
 
                     sPrint += _sMatrix[i][j];	// Verknuepfe alle Elemente einer Zeile zu einem einzigen String
 
                     if (i < nHeadLineCount)
-                        sPrint.append(nLongest[j] - _sMatrix[i][j].length() - COLUMNSEPARATOR, ' ');
+                        sPrint.append(nLongest[j] - countUnicodePoints(_sMatrix[i][j]) - COLUMNSEPARATOR, ' ');
 
                     if (!nLineStartCol && nLineEndCol != nCols && nNotRepeatFirstCol && i >= nHeadLineCount)
                     {
@@ -937,7 +938,7 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
     for (size_t i = 0; i < nHeadLineCount; i++)
     {
         for (size_t j = 0; j < nCols; j++)
-            nLongest[j] = std::max(nLongest[j], _table.getCleanHeadPart(j, i).length());
+            nLongest[j] = std::max(nLongest[j], countUnicodePoints(_table.getCleanHeadPart(j, i)));
     }
 
     if (!bCompact || nRows < 12)
@@ -950,8 +951,8 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
                 for (size_t i = 0; i < nRows; i++)
                 {
                     nLongest[j] = std::max(nLongest[j],
-                                           formatUnit(_table.get(i, j).print(digits, chars),
-                                                      _table.getColumn(j)->m_sUnit).length());
+                                           countUnicodePoints(formatUnit(_table.get(i, j).print(digits, chars),
+                                                              _table.getColumn(j)->m_sUnit)));
                 }
             }
 
@@ -969,8 +970,8 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
                     if (i < 5 || i >= nRows - 5)
                     {
                         nLongest[j] = std::max(nLongest[j],
-                                               formatUnit(_table.get(i, j).print(digits, chars),
-                                                          _table.getColumn(j)->m_sUnit).length());
+                                               countUnicodePoints(formatUnit(_table.get(i, j).print(digits, chars),
+                                                                  _table.getColumn(j)->m_sUnit)));
                     }
                 }
             }
@@ -1044,7 +1045,7 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
                 }
 
                 sPrint += sValue;
-                sPrint.append(nLongest[j] - sValue.length() - COLUMNSEPARATOR, ' ');
+                sPrint.append(nLongest[j] - countUnicodePoints(sValue) - COLUMNSEPARATOR, ' ');
 
                 /*if (!nLineStartCol && nLineEndCol != nCols && nNotRepeatFirstCol && i >= nHeadLineCount)
                 {
@@ -1094,12 +1095,12 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
                     if (!TableColumn::isValueType(vTypes[j]))
                         sPrint.append(COLUMNSEPARATOR, ' ');
                     else
-                        sPrint.append(nLongest[j] - sValue.length(), ' ');
+                        sPrint.append(nLongest[j] - countUnicodePoints(sValue), ' ');
 
                     sPrint += sValue;
 
                     if (!TableColumn::isValueType(vTypes[j]))
-                        sPrint.append(nLongest[j] - sValue.length() - COLUMNSEPARATOR, ' ');
+                        sPrint.append(nLongest[j] - countUnicodePoints(sValue) - COLUMNSEPARATOR, ' ');
 
                     /*if (!nLineStartCol && nLineEndCol != nCols && nNotRepeatFirstCol && i >= nHeadLineCount)
                     {

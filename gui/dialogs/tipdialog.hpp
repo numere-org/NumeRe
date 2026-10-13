@@ -23,51 +23,99 @@
 #include <cmath>
 #include <ctime>
 
+#include "../stringconv.hpp"
+#include "../compositions/grouppanel.hpp"
 
+
+/////////////////////////////////////////////////
+/// \brief Custom implementation of a tip
+/// provider.
+/////////////////////////////////////////////////
 class MyTipProvider : public wxTipProvider
 {
     private:
         std::vector<std::string> vTip;
-        unsigned int nth_tip;
+        size_t nth_tip;
     public:
         MyTipProvider(const std::vector<std::string>& vTipList);
 
+        /////////////////////////////////////////////////
+        /// \brief Get the next tip.
+        ///
+        /// \return virtual wxString
+        ///
+        /////////////////////////////////////////////////
         virtual wxString GetTip()
-            {
-                nth_tip++;
-                if (nth_tip >= vTip.size())
-                    nth_tip = 0;
-                return vTip[nth_tip];
-            }
+        {
+            nth_tip++;
+
+            if (nth_tip >= vTip.size())
+                nth_tip = 0;
+
+            return wxFromUtf8(vTip[nth_tip]);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get the index of the current tip and
+        /// the count of available tips.
+        ///
+        /// \return std::pair<std::string,std::string>
+        ///
+        /////////////////////////////////////////////////
+        std::pair<std::string,std::string> getIndex() const
+        {
+            return std::make_pair(std::to_string(nth_tip+1), std::to_string(vTip.size()));
+        }
 };
 
+
+
+/////////////////////////////////////////////////
+/// \brief Implements a custom tip dialog.
+/////////////////////////////////////////////////
 class TipDialog : public wxDialog
 {
     public:
-        /* text defines all strings:
-         * 0 = title, 1 = Did you know, 2 = &Next tip, 3 = &Show tips at startup
-         */
-        TipDialog(wxWindow *parent, wxTipProvider *tipProvider, const wxArrayString& text, bool showAtStartup);
+        TipDialog(wxWindow *parent, MyTipProvider *tipProvider, const wxArrayString& text, bool showAtStartup);
 
-        // the tip dialog has "Show tips on startup" checkbox - return true if it
-        // was checked (or wasn't unchecked)
-        bool ShowTipsOnStartup() const { return m_checkbox->GetValue(); }
+        /////////////////////////////////////////////////
+        /// \brief Shall we show this dialog again next
+        /// time?
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool ShowTipsOnStartup() const
+        {
+            return m_checkbox->GetValue();
+        }
 
-        // sets the (next) tip text
-        void SetTipText() { m_text->SetValue(m_tipProvider->GetTip()); }
+        void SetTipText();
 
-        // "Next" button handler
-        void OnNextTip(wxCommandEvent& WXUNUSED(event)) { SetTipText(); }
+
+        /////////////////////////////////////////////////
+        /// \brief Button handler for clicking on "Next".
+        ///
+        /// \param event wxCommandEvent&
+        ///
+        /////////////////////////////////////////////////
+        void OnNextTip(wxCommandEvent& WXUNUSED(event))
+        {
+            SetTipText();
+        }
 
     private:
-        wxTipProvider *m_tipProvider;
+        MyTipProvider *m_tipProvider;
 
-        wxTextCtrl *m_text;
+        TextField *m_text;
         wxCheckBox *m_checkbox;
+        wxArrayString m_textSnippets;
+        wxStaticText* m_header;
 
         DECLARE_EVENT_TABLE()
         wxDECLARE_NO_COPY_CLASS(TipDialog);
 };
 
 
-bool ShowTip(wxWindow* parent, wxTipProvider* tipProvider, const wxArrayString& text, bool showAtStartUp = true);
+
+bool ShowTip(wxWindow* parent, MyTipProvider* tipProvider, const wxArrayString& text, bool showAtStartUp = true);

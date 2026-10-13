@@ -850,6 +850,38 @@ namespace mu
 		ReInit();
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief Sets the current user-defined
+    /// environment variables.
+    ///
+    /// \param std::map<std::string const
+    /// \param envVars Value>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::SetEnvironmentVars(const std::map<std::string, Value>& envVars)
+	{
+	    auto iter = m_ConstDef.begin();
+
+	    // Erase all declared environment variables
+	    while (iter != m_ConstDef.end())
+        {
+            if (iter->first.starts_with("__") && iter->first.ends_with("__"))
+                iter = m_ConstDef.erase(iter);
+            else
+                iter++;
+        }
+
+        // Declare the new set of environment variables
+        for (const auto& envVar : envVars)
+        {
+            CheckName(envVar.first, ValidNameChars());
+            m_ConstDef[envVar.first] = envVar.second;
+        }
+
+        ReInit();
+	}
+
 	//---------------------------------------------------------------------------
 	/** \brief Get operator priority.
 	    \throw ParserException if a_Oprt is no operator code
@@ -1341,7 +1373,6 @@ namespace mu
 
         for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
         {
-            //continue;
             switch (pTok->Cmd)
             {
                 // built in binary operators
@@ -1480,10 +1511,10 @@ namespace mu
                     if (pTok->Oprt().var.isScalar())
                         pTok->Oprt().var -= Value(1);
                     else
-                        Stack[sidx] = pTok->Oprt().var-= Value(1);
+                        Stack[sidx] = pTok->Oprt().var -= Value(1);
                     continue;
 
-                case  cmIF: // Not needed right now, operator converted to a function
+                /*case  cmIF: // Not needed right now, operator converted to a function
                     if (!all(Stack[sidx--].get()))
                         pTok += pTok->Oprt().offset;
                     continue;
@@ -1493,7 +1524,7 @@ namespace mu
                     continue;
 
                 case  cmENDIF: // Not needed right now, operator converted to a function
-                    continue;
+                    continue;*/
 
                 // value and variable tokens
                 case  cmVAL:
@@ -2245,6 +2276,16 @@ namespace mu
                             stOpt.top().Set(m_FunDef.at(MU_VECTOR_EXP3), MU_VECTOR_EXP3);
                             ApplyFunc(stOpt, stVal, 3);
                         }
+                        else if (stOpt.top().GetCode() == cmIF && opt.GetCode() == cmARG_SEP)
+                        {
+                            if (stArgCount.top() < 3 || stVal.size() < 3)
+                                Error(ecUNEXPECTED_ARG_SEP, m_pTokenReader->GetPos());
+
+                            stOpt.top().Set(m_FunDef.at(MU_IF_ELSE), MU_IF_ELSE);
+                            ApplyFunc(stOpt, stVal, 3);
+                            stArgCount.pop();
+                            stArgCount.top()++;
+                        }
                     }
 					break;
 
@@ -2542,11 +2583,11 @@ namespace mu
 			}
 
 			// Commented out - might be necessary for deep debugging stuff
-			//if (ParserBase::g_DbgDumpStack)
-			//{
+//			if (ParserBase::g_DbgDumpStack)
+//			{
 //				StackDump(stVal, stOpt);
 //				m_compilingState.m_byteCode.AsciiDump();
-			//}
+//			}
 		} // while (true)
 
 
@@ -2662,6 +2703,25 @@ namespace mu
 	{
 	    if (m_factory->Remove(a_strVarName))
             ReInit();
+	}
+
+    /////////////////////////////////////////////////
+    /// \brief Remove a constant from internal
+    /// storage.
+    ///
+    /// \param a_strConstName const string_type&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::RemoveConst(const string_type& a_strConstName)
+	{
+	    auto iter = m_ConstDef.find(a_strConstName);
+
+	    if (iter != m_ConstDef.end())
+        {
+            m_ConstDef.erase(iter);
+            ReInit();
+        }
 	}
 
 	//------------------------------------------------------------------------------
